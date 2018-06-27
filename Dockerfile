@@ -42,9 +42,19 @@ RUN \
 
 ADD . /usr/local/src/steem
 
+# IF USING GIT WORKTREES  UNCOMMENT BELOW
+## MAKE SURE MASTER IS THE FOLDER WITH THE .GIT FOLDER
+# ADD ../master /usr/local/src/master
+
+# RUN \
+# 		cd /usr/local/src/steem && \
+# 		export repopath=`awk '{ split($2,a,".git"); print a[3] }' .git ` \
+# 		echo "gitdir: /usr/local/src/master/.git$repopath"
+
+
 RUN \
     cd /usr/local/src/steem && \
-    git submodule update --init --recursive && \
+    # git submodule update --init --recursive && \
     mkdir build && \
     cd build && \
     cmake \
@@ -65,7 +75,7 @@ RUN \
 
 RUN \
     cd /usr/local/src/steem && \
-    git submodule update --init --recursive && \
+    # git submodule update --init --recursive && \
     mkdir build && \
     cd build && \
     cmake \
