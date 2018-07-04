@@ -54,7 +54,7 @@ ADD . /usr/local/src/steem
 
 RUN \
     cd /usr/local/src/steem && \
-    # git submodule update --init --recursive && \
+    git submodule update --init --recursive && \
     mkdir build && \
     cd build && \
     cmake \
@@ -75,7 +75,7 @@ RUN \
 
 RUN \
     cd /usr/local/src/steem && \
-    # git submodule update --init --recursive && \
+    git submodule update --init --recursive && \
     mkdir build && \
     cd build && \
     cmake \
@@ -105,7 +105,7 @@ RUN \
         -DLOW_MEMORY_NODE=ON \
         -DCLEAR_VOTES=ON \
         -DSKIP_BY_TX_ID=OFF \
-        -DBUILD_STEEM_TESTNET=OFF \
+        -DBUILD_STEEM_TESTNET=ON \
         -DSTEEM_STATIC_BUILD=${STEEM_STATIC_BUILD} \
         .. \
     && \
@@ -128,7 +128,7 @@ RUN \
         -DLOW_MEMORY_NODE=OFF \
         -DCLEAR_VOTES=OFF \
         -DSKIP_BY_TX_ID=ON \
-        -DBUILD_STEEM_TESTNET=OFF \
+        -DBUILD_STEEM_TESTNET=ON \
         -DSTEEM_STATIC_BUILD=${STEEM_STATIC_BUILD} \
         .. \
     && \
