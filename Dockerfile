@@ -52,47 +52,47 @@ ADD . /usr/local/src/steem
 # 		echo "gitdir: /usr/local/src/master/.git$repopath"
 
 
-RUN \
-    cd /usr/local/src/steem && \
-    git submodule update --init --recursive && \
-    mkdir build && \
-    cd build && \
-    cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_STEEM_TESTNET=ON \
-        -DLOW_MEMORY_NODE=OFF \
-        -DCLEAR_VOTES=ON \
-        -DSKIP_BY_TX_ID=ON \
-        .. && \
-    make -j$(nproc) chain_test test_fixed_string && \
-    ./tests/chain_test && \
-    ./programs/util/test_fixed_string && \
-    cd /usr/local/src/steem && \
-    doxygen && \
-    programs/build_helpers/check_reflect.py && \
-    programs/build_helpers/get_config_check.sh && \
-    rm -rf /usr/local/src/steem/build
+# RUN \
+#     cd /usr/local/src/steem && \
+#     git submodule update --init --recursive && \
+#     mkdir build && \
+#     cd build && \
+#     cmake \
+#         -DCMAKE_BUILD_TYPE=Release \
+#         -DBUILD_STEEM_TESTNET=ON \
+#         -DLOW_MEMORY_NODE=OFF \
+#         -DCLEAR_VOTES=ON \
+#         -DSKIP_BY_TX_ID=ON \
+#         .. && \
+#     make -j$(nproc) chain_test test_fixed_string && \
+#     ./tests/chain_test && \
+#     ./programs/util/test_fixed_string && \
+#     cd /usr/local/src/steem && \
+#     doxygen && \
+#     programs/build_helpers/check_reflect.py && \
+#     programs/build_helpers/get_config_check.sh && \
+#     rm -rf /usr/local/src/steem/build
 
-RUN \
-    cd /usr/local/src/steem && \
-    git submodule update --init --recursive && \
-    mkdir build && \
-    cd build && \
-    cmake \
-        -DCMAKE_BUILD_TYPE=Debug \
-        -DENABLE_COVERAGE_TESTING=ON \
-        -DBUILD_STEEM_TESTNET=ON \
-        -DLOW_MEMORY_NODE=OFF \
-        -DCLEAR_VOTES=ON \
-        -DSKIP_BY_TX_ID=ON \
-        -DCHAINBASE_CHECK_LOCKING=OFF \
-        .. && \
-    make -j$(nproc) chain_test && \
-    ./tests/chain_test && \
-    mkdir -p /var/cobertura && \
-    gcovr --object-directory="../" --root=../ --xml-pretty --gcov-exclude=".*tests.*" --gcov-exclude=".*fc.*" --gcov-exclude=".*app*" --gcov-exclude=".*net*" --gcov-exclude=".*plugins*" --gcov-exclude=".*schema*" --gcov-exclude=".*time*" --gcov-exclude=".*utilities*" --gcov-exclude=".*wallet*" --gcov-exclude=".*programs*" --output="/var/cobertura/coverage.xml" && \
-    cd /usr/local/src/steem && \
-    rm -rf /usr/local/src/steem/build
+# RUN \
+#     cd /usr/local/src/steem && \
+#     git submodule update --init --recursive && \
+#     mkdir build && \
+#     cd build && \
+#     cmake \
+#         -DCMAKE_BUILD_TYPE=Debug \
+#         -DENABLE_COVERAGE_TESTING=ON \
+#         -DBUILD_STEEM_TESTNET=ON \
+#         -DLOW_MEMORY_NODE=OFF \
+#         -DCLEAR_VOTES=ON \
+#         -DSKIP_BY_TX_ID=ON \
+#         -DCHAINBASE_CHECK_LOCKING=OFF \
+#         .. && \
+#     make -j$(nproc) chain_test && \
+#     ./tests/chain_test && \
+#     mkdir -p /var/cobertura && \
+#     gcovr --object-directory="../" --root=../ --xml-pretty --gcov-exclude=".*tests.*" --gcov-exclude=".*fc.*" --gcov-exclude=".*app*" --gcov-exclude=".*net*" --gcov-exclude=".*plugins*" --gcov-exclude=".*schema*" --gcov-exclude=".*time*" --gcov-exclude=".*utilities*" --gcov-exclude=".*wallet*" --gcov-exclude=".*programs*" --output="/var/cobertura/coverage.xml" && \
+#     cd /usr/local/src/steem && \
+#     rm -rf /usr/local/src/steem/build
 
 RUN \
     cd /usr/local/src/steem && \
