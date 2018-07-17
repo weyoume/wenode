@@ -85,10 +85,10 @@ fi
 # who knows what else it dumps into current dir
 cd $HOME
 
-if [[ "$USE_PUBLIC_SHARED_MEMORY" ]]; then
-  echo steemd: Downloading and uncompressing blockchain-$VERSION-latest.tar.lz4 - this may take awhile.
-  wget -qO- https://s3.amazonaws.com/steemit-dev-blockchainstate/blockchain-$VERSION-latest.tar.lz4 | lz4 -d | tar x
-fi
+# if [[ "$USE_PUBLIC_SHARED_MEMORY" ]]; then
+#   echo steemd: Downloading and uncompressing blockchain-$VERSION-latest.tar.lz4 - this may take awhile.
+#   wget -qO- https://s3.amazonaws.com/steemit-dev-blockchainstate/blockchain-$VERSION-latest.tar.lz4 | lz4 -d | tar x
+# fi
 
 # slow down restart loop if flapping
 sleep 1

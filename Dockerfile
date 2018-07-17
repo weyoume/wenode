@@ -42,84 +42,74 @@ RUN \
 
 ADD . /usr/local/src/steem
 
-# IF USING GIT WORKTREES  UNCOMMENT BELOW
-## MAKE SURE MASTER IS THE FOLDER WITH THE .GIT FOLDER
-# ADD ../master /usr/local/src/master
+# RUN \
+#     cd /usr/local/src/steem && \
+#     git submodule update --init --recursive && \
+#     mkdir build && \
+#     cd build && \
+#     cmake \
+#         -DCMAKE_BUILD_TYPE=Release \
+#         -DBUILD_STEEM_TESTNET=ON \
+#         -DLOW_MEMORY_NODE=OFF \
+#         -DCLEAR_VOTES=ON \
+#         -DSKIP_BY_TX_ID=ON \
+#         .. && \
+#     make -j$(nproc) chain_test test_fixed_string && \
+#     ./tests/chain_test && \
+#     ./programs/util/test_fixed_string && \
+#     cd /usr/local/src/steem && \
+#     doxygen && \
+#     programs/build_helpers/check_reflect.py && \
+#     programs/build_helpers/get_config_check.sh && \
+#     rm -rf /usr/local/src/steem/build
 
 # RUN \
-# 		cd /usr/local/src/steem && \
-# 		export repopath=`awk '{ split($2,a,".git"); print a[3] }' .git ` \
-# 		echo "gitdir: /usr/local/src/master/.git$repopath"
-
-
-RUN \
-    cd /usr/local/src/steem && \
-    git submodule update --init --recursive && \
-    mkdir build && \
-    cd build && \
-    cmake \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DBUILD_STEEM_TESTNET=ON \
-        -DLOW_MEMORY_NODE=OFF \
-        -DCLEAR_VOTES=ON \
-        -DSKIP_BY_TX_ID=ON \
-        .. && \
-    make -j$(nproc) chain_test test_fixed_string && \
-    ./tests/chain_test && \
-    ./programs/util/test_fixed_string && \
-    cd /usr/local/src/steem && \
-    doxygen && \
-    programs/build_helpers/check_reflect.py && \
-    programs/build_helpers/get_config_check.sh && \
-    rm -rf /usr/local/src/steem/build
+#     cd /usr/local/src/steem && \
+#     git submodule update --init --recursive && \
+#     mkdir build && \
+#     cd build && \
+#     cmake \
+#         -DCMAKE_BUILD_TYPE=Debug \
+#         -DENABLE_COVERAGE_TESTING=ON \
+#         -DBUILD_STEEM_TESTNET=ON \
+#         -DLOW_MEMORY_NODE=OFF \
+#         -DCLEAR_VOTES=ON \
+#         -DSKIP_BY_TX_ID=ON \
+#         -DCHAINBASE_CHECK_LOCKING=OFF \
+#         .. && \
+#     make -j$(nproc) chain_test && \
+#     ./tests/chain_test && \
+#     mkdir -p /var/cobertura && \
+#     gcovr --object-directory="../" --root=../ --xml-pretty --gcov-exclude=".*tests.*" --gcov-exclude=".*fc.*" --gcov-exclude=".*app*" --gcov-exclude=".*net*" --gcov-exclude=".*plugins*" --gcov-exclude=".*schema*" --gcov-exclude=".*time*" --gcov-exclude=".*utilities*" --gcov-exclude=".*wallet*" --gcov-exclude=".*programs*" --output="/var/cobertura/coverage.xml" && \
+#     cd /usr/local/src/steem && \
+#     rm -rf /usr/local/src/steem/build
 
 RUN \
     cd /usr/local/src/steem && \
     git submodule update --init --recursive && \
-    mkdir build && \
-    cd build && \
-    cmake \
-        -DCMAKE_BUILD_TYPE=Debug \
-        -DENABLE_COVERAGE_TESTING=ON \
-        -DBUILD_STEEM_TESTNET=ON \
-        -DLOW_MEMORY_NODE=OFF \
-        -DCLEAR_VOTES=ON \
-        -DSKIP_BY_TX_ID=ON \
-        -DCHAINBASE_CHECK_LOCKING=OFF \
-        .. && \
-    make -j$(nproc) chain_test && \
-    ./tests/chain_test && \
-    mkdir -p /var/cobertura && \
-    gcovr --object-directory="../" --root=../ --xml-pretty --gcov-exclude=".*tests.*" --gcov-exclude=".*fc.*" --gcov-exclude=".*app*" --gcov-exclude=".*net*" --gcov-exclude=".*plugins*" --gcov-exclude=".*schema*" --gcov-exclude=".*time*" --gcov-exclude=".*utilities*" --gcov-exclude=".*wallet*" --gcov-exclude=".*programs*" --output="/var/cobertura/coverage.xml" && \
-    cd /usr/local/src/steem && \
-    rm -rf /usr/local/src/steem/build
-
-RUN \
-    cd /usr/local/src/steem && \
-    git submodule update --init --recursive && \
-    mkdir build && \
-    cd build && \
-    cmake \
-        -DCMAKE_INSTALL_PREFIX=/usr/local/steemd-default \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DLOW_MEMORY_NODE=ON \
-        -DCLEAR_VOTES=ON \
-        -DSKIP_BY_TX_ID=OFF \
-        -DBUILD_STEEM_TESTNET=ON \
-        -DSTEEM_STATIC_BUILD=${STEEM_STATIC_BUILD} \
-        .. \
-    && \
-    make -j$(nproc) && \
-    make install && \
-    cd .. && \
-    ( /usr/local/steemd-default/bin/steemd --version \
-      | grep -o '[0-9]*\.[0-9]*\.[0-9]*' \
-      && echo '_' \
-      && git rev-parse --short HEAD ) \
-      | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g' \
-      > /etc/steemdversion && \
-    cat /etc/steemdversion && \
-    rm -rfv build && \
+    # mkdir build && \
+    # cd build && \
+    # cmake \
+    #     -DCMAKE_INSTALL_PREFIX=/usr/local/steemd-default \
+    #     -DCMAKE_BUILD_TYPE=Release \
+    #     -DLOW_MEMORY_NODE=ON \
+    #     -DCLEAR_VOTES=ON \
+    #     -DSKIP_BY_TX_ID=OFF \
+    #     -DBUILD_STEEM_TESTNET=ON \
+    #     -DSTEEM_STATIC_BUILD=${STEEM_STATIC_BUILD} \
+    #     .. \
+    # && \
+    # make -j$(nproc) && \
+    # make install && \
+    # cd .. && \
+    # ( /usr/local/steemd-default/bin/steemd --version \
+    #   | grep -o '[0-9]*\.[0-9]*\.[0-9]*' \
+    #   && echo '_' \
+    #   && git rev-parse --short HEAD ) \
+    #   | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g' \
+    #   > /etc/steemdversion && \
+    # cat /etc/steemdversion && \
+    # rm -rfv build && \
     mkdir build && \
     cd build && \
     cmake \
@@ -136,53 +126,53 @@ RUN \
     make install && \
     rm -rf /usr/local/src/steem
 
-RUN \
-    apt-get remove -y \
-        automake \
-        autotools-dev \
-        bsdmainutils \
-        build-essential \
-        cmake \
-        doxygen \
-        dpkg-dev \
-        git \
-        libboost-all-dev \
-        libc6-dev \
-        libexpat1-dev \
-        libgcc-5-dev \
-        libhwloc-dev \
-        libibverbs-dev \
-        libicu-dev \
-        libltdl-dev \
-        libncurses5-dev \
-        libnuma-dev \
-        libopenmpi-dev \
-        libpython-dev \
-        libpython2.7-dev \
-        libreadline-dev \
-        libreadline6-dev \
-        libssl-dev \
-        libstdc++-5-dev \
-        libtinfo-dev \
-        libtool \
-        linux-libc-dev \
-        m4 \
-        make \
-        manpages \
-        manpages-dev \
-        mpi-default-dev \
-        python-dev \
-        python2.7-dev \
-        python3-dev \
-    && \
-    apt-get autoremove -y && \
-    rm -rf \
-        /var/lib/apt/lists/* \
-        /tmp/* \
-        /var/tmp/* \
-        /var/cache/* \
-        /usr/include \
-        /usr/local/include
+# RUN \
+#     apt-get remove -y \
+#         automake \
+#         autotools-dev \
+#         bsdmainutils \
+#         build-essential \
+#         cmake \
+#         doxygen \
+#         dpkg-dev \
+#         git \
+#         libboost-all-dev \
+#         libc6-dev \
+#         libexpat1-dev \
+#         libgcc-5-dev \
+#         libhwloc-dev \
+#         libibverbs-dev \
+#         libicu-dev \
+#         libltdl-dev \
+#         libncurses5-dev \
+#         libnuma-dev \
+#         libopenmpi-dev \
+#         libpython-dev \
+#         libpython2.7-dev \
+#         libreadline-dev \
+#         libreadline6-dev \
+#         libssl-dev \
+#         libstdc++-5-dev \
+#         libtinfo-dev \
+#         libtool \
+#         linux-libc-dev \
+#         m4 \
+#         make \
+#         manpages \
+#         manpages-dev \
+#         mpi-default-dev \
+#         python-dev \
+#         python2.7-dev \
+#         python3-dev \
+#     && \
+#     apt-get autoremove -y && \
+#     rm -rf \
+#         /var/lib/apt/lists/* \
+#         /tmp/* \
+#         /var/tmp/* \
+#         /var/cache/* \
+#         /usr/include \
+#         /usr/local/include
 
 RUN useradd -s /bin/bash -m -d /var/lib/steemd steemd
 
