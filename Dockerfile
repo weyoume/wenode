@@ -202,7 +202,7 @@ ADD contrib/config-for-broadcaster.ini /etc/steemd/config-for-broadcaster.ini
 ADD contrib/config-for-ahnode.ini /etc/steemd/config-for-ahnode.ini
 
 # add normal startup script that starts via sv
-ADD contrib/steemd.run /usr/local/bin/steem-sv-run.sh
+ADD contrib/steem-sv-run.sh /usr/local/bin/steem-sv-run.sh
 RUN chmod +x /usr/local/bin/steem-sv-run.sh
 
 # add nginx templates
