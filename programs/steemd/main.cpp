@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
    fc::oexception unhandled_exception;
    try {
 
-#ifdef IS_TEST_NET
+		#ifdef IS_TEST_NET
       std::cerr << "------------------------------------------------------\n\n";
       std::cerr << "            STARTING TEST NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
       std::cerr << "chain id: " << std::string(STEEMIT_CHAIN_ID) << "\n";
       std::cerr << "blockchain version: " << fc::string( STEEMIT_BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
-#else
+		#else
       std::cerr << "------------------------------------------------------\n\n";
       std::cerr << "            STARTING STEEM NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
@@ -64,8 +64,7 @@ int main(int argc, char** argv) {
       std::cerr << "chain id: " << std::string(STEEMIT_CHAIN_ID) << "\n";
       std::cerr << "blockchain version: " << fc::string( STEEMIT_BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
-#endif
-
+		#endif
       bpo::options_description app_options("Steem Daemon");
       bpo::options_description cfg_options("Steem Daemon");
       app_options.add_options()
