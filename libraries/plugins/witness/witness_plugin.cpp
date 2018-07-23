@@ -62,7 +62,7 @@ void new_chain_banner( const steemit::chain::database& db )
       "********************************\n"
       "*                              *\n"
       "*   ------- NEW CHAIN ------   *\n"
-      "*   -   Welcome to Steem!  -   *\n"
+      "*   -   Welcome to Ezira!  -   *\n"
       "*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
