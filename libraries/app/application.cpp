@@ -103,9 +103,9 @@ namespace detail {
                   std::vector<fc::ip::endpoint> endpoints = resolve_string_to_ip_endpoints(endpoint_string);
                   for (const fc::ip::endpoint& endpoint : endpoints)
                   {
-                     ilog("Adding seed node ${endpoint}", ("endpoint", endpoint));
-                     _p2p_network->add_node(endpoint);
-                     _p2p_network->connect_to_endpoint(endpoint);
+                     ilog("Adding seed node ${endpoint}", ("endpoint", endpoint_string));
+                     _p2p_network->add_node(endpoint_string);
+                     _p2p_network->connect_to_endpoint(endpoint_string);
                   }
                } catch( const fc::exception& e ) {
                   wlog( "caught exception ${e} while adding seed node ${endpoint}",
@@ -165,6 +165,8 @@ namespace detail {
                std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
                if (endpoints.empty())
                   FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
+							 ilog("endpoints")
+							 ilog(endpoints)
                return endpoints;
             }
             catch (const boost::bad_lexical_cast&)
