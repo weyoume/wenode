@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "starting docker container ezira with credentials in config.ini"
 echo "linked ports 2001:2001 8090:8090"
 echo "image eziranetwork/ezira"
