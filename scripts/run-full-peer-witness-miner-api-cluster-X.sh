@@ -15,9 +15,9 @@ for ((i=0;i<${#witnesses[@]};i++))
 		echo "image eziranetwork/ezira"
 		echo "not load balanced internally"
 		echo "full web node"
-		echo "peer, witness, miner, api"
+		echo "peer, witness, api"
 
-		docker run --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_WEB_NODE=1 --env STEEMD_WITNESS_NAME=${witnesses[$i]} --env STEEMD_PRIVATE_KEY=${keys[$i]}  -d --name ezira$i eziranetwork/ezira
+		docker run --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_WEB_NODE=1 --env STEEMD_WITNESS_NAME=${witnesses[$i]} --env STEEMD_PRIVATE_KEY=${keys[$i]}  -d --name ezira$i eziranetwork/ezira && 
 		# sleep 1
 done
 
