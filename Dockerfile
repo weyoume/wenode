@@ -32,6 +32,7 @@ RUN \
         nginx \
         fcgiwrap \
         awscli \
+				nano \
         jq \
         wget \
         gdb \
