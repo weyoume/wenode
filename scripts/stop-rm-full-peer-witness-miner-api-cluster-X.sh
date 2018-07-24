@@ -7,7 +7,6 @@ export peerCount=${1:-${#witnesses[@]}}
 keys="$(cat ./contrib/credentials/witnesses.txt | awk -F' ' '{print $2}')"
 keys=($keys)
 nodescount=0
-
 for ((i=0;i<$peerCount;i++)) ; do
 	if [[ ! -z "${witnesses[$i]}" ]] ; then
 		echo "#### LOOP "$i" ####"
@@ -23,4 +22,4 @@ echo "ALL DONE :D you stopped "$nodescount" nodes out of "$peerCount" desired"
 
 wait
 
-./scripts/rm-full-peer-witness-miner-api-cluster-X.sh
+./scripts/rm-full-peer-witness-miner-api-cluster-X.sh $peerCount
