@@ -18,7 +18,7 @@ for ((i=0;i<$peerCount;i++)) ; do
 		echo "peer, witness, api"
 
 		docker run --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_WEB_NODE=1 --env STEEMD_WITNESS_NAME=${witnesses[$i]} --env STEEMD_PRIVATE_KEY=${keys[$i]}  -d --name ezira$i eziranetwork/ezira & 
-		(($nodescount++))
+		((nodescount++))
 		# sleep 1
 	fi
 done
