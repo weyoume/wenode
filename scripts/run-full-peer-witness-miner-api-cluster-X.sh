@@ -9,7 +9,7 @@ keys=($keys)
 nodescount=0
 for ((i=0;i<$peerCount;i++)) ; do
 	if [[ ! -z ${witnesses[$i]} ]] ; then
-		echo "#### LOOP "$1" ####"
+		echo "#### LOOP "$i" ####"
 		echo "starting docker container ezira"$i" with witness "${witnesses[$i]}
 		echo "no linked ports, nginx-router will handle"
 		echo "image eziranetwork/ezira"
