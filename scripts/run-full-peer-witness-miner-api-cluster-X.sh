@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export subnet=172.20.0.
-export peerCount=10
+export peerCount=${1:-10}
 witnesses="$(cat ./contrib/credentials/witnesses.txt | awk -F' ' '{print $1}')"
 witnesses=($witnesses)
 keys="$(cat ./contrib/credentials/witnesses.txt | awk -F' ' '{print $2}')"
