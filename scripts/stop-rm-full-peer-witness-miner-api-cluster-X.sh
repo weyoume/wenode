@@ -18,4 +18,6 @@ done
 
 echo "ALL DONE :D you stopped "${#witnesses[@]}" nodes"
 
+wait
+
 ./scripts/rm-full-peer-witness-miner-api-cluster-X.sh
