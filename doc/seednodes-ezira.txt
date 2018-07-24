@@ -1,3 +1,10 @@
-34.214.86.238:2001          # ezira aws
-120.148.140.75:2001					# ezira local 1
-137.147.129.140:2001				# ezira local 2
+peer0.ezira.io
+peer1.ezira.io
+peer2.ezira.io
+peer3.ezira.io
+peer4.ezira.io
+peer5.ezira.io
+peer6.ezira.io
+peer7.ezira.io
+peer8.ezira.io
+peer9.ezira.io
