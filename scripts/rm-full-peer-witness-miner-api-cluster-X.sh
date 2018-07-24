@@ -14,3 +14,5 @@ for ((i=0;i<${#witnesses[@]};i++))
 		docker rm ezira$i
 		sleep 1
 done
+
+echo "ALL DONE :D you removed "${#witnesses[@]}" nodes"

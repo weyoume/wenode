@@ -13,3 +13,5 @@ for ((i=0;i<${#witnesses[@]};i++))
 		docker stop ezira$i
 		sleep 1
 done
+
+echo "ALL DONE :D you stopped "${#witnesses[@]}" nodes"
