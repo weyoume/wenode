@@ -17,7 +17,7 @@ for ((i=0;i<$peerCount;i++)) ; do
 		echo "full web node"
 		echo "peer, witness, api"
 
-		docker run --ip $subnet"."(($i+3)) --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_WEB_NODE=1 --env STEEMD_WITNESS_NAME=${witnesses[$i]} --env STEEMD_PRIVATE_KEY=${keys[$i]}  -d --name ezira$i eziranetwork/ezira & 
+		docker run --ip $subnet"."$(($i+3)) --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_WEB_NODE=1 --env STEEMD_WITNESS_NAME=${witnesses[$i]} --env STEEMD_PRIVATE_KEY=${keys[$i]}  -d --name ezira$i eziranetwork/ezira & 
 		((nodescount++))
 		# sleep 1
 	fi
