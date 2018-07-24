@@ -9,7 +9,7 @@ keys=($keys)
 
 for ((i=0;i<${#witnesses[@]};i++))
 	do
-		echo "LOOP #"$i
+		echo "#### LOOP "$1" ####"
 		echo "starting docker container ezira"$i" with witness "${witnesses[$i]}
 		echo "no linked ports, nginx-router will handle"
 		echo "image eziranetwork/ezira"
