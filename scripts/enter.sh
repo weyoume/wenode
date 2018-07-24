@@ -1,1 +1,1 @@
-docker exec -it eznode /bin/bash
+docker exec -it ezira /bin/bash
