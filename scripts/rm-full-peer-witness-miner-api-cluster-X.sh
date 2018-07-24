@@ -17,4 +17,4 @@ for ((i=0;i<${#witnesses[@]};i++))
 		# sleep 1
 done
 
-echo "ALL DONE :D you removed "${#witnesses[@]}" nodes"
+echo "ALL DONE :D you removed "${#witnesses[@]}" stopped nodes"
