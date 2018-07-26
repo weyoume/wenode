@@ -100,9 +100,9 @@ namespace detail {
             for( const string& endpoint_string : seeds )
             {
                try {
+									std::vector<fc::ip::endpoint> endpoints = resolve_string_to_ip_endpoints(endpoint_string);
                   for (const fc::ip::endpoint& endpoint : endpoints)
                   {
-										std::vector<fc::ip::endpoint> endpoints = resolve_string_to_ip_endpoints(endpoint_string);
 										ilog("Adding seed node ${endpoint}", ("endpoint", endpoint));
 										_p2p_network->add_node(endpoint);
 										_p2p_network->connect_to_endpoint(endpoint);
