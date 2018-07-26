@@ -12,6 +12,7 @@
 		"unordered_set": "cpp",
 		"random": "cpp",
 		"*.ipp": "cpp",
-		"exception": "cpp"
+		"exception": "cpp",
+		"iosfwd": "cpp"
 	}
 }
