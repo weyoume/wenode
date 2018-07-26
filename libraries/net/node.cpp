@@ -425,7 +425,7 @@ namespace graphene { namespace net { namespace detail {
       fc::time_point       _last_firewall_check_message_sent;
 
       /// used by the task that manages connecting to peers
-      // @{
+      // @{ #nodelist decleration
       std::list<potential_peer_record> _add_once_node_list; /// list of peers we want to connect to as soon as possible
 
       peer_database             _potential_peer_db;
