@@ -165,8 +165,8 @@ namespace detail {
                std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
                if (endpoints.empty())
                   FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
-							 ilog("endpoints");
-							 ilog(endpoints);
+							//  ilog("endpoints");
+							//  ilog(endpoints);
                return endpoints;
             }
             catch (const boost::bad_lexical_cast&)
