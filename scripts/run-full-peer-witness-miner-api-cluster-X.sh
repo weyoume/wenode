@@ -26,7 +26,7 @@ for ((i=0;i<$peerCount;i++)) ; do
 			--env STEEMD_WITNESS_NAME=${witnesses[$i]} \
 			--env STEEMD_PRIVATE_KEY=${keys[$i]}  \
 			-d --name ezira$i \
-			eziranetwork/ezira & 
+			eziranetwork/ezira &
 		((nodescount++))
 		# sleep 1
 	fi
