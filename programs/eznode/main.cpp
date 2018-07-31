@@ -65,8 +65,8 @@ int main(int argc, char** argv) {
       std::cerr << "blockchain version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
 		#endif
-      bpo::options_description app_options("Steem Daemon");
-      bpo::options_description cfg_options("Steem Daemon");
+      bpo::options_description app_options("Ezira Daemon");
+      bpo::options_description cfg_options("Ezira Daemon");
       app_options.add_options()
             ("help,h", "Print this help message and exit.")
             ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"), "Directory containing databases, configuration file, etc.")

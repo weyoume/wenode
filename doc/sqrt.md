@@ -1,7 +1,7 @@
 
 # Introduction
 
-In this document we derive the approximate integer square root function used by Steem for the curation curve
+In this document we derive the approximate integer square root function used by Ezira for the curation curve
 [here](https://github.com/eziranetwork/ezira/issues/1052).
 
 # MSB function

@@ -1,6 +1,6 @@
-# Introducing Steem (beta)
+# Introducing Ezira (beta)
 
-Steem is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" social consnensus algorithm for token allocation.
+Ezira is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" social consnensus algorithm for token allocation.
 
   - Currency symbol EZIRA.
   - 10% APR inflation narrowing to 1% APR over 20 years.
@@ -10,7 +10,7 @@ Steem is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" soci
 
 # Public Announcement & Discussion
 
-Steem was announced on the
+Ezira was announced on the
 [Bitcointalk forum](https://bitcointalk.org/index.php?topic=1410943.new) prior to
 the start of any mining.
 
@@ -26,7 +26,7 @@ IN THE SOFTWARE.
 
 # Whitepaper
 
-You can read the Steem Whitepaper at [Steem.io/SteemWhitePaper.pdf](https://ezira.io/SteemWhitePaper.pdf).
+You can read the Ezira Whitepaper at [Ezira.io/EziraWhitePaper.pdf](https://ezira.io/EziraWhitePaper.pdf).
 
 # Quickstart
 
@@ -34,7 +34,7 @@ Just want to get up and running quickly? We have pre-build docker images for you
 
 # Building
 
-We strongly recommend using one of our pre-built Docker images or using Docker to build Steem. Both of these processes are described in the [quickstart guide](https://github.com/eziranetwork/ezira/blob/master/doc/exchangequickstart.md).
+We strongly recommend using one of our pre-built Docker images or using Docker to build Ezira. Both of these processes are described in the [quickstart guide](https://github.com/eziranetwork/ezira/blob/master/doc/exchangequickstart.md).
 
 If you would still like to build from source, we do have [build instructions](https://github.com/eziranetwork/ezira/blob/master/doc/building.md) for Linux (Ubuntu LTS) and macOS X.
 
@@ -72,7 +72,7 @@ There are quite a few environment variables that can be set to run eznode in dif
 
 # PaaS mode
 
-Steemd now supports a PaaS mode (platform as a service) that currently works with Amazon's Elastic Beanstalk service. It can be launched using the following environment variables:
+Ezirad now supports a PaaS mode (platform as a service) that currently works with Amazon's Elastic Beanstalk service. It can be launched using the following environment variables:
 
 * `USE_PAAS` - if set to true, eznode will launch in a format that works with AWS EB. Containers will exit upon failure so that they can be relaunched automatically by ECS. This mode assumes `USE_WAY_TOO_MUCH_RAM` and `USE_FULL_WEB_NODE`, they do not need to be also set.
 * `S3_BUCKET` - set this to the name of the S3 bucket where you will store shared memory files for eznode in Amazon S3. They will be stored compressed in bz2 format with the file name `blockchain-$VERSION-latest.tar.bz2`, where $VERSION is the release number followed by the git short commit hash stored in each docker image at `/etc/eznodeversion`.
@@ -94,7 +94,7 @@ on how to use lcov to check code test coverage.
 
 # System Requirements
 
-For a full web node, you need at least 270GB of disk space available. Steemd uses a memory mapped file which currently holds 189GB of data and by default is set to use up to 215GB. The block log of the blockchain itself is a little over 48GB. It's highly recommended to run eznode on a fast disk such as an SSD or by placing the shared memory files in a ramdisk and using the `--shared-file-dir=/path` command line option to specify where. At least 16GB of memory is required for a full web node. Seed nodes (p2p mode) can run with as little as 4GB of memory with a 24 GB state file. Any CPU with decent single core performance should be sufficient. Steemd is constantly growing. As of December 2017, these numbers were accurate, but you may find you need more disk space to run a full node. We are also constantly working on optimizing Steem's use of disk space.
+For a full web node, you need at least 270GB of disk space available. Ezirad uses a memory mapped file which currently holds 189GB of data and by default is set to use up to 215GB. The block log of the blockchain itself is a little over 48GB. It's highly recommended to run eznode on a fast disk such as an SSD or by placing the shared memory files in a ramdisk and using the `--shared-file-dir=/path` command line option to specify where. At least 16GB of memory is required for a full web node. Seed nodes (p2p mode) can run with as little as 4GB of memory with a 24 GB state file. Any CPU with decent single core performance should be sufficient. Ezirad is constantly growing. As of December 2017, these numbers were accurate, but you may find you need more disk space to run a full node. We are also constantly working on optimizing Ezira's use of disk space.
 
 On Linux use the following Virtual Memory configuration for the initial sync and subsequent replays. It is not needed for normal operation.
 

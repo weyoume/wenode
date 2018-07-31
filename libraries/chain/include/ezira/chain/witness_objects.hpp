@@ -110,7 +110,7 @@ namespace ezira { namespace chain {
          digest_type       last_work;
 
          /**
-          * This field represents the Steem blockchain version the witness is running.
+          * This field represents the Ezira blockchain version the witness is running.
           */
          version           running_version;
 

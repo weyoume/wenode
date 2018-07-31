@@ -1,6 +1,6 @@
 # Please Read
 
-Please read these instructions before submitting issues to the Steem GitHub repository. The issue tracker is for bugs and specific implementation discussion **only**. It should not be used for other purposes, as described below.
+Please read these instructions before submitting issues to the Ezira GitHub repository. The issue tracker is for bugs and specific implementation discussion **only**. It should not be used for other purposes, as described below.
 
 ## Bug Reports
 
@@ -22,9 +22,9 @@ This is not the place to make suggestions for product improvement (please see th
 
 Please do a keyword search to see if there is already an existing issue before opening a new one.
 
-## Ezira.io vs. Steem Blockchain
+## Ezira.io vs. Ezira Blockchain
 
-This issue tracker is only intended to track issues for the Steem blockchain. If the issue is with the Ezira.io website, please open an issue in the [Ezira.io Repository](https://github.com/eziranetwork/ezirait.com/).
+This issue tracker is only intended to track issues for the Ezira blockchain. If the issue is with the Ezira.io website, please open an issue in the [Ezira.io Repository](https://github.com/eziranetwork/ezirait.com/).
 
 ## Pull Requests
 
