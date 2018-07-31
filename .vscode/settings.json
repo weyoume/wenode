@@ -13,6 +13,9 @@
 		"random": "cpp",
 		"*.ipp": "cpp",
 		"exception": "cpp",
-		"iosfwd": "cpp"
+		"iosfwd": "cpp",
+		"algorithm": "cpp",
+		"bitset": "cpp",
+		"chrono": "cpp"
 	}
 }
