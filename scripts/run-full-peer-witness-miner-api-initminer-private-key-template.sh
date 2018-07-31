@@ -7,10 +7,10 @@ echo "not load balanced internally"
 echo "full web node"
 
 docker run \
-	--env USE_WAY_TOO_MUCH_RAM=1 \ 
+	--env USE_WAY_TOO_MUCH_RAM=1 \
 	--env USE_FULL_WEB_NODE=1 \
 	--env STEEMD_PRIVATE_KEY=PRIVATE_KEY_HERE \
-	--env STEEMD_WITNESS_NAME="initminer"
+	--env STEEMD_WITNESS_NAME="initminer" \
 	-d -p 2001:2001 -p 8090:8090 --name ezira \
 	eziranetwork/ezira
 
