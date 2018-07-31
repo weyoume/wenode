@@ -50,3 +50,4 @@ witness_node_data_dir
 
 contrib/private*
 contrib/credentials/private*
+scripts/private*
