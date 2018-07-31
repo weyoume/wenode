@@ -1,12 +1,12 @@
 #pragma once
 
-#include <steemit/protocol/steem_operations.hpp>
+#include <ezira/protocol/steem_operations.hpp>
 
-#include <steemit/chain/evaluator.hpp>
+#include <ezira/chain/evaluator.hpp>
 
-namespace steemit{ namespace chain {
+namespace ezira{ namespace chain {
 
-using namespace steemit::protocol;
+using namespace ezira::protocol;
 
 DEFINE_EVALUATOR( account_create )
 DEFINE_EVALUATOR( account_create_with_delegation )
@@ -51,4 +51,4 @@ DEFINE_EVALUATOR( set_reset_account )
 DEFINE_EVALUATOR( claim_reward_balance )
 DEFINE_EVALUATOR( delegate_vesting_shares )
 
-} } // steemit::chain
+} } // ezira::chain

@@ -1,9 +1,9 @@
 FROM phusion/baseimage:0.9.19
 
-#ARG STEEMD_BLOCKCHAIN=https://example.com/steemd-blockchain.tbz2
+#ARG EZIRAD_BLOCKCHAIN=https://example.com/steemd-blockchain.tbz2
 
-ARG STEEM_STATIC_BUILD=ON
-ENV STEEM_STATIC_BUILD ${STEEM_STATIC_BUILD}
+ARG EZIRA_STATIC_BUILD=ON
+ENV EZIRA_STATIC_BUILD ${EZIRA_STATIC_BUILD}
 
 ENV LANG=en_US.UTF-8
 
@@ -50,7 +50,7 @@ ADD . /usr/local/src/steem
 #     cd build && \
 #     cmake \
 #         -DCMAKE_BUILD_TYPE=Release \
-#         -DBUILD_STEEM_TESTNET=ON \
+#         -DBUILD_EZIRA_TESTNET=ON \
 #         -DLOW_MEMORY_NODE=OFF \
 #         -DCLEAR_VOTES=ON \
 #         -DSKIP_BY_TX_ID=ON \
@@ -72,7 +72,7 @@ ADD . /usr/local/src/steem
 #     cmake \
 #         -DCMAKE_BUILD_TYPE=Debug \
 #         -DENABLE_COVERAGE_TESTING=ON \
-#         -DBUILD_STEEM_TESTNET=ON \
+#         -DBUILD_EZIRA_TESTNET=ON \
 #         -DLOW_MEMORY_NODE=OFF \
 #         -DCLEAR_VOTES=ON \
 #         -DSKIP_BY_TX_ID=ON \
@@ -96,8 +96,8 @@ RUN \
     #     -DLOW_MEMORY_NODE=ON \
     #     -DCLEAR_VOTES=ON \
     #     -DSKIP_BY_TX_ID=OFF \
-    #     -DBUILD_STEEM_TESTNET=ON \
-    #     -DSTEEM_STATIC_BUILD=${STEEM_STATIC_BUILD} \
+    #     -DBUILD_EZIRA_TESTNET=ON \
+    #     -DEZIRA_STATIC_BUILD=${EZIRA_STATIC_BUILD} \
     #     .. \
     # && \
     # make -j$(nproc) && \
@@ -119,8 +119,8 @@ RUN \
         -DLOW_MEMORY_NODE=OFF \
         -DCLEAR_VOTES=OFF \
         -DSKIP_BY_TX_ID=ON \
-        -DBUILD_STEEM_TESTNET=OFF \
-        -DSTEEM_STATIC_BUILD=${STEEM_STATIC_BUILD} \
+        -DBUILD_EZIRA_TESTNET=OFF \
+        -DEZIRA_STATIC_BUILD=${EZIRA_STATIC_BUILD} \
         .. \
     && \
     make -j$(nproc) && \
@@ -181,7 +181,7 @@ RUN mkdir /var/cache/steemd && \
     chown steemd:steemd -R /var/cache/steemd
 
 # add blockchain cache to image
-#ADD $STEEMD_BLOCKCHAIN /var/cache/steemd/blocks.tbz2
+#ADD $EZIRAD_BLOCKCHAIN /var/cache/steemd/blocks.tbz2
 
 ENV HOME /var/lib/steemd
 RUN chown steemd:steemd -R /var/lib/steemd

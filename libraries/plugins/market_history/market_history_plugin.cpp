@@ -1,14 +1,14 @@
-#include <steemit/market_history/market_history_api.hpp>
+#include <ezira/market_history/market_history_api.hpp>
 
-#include <steemit/chain/database.hpp>
-#include <steemit/chain/index.hpp>
-#include <steemit/chain/operation_notification.hpp>
+#include <ezira/chain/database.hpp>
+#include <ezira/chain/index.hpp>
+#include <ezira/chain/operation_notification.hpp>
 
-namespace steemit { namespace market_history {
+namespace ezira { namespace market_history {
 
 namespace detail {
 
-using steemit::protocol::fill_order_operation;
+using ezira::protocol::fill_order_operation;
 
 class market_history_plugin_impl
 {
@@ -61,7 +61,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                b.open = open;
                b.seconds = bucket;
 
-               if( op.open_pays.symbol == STEEM_SYMBOL )
+               if( op.open_pays.symbol == EZIRA_SYMBOL )
                {
                   b.high_steem = op.open_pays.amount;
                   b.high_sbd = op.current_pays.amount;
@@ -93,7 +93,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
          {
             db.modify( *itr, [&]( bucket_object& b )
             {
-               if( op.open_pays.symbol == STEEM_SYMBOL )
+               if( op.open_pays.symbol == EZIRA_SYMBOL )
                {
                   b.steem_volume += op.open_pays.amount;
                   b.sbd_volume += op.current_pays.amount;
@@ -215,6 +215,6 @@ uint32_t market_history_plugin::get_max_history_per_bucket() const
    return _my->_maximum_history_per_bucket_size;
 }
 
-} } // steemit::market_history
+} } // ezira::market_history
 
-STEEMIT_DEFINE_PLUGIN( market_history, steemit::market_history::market_history_plugin )
+EZIRA_DEFINE_PLUGIN( market_history, ezira::market_history::market_history_plugin )

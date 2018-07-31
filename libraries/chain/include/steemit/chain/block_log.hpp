@@ -1,10 +1,10 @@
 #pragma once
 #include <fc/filesystem.hpp>
-#include <steemit/protocol/block.hpp>
+#include <ezira/protocol/block.hpp>
 
-namespace steemit { namespace chain {
+namespace ezira { namespace chain {
 
-   using namespace steemit::protocol;
+   using namespace ezira::protocol;
 
    namespace detail { class block_log_impl; }
 

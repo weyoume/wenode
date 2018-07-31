@@ -9,34 +9,34 @@ if( GPERFTOOLS_FOUND )
     list( APPEND PLATFORM_SPECIFIC_LIBS tcmalloc )
 endif()
 
-if( STEEM_STATIC_BUILD )
+if( EZIRA_STATIC_BUILD )
    target_link_libraries( steemd PRIVATE
       "-static-libstdc++ -static-libgcc"
-      steemit_plugins
-      steemit_mf_plugins
-      steemit_app
-      steemit_witness
-      steemit_account_history
-      steemit_chain
-      steemit_protocol
+      ezira_plugins
+      ezira_mf_plugins
+      ezira_app
+      ezira_witness
+      ezira_account_history
+      ezira_chain
+      ezira_protocol
       fc
       ${CMAKE_DL_LIBS}
       ${PLATFORM_SPECIFIC_LIBS}
    )
-else( STEEM_STATIC_BUILD )
+else( EZIRA_STATIC_BUILD )
    target_link_libraries( steemd PRIVATE
-      steemit_plugins
-      steemit_mf_plugins
-      steemit_app
-      steemit_witness
-      steemit_account_history
-      steemit_chain
-      steemit_protocol
+      ezira_plugins
+      ezira_mf_plugins
+      ezira_app
+      ezira_witness
+      ezira_account_history
+      ezira_chain
+      ezira_protocol
       fc
       ${CMAKE_DL_LIBS}
       ${PLATFORM_SPECIFIC_LIBS}
    )
-endif( STEEM_STATIC_BUILD )
+endif( EZIRA_STATIC_BUILD )
 
 install( TARGETS
    steemd

@@ -1,14 +1,14 @@
 #pragma once
 
-#include <steemit/blockchain_statistics/blockchain_statistics_plugin.hpp>
+#include <ezira/blockchain_statistics/blockchain_statistics_plugin.hpp>
 
 #include <fc/api.hpp>
 
-namespace steemit { namespace app {
+namespace ezira { namespace app {
    struct api_context;
 } }
 
-namespace steemit { namespace blockchain_statistics {
+namespace ezira { namespace blockchain_statistics {
 
 namespace detail
 {
@@ -22,7 +22,7 @@ struct statistics
    uint32_t             operations = 0;                              ///< Operations evaluated
    uint32_t             transactions = 0;                            ///< Transactions processed
    uint32_t             transfers = 0;                               ///< Account to account transfers
-   share_type           steem_transferred = 0;                       ///< STEEM transferred from account to account
+   share_type           steem_transferred = 0;                       ///< EZIRA transferred from account to account
    share_type           sbd_transferred = 0;                         ///< SBD transferred from account to account
    share_type           sbd_paid_as_interest = 0;                    ///< SBD paid as interest
    uint32_t             accounts_created = 0;                        ///< Total accounts created
@@ -50,20 +50,20 @@ struct statistics
    share_type           sbd_paid_to_authors = 0;                     ///< Ammount of SBD paid to authors
    share_type           vests_paid_to_authors = 0;                   ///< Ammount of VESS paid to authors
    share_type           vests_paid_to_curators = 0;                  ///< Ammount of VESTS paid to curators
-   share_type           liquidity_rewards_paid = 0;                  ///< Ammount of STEEM paid to market makers
-   uint32_t             transfers_to_vesting = 0;                    ///< Transfers of STEEM into VESTS
-   share_type           steem_vested = 0;                            ///< Ammount of STEEM vested
+   share_type           liquidity_rewards_paid = 0;                  ///< Ammount of EZIRA paid to market makers
+   uint32_t             transfers_to_vesting = 0;                    ///< Transfers of EZIRA into VESTS
+   share_type           steem_vested = 0;                            ///< Ammount of EZIRA vested
    uint32_t             new_vesting_withdrawal_requests = 0;         ///< New vesting withdrawal requests
    uint32_t             modified_vesting_withdrawal_requests = 0;    ///< Changes to vesting withdrawal requests
    share_type           vesting_withdraw_rate_delta = 0;
    uint32_t             vesting_withdrawals_processed = 0;           ///< Number of vesting withdrawals
    uint32_t             finished_vesting_withdrawals = 0;            ///< Processed vesting withdrawals that are now finished
-   share_type           vests_withdrawn = 0;                         ///< Ammount of VESTS withdrawn to STEEM
+   share_type           vests_withdrawn = 0;                         ///< Ammount of VESTS withdrawn to EZIRA
    share_type           vests_transferred = 0;                       ///< Ammount of VESTS transferred to another account
    uint32_t             sbd_conversion_requests_created = 0;         ///< SBD conversion requests created
    share_type           sbd_to_be_converted = 0;                     ///< Amount of SBD to be converted
    uint32_t             sbd_conversion_requests_filled = 0;          ///< SBD conversion requests filled
-   share_type           steem_converted = 0;                         ///< Amount of STEEM that was converted
+   share_type           steem_converted = 0;                         ///< Amount of EZIRA that was converted
    uint32_t             limit_orders_created = 0;                    ///< Limit orders created
    uint32_t             limit_orders_filled = 0;                     ///< Limit orders filled
    uint32_t             limit_orders_cancelled = 0;                  ///< Limit orders cancelled
@@ -76,7 +76,7 @@ struct statistics
 class blockchain_statistics_api
 {
    public:
-      blockchain_statistics_api( const steemit::app::api_context& ctx );
+      blockchain_statistics_api( const ezira::app::api_context& ctx );
 
       void on_api_startup();
 
@@ -105,9 +105,9 @@ class blockchain_statistics_api
       std::shared_ptr< detail::blockchain_statistics_api_impl > my;
 };
 
-} } // steemit::blockchain_statistics
+} } // ezira::blockchain_statistics
 
-FC_REFLECT( steemit::blockchain_statistics::statistics,
+FC_REFLECT( ezira::blockchain_statistics::statistics,
    (blocks)
    (bandwidth)
    (operations)
@@ -162,7 +162,7 @@ FC_REFLECT( steemit::blockchain_statistics::statistics,
    (estimated_hashpower) )
 
 
-FC_API( steemit::blockchain_statistics::blockchain_statistics_api,
+FC_API( ezira::blockchain_statistics::blockchain_statistics_api,
    (get_stats_for_time)
    (get_stats_for_interval)
    (get_lifetime_stats)

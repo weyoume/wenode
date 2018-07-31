@@ -3,11 +3,11 @@
 VERSION=`cat /etc/steemdversion`
 
 if [[ "$IS_BROADCAST_NODE" ]]; then
-  STEEMD="/usr/local/steemd-default/bin/steemd"
+  EZIRAD="/usr/local/steemd-default/bin/steemd"
 elif [[ "$IS_AH_NODE" ]]; then
-  STEEMD="/usr/local/steemd-default/bin/steemd"
+  EZIRAD="/usr/local/steemd-default/bin/steemd"
 else
-  STEEMD="/usr/local/steemd-full/bin/steemd"
+  EZIRAD="/usr/local/steemd-full/bin/steemd"
 fi
 
 chown -R steemd:steemd $HOME
@@ -23,7 +23,7 @@ ARGS=""
 
 # if user did not pass in any desired
 # seed nodes, use the ones above:
-if [[ -z "$STEEMD_SEED_NODES" ]]; then
+if [[ -z "$EZIRAD_SEED_NODES" ]]; then
     for NODE in $SEED_NODES ; do
         ARGS+=" --seed-node=$NODE"
     done
@@ -31,17 +31,17 @@ fi
 
 # if user did pass in desired seed nodes, use
 # the ones the user specified:
-if [[ ! -z "$STEEMD_SEED_NODES" ]]; then
-    for NODE in $STEEMD_SEED_NODES ; do
+if [[ ! -z "$EZIRAD_SEED_NODES" ]]; then
+    for NODE in $EZIRAD_SEED_NODES ; do
         ARGS+=" --seed-node=$NODE"
     done
 fi
 
 NOW=`date +%s`
-STEEMD_FEED_START_TIME=`expr $NOW - 1209600`
+EZIRAD_FEED_START_TIME=`expr $NOW - 1209600`
 
 if [[ ! "$IS_BROADCAST_NODE" ]]; then
-  ARGS+=" --follow-start-feeds=$STEEMD_FEED_START_TIME"
+  ARGS+=" --follow-start-feeds=$EZIRAD_FEED_START_TIME"
   ARGS+=" --disable-get-block"
 fi
 
@@ -145,12 +145,12 @@ cp /etc/nginx/healthcheck.conf /etc/nginx/sites-enabled/default
 /etc/init.d/fcgiwrap restart
 service nginx restart
 exec chpst -usteemd \
-    $STEEMD \
+    $EZIRAD \
         --rpc-endpoint=0.0.0.0:8091 \
         --p2p-endpoint=0.0.0.0:2001 \
         --data-dir=$HOME \
         $ARGS \
-        $STEEMD_EXTRA_OPTS \
+        $EZIRAD_EXTRA_OPTS \
         2>&1&
 SAVED_PID=`pgrep -f p2p-endpoint`
 echo $SAVED_PID >> /tmp/steemdpid

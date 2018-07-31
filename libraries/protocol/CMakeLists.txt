@@ -1,7 +1,7 @@
-file(GLOB HEADERS "include/steemit/protocol/*.hpp")
+file(GLOB HEADERS "include/ezira/protocol/*.hpp")
 
 ## SORT .cpp by most likely to change / break compile
-add_library( steemit_protocol
+add_library( ezira_protocol
 
              types.cpp
              authority.cpp
@@ -18,16 +18,16 @@ add_library( steemit_protocol
              ${HEADERS}
            )
 
-target_link_libraries( steemit_protocol fc )
-target_include_directories( steemit_protocol
+target_link_libraries( ezira_protocol fc )
+target_include_directories( ezira_protocol
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
 INSTALL( TARGETS
-   steemit_protocol
+   ezira_protocol
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 )
 
-INSTALL( FILES ${HEADERS} DESTINATION "include/steemit/protocol" )
+INSTALL( FILES ${HEADERS} DESTINATION "include/ezira/protocol" )

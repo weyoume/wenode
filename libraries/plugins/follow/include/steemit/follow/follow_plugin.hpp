@@ -1,19 +1,19 @@
 #pragma once
-#include <steemit/app/plugin.hpp>
-#include <steemit/chain/database.hpp>
+#include <ezira/app/plugin.hpp>
+#include <ezira/chain/database.hpp>
 
 #include <fc/thread/future.hpp>
 
-#include <steemit/follow/follow_api.hpp>
+#include <ezira/follow/follow_api.hpp>
 
-namespace steemit { namespace follow {
-using steemit::app::application;
+namespace ezira { namespace follow {
+using ezira::app::application;
 
 #define FOLLOW_PLUGIN_NAME "follow"
 
 namespace detail { class follow_plugin_impl; }
 
-class follow_plugin : public steemit::app::plugin
+class follow_plugin : public ezira::app::plugin
 {
    public:
       follow_plugin( application* app );
@@ -31,4 +31,4 @@ class follow_plugin : public steemit::app::plugin
       fc::time_point_sec start_feeds;
 };
 
-} } //steemit::follow
+} } //ezira::follow

@@ -1,9 +1,9 @@
-#include <steemit/witness/witness_operations.hpp>
-#include <steemit/witness/witness_objects.hpp>
+#include <ezira/witness/witness_operations.hpp>
+#include <ezira/witness/witness_objects.hpp>
 
-#include <steemit/chain/comment_object.hpp>
+#include <ezira/chain/comment_object.hpp>
 
-namespace steemit { namespace witness {
+namespace ezira { namespace witness {
 
 void enable_content_editing_evaluator::do_apply( const enable_content_editing_operation& o )
 {
@@ -30,4 +30,4 @@ void enable_content_editing_evaluator::do_apply( const enable_content_editing_op
    FC_CAPTURE_AND_RETHROW( (o) )
 }
 
-} } // steemit::witness
+} } // ezira::witness

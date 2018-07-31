@@ -1,6 +1,6 @@
-#include <steemit/protocol/authority.hpp>
+#include <ezira/protocol/authority.hpp>
 
-namespace steemit { namespace protocol {
+namespace ezira { namespace protocol {
 
 // authority methods
 void authority::add_authority( const public_key_type& k, weight_type w )
@@ -45,15 +45,15 @@ void authority::validate()const
 
 bool is_valid_account_name( const string& name )
 {
-#if STEEMIT_MIN_ACCOUNT_NAME_LENGTH < 3
+#if EZIRA_MIN_ACCOUNT_NAME_LENGTH < 3
 #error This is_valid_account_name implementation implicitly enforces minimum name length of 3.
 #endif
 
    const size_t len = name.size();
-   if( len < STEEMIT_MIN_ACCOUNT_NAME_LENGTH )
+   if( len < EZIRA_MIN_ACCOUNT_NAME_LENGTH )
       return false;
 
-   if( len > STEEMIT_MAX_ACCOUNT_NAME_LENGTH )
+   if( len > EZIRA_MAX_ACCOUNT_NAME_LENGTH )
       return false;
 
    size_t begin = 0;
@@ -116,4 +116,4 @@ bool operator == ( const authority& a, const authority& b )
             ( a.key_auths      == b.key_auths );
 }
 
-} } // steemit::protocol
+} } // ezira::protocol

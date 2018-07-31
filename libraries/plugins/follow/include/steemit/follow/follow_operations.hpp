@@ -1,13 +1,13 @@
 #pragma once
 
-#include <steemit/protocol/base.hpp>
+#include <ezira/protocol/base.hpp>
 
-#include <steemit/follow/follow_plugin.hpp>
+#include <ezira/follow/follow_plugin.hpp>
 
-namespace steemit { namespace follow {
+namespace ezira { namespace follow {
 
 using namespace std;
-using steemit::protocol::base_operation;
+using ezira::protocol::base_operation;
 
 struct follow_operation : base_operation
 {
@@ -39,11 +39,11 @@ typedef fc::static_variant<
 DEFINE_PLUGIN_EVALUATOR( follow_plugin, follow_plugin_operation, follow );
 DEFINE_PLUGIN_EVALUATOR( follow_plugin, follow_plugin_operation, reblog );
 
-} } // steemit::follow
+} } // ezira::follow
 
-FC_REFLECT( steemit::follow::follow_operation, (follower)(following)(what) )
-FC_REFLECT( steemit::follow::reblog_operation, (account)(author)(permlink) )
+FC_REFLECT( ezira::follow::follow_operation, (follower)(following)(what) )
+FC_REFLECT( ezira::follow::reblog_operation, (account)(author)(permlink) )
 
-DECLARE_OPERATION_TYPE( steemit::follow::follow_plugin_operation )
+DECLARE_OPERATION_TYPE( ezira::follow::follow_plugin_operation )
 
-FC_REFLECT_TYPENAME( steemit::follow::follow_plugin_operation )
+FC_REFLECT_TYPENAME( ezira::follow::follow_plugin_operation )
