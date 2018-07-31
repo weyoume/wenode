@@ -13,8 +13,8 @@
 
 #define VESTS_SYMBOL  (uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< VESTS with 6 digits of precision
 #define EZIRA_SYMBOL  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< EZIRA with 3 digits of precision
-#define SBD_SYMBOL    (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test Backed Dollars with 3 digits of precision
-#define STMD_SYMBOL   (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('S') << 16) | (uint64_t('T') << 24) | (uint64_t('D') << 32) ) ///< Test Dollars with 3 digits of precision
+#define EZD_SYMBOL    (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test Backed Dollars with 3 digits of precision
+#define EZC_SYMBOL   (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('S') << 16) | (uint64_t('T') << 24) ) ///< Test Dollars with 3 digits of precision
 
 #define EZIRA_ADDRESS_PREFIX                  "EZT"
 
@@ -43,8 +43,8 @@
 #define EZIRA_CHAIN_ID                        (fc::sha256::hash("eztestnet"))
 #define VESTS_SYMBOL  (uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< VESTS with 6 digits of precision
 #define EZIRA_SYMBOL  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('I') << 24) | (uint64_t('R') << 32) | (uint64_t('A') << 40)) ///< EZIRA with 3 digits of precision
-#define SBD_SYMBOL    (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) ) ///< EZIRA Backed Dollars with 3 digits of precision
-#define STMD_SYMBOL   (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('D') << 32) ) ///< EZIRA Dollars with 3 digits of precision
+#define EZD_SYMBOL    (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) ) ///< EZIRA Backed Dollars with 3 digits of precision
+#define EZC_SYMBOL   (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('C') << 24) ) ///< EZIRA Dollars with 3 digits of precision
 #define EZIRA_ADDRESS_PREFIX                  "EZT"
 
 #define EZIRA_GENESIS_TIME                    (fc::time_point_sec(1532229209))
@@ -115,7 +115,7 @@
 #define EZIRA_100_PERCENT                     10000
 #define EZIRA_1_PERCENT                       (EZIRA_100_PERCENT/100)
 #define EZIRA_1_TENTH_PERCENT                 (EZIRA_100_PERCENT/1000)
-#define EZIRA_DEFAULT_SBD_INTEREST_RATE       (10*EZIRA_1_PERCENT) ///< 10% APR
+#define EZIRA_DEFAULT_EZD_INTEREST_RATE       (10*EZIRA_1_PERCENT) ///< 10% APR
 
 #define EZIRA_INFLATION_RATE_START_PERCENT    (978) // Fixes block 7,000,000 to 9.5%
 #define EZIRA_INFLATION_RATE_STOP_PERCENT     (95) // 0.95%
@@ -201,10 +201,10 @@
 #define EZIRA_PRODUCER_APR_PERCENT             750
 #define EZIRA_POW_APR_PERCENT                  750
 
-#define EZIRA_MIN_PAYOUT_SBD                  (asset(20,SBD_SYMBOL))
+#define EZIRA_MIN_PAYOUT_EZD                  (asset(20,EZD_SYMBOL))
 
-#define EZIRA_SBD_STOP_PERCENT                (5*EZIRA_1_PERCENT ) // Stop printing SBD at 5% Market Cap
-#define EZIRA_SBD_START_PERCENT               (2*EZIRA_1_PERCENT) // Start reducing printing of SBD at 2% Market Cap
+#define EZIRA_EZD_STOP_PERCENT                (5*EZIRA_1_PERCENT ) // Stop printing EZD at 5% Market Cap
+#define EZIRA_EZD_START_PERCENT               (2*EZIRA_1_PERCENT) // Start reducing printing of EZD at 2% Market Cap
 
 #define EZIRA_MIN_ACCOUNT_NAME_LENGTH          3
 #define EZIRA_MAX_ACCOUNT_NAME_LENGTH         16
@@ -220,7 +220,7 @@
 #define EZIRA_MIN_TRANSACTION_SIZE_LIMIT      1024
 #define EZIRA_SECONDS_PER_YEAR                (uint64_t(60*60*24*365ll))
 
-#define EZIRA_SBD_INTEREST_COMPOUND_INTERVAL_SEC  (60*60*24*30)
+#define EZIRA_EZD_INTEREST_COMPOUND_INTERVAL_SEC  (60*60*24*30)
 #define EZIRA_MAX_TRANSACTION_SIZE            (1024*64)
 #define EZIRA_MIN_BLOCK_SIZE_LIMIT            (EZIRA_MAX_TRANSACTION_SIZE)
 #define EZIRA_MAX_BLOCK_SIZE                  (EZIRA_MAX_TRANSACTION_SIZE*EZIRA_BLOCK_INTERVAL*2000)

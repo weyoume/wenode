@@ -1,0 +1,1 @@
+find . -name "*steem*" -exec bash -c 'mv "$1" "${1/steem/ezira}"' - '{}' \;

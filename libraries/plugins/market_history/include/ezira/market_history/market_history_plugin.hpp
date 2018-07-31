@@ -74,18 +74,18 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
    fc::time_point_sec   open;
    uint32_t             seconds = 0;
    share_type           high_ezira;
-   share_type           high_sbd;
+   share_type           high_EZD;
    share_type           low_ezira;
-   share_type           low_sbd;
+   share_type           low_EZD;
    share_type           open_ezira;
-   share_type           open_sbd;
+   share_type           open_EZD;
    share_type           close_ezira;
-   share_type           close_sbd;
+   share_type           close_EZD;
    share_type           ezira_volume;
-   share_type           sbd_volume;
+   share_type           EZD_volume;
 
-   price high()const { return asset( high_sbd, SBD_SYMBOL ) / asset( high_ezira, EZIRA_SYMBOL ); }
-   price low()const { return asset( low_sbd, SBD_SYMBOL ) / asset( low_ezira, EZIRA_SYMBOL ); }
+   price high()const { return asset( high_EZD, EZD_SYMBOL ) / asset( high_ezira, EZIRA_SYMBOL ); }
+   price low()const { return asset( low_EZD, EZD_SYMBOL ) / asset( low_ezira, EZIRA_SYMBOL ); }
 };
 
 typedef oid< bucket_object > bucket_id_type;
@@ -139,11 +139,11 @@ typedef multi_index_container<
 FC_REFLECT( ezira::market_history::bucket_object,
                      (id)
                      (open)(seconds)
-                     (high_ezira)(high_sbd)
-                     (low_ezira)(low_sbd)
-                     (open_ezira)(open_sbd)
-                     (close_ezira)(close_sbd)
-                     (ezira_volume)(sbd_volume) )
+                     (high_ezira)(high_EZD)
+                     (low_ezira)(low_EZD)
+                     (open_ezira)(open_EZD)
+                     (close_ezira)(close_EZD)
+                     (ezira_volume)(EZD_volume) )
 CHAINBASE_SET_INDEX_TYPE( ezira::market_history::bucket_object, ezira::market_history::bucket_index )
 
 FC_REFLECT( ezira::market_history::order_history_object,

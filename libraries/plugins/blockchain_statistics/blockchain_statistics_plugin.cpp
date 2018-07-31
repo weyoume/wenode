@@ -56,7 +56,7 @@ struct operation_process
          if( op.amount.symbol == EZIRA_SYMBOL )
             b.ezira_transferred += op.amount.amount;
          else
-            b.sbd_transferred += op.amount.amount;
+            b.EZD_transferred += op.amount.amount;
       });
    }
 
@@ -64,7 +64,7 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.sbd_paid_as_interest += op.interest.amount;
+         b.EZD_paid_as_interest += op.interest.amount;
       });
    }
 
@@ -154,7 +154,7 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.payouts++;
-         b.sbd_paid_to_authors += op.sbd_payout.amount;
+         b.EZD_paid_to_authors += op.EZD_payout.amount;
          b.vests_paid_to_authors += op.vesting_payout.amount;
       });
    }
@@ -229,8 +229,8 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.sbd_conversion_requests_created++;
-         b.sbd_to_be_converted += op.amount.amount;
+         b.EZD_conversion_requests_created++;
+         b.EZD_to_be_converted += op.amount.amount;
       });
    }
 
@@ -238,7 +238,7 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.sbd_conversion_requests_filled++;
+         b.EZD_conversion_requests_filled++;
          b.ezira_converted += op.amount_out.amount;
       });
    }

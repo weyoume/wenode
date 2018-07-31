@@ -348,10 +348,10 @@ void database_fixture::fund(
          {
             if( amount.symbol == EZIRA_SYMBOL )
                a.balance += amount;
-            else if( amount.symbol == SBD_SYMBOL )
+            else if( amount.symbol == EZD_SYMBOL )
             {
-               a.sbd_balance += amount;
-               a.sbd_seconds_last_update = db.head_block_time();
+               a.EZD_balance += amount;
+               a.EZD_seconds_last_update = db.head_block_time();
             }
          });
 
@@ -359,17 +359,17 @@ void database_fixture::fund(
          {
             if( amount.symbol == EZIRA_SYMBOL )
                gpo.current_supply += amount;
-            else if( amount.symbol == SBD_SYMBOL )
-               gpo.current_sbd_supply += amount;
+            else if( amount.symbol == EZD_SYMBOL )
+               gpo.current_EZD_supply += amount;
          });
 
-         if( amount.symbol == SBD_SYMBOL )
+         if( amount.symbol == EZD_SYMBOL )
          {
             const auto& median_feed = db.get_feed_history();
             if( median_feed.current_median_history.is_null() )
                db.modify( median_feed, [&]( feed_history_object& f )
                {
-                  f.current_median_history = price( asset( 1, SBD_SYMBOL ), asset( 1, EZIRA_SYMBOL ) );
+                  f.current_median_history = price( asset( 1, EZD_SYMBOL ), asset( 1, EZIRA_SYMBOL ) );
                });
          }
 
@@ -391,11 +391,11 @@ void database_fixture::convert(
       if ( amount.symbol == EZIRA_SYMBOL )
       {
          db.adjust_balance( account, -amount );
-         db.adjust_balance( account, db.to_sbd( amount ) );
+         db.adjust_balance( account, db.to_EZD( amount ) );
          db.adjust_supply( -amount );
-         db.adjust_supply( db.to_sbd( amount ) );
+         db.adjust_supply( db.to_EZD( amount ) );
       }
-      else if ( amount.symbol == SBD_SYMBOL )
+      else if ( amount.symbol == EZD_SYMBOL )
       {
          db.adjust_balance( account, -amount );
          db.adjust_balance( account, db.to_ezira( amount ) );

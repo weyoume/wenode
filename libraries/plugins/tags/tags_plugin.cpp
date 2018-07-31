@@ -391,7 +391,7 @@ struct operation_visitor
 
    void operator()( const transfer_operation& op )const
    {
-      if( op.to == EZIRA_NULL_ACCOUNT && op.amount.symbol == SBD_SYMBOL )
+      if( op.to == EZIRA_NULL_ACCOUNT && op.amount.symbol == EZD_SYMBOL )
       {
          vector<string> part; part.reserve(4);
          auto path = op.memo;

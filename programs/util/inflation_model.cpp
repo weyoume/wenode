@@ -53,8 +53,8 @@ Some possible sources of inaccuracy, the direction and estimated relative sizes 
 
 - Missed blocks not modeled (lowers EZIRA supply, small)
 - Miner queue length very approximately modeled (assumed to go to 100 during the first blocks and then stay there) (may lower or raise EZIRA supply, very small)
-- Creation / destruction of EZIRA used to back SBD not modeled (moves EZIRA supply in direction opposite to changes in dollar value of 1 EZIRA, large)
-- Interest paid to SBD not modeled (raises EZIRA supply, medium)
+- Creation / destruction of EZIRA used to back EZD not modeled (moves EZIRA supply in direction opposite to changes in dollar value of 1 EZIRA, large)
+- Interest paid to EZD not modeled (raises EZIRA supply, medium)
 - Lost / forgotten private keys / wallets and deliberate burning of EZIRA not modeled (lowers EZIRA supply, unknown but likely small)
 - Possible bugs or mismatches with implementation (unknown)
 
