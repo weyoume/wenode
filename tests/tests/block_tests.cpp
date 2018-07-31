@@ -27,7 +27,7 @@
 #include <ezira/protocol/exceptions.hpp>
 
 #include <ezira/chain/database.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 #include <ezira/chain/history_object.hpp>
 
 #include <ezira/account_history/account_history_plugin.hpp>

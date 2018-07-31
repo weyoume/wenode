@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Steemit, Inc., and contributors.
+ * Copyright (c) 2016 Ezira Network., and contributors.
  */
 #pragma once
 

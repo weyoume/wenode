@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ezira/app/application.hpp>
-#include <ezira/app/steem_api_objects.hpp>
+#include <ezira/app/ezira_api_objects.hpp>
 
 #include <ezira/follow/follow_objects.hpp>
 

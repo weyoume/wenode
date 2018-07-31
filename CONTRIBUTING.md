@@ -8,7 +8,7 @@ If there is an existing feature that is not working correctly, or a glitch in th
 
 ## Enhancement Suggestions
 
-Do **not** use the issue tracker to suggest enhancements or improvements to the platform. The best place for these discussions is on Steemit.com. If there is a well vetted idea that has the support of the community that you feel should be considered by the development team, please email it to [sneak@ezira.io](mailto:sneak@ezira.io) for review.
+Do **not** use the issue tracker to suggest enhancements or improvements to the platform. The best place for these discussions is on Ezira.io. If there is a well vetted idea that has the support of the community that you feel should be considered by the development team, please email it to [sneak@ezira.io](mailto:sneak@ezira.io) for review.
 
 ## Implementation Discussion
 
@@ -22,9 +22,9 @@ This is not the place to make suggestions for product improvement (please see th
 
 Please do a keyword search to see if there is already an existing issue before opening a new one.
 
-## Steemit.com vs. Steem Blockchain
+## Ezira.io vs. Steem Blockchain
 
-This issue tracker is only intended to track issues for the Steem blockchain. If the issue is with the Steemit.com website, please open an issue in the [Steemit.com Repository](https://github.com/eziranetwork/ezirait.com/).
+This issue tracker is only intended to track issues for the Steem blockchain. If the issue is with the Ezira.io website, please open an issue in the [Ezira.io Repository](https://github.com/eziranetwork/ezirait.com/).
 
 ## Pull Requests
 

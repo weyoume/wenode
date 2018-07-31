@@ -10,7 +10,7 @@ running tests, it is recommended to build as release.
 
 ### LOW_MEMORY_NODE=[OFF/ON]
 
-Builds steemd to be a consensus-only low memory node. Data and fields not
+Builds eznode to be a consensus-only low memory node. Data and fields not
 needed for consensus are not stored in the object database.  This option is
 recommended for witnesses and seed-nodes.
 
@@ -20,7 +20,7 @@ Clears old votes from memory that are no longer required for consensus.
 
 ### BUILD_EZIRA_TESTNET=[OFF/ON]
 
-Builds steem for use in a private testnet. Also required for building unit tests.
+Builds ezira for use in a private testnet. Also required for building unit tests.
 
 ### SKIP_BY_TX_ID=[OFF/ON]
 
@@ -33,7 +33,7 @@ huge gain if you do not need this functionality.
 We ship a Dockerfile.  This builds both common node type binaries.
 
     git clone https://github.com/eziranetwork/ezira
-    cd steem
+    cd ezira
     docker build -t eziranetwork/ezira .
 
 ## Building on Ubuntu 16.04
@@ -79,12 +79,12 @@ will build out of the box without further effort:
         perl
 
     git clone https://github.com/eziranetwork/ezira
-    cd steem
+    cd ezira
     git submodule update --init --recursive
     mkdir build
     cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..
-    make -j$(nproc) steemd
+    make -j$(nproc) eznode
     make -j$(nproc) cli_wallet
     # optional
     make install  # defaults to /usr/local
@@ -139,14 +139,14 @@ Here is how to build and install Boost 1.60 into your user's home directory
     ./bootstrap.sh "--prefix=$BOOST_ROOT"
     ./b2 install
 
-Then the instructions are the same as for steem:
+Then the instructions are the same as for ezira:
 
     git clone https://github.com/eziranetwork/ezira
-    cd steem
+    cd ezira
     git submodule update --init --recursive
     mkdir build && cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..
-    make -j$(nproc) steemd
+    make -j$(nproc) eznode
     make -j$(nproc) cli_wallet
 
 ## Building on macOS X
@@ -167,7 +167,7 @@ Install Homebrew by following the instructions here: http://brew.sh/
    brew doctor
    brew update
 
-### Install steem dependencies:
+### Install ezira dependencies:
 
     brew install \
         autoconf \
@@ -181,7 +181,7 @@ Install Homebrew by following the instructions here: http://brew.sh/
         python3-jinja2
 
 Note: brew recently updated to boost 1.61.0, which is not yet supported by
-steem. Until then, this will allow you to install boost 1.60.0.
+ezira. Until then, this will allow you to install boost 1.60.0.
 
 *Optional.* To use TCMalloc in LevelDB:
 
@@ -195,7 +195,7 @@ steem. Until then, this will allow you to install boost 1.60.0.
 ### Clone the Repository
 
     git clone https://github.com/eziranetwork/ezira.git
-    cd steem
+    cd ezira
 
 ### Compile
 
@@ -208,15 +208,15 @@ steem. Until then, this will allow you to install boost 1.60.0.
 
 Also, some useful build targets for `make` are:
 
-    steemd
+    eznode
     chain_test
     cli_wallet
 
 e.g.:
 
-    make -j$(sysctl -n hw.logicalcpu) steemd
+    make -j$(sysctl -n hw.logicalcpu) eznode
 
-This will only build `steemd`.
+This will only build `eznode`.
 
 ## Building on Other Platforms
 

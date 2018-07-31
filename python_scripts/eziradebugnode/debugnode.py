@@ -14,10 +14,10 @@ from time import sleep
 from steemapi.steemnoderpc import SteemNodeRPC
 
 class DebugNode( object ):
-   """ Wraps the steemd debug node plugin for easier automated testing of the Steem Network"""
+   """ Wraps the eznode debug node plugin for easier automated testing of the Steem Network"""
 
-   def __init__( self, steemd, data_dir, args='', plugins=[], apis=[], steemd_out=None, steemd_err=None ):
-      """ Creates a steemd debug node.
+   def __init__( self, eznode, data_dir, args='', plugins=[], apis=[], eznode_out=None, eznode_err=None ):
+      """ Creates a eznode debug node.
 
       It can be ran by using 'with debug_node:'
       While in the context of 'with' the debug node will continue to run.
@@ -26,29 +26,29 @@ class DebugNode( object ):
       For all other requests, the python-steem library should be used.
 
       args:
-         steemd -- The string path to the location of the steemd binary
-         data_dir -- The string path to an existing steemd data directory which will be used to pull blocks from.
-         args -- Other string args to pass to steemd.
+         eznode -- The string path to the location of the eznode binary
+         data_dir -- The string path to an existing eznode data directory which will be used to pull blocks from.
+         args -- Other string args to pass to eznode.
          plugins -- Any additional plugins to start with the debug node. Modify plugins DebugNode.plugins
          apis -- Any additional APIs to have available. APIs will retain this order for accesibility starting at id 3.
             database_api is 0, login_api is 1, and debug_node_api is 2. Modify apis with DebugNode.api
-         steemd_stdout -- A stream for steemd's stdout. Default is to pipe to /dev/null
-         steemd_stderr -- A stream for steemd's stderr. Default is to pipe to /dev/null
+         eznode_stdout -- A stream for eznode's stdout. Default is to pipe to /dev/null
+         eznode_stderr -- A stream for eznode's stderr. Default is to pipe to /dev/null
       """
       self._data_dir = None
       self._debug_key = None
       self._FNULL = None
       self._rpc = None
-      self._steemd_bin = None
-      self._steemd_lock = None
-      self._steemd_process = None
+      self._eznode_bin = None
+      self._eznode_lock = None
+      self._eznode_process = None
       self._temp_data_dir = None
 
-      self._steemd_bin = Path( steemd )
-      if( not self._steemd_bin.exists() ):
-         raise ValueError( 'steemd does not exist' )
-      if( not self._steemd_bin.is_file() ):
-         raise ValueError( 'steemd is not a file' )
+      self._eznode_bin = Path( eznode )
+      if( not self._eznode_bin.exists() ):
+         raise ValueError( 'eznode does not exist' )
+      if( not self._eznode_bin.is_file() ):
+         raise ValueError( 'eznode is not a file' )
 
       self._data_dir = Path( data_dir )
       if( not self._data_dir.exists() ):
@@ -65,22 +65,22 @@ class DebugNode( object ):
          self._args = list()
 
       self._FNULL = open( devnull, 'w' )
-      if( steemd_out != None ):
-         self.steemd_out = steemd_out
+      if( eznode_out != None ):
+         self.eznode_out = eznode_out
       else:
-         self.steemd_out = self._FNULL
+         self.eznode_out = self._FNULL
 
-      if( steemd_err != None ):
-         self.steemd_err = steemd_err
+      if( eznode_err != None ):
+         self.eznode_err = eznode_err
       else:
-         self.steemd_err = self._FNULL
+         self.eznode_err = self._FNULL
 
       self._debug_key = '5JHNbFNDg834SFj8CMArV6YW7td4zrPzXveqTfaShmYVuYNeK69'
-      self._steemd_lock = Lock()
+      self._eznode_lock = Lock()
 
 
    def __enter__( self ):
-      self._steemd_lock.acquire()
+      self._eznode_lock.acquire()
 
       # Setup temp directory to use as the data directory for this
       self._temp_data_dir = TemporaryDirectory()
@@ -97,42 +97,42 @@ class DebugNode( object ):
       config.touch()
       config.write_text( self._get_config() )
 
-      steemd = [ str( self._steemd_bin ), '--data-dir=' + str( self._temp_data_dir.name ) ]
-      steemd.extend( self._args )
+      eznode = [ str( self._eznode_bin ), '--data-dir=' + str( self._temp_data_dir.name ) ]
+      eznode.extend( self._args )
 
-      self._steemd_process = Popen( steemd, stdout=self.steemd_out, stderr=self.steemd_err )
-      self._steemd_process.poll()
+      self._eznode_process = Popen( eznode, stdout=self.eznode_out, stderr=self.eznode_err )
+      self._eznode_process.poll()
       sleep( 5 )
-      if( not self._steemd_process.returncode ):
+      if( not self._eznode_process.returncode ):
          self._rpc = SteemNodeRPC( 'ws://127.0.0.1:8095', '', '' )
       else:
-         raise Exception( "steemd did not start properly..." )
+         raise Exception( "eznode did not start properly..." )
 
    def __exit__( self, exc, value, tb ):
       self._rpc = None
 
-      if( self._steemd_process != None ):
-         self._steemd_process.poll()
+      if( self._eznode_process != None ):
+         self._eznode_process.poll()
 
-         if( not self._steemd_process.returncode ):
-            self._steemd_process.send_signal( SIGINT )
+         if( not self._eznode_process.returncode ):
+            self._eznode_process.send_signal( SIGINT )
 
             sleep( 7 )
-            self._steemd_process.poll()
+            self._eznode_process.poll()
 
-            if( not self._steemd_process.returncode ):
-               self._steemd_process.send_signal( SIGTERM )
+            if( not self._eznode_process.returncode ):
+               self._eznode_process.send_signal( SIGTERM )
 
                sleep( 5 )
-               self._steemd_process.poll()
+               self._eznode_process.poll()
 
-               if( self._steemd_process.returncode ):
-                  loggin.error( 'steemd did not properly shut down after SIGINT and SIGTERM. User intervention may be required.' )
+               if( self._eznode_process.returncode ):
+                  loggin.error( 'eznode did not properly shut down after SIGINT and SIGTERM. User intervention may be required.' )
 
-      self._steemd_process = None
+      self._eznode_process = None
       self._temp_data_dir.cleanup()
       self._temp_data_dir = None
-      self._steemd_lock.release()
+      self._eznode_lock.release()
 
 
    def _get_config( self ):
@@ -233,7 +233,7 @@ if __name__=="__main__":
    def main():
       global WAITING
       """
-      This example contains a simple parser to obtain the locations of both steemd and the data directory,
+      This example contains a simple parser to obtain the locations of both eznode and the data directory,
       creates and runs a new debug node, replays all of the blocks in the data directory, and finally waits
       for the user to interface with it outside of the script. Sending SIGINT succesfully and cleanly terminates
       the program.
@@ -248,26 +248,26 @@ if __name__=="__main__":
       parser = ArgumentParser( description='Run a Debug Node on an existing chain. This simply replays all blocks ' + \
                                  'and then waits indefinitely to allow user interaction through RPC calls and ' + \
                                  'the CLI wallet' )
-      parser.add_argument( '--steemd', '-s', type=str, required=True, help='The location of a steemd binary to run the debug node' )
+      parser.add_argument( '--eznode', '-s', type=str, required=True, help='The location of a eznode binary to run the debug node' )
       parser.add_argument( '--data-dir', '-d', type=str, required=True, help='The location of an existing data directory. ' + \
                            'The debug node will pull blocks from this directory when replaying the chain. The directory ' + \
                            'will not be changed.' )
 
       args = parser.parse_args()
 
-      steemd = Path( args.steemd )
-      if( not steemd.exists() ):
-         print( 'Error: steemd does not exist.' )
+      eznode = Path( args.eznode )
+      if( not eznode.exists() ):
+         print( 'Error: eznode does not exist.' )
          return
 
-      steemd = steemd.resolve()
-      if( not steemd.is_file() ):
-         print( 'Error: steemd is not a file.' )
+      eznode = eznode.resolve()
+      if( not eznode.is_file() ):
+         print( 'Error: eznode is not a file.' )
          return
 
       data_dir = Path( args.data_dir )
       if( not data_dir.exists() ):
-         print( 'Error: data_dir does not exist or is not a properly constructed steemd data directory' )
+         print( 'Error: data_dir does not exist or is not a properly constructed eznode data directory' )
 
       data_dir = data_dir.resolve()
       if( not data_dir.is_dir() ):
@@ -276,7 +276,7 @@ if __name__=="__main__":
       signal.signal( signal.SIGINT, sigint_handler )
 
       print( 'Creating and starting debug node' )
-      debug_node = DebugNode( str( steemd ), str( data_dir ), steemd_err=sys.stderr )
+      debug_node = DebugNode( str( eznode ), str( data_dir ), eznode_err=sys.stderr )
 
       with debug_node:
          print( 'Done!' )

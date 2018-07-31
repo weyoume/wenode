@@ -415,7 +415,7 @@ vector<account_id_type> database_api_impl::get_account_references( account_id_ty
       for( auto item : itr->second ) result.push_back(item);
    }
    return result;*/
-   FC_ASSERT( false, "database_api::get_account_references --- Needs to be refactored for steem." );
+   FC_ASSERT( false, "database_api::get_account_references --- Needs to be refactored for ezira." );
 }
 
 vector<optional<account_api_obj>> database_api::lookup_account_names(const vector<string>& account_names)const
@@ -772,7 +772,7 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
       cur.order_price = itr->sell_price;
       cur.real_price  = (cur.order_price).to_real();
       cur.sbd = itr->for_sale;
-      cur.steem = ( asset( itr->for_sale, SBD_SYMBOL ) * cur.order_price ).amount;
+      cur.ezira = ( asset( itr->for_sale, SBD_SYMBOL ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.bids.push_back( cur );
       ++sell_itr;
@@ -783,7 +783,7 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
       order cur;
       cur.order_price = itr->sell_price;
       cur.real_price  = (~cur.order_price).to_real();
-      cur.steem   = itr->for_sale;
+      cur.ezira   = itr->for_sale;
       cur.sbd     = ( asset( itr->for_sale, EZIRA_SYMBOL ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.asks.push_back( cur );
@@ -1083,7 +1083,7 @@ void database_api::set_pending_payout( discussion& d )const
    if( my->_db.has_hardfork( EZIRA_HARDFORK_0_17__774 ) )
       pot = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) ).reward_balance;
    else
-      pot = props.total_reward_fund_steem;
+      pot = props.total_reward_fund_ezira;
 
    if( !hist.current_median_history.is_null() ) pot = pot * hist.current_median_history;
 

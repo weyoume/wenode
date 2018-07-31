@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <ezira/protocol/steem_operations.hpp>
+#include <ezira/protocol/ezira_operations.hpp>
 #include <ezira/protocol/operation_util_impl.hpp>
 
 #include <ezira/chain/evaluator.hpp>

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <ezira/protocol/authority.hpp>
-#include <ezira/protocol/steem_operations.hpp>
+#include <ezira/protocol/ezira_operations.hpp>
 
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
@@ -18,7 +18,7 @@ namespace ezira { namespace chain {
    typedef protocol::fixed_string_16 reward_fund_name_type;
 
    /**
-    *  This object is used to track pending requests to convert sbd to steem
+    *  This object is used to track pending requests to convert sbd to ezira
     */
    class convert_request_object : public object< convert_request_object_type, convert_request_object >
    {
@@ -60,7 +60,7 @@ namespace ezira { namespace chain {
          time_point_sec    ratification_deadline;
          time_point_sec    escrow_expiration;
          asset             sbd_balance;
-         asset             steem_balance;
+         asset             ezira_balance;
          asset             pending_fee;
          bool              to_approved = false;
          bool              agent_approved = false;
@@ -118,7 +118,7 @@ namespace ezira { namespace chain {
          id_type           id;
 
          account_id_type   owner;
-         int64_t           steem_volume = 0;
+         int64_t           ezira_volume = 0;
          int64_t           sbd_volume = 0;
          uint128_t         weight = 0;
 
@@ -127,12 +127,12 @@ namespace ezira { namespace chain {
          /// this is the sort index
          uint128_t volume_weight()const
          {
-            return steem_volume * sbd_volume * is_positive();
+            return ezira_volume * sbd_volume * is_positive();
          }
 
          uint128_t min_volume_weight()const
          {
-            return std::min(steem_volume,sbd_volume) * is_positive();
+            return std::min(ezira_volume,sbd_volume) * is_positive();
          }
 
          void update_weight( bool hf9 )
@@ -142,7 +142,7 @@ namespace ezira { namespace chain {
 
          inline int is_positive()const
          {
-            return ( steem_volume > 0 && sbd_volume > 0 ) ? 1 : 0;
+            return ( ezira_volume > 0 && sbd_volume > 0 ) ? 1 : 0;
          }
    };
 
@@ -505,7 +505,7 @@ FC_REFLECT( ezira::chain::convert_request_object,
 CHAINBASE_SET_INDEX_TYPE( ezira::chain::convert_request_object, ezira::chain::convert_request_index )
 
 FC_REFLECT( ezira::chain::liquidity_reward_balance_object,
-             (id)(owner)(steem_volume)(sbd_volume)(weight)(last_update) )
+             (id)(owner)(ezira_volume)(sbd_volume)(weight)(last_update) )
 CHAINBASE_SET_INDEX_TYPE( ezira::chain::liquidity_reward_balance_object, ezira::chain::liquidity_reward_balance_index )
 
 FC_REFLECT( ezira::chain::withdraw_vesting_route_object,
@@ -519,7 +519,7 @@ CHAINBASE_SET_INDEX_TYPE( ezira::chain::savings_withdraw_object, ezira::chain::s
 FC_REFLECT( ezira::chain::escrow_object,
              (id)(escrow_id)(from)(to)(agent)
              (ratification_deadline)(escrow_expiration)
-             (sbd_balance)(steem_balance)(pending_fee)
+             (sbd_balance)(ezira_balance)(pending_fee)
              (to_approved)(agent_approved)(disputed) )
 CHAINBASE_SET_INDEX_TYPE( ezira::chain::escrow_object, ezira::chain::escrow_index )
 

@@ -31,7 +31,7 @@
 #include <ezira/protocol/get_config.hpp>
 
 #include <ezira/chain/database.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 #include <ezira/chain/transaction_object.hpp>
 #include <fc/time.hpp>
 
@@ -115,9 +115,9 @@ namespace ezira { namespace app {
        return it->second;
     }
 
-    steem_version_info login_api::get_version()
+    ezira_version_info login_api::get_version()
     {
-       return steem_version_info(
+       return ezira_version_info(
          fc::string( EZIRA_BLOCKCHAIN_VERSION ),
          fc::string( graphene::utilities::git_revision_sha ),
          fc::string( fc::git_revision_sha ) );

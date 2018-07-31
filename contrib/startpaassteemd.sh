@@ -1,23 +1,23 @@
 #!/bin/bash
 
-VERSION=`cat /etc/steemdversion`
+VERSION=`cat /etc/eznodeversion`
 
 if [[ "$IS_BROADCAST_NODE" ]]; then
-  EZIRAD="/usr/local/steemd-default/bin/steemd"
+  EZIRAD="/usr/local/eznode-default/bin/eznode"
 elif [[ "$IS_AH_NODE" ]]; then
-  EZIRAD="/usr/local/steemd-default/bin/steemd"
+  EZIRAD="/usr/local/eznode-default/bin/eznode"
 else
-  EZIRAD="/usr/local/steemd-full/bin/steemd"
+  EZIRAD="/usr/local/eznode-full/bin/eznode"
 fi
 
-chown -R steemd:steemd $HOME
+chown -R eznode:eznode $HOME
 
 # clean out data dir since it may be semi-persistent block storage on the ec2 with stale data
 rm -rf $HOME/*
 
 # seed nodes come from doc/seednodes.txt which is
-# installed by docker into /etc/steemd/seednodes.txt
-SEED_NODES="$(cat /etc/steemd/seednodes.txt | awk -F' ' '{print $1}')"
+# installed by docker into /etc/eznode/seednodes.txt
+SEED_NODES="$(cat /etc/eznode/seednodes.txt | awk -F' ' '{print $1}')"
 
 ARGS=""
 
@@ -47,22 +47,22 @@ fi
 
 # overwrite local config with image one
 if [[ "$IS_BROADCAST_NODE" ]]; then
-  cp /etc/steemd/config-for-broadcaster.ini $HOME/config.ini
+  cp /etc/eznode/config-for-broadcaster.ini $HOME/config.ini
 elif [[ "$IS_AH_NODE" ]]; then
-  cp /etc/steemd/config-for-ahnode.ini $HOME/config.ini
+  cp /etc/eznode/config-for-ahnode.ini $HOME/config.ini
 else
-  cp /etc/steemd/fullnode.config.ini $HOME/config.ini
+  cp /etc/eznode/fullnode.config.ini $HOME/config.ini
 fi
 
-chown steemd:steemd $HOME/config.ini
+chown eznode:eznode $HOME/config.ini
 
 cd $HOME
 
 mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
-cp /etc/nginx/steemd.nginx.conf /etc/nginx/nginx.conf
+cp /etc/nginx/eznode.nginx.conf /etc/nginx/nginx.conf
 
 # get blockchain state from an S3 bucket
-echo steemd: beginning download and decompress of s3://$S3_BUCKET/blockchain-$VERSION-latest.tar.lz4
+echo eznode: beginning download and decompress of s3://$S3_BUCKET/blockchain-$VERSION-latest.tar.lz4
 if [[ "$USE_RAMDISK" ]]; then
   mkdir -p /mnt/ramdisk
   mount -t ramfs -o size=${RAMDISK_SIZE_IN_MB:-51200}m ramfs /mnt/ramdisk
@@ -83,13 +83,13 @@ if [[ "$USE_RAMDISK" ]]; then
     fi
     if [[ $? -ne 0 ]]; then
       sleep 1
-      echo notifyalert steemd: unable to pull blockchain state from S3 - attempt $count
+      echo notifyalert eznode: unable to pull blockchain state from S3 - attempt $count
       (( count++ ))
     else
       finished=1
     fi
   done
-  chown -R steemd:steemd /mnt/ramdisk/blockchain
+  chown -R eznode:eznode /mnt/ramdisk/blockchain
 else
   while [[ $count -le 5 ]] && [[ $finished == 0 ]]
   do
@@ -103,7 +103,7 @@ else
     fi
     if [[ $? -ne 0 ]]; then
       sleep 1
-      echo notifyalert steemd: unable to pull blockchain state from S3 - attempt $count
+      echo notifyalert eznode: unable to pull blockchain state from S3 - attempt $count
       (( count++ ))
     else
       finished=1
@@ -112,14 +112,14 @@ else
 fi
 if [[ $finished == 0 ]]; then
   if [[ ! "$SYNC_TO_S3" ]]; then
-    echo notifyalert steemd: unable to pull blockchain state from S3 - exiting
+    echo notifyalert eznode: unable to pull blockchain state from S3 - exiting
     exit 1
   else
-    echo notifysteemdsync steemdsync: shared memory file for $VERSION not found, creating a new one by replaying the blockchain
+    echo notifyeznodesync eznodesync: shared memory file for $VERSION not found, creating a new one by replaying the blockchain
     mkdir blockchain
     aws s3 cp s3://$S3_BUCKET/block_log-latest blockchain/block_log
     if [[ $? -ne 0 ]]; then
-      echo notifysteemdsync steemdsync: unable to pull latest block_log from S3, will sync from scratch.
+      echo notifyeznodesync eznodesync: unable to pull latest block_log from S3, will sync from scratch.
     else
       ARGS+=" --replay-blockchain --force-validate"
     fi
@@ -134,7 +134,7 @@ if [[ "$SYNC_TO_S3" ]]; then
   chown www-data:www-data /tmp/issyncnode
 fi
 
-chown -R steemd:steemd $HOME/*
+chown -R eznode:eznode $HOME/*
 
 # let's get going
 cp /etc/nginx/healthcheck.conf.template /etc/nginx/healthcheck.conf
@@ -144,7 +144,7 @@ rm /etc/nginx/sites-enabled/default
 cp /etc/nginx/healthcheck.conf /etc/nginx/sites-enabled/default
 /etc/init.d/fcgiwrap restart
 service nginx restart
-exec chpst -usteemd \
+exec chpst -ueznode \
     $EZIRAD \
         --rpc-endpoint=0.0.0.0:8091 \
         --p2p-endpoint=0.0.0.0:2001 \
@@ -153,12 +153,12 @@ exec chpst -usteemd \
         $EZIRAD_EXTRA_OPTS \
         2>&1&
 SAVED_PID=`pgrep -f p2p-endpoint`
-echo $SAVED_PID >> /tmp/steemdpid
-mkdir -p /etc/service/steemd
+echo $SAVED_PID >> /tmp/eznodepid
+mkdir -p /etc/service/eznode
 if [[ ! "$SYNC_TO_S3" ]]; then
-  cp /usr/local/bin/paas-sv-run.sh /etc/service/steemd/run
+  cp /usr/local/bin/paas-sv-run.sh /etc/service/eznode/run
 else
-  cp /usr/local/bin/sync-sv-run.sh /etc/service/steemd/run
+  cp /usr/local/bin/sync-sv-run.sh /etc/service/eznode/run
 fi
-chmod +x /etc/service/steemd/run
-runsv /etc/service/steemd
+chmod +x /etc/service/eznode/run
+runsv /etc/service/eznode

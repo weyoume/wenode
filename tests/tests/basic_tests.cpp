@@ -27,7 +27,7 @@
 #include <ezira/chain/database.hpp>
 #include <ezira/protocol/protocol.hpp>
 
-#include <ezira/protocol/steem_operations.hpp>
+#include <ezira/protocol/ezira_operations.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/hex.hpp>

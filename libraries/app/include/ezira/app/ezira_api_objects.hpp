@@ -4,7 +4,7 @@
 #include <ezira/chain/comment_object.hpp>
 #include <ezira/chain/global_property_object.hpp>
 #include <ezira/chain/history_object.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 #include <ezira/chain/transaction_object.hpp>
 #include <ezira/chain/witness_objects.hpp>
 
@@ -87,7 +87,7 @@ struct comment_api_obj
       net_votes( o.net_votes ),
       root_comment( o.root_comment ),
       max_accepted_payout( o.max_accepted_payout ),
-      percent_steem_dollars( o.percent_steem_dollars ),
+      percent_ezira_dollars( o.percent_ezira_dollars ),
       allow_replies( o.allow_replies ),
       allow_votes( o.allow_votes ),
       allow_curation_rewards( o.allow_curation_rewards )
@@ -139,7 +139,7 @@ struct comment_api_obj
    comment_id_type   root_comment;
 
    asset             max_accepted_payout;
-   uint16_t          percent_steem_dollars = 0;
+   uint16_t          percent_ezira_dollars = 0;
    bool              allow_replies = false;
    bool              allow_votes = false;
    bool              allow_curation_rewards = false;
@@ -202,9 +202,9 @@ struct account_api_obj
       savings_sbd_last_interest_payment( a.savings_sbd_last_interest_payment ),
       savings_withdraw_requests( a.savings_withdraw_requests ),
       reward_sbd_balance( a.reward_sbd_balance ),
-      reward_steem_balance( a.reward_steem_balance ),
+      reward_ezira_balance( a.reward_ezira_balance ),
       reward_vesting_balance( a.reward_vesting_balance ),
-      reward_vesting_steem( a.reward_vesting_steem ),
+      reward_vesting_ezira( a.reward_vesting_ezira ),
       curation_rewards( a.curation_rewards ),
       posting_rewards( a.posting_rewards ),
       vesting_shares( a.vesting_shares ),
@@ -301,9 +301,9 @@ struct account_api_obj
    uint8_t           savings_withdraw_requests = 0;
 
    asset             reward_sbd_balance;
-   asset             reward_steem_balance;
+   asset             reward_ezira_balance;
    asset             reward_vesting_balance;
-   asset             reward_vesting_steem;
+   asset             reward_vesting_ezira;
 
    share_type        curation_rewards;
    share_type        posting_rewards;
@@ -515,7 +515,7 @@ FC_REFLECT( ezira::app::comment_api_obj,
              (net_rshares)(abs_rshares)(vote_rshares)
              (children_abs_rshares)(cashout_time)(max_cashout_time)
              (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(author_rewards)(net_votes)(root_comment)
-             (max_accepted_payout)(percent_steem_dollars)(allow_replies)(allow_votes)(allow_curation_rewards)
+             (max_accepted_payout)(percent_ezira_dollars)(allow_replies)(allow_votes)(allow_curation_rewards)
              (beneficiaries)
           )
 
@@ -528,7 +528,7 @@ FC_REFLECT( ezira::app::account_api_obj,
              (savings_balance)
              (sbd_balance)(sbd_seconds)(sbd_seconds_last_update)(sbd_last_interest_payment)
              (savings_sbd_balance)(savings_sbd_seconds)(savings_sbd_seconds_last_update)(savings_sbd_last_interest_payment)(savings_withdraw_requests)
-             (reward_sbd_balance)(reward_steem_balance)(reward_vesting_balance)(reward_vesting_steem)
+             (reward_sbd_balance)(reward_ezira_balance)(reward_vesting_balance)(reward_vesting_ezira)
              (vesting_shares)(delegated_vesting_shares)(received_vesting_shares)(vesting_withdraw_rate)(next_vesting_withdrawal)(withdrawn)(to_withdraw)(withdraw_routes)
              (curation_rewards)
              (posting_rewards)

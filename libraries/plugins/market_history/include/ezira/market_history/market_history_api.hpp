@@ -26,20 +26,20 @@ struct market_ticker
    double      lowest_ask = 0;
    double      highest_bid = 0;
    double      percent_change = 0;
-   asset       steem_volume = asset( 0 , EZIRA_SYMBOL );
+   asset       ezira_volume = asset( 0 , EZIRA_SYMBOL );
    asset       sbd_volume = asset( 0, SBD_SYMBOL );
 };
 
 struct market_volume
 {
-   asset       steem_volume = asset( 0, EZIRA_SYMBOL );
+   asset       ezira_volume = asset( 0, EZIRA_SYMBOL );
    asset       sbd_volume = asset( 0, SBD_SYMBOL );
 };
 
 struct order
 {
    double      price;
-   share_type  steem;
+   share_type  ezira;
    share_type  sbd;
 };
 
@@ -116,11 +116,11 @@ class market_history_api
 } } // ezira::market_history
 
 FC_REFLECT( ezira::market_history::market_ticker,
-   (latest)(lowest_ask)(highest_bid)(percent_change)(steem_volume)(sbd_volume) );
+   (latest)(lowest_ask)(highest_bid)(percent_change)(ezira_volume)(sbd_volume) );
 FC_REFLECT( ezira::market_history::market_volume,
-   (steem_volume)(sbd_volume) );
+   (ezira_volume)(sbd_volume) );
 FC_REFLECT( ezira::market_history::order,
-   (price)(steem)(sbd) );
+   (price)(ezira)(sbd) );
 FC_REFLECT( ezira::market_history::order_book,
    (bids)(asks) );
 FC_REFLECT( ezira::market_history::market_trade,

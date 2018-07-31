@@ -8,7 +8,7 @@ add_library( ezira_protocol
              operations.cpp
              sign_state.cpp
              operation_util_impl.cpp
-             steem_operations.cpp
+             ezira_operations.cpp
              transaction.cpp
              block.cpp
              asset.cpp

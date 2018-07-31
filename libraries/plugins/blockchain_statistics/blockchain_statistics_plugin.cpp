@@ -54,7 +54,7 @@ struct operation_process
          b.transfers++;
 
          if( op.amount.symbol == EZIRA_SYMBOL )
-            b.steem_transferred += op.amount.amount;
+            b.ezira_transferred += op.amount.amount;
          else
             b.sbd_transferred += op.amount.amount;
       });
@@ -180,7 +180,7 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.transfers_to_vesting++;
-         b.steem_vested += op.amount.amount;
+         b.ezira_vested += op.amount.amount;
       });
    }
 
@@ -239,7 +239,7 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.sbd_conversion_requests_filled++;
-         b.steem_converted += op.amount_out.amount;
+         b.ezira_converted += op.amount_out.amount;
       });
    }
 };

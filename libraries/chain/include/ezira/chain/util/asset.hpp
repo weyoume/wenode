@@ -7,15 +7,15 @@ namespace ezira { namespace chain { namespace util {
 using ezira::protocol::asset;
 using ezira::protocol::price;
 
-inline asset to_sbd( const price& p, const asset& steem )
+inline asset to_sbd( const price& p, const asset& ezira )
 {
-   FC_ASSERT( steem.symbol == EZIRA_SYMBOL );
+   FC_ASSERT( ezira.symbol == EZIRA_SYMBOL );
    if( p.is_null() )
       return asset( 0, SBD_SYMBOL );
-   return steem * p;
+   return ezira * p;
 }
 
-inline asset to_steem( const price& p, const asset& sbd )
+inline asset to_ezira( const price& p, const asset& sbd )
 {
    FC_ASSERT( sbd.symbol == SBD_SYMBOL );
    if( p.is_null() )

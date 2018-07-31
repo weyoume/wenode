@@ -1,18 +1,18 @@
 #!/bin/bash
 
-EZIRAD="/usr/local/steemd-default/bin/steemd"
+EZIRAD="/usr/local/eznode-default/bin/eznode"
 
-VERSION=`cat /etc/steemdversion`
+VERSION=`cat /etc/eznodeversion`
 
 if [[ "$USE_WAY_TOO_MUCH_RAM" ]]; then
-    EZIRAD="/usr/local/steemd-full/bin/steemd"
+    EZIRAD="/usr/local/eznode-full/bin/eznode"
 fi
 
-chown -R steemd:steemd $HOME
+chown -R eznode:eznode $HOME
 
 # seed nodes come from doc/seednodes.txt which is
-# installed by docker into /etc/steemd/seednodes.txt
-SEED_NODES="$(cat /etc/steemd/seednodes.txt | awk -F' ' '{print $1}')"
+# installed by docker into /etc/eznode/seednodes.txt
+SEED_NODES="$(cat /etc/eznode/seednodes.txt | awk -F' ' '{print $1}')"
 
 ARGS=""
 
@@ -59,25 +59,25 @@ ARGS+=" --follow-start-feeds=$EZIRAD_FEED_START_TIME"
 
 # overwrite local config with image one
 if [[ "$USE_FULL_WEB_NODE" ]]; then
-  cp /etc/steemd/fullnode.config.ini $HOME/config.ini
+  cp /etc/eznode/fullnode.config.ini $HOME/config.ini
 elif [[ "$IS_BROADCAST_NODE" ]]; then
-  cp /etc/steemd/config-for-broadcaster.ini $HOME/config.ini
+  cp /etc/eznode/config-for-broadcaster.ini $HOME/config.ini
 elif [[ "$IS_AH_NODE" ]]; then
-  cp /etc/steemd/config-for-ahnode.ini $HOME/config.ini
+  cp /etc/eznode/config-for-ahnode.ini $HOME/config.ini
 else
-  cp /etc/steemd/config.ini $HOME/config.ini
+  cp /etc/eznode/config.ini $HOME/config.ini
 fi
 
-chown steemd:steemd $HOME/config.ini
+chown eznode:eznode $HOME/config.ini
 
 if [[ ! -d $HOME/blockchain ]]; then
-    if [[ -e /var/cache/steemd/blocks.tbz2 ]]; then
+    if [[ -e /var/cache/eznode/blocks.tbz2 ]]; then
         # init with blockchain cached in image
         ARGS+=" --replay-blockchain"
         mkdir -p $HOME/blockchain/database
         cd $HOME/blockchain/database
-        tar xvjpf /var/cache/steemd/blocks.tbz2
-        chown -R steemd:steemd $HOME/blockchain
+        tar xvjpf /var/cache/eznode/blocks.tbz2
+        chown -R eznode:eznode $HOME/blockchain
     fi
 fi
 
@@ -86,7 +86,7 @@ fi
 cd $HOME
 
 # if [[ "$USE_PUBLIC_SHARED_MEMORY" ]]; then
-#   echo steemd: Downloading and uncompressing blockchain-$VERSION-latest.tar.lz4 - this may take awhile.
+#   echo eznode: Downloading and uncompressing blockchain-$VERSION-latest.tar.lz4 - this may take awhile.
 #   wget -qO- https://s3.amazonaws.com/steemit-dev-blockchainstate/blockchain-$VERSION-latest.tar.lz4 | lz4 -d | tar x
 # fi
 
@@ -95,7 +95,7 @@ if [[ "$USE_PUBLIC_BLOCKLOG" ]]; then
     if [[ ! -d $HOME/blockchain ]]; then
       mkdir -p $HOME/blockchain
     fi
-    echo "steemd: Downloading a block_log and replaying the blockchain"
+    echo "eznode: Downloading a block_log and replaying the blockchain"
     echo "This may take a little while..."
     wget -O $HOME/blockchain/block_log https://s3.amazonaws.com/steemit-dev-blockchainstate/block_log-latest
     ARGS+=" --replay-blockchain"
@@ -106,12 +106,12 @@ fi
 sleep 1
 
 mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
-cp /etc/nginx/steemd.nginx.conf /etc/nginx/nginx.conf
+cp /etc/nginx/eznode.nginx.conf /etc/nginx/nginx.conf
 
 #start multiple read-only instances based on the number of cores
 #attach to the local interface since a proxy will be used to loadbalance
 if [[ "$USE_MULTICORE_READONLY" ]]; then
-    exec chpst -usteemd \
+    exec chpst -ueznode \
         $EZIRAD \
             --rpc-endpoint=127.0.0.1:8091 \
             --p2p-endpoint=0.0.0.0:2001 \
@@ -134,7 +134,7 @@ if [[ "$USE_MULTICORE_READONLY" ]]; then
     PORT_NUM=8092
     for (( i=2; i<=$PROCESSES; i++ ))
       do
-        exec chpst -usteemd \
+        exec chpst -ueznode \
         $EZIRAD \
           --rpc-endpoint=127.0.0.1:$PORT_NUM \
           --data-dir=$HOME \
@@ -160,7 +160,7 @@ elif [[ "$USE_NGINX_FRONTEND" ]]; then
     cp /etc/nginx/healthcheck.conf /etc/nginx/sites-enabled/default
     /etc/init.d/fcgiwrap restart
     service nginx restart
-    exec chpst -usteemd \
+    exec chpst -ueznode \
         $EZIRAD \
             --rpc-endpoint=0.0.0.0:8091 \
             --p2p-endpoint=0.0.0.0:2001 \
@@ -169,7 +169,7 @@ elif [[ "$USE_NGINX_FRONTEND" ]]; then
             $EZIRAD_EXTRA_OPTS \
             2>&1
 else
-    exec chpst -usteemd \
+    exec chpst -ueznode \
         $EZIRAD \
             --rpc-endpoint=0.0.0.0:8090 \
             --p2p-endpoint=0.0.0.0:2001 \

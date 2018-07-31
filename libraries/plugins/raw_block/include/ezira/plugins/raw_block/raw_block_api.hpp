@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 
 #include <fc/api.hpp>
 

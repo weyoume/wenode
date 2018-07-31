@@ -18,12 +18,12 @@ curl -fsSL get.docker.com -o get-docker.sh
 sh get-docker.sh
 ```
 
-### Clone the steem repo
+### Clone the ezira repo
 
-Pull in the steem repo from the official source on github and then change into the directory that's created for it.
+Pull in the ezira repo from the official source on github and then change into the directory that's created for it.
 ```
 git clone https://github.com/eziranetwork/ezira
-cd steem
+cd ezira
 ```
 
 ### Build the image from source with docker
@@ -50,15 +50,15 @@ docker pull eziranetwork/ezira
 
 ### Running a binary build without a Docker container
 
-If you build with Docker but do not want to run steemd from within a docker container, you can stop here with this step and instead extract the binary from the container with the commands below. If you are going to run steemd with docker (recommended method), skip this step altogether. We're simply providing an option for everyone's use-case. Our binaries are built mostly static, only dynamically linking to linux kernel libraries. We have tested and confirmed binaries built in Docker work on Ubuntu and Fedora and will likely work on many other Linux distrubutions. Building the image yourself or pulling one of our pre-built images both work.
+If you build with Docker but do not want to run eznode from within a docker container, you can stop here with this step and instead extract the binary from the container with the commands below. If you are going to run eznode with docker (recommended method), skip this step altogether. We're simply providing an option for everyone's use-case. Our binaries are built mostly static, only dynamically linking to linux kernel libraries. We have tested and confirmed binaries built in Docker work on Ubuntu and Fedora and will likely work on many other Linux distrubutions. Building the image yourself or pulling one of our pre-built images both work.
 
 To extract the binary you need to start a container and then copy the file from it.
 
 ```
-docker run -d --name steemd-exchange eziranetwork/ezira
-docker cp steemd-exchange:/usr/local/steemd-default/bin/steemd /local/path/to/steemd
-docker cp steemd-exchange:/usr/local/steemd-default/bin/cli_wallet /local/path/to/cli_wallet
-docker stop steemd-exchange
+docker run -d --name eznode-exchange eziranetwork/ezira
+docker cp eznode-exchange:/usr/local/eznode-default/bin/eznode /local/path/to/eznode
+docker cp eznode-exchange:/usr/local/eznode-default/bin/cli_wallet /local/path/to/cli_wallet
+docker stop eznode-exchange
 ```
 
 For your convenience, we have provided a provided an [example\_config](example\_config.ini) that we expect should be sufficient to run your exchange node. Be sure to rename it to simply `config.ini`.
@@ -69,7 +69,7 @@ For re-usability, you can create directories to store blockchain and wallet data
 
 ```
 mkdir blockchain
-mkdir steemwallet
+mkdir ezwallet
 ```
 
 ### Run the container
@@ -77,7 +77,7 @@ mkdir steemwallet
 The below command will start a daemonized instance opening ports for p2p and RPC  while linking the directories we created for blockchain and wallet data inside the container. Fill in `TRACK_ACCOUNT` with the name of your exchange account that you want to follow. The `-v` flags are how you map directories outside of the container to the inside, you list the path to the directories you created earlier before the `:` for each `-v` flag. The restart policy ensures that the container will automatically restart even if your system is restarted.
 
 ```
-docker run -d --name steemd-exchange --env TRACK_ACCOUNT=nameofaccount -p 2001:2001 -p 8090:8090 -v /path/to/steemwallet:/var/steemwallet -v /path/to/blockchain:/var/lib/steemd/blockchain --restart always eziranetwork/ezira
+docker run -d --name eznode-exchange --env TRACK_ACCOUNT=nameofaccount -p 2001:2001 -p 8090:8090 -v /path/to/ezwallet:/var/ezwallet -v /path/to/blockchain:/var/lib/eznode/blockchain --restart always eziranetwork/ezira
 ```
 
 You can see that the container is running with the `docker ps` command.
@@ -91,5 +91,5 @@ Initial syncing will take between 6 and 48 hours depending on your equipment, fa
 The command below will run the cli_wallet from inside the running container while mapping the `wallet.json` to the directory you created for it on the host.
 
 ```
-docker exec -it steemd-exchange /usr/local/steemd-default/bin/cli_wallet -w /var/steemwallet/wallet.json
+docker exec -it eznode-exchange /usr/local/eznode-default/bin/cli_wallet -w /var/ezwallet/wallet.json
 ```

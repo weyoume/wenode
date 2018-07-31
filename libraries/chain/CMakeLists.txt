@@ -22,9 +22,9 @@ add_library( ezira_chain
              fork_database.cpp
              witness_schedule.cpp
 
-             steem_evaluator.cpp
+             ezira_evaluator.cpp
 
-             steem_objects.cpp
+             ezira_objects.cpp
              shared_authority.cpp
              block_log.cpp
 

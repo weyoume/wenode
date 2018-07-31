@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
       app_options.add_options()
             ("help,h", "Print this help message and exit.")
             ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"), "Directory containing databases, configuration file, etc.")
-            ("version,v", "Print steemd version and exit.")
+            ("version,v", "Print eznode version and exit.")
             ;
 
       bpo::variables_map options;
@@ -94,8 +94,8 @@ int main(int argc, char** argv) {
 
       if( options.count("version") )
       {
-         std::cout << "steem_blockchain_version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
-         std::cout << "steem_git_revision:       " << fc::string( graphene::utilities::git_revision_sha ) << "\n";
+         std::cout << "ezira_blockchain_version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
+         std::cout << "ezira_git_revision:       " << fc::string( graphene::utilities::git_revision_sha ) << "\n";
          std::cout << "fc_git_revision:          " << fc::string( fc::git_revision_sha ) << "\n";
          return 0;
       }

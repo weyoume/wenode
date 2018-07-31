@@ -24,7 +24,7 @@
 #pragma once
 
 #include <ezira/app/plugin.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 
 namespace ezira { namespace delayed_node {
 namespace detail { struct delayed_node_plugin_impl; }

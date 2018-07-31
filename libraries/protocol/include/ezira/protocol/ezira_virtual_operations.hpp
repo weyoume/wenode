@@ -10,12 +10,12 @@ namespace ezira { namespace protocol {
    struct author_reward_operation : public virtual_operation {
       author_reward_operation(){}
       author_reward_operation( const account_name_type& a, const string& p, const asset& s, const asset& st, const asset& v )
-         :author(a), permlink(p), sbd_payout(s), steem_payout(st), vesting_payout(v){}
+         :author(a), permlink(p), sbd_payout(s), ezira_payout(st), vesting_payout(v){}
 
       account_name_type author;
       string            permlink;
       asset             sbd_payout;
-      asset             steem_payout;
+      asset             ezira_payout;
       asset             vesting_payout;
    };
 
@@ -178,7 +178,7 @@ namespace ezira { namespace protocol {
 
 } } //ezira::protocol
 
-FC_REFLECT( ezira::protocol::author_reward_operation, (author)(permlink)(sbd_payout)(steem_payout)(vesting_payout) )
+FC_REFLECT( ezira::protocol::author_reward_operation, (author)(permlink)(sbd_payout)(ezira_payout)(vesting_payout) )
 FC_REFLECT( ezira::protocol::curation_reward_operation, (curator)(reward)(comment_author)(comment_permlink) )
 FC_REFLECT( ezira::protocol::comment_reward_operation, (author)(permlink)(payout) )
 FC_REFLECT( ezira::protocol::fill_convert_request_operation, (owner)(requestid)(amount_in)(amount_out) )
