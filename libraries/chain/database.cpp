@@ -350,9 +350,12 @@ chain_id_type database::get_chain_id() const
 }
 
 const witness_object& database::get_witness( const account_name_type& name ) const
-{ try {
+{ 
+	try {
    return get< witness_object, by_name >( name );
-} FC_CAPTURE_AND_RETHROW( (name) ) }
+	} 
+	FC_CAPTURE_AND_RETHROW( (name) ) 
+}
 
 const witness_object* database::find_witness( const account_name_type& name ) const
 {
