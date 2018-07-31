@@ -1,8 +1,8 @@
 
-#include <steemit/chain/steem_objects.hpp>
+#include <ezira/chain/steem_objects.hpp>
 
 #include <fc/uint128.hpp>
 
-namespace steemit { namespace chain {
+namespace ezira { namespace chain {
 
-} } // steemit::chain
+} } // ezira::chain

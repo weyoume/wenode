@@ -1,10 +1,10 @@
 #pragma once
 
-#include <steemit/protocol/operations.hpp>
+#include <ezira/protocol/operations.hpp>
 
-#include <steemit/chain/steem_object_types.hpp>
+#include <ezira/chain/steem_object_types.hpp>
 
-namespace steemit { namespace chain {
+namespace ezira { namespace chain {
 
 struct operation_notification
 {

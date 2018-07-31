@@ -1,7 +1,7 @@
-#include <steemit/app/application.hpp>
+#include <ezira/app/application.hpp>
 
-#include <steemit/witness/witness_plugin.hpp>
-#include <steemit/manifest/plugins.hpp>
+#include <ezira/witness/witness_plugin.hpp>
+#include <ezira/manifest/plugins.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
@@ -11,7 +11,7 @@
 #include <fc/log/logger.hpp>
 #include <fc/log/logger_config.hpp>
 
-#include <steemit/protocol/version.hpp>
+#include <ezira/protocol/version.hpp>
 #include <graphene/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
@@ -33,15 +33,15 @@
 #endif
 #include <graphene/utilities/key_conversion.hpp>
 
-using namespace steemit;
-using steemit::protocol::version;
+using namespace ezira;
+using ezira::protocol::version;
 namespace bpo = boost::program_options;
 
 void write_default_logging_config_to_stream(std::ostream& out);
 fc::optional<fc::logging_config> load_logging_config_from_ini_file(const fc::path& config_ini_filename);
 
 int main(int argc, char** argv) {
-   steemit::plugin::initialize_plugin_factories();
+   ezira::plugin::initialize_plugin_factories();
    app::application* node = new app::application();
    fc::oexception unhandled_exception;
    try {
@@ -50,19 +50,19 @@ int main(int argc, char** argv) {
       std::cerr << "------------------------------------------------------\n\n";
       std::cerr << "            STARTING TEST NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
-      auto initminer_private_key = graphene::utilities::key_to_wif( STEEMIT_INIT_PRIVATE_KEY );
-      std::cerr << "initminer public key: " << STEEMIT_INIT_PUBLIC_KEY_STR << "\n";
+      auto initminer_private_key = graphene::utilities::key_to_wif( EZIRA_INIT_PRIVATE_KEY );
+      std::cerr << "initminer public key: " << EZIRA_INIT_PUBLIC_KEY_STR << "\n";
       std::cerr << "initminer private key: " << initminer_private_key << "\n";
-      std::cerr << "chain id: " << std::string(STEEMIT_CHAIN_ID) << "\n";
-      std::cerr << "blockchain version: " << fc::string( STEEMIT_BLOCKCHAIN_VERSION ) << "\n";
+      std::cerr << "chain id: " << std::string(EZIRA_CHAIN_ID) << "\n";
+      std::cerr << "blockchain version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
 		#else
       std::cerr << "------------------------------------------------------\n\n";
-      std::cerr << "            STARTING STEEM NETWORK\n\n";
+      std::cerr << "            STARTING EZIRA NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
-      std::cerr << "initminer public key: " << STEEMIT_INIT_PUBLIC_KEY_STR << "\n";
-      std::cerr << "chain id: " << std::string(STEEMIT_CHAIN_ID) << "\n";
-      std::cerr << "blockchain version: " << fc::string( STEEMIT_BLOCKCHAIN_VERSION ) << "\n";
+      std::cerr << "initminer public key: " << EZIRA_INIT_PUBLIC_KEY_STR << "\n";
+      std::cerr << "chain id: " << std::string(EZIRA_CHAIN_ID) << "\n";
+      std::cerr << "blockchain version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
 		#endif
       bpo::options_description app_options("Steem Daemon");
@@ -75,8 +75,8 @@ int main(int argc, char** argv) {
 
       bpo::variables_map options;
 
-      for( const std::string& plugin_name : steemit::plugin::get_available_plugins() )
-         node->register_abstract_plugin( steemit::plugin::create_plugin( plugin_name, node ) );
+      for( const std::string& plugin_name : ezira::plugin::get_available_plugins() )
+         node->register_abstract_plugin( ezira::plugin::create_plugin( plugin_name, node ) );
 
       try
       {
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 
       if( options.count("version") )
       {
-         std::cout << "steem_blockchain_version: " << fc::string( STEEMIT_BLOCKCHAIN_VERSION ) << "\n";
+         std::cout << "steem_blockchain_version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
          std::cout << "steem_git_revision:       " << fc::string( graphene::utilities::git_revision_sha ) << "\n";
          std::cout << "fc_git_revision:          " << fc::string( fc::git_revision_sha ) << "\n";
          return 0;

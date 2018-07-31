@@ -1,20 +1,20 @@
 #pragma once
 #include <fc/fixed_string.hpp>
 
-#include <steemit/protocol/authority.hpp>
-#include <steemit/protocol/steem_operations.hpp>
+#include <ezira/protocol/authority.hpp>
+#include <ezira/protocol/steem_operations.hpp>
 
-#include <steemit/chain/steem_object_types.hpp>
-#include <steemit/chain/witness_objects.hpp>
-#include <steemit/chain/shared_authority.hpp>
+#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/witness_objects.hpp>
+#include <ezira/chain/shared_authority.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
 
 #include <numeric>
 
-namespace steemit { namespace chain {
+namespace ezira { namespace chain {
 
-   using steemit::protocol::authority;
+   using ezira::protocol::authority;
 
    class account_object : public object< account_object_type, account_object >
    {
@@ -44,18 +44,18 @@ namespace steemit { namespace chain {
          time_point_sec    last_owner_proved = time_point_sec::min();
          time_point_sec    last_active_proved = time_point_sec::min();
          account_name_type recovery_account;
-         account_name_type reset_account = STEEMIT_NULL_ACCOUNT;
+         account_name_type reset_account = EZIRA_NULL_ACCOUNT;
          time_point_sec    last_account_recovery;
          uint32_t          comment_count = 0;
          uint32_t          lifetime_vote_count = 0;
          uint32_t          post_count = 0;
 
          bool              can_vote = true;
-         uint16_t          voting_power = STEEMIT_100_PERCENT;   ///< current voting power of this account, it falls after every vote
+         uint16_t          voting_power = EZIRA_100_PERCENT;   ///< current voting power of this account, it falls after every vote
          time_point_sec    last_vote_time; ///< used to increase the voting power of this account the longer it goes without voting.
 
-         asset             balance = asset( 0, STEEM_SYMBOL );  ///< total liquid shares held by this account
-         asset             savings_balance = asset( 0, STEEM_SYMBOL );  ///< total liquid shares held by this account
+         asset             balance = asset( 0, EZIRA_SYMBOL );  ///< total liquid shares held by this account
+         asset             savings_balance = asset( 0, EZIRA_SYMBOL );  ///< total liquid shares held by this account
 
          /**
           *  SBD Deposits pay interest based upon the interest rate set by witnesses. The purpose of these
@@ -65,7 +65,7 @@ namespace steemit { namespace chain {
           *  interest = interest_rate * sbd_seconds / seconds_per_year
           *
           *  Every time the sbd_balance is updated the sbd_seconds is also updated. If at least
-          *  STEEMIT_MIN_COMPOUNDING_INTERVAL_SECONDS has past since sbd_last_interest_payment then
+          *  EZIRA_MIN_COMPOUNDING_INTERVAL_SECONDS has past since sbd_last_interest_payment then
           *  interest is added to sbd_balance.
           *
           *  @defgroup sbd_data sbd Balance Data
@@ -86,9 +86,9 @@ namespace steemit { namespace chain {
          ///@}
 
          asset             reward_sbd_balance = asset( 0, SBD_SYMBOL );
-         asset             reward_steem_balance = asset( 0, STEEM_SYMBOL );
+         asset             reward_steem_balance = asset( 0, EZIRA_SYMBOL );
          asset             reward_vesting_balance = asset( 0, VESTS_SYMBOL );
-         asset             reward_vesting_steem = asset( 0, STEEM_SYMBOL );
+         asset             reward_vesting_steem = asset( 0, EZIRA_SYMBOL );
 
          share_type        curation_rewards = 0;
          share_type        posting_rewards = 0;
@@ -103,7 +103,7 @@ namespace steemit { namespace chain {
          share_type        to_withdraw = 0; /// Might be able to look this up with operation history.
          uint16_t          withdraw_routes = 0;
 
-         fc::array<share_type, STEEMIT_MAX_PROXY_RECURSION_DEPTH> proxied_vsf_votes;// = std::vector<share_type>( STEEMIT_MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total VFS votes proxied to this account
+         fc::array<share_type, EZIRA_MAX_PROXY_RECURSION_DEPTH> proxied_vsf_votes;// = std::vector<share_type>( EZIRA_MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total VFS votes proxied to this account
 
          uint16_t          witnesses_voted_for = 0;
 
@@ -457,7 +457,7 @@ namespace steemit { namespace chain {
    > change_recovery_account_request_index;
 } }
 
-FC_REFLECT( steemit::chain::account_object,
+FC_REFLECT( ezira::chain::account_object,
              (id)(name)(memo_key)(json_metadata)(proxy)(last_account_update)
              (created)(mined)
              (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recovery_account)(last_account_recovery)(reset_account)
@@ -474,32 +474,32 @@ FC_REFLECT( steemit::chain::account_object,
              (proxied_vsf_votes)(witnesses_voted_for)
              (last_post)(last_root_post)(post_bandwidth)
           )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::account_object, steemit::chain::account_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::account_object, ezira::chain::account_index )
 
-FC_REFLECT( steemit::chain::account_authority_object,
+FC_REFLECT( ezira::chain::account_authority_object,
              (id)(account)(owner)(active)(posting)(last_owner_update)
 )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::account_authority_object, steemit::chain::account_authority_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::account_authority_object, ezira::chain::account_authority_index )
 
-FC_REFLECT( steemit::chain::vesting_delegation_object,
+FC_REFLECT( ezira::chain::vesting_delegation_object,
             (id)(delegator)(delegatee)(vesting_shares)(min_delegation_time) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::vesting_delegation_object, steemit::chain::vesting_delegation_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::vesting_delegation_object, ezira::chain::vesting_delegation_index )
 
-FC_REFLECT( steemit::chain::vesting_delegation_expiration_object,
+FC_REFLECT( ezira::chain::vesting_delegation_expiration_object,
             (id)(delegator)(vesting_shares)(expiration) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::vesting_delegation_expiration_object, steemit::chain::vesting_delegation_expiration_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::vesting_delegation_expiration_object, ezira::chain::vesting_delegation_expiration_index )
 
-FC_REFLECT( steemit::chain::owner_authority_history_object,
+FC_REFLECT( ezira::chain::owner_authority_history_object,
              (id)(account)(previous_owner_authority)(last_valid_time)
           )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::owner_authority_history_object, steemit::chain::owner_authority_history_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::owner_authority_history_object, ezira::chain::owner_authority_history_index )
 
-FC_REFLECT( steemit::chain::account_recovery_request_object,
+FC_REFLECT( ezira::chain::account_recovery_request_object,
              (id)(account_to_recover)(new_owner_authority)(expires)
           )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::account_recovery_request_object, steemit::chain::account_recovery_request_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::account_recovery_request_object, ezira::chain::account_recovery_request_index )
 
-FC_REFLECT( steemit::chain::change_recovery_account_request_object,
+FC_REFLECT( ezira::chain::change_recovery_account_request_object,
              (id)(account_to_recover)(recovery_account)(effective_on)
           )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::change_recovery_account_request_object, steemit::chain::change_recovery_account_request_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::change_recovery_account_request_object, ezira::chain::change_recovery_account_request_index )

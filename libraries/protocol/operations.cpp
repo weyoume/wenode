@@ -1,8 +1,8 @@
-#include <steemit/protocol/operations.hpp>
+#include <ezira/protocol/operations.hpp>
 
-#include <steemit/protocol/operation_util_impl.hpp>
+#include <ezira/protocol/operation_util_impl.hpp>
 
-namespace steemit { namespace protocol {
+namespace ezira { namespace protocol {
 
 struct is_market_op_visitor {
    typedef bool result_type;
@@ -32,6 +32,6 @@ bool is_virtual_operation( const operation& op )
    return op.visit( is_vop_visitor() );
 }
 
-} } // steemit::protocol
+} } // ezira::protocol
 
-DEFINE_OPERATION_TYPE( steemit::protocol::operation )
+DEFINE_OPERATION_TYPE( ezira::protocol::operation )

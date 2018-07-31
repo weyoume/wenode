@@ -1,8 +1,8 @@
 #pragma once
 
-#include <steemit/chain/evaluator.hpp>
+#include <ezira/chain/evaluator.hpp>
 
-namespace steemit { namespace chain {
+namespace ezira { namespace chain {
 
 template< typename OperationType >
 class evaluator_registry

@@ -1,13 +1,13 @@
 #pragma once
-#include <steemit/protocol/transaction.hpp>
+#include <ezira/protocol/transaction.hpp>
 
-#include <steemit/chain/steem_object_types.hpp>
+#include <ezira/chain/steem_object_types.hpp>
 
 #include <boost/multi_index/hashed_index.hpp>
 
-namespace steemit { namespace chain {
+namespace ezira { namespace chain {
 
-   using steemit::protocol::signed_transaction;
+   using ezira::protocol::signed_transaction;
 
    /**
     * The purpose of this object is to enable the detection of duplicate transactions. When a transaction is included
@@ -45,7 +45,7 @@ namespace steemit { namespace chain {
       allocator< transaction_object >
    > transaction_index;
 
-} } // steemit::chain
+} } // ezira::chain
 
-FC_REFLECT( steemit::chain::transaction_object, (id)(packed_trx)(trx_id)(expiration) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::transaction_object, steemit::chain::transaction_index )
+FC_REFLECT( ezira::chain::transaction_object, (id)(packed_trx)(trx_id)(expiration) )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::transaction_object, ezira::chain::transaction_index )

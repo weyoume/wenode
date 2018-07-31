@@ -1,8 +1,8 @@
-#include <steemit/market_history/market_history_api.hpp>
+#include <ezira/market_history/market_history_api.hpp>
 
-#include <steemit/chain/steem_objects.hpp>
+#include <ezira/chain/steem_objects.hpp>
 
-namespace steemit { namespace market_history {
+namespace ezira { namespace market_history {
 
 namespace detail
 {
@@ -10,7 +10,7 @@ namespace detail
 class market_history_api_impl
 {
    public:
-      market_history_api_impl( steemit::app::application& _app )
+      market_history_api_impl( ezira::app::application& _app )
          :app( _app ) {}
 
       market_ticker get_ticker() const;
@@ -21,7 +21,7 @@ class market_history_api_impl
       vector< bucket_object > get_market_history( uint32_t bucket_seconds, time_point_sec start, time_point_sec end ) const;
       flat_set< uint32_t > get_market_history_buckets() const;
 
-      steemit::app::application& app;
+      ezira::app::application& app;
 };
 
 market_ticker market_history_api_impl::get_ticker() const
@@ -34,8 +34,8 @@ market_ticker market_history_api_impl::get_ticker() const
 
    if( itr != bucket_idx.end() )
    {
-      auto open = ( asset( itr->open_sbd, SBD_SYMBOL ) / asset( itr->open_steem, STEEM_SYMBOL ) ).to_real();
-      result.latest = ( asset( itr->close_sbd, SBD_SYMBOL ) / asset( itr->close_steem, STEEM_SYMBOL ) ).to_real();
+      auto open = ( asset( itr->open_sbd, SBD_SYMBOL ) / asset( itr->open_steem, EZIRA_SYMBOL ) ).to_real();
+      result.latest = ( asset( itr->close_sbd, SBD_SYMBOL ) / asset( itr->close_steem, EZIRA_SYMBOL ) ).to_real();
       result.percent_change = ( ( result.latest - open ) / open ) * 100;
    }
    else
@@ -83,8 +83,8 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
 {
    FC_ASSERT( limit <= 500 );
 
-   const auto& order_idx = app.chain_database()->get_index< steemit::chain::limit_order_index >().indices().get< steemit::chain::by_price >();
-   auto itr = order_idx.lower_bound( price::max( SBD_SYMBOL, STEEM_SYMBOL ) );
+   const auto& order_idx = app.chain_database()->get_index< ezira::chain::limit_order_index >().indices().get< ezira::chain::by_price >();
+   auto itr = order_idx.lower_bound( price::max( SBD_SYMBOL, EZIRA_SYMBOL ) );
 
    order_book result;
 
@@ -98,14 +98,14 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
       ++itr;
    }
 
-   itr = order_idx.lower_bound( price::max( STEEM_SYMBOL, SBD_SYMBOL ) );
+   itr = order_idx.lower_bound( price::max( EZIRA_SYMBOL, SBD_SYMBOL ) );
 
-   while( itr != order_idx.end() && itr->sell_price.base.symbol == STEEM_SYMBOL && result.asks.size() < limit )
+   while( itr != order_idx.end() && itr->sell_price.base.symbol == EZIRA_SYMBOL && result.asks.size() < limit )
    {
       order cur;
       cur.price = itr->sell_price.quote.to_real() / itr->sell_price.base.to_real();
       cur.steem = itr->for_sale;
-      cur.sbd = ( asset( itr->for_sale, STEEM_SYMBOL ) * itr->sell_price ).amount;
+      cur.sbd = ( asset( itr->for_sale, EZIRA_SYMBOL ) * itr->sell_price ).amount;
       result.asks.push_back( cur );
       ++itr;
    }
@@ -180,7 +180,7 @@ flat_set< uint32_t > market_history_api_impl::get_market_history_buckets() const
 
 } // detail
 
-market_history_api::market_history_api( const steemit::app::api_context& ctx )
+market_history_api::market_history_api( const ezira::app::api_context& ctx )
 {
    my = std::make_shared< detail::market_history_api_impl >( ctx.app );
 }
@@ -243,4 +243,4 @@ flat_set< uint32_t > market_history_api::get_market_history_buckets() const
    });
 }
 
-} } // steemit::market_history
+} } // ezira::market_history

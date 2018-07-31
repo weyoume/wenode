@@ -1,7 +1,7 @@
 #pragma once
-#include <steemit/app/plugin.hpp>
+#include <ezira/app/plugin.hpp>
 
-#include <steemit/chain/steem_object_types.hpp>
+#include <ezira/chain/steem_object_types.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
 
@@ -24,10 +24,10 @@
 #endif
 
 
-namespace steemit { namespace market_history {
+namespace ezira { namespace market_history {
 
 using namespace chain;
-using steemit::app::application;
+using ezira::app::application;
 
 enum market_history_object_types
 {
@@ -40,7 +40,7 @@ namespace detail
    class market_history_plugin_impl;
 }
 
-class market_history_plugin : public steemit::app::plugin
+class market_history_plugin : public ezira::app::plugin
 {
    public:
       market_history_plugin( application* app );
@@ -84,8 +84,8 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
    share_type           steem_volume;
    share_type           sbd_volume;
 
-   price high()const { return asset( high_sbd, SBD_SYMBOL ) / asset( high_steem, STEEM_SYMBOL ); }
-   price low()const { return asset( low_sbd, SBD_SYMBOL ) / asset( low_steem, STEEM_SYMBOL ); }
+   price high()const { return asset( high_sbd, SBD_SYMBOL ) / asset( high_steem, EZIRA_SYMBOL ); }
+   price low()const { return asset( low_sbd, SBD_SYMBOL ) / asset( low_steem, EZIRA_SYMBOL ); }
 };
 
 typedef oid< bucket_object > bucket_id_type;
@@ -134,9 +134,9 @@ typedef multi_index_container<
    allocator< order_history_object >
 > order_history_index;
 
-} } // steemit::market_history
+} } // ezira::market_history
 
-FC_REFLECT( steemit::market_history::bucket_object,
+FC_REFLECT( ezira::market_history::bucket_object,
                      (id)
                      (open)(seconds)
                      (high_steem)(high_sbd)
@@ -144,10 +144,10 @@ FC_REFLECT( steemit::market_history::bucket_object,
                      (open_steem)(open_sbd)
                      (close_steem)(close_sbd)
                      (steem_volume)(sbd_volume) )
-CHAINBASE_SET_INDEX_TYPE( steemit::market_history::bucket_object, steemit::market_history::bucket_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::market_history::bucket_object, ezira::market_history::bucket_index )
 
-FC_REFLECT( steemit::market_history::order_history_object,
+FC_REFLECT( ezira::market_history::order_history_object,
                      (id)
                      (time)
                      (op) )
-CHAINBASE_SET_INDEX_TYPE( steemit::market_history::order_history_object, steemit::market_history::order_history_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::market_history::order_history_object, ezira::market_history::order_history_index )

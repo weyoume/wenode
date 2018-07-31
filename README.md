@@ -2,7 +2,7 @@
 
 Steem is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" social consnensus algorithm for token allocation.
 
-  - Currency symbol STEEM.
+  - Currency symbol EZIRA.
   - 10% APR inflation narrowing to 1% APR over 20 years.
   - 75% of inflation to "Proof of Brain" social consensus algorithm.
   - 15% of inflation to stake holders.
@@ -30,13 +30,13 @@ You can read the Steem Whitepaper at [Steem.io/SteemWhitePaper.pdf](https://stee
 
 # Quickstart
 
-Just want to get up and running quickly? We have pre-build docker images for your convenience. More details are in our [quickstart guide](https://github.com/steemit/steem/blob/master/doc/exchangequickstart.md).
+Just want to get up and running quickly? We have pre-build docker images for your convenience. More details are in our [quickstart guide](https://github.com/eziranetwork/ezira/blob/master/doc/exchangequickstart.md).
 
 # Building
 
-We strongly recommend using one of our pre-built Docker images or using Docker to build Steem. Both of these processes are described in the [quickstart guide](https://github.com/steemit/steem/blob/master/doc/exchangequickstart.md).
+We strongly recommend using one of our pre-built Docker images or using Docker to build Steem. Both of these processes are described in the [quickstart guide](https://github.com/eziranetwork/ezira/blob/master/doc/exchangequickstart.md).
 
-If you would still like to build from source, we do have [build instructions](https://github.com/steemit/steem/blob/master/doc/building.md) for Linux (Ubuntu LTS) and macOS X.
+If you would still like to build from source, we do have [build instructions](https://github.com/eziranetwork/ezira/blob/master/doc/building.md) for Linux (Ubuntu LTS) and macOS X.
 
 ## Dockerized p2p Node
 
@@ -44,7 +44,7 @@ To run a p2p node (ca. 2GB of memory is required at the moment):
 
     docker run \
         -d -p 2001:2001 -p 8090:8090 --name steemd-default \
-        steemit/steem
+        eziranetwork/ezira
 
     docker logs -f steemd-default  # follow along
 
@@ -56,7 +56,7 @@ that uses ca. 14GB of memory and growing:
     docker run \
         --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_WEB_NODE=1 \
         -d -p 2001:2001 -p 8090:8090 --name steemd-full \
-        steemit/steem
+        eziranetwork/ezira
 
     docker logs -f steemd-full
 
@@ -84,7 +84,7 @@ A list of some seed nodes to get you started can be found in
 [doc/seednodes.txt](doc/seednodes.txt).
 
 This same file is baked into the docker images and can be overridden by
-setting `STEEMD_SEED_NODES` in the container environment at `docker run`
+setting `EZIRAD_SEED_NODES` in the container environment at `docker run`
 time to a whitespace delimited list of seed nodes (with port).
 
 # Testing

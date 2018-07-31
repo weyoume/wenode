@@ -1,13 +1,13 @@
 
 #pragma once
 
-#include <steemit/app/plugin.hpp>
+#include <ezira/app/plugin.hpp>
 
-namespace steemit { namespace plugin { namespace auth_util {
+namespace ezira { namespace plugin { namespace auth_util {
 
-using steemit::app::application;
+using ezira::app::application;
 
-class auth_util_plugin : public steemit::app::plugin
+class auth_util_plugin : public ezira::app::plugin
 {
    public:
       auth_util_plugin( application* app ) ;

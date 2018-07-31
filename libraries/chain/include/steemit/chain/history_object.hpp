@@ -1,16 +1,16 @@
 #pragma once
 
-#include <steemit/protocol/authority.hpp>
-#include <steemit/protocol/operations.hpp>
-#include <steemit/protocol/steem_operations.hpp>
+#include <ezira/protocol/authority.hpp>
+#include <ezira/protocol/operations.hpp>
+#include <ezira/protocol/steem_operations.hpp>
 
-#include <steemit/chain/steem_object_types.hpp>
-#include <steemit/chain/witness_objects.hpp>
+#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/witness_objects.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
 
 
-namespace steemit { namespace chain {
+namespace ezira { namespace chain {
 
    class operation_object : public object< operation_object_type, operation_object >
    {
@@ -96,8 +96,8 @@ namespace steemit { namespace chain {
    > account_history_index;
 } }
 
-FC_REFLECT( steemit::chain::operation_object, (id)(trx_id)(block)(trx_in_block)(op_in_trx)(virtual_op)(timestamp)(serialized_op) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::operation_object, steemit::chain::operation_index )
+FC_REFLECT( ezira::chain::operation_object, (id)(trx_id)(block)(trx_in_block)(op_in_trx)(virtual_op)(timestamp)(serialized_op) )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::operation_object, ezira::chain::operation_index )
 
-FC_REFLECT( steemit::chain::account_history_object, (id)(account)(sequence)(op) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::account_history_object, steemit::chain::account_history_index )
+FC_REFLECT( ezira::chain::account_history_object, (id)(account)(sequence)(op) )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::account_history_object, ezira::chain::account_history_index )

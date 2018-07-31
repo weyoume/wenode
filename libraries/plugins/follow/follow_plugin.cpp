@@ -1,17 +1,17 @@
-#include <steemit/follow/follow_api.hpp>
-#include <steemit/follow/follow_objects.hpp>
-#include <steemit/follow/follow_operations.hpp>
+#include <ezira/follow/follow_api.hpp>
+#include <ezira/follow/follow_objects.hpp>
+#include <ezira/follow/follow_operations.hpp>
 
-#include <steemit/app/impacted.hpp>
+#include <ezira/app/impacted.hpp>
 
-#include <steemit/protocol/config.hpp>
+#include <ezira/protocol/config.hpp>
 
-#include <steemit/chain/database.hpp>
-#include <steemit/chain/index.hpp>
-#include <steemit/chain/generic_custom_operation_interpreter.hpp>
-#include <steemit/chain/operation_notification.hpp>
-#include <steemit/chain/account_object.hpp>
-#include <steemit/chain/comment_object.hpp>
+#include <ezira/chain/database.hpp>
+#include <ezira/chain/index.hpp>
+#include <ezira/chain/generic_custom_operation_interpreter.hpp>
+#include <ezira/chain/operation_notification.hpp>
+#include <ezira/chain/account_object.hpp>
+#include <ezira/chain/comment_object.hpp>
 
 #include <graphene/schema/schema.hpp>
 #include <graphene/schema/schema_impl.hpp>
@@ -21,12 +21,12 @@
 
 #include <memory>
 
-namespace steemit { namespace follow {
+namespace ezira { namespace follow {
 
 namespace detail
 {
 
-using namespace steemit::protocol;
+using namespace ezira::protocol;
 
 class follow_plugin_impl
 {
@@ -35,7 +35,7 @@ class follow_plugin_impl
 
       void plugin_initialize();
 
-      steemit::chain::database& database()
+      ezira::chain::database& database()
       {
          return _self.database();
       }
@@ -44,13 +44,13 @@ class follow_plugin_impl
       void post_operation( const operation_notification& op_obj );
 
       follow_plugin&                                                                         _self;
-      std::shared_ptr< generic_custom_operation_interpreter< steemit::follow::follow_plugin_operation > > _custom_operation_interpreter;
+      std::shared_ptr< generic_custom_operation_interpreter< ezira::follow::follow_plugin_operation > > _custom_operation_interpreter;
 };
 
 void follow_plugin_impl::plugin_initialize()
 {
    // Each plugin needs its own evaluator registry.
-   _custom_operation_interpreter = std::make_shared< generic_custom_operation_interpreter< steemit::follow::follow_plugin_operation > >( database() );
+   _custom_operation_interpreter = std::make_shared< generic_custom_operation_interpreter< ezira::follow::follow_plugin_operation > >( database() );
 
    // Add each operation evaluator to the registry
    _custom_operation_interpreter->register_evaluator<follow_evaluator>( &_self );
@@ -389,8 +389,8 @@ void follow_plugin::plugin_startup()
    app().register_api_factory<follow_api>("follow_api");
 }
 
-} } // steemit::follow
+} } // ezira::follow
 
-STEEMIT_DEFINE_PLUGIN( follow, steemit::follow::follow_plugin )
+EZIRA_DEFINE_PLUGIN( follow, ezira::follow::follow_plugin )
 
-//DEFINE_OPERATION_TYPE( steemit::follow::follow_plugin_operation )
+//DEFINE_OPERATION_TYPE( ezira::follow::follow_plugin_operation )

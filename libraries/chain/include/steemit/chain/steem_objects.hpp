@@ -1,19 +1,19 @@
 #pragma once
 
-#include <steemit/protocol/authority.hpp>
-#include <steemit/protocol/steem_operations.hpp>
+#include <ezira/protocol/authority.hpp>
+#include <ezira/protocol/steem_operations.hpp>
 
-#include <steemit/chain/steem_object_types.hpp>
+#include <ezira/chain/steem_object_types.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
 
-namespace steemit { namespace chain {
+namespace ezira { namespace chain {
 
-   using steemit::protocol::asset;
-   using steemit::protocol::price;
-   using steemit::protocol::asset_symbol_type;
+   using ezira::protocol::asset;
+   using ezira::protocol::price;
+   using ezira::protocol::asset_symbol_type;
 
    typedef protocol::fixed_string_16 reward_fund_name_type;
 
@@ -100,7 +100,7 @@ namespace steemit { namespace chain {
     *  When a user is a taker, their volume decreases
     *
     *  Every 1000 blocks, the account that has the highest volume_weight() is paid the maximum of
-    *  1000 STEEM or 1000 * virtual_supply / (100*blocks_per_year) aka 10 * virtual_supply / blocks_per_year
+    *  1000 EZIRA or 1000 * virtual_supply / (100*blocks_per_year) aka 10 * virtual_supply / blocks_per_year
     *
     *  After being paid volume gets reset to 0
     */
@@ -270,7 +270,7 @@ namespace steemit { namespace chain {
 
          reward_fund_id_type     id;
          reward_fund_name_type   name;
-         asset                   reward_balance = asset( 0, STEEM_SYMBOL );
+         asset                   reward_balance = asset( 0, EZIRA_SYMBOL );
          fc::uint128_t           recent_claims = 0;
          time_point_sec          last_update;
          uint128_t               content_constant = 0;
@@ -484,50 +484,50 @@ namespace steemit { namespace chain {
       allocator< reward_fund_object >
    > reward_fund_index;
 
-} } // steemit::chain
+} } // ezira::chain
 
-#include <steemit/chain/comment_object.hpp>
-#include <steemit/chain/account_object.hpp>
+#include <ezira/chain/comment_object.hpp>
+#include <ezira/chain/account_object.hpp>
 
-FC_REFLECT_ENUM( steemit::chain::curve_id,
+FC_REFLECT_ENUM( ezira::chain::curve_id,
                   (quadratic)(quadratic_curation)(linear)(square_root))
 
-FC_REFLECT( steemit::chain::limit_order_object,
+FC_REFLECT( ezira::chain::limit_order_object,
              (id)(created)(expiration)(seller)(orderid)(for_sale)(sell_price) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::limit_order_object, steemit::chain::limit_order_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::limit_order_object, ezira::chain::limit_order_index )
 
-FC_REFLECT( steemit::chain::feed_history_object,
+FC_REFLECT( ezira::chain::feed_history_object,
              (id)(current_median_history)(price_history) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::feed_history_object, steemit::chain::feed_history_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::feed_history_object, ezira::chain::feed_history_index )
 
-FC_REFLECT( steemit::chain::convert_request_object,
+FC_REFLECT( ezira::chain::convert_request_object,
              (id)(owner)(requestid)(amount)(conversion_date) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::convert_request_object, steemit::chain::convert_request_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::convert_request_object, ezira::chain::convert_request_index )
 
-FC_REFLECT( steemit::chain::liquidity_reward_balance_object,
+FC_REFLECT( ezira::chain::liquidity_reward_balance_object,
              (id)(owner)(steem_volume)(sbd_volume)(weight)(last_update) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::liquidity_reward_balance_object, steemit::chain::liquidity_reward_balance_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::liquidity_reward_balance_object, ezira::chain::liquidity_reward_balance_index )
 
-FC_REFLECT( steemit::chain::withdraw_vesting_route_object,
+FC_REFLECT( ezira::chain::withdraw_vesting_route_object,
              (id)(from_account)(to_account)(percent)(auto_vest) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::withdraw_vesting_route_object, steemit::chain::withdraw_vesting_route_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::withdraw_vesting_route_object, ezira::chain::withdraw_vesting_route_index )
 
-FC_REFLECT( steemit::chain::savings_withdraw_object,
+FC_REFLECT( ezira::chain::savings_withdraw_object,
              (id)(from)(to)(memo)(request_id)(amount)(complete) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::savings_withdraw_object, steemit::chain::savings_withdraw_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::savings_withdraw_object, ezira::chain::savings_withdraw_index )
 
-FC_REFLECT( steemit::chain::escrow_object,
+FC_REFLECT( ezira::chain::escrow_object,
              (id)(escrow_id)(from)(to)(agent)
              (ratification_deadline)(escrow_expiration)
              (sbd_balance)(steem_balance)(pending_fee)
              (to_approved)(agent_approved)(disputed) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::escrow_object, steemit::chain::escrow_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::escrow_object, ezira::chain::escrow_index )
 
-FC_REFLECT( steemit::chain::decline_voting_rights_request_object,
+FC_REFLECT( ezira::chain::decline_voting_rights_request_object,
              (id)(account)(effective_date) )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::decline_voting_rights_request_object, steemit::chain::decline_voting_rights_request_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::decline_voting_rights_request_object, ezira::chain::decline_voting_rights_request_index )
 
-FC_REFLECT( steemit::chain::reward_fund_object,
+FC_REFLECT( ezira::chain::reward_fund_object,
             (id)
             (name)
             (reward_balance)
@@ -539,4 +539,4 @@ FC_REFLECT( steemit::chain::reward_fund_object,
             (author_reward_curve)
             (curation_reward_curve)
          )
-CHAINBASE_SET_INDEX_TYPE( steemit::chain::reward_fund_object, steemit::chain::reward_fund_index )
+CHAINBASE_SET_INDEX_TYPE( ezira::chain::reward_fund_object, ezira::chain::reward_fund_index )

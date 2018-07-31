@@ -1,9 +1,9 @@
-#include <steemit/protocol/steem_operations.hpp>
+#include <ezira/protocol/steem_operations.hpp>
 #include <fc/io/json.hpp>
 
 #include <locale>
 
-namespace steemit { namespace protocol {
+namespace ezira { namespace protocol {
 
    bool inline is_asset_type( asset asset, asset_symbol_type symbol )
    {
@@ -13,7 +13,7 @@ namespace steemit { namespace protocol {
    void account_create_operation::validate() const
    {
       validate_account_name( new_account_name );
-      FC_ASSERT( is_asset_type( fee, STEEM_SYMBOL ), "Account creation fee must be STEEM" );
+      FC_ASSERT( is_asset_type( fee, EZIRA_SYMBOL ), "Account creation fee must be EZIRA" );
       owner.validate();
       active.validate();
 
@@ -22,14 +22,14 @@ namespace steemit { namespace protocol {
          FC_ASSERT( fc::is_utf8(json_metadata), "JSON Metadata not formatted in UTF8" );
          FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
       }
-      FC_ASSERT( fee >= asset( 0, STEEM_SYMBOL ), "Account creation fee cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, EZIRA_SYMBOL ), "Account creation fee cannot be negative" );
    }
 
    void account_create_with_delegation_operation::validate() const
    {
       validate_account_name( new_account_name );
       validate_account_name( creator );
-      FC_ASSERT( is_asset_type( fee, STEEM_SYMBOL ), "Account creation fee must be STEEM" );
+      FC_ASSERT( is_asset_type( fee, EZIRA_SYMBOL ), "Account creation fee must be EZIRA" );
       FC_ASSERT( is_asset_type( delegation, VESTS_SYMBOL ), "Delegation must be VESTS" );
 
       owner.validate();
@@ -42,7 +42,7 @@ namespace steemit { namespace protocol {
          FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
       }
 
-      FC_ASSERT( fee >= asset( 0, STEEM_SYMBOL ), "Account creation fee cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, EZIRA_SYMBOL ), "Account creation fee cannot be negative" );
       FC_ASSERT( delegation >= asset( 0, VESTS_SYMBOL ), "Delegation cannot be negative" );
    }
 
@@ -103,16 +103,16 @@ namespace steemit { namespace protocol {
       FC_ASSERT( beneficiaries.size() < 128, "Cannot specify more than 127 beneficiaries." ); // Require size serializtion fits in one byte.
 
       validate_account_name( beneficiaries[0].account );
-      FC_ASSERT( beneficiaries[0].weight <= STEEMIT_100_PERCENT, "Cannot allocate more than 100% of rewards to one account" );
+      FC_ASSERT( beneficiaries[0].weight <= EZIRA_100_PERCENT, "Cannot allocate more than 100% of rewards to one account" );
       sum += beneficiaries[0].weight;
-      FC_ASSERT( sum <= STEEMIT_100_PERCENT, "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
+      FC_ASSERT( sum <= EZIRA_100_PERCENT, "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
 
       for( size_t i = 1; i < beneficiaries.size(); i++ )
       {
          validate_account_name( beneficiaries[i].account );
-         FC_ASSERT( beneficiaries[i].weight <= STEEMIT_100_PERCENT, "Cannot allocate more than 100% of rewards to one account" );
+         FC_ASSERT( beneficiaries[i].weight <= EZIRA_100_PERCENT, "Cannot allocate more than 100% of rewards to one account" );
          sum += beneficiaries[i].weight;
-         FC_ASSERT( sum <= STEEMIT_100_PERCENT, "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
+         FC_ASSERT( sum <= EZIRA_100_PERCENT, "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
          FC_ASSERT( beneficiaries[i - 1] < beneficiaries[i], "Benficiaries must be specified in sorted order (account ascending)" );
       }
    }
@@ -120,7 +120,7 @@ namespace steemit { namespace protocol {
    void comment_options_operation::validate()const
    {
       validate_account_name( author );
-      FC_ASSERT( percent_steem_dollars <= STEEMIT_100_PERCENT, "Percent cannot exceed 100%" );
+      FC_ASSERT( percent_steem_dollars <= EZIRA_100_PERCENT, "Percent cannot exceed 100%" );
       FC_ASSERT( max_accepted_payout.symbol == SBD_SYMBOL, "Max accepted payout must be in SBD" );
       FC_ASSERT( max_accepted_payout.amount.value >= 0, "Cannot accept less than 0 payout" );
       validate_permlink( permlink );
@@ -150,7 +150,7 @@ namespace steemit { namespace protocol {
    {
       validate_account_name( voter );
       validate_account_name( author );\
-      FC_ASSERT( abs(weight) <= STEEMIT_100_PERCENT, "Weight is not a STEEMIT percentage" );
+      FC_ASSERT( abs(weight) <= EZIRA_100_PERCENT, "Weight is not a EZIRA percentage" );
       validate_permlink( permlink );
    }
 
@@ -160,16 +160,16 @@ namespace steemit { namespace protocol {
       validate_account_name( to );
       FC_ASSERT( amount.symbol != VESTS_SYMBOL, "transferring of Steem Power (STMP) is not allowed." );
       FC_ASSERT( amount.amount > 0, "Cannot transfer a negative amount (aka: stealing)" );
-      FC_ASSERT( memo.size() < STEEMIT_MAX_MEMO_SIZE, "Memo is too large" );
+      FC_ASSERT( memo.size() < EZIRA_MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void transfer_to_vesting_operation::validate() const
    {
       validate_account_name( from );
-      FC_ASSERT( is_asset_type( amount, STEEM_SYMBOL ), "Amount must be STEEM" );
+      FC_ASSERT( is_asset_type( amount, EZIRA_SYMBOL ), "Amount must be EZIRA" );
       if ( to != account_name_type() ) validate_account_name( to );
-      FC_ASSERT( amount > asset( 0, STEEM_SYMBOL ), "Must transfer a nonzero amount" );
+      FC_ASSERT( amount > asset( 0, EZIRA_SYMBOL ), "Must transfer a nonzero amount" );
    }
 
    void withdraw_vesting_operation::validate() const
@@ -182,7 +182,7 @@ namespace steemit { namespace protocol {
    {
       validate_account_name( from_account );
       validate_account_name( to_account );
-      FC_ASSERT( 0 <= percent && percent <= STEEMIT_100_PERCENT, "Percent must be valid steemit percent" );
+      FC_ASSERT( 0 <= percent && percent <= EZIRA_100_PERCENT, "Percent must be valid EZIRA percent" );
    }
 
    void witness_update_operation::validate() const
@@ -190,7 +190,7 @@ namespace steemit { namespace protocol {
       validate_account_name( owner );
       FC_ASSERT( url.size() > 0, "URL size must be greater than 0" );
       FC_ASSERT( fc::is_utf8( url ), "URL is not valid UTF8" );
-      FC_ASSERT( fee >= asset( 0, STEEM_SYMBOL ), "Fee cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, EZIRA_SYMBOL ), "Fee cannot be negative" );
       props.validate();
    }
 
@@ -318,7 +318,7 @@ namespace steemit { namespace protocol {
       input.nonce = nonce;
 
       auto seed = fc::sha256::hash( input );
-      proof = fc::equihash::proof::hash( STEEMIT_EQUIHASH_N, STEEMIT_EQUIHASH_K, seed );
+      proof = fc::equihash::proof::hash( EZIRA_EQUIHASH_N, EZIRA_EQUIHASH_K, seed );
       pow_summary = fc::sha256::hash( proof.inputs ).approx_log_32();
    }
 
@@ -342,8 +342,8 @@ namespace steemit { namespace protocol {
    {
       validate_account_name( input.worker_account );
       auto seed = fc::sha256::hash( input );
-      FC_ASSERT( proof.n == STEEMIT_EQUIHASH_N, "proof of work 'n' value is incorrect" );
-      FC_ASSERT( proof.k == STEEMIT_EQUIHASH_K, "proof of work 'k' value is incorrect" );
+      FC_ASSERT( proof.n == EZIRA_EQUIHASH_N, "proof of work 'n' value is incorrect" );
+      FC_ASSERT( proof.k == EZIRA_EQUIHASH_K, "proof of work 'k' value is incorrect" );
       FC_ASSERT( proof.seed == seed, "proof of work seed does not match expected seed" );
       FC_ASSERT( proof.is_valid(), "proof of work is not a solution", ("block_id", input.prev_block)("worker_account", input.worker_account)("nonce", input.nonce) );
       FC_ASSERT( pow_summary == fc::sha256::hash( proof.inputs ).approx_log_32() );
@@ -352,18 +352,18 @@ namespace steemit { namespace protocol {
    void feed_publish_operation::validate()const
    {
       validate_account_name( publisher );
-      FC_ASSERT( ( is_asset_type( exchange_rate.base, STEEM_SYMBOL ) && is_asset_type( exchange_rate.quote, SBD_SYMBOL ) )
-         || ( is_asset_type( exchange_rate.base, SBD_SYMBOL ) && is_asset_type( exchange_rate.quote, STEEM_SYMBOL ) ),
-         "Price feed must be a STEEM/SBD price" );
+      FC_ASSERT( ( is_asset_type( exchange_rate.base, EZIRA_SYMBOL ) && is_asset_type( exchange_rate.quote, SBD_SYMBOL ) )
+         || ( is_asset_type( exchange_rate.base, SBD_SYMBOL ) && is_asset_type( exchange_rate.quote, EZIRA_SYMBOL ) ),
+         "Price feed must be a EZIRA/SBD price" );
       exchange_rate.validate();
    }
 
    void limit_order_create_operation::validate()const
    {
       validate_account_name( owner );
-      FC_ASSERT( ( is_asset_type( amount_to_sell, STEEM_SYMBOL ) && is_asset_type( min_to_receive, SBD_SYMBOL ) )
-         || ( is_asset_type( amount_to_sell, SBD_SYMBOL ) && is_asset_type( min_to_receive, STEEM_SYMBOL ) ),
-         "Limit order must be for the STEEM:SBD market" );
+      FC_ASSERT( ( is_asset_type( amount_to_sell, EZIRA_SYMBOL ) && is_asset_type( min_to_receive, SBD_SYMBOL ) )
+         || ( is_asset_type( amount_to_sell, SBD_SYMBOL ) && is_asset_type( min_to_receive, EZIRA_SYMBOL ) ),
+         "Limit order must be for the EZIRA:SBD market" );
       (amount_to_sell / min_to_receive).validate();
    }
    void limit_order_create2_operation::validate()const
@@ -372,9 +372,9 @@ namespace steemit { namespace protocol {
       FC_ASSERT( amount_to_sell.symbol == exchange_rate.base.symbol, "Sell asset must be the base of the price" );
       exchange_rate.validate();
 
-      FC_ASSERT( ( is_asset_type( amount_to_sell, STEEM_SYMBOL ) && is_asset_type( exchange_rate.quote, SBD_SYMBOL ) ) ||
-                 ( is_asset_type( amount_to_sell, SBD_SYMBOL ) && is_asset_type( exchange_rate.quote, STEEM_SYMBOL ) ),
-                 "Limit order must be for the STEEM:SBD market" );
+      FC_ASSERT( ( is_asset_type( amount_to_sell, EZIRA_SYMBOL ) && is_asset_type( exchange_rate.quote, SBD_SYMBOL ) ) ||
+                 ( is_asset_type( amount_to_sell, SBD_SYMBOL ) && is_asset_type( exchange_rate.quote, EZIRA_SYMBOL ) ),
+                 "Limit order must be for the EZIRA:SBD market" );
 
       FC_ASSERT( (amount_to_sell * exchange_rate).amount > 0, "Amount to sell cannot round to 0 when traded" );
    }
@@ -387,9 +387,9 @@ namespace steemit { namespace protocol {
    void convert_operation::validate()const
    {
       validate_account_name( owner );
-      /// only allow conversion from SBD to STEEM, allowing the opposite can enable traders to abuse
+      /// only allow conversion from SBD to EZIRA, allowing the opposite can enable traders to abuse
       /// market fluxuations through converting large quantities without moving the price.
-      FC_ASSERT( is_asset_type( amount, SBD_SYMBOL ), "Can only convert SBD to STEEM" );
+      FC_ASSERT( is_asset_type( amount, SBD_SYMBOL ), "Can only convert SBD to EZIRA" );
       FC_ASSERT( amount.amount > 0, "Must convert some SBD" );
    }
 
@@ -413,9 +413,9 @@ namespace steemit { namespace protocol {
       FC_ASSERT( steem_amount.amount >= 0, "steem amount cannot be negative" );
       FC_ASSERT( sbd_amount.amount > 0 || steem_amount.amount > 0, "escrow must transfer a non-zero amount" );
       FC_ASSERT( from != agent && to != agent, "agent must be a third party" );
-      FC_ASSERT( (fee.symbol == STEEM_SYMBOL) || (fee.symbol == SBD_SYMBOL), "fee must be STEEM or SBD" );
+      FC_ASSERT( (fee.symbol == EZIRA_SYMBOL) || (fee.symbol == SBD_SYMBOL), "fee must be EZIRA or SBD" );
       FC_ASSERT( sbd_amount.symbol == SBD_SYMBOL, "sbd amount must contain SBD" );
-      FC_ASSERT( steem_amount.symbol == STEEM_SYMBOL, "steem amount must contain STEEM" );
+      FC_ASSERT( steem_amount.symbol == EZIRA_SYMBOL, "steem amount must contain EZIRA" );
       FC_ASSERT( ratification_deadline < escrow_expiration, "ratification deadline must be before escrow expiration" );
       if ( json_meta.size() > 0 )
       {
@@ -455,7 +455,7 @@ namespace steemit { namespace protocol {
       FC_ASSERT( steem_amount.amount >= 0, "steem amount cannot be negative" );
       FC_ASSERT( sbd_amount.amount > 0 || steem_amount.amount > 0, "escrow must release a non-zero amount" );
       FC_ASSERT( sbd_amount.symbol == SBD_SYMBOL, "sbd amount must contain SBD" );
-      FC_ASSERT( steem_amount.symbol == STEEM_SYMBOL, "steem amount must contain STEEM" );
+      FC_ASSERT( steem_amount.symbol == EZIRA_SYMBOL, "steem amount must contain EZIRA" );
    }
 
    void request_account_recovery_operation::validate()const
@@ -486,16 +486,16 @@ namespace steemit { namespace protocol {
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( amount.symbol == STEEM_SYMBOL || amount.symbol == SBD_SYMBOL );
-      FC_ASSERT( memo.size() < STEEMIT_MAX_MEMO_SIZE, "Memo is too large" );
+      FC_ASSERT( amount.symbol == EZIRA_SYMBOL || amount.symbol == SBD_SYMBOL );
+      FC_ASSERT( memo.size() < EZIRA_MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    }
    void transfer_from_savings_operation::validate()const {
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( amount.symbol == STEEM_SYMBOL || amount.symbol == SBD_SYMBOL );
-      FC_ASSERT( memo.size() < STEEMIT_MAX_MEMO_SIZE, "Memo is too large" );
+      FC_ASSERT( amount.symbol == EZIRA_SYMBOL || amount.symbol == SBD_SYMBOL );
+      FC_ASSERT( memo.size() < EZIRA_MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    }
    void cancel_transfer_from_savings_operation::validate()const {
@@ -528,7 +528,7 @@ namespace steemit { namespace protocol {
    void claim_reward_balance_operation::validate()const
    {
       validate_account_name( account );
-      FC_ASSERT( is_asset_type( reward_steem, STEEM_SYMBOL ), "Reward Steem must be STEEM" );
+      FC_ASSERT( is_asset_type( reward_steem, EZIRA_SYMBOL ), "Reward Steem must be EZIRA" );
       FC_ASSERT( is_asset_type( reward_sbd, SBD_SYMBOL ), "Reward Steem must be SBD" );
       FC_ASSERT( is_asset_type( reward_vests, VESTS_SYMBOL ), "Reward Steem must be VESTS" );
       FC_ASSERT( reward_steem.amount >= 0, "Cannot claim a negative amount" );
@@ -546,4 +546,4 @@ namespace steemit { namespace protocol {
       FC_ASSERT( vesting_shares >= asset( 0, VESTS_SYMBOL ), "Delegation cannot be negative" );
    }
 
-} } // steemit::protocol
+} } // ezira::protocol

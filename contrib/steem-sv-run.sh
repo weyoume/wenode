@@ -1,11 +1,11 @@
 #!/bin/bash
 
-STEEMD="/usr/local/steemd-default/bin/steemd"
+EZIRAD="/usr/local/steemd-default/bin/steemd"
 
 VERSION=`cat /etc/steemdversion`
 
 if [[ "$USE_WAY_TOO_MUCH_RAM" ]]; then
-    STEEMD="/usr/local/steemd-full/bin/steemd"
+    EZIRAD="/usr/local/steemd-full/bin/steemd"
 fi
 
 chown -R steemd:steemd $HOME
@@ -18,7 +18,7 @@ ARGS=""
 
 # if user did not pass in any desired
 # seed nodes, use the ones above:
-if [[ -z "$STEEMD_SEED_NODES" ]]; then
+if [[ -z "$EZIRAD_SEED_NODES" ]]; then
     for NODE in $SEED_NODES ; do
         ARGS+=" --seed-node=$NODE"
     done
@@ -26,23 +26,23 @@ fi
 
 # if user did pass in desired seed nodes, use
 # the ones the user specified:
-if [[ ! -z "$STEEMD_SEED_NODES" ]]; then
-    for NODE in $STEEMD_SEED_NODES ; do
+if [[ ! -z "$EZIRAD_SEED_NODES" ]]; then
+    for NODE in $EZIRAD_SEED_NODES ; do
         ARGS+=" --seed-node=$NODE"
     done
 fi
 
-if [[ ! -z "$STEEMD_WITNESS_NAME" ]]; then
-    ARGS+=" --witness=\"$STEEMD_WITNESS_NAME\""
+if [[ ! -z "$EZIRAD_WITNESS_NAME" ]]; then
+    ARGS+=" --witness=\"$EZIRAD_WITNESS_NAME\""
 fi
 
-if [[ ! -z "$STEEMD_MINER_NAME" ]]; then
-    ARGS+=" --miner=[\"$STEEMD_MINER_NAME\",\"$STEEMD_PRIVATE_KEY\"]"
+if [[ ! -z "$EZIRAD_MINER_NAME" ]]; then
+    ARGS+=" --miner=[\"$EZIRAD_MINER_NAME\",\"$EZIRAD_PRIVATE_KEY\"]"
     ARGS+=" --mining-threads=$(nproc)"
 fi
 
-if [[ ! -z "$STEEMD_PRIVATE_KEY" ]]; then
-    ARGS+=" --private-key=$STEEMD_PRIVATE_KEY"
+if [[ ! -z "$EZIRAD_PRIVATE_KEY" ]]; then
+    ARGS+=" --private-key=$EZIRAD_PRIVATE_KEY"
 fi
 
 if [[ ! -z "$TRACK_ACCOUNT" ]]; then
@@ -53,9 +53,9 @@ if [[ ! -z "$TRACK_ACCOUNT" ]]; then
 fi
 
 NOW=`date +%s`
-STEEMD_FEED_START_TIME=`expr $NOW - 1209600`
+EZIRAD_FEED_START_TIME=`expr $NOW - 1209600`
 
-ARGS+=" --follow-start-feeds=$STEEMD_FEED_START_TIME"
+ARGS+=" --follow-start-feeds=$EZIRAD_FEED_START_TIME"
 
 # overwrite local config with image one
 if [[ "$USE_FULL_WEB_NODE" ]]; then
@@ -112,12 +112,12 @@ cp /etc/nginx/steemd.nginx.conf /etc/nginx/nginx.conf
 #attach to the local interface since a proxy will be used to loadbalance
 if [[ "$USE_MULTICORE_READONLY" ]]; then
     exec chpst -usteemd \
-        $STEEMD \
+        $EZIRAD \
             --rpc-endpoint=127.0.0.1:8091 \
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
             $ARGS \
-            $STEEMD_EXTRA_OPTS \
+            $EZIRAD_EXTRA_OPTS \
             2>&1 &
     # sleep for a moment to allow the writer node to be ready to accept connections from the readers
     sleep 30
@@ -135,7 +135,7 @@ if [[ "$USE_MULTICORE_READONLY" ]]; then
     for (( i=2; i<=$PROCESSES; i++ ))
       do
         exec chpst -usteemd \
-        $STEEMD \
+        $EZIRAD \
           --rpc-endpoint=127.0.0.1:$PORT_NUM \
           --data-dir=$HOME \
           --read-forward-rpc=127.0.0.1:8091 \
@@ -161,20 +161,20 @@ elif [[ "$USE_NGINX_FRONTEND" ]]; then
     /etc/init.d/fcgiwrap restart
     service nginx restart
     exec chpst -usteemd \
-        $STEEMD \
+        $EZIRAD \
             --rpc-endpoint=0.0.0.0:8091 \
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
             $ARGS \
-            $STEEMD_EXTRA_OPTS \
+            $EZIRAD_EXTRA_OPTS \
             2>&1
 else
     exec chpst -usteemd \
-        $STEEMD \
+        $EZIRAD \
             --rpc-endpoint=0.0.0.0:8090 \
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
             $ARGS \
-            $STEEMD_EXTRA_OPTS \
+            $EZIRAD_EXTRA_OPTS \
             2>&1
 fi

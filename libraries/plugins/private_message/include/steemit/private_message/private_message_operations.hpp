@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include <steemit/protocol/base.hpp>
-#include <steemit/protocol/types.hpp>
+#include <ezira/protocol/base.hpp>
+#include <ezira/protocol/types.hpp>
 
 #include <fc/reflect/reflect.hpp>
 
@@ -10,9 +10,9 @@
 #include <string>
 #include <vector>
 
-namespace steemit { namespace private_message {
+namespace ezira { namespace private_message {
 
-struct private_message_operation : public steemit::protocol::base_operation
+struct private_message_operation : public ezira::protocol::base_operation
 {
     protocol::account_name_type  from;
     protocol::account_name_type  to;
@@ -27,7 +27,7 @@ typedef fc::static_variant< private_message_operation > private_message_plugin_o
 
 } }
 
-FC_REFLECT( steemit::private_message::private_message_operation, (from)(to)(from_memo_key)(to_memo_key)(sent_time)(checksum)(encrypted_message) )
+FC_REFLECT( ezira::private_message::private_message_operation, (from)(to)(from_memo_key)(to_memo_key)(sent_time)(checksum)(encrypted_message) )
 
-DECLARE_OPERATION_TYPE( steemit::private_message::private_message_plugin_operation )
-FC_REFLECT_TYPENAME( steemit::private_message::private_message_plugin_operation )
+DECLARE_OPERATION_TYPE( ezira::private_message::private_message_plugin_operation )
+FC_REFLECT_TYPENAME( ezira::private_message::private_message_plugin_operation )

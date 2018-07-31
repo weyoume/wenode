@@ -24,8 +24,8 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <steemit/chain/steem_objects.hpp>
-#include <steemit/chain/database.hpp>
+#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/database.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/elliptic.hpp>
@@ -35,9 +35,9 @@
 
 #include <cmath>
 
-using namespace steemit;
-using namespace steemit::chain;
-using namespace steemit::protocol;
+using namespace ezira;
+using namespace ezira::chain;
+using namespace ezira::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( serialization_tests, clean_database_fixture )
 
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( serialization_raw_test )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,STEEM_SYMBOL);
+      op.amount = asset(100,EZIRA_SYMBOL);
 
       trx.operations.push_back( op );
       auto packed = fc::raw::pack( trx );
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,STEEM_SYMBOL);
+      op.amount = asset(100,EZIRA_SYMBOL);
 
       fc::variant test(op.amount);
       auto tmp = test.as<asset>();
@@ -131,9 +131,9 @@ BOOST_AUTO_TEST_CASE( asset_test )
       BOOST_CHECK_EQUAL( steem.decimals(), 3 );
       BOOST_CHECK_EQUAL( steem.symbol_name(), "TESTS" );
       BOOST_CHECK_EQUAL( steem.to_string(), "123.456 TESTS" );
-      BOOST_CHECK_EQUAL( steem.symbol, STEEM_SYMBOL);
-      BOOST_CHECK_EQUAL( asset(50, STEEM_SYMBOL).to_string(), "0.050 TESTS" );
-      BOOST_CHECK_EQUAL( asset(50000, STEEM_SYMBOL).to_string(), "50.000 TESTS" );
+      BOOST_CHECK_EQUAL( steem.symbol, EZIRA_SYMBOL);
+      BOOST_CHECK_EQUAL( asset(50, EZIRA_SYMBOL).to_string(), "0.050 TESTS" );
+      BOOST_CHECK_EQUAL( asset(50000, EZIRA_SYMBOL).to_string(), "50.000 TESTS" );
 
       BOOST_CHECK( std::abs( sbd.to_real() - 654.321 ) < 0.0005 );
       BOOST_CHECK_EQUAL( sbd.amount.value, 654321 );
@@ -261,19 +261,19 @@ BOOST_AUTO_TEST_CASE( version_test )
       BOOST_REQUIRE( ver == version( 12, 34, 56 ) );
 
       ver_str = fc::variant( "256.0.0" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
 
       ver_str = fc::variant( "0.256.0" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
 
       ver_str = fc::variant( "0.0.65536" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
 
       ver_str = fc::variant( "1.0" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
 
       ver_str = fc::variant( "1.0.0.1" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
    }
    FC_LOG_AND_RETHROW();
 }
@@ -306,20 +306,20 @@ BOOST_AUTO_TEST_CASE( hardfork_version_test )
       BOOST_REQUIRE( ver == hardfork_version( 12, 34 ) );
 
       ver_str = fc::variant( "256.0.0" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
 
       ver_str = fc::variant( "0.256.0" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
 
       ver_str = fc::variant( "0.0.1" );
       fc::from_variant( ver_str, ver );
       BOOST_REQUIRE( ver == hardfork_version( 0, 0 ) );
 
       ver_str = fc::variant( "1.0" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
 
       ver_str = fc::variant( "1.0.0.1" );
-      STEEMIT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
+      EZIRA_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
    }
    FC_LOG_AND_RETHROW();
 }
@@ -327,10 +327,10 @@ BOOST_AUTO_TEST_CASE( hardfork_version_test )
 BOOST_AUTO_TEST_CASE( min_block_size )
 {
    signed_block b;
-   while( b.witness.length() < STEEMIT_MIN_ACCOUNT_NAME_LENGTH )
+   while( b.witness.length() < EZIRA_MIN_ACCOUNT_NAME_LENGTH )
       b.witness += 'a';
    size_t min_size = fc::raw::pack_size( b );
-   BOOST_CHECK( min_size == STEEMIT_MIN_BLOCK_SIZE );
+   BOOST_CHECK( min_size == EZIRA_MIN_BLOCK_SIZE );
 }
 
 BOOST_AUTO_TEST_SUITE_END()
