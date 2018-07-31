@@ -170,14 +170,14 @@ namespace ezira { namespace app {
          application& _app;
    };
 
-   struct steem_version_info
+   struct ezira_version_info
    {
-      steem_version_info() {}
-      steem_version_info( fc::string bc_v, fc::string s_v, fc::string fc_v )
-         :blockchain_version( bc_v ), steem_revision( s_v ), fc_revision( fc_v ) {}
+      ezira_version_info() {}
+      ezira_version_info( fc::string bc_v, fc::string s_v, fc::string fc_v )
+         :blockchain_version( bc_v ), ezira_revision( s_v ), fc_revision( fc_v ) {}
 
       fc::string blockchain_version;
-      fc::string steem_revision;
+      fc::string ezira_revision;
       fc::string fc_revision;
    };
 
@@ -205,7 +205,7 @@ namespace ezira { namespace app {
 
          fc::api_ptr get_api_by_name( const string& api_name )const;
 
-         steem_version_info get_version();
+         ezira_version_info get_version();
 
          /// internal method, not exposed via JSON RPC
          void on_api_startup();
@@ -218,7 +218,7 @@ namespace ezira { namespace app {
 
 FC_REFLECT( ezira::app::network_broadcast_api::transaction_confirmation,
         (id)(block_num)(trx_num)(expired) )
-FC_REFLECT( ezira::app::steem_version_info, (blockchain_version)(steem_revision)(fc_revision) )
+FC_REFLECT( ezira::app::ezira_version_info, (blockchain_version)(ezira_revision)(fc_revision) )
 //FC_REFLECT_TYPENAME( fc::ecc::compact_signature );
 //FC_REFLECT_TYPENAME( fc::ecc::commitment_type );
 

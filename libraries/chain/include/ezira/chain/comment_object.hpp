@@ -1,9 +1,9 @@
 #pragma once
 
 #include <ezira/protocol/authority.hpp>
-#include <ezira/protocol/steem_operations.hpp>
+#include <ezira/protocol/ezira_operations.hpp>
 
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 #include <ezira/chain/witness_objects.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
@@ -93,7 +93,7 @@ namespace ezira { namespace chain {
          id_type           root_comment;
 
          asset             max_accepted_payout = asset( 1000000000, SBD_SYMBOL );       /// SBD value of the maximum payout this post will receive
-         uint16_t          percent_steem_dollars = EZIRA_100_PERCENT; /// the percent of Steem Dollars to key, unkept amounts will be received as Steem Power
+         uint16_t          percent_ezira_dollars = EZIRA_100_PERCENT; /// the percent of Steem Dollars to key, unkept amounts will be received as Steem Power
          bool              allow_replies = true;      /// allows a post to disable replies.
          bool              allow_votes   = true;      /// allows a post to receive votes;
          bool              allow_curation_rewards = true;
@@ -251,7 +251,7 @@ FC_REFLECT( ezira::chain::comment_object,
              (net_rshares)(abs_rshares)(vote_rshares)
              (children_abs_rshares)(cashout_time)(max_cashout_time)
              (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(beneficiary_payout_value)(author_rewards)(net_votes)(root_comment)
-             (max_accepted_payout)(percent_steem_dollars)(allow_replies)(allow_votes)(allow_curation_rewards)
+             (max_accepted_payout)(percent_ezira_dollars)(allow_replies)(allow_votes)(allow_curation_rewards)
              (beneficiaries)
           )
 CHAINBASE_SET_INDEX_TYPE( ezira::chain::comment_object, ezira::chain::comment_index )

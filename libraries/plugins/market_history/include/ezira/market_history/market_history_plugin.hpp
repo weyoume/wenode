@@ -1,7 +1,7 @@
 #pragma once
 #include <ezira/app/plugin.hpp>
 
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
 
@@ -73,19 +73,19 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
 
    fc::time_point_sec   open;
    uint32_t             seconds = 0;
-   share_type           high_steem;
+   share_type           high_ezira;
    share_type           high_sbd;
-   share_type           low_steem;
+   share_type           low_ezira;
    share_type           low_sbd;
-   share_type           open_steem;
+   share_type           open_ezira;
    share_type           open_sbd;
-   share_type           close_steem;
+   share_type           close_ezira;
    share_type           close_sbd;
-   share_type           steem_volume;
+   share_type           ezira_volume;
    share_type           sbd_volume;
 
-   price high()const { return asset( high_sbd, SBD_SYMBOL ) / asset( high_steem, EZIRA_SYMBOL ); }
-   price low()const { return asset( low_sbd, SBD_SYMBOL ) / asset( low_steem, EZIRA_SYMBOL ); }
+   price high()const { return asset( high_sbd, SBD_SYMBOL ) / asset( high_ezira, EZIRA_SYMBOL ); }
+   price low()const { return asset( low_sbd, SBD_SYMBOL ) / asset( low_ezira, EZIRA_SYMBOL ); }
 };
 
 typedef oid< bucket_object > bucket_id_type;
@@ -139,11 +139,11 @@ typedef multi_index_container<
 FC_REFLECT( ezira::market_history::bucket_object,
                      (id)
                      (open)(seconds)
-                     (high_steem)(high_sbd)
-                     (low_steem)(low_sbd)
-                     (open_steem)(open_sbd)
-                     (close_steem)(close_sbd)
-                     (steem_volume)(sbd_volume) )
+                     (high_ezira)(high_sbd)
+                     (low_ezira)(low_sbd)
+                     (open_ezira)(open_sbd)
+                     (close_ezira)(close_sbd)
+                     (ezira_volume)(sbd_volume) )
 CHAINBASE_SET_INDEX_TYPE( ezira::market_history::bucket_object, ezira::market_history::bucket_index )
 
 FC_REFLECT( ezira::market_history::order_history_object,

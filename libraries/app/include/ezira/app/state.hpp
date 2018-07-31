@@ -1,10 +1,10 @@
 #pragma once
 #include <ezira/app/applied_operation.hpp>
-#include <ezira/app/steem_api_objects.hpp>
+#include <ezira/app/ezira_api_objects.hpp>
 
 #include <ezira/chain/global_property_object.hpp>
 #include <ezira/chain/account_object.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 
 namespace ezira { namespace app {
    using std::string;
@@ -88,7 +88,7 @@ namespace ezira { namespace app {
       extended_account(){}
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
 
-      asset                                   vesting_balance; /// convert vesting_shares to vesting steem
+      asset                                   vesting_balance; /// convert vesting_shares to vesting ezira
       share_type                              reputation = 0;
       map<uint64_t,applied_operation>         transfer_history; /// transfer to/from vesting
       map<uint64_t,applied_operation>         market_history; /// limit order / cancel / fill
@@ -116,7 +116,7 @@ namespace ezira { namespace app {
       double          low = 0;
       double          open = 0;
       double          close = 0;
-      double          steem_volume = 0;
+      double          ezira_volume = 0;
       double          dollar_volume = 0;
    };
 
@@ -124,7 +124,7 @@ namespace ezira { namespace app {
       time_point_sec time;
       string         type; // buy or sell
       asset          sbd_quantity;
-      asset          steem_quantity;
+      asset          ezira_quantity;
       double         real_price = 0;
    };
 
@@ -191,6 +191,6 @@ FC_REFLECT_DERIVED( ezira::app::discussion, (ezira::app::comment_api_obj), (url)
 FC_REFLECT( ezira::app::state, (current_route)(props)(tag_idx)(tags)(content)(accounts)(pow_queue)(witnesses)(discussion_idx)(witness_schedule)(feed_price)(error)(market_data) )
 
 FC_REFLECT_DERIVED( ezira::app::extended_limit_order, (ezira::app::limit_order_api_obj), (real_price)(rewarded) )
-FC_REFLECT( ezira::app::order_history_item, (time)(type)(sbd_quantity)(steem_quantity)(real_price) );
+FC_REFLECT( ezira::app::order_history_item, (time)(type)(sbd_quantity)(ezira_quantity)(real_price) );
 FC_REFLECT( ezira::app::market, (bids)(asks)(history)(price_history)(available_candlesticks)(available_zoom)(current_candlestick)(current_zoom) )
-FC_REFLECT( ezira::app::candle_stick, (open_time)(period)(high)(low)(open)(close)(steem_volume)(dollar_volume) );
+FC_REFLECT( ezira::app::candle_stick, (open_time)(period)(high)(low)(open)(close)(ezira_volume)(dollar_volume) );

@@ -2,7 +2,7 @@
 
 #include <ezira/protocol/operations.hpp>
 
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 
 namespace ezira { namespace chain {
 

@@ -119,7 +119,7 @@ namespace ezira { namespace protocol {
     *  operation allows authors to update properties associated with their post.
     *
     *  The max_accepted_payout may be decreased, but never increased.
-    *  The percent_steem_dollars may be decreased, but never increased
+    *  The percent_ezira_dollars may be decreased, but never increased
     *
     */
    struct comment_options_operation : public base_operation
@@ -128,7 +128,7 @@ namespace ezira { namespace protocol {
       string            permlink;
 
       asset             max_accepted_payout    = asset( 1000000000, SBD_SYMBOL );       /// SBD value of the maximum payout this post will receive
-      uint16_t          percent_steem_dollars  = EZIRA_100_PERCENT; /// the percent of Steem Dollars to key, unkept amounts will be received as Steem Power
+      uint16_t          percent_ezira_dollars  = EZIRA_100_PERCENT; /// the percent of Steem Dollars to key, unkept amounts will be received as Steem Power
       bool              allow_votes            = true;      /// allows a post to receive votes;
       bool              allow_curation_rewards = true; /// allows voters to recieve curation rewards. Rewards return to reward fund.
       comment_options_extensions_type extensions;
@@ -232,7 +232,7 @@ namespace ezira { namespace protocol {
       uint32_t          escrow_id = 30;
 
       asset             sbd_amount = asset( 0, SBD_SYMBOL );
-      asset             steem_amount = asset( 0, EZIRA_SYMBOL );
+      asset             ezira_amount = asset( 0, EZIRA_SYMBOL );
       asset             fee;
 
       time_point_sec    ratification_deadline;
@@ -304,7 +304,7 @@ namespace ezira { namespace protocol {
 
       uint32_t          escrow_id = 30;
       asset             sbd_amount = asset( 0, SBD_SYMBOL ); ///< the amount of sbd to release
-      asset             steem_amount = asset( 0, EZIRA_SYMBOL ); ///< the amount of steem to release
+      asset             ezira_amount = asset( 0, EZIRA_SYMBOL ); ///< the amount of ezira to release
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(who); }
@@ -354,7 +354,7 @@ namespace ezira { namespace protocol {
     * request for the funds to be transferred directly to another account's
     * balance rather than the withdrawing account. In addition, those funds
     * can be immediately vested again, circumventing the conversion from
-    * vests to steem and back, guaranteeing they maintain their value.
+    * vests to ezira and back, guaranteeing they maintain their value.
     */
    struct set_withdraw_vesting_route_operation : public base_operation
    {
@@ -507,7 +507,7 @@ namespace ezira { namespace protocol {
 
    /**
     *  Feeds can only be published by the top N witnesses which are included in every round and are
-    *  used to define the exchange rate between steem and the dollar.
+    *  used to define the exchange rate between ezira and the dollar.
     */
    struct feed_publish_operation : public base_operation
    {
@@ -688,7 +688,7 @@ namespace ezira { namespace protocol {
     *
     * Users not in the ACTIVE witness set should not have to worry about their
     * key getting compromised and being used to produced multiple blocks so
-    * the attacker can report it and steel their vesting steem.
+    * the attacker can report it and steel their vesting ezira.
     *
     * The result of the operation is to transfer the full VESTING EZIRA balance
     * of the block producer to the reporter.
@@ -913,7 +913,7 @@ namespace ezira { namespace protocol {
    struct claim_reward_balance_operation : public base_operation
    {
       account_name_type account;
-      asset             reward_steem;
+      asset             reward_ezira;
       asset             reward_sbd;
       asset             reward_vests;
 
@@ -1014,17 +1014,17 @@ FC_REFLECT( ezira::protocol::delete_comment_operation, (author)(permlink) );
 FC_REFLECT( ezira::protocol::beneficiary_route_type, (account)(weight) )
 FC_REFLECT( ezira::protocol::comment_payout_beneficiaries, (beneficiaries) )
 FC_REFLECT_TYPENAME( ezira::protocol::comment_options_extension )
-FC_REFLECT( ezira::protocol::comment_options_operation, (author)(permlink)(max_accepted_payout)(percent_steem_dollars)(allow_votes)(allow_curation_rewards)(extensions) )
+FC_REFLECT( ezira::protocol::comment_options_operation, (author)(permlink)(max_accepted_payout)(percent_ezira_dollars)(allow_votes)(allow_curation_rewards)(extensions) )
 
-FC_REFLECT( ezira::protocol::escrow_transfer_operation, (from)(to)(sbd_amount)(steem_amount)(escrow_id)(agent)(fee)(json_meta)(ratification_deadline)(escrow_expiration) );
+FC_REFLECT( ezira::protocol::escrow_transfer_operation, (from)(to)(sbd_amount)(ezira_amount)(escrow_id)(agent)(fee)(json_meta)(ratification_deadline)(escrow_expiration) );
 FC_REFLECT( ezira::protocol::escrow_approve_operation, (from)(to)(agent)(who)(escrow_id)(approve) );
 FC_REFLECT( ezira::protocol::escrow_dispute_operation, (from)(to)(agent)(who)(escrow_id) );
-FC_REFLECT( ezira::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(sbd_amount)(steem_amount) );
+FC_REFLECT( ezira::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(sbd_amount)(ezira_amount) );
 FC_REFLECT( ezira::protocol::challenge_authority_operation, (challenger)(challenged)(require_owner) );
 FC_REFLECT( ezira::protocol::prove_authority_operation, (challenged)(require_owner) );
 FC_REFLECT( ezira::protocol::request_account_recovery_operation, (recovery_account)(account_to_recover)(new_owner_authority)(extensions) );
 FC_REFLECT( ezira::protocol::recover_account_operation, (account_to_recover)(new_owner_authority)(recent_owner_authority)(extensions) );
 FC_REFLECT( ezira::protocol::change_recovery_account_operation, (account_to_recover)(new_recovery_account)(extensions) );
 FC_REFLECT( ezira::protocol::decline_voting_rights_operation, (account)(decline) );
-FC_REFLECT( ezira::protocol::claim_reward_balance_operation, (account)(reward_steem)(reward_sbd)(reward_vests) )
+FC_REFLECT( ezira::protocol::claim_reward_balance_operation, (account)(reward_ezira)(reward_sbd)(reward_vests) )
 FC_REFLECT( ezira::protocol::delegate_vesting_shares_operation, (delegator)(delegatee)(vesting_shares) );

@@ -2,9 +2,9 @@
 
 #include <ezira/protocol/authority.hpp>
 #include <ezira/protocol/operations.hpp>
-#include <ezira/protocol/steem_operations.hpp>
+#include <ezira/protocol/ezira_operations.hpp>
 
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 #include <ezira/chain/witness_objects.hpp>
 
 #include <boost/multi_index/composite_key.hpp>

@@ -8,7 +8,7 @@
 #include <vector>
 
 #include <ezira/chain/account_object.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 
 using namespace graphene::db;
 

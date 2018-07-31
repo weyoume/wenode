@@ -13,7 +13,7 @@ From the root of the repository:
 (Also in the root of the repository.)
 
     docker build --rm=false \
-        -t eziranetwork/steem-test \
+        -t eziranetwork/ezira-test \
         -f Dockerfile.test .
 
 ## To Troubleshoot Failing Tests
@@ -28,8 +28,8 @@ Then, inside the container:
 repository root.)
 
     git clone https://github.com/eziranetwork/ezira.git \
-        /usr/local/src/steem
-    cd /usr/local/src/steem
+        /usr/local/src/ezira
+    cd /usr/local/src/ezira
     git checkout <branch> # e.g. 123-feature
     git submodule update --init --recursive
     mkdir build
@@ -42,6 +42,6 @@ repository root.)
         ..
     make -j$(nproc) chain_test
     ./tests/chain_test
-    cd /usr/local/src/steem
+    cd /usr/local/src/ezira
     doxygen
     programs/build_helpers/check_reflect.py

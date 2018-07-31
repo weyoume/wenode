@@ -30,7 +30,7 @@
 #include <ezira/chain/database_exceptions.hpp>
 #include <ezira/chain/generic_custom_operation_interpreter.hpp>
 #include <ezira/chain/index.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 
 #include <ezira/app/impacted.hpp>
 

@@ -3,7 +3,7 @@
 
 #include <graphene/utilities/tempdir.hpp>
 
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 #include <ezira/chain/history_object.hpp>
 #include <ezira/account_history/account_history_plugin.hpp>
 #include <ezira/witness/witness_plugin.hpp>
@@ -398,9 +398,9 @@ void database_fixture::convert(
       else if ( amount.symbol == SBD_SYMBOL )
       {
          db.adjust_balance( account, -amount );
-         db.adjust_balance( account, db.to_steem( amount ) );
+         db.adjust_balance( account, db.to_ezira( amount ) );
          db.adjust_supply( -amount );
-         db.adjust_supply( db.to_steem( amount ) );
+         db.adjust_supply( db.to_ezira( amount ) );
       }
    } FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }

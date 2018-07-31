@@ -22,7 +22,7 @@ struct statistics
    uint32_t             operations = 0;                              ///< Operations evaluated
    uint32_t             transactions = 0;                            ///< Transactions processed
    uint32_t             transfers = 0;                               ///< Account to account transfers
-   share_type           steem_transferred = 0;                       ///< EZIRA transferred from account to account
+   share_type           ezira_transferred = 0;                       ///< EZIRA transferred from account to account
    share_type           sbd_transferred = 0;                         ///< SBD transferred from account to account
    share_type           sbd_paid_as_interest = 0;                    ///< SBD paid as interest
    uint32_t             accounts_created = 0;                        ///< Total accounts created
@@ -52,7 +52,7 @@ struct statistics
    share_type           vests_paid_to_curators = 0;                  ///< Ammount of VESTS paid to curators
    share_type           liquidity_rewards_paid = 0;                  ///< Ammount of EZIRA paid to market makers
    uint32_t             transfers_to_vesting = 0;                    ///< Transfers of EZIRA into VESTS
-   share_type           steem_vested = 0;                            ///< Ammount of EZIRA vested
+   share_type           ezira_vested = 0;                            ///< Ammount of EZIRA vested
    uint32_t             new_vesting_withdrawal_requests = 0;         ///< New vesting withdrawal requests
    uint32_t             modified_vesting_withdrawal_requests = 0;    ///< Changes to vesting withdrawal requests
    share_type           vesting_withdraw_rate_delta = 0;
@@ -63,7 +63,7 @@ struct statistics
    uint32_t             sbd_conversion_requests_created = 0;         ///< SBD conversion requests created
    share_type           sbd_to_be_converted = 0;                     ///< Amount of SBD to be converted
    uint32_t             sbd_conversion_requests_filled = 0;          ///< SBD conversion requests filled
-   share_type           steem_converted = 0;                         ///< Amount of EZIRA that was converted
+   share_type           ezira_converted = 0;                         ///< Amount of EZIRA that was converted
    uint32_t             limit_orders_created = 0;                    ///< Limit orders created
    uint32_t             limit_orders_filled = 0;                     ///< Limit orders filled
    uint32_t             limit_orders_cancelled = 0;                  ///< Limit orders cancelled
@@ -113,7 +113,7 @@ FC_REFLECT( ezira::blockchain_statistics::statistics,
    (operations)
    (transactions)
    (transfers)
-   (steem_transferred)
+   (ezira_transferred)
    (sbd_transferred)
    (sbd_paid_as_interest)
    (accounts_created)
@@ -143,7 +143,7 @@ FC_REFLECT( ezira::blockchain_statistics::statistics,
    (vests_paid_to_curators)
    (liquidity_rewards_paid)
    (transfers_to_vesting)
-   (steem_vested)
+   (ezira_vested)
    (new_vesting_withdrawal_requests)
    (modified_vesting_withdrawal_requests)
    (vesting_withdraw_rate_delta)
@@ -154,7 +154,7 @@ FC_REFLECT( ezira::blockchain_statistics::statistics,
    (sbd_conversion_requests_created)
    (sbd_to_be_converted)
    (sbd_conversion_requests_filled)
-   (steem_converted)
+   (ezira_converted)
    (limit_orders_created)
    (limit_orders_filled)
    (limit_orders_cancelled)

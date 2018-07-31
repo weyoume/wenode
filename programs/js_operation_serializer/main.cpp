@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 #include <ezira/protocol/protocol.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 #include <fc/smart_ref_impl.hpp>
 #include <iostream>
 

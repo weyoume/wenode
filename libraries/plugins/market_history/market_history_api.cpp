@@ -1,6 +1,6 @@
 #include <ezira/market_history/market_history_api.hpp>
 
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 
 namespace ezira { namespace market_history {
 
@@ -34,8 +34,8 @@ market_ticker market_history_api_impl::get_ticker() const
 
    if( itr != bucket_idx.end() )
    {
-      auto open = ( asset( itr->open_sbd, SBD_SYMBOL ) / asset( itr->open_steem, EZIRA_SYMBOL ) ).to_real();
-      result.latest = ( asset( itr->close_sbd, SBD_SYMBOL ) / asset( itr->close_steem, EZIRA_SYMBOL ) ).to_real();
+      auto open = ( asset( itr->open_sbd, SBD_SYMBOL ) / asset( itr->open_ezira, EZIRA_SYMBOL ) ).to_real();
+      result.latest = ( asset( itr->close_sbd, SBD_SYMBOL ) / asset( itr->close_ezira, EZIRA_SYMBOL ) ).to_real();
       result.percent_change = ( ( result.latest - open ) / open ) * 100;
    }
    else
@@ -51,7 +51,7 @@ market_ticker market_history_api_impl::get_ticker() const
       result.lowest_ask = orders.asks[0].price;
 
    auto volume = get_volume();
-   result.steem_volume = volume.steem_volume;
+   result.ezira_volume = volume.ezira_volume;
    result.sbd_volume = volume.sbd_volume;
 
    return result;
@@ -70,7 +70,7 @@ market_volume market_history_api_impl::get_volume() const
    uint32_t bucket_size = itr->seconds;
    do
    {
-      result.steem_volume.amount += itr->steem_volume;
+      result.ezira_volume.amount += itr->ezira_volume;
       result.sbd_volume.amount += itr->sbd_volume;
 
       ++itr;
@@ -92,7 +92,7 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
    {
       order cur;
       cur.price = itr->sell_price.base.to_real() / itr->sell_price.quote.to_real();
-      cur.steem = ( asset( itr->for_sale, SBD_SYMBOL ) * itr->sell_price ).amount;
+      cur.ezira = ( asset( itr->for_sale, SBD_SYMBOL ) * itr->sell_price ).amount;
       cur.sbd = itr->for_sale;
       result.bids.push_back( cur );
       ++itr;
@@ -104,7 +104,7 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
    {
       order cur;
       cur.price = itr->sell_price.quote.to_real() / itr->sell_price.base.to_real();
-      cur.steem = itr->for_sale;
+      cur.ezira = itr->for_sale;
       cur.sbd = ( asset( itr->for_sale, EZIRA_SYMBOL ) * itr->sell_price ).amount;
       result.asks.push_back( cur );
       ++itr;

@@ -26,7 +26,7 @@
 #include <fc/container/flat.hpp>
 #include <ezira/protocol/operations.hpp>
 #include <ezira/protocol/transaction.hpp>
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 
 #include <fc/string.hpp>
 

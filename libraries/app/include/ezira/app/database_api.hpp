@@ -3,8 +3,8 @@
 #include <ezira/app/state.hpp>
 
 #include <ezira/chain/database.hpp>
-#include <ezira/chain/steem_objects.hpp>
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_objects.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 #include <ezira/chain/history_object.hpp>
 
 #include <ezira/tags/tags_plugin.hpp>
@@ -34,8 +34,8 @@ using namespace std;
 struct order
 {
    price                order_price;
-   double               real_price; // dollars per steem
-   share_type           steem;
+   double               real_price; // dollars per ezira
+   share_type           ezira;
    share_type           sbd;
    fc::time_point_sec   created;
 };
@@ -437,7 +437,7 @@ class database_api
 
 } }
 
-FC_REFLECT( ezira::app::order, (order_price)(real_price)(steem)(sbd)(created) );
+FC_REFLECT( ezira::app::order, (order_price)(real_price)(ezira)(sbd)(created) );
 FC_REFLECT( ezira::app::order_book, (asks)(bids) );
 FC_REFLECT( ezira::app::scheduled_hardfork, (hf_version)(live_time) );
 FC_REFLECT( ezira::app::liquidity_balance, (account)(weight) );

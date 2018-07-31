@@ -26,8 +26,8 @@
 #include <ezira/app/application.hpp>
 #include <ezira/app/plugin.hpp>
 
-#include <ezira/chain/steem_objects.hpp>
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_objects.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 #include <ezira/chain/database_exceptions.hpp>
 
 #include <fc/time.hpp>

@@ -1,5 +1,5 @@
 
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 
 #include <fc/uint128.hpp>
 

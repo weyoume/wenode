@@ -1,7 +1,7 @@
 #pragma once
 #include <ezira/protocol/transaction.hpp>
 
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 
 #include <boost/multi_index/hashed_index.hpp>
 

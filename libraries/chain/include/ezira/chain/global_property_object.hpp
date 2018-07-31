@@ -1,7 +1,7 @@
 #pragma once
 #include <fc/uint128.hpp>
 
-#include <ezira/chain/steem_object_types.hpp>
+#include <ezira/chain/ezira_object_types.hpp>
 
 #include <ezira/protocol/asset.hpp>
 
@@ -54,25 +54,25 @@ namespace ezira { namespace chain {
          asset       confidential_supply        = asset( 0, EZIRA_SYMBOL ); ///< total asset held in confidential balances
          asset       current_sbd_supply         = asset( 0, SBD_SYMBOL );
          asset       confidential_sbd_supply    = asset( 0, SBD_SYMBOL ); ///< total asset held in confidential balances
-         asset       total_vesting_fund_steem   = asset( 0, EZIRA_SYMBOL );
+         asset       total_vesting_fund_ezira   = asset( 0, EZIRA_SYMBOL );
          asset       total_vesting_shares       = asset( 0, VESTS_SYMBOL );
-         asset       total_reward_fund_steem    = asset( 0, EZIRA_SYMBOL );
+         asset       total_reward_fund_ezira    = asset( 0, EZIRA_SYMBOL );
          fc::uint128 total_reward_shares2; ///< the running total of REWARD^2
          asset       pending_rewarded_vesting_shares = asset( 0, VESTS_SYMBOL );
-         asset       pending_rewarded_vesting_steem = asset( 0, EZIRA_SYMBOL );
+         asset       pending_rewarded_vesting_ezira = asset( 0, EZIRA_SYMBOL );
 
          price       get_vesting_share_price() const
          {
-            if ( total_vesting_fund_steem.amount == 0 || total_vesting_shares.amount == 0 )
+            if ( total_vesting_fund_ezira.amount == 0 || total_vesting_shares.amount == 0 )
                return price ( asset( 1000, EZIRA_SYMBOL ), asset( 1000000, VESTS_SYMBOL ) );
 
-            return price( total_vesting_shares, total_vesting_fund_steem );
+            return price( total_vesting_shares, total_vesting_fund_ezira );
          }
 
          price get_reward_vesting_share_price() const
          {
             return price( total_vesting_shares + pending_rewarded_vesting_shares,
-               total_vesting_fund_steem + pending_rewarded_vesting_steem );
+               total_vesting_fund_ezira + pending_rewarded_vesting_ezira );
          }
 
          /**
@@ -139,12 +139,12 @@ FC_REFLECT( ezira::chain::dynamic_global_property_object,
              (confidential_supply)
              (current_sbd_supply)
              (confidential_sbd_supply)
-             (total_vesting_fund_steem)
+             (total_vesting_fund_ezira)
              (total_vesting_shares)
-             (total_reward_fund_steem)
+             (total_reward_fund_ezira)
              (total_reward_shares2)
              (pending_rewarded_vesting_shares)
-             (pending_rewarded_vesting_steem)
+             (pending_rewarded_vesting_ezira)
              (sbd_interest_rate)
              (sbd_print_rate)
              (maximum_block_size)

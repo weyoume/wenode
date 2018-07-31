@@ -1,7 +1,7 @@
-#include <ezira/chain/steem_evaluator.hpp>
+#include <ezira/chain/ezira_evaluator.hpp>
 #include <ezira/chain/database.hpp>
 #include <ezira/chain/custom_operation_interpreter.hpp>
-#include <ezira/chain/steem_objects.hpp>
+#include <ezira/chain/ezira_objects.hpp>
 #include <ezira/chain/witness_objects.hpp>
 #include <ezira/chain/block_summary_object.hpp>
 
@@ -161,7 +161,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       acc.mined = false;
 
       if( !_db.has_hardfork( EZIRA_HARDFORK_0_11__169 ) )
-         acc.recovery_account = "steem";
+         acc.recovery_account = "ezira";
       else
          acc.recovery_account = o.creator;
 
@@ -449,11 +449,11 @@ void comment_options_evaluator::do_apply( const comment_options_operation& o )
    FC_ASSERT( comment.allow_curation_rewards >= o.allow_curation_rewards, "Curation rewards cannot be re-enabled." );
    FC_ASSERT( comment.allow_votes >= o.allow_votes, "Voting cannot be re-enabled." );
    FC_ASSERT( comment.max_accepted_payout >= o.max_accepted_payout, "A comment cannot accept a greater payout." );
-   FC_ASSERT( comment.percent_steem_dollars >= o.percent_steem_dollars, "A comment cannot accept a greater percent SBD." );
+   FC_ASSERT( comment.percent_ezira_dollars >= o.percent_ezira_dollars, "A comment cannot accept a greater percent SBD." );
 
    _db.modify( comment, [&]( comment_object& c ) {
        c.max_accepted_payout   = o.max_accepted_payout;
-       c.percent_steem_dollars = o.percent_steem_dollars;
+       c.percent_ezira_dollars = o.percent_ezira_dollars;
        c.allow_votes           = o.allow_votes;
        c.allow_curation_rewards = o.allow_curation_rewards;
    });
@@ -692,17 +692,17 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
       FC_ASSERT( o.ratification_deadline > _db.head_block_time(), "The escorw ratification deadline must be after head block time." );
       FC_ASSERT( o.escrow_expiration > _db.head_block_time(), "The escrow expiration must be after head block time." );
 
-      asset steem_spent = o.steem_amount;
+      asset ezira_spent = o.ezira_amount;
       asset sbd_spent = o.sbd_amount;
       if( o.fee.symbol == EZIRA_SYMBOL )
-         steem_spent += o.fee;
+         ezira_spent += o.fee;
       else
          sbd_spent += o.fee;
 
-      FC_ASSERT( from_account.balance >= steem_spent, "Account cannot cover EZIRA costs of escrow. Required: ${r} Available: ${a}", ("r",steem_spent)("a",from_account.balance) );
+      FC_ASSERT( from_account.balance >= ezira_spent, "Account cannot cover EZIRA costs of escrow. Required: ${r} Available: ${a}", ("r",ezira_spent)("a",from_account.balance) );
       FC_ASSERT( from_account.sbd_balance >= sbd_spent, "Account cannot cover SBD costs of escrow. Required: ${r} Available: ${a}", ("r",sbd_spent)("a",from_account.sbd_balance) );
 
-      _db.adjust_balance( from_account, -steem_spent );
+      _db.adjust_balance( from_account, -ezira_spent );
       _db.adjust_balance( from_account, -sbd_spent );
 
       _db.create<escrow_object>([&]( escrow_object& esc )
@@ -714,7 +714,7 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
          esc.ratification_deadline  = o.ratification_deadline;
          esc.escrow_expiration      = o.escrow_expiration;
          esc.sbd_balance            = o.sbd_amount;
-         esc.steem_balance          = o.steem_amount;
+         esc.ezira_balance          = o.ezira_amount;
          esc.pending_fee            = o.fee;
       });
    }
@@ -762,7 +762,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
       if( reject_escrow )
       {
          const auto& from_account = _db.get_account( o.from );
-         _db.adjust_balance( from_account, escrow.steem_balance );
+         _db.adjust_balance( from_account, escrow.ezira_balance );
          _db.adjust_balance( from_account, escrow.sbd_balance );
          _db.adjust_balance( from_account, escrow.pending_fee );
 
@@ -811,7 +811,7 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
       const auto& receiver_account = _db.get_account(o.receiver);
 
       const auto& e = _db.get_escrow( o.from, o.escrow_id );
-      FC_ASSERT( e.steem_balance >= o.steem_amount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.steem_amount)("b", e.steem_balance) );
+      FC_ASSERT( e.ezira_balance >= o.ezira_amount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.ezira_amount)("b", e.ezira_balance) );
       FC_ASSERT( e.sbd_balance >= o.sbd_amount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.sbd_amount)("b", e.sbd_balance) );
       FC_ASSERT( e.to == o.to, "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to)("e", e.to) );
       FC_ASSERT( e.agent == o.agent, "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", e.agent) );
@@ -842,16 +842,16 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
       }
       // If escrow expires and there is no dispute, either party can release funds to either party.
 
-      _db.adjust_balance( receiver_account, o.steem_amount );
+      _db.adjust_balance( receiver_account, o.ezira_amount );
       _db.adjust_balance( receiver_account, o.sbd_amount );
 
       _db.modify( e, [&]( escrow_object& esc )
       {
-         esc.steem_balance -= o.steem_amount;
+         esc.ezira_balance -= o.ezira_amount;
          esc.sbd_balance -= o.sbd_amount;
       });
 
-      if( e.steem_balance.amount == 0 && e.sbd_balance.amount == 0 )
+      if( e.ezira_balance.amount == 0 && e.sbd_balance.amount == 0 )
       {
          _db.remove( e );
       }
@@ -1209,11 +1209,11 @@ void vote_evaluator::do_apply( const vote_operation& o )
 
    if( _db.has_hardfork( EZIRA_HARDFORK_0_14__259 ) )
    {
-      FC_ASSERT( abs_rshares > EZIRA_VOTE_DUST_THRESHOLD || o.weight == 0, "Voting weight is too small, please accumulate more voting power or steem power." );
+      FC_ASSERT( abs_rshares > EZIRA_VOTE_DUST_THRESHOLD || o.weight == 0, "Voting weight is too small, please accumulate more voting power or ezira power." );
    }
    else if( _db.has_hardfork( EZIRA_HARDFORK_0_13__248 ) )
    {
-      FC_ASSERT( abs_rshares > EZIRA_VOTE_DUST_THRESHOLD || abs_rshares == 1, "Voting weight is too small, please accumulate more voting power or steem power." );
+      FC_ASSERT( abs_rshares > EZIRA_VOTE_DUST_THRESHOLD || abs_rshares == 1, "Voting weight is too small, please accumulate more voting power or ezira power." );
    }
 
 
@@ -1611,7 +1611,7 @@ void pow_apply( database& db, Operation o )
          acc.last_vote_time = dgp.time;
 
          if( !db.has_hardfork( EZIRA_HARDFORK_0_11__169 ) )
-            acc.recovery_account = "steem";
+            acc.recovery_account = "ezira";
          else
             acc.recovery_account = ""; /// highest voted witness at time of recovery
       });
@@ -2151,39 +2151,39 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
 {
    const auto& acnt = _db.get_account( op.account );
 
-   FC_ASSERT( op.reward_steem <= acnt.reward_steem_balance, "Cannot claim that much EZIRA. Claim: ${c} Actual: ${a}",
-      ("c", op.reward_steem)("a", acnt.reward_steem_balance) );
+   FC_ASSERT( op.reward_ezira <= acnt.reward_ezira_balance, "Cannot claim that much EZIRA. Claim: ${c} Actual: ${a}",
+      ("c", op.reward_ezira)("a", acnt.reward_ezira_balance) );
    FC_ASSERT( op.reward_sbd <= acnt.reward_sbd_balance, "Cannot claim that much SBD. Claim: ${c} Actual: ${a}",
       ("c", op.reward_sbd)("a", acnt.reward_sbd_balance) );
    FC_ASSERT( op.reward_vests <= acnt.reward_vesting_balance, "Cannot claim that much VESTS. Claim: ${c} Actual: ${a}",
       ("c", op.reward_vests)("a", acnt.reward_vesting_balance) );
 
-   asset reward_vesting_steem_to_move = asset( 0, EZIRA_SYMBOL );
+   asset reward_vesting_ezira_to_move = asset( 0, EZIRA_SYMBOL );
    if( op.reward_vests == acnt.reward_vesting_balance )
-      reward_vesting_steem_to_move = acnt.reward_vesting_steem;
+      reward_vesting_ezira_to_move = acnt.reward_vesting_ezira;
    else
-      reward_vesting_steem_to_move = asset( ( ( uint128_t( op.reward_vests.amount.value ) * uint128_t( acnt.reward_vesting_steem.amount.value ) )
+      reward_vesting_ezira_to_move = asset( ( ( uint128_t( op.reward_vests.amount.value ) * uint128_t( acnt.reward_vesting_ezira.amount.value ) )
          / uint128_t( acnt.reward_vesting_balance.amount.value ) ).to_uint64(), EZIRA_SYMBOL );
 
-   _db.adjust_reward_balance( acnt, -op.reward_steem );
+   _db.adjust_reward_balance( acnt, -op.reward_ezira );
    _db.adjust_reward_balance( acnt, -op.reward_sbd );
-   _db.adjust_balance( acnt, op.reward_steem );
+   _db.adjust_balance( acnt, op.reward_ezira );
    _db.adjust_balance( acnt, op.reward_sbd );
 
    _db.modify( acnt, [&]( account_object& a )
    {
       a.vesting_shares += op.reward_vests;
       a.reward_vesting_balance -= op.reward_vests;
-      a.reward_vesting_steem -= reward_vesting_steem_to_move;
+      a.reward_vesting_ezira -= reward_vesting_ezira_to_move;
    });
 
    _db.modify( _db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
    {
       gpo.total_vesting_shares += op.reward_vests;
-      gpo.total_vesting_fund_steem += reward_vesting_steem_to_move;
+      gpo.total_vesting_fund_ezira += reward_vesting_ezira_to_move;
 
       gpo.pending_rewarded_vesting_shares -= op.reward_vests;
-      gpo.pending_rewarded_vesting_steem -= reward_vesting_steem_to_move;
+      gpo.pending_rewarded_vesting_ezira -= reward_vesting_ezira_to_move;
    });
 
    _db.adjust_proxied_witness_votes( acnt, op.reward_vests.amount );
