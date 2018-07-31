@@ -3,7 +3,7 @@
 VERSION=`cat /etc/eznodeversion`
 
 # if the writer node dies by itself, kill runsv causing the container to exit
-EZIRAD_PID=`pgrep -f p2p-endpoint`
+EZNODE_PID=`pgrep -f p2p-endpoint`
 if [[ ! $? -eq 0 ]]; then
   echo NOTIFYALERT! eznodesync has quit unexpectedly, checking for coredump and then starting a new instance..
   sleep 30
@@ -38,10 +38,10 @@ if [[ ! -z "$BLOCKCHAIN_TIME" ]]; then
   # if we're within 10 seconds of current time, call it synced and begin the upload
   BLOCK_AGE=$((${CURRENT_SECS} - ${BLOCKCHAIN_SECS}))
   if [[ ${BLOCK_AGE} -le 10 ]]; then
-    EZIRAD_PID=`pgrep -f p2p-endpoint`
-    kill -SIGINT $EZIRAD_PID
+    EZNODE_PID=`pgrep -f p2p-endpoint`
+    kill -SIGINT $EZNODE_PID
     echo eznodesync: waiting for eznode to exit cleanly
-    while [ -e /proc/$EZIRAD_PID ]; do sleep 0.1; done
+    while [ -e /proc/$EZNODE_PID ]; do sleep 0.1; done
     echo eznodesync: starting a new blockchainstate upload operation
     cd ${COMPRESSPATH:-$HOME}
     echo eznodesync: compressing blockchainstate...
