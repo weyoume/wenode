@@ -1,6 +1,6 @@
 FROM phusion/baseimage:0.9.19
 
-#ARG EZIRAD_BLOCKCHAIN=https://example.com/eznode-blockchain.tbz2
+#ARG EZNODE_BLOCKCHAIN=https://example.com/eznode-blockchain.tbz2
 
 ARG EZIRA_STATIC_BUILD=ON
 ENV EZIRA_STATIC_BUILD ${EZIRA_STATIC_BUILD}
@@ -181,7 +181,7 @@ RUN mkdir /var/cache/eznode && \
     chown eznode:eznode -R /var/cache/eznode
 
 # add blockchain cache to image
-#ADD $EZIRAD_BLOCKCHAIN /var/cache/eznode/blocks.tbz2
+#ADD $EZNODE_BLOCKCHAIN /var/cache/eznode/blocks.tbz2
 
 ENV HOME /var/lib/eznode
 RUN chown eznode:eznode -R /var/lib/eznode
