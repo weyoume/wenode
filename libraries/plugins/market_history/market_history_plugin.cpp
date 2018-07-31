@@ -64,28 +64,28 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                if( op.open_pays.symbol == EZIRA_SYMBOL )
                {
                   b.high_ezira = op.open_pays.amount;
-                  b.high_sbd = op.current_pays.amount;
+                  b.high_EZD = op.current_pays.amount;
                   b.low_ezira = op.open_pays.amount;
-                  b.low_sbd = op.current_pays.amount;
+                  b.low_EZD = op.current_pays.amount;
                   b.open_ezira = op.open_pays.amount;
-                  b.open_sbd = op.current_pays.amount;
+                  b.open_EZD = op.current_pays.amount;
                   b.close_ezira = op.open_pays.amount;
-                  b.close_sbd = op.current_pays.amount;
+                  b.close_EZD = op.current_pays.amount;
                   b.ezira_volume = op.open_pays.amount;
-                  b.sbd_volume = op.current_pays.amount;
+                  b.EZD_volume = op.current_pays.amount;
                }
                else
                {
                   b.high_ezira = op.current_pays.amount;
-                  b.high_sbd = op.open_pays.amount;
+                  b.high_EZD = op.open_pays.amount;
                   b.low_ezira = op.current_pays.amount;
-                  b.low_sbd = op.open_pays.amount;
+                  b.low_EZD = op.open_pays.amount;
                   b.open_ezira = op.current_pays.amount;
-                  b.open_sbd = op.open_pays.amount;
+                  b.open_EZD = op.open_pays.amount;
                   b.close_ezira = op.current_pays.amount;
-                  b.close_sbd = op.open_pays.amount;
+                  b.close_EZD = op.open_pays.amount;
                   b.ezira_volume = op.current_pays.amount;
-                  b.sbd_volume = op.open_pays.amount;
+                  b.EZD_volume = op.open_pays.amount;
                }
             });
          }
@@ -96,39 +96,39 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                if( op.open_pays.symbol == EZIRA_SYMBOL )
                {
                   b.ezira_volume += op.open_pays.amount;
-                  b.sbd_volume += op.current_pays.amount;
+                  b.EZD_volume += op.current_pays.amount;
                   b.close_ezira = op.open_pays.amount;
-                  b.close_sbd = op.current_pays.amount;
+                  b.close_EZD = op.current_pays.amount;
 
                   if( b.high() < price( op.current_pays, op.open_pays ) )
                   {
                      b.high_ezira = op.open_pays.amount;
-                     b.high_sbd = op.current_pays.amount;
+                     b.high_EZD = op.current_pays.amount;
                   }
 
                   if( b.low() > price( op.current_pays, op.open_pays ) )
                   {
                      b.low_ezira = op.open_pays.amount;
-                     b.low_sbd = op.current_pays.amount;
+                     b.low_EZD = op.current_pays.amount;
                   }
                }
                else
                {
                   b.ezira_volume += op.current_pays.amount;
-                  b.sbd_volume += op.open_pays.amount;
+                  b.EZD_volume += op.open_pays.amount;
                   b.close_ezira = op.current_pays.amount;
-                  b.close_sbd = op.open_pays.amount;
+                  b.close_EZD = op.open_pays.amount;
 
                   if( b.high() < price( op.open_pays, op.current_pays ) )
                   {
                      b.high_ezira = op.current_pays.amount;
-                     b.high_sbd = op.open_pays.amount;
+                     b.high_EZD = op.open_pays.amount;
                   }
 
                   if( b.low() > price( op.open_pays, op.current_pays ) )
                   {
                      b.low_ezira = op.current_pays.amount;
-                     b.low_sbd = op.open_pays.amount;
+                     b.low_EZD = op.open_pays.amount;
                   }
                }
             });

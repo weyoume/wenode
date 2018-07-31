@@ -52,8 +52,8 @@ namespace ezira { namespace chain {
          asset       virtual_supply             = asset( 0, EZIRA_SYMBOL );
          asset       current_supply             = asset( 0, EZIRA_SYMBOL );
          asset       confidential_supply        = asset( 0, EZIRA_SYMBOL ); ///< total asset held in confidential balances
-         asset       current_sbd_supply         = asset( 0, SBD_SYMBOL );
-         asset       confidential_sbd_supply    = asset( 0, SBD_SYMBOL ); ///< total asset held in confidential balances
+         asset       current_EZD_supply         = asset( 0, EZD_SYMBOL );
+         asset       confidential_EZD_supply    = asset( 0, EZD_SYMBOL ); ///< total asset held in confidential balances
          asset       total_vesting_fund_ezira   = asset( 0, EZIRA_SYMBOL );
          asset       total_vesting_shares       = asset( 0, VESTS_SYMBOL );
          asset       total_reward_fund_ezira    = asset( 0, EZIRA_SYMBOL );
@@ -76,11 +76,11 @@ namespace ezira { namespace chain {
          }
 
          /**
-          *  This property defines the interest rate that SBD deposits receive.
+          *  This property defines the interest rate that EZD deposits receive.
           */
-         uint16_t sbd_interest_rate = 0;
+         uint16_t EZD_interest_rate = 0;
 
-         uint16_t sbd_print_rate = EZIRA_100_PERCENT;
+         uint16_t EZD_print_rate = EZIRA_100_PERCENT;
 
          /**
           *  Maximum block size is decided by the set of active witnesses which change every round.
@@ -137,16 +137,16 @@ FC_REFLECT( ezira::chain::dynamic_global_property_object,
              (virtual_supply)
              (current_supply)
              (confidential_supply)
-             (current_sbd_supply)
-             (confidential_sbd_supply)
+             (current_EZD_supply)
+             (confidential_EZD_supply)
              (total_vesting_fund_ezira)
              (total_vesting_shares)
              (total_reward_fund_ezira)
              (total_reward_shares2)
              (pending_rewarded_vesting_shares)
              (pending_rewarded_vesting_ezira)
-             (sbd_interest_rate)
-             (sbd_print_rate)
+             (EZD_interest_rate)
+             (EZD_print_rate)
              (maximum_block_size)
              (current_aslot)
              (recent_slots_filled)

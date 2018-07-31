@@ -284,10 +284,10 @@ namespace ezira { namespace chain {
           */
          uint32_t get_slot_at_time(fc::time_point_sec when)const;
 
-         /** @return the sbd created and deposited to_account, may return EZIRA if there is no median feed */
-         std::pair< asset, asset > create_sbd( const account_object& to_account, asset ezira, bool to_reward_balance=false );
+         /** @return the EZD created and deposited to_account, may return EZIRA if there is no median feed */
+         std::pair< asset, asset > create_EZD( const account_object& to_account, asset ezira, bool to_reward_balance=false );
          asset create_vesting( const account_object& to_account, asset ezira, bool to_reward_balance=false );
-         void adjust_total_payout( const comment_object& a, const asset& sbd, const asset& curator_sbd_value, const asset& beneficiary_value );
+         void adjust_total_payout( const comment_object& a, const asset& EZD, const asset& curator_EZD_value, const asset& beneficiary_value );
 
          void        adjust_liquidity_reward( const account_object& owner, const asset& volume, bool is_bid );
          void        adjust_balance( const account_object& a, const asset& delta );
@@ -345,11 +345,11 @@ namespace ezira { namespace chain {
          void  pay_liquidity_reward();
 
          /**
-          * Helper method to return the current sbd value of a given amount of
-          * EZIRA.  Return 0 SBD if there isn't a current_median_history
+          * Helper method to return the current EZD value of a given amount of
+          * EZIRA.  Return 0 EZD if there isn't a current_median_history
           */
-         asset to_sbd( const asset& ezira )const;
-         asset to_ezira( const asset& sbd )const;
+         asset to_EZD( const asset& ezira )const;
+         asset to_ezira( const asset& EZD )const;
 
          time_point_sec   head_block_time()const;
          uint32_t         head_block_num()const;

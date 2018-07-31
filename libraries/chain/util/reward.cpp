@@ -57,7 +57,7 @@ uint64_t get_rshare_reward( const comment_reward_context& ctx )
    if( is_comment_payout_dust( ctx.current_ezira_price, payout ) )
       payout = 0;
 
-   asset max_ezira = to_ezira( ctx.current_ezira_price, ctx.max_sbd );
+   asset max_ezira = to_ezira( ctx.current_ezira_price, ctx.max_EZD );
 
    payout = std::min( payout, uint64_t( max_ezira.amount.value ) );
 

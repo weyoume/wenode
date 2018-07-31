@@ -601,7 +601,7 @@ class wallet_api
                                           bool broadcast = false);
 
       /**
-       * Transfer funds from one account to another. EZIRA and SBD can be transferred.
+       * Transfer funds from one account to another. EZIRA and EZD can be transferred.
        *
        * @param from The account the funds are coming from
        * @param to The account the funds are going to
@@ -612,13 +612,13 @@ class wallet_api
       annotated_signed_transaction transfer(string from, string to, asset amount, string memo, bool broadcast = false);
 
       /**
-       * Transfer funds from one account to another using escrow. EZIRA and SBD can be transferred.
+       * Transfer funds from one account to another using escrow. EZIRA and EZD can be transferred.
        *
        * @param from The account the funds are coming from
        * @param to The account the funds are going to
        * @param agent The account acting as the agent in case of dispute
        * @param escrow_id A unique id for the escrow transfer. (from, escrow_id) must be a unique pair
-       * @param sbd_amount The amount of SBD to transfer
+       * @param EZD_amount The amount of EZD to transfer
        * @param ezira_amount The amount of EZIRA to transfer
        * @param fee The fee paid to the agent
        * @param ratification_deadline The deadline for 'to' and 'agent' to approve the escrow transfer
@@ -631,7 +631,7 @@ class wallet_api
          string to,
          string agent,
          uint32_t escrow_id,
-         asset sbd_amount,
+         asset EZD_amount,
          asset ezira_amount,
          asset fee,
          time_point_sec ratification_deadline,
@@ -690,7 +690,7 @@ class wallet_api
        * @param who The account authorizing the release
        * @param receiver The account that will receive funds being released
        * @param escrow_id A unique id for the escrow transfer
-       * @param sbd_amount The amount of SBD that will be released
+       * @param EZD_amount The amount of EZD that will be released
        * @param ezira_amount The amount of EZIRA that will be released
        * @param broadcast true if you wish to broadcast the transaction
        */
@@ -701,7 +701,7 @@ class wallet_api
          string who,
          string receiver,
          uint32_t escrow_id,
-         asset sbd_amount,
+         asset EZD_amount,
          asset ezira_amount,
          bool broadcast = false
       );
@@ -760,18 +760,18 @@ class wallet_api
       annotated_signed_transaction set_withdraw_vesting_route( string from, string to, uint16_t percent, bool auto_vest, bool broadcast = false );
 
       /**
-       *  This method will convert SBD to EZIRA at the current_median_history price one
+       *  This method will convert EZD to EZIRA at the current_median_history price one
        *  week from the time it is executed. This method depends upon there being a valid price feed.
        *
-       *  @param from The account requesting conversion of its SBD i.e. "1.000 SBD"
-       *  @param amount The amount of SBD to convert
+       *  @param from The account requesting conversion of its EZD i.e. "1.000 EZD"
+       *  @param amount The amount of EZD to convert
        *  @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction convert_sbd( string from, asset amount, bool broadcast = false );
+      annotated_signed_transaction convert_EZD( string from, asset amount, bool broadcast = false );
 
       /**
-       * A witness can public a price feed for the EZIRA:SBD market. The median price feed is used
-       * to process conversion requests from SBD to EZIRA.
+       * A witness can public a price feed for the EZIRA:EZD market. The median price feed is used
+       * to process conversion requests from EZD to EZIRA.
        *
        * @param witness The witness publishing the price feed
        * @param exchange_rate The desired exchange rate
@@ -811,7 +811,7 @@ class wallet_api
       vector< variant > network_get_connected_peers();
 
       /**
-       * Gets the current order book for EZIRA:SBD
+       * Gets the current order book for EZIRA:EZD
        *
        * @param limit Maximum number of orders to return for bids and asks. Max is 1000.
        */
@@ -823,7 +823,7 @@ class wallet_api
        *
        *  @param owner The name of the account creating the order
        *  @param order_id is a unique identifier assigned by the creator of the order, it can be reused after the order has been filled
-       *  @param amount_to_sell The amount of either SBD or EZIRA you wish to sell
+       *  @param amount_to_sell The amount of either EZD or EZIRA you wish to sell
        *  @param min_to_receive The amount of the other asset you will receive at a minimum
        *  @param fill_or_kill true if you want the order to be killed if it cannot immediately be filled
        *  @param expiration the time the order should expire if it has not been filled
@@ -973,7 +973,7 @@ class wallet_api
 
       annotated_signed_transaction decline_voting_rights( string account, bool decline, bool broadcast );
 
-      annotated_signed_transaction claim_reward_balance( string account, asset reward_ezira, asset reward_sbd, asset reward_vests, bool broadcast );
+      annotated_signed_transaction claim_reward_balance( string account, asset reward_ezira, asset reward_EZD, asset reward_vests, bool broadcast );
 };
 
 struct plain_keys {
@@ -1049,7 +1049,7 @@ FC_API( ezira::wallet::wallet_api,
         (transfer_to_vesting)
         (withdraw_vesting)
         (set_withdraw_vesting_route)
-        (convert_sbd)
+        (convert_EZD)
         (publish_feed)
         (get_order_book)
         (get_open_orders)

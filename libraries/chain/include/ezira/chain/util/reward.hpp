@@ -23,7 +23,7 @@ struct comment_reward_context
 {
    share_type rshares;
    uint16_t   reward_weight = 0;
-   asset      max_sbd;
+   asset      max_EZD;
    uint128_t  total_reward_shares2;
    asset      total_reward_fund_ezira;
    price      current_ezira_price;
@@ -42,7 +42,7 @@ uint128_t evaluate_reward_curve( const uint128_t& rshares, const curve_id& curve
 
 inline bool is_comment_payout_dust( const price& p, uint64_t ezira_payout )
 {
-   return to_sbd( p, asset( ezira_payout, EZIRA_SYMBOL ) ) < EZIRA_MIN_PAYOUT_SBD;
+   return to_EZD( p, asset( ezira_payout, EZIRA_SYMBOL ) ) < EZIRA_MIN_PAYOUT_EZD;
 }
 
 } } } // ezira::chain::util
@@ -50,7 +50,7 @@ inline bool is_comment_payout_dust( const price& p, uint64_t ezira_payout )
 FC_REFLECT( ezira::chain::util::comment_reward_context,
    (rshares)
    (reward_weight)
-   (max_sbd)
+   (max_EZD)
    (total_reward_shares2)
    (total_reward_fund_ezira)
    (current_ezira_price)

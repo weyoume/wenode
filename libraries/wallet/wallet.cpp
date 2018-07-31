@@ -295,7 +295,7 @@ public:
                                                                           time_point_sec(time_point::now()),
                                                                           " old");
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
-      result["median_sbd_price"] = _remote_db->get_current_median_history_price();
+      result["median_EZD_price"] = _remote_db->get_current_median_history_price();
       result["account_creation_fee"] = _remote_db->get_chain_properties().account_creation_fee;
       result["post_reward_fund"] = fc::variant(_remote_db->get_reward_fund( EZIRA_POST_REWARD_FUND_NAME )).get_object();
       return result;
@@ -728,21 +728,21 @@ public:
          auto accounts = result.as<vector<account_api_obj>>();
          asset total_ezira;
          asset total_vest(0, VESTS_SYMBOL );
-         asset total_sbd(0, SBD_SYMBOL );
+         asset total_EZD(0, EZD_SYMBOL );
          for( const auto& a : accounts ) {
             total_ezira += a.balance;
             total_vest  += a.vesting_shares;
-            total_sbd  += a.sbd_balance;
+            total_EZD  += a.EZD_balance;
             out << std::left << std::setw( 17 ) << std::string(a.name)
                 << std::right << std::setw(18) << fc::variant(a.balance).as_string() <<" "
                 << std::right << std::setw(26) << fc::variant(a.vesting_shares).as_string() <<" "
-                << std::right << std::setw(16) << fc::variant(a.sbd_balance).as_string() <<"\n";
+                << std::right << std::setw(16) << fc::variant(a.EZD_balance).as_string() <<"\n";
          }
          out << "-------------------------------------------------------------------------\n";
             out << std::left << std::setw( 17 ) << "TOTAL"
                 << std::right << std::setw(18) << fc::variant(total_ezira).as_string() <<" "
                 << std::right << std::setw(26) << fc::variant(total_vest).as_string() <<" "
-                << std::right << std::setw(16) << fc::variant(total_sbd).as_string() <<"\n";
+                << std::right << std::setw(16) << fc::variant(total_EZD).as_string() <<"\n";
          return out.str();
       };
       m["get_account_history"] = []( variant result, const fc::variants& a ) {
@@ -788,21 +788,21 @@ public:
       m["get_order_book"] = []( variant result, const fc::variants& a ) {
          auto orders = result.as< order_book >();
          std::stringstream ss;
-         asset bid_sum = asset( 0, SBD_SYMBOL );
-         asset ask_sum = asset( 0, SBD_SYMBOL );
+         asset bid_sum = asset( 0, EZD_SYMBOL );
+         asset ask_sum = asset( 0, EZD_SYMBOL );
          int spacing = 24;
 
          ss << setiosflags( ios::fixed ) << setiosflags( ios::left ) ;
 
          ss << ' ' << setw( ( spacing * 4 ) + 6 ) << "Bids" << "Asks\n"
             << ' '
-            << setw( spacing + 3 ) << "Sum(SBD)"
-            << setw( spacing + 1) << "SBD"
+            << setw( spacing + 3 ) << "Sum(EZD)"
+            << setw( spacing + 1) << "EZD"
             << setw( spacing + 1 ) << "EZIRA"
             << setw( spacing + 1 ) << "Price"
             << setw( spacing + 1 ) << "Price"
             << setw( spacing + 1 ) << "EZIRA "
-            << setw( spacing + 1 ) << "SBD " << "Sum(SBD)"
+            << setw( spacing + 1 ) << "EZD " << "Sum(EZD)"
             << "\n====================================================================================================="
             << "|=====================================================================================================\n";
 
@@ -810,10 +810,10 @@ public:
          {
             if ( i < orders.bids.size() )
             {
-               bid_sum += asset( orders.bids[i].sbd, SBD_SYMBOL );
+               bid_sum += asset( orders.bids[i].EZD, EZD_SYMBOL );
                ss
                   << ' ' << setw( spacing ) << bid_sum.to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].sbd, SBD_SYMBOL ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].EZD, EZD_SYMBOL ).to_string()
                   << ' ' << setw( spacing ) << asset( orders.bids[i].ezira, EZIRA_SYMBOL ).to_string()
                   << ' ' << setw( spacing ) << orders.bids[i].real_price; //(~orders.bids[i].order_price).to_real();
             }
@@ -826,11 +826,11 @@ public:
 
             if ( i < orders.asks.size() )
             {
-               ask_sum += asset( orders.asks[i].sbd, SBD_SYMBOL );
+               ask_sum += asset( orders.asks[i].EZD, EZD_SYMBOL );
                //ss << ' ' << setw( spacing ) << (~orders.asks[i].order_price).to_real()
                ss << ' ' << setw( spacing ) << orders.asks[i].real_price
                   << ' ' << setw( spacing ) << asset( orders.asks[i].ezira, EZIRA_SYMBOL ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].sbd, SBD_SYMBOL ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].EZD, EZD_SYMBOL ).to_string()
                   << ' ' << setw( spacing ) << ask_sum.to_string();
             }
 
@@ -1870,7 +1870,7 @@ annotated_signed_transaction wallet_api::escrow_transfer(
       string to,
       string agent,
       uint32_t escrow_id,
-      asset sbd_amount,
+      asset EZD_amount,
       asset ezira_amount,
       asset fee,
       time_point_sec ratification_deadline,
@@ -1885,7 +1885,7 @@ annotated_signed_transaction wallet_api::escrow_transfer(
    op.to = to;
    op.agent = agent;
    op.escrow_id = escrow_id;
-   op.sbd_amount = sbd_amount;
+   op.EZD_amount = EZD_amount;
    op.ezira_amount = ezira_amount;
    op.fee = fee;
    op.ratification_deadline = ratification_deadline;
@@ -1955,7 +1955,7 @@ annotated_signed_transaction wallet_api::escrow_release(
    string who,
    string receiver,
    uint32_t escrow_id,
-   asset sbd_amount,
+   asset EZD_amount,
    asset ezira_amount,
    bool broadcast
 )
@@ -1968,7 +1968,7 @@ annotated_signed_transaction wallet_api::escrow_release(
    op.who = who;
    op.receiver = receiver;
    op.escrow_id = escrow_id;
-   op.sbd_amount = sbd_amount;
+   op.EZD_amount = EZD_amount;
    op.ezira_amount = ezira_amount;
 
    signed_transaction tx;
@@ -2080,7 +2080,7 @@ annotated_signed_transaction wallet_api::set_withdraw_vesting_route( string from
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::convert_sbd(string from, asset amount, bool broadcast )
+annotated_signed_transaction wallet_api::convert_EZD(string from, asset amount, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
     convert_operation op;
@@ -2160,13 +2160,13 @@ annotated_signed_transaction wallet_api::decline_voting_rights( string account, 
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::claim_reward_balance( string account, asset reward_ezira, asset reward_sbd, asset reward_vests, bool broadcast )
+annotated_signed_transaction wallet_api::claim_reward_balance( string account, asset reward_ezira, asset reward_EZD, asset reward_vests, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
    claim_reward_balance_operation op;
    op.account = account;
    op.reward_ezira = reward_ezira;
-   op.reward_sbd = reward_sbd;
+   op.reward_EZD = reward_EZD;
    op.reward_vests = reward_vests;
 
    signed_transaction tx;
