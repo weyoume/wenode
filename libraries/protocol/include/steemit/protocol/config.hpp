@@ -16,7 +16,6 @@
 #define SBD_SYMBOL    (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test Backed Dollars with 3 digits of precision
 #define STMD_SYMBOL   (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('S') << 16) | (uint64_t('T') << 24) | (uint64_t('D') << 32) ) ///< Test Dollars with 3 digits of precision
 
-#define STEEMIT_SYMBOL                          "EZIRA"
 #define STEEMIT_ADDRESS_PREFIX                  "EZT"
 
 #define STEEMIT_GENESIS_TIME                    (fc::time_point_sec(1451606400))
@@ -46,7 +45,6 @@
 #define STEEM_SYMBOL  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('I') << 24) | (uint64_t('R') << 32) | (uint64_t('A') << 40)) ///< STEEM with 3 digits of precision
 #define SBD_SYMBOL    (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) ) ///< STEEM Backed Dollars with 3 digits of precision
 #define STMD_SYMBOL   (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('D') << 32) ) ///< STEEM Dollars with 3 digits of precision
-#define STEEMIT_SYMBOL                          "EZIRA"
 #define STEEMIT_ADDRESS_PREFIX                  "EZT"
 
 #define STEEMIT_GENESIS_TIME                    (fc::time_point_sec(1532229209))
