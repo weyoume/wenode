@@ -74,7 +74,7 @@
 #define EZIRA_START_VESTING_BLOCK             (EZIRA_BLOCKS_PER_DAY * 7)
 #define EZIRA_START_MINER_VOTING_BLOCK        (EZIRA_BLOCKS_PER_DAY * 30)
 
-#define EZIRA_INIT_MINER_NAME                 "ezwitness"
+#define EZIRA_INIT_MINER_NAME                 "ezbuilder"
 #define EZIRA_NUM_INIT_MINERS                 100
 #define EZIRA_NUM_ACTIVE_INIT_MINERS					1
 #define EZIRA_INIT_TIME                       (fc::time_point_sec());

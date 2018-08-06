@@ -1777,7 +1777,7 @@ namespace graphene { namespace net { namespace detail {
            ("type", graphene::net::core_message_type_enum(received_message.msg_type))("hash", message_hash)
            ("size", received_message.size)
            ("endpoint", originating_peer->get_remote_endpoint()));
-      switch ( received_message.msg_type 
+      switch ( received_message.msg_type )
       {
       case core_message_type_enum::hello_message_type:
         on_hello_message(originating_peer, received_message.as<hello_message>());
