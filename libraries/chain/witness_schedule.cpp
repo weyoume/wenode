@@ -330,7 +330,7 @@ void update_witness_schedule(database& db)
       {
          const auto& widx = db.get_index<witness_index>().indices().get<by_vote_name>();
 
-         for( auto itr = widx.begin(); itr != widx.end() && (active_witnesses.size() < (EZIRA_MAX_WITNESSES-2)); ++itr )
+         for( auto itr = widx.begin(); itr != widx.end() && (active_witnesses.size() < (EZIRA_MAX_WITNESSES-2)) && (active_witness.size() < EZIRA_NUM_ACTIVE_INIT_MINERS); ++itr )
          {
             if( itr->pow_worker )
                continue;
@@ -396,7 +396,7 @@ void update_witness_schedule(database& db)
 
       /// add all of the pow witnesses to the round until voting takes over, then only add one per round
       itr = pow_idx.upper_bound(0);
-			active_witnesses.push_back( itr->owner );
+			// active_witnesses.push_back( itr->owner );
 			int loop_count = 0 ;
       while( ( itr != pow_idx.end() ) && ( loop_count < EZIRA_NUM_ACTIVE_INIT_MINERS ) )
       {
@@ -427,7 +427,7 @@ void update_witness_schedule(database& db)
             _wso.current_shuffled_witnesses[i] = account_name_type();
          }
 
-         _wso.num_scheduled_witnesses = std::max< uint8_t >( _wso.current_shuffled_witnesses.size(), 1 );
+         _wso.num_scheduled_witnesses = std::max< uint8_t >( active_witnesses.size(), 1 );
 
          //idump( (_wso.current_shuffled_witnesses)(active_witnesses.size()) );
 
