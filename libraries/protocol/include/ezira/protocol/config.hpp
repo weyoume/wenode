@@ -14,7 +14,6 @@
 #define VESTS_SYMBOL  (uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< VESTS with 6 digits of precision
 #define EZIRA_SYMBOL  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< EZIRA with 3 digits of precision
 #define EZD_SYMBOL    (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test Backed Dollars with 3 digits of precision
-#define EZC_SYMBOL   (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('S') << 16) | (uint64_t('T') << 24) ) ///< Test Dollars with 3 digits of precision
 
 #define EZIRA_ADDRESS_PREFIX                  "EZT"
 
@@ -44,7 +43,7 @@
 #define VESTS_SYMBOL  (uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< VESTS with 6 digits of precision
 #define EZIRA_SYMBOL  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('I') << 24) | (uint64_t('R') << 32) | (uint64_t('A') << 40)) ///< EZIRA with 3 digits of precision
 #define EZD_SYMBOL    (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) ) ///< EZIRA Backed Dollars with 3 digits of precision
-#define EZC_SYMBOL   (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('C') << 24) ) ///< EZIRA Dollars with 3 digits of precision
+
 #define EZIRA_ADDRESS_PREFIX                  "EZT"
 
 #define EZIRA_GENESIS_TIME                    (fc::time_point_sec(1532229209))
