@@ -1946,7 +1946,7 @@ asset database::get_pow_reward()const
 #endif
 
    static_assert( EZIRA_BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
-   static_assert( EZIRA_MAX_WITNESSES == 21, "this code assumes 21 per round" );
+  //  static_assert( EZIRA_MAX_WITNESSES == 21, "this code assumes 21 per round" );
    asset percent( calc_percent_reward_per_round< EZIRA_POW_APR_PERCENT >( props.virtual_supply.amount ), EZIRA_SYMBOL);
    return std::max( percent, EZIRA_MIN_POW_REWARD );
 }
