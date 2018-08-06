@@ -398,14 +398,14 @@ void update_witness_schedule(database& db)
       itr = pow_idx.upper_bound(0);
 			active_witnesses.push_back( itr->owner );
 
-      // while( itr != pow_idx.end() )
-      // {
-      //    active_witnesses.push_back( itr->owner );
+      while( itr != pow_idx.end() && itr < EZIRA_NUM_ACTIVE_INIT_MINERS )
+      {
+         active_witnesses.push_back( itr->owner );
 
-      //    if( db.head_block_num() > EZIRA_START_MINER_VOTING_BLOCK || active_witnesses.size() >= EZIRA_MAX_WITNESSES )
-      //       break;
-      //    ++itr;
-      // }
+         if( db.head_block_num() > EZIRA_START_MINER_VOTING_BLOCK || active_witnesses.size() >= EZIRA_MAX_WITNESSES )
+            break;
+         ++itr;
+      }
 
       db.modify( wso, [&]( witness_schedule_object& _wso )
       {
