@@ -1777,7 +1777,7 @@ namespace graphene { namespace net { namespace detail {
            ("type", graphene::net::core_message_type_enum(received_message.msg_type))("hash", message_hash)
            ("size", received_message.size)
            ("endpoint", originating_peer->get_remote_endpoint()));
-      switch ( received_message.msg_type )
+      switch ( received_message.msg_type 
       {
       case core_message_type_enum::hello_message_type:
         on_hello_message(originating_peer, received_message.as<hello_message>());
@@ -3131,7 +3131,7 @@ namespace graphene { namespace net { namespace detail {
       if( client_accepted_block )
       {
         --_total_number_of_unfetched_items;
-        dlog("sync: client accpted the block, we now have only ${count} items left to fetch before we're in sync",
+        dlog("sync: this client accpted the receievd block, we now have only ${count} items left to fetch before we're in sync",
               ("count", _total_number_of_unfetched_items));
         bool is_fork_block = is_hard_fork_block(block_message_to_send.block.block_num());
         for (const peer_connection_ptr& peer : _active_connections)
@@ -3417,7 +3417,7 @@ namespace graphene { namespace net { namespace detail {
     {
       fc::time_point message_receive_time = fc::time_point::now();
 
-      dlog( "received a block from peer ${endpoint}, passing it to client", ("endpoint", originating_peer->get_remote_endpoint() ) );
+      dlog( "received a block from peer ${endpoint}, passing it to this client", ("endpoint", originating_peer->get_remote_endpoint() ) );
       std::set<peer_connection_ptr> peers_to_disconnect;
       std::string disconnect_reason;
       fc::oexception disconnect_exception;
@@ -3429,7 +3429,7 @@ namespace graphene { namespace net { namespace detail {
         // message, while at the same time still be synchronizing with a peer who is sending us the
         // block through the sync mechanism.  Further, we must request both blocks because
         // we don't know they're the same (for the peer in normal operation, it has only told us the
-        // message id, for the peer in the sync case we only known the block_id).
+        // message id, for the peer in the sync case we only know the block_id).
         fc::time_point message_validated_time;
         if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
                       block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
@@ -3477,7 +3477,7 @@ namespace graphene { namespace net { namespace detail {
           dlog( "Already received and accepted this block (presumably through sync mechanism), treating it as accepted" );
         }
 
-        dlog( "client validated the block, advertising it to other peers" );
+        dlog( "this client validated the incoming block, advertising it to other peers" );
 
         item_id block_message_item_id(core_message_type_enum::block_message_type, message_hash);
         uint32_t block_number = block_message_to_process.block.block_num();
@@ -3584,6 +3584,7 @@ namespace graphene { namespace net { namespace detail {
       auto item_iter = originating_peer->items_requested_from_peer.find(item_id(graphene::net::block_message_type, message_hash));
       if (item_iter != originating_peer->items_requested_from_peer.end())
       {
+				// if we did request during normal operation
         originating_peer->items_requested_from_peer.erase(item_iter);
         process_block_during_normal_operation(originating_peer, block_message_to_process, message_hash);
         if (originating_peer->idle())

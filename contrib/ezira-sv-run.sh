@@ -10,7 +10,7 @@ fi
 
 chown -R eznode:eznode $HOME
 
-# seed nodes come from doc/seednodes.txt which is
+# witness nodes come from doc/seednodes.txt which is
 # installed by docker into /etc/eznode/seednodes.txt
 SEED_NODES="$(cat /etc/eznode/seednodes.txt | awk -F' ' '{print $1}')"
 
@@ -32,6 +32,12 @@ if [[ ! -z "$EZNODE_SEED_NODES" ]]; then
     done
 fi
 
+if [[ ! -z "$EZNODE_WITNESS_NAMES" ]]; then
+    for WITNESS in $EZNODE_WITNESS_NAMES ; do
+        ARGS+=" --witness=$WITNESS"
+    done
+fi
+
 if [[ ! -z "$EZNODE_WITNESS_NAME" ]]; then
     ARGS+=" --witness=\"$EZNODE_WITNESS_NAME\""
 fi
@@ -39,6 +45,12 @@ fi
 if [[ ! -z "$EZNODE_MINER_NAME" ]]; then
     ARGS+=" --miner=[\"$EZNODE_MINER_NAME\",\"$EZNODE_PRIVATE_KEY\"]"
     ARGS+=" --mining-threads=$(nproc)"
+fi
+
+if [[ ! -z "$EZNODE_PRIVATE_KEYS" ]]; then
+    for PRIVATE_KEY in $EZNODE_PRIVATE_KEYS ; do
+        ARGS+=" --private-key=$PRIVATE_KEY"
+    done
 fi
 
 if [[ ! -z "$EZNODE_PRIVATE_KEY" ]]; then
