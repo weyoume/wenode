@@ -397,7 +397,7 @@ void update_witness_schedule(database& db)
       /// add all of the pow witnesses to the round until voting takes over, then only add one per round
       itr = pow_idx.upper_bound(0);
 			active_witnesses.push_back( itr->owner );
-			int loop_count = 0
+			int loop_count = 0 ;
       while( ( itr != pow_idx.end() ) && ( loop_count < EZIRA_NUM_ACTIVE_INIT_MINERS ) )
       {
          active_witnesses.push_back( itr->owner );
