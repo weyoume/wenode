@@ -81,15 +81,15 @@
 
 #define EZIRA_MAX_WITNESSES                   100
 
-#define EZIRA_MAX_VOTED_WITNESSES_HF0         19
+#define EZIRA_MAX_VOTED_WITNESSES_HF0         98
 #define EZIRA_MAX_MINER_WITNESSES_HF0         1
 #define EZIRA_MAX_RUNNER_WITNESSES_HF0        1
 
-#define EZIRA_MAX_VOTED_WITNESSES_HF17        20
+#define EZIRA_MAX_VOTED_WITNESSES_HF17        99
 #define EZIRA_MAX_MINER_WITNESSES_HF17        0
 #define EZIRA_MAX_RUNNER_WITNESSES_HF17       1
 
-#define EZIRA_HARDFORK_REQUIRED_WITNESSES     17 // 17 of the 21 dpos witnesses (20 elected and 1 virtual time) required for hardfork. This guarantees 75% participation on all subsequent rounds.
+#define EZIRA_HARDFORK_REQUIRED_WITNESSES     5 // 17 of the 21 dpos witnesses (20 elected and 1 virtual time) required for hardfork. This guarantees 75% participation on all subsequent rounds.
 #define EZIRA_MAX_TIME_UNTIL_EXPIRATION       (60*60) // seconds,  aka: 1 hour
 #define EZIRA_MAX_MEMO_SIZE                   2048
 #define EZIRA_MAX_PROXY_RECURSION_DEPTH       4
