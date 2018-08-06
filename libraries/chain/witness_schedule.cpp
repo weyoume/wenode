@@ -398,7 +398,7 @@ void update_witness_schedule(database& db)
       itr = pow_idx.upper_bound(0);
 			active_witnesses.push_back( itr->owner );
 
-      while( itr != pow_idx.end() && itr < EZIRA_NUM_ACTIVE_INIT_MINERS )
+      while( ( itr != pow_idx.end() ) && ( itr < EZIRA_NUM_ACTIVE_INIT_MINERS ) )
       {
          active_witnesses.push_back( itr->owner );
 
