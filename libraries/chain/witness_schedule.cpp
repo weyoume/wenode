@@ -410,25 +410,24 @@ void update_witness_schedule(database& db)
 
       db.modify( wso, [&]( witness_schedule_object& _wso )
       {
-      /*
-         _wso.current_shuffled_witnesses.clear();
-         _wso.current_shuffled_witnesses.reserve( active_witnesses.size() );
+        //  _wso.current_shuffled_witnesses.clear();
+        //  _wso.current_shuffled_witnesses.reserve( active_witnesses.size() );
 
-         for( const string& w : active_witnesses )
-            _wso.current_shuffled_witnesses.push_back( w );
-            */
+        //  for( const string& w : active_witnesses )
+        //     _wso.current_shuffled_witnesses.push_back( w );
+
          // active witnesses has exactly EZIRA_MAX_WITNESSES elements, asserted above
-         for( size_t i = 0; i < active_witnesses.size(); i++ )
+         for( size_t i = 0; (i < active_witnesses.size()) && (i < EZIRA_NUM_ACTIVE_INIT_MINERS); i++ )
          {
             _wso.current_shuffled_witnesses[i] = active_witnesses[i];
          }
 
-         for( size_t i = active_witnesses.size(); i < EZIRA_MAX_WITNESSES; i++ )
+         for( size_t i = active_witnesses.size(); (i < EZIRA_MAX_WITNESSES) && (i < EZIRA_NUM_ACTIVE_INIT_MINERS); i++ )
          {
             _wso.current_shuffled_witnesses[i] = account_name_type();
          }
 
-         _wso.num_scheduled_witnesses = std::max< uint8_t >( active_witnesses.size(), 1 );
+         _wso.num_scheduled_witnesses = std::max< uint8_t >( _wso.current_shuffled_witnesses.size(), 1 );
 
          //idump( (_wso.current_shuffled_witnesses)(active_witnesses.size()) );
 
