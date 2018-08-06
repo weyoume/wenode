@@ -428,7 +428,7 @@ const savings_withdraw_object* database::find_savings_withdraw( const account_na
    return find< savings_withdraw_object, by_from_rid >( boost::make_tuple( owner, request_id ) );
 }
 
-const dynamic_global_property_object&database::get_dynamic_global_properties() const
+const dynamic_global_property_object& database::get_dynamic_global_properties() const
 { try {
    return get< dynamic_global_property_object >();
 } FC_CAPTURE_AND_RETHROW() }
