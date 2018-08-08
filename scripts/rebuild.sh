@@ -1,4 +1,4 @@
-docker rm -f ezira-test-node \
+./scripts/prerebuild.sh \
 && \
 git pull origin dev \
 && \
