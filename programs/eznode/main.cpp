@@ -51,8 +51,8 @@ int main(int argc, char** argv) {
       std::cerr << "            STARTING TEST NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
       auto initminer_private_key = graphene::utilities::key_to_wif( EZIRA_INIT_PRIVATE_KEY );
-      std::cerr << "initminer public key: " << EZIRA_INIT_PUBLIC_KEY_STR << "\n";
-      std::cerr << "initminer private key: " << initminer_private_key << "\n";
+      std::cerr << "init public key: " << EZIRA_INIT_PUBLIC_KEY_STR << "\n";
+      std::cerr << "init private key: " << initminer_private_key << "\n";
       std::cerr << "chain id: " << std::string(EZIRA_CHAIN_ID) << "\n";
       std::cerr << "blockchain version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
       std::cerr << "------------------------------------------------------\n\n";
       std::cerr << "            STARTING EZIRA NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
-      std::cerr << "initminer public key: " << EZIRA_INIT_PUBLIC_KEY_STR << "\n";
+      std::cerr << "init public key: " << EZIRA_INIT_PUBLIC_KEY_STR << "\n";
       std::cerr << "chain id: " << std::string(EZIRA_CHAIN_ID) << "\n";
       std::cerr << "blockchain version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";

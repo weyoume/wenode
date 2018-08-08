@@ -2395,13 +2395,13 @@ void database::init_genesis( uint64_t init_supply )
          auth.active.weight_threshold = 0;
       });
 
-      for( int i = 0; i < EZIRA_NUM_INIT_MINERS; ++i )
+      for( int i = 0; i < (EZIRA_NUM_INIT_MINERS + EZIRA_NUM_INIT_EXTRAS); ++i )
       {
          create< account_object >( [&]( account_object& a )
          {
             a.name = EZIRA_INIT_MINER_NAME + ( i ? fc::to_string( i ) : std::string() );
             a.memo_key = init_public_key;
-            a.balance  = asset( i ? 0 : init_supply, EZIRA_SYMBOL );
+            a.balance  = asset( init_supply / (EZIRA_NUM_INIT_MINERS + EZIRA_NUM_INIT_EXTRAS), EZIRA_SYMBOL );
          } );
 
          create< account_authority_object >( [&]( account_authority_object& auth )

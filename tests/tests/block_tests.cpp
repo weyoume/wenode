@@ -393,7 +393,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
 {
    try
    {
-      idump((db.get_account("initminer")));
+      idump((db.get_account(EZIRA_INIT_MINER_NAME)));
       ACTORS( (alice)(bob) );
 
       generate_block();
@@ -731,7 +731,7 @@ BOOST_FIXTURE_TEST_CASE( hardfork_test, database_fixture )
       ahplugin->plugin_startup();
       db_plugin->plugin_startup();
 
-      vest( "initminer", 10000 );
+      vest( EZIRA_INIT_MINER_NAME, 10000 );
 
       // Fill up the rest of the required miners
       for( int i = EZIRA_NUM_INIT_MINERS; i < EZIRA_MAX_WITNESSES; i++ )

@@ -17,6 +17,8 @@
 
 #include "database_fixture.hpp"
 
+#include <ezira/protocol/config.hpp>
+
 //using namespace ezira::chain::test;
 
 uint32_t EZIRA_TESTING_GENESIS_TIMESTAMP = 1431700000;
@@ -59,7 +61,7 @@ clean_database_fixture::clean_database_fixture()
 
    //ahplugin->plugin_startup();
    db_plugin->plugin_startup();
-   vest( "initminer", 10000 );
+   vest( EZIRA_INIT_MINER_NAME, 10000 );
 
    // Fill up the rest of the required miners
    for( int i = EZIRA_NUM_INIT_MINERS; i < EZIRA_MAX_WITNESSES; i++ )
@@ -117,7 +119,7 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
    db.set_hardfork( EZIRA_NUM_HARDFORKS );
    generate_block();
 
-   vest( "initminer", 10000 );
+   vest( EZIRA_INIT_MINER_NAME, 10000 );
 
    // Fill up the rest of the required miners
    for( int i = EZIRA_NUM_INIT_MINERS; i < EZIRA_MAX_WITNESSES; i++ )

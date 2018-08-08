@@ -330,7 +330,7 @@ void update_witness_schedule(database& db)
       {
          const auto& widx = db.get_index<witness_index>().indices().get<by_vote_name>();
 
-         for( auto itr = widx.begin(); itr != widx.end() && (active_witnesses.size() < (EZIRA_MAX_WITNESSES-2)) && (active_witness.size() < EZIRA_NUM_ACTIVE_INIT_MINERS); ++itr )
+         for( auto itr = widx.begin(); itr != widx.end() && (active_witnesses.size() < (EZIRA_MAX_WITNESSES-2)); ++itr )
          {
             if( itr->pow_worker )
                continue;
@@ -397,8 +397,7 @@ void update_witness_schedule(database& db)
       /// add all of the pow witnesses to the round until voting takes over, then only add one per round
       itr = pow_idx.upper_bound(0);
 			// active_witnesses.push_back( itr->owner );
-			int loop_count = 0 ;
-      while( ( itr != pow_idx.end() ) && ( loop_count < EZIRA_NUM_ACTIVE_INIT_MINERS ) )
+      while( ( itr != pow_idx.end() ) )
       {
          active_witnesses.push_back( itr->owner );
 
@@ -417,12 +416,12 @@ void update_witness_schedule(database& db)
         //     _wso.current_shuffled_witnesses.push_back( w );
 
          // active witnesses has exactly EZIRA_MAX_WITNESSES elements, asserted above
-         for( size_t i = 0; (i < active_witnesses.size()) && (i < EZIRA_NUM_ACTIVE_INIT_MINERS); i++ )
+         for( size_t i = 0; (i < active_witnesses.size()); i++ )
          {
             _wso.current_shuffled_witnesses[i] = active_witnesses[i];
          }
 
-         for( size_t i = active_witnesses.size(); (i < EZIRA_MAX_WITNESSES) && (i < EZIRA_NUM_ACTIVE_INIT_MINERS); i++ )
+         for( size_t i = active_witnesses.size(); (i < EZIRA_MAX_WITNESSES); i++ )
          {
             _wso.current_shuffled_witnesses[i] = account_name_type();
          }
