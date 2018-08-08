@@ -4,7 +4,8 @@ num=99
 offset=1
 witness_names=""
 witness_base_name="ezbuilder"
-for n in $num ;	do
+for ((n=0;n<$num;n++)); do
+	echo $n
 	witness_names+="$witness_base_name$((n+offset)) "
 done
 
