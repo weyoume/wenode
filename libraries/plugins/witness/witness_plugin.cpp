@@ -668,6 +668,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
    // which would result in allowing a later block to have a timestamp
    // less than or equal to the previous block
    //
+	 
    assert( now > db.head_block_time() );
 
    string scheduled_witness = db.get_scheduled_witness( slot );
