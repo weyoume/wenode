@@ -1,13 +1,17 @@
+# $repos is an environment variable which is 
+# an absolute path to the directory your github 
+# repo for the ezira node software resides in
+
 cd $repos/ezira-node/dev ;
 rm -r build/ ;
 mkdir build && cd build ;
 cmake \
-	-DCMAKE_BUILD_TYPE=Debug \
-	_DCFLAGS="-ferror-limit=0" \
+	-DCMAKE_BUILD_TYPE=Release \
 	-DLOW_MEMORY_NODE=OFF \
 	-DCLEAR_VOTES=OFF \
 	-DSKIP_BY_TX_ID=ON \
-	-DBUILD_EZIRA_TESTNET=OFF \
-	-DEZIRA_STATIC_BUILD=ON \
+	-DCMAKE_INSTALL_PREFIX=$repos/ezira-node/dev/made \
 	..
+
+# make -j$(sysctl -n hw.logicalcpu)
 

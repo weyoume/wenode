@@ -37,7 +37,8 @@ tests/performance_test
 
 doxygen
 
-build
+build/*
+made/*
 
 wallet.json
 witness_node_data_dir
