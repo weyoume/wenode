@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker stop -f ezira-test-node
+docker rm -f ezira-test-node ;
 
 num=99
 offset=1
