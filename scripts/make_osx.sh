@@ -1,0 +1,1 @@
+make -j$(sysctl -n hw.logicalcpu)
