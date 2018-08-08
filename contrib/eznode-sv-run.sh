@@ -18,7 +18,7 @@ ARGS=""
 
 # if user did not pass in any desired
 # seed nodes, use the ones above:
-if [[ -z "$EZNODE_SEED_NODES" ]]; then
+if [[ -z "$SEED_NODES" ]]; then
     for NODE in $SEED_NODES ; do
         ARGS+=" --seed-node=$NODE"
     done
@@ -26,35 +26,35 @@ fi
 
 # if user did pass in desired seed nodes, use
 # the ones the user specified:
-if [[ ! -z "$EZNODE_SEED_NODES" ]]; then
-    for NODE in $EZNODE_SEED_NODES ; do
+if [[ ! -z "$SEED_NODES" ]]; then
+    for NODE in $SEED_NODES ; do
         ARGS+=" --seed-node=$NODE"
     done
 fi
 
-if [[ ! -z "$EZNODE_WITNESS_NAMES" ]]; then
-    for WITNESS in $EZNODE_WITNESS_NAMES ; do
+if [[ ! -z "$WITNESS_NAMES" ]]; then
+    for WITNESS in $WITNESS_NAMES ; do
         ARGS+=" --witness=\"$WITNESS\""
     done
 fi
 
-if [[ ! -z "$EZNODE_WITNESS_NAME" ]]; then
-    ARGS+=" --witness=\"$EZNODE_WITNESS_NAME\""
+if [[ ! -z "$WITNESS_NAME" ]]; then
+    ARGS+=" --witness=\"$WITNESS_NAME\""
 fi
 
-if [[ ! -z "$EZNODE_MINER_NAME" ]]; then
-    ARGS+=" --miner=[\"$EZNODE_MINER_NAME\",\"$EZNODE_PRIVATE_KEY\"]"
+if [[ ! -z "$MINER_NAME" ]]; then
+    ARGS+=" --miner=[\"$MINER_NAME\",\"$PRIVATE_KEY\"]"
     ARGS+=" --mining-threads=$(nproc)"
 fi
 
-if [[ ! -z "$EZNODE_PRIVATE_KEYS" ]]; then
-    for PRIVATE_KEY in $EZNODE_PRIVATE_KEYS ; do
+if [[ ! -z "$PRIVATE_KEYS" ]]; then
+    for PRIVATE_KEY in $PRIVATE_KEYS ; do
         ARGS+=" --private-key=$PRIVATE_KEY"
     done
 fi
 
-if [[ ! -z "$EZNODE_PRIVATE_KEY" ]]; then
-    ARGS+=" --private-key=$EZNODE_PRIVATE_KEY"
+if [[ ! -z "$PRIVATE_KEY" ]]; then
+    ARGS+=" --private-key=$PRIVATE_KEY"
 fi
 
 if [[ ! -z "$TRACK_ACCOUNT" ]]; then
@@ -65,9 +65,9 @@ if [[ ! -z "$TRACK_ACCOUNT" ]]; then
 fi
 
 NOW=`date +%s`
-EZNODE_FEED_START_TIME=`expr $NOW - 1209600`
+FEED_START_TIME=`expr $NOW - 1209600`
 
-ARGS+=" --follow-start-feeds=$EZNODE_FEED_START_TIME"
+ARGS+=" --follow-start-feeds=$FEED_START_TIME"
 
 # overwrite local config with image one
 if [[ "$USE_FULL_WEB_NODE" ]]; then
@@ -129,7 +129,7 @@ if [[ "$USE_MULTICORE_READONLY" ]]; then
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
             $ARGS \
-            $EZNODE_EXTRA_OPTS \
+            $EXTRA_OPTS \
             2>&1 &
     # sleep for a moment to allow the writer node to be ready to accept connections from the readers
     sleep 30
@@ -178,7 +178,7 @@ elif [[ "$USE_NGINX_FRONTEND" ]]; then
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
             $ARGS \
-            $EZNODE_EXTRA_OPTS \
+            $EXTRA_OPTS \
             2>&1
 else
     exec chpst -ueznode \
@@ -187,6 +187,6 @@ else
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
             $ARGS \
-            $EZNODE_EXTRA_OPTS \
+            $EXTRA_OPTS \
             2>&1
 fi
