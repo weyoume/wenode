@@ -403,7 +403,7 @@ void update_witness_schedule(database& db)
 
          if( db.head_block_num() > EZIRA_START_MINER_VOTING_BLOCK || active_witnesses.size() >= EZIRA_MAX_WITNESSES )
             break;
-				 ++loop_count;
+				//  ++loop_count;
          ++itr;
       }
 
