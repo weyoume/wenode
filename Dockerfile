@@ -124,7 +124,7 @@ RUN \
         -DSTATIC_BUILD=${STATIC_BUILD} \
         .. \
     && \
-    make -j$(nproc) eznode cli_wallet && \
+    make -j$(nproc) && \
     make install && \
     rm -rf /usr/local/src/ezira
 
