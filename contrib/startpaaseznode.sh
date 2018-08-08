@@ -23,7 +23,7 @@ ARGS=""
 
 # if user did not pass in any desired
 # seed nodes, use the ones above:
-if [[ -z "$EZNODE_SEED_NODES" ]]; then
+if [[ -z "$SEED_NODES" ]]; then
     for NODE in $SEED_NODES ; do
         ARGS+=" --seed-node=$NODE"
     done
@@ -31,17 +31,17 @@ fi
 
 # if user did pass in desired seed nodes, use
 # the ones the user specified:
-if [[ ! -z "$EZNODE_SEED_NODES" ]]; then
-    for NODE in $EZNODE_SEED_NODES ; do
+if [[ ! -z "$SEED_NODES" ]]; then
+    for NODE in $SEED_NODES ; do
         ARGS+=" --seed-node=$NODE"
     done
 fi
 
 NOW=`date +%s`
-EZNODE_FEED_START_TIME=`expr $NOW - 1209600`
+FEED_START_TIME=`expr $NOW - 1209600`
 
 if [[ ! "$IS_BROADCAST_NODE" ]]; then
-  ARGS+=" --follow-start-feeds=$EZNODE_FEED_START_TIME"
+  ARGS+=" --follow-start-feeds=$FEED_START_TIME"
   ARGS+=" --disable-get-block"
 fi
 
@@ -150,7 +150,7 @@ exec chpst -ueznode \
         --p2p-endpoint=0.0.0.0:2001 \
         --data-dir=$HOME \
         $ARGS \
-        $EZNODE_EXTRA_OPTS \
+        $EXTRA_OPTS \
         2>&1&
 SAVED_PID=`pgrep -f p2p-endpoint`
 echo $SAVED_PID >> /tmp/eznodepid

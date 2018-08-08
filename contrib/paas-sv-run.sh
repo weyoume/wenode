@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # if the writer node dies, kill runsv causing the container to exit
-EZNODE_PID=`pgrep -f p2p-endpoint`
+PID=`pgrep -f p2p-endpoint`
 if [[ ! $? -eq 0 ]]; then
   echo NOTIFYALERT! eznode has quit unexpectedly, checking for core dump and then starting a new instance..
   sleep 30

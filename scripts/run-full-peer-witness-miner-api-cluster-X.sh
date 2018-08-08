@@ -23,8 +23,8 @@ for ((i=0;i<$peerCount;i++)) ; do
 			--env USE_WAY_TOO_MUCH_RAM=1 \
 			--env USE_FULL_WEB_NODE=1 \
 			--env USE_NGINX_FRONTEND=1 \
-			--env EZNODE_WITNESS_NAME=${witnesses[$i]} \
-			--env EZNODE_PRIVATE_KEY=${keys[$i]}  \
+			--env WITNESS_NAME=${witnesses[$i]} \
+			--env PRIVATE_KEY=${keys[$i]}  \
 			-d --name ezira$i \
 			eziranetwork/ezira &
 		((nodescount++))

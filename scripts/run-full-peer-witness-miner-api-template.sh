@@ -9,8 +9,8 @@ echo "full web node"
 docker run \
 	--env USE_WAY_TOO_MUCH_RAM=1 \
 	--env USE_FULL_WEB_NODE=1 \
-	--env EZNODE_PRIVATE_KEY=PRIVATE_KEY_HERE \
-	--env EZNODE_WITNESS_NAME="initminer" \
+	--env PRIVATE_KEY=PRIVATE_KEY_HERE \
+	--env WITNESS_NAME="initminer" \
 	-d -p 2001:2001 -p 8090:8090 --name ezira \
 	eziranetwork/ezira
 
