@@ -93,7 +93,7 @@ endif()
 
 OPTION( EZIRA_STATIC_BUILD "Build eznode as a static library (ON or OFF)" OFF )
 if( EZIRA_STATIC_BUILD AND ( ( MSVC AND NOT MINGW ) OR APPLE ) )
-   MESSAGE( STATUS "Statuc build is not available on Windows or OS X" )
+   MESSAGE( STATUS "Static build is not available on Windows or OS X" )
    SET( EZIRA_STATIC_BUILD OFF )
 endif()
 MESSAGE( STATUS "EZIRA_STATIC_BUILD: ${EZIRA_STATIC_BUILD}" )
