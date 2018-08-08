@@ -7,7 +7,7 @@ if [[ "$IS_BROADCAST_NODE" ]]; then
 elif [[ "$IS_AH_NODE" ]]; then
   EZNODE="/usr/local/eznode-default/bin/eznode"
 else
-  EZNODE="/usr/local/eznode-full/bin/eznode"
+  EZNODE="/usr/local/eznode/bin/eznode"
 fi
 
 chown -R eznode:eznode $HOME

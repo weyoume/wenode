@@ -5,7 +5,7 @@ EZNODE="/usr/local/eznode-default/bin/eznode"
 VERSION=`cat /etc/eznodeversion`
 
 if [[ "$USE_WAY_TOO_MUCH_RAM" ]]; then
-    EZNODE="/usr/local/eznode-full/bin/eznode"
+    EZNODE="/usr/local/eznode/bin/eznode"
 fi
 
 chown -R eznode:eznode $HOME
