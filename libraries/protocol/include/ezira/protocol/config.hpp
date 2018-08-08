@@ -78,7 +78,7 @@
 #define EZIRA_NUM_INIT_EXTRAS									95
 #define EZIRA_INIT_TIME                       (fc::time_point_sec());
 
-#define EZIRA_MAX_WITNESSES                   5
+#define EZIRA_MAX_WITNESSES                   21
 
 #define EZIRA_MAX_VOTED_WITNESSES_HF0         19
 #define EZIRA_MAX_MINER_WITNESSES_HF0         1
