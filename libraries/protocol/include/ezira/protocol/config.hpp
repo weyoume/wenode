@@ -213,7 +213,7 @@
 #define MAX_PERMLINK_LENGTH             256
 #define MAX_WITNESS_URL_LENGTH          2048
 
-#define INIT_SUPPLY                     int64_t(100000000)
+#define INIT_SUPPLY                     int64_t(10000000000)
 #define MAX_SHARE_SUPPLY                int64_t(1000000000000000ll)
 #define MAX_SIG_CHECK_DEPTH             2
 
