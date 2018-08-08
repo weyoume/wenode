@@ -1,5 +1,7 @@
 #!/bin/bash
 
+docker stop -f ezira-test-node
+
 num=99
 offset=1
 witness_names=""
