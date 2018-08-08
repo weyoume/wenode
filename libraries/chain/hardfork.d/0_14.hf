@@ -15,7 +15,7 @@
 #define HARDFORK_0_14__410 (HARDFORK_0_14)
 
 
-#define HARDFORK_0_14_TIME  1474383600 // Tue, 20 Sep 2016 15:00:00 GMT
+#define HARDFORK_0_14_TIME  0
 
 #define HARDFORK_0_14_VERSION hardfork_version( 0, 14 )
 
