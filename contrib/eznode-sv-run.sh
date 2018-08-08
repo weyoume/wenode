@@ -34,7 +34,7 @@ fi
 
 if [[ ! -z "$EZNODE_WITNESS_NAMES" ]]; then
     for WITNESS in $EZNODE_WITNESS_NAMES ; do
-        ARGS+=" --witness=$WITNESS"
+        ARGS+=" --witness=\"$WITNESS\""
     done
 fi
 
