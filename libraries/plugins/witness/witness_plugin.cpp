@@ -672,6 +672,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
    assert( now > db.head_block_time() );
 
    string scheduled_witness = db.get_scheduled_witness( slot );
+	 ilog("the scheduled_witness is ${witness}", ("witness", scheduled_witness));
    // we must control the witness scheduled to produce the next block.
    if( _witnesses.find( scheduled_witness ) == _witnesses.end() )
    {
