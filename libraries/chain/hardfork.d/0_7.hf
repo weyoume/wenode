@@ -3,8 +3,6 @@
 #define HARDFORK_0_7__117 HARDFORK_0_7
 #define FIRST_CASHOUT_TIME HARDFORK_0_7
 
-// Mon Jul  4 00:00:00 UTC 2016
-// Sun Jul  3 20:00:00 EDT 2016
-#define HARDFORK_0_7_TIME 1467590400  //July 4th
+#define HARDFORK_0_7_TIME 0  //July 4th
 #define HARDFORK_0_7_VERSION hardfork_version( 0, 7 )
 #endif
