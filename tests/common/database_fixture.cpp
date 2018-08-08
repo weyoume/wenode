@@ -21,7 +21,7 @@
 
 //using namespace ezira::chain::test;
 
-uint32_t EZIRA_TESTING_GENESIS_TIMESTAMP = 1431700000;
+uint32_t TESTING_GENESIS_TIMESTAMP = 1431700000;
 
 namespace ezira { namespace chain {
 
@@ -56,19 +56,19 @@ clean_database_fixture::clean_database_fixture()
    open_database();
 
    generate_block();
-   db.set_hardfork( EZIRA_NUM_HARDFORKS );
+   db.set_hardfork( NUM_HARDFORKS );
    generate_block();
 
    //ahplugin->plugin_startup();
    db_plugin->plugin_startup();
-   vest( EZIRA_INIT_MINER_NAME, 10000 );
+   vest( INIT_MINER_NAME, 10000 );
 
    // Fill up the rest of the required miners
-   for( int i = EZIRA_NUM_INIT_MINERS; i < EZIRA_MAX_WITNESSES; i++ )
+   for( int i = NUM_INIT_MINERS; i < MAX_WITNESSES; i++ )
    {
-      account_create( EZIRA_INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
-      fund( EZIRA_INIT_MINER_NAME + fc::to_string( i ), EZIRA_MIN_PRODUCER_REWARD.amount.value );
-      witness_create( EZIRA_INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, EZIRA_MIN_PRODUCER_REWARD.amount );
+      account_create( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
+      fund( INIT_MINER_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
+      witness_create( INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
    }
 
    validate_database();
@@ -116,17 +116,17 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
 
 
    generate_block();
-   db.set_hardfork( EZIRA_NUM_HARDFORKS );
+   db.set_hardfork( NUM_HARDFORKS );
    generate_block();
 
-   vest( EZIRA_INIT_MINER_NAME, 10000 );
+   vest( INIT_MINER_NAME, 10000 );
 
    // Fill up the rest of the required miners
-   for( int i = EZIRA_NUM_INIT_MINERS; i < EZIRA_MAX_WITNESSES; i++ )
+   for( int i = NUM_INIT_MINERS; i < MAX_WITNESSES; i++ )
    {
-      account_create( EZIRA_INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
-      fund( EZIRA_INIT_MINER_NAME + fc::to_string( i ), EZIRA_MIN_PRODUCER_REWARD.amount.value );
-      witness_create( EZIRA_INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, EZIRA_MIN_PRODUCER_REWARD.amount );
+      account_create( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
+      fund( INIT_MINER_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
+      witness_create( INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
    }
 
    validate_database();
@@ -210,7 +210,7 @@ void database_fixture::generate_blocks( uint32_t block_count )
 void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_intermediate_blocks)
 {
    db_plugin->debug_generate_blocks_until( debug_key, timestamp, miss_intermediate_blocks, default_skip );
-   BOOST_REQUIRE( ( db.head_block_time() - timestamp ).to_seconds() < EZIRA_BLOCK_INTERVAL );
+   BOOST_REQUIRE( ( db.head_block_time() - timestamp ).to_seconds() < BLOCK_INTERVAL );
 }
 
 const account_object& database_fixture::account_create(
@@ -225,12 +225,12 @@ const account_object& database_fixture::account_create(
 {
    try
    {
-      if( db.has_hardfork( EZIRA_HARDFORK_0_17 ) )
+      if( db.has_hardfork( HARDFORK_0_17 ) )
       {
          account_create_with_delegation_operation op;
          op.new_account_name = name;
          op.creator = creator;
-         op.fee = asset( fee, EZIRA_SYMBOL );
+         op.fee = asset( fee, SYMBOL );
          op.delegation = asset( 0, VESTS_SYMBOL );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
@@ -245,7 +245,7 @@ const account_object& database_fixture::account_create(
          account_create_operation op;
          op.new_account_name = name;
          op.creator = creator;
-         op.fee = asset( fee, EZIRA_SYMBOL );
+         op.fee = asset( fee, SYMBOL );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
@@ -255,7 +255,7 @@ const account_object& database_fixture::account_create(
          trx.operations.push_back( op );
       }
 
-      trx.set_expiration( db.head_block_time() + EZIRA_MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       trx.sign( creator_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -279,9 +279,9 @@ const account_object& database_fixture::account_create(
    {
       return account_create(
          name,
-         EZIRA_INIT_MINER_NAME,
+         INIT_MINER_NAME,
          init_account_priv_key,
-         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount * EZIRA_CREATE_ACCOUNT_WITH_EZIRA_MODIFIER, share_type( 100 ) ),
+         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER, share_type( 100 ) ),
          key,
          post_key,
          "" );
@@ -310,10 +310,10 @@ const witness_object& database_fixture::witness_create(
       op.owner = owner;
       op.url = url;
       op.block_signing_key = signing_key;
-      op.fee = asset( fee, EZIRA_SYMBOL );
+      op.fee = asset( fee, SYMBOL );
 
       trx.operations.push_back( op );
-      trx.set_expiration( db.head_block_time() + EZIRA_MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       trx.sign( owner_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -332,7 +332,7 @@ void database_fixture::fund(
 {
    try
    {
-      transfer( EZIRA_INIT_MINER_NAME, account_name, amount );
+      transfer( INIT_MINER_NAME, account_name, amount );
 
    } FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
@@ -348,7 +348,7 @@ void database_fixture::fund(
       {
          db.modify( db.get_account( account_name ), [&]( account_object& a )
          {
-            if( amount.symbol == EZIRA_SYMBOL )
+            if( amount.symbol == SYMBOL )
                a.balance += amount;
             else if( amount.symbol == EZD_SYMBOL )
             {
@@ -359,7 +359,7 @@ void database_fixture::fund(
 
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
          {
-            if( amount.symbol == EZIRA_SYMBOL )
+            if( amount.symbol == SYMBOL )
                gpo.current_supply += amount;
             else if( amount.symbol == EZD_SYMBOL )
                gpo.current_EZD_supply += amount;
@@ -371,7 +371,7 @@ void database_fixture::fund(
             if( median_feed.current_median_history.is_null() )
                db.modify( median_feed, [&]( feed_history_object& f )
                {
-                  f.current_median_history = price( asset( 1, EZD_SYMBOL ), asset( 1, EZIRA_SYMBOL ) );
+                  f.current_median_history = price( asset( 1, EZD_SYMBOL ), asset( 1, SYMBOL ) );
                });
          }
 
@@ -390,7 +390,7 @@ void database_fixture::convert(
       const account_object& account = db.get_account( account_name );
 
 
-      if ( amount.symbol == EZIRA_SYMBOL )
+      if ( amount.symbol == SYMBOL )
       {
          db.adjust_balance( account, -amount );
          db.adjust_balance( account, db.to_EZD( amount ) );
@@ -420,7 +420,7 @@ void database_fixture::transfer(
       op.amount = amount;
 
       trx.operations.push_back( op );
-      trx.set_expiration( db.head_block_time() + EZIRA_MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       trx.validate();
       db.push_transaction( trx, ~0 );
       trx.operations.clear();
@@ -434,10 +434,10 @@ void database_fixture::vest( const string& from, const share_type& amount )
       transfer_to_vesting_operation op;
       op.from = from;
       op.to = "";
-      op.amount = asset( amount, EZIRA_SYMBOL );
+      op.amount = asset( amount, SYMBOL );
 
       trx.operations.push_back( op );
-      trx.set_expiration( db.head_block_time() + EZIRA_MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       trx.validate();
       db.push_transaction( trx, ~0 );
       trx.operations.clear();
@@ -446,7 +446,7 @@ void database_fixture::vest( const string& from, const share_type& amount )
 
 void database_fixture::vest( const string& account, const asset& amount )
 {
-   if( amount.symbol != EZIRA_SYMBOL )
+   if( amount.symbol != SYMBOL )
       return;
 
    db_plugin->debug_update( [=]( database& db )
@@ -482,16 +482,16 @@ void database_fixture::set_price_feed( const price& new_price )
       for ( int i = 1; i < 8; i++ )
       {
          feed_publish_operation op;
-         op.publisher = EZIRA_INIT_MINER_NAME + fc::to_string( i );
+         op.publisher = INIT_MINER_NAME + fc::to_string( i );
          op.exchange_rate = new_price;
          trx.operations.push_back( op );
-         trx.set_expiration( db.head_block_time() + EZIRA_MAX_TIME_UNTIL_EXPIRATION );
+         trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
          db.push_transaction( trx, ~0 );
          trx.operations.clear();
       }
    } FC_CAPTURE_AND_RETHROW( (new_price) )
 
-   generate_blocks( EZIRA_BLOCKS_PER_HOUR );
+   generate_blocks( BLOCKS_PER_HOUR );
    BOOST_REQUIRE(
 #ifdef IS_TEST_NET
       !db.skip_price_feed_limit_check ||

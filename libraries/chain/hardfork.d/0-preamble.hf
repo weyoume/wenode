@@ -48,4 +48,4 @@ FC_REFLECT( ezira::chain::hardfork_property_object,
    (next_hardfork)(next_hardfork_time) )
 CHAINBASE_SET_INDEX_TYPE( ezira::chain::hardfork_property_object, ezira::chain::hardfork_property_index )
 
-#define EZIRA_NUM_HARDFORKS 19
+#define NUM_HARDFORKS 19

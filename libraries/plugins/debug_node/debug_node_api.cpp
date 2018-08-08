@@ -95,8 +95,8 @@ void debug_private_key_storage::maybe_get_private_key(
 
 debug_node_api_impl::debug_node_api_impl( ezira::app::application& _app ) : app( _app )
 {
-#ifdef EZIRA_INIT_PRIVATE_KEY
-   fc::ecc::private_key init_key = EZIRA_INIT_PRIVATE_KEY;
+#ifdef INIT_PRIVATE_KEY
+   fc::ecc::private_key init_key = INIT_PRIVATE_KEY;
    key_storage.key_table[ init_key.get_public_key() ] = init_key;
 #endif
 }
@@ -161,9 +161,9 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
    tx.operations.push_back(op);
    tx.ref_block_num = db->head_block_num();
    tx.ref_block_prefix = work.input.prev_block._hash[1];
-   tx.set_expiration( db->head_block_time() + EZIRA_MAX_TIME_UNTIL_EXPIRATION );
+   tx.set_expiration( db->head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
 
-   tx.sign( *priv, EZIRA_CHAIN_ID );
+   tx.sign( *priv, CHAIN_ID );
 
    db->push_transaction( tx );
    return;
@@ -294,7 +294,7 @@ void debug_node_api_impl::debug_set_hardfork( uint32_t hardfork_id )
 {
    using namespace ezira::chain;
 
-   if( hardfork_id > EZIRA_NUM_HARDFORKS )
+   if( hardfork_id > NUM_HARDFORKS )
       return;
 
    get_plugin()->debug_update( [=]( database& db )

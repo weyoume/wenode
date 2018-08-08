@@ -49,22 +49,22 @@ namespace ezira { namespace chain {
           */
          uint32_t num_pow_witnesses = 0;
 
-         asset       virtual_supply             = asset( 0, EZIRA_SYMBOL );
-         asset       current_supply             = asset( 0, EZIRA_SYMBOL );
-         asset       confidential_supply        = asset( 0, EZIRA_SYMBOL ); ///< total asset held in confidential balances
+         asset       virtual_supply             = asset( 0, SYMBOL );
+         asset       current_supply             = asset( 0, SYMBOL );
+         asset       confidential_supply        = asset( 0, SYMBOL ); ///< total asset held in confidential balances
          asset       current_EZD_supply         = asset( 0, EZD_SYMBOL );
          asset       confidential_EZD_supply    = asset( 0, EZD_SYMBOL ); ///< total asset held in confidential balances
-         asset       total_vesting_fund_ezira   = asset( 0, EZIRA_SYMBOL );
+         asset       total_vesting_fund_ezira   = asset( 0, SYMBOL );
          asset       total_vesting_shares       = asset( 0, VESTS_SYMBOL );
-         asset       total_reward_fund_ezira    = asset( 0, EZIRA_SYMBOL );
+         asset       total_reward_fund_ezira    = asset( 0, SYMBOL );
          fc::uint128 total_reward_shares2; ///< the running total of REWARD^2
          asset       pending_rewarded_vesting_shares = asset( 0, VESTS_SYMBOL );
-         asset       pending_rewarded_vesting_ezira = asset( 0, EZIRA_SYMBOL );
+         asset       pending_rewarded_vesting_ezira = asset( 0, SYMBOL );
 
          price       get_vesting_share_price() const
          {
             if ( total_vesting_fund_ezira.amount == 0 || total_vesting_shares.amount == 0 )
-               return price ( asset( 1000, EZIRA_SYMBOL ), asset( 1000000, VESTS_SYMBOL ) );
+               return price ( asset( 1000, SYMBOL ), asset( 1000000, VESTS_SYMBOL ) );
 
             return price( total_vesting_shares, total_vesting_fund_ezira );
          }
@@ -80,7 +80,7 @@ namespace ezira { namespace chain {
           */
          uint16_t EZD_interest_rate = 0;
 
-         uint16_t EZD_print_rate = EZIRA_100_PERCENT;
+         uint16_t EZD_print_rate = PERCENT_100;
 
          /**
           *  Maximum block size is decided by the set of active witnesses which change every round.

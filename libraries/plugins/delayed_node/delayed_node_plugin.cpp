@@ -165,4 +165,4 @@ void delayed_node_plugin::connection_failed()
 
 } }
 
-EZIRA_DEFINE_PLUGIN( delayed_node, ezira::delayed_node::delayed_node_plugin )
+DEFINE_PLUGIN( delayed_node, ezira::delayed_node::delayed_node_plugin )

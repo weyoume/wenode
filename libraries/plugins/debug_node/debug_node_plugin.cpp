@@ -439,4 +439,4 @@ void debug_node_plugin::plugin_shutdown()
 
 } } }
 
-EZIRA_DEFINE_PLUGIN( debug_node, ezira::plugin::debug_node::debug_node_plugin )
+DEFINE_PLUGIN( debug_node, ezira::plugin::debug_node::debug_node_plugin )

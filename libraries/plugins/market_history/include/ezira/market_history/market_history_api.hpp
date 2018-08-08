@@ -26,13 +26,13 @@ struct market_ticker
    double      lowest_ask = 0;
    double      highest_bid = 0;
    double      percent_change = 0;
-   asset       ezira_volume = asset( 0 , EZIRA_SYMBOL );
+   asset       ezira_volume = asset( 0 , SYMBOL );
    asset       EZD_volume = asset( 0, EZD_SYMBOL );
 };
 
 struct market_volume
 {
-   asset       ezira_volume = asset( 0, EZIRA_SYMBOL );
+   asset       ezira_volume = asset( 0, SYMBOL );
    asset       EZD_volume = asset( 0, EZD_SYMBOL );
 };
 

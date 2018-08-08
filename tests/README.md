@@ -36,7 +36,7 @@ repository root.)
     cd build
     cmake \
         -DCMAKE_BUILD_TYPE=Debug \
-        -DBUILD_EZIRA_TESTNET=ON \
+        -DBUILD_TESTNET=ON \
         -DLOW_MEMORY_NODE=OFF \
         -DCLEAR_VOTES=ON \
         ..

@@ -9,15 +9,15 @@ if( GPERFTOOLS_FOUND )
     list( APPEND PLATFORM_SPECIFIC_LIBS tcmalloc )
 endif()
 
-if( EZIRA_STATIC_BUILD )
+if( STATIC_BUILD )
    # I don't know why ezira_app is required twice in the following line, I just know the linker breaks if it isn't.
    target_link_libraries( cli_wallet PRIVATE
                           "-static-libstdc++ -static-libgcc -lreadline"
                           ezira_app graphene_net ezira_chain ezira_protocol graphene_utilities ezira_wallet ezira_private_message ezira_app ezira_follow fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
-else( EZIRA_STATIC_BUILD )
+else( STATIC_BUILD )
    target_link_libraries( cli_wallet PRIVATE
                           ezira_app graphene_net ezira_chain ezira_protocol graphene_utilities ezira_wallet ezira_private_message ezira_app ezira_follow fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
-endif( EZIRA_STATIC_BUILD )
+endif( STATIC_BUILD )
 
 if(MSVC)
   set_source_files_properties( main.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )

@@ -61,7 +61,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                b.open = open;
                b.seconds = bucket;
 
-               if( op.open_pays.symbol == EZIRA_SYMBOL )
+               if( op.open_pays.symbol == SYMBOL )
                {
                   b.high_ezira = op.open_pays.amount;
                   b.high_EZD = op.current_pays.amount;
@@ -93,7 +93,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
          {
             db.modify( *itr, [&]( bucket_object& b )
             {
-               if( op.open_pays.symbol == EZIRA_SYMBOL )
+               if( op.open_pays.symbol == SYMBOL )
                {
                   b.ezira_volume += op.open_pays.amount;
                   b.EZD_volume += op.current_pays.amount;
@@ -217,4 +217,4 @@ uint32_t market_history_plugin::get_max_history_per_bucket() const
 
 } } // ezira::market_history
 
-EZIRA_DEFINE_PLUGIN( market_history, ezira::market_history::market_history_plugin )
+DEFINE_PLUGIN( market_history, ezira::market_history::market_history_plugin )

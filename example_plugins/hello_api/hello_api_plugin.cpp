@@ -110,8 +110,8 @@ std::string hello_api_api::get_message()
 } }
 
 /**
- * The EZIRA_DEFINE_PLUGIN() macro will define a ezira::plugin::create_hello_api_plugin()
+ * The DEFINE_PLUGIN() macro will define a ezira::plugin::create_hello_api_plugin()
  * factory method which is expected by the manifest.
  */
 
-EZIRA_DEFINE_PLUGIN( hello_api, ezira::example_plugin::hello_api_plugin )
+DEFINE_PLUGIN( hello_api, ezira::example_plugin::hello_api_plugin )

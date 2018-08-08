@@ -3,7 +3,7 @@
 #include <fc/exception/exception.hpp>
 #include <ezira/protocol/protocol.hpp>
 
-#define EZIRA_ASSERT( expr, exc_type, FORMAT, ... )                \
+#define ASSERT( expr, exc_type, FORMAT, ... )                \
    FC_MULTILINE_MACRO_BEGIN                                           \
    if( !(expr) )                                                      \
       FC_THROW_EXCEPTION( exc_type, FORMAT, __VA_ARGS__ );            \
@@ -19,7 +19,7 @@ namespace ezira { namespace protocol {
    FC_DECLARE_DERIVED_EXCEPTION( tx_irrelevant_sig,                 ezira::protocol::transaction_exception, 3050000, "irrelevant signature included" )
    FC_DECLARE_DERIVED_EXCEPTION( tx_duplicate_sig,                  ezira::protocol::transaction_exception, 3060000, "duplicate signature included" )
 
-   #define EZIRA_RECODE_EXC( cause_type, effect_type ) \
+   #define RECODE_EXC( cause_type, effect_type ) \
       catch( const cause_type& e ) \
       { throw( effect_type( e.what(), e.get_log() ) ); }
 

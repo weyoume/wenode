@@ -115,7 +115,7 @@ namespace ezira { namespace chain {
          version           running_version;
 
          hardfork_version  hardfork_version_vote;
-         time_point_sec    hardfork_time_vote = EZIRA_GENESIS_TIME;
+         time_point_sec    hardfork_time_vote = GENESIS_TIME;
    };
 
 
@@ -151,7 +151,7 @@ namespace ezira { namespace chain {
 
          fc::uint128                                                       current_virtual_time;
          uint32_t                                                          next_shuffle_block_num = 1;
-         fc::array< account_name_type, EZIRA_MAX_WITNESSES >             current_shuffled_witnesses;
+         fc::array< account_name_type, MAX_WITNESSES >             current_shuffled_witnesses;
          uint8_t                                                           num_scheduled_witnesses = 1;
          uint8_t                                                           top19_weight = 1;
          uint8_t                                                           timeshare_weight = 5;
@@ -160,10 +160,10 @@ namespace ezira { namespace chain {
          chain_properties                                                  median_props;
          version                                                           majority_version;
 
-         uint8_t max_voted_witnesses            = EZIRA_MAX_VOTED_WITNESSES_HF0;
-         uint8_t max_miner_witnesses            = EZIRA_MAX_MINER_WITNESSES_HF0;
-         uint8_t max_runner_witnesses           = EZIRA_MAX_RUNNER_WITNESSES_HF0;
-         uint8_t hardfork_required_witnesses    = EZIRA_HARDFORK_REQUIRED_WITNESSES;
+         uint8_t max_voted_witnesses            = MAX_VOTED_WITNESSES_HF0;
+         uint8_t max_miner_witnesses            = MAX_MINER_WITNESSES_HF0;
+         uint8_t max_runner_witnesses           = MAX_RUNNER_WITNESSES_HF0;
+         uint8_t hardfork_required_witnesses    = HARDFORK_REQUIRED_WITNESSES;
    };
 
 

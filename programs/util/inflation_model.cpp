@@ -66,9 +66,9 @@ int main( int argc, char** argv, char** envp )
    std::vector< share_type > reward_total;
 
 /*
-#define EZIRA_GENESIS_TIME                    (fc::time_point_sec(1458835200))
-#define EZIRA_MINING_TIME                     (fc::time_point_sec(1458838800))
-#define EZIRA_FIRST_CASHOUT_TIME              (fc::time_point_sec(1467590400))  /// July 4th
+#define GENESIS_TIME                    (fc::time_point_sec(1458835200))
+#define MINING_TIME                     (fc::time_point_sec(1458838800))
+#define FIRST_CASHOUT_TIME              (fc::time_point_sec(1467590400))  /// July 4th
 */
 
    uint32_t liquidity_begin_block = (1467590400 - 1458835200) / 3;
@@ -82,18 +82,18 @@ int main( int argc, char** argv, char** envp )
 
    auto block_inflation_model = [&]( uint32_t block_num, share_type& current_supply )
    {
-      uint32_t vesting_factor = (block_num < EZIRA_START_VESTING_BLOCK) ? 0 : 9;
+      uint32_t vesting_factor = (block_num < START_VESTING_BLOCK) ? 0 : 9;
 
-      share_type curate_reward   = calc_percent_reward_per_block< EZIRA_CURATE_APR_PERCENT >( current_supply );
-      reward_delta[ CURATE_OFF ] = std::max( curate_reward, EZIRA_MIN_CURATE_REWARD.amount );
+      share_type curate_reward   = calc_percent_reward_per_block< CURATE_APR_PERCENT >( current_supply );
+      reward_delta[ CURATE_OFF ] = std::max( curate_reward, MIN_CURATE_REWARD.amount );
       reward_delta[ VCURATE_OFF ] = reward_delta[ CURATE_OFF ] * vesting_factor;
 
-      share_type content_reward  = calc_percent_reward_per_block< EZIRA_CONTENT_APR_PERCENT >( current_supply );
-      reward_delta[ CONTENT_OFF ] = std::max( content_reward, EZIRA_MIN_CONTENT_REWARD.amount );
+      share_type content_reward  = calc_percent_reward_per_block< CONTENT_APR_PERCENT >( current_supply );
+      reward_delta[ CONTENT_OFF ] = std::max( content_reward, MIN_CONTENT_REWARD.amount );
       reward_delta[ VCONTENT_OFF ] = reward_delta[ CONTENT_OFF ] * vesting_factor;
 
-      share_type producer_reward = calc_percent_reward_per_block< EZIRA_PRODUCER_APR_PERCENT >( current_supply );
-      reward_delta[ PRODUCER_OFF ] = std::max( producer_reward, EZIRA_MIN_PRODUCER_REWARD.amount );
+      share_type producer_reward = calc_percent_reward_per_block< PRODUCER_APR_PERCENT >( current_supply );
+      reward_delta[ PRODUCER_OFF ] = std::max( producer_reward, MIN_PRODUCER_REWARD.amount );
       reward_delta[ VPRODUCER_OFF ] = reward_delta[ PRODUCER_OFF ] * vesting_factor;
 
       current_supply += reward_delta[CURATE_OFF] + reward_delta[VCURATE_OFF] + reward_delta[CONTENT_OFF] + reward_delta[VCONTENT_OFF] + reward_delta[PRODUCER_OFF] + reward_delta[VPRODUCER_OFF];
@@ -103,15 +103,15 @@ int main( int argc, char** argv, char** envp )
       share_type liquidity_reward = 0;
       share_type pow_reward = 0;
 
-      if( (block_num % EZIRA_MAX_WITNESSES) == 0 )
+      if( (block_num % MAX_WITNESSES) == 0 )
          ++pow_deficit;
 
       if( pow_deficit > 0 )
       {
-         pow_reward = calc_percent_reward_per_round< EZIRA_POW_APR_PERCENT >( current_supply );
-         pow_reward = std::max( pow_reward, EZIRA_MIN_POW_REWARD.amount );
-         if( block_num < EZIRA_START_MINER_VOTING_BLOCK )
-            pow_reward *= EZIRA_MAX_WITNESSES;
+         pow_reward = calc_percent_reward_per_round< POW_APR_PERCENT >( current_supply );
+         pow_reward = std::max( pow_reward, MIN_POW_REWARD.amount );
+         if( block_num < START_MINER_VOTING_BLOCK )
+            pow_reward *= MAX_WITNESSES;
          --pow_deficit;
       }
       reward_delta[ POW_OFF ] = pow_reward;
@@ -119,10 +119,10 @@ int main( int argc, char** argv, char** envp )
 
       current_supply += reward_delta[ POW_OFF ] + reward_delta[ VPOW_OFF ];
 
-      if( (block_num > liquidity_begin_block) && ((block_num % EZIRA_LIQUIDITY_REWARD_BLOCKS) == 0) )
+      if( (block_num > liquidity_begin_block) && ((block_num % LIQUIDITY_REWARD_BLOCKS) == 0) )
       {
-         liquidity_reward = calc_percent_reward_per_hour< EZIRA_LIQUIDITY_APR_PERCENT >( current_supply );
-         liquidity_reward = std::max( liquidity_reward, EZIRA_MIN_LIQUIDITY_REWARD.amount );
+         liquidity_reward = calc_percent_reward_per_hour< LIQUIDITY_APR_PERCENT >( current_supply );
+         liquidity_reward = std::max( liquidity_reward, MIN_LIQUIDITY_REWARD.amount );
       }
       reward_delta[ LIQUIDITY_OFF ] = liquidity_reward;
       reward_delta[ VLIQUIDITY_OFF ] = reward_delta[ LIQUIDITY_OFF ] * vesting_factor;
@@ -138,7 +138,7 @@ int main( int argc, char** argv, char** envp )
 
    share_type current_supply = 0;
 
-   for( uint32_t b=1; b<10*EZIRA_BLOCKS_PER_YEAR; b++ )
+   for( uint32_t b=1; b<10*BLOCKS_PER_YEAR; b++ )
    {
       block_inflation_model( b, current_supply );
       if( b%1000 == 0 )

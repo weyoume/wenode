@@ -30,4 +30,4 @@ void auth_util_plugin::plugin_shutdown()
 
 } } } // ezira::plugin::auth_util
 
-EZIRA_DEFINE_PLUGIN( auth_util, ezira::plugin::auth_util::auth_util_plugin )
+DEFINE_PLUGIN( auth_util, ezira::plugin::auth_util::auth_util_plugin )

@@ -297,7 +297,7 @@ public:
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
       result["median_EZD_price"] = _remote_db->get_current_median_history_price();
       result["account_creation_fee"] = _remote_db->get_chain_properties().account_creation_fee;
-      result["post_reward_fund"] = fc::variant(_remote_db->get_reward_fund( EZIRA_POST_REWARD_FUND_NAME )).get_object();
+      result["post_reward_fund"] = fc::variant(_remote_db->get_reward_fund( POST_REWARD_FUND_NAME )).get_object();
       return result;
    }
 
@@ -309,7 +309,7 @@ public:
          client_version = client_version.substr( pos + 1 );
 
       fc::mutable_variant_object result;
-      result["blockchain_version"]       = EZIRA_BLOCKCHAIN_VERSION;
+      result["blockchain_version"]       = BLOCKCHAIN_VERSION;
       result["client_version"]           = client_version;
       result["ezira_revision"]           = graphene::utilities::git_revision_sha;
       result["ezira_revision_age"]       = fc::get_approximate_relative_time_string( fc::time_point_sec( graphene::utilities::git_revision_unix_timestamp ) );
@@ -543,7 +543,7 @@ public:
 
    void set_transaction_expiration( uint32_t tx_expiration_seconds )
    {
-      FC_ASSERT( tx_expiration_seconds < EZIRA_MAX_TIME_UNTIL_EXPIRATION );
+      FC_ASSERT( tx_expiration_seconds < MAX_TIME_UNTIL_EXPIRATION );
       _tx_expiration_seconds = tx_expiration_seconds;
    }
 
@@ -674,7 +674,7 @@ public:
       }
 
       auto minimal_signing_keys = tx.minimize_required_signatures(
-         EZIRA_CHAIN_ID,
+         CHAIN_ID,
          available_keys,
          [&]( const string& account_name ) -> const authority&
          { return (get_account_from_lut( account_name ).active); },
@@ -682,14 +682,14 @@ public:
          { return (get_account_from_lut( account_name ).owner); },
          [&]( const string& account_name ) -> const authority&
          { return (get_account_from_lut( account_name ).posting); },
-         EZIRA_MAX_SIG_CHECK_DEPTH
+         MAX_SIG_CHECK_DEPTH
          );
 
       for( const public_key_type& k : minimal_signing_keys )
       {
          auto it = available_private_keys.find(k);
          FC_ASSERT( it != available_private_keys.end() );
-         tx.sign( it->second, EZIRA_CHAIN_ID );
+         tx.sign( it->second, CHAIN_ID );
       }
 
       if( broadcast ) {
@@ -780,7 +780,7 @@ public:
              ss << ' ' << setw( 10 ) << o.orderid;
              ss << ' ' << setw( 10 ) << o.real_price;
              ss << ' ' << setw( 10 ) << fc::variant( asset( o.for_sale, o.sell_price.base.symbol ) ).as_string();
-             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == EZIRA_SYMBOL ? "SELL" : "BUY");
+             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL ? "SELL" : "BUY");
              ss << "\n";
           }
           return ss.str();
@@ -814,7 +814,7 @@ public:
                ss
                   << ' ' << setw( spacing ) << bid_sum.to_string()
                   << ' ' << setw( spacing ) << asset( orders.bids[i].EZD, EZD_SYMBOL ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].ezira, EZIRA_SYMBOL ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].ezira, SYMBOL ).to_string()
                   << ' ' << setw( spacing ) << orders.bids[i].real_price; //(~orders.bids[i].order_price).to_real();
             }
             else
@@ -829,7 +829,7 @@ public:
                ask_sum += asset( orders.asks[i].EZD, EZD_SYMBOL );
                //ss << ' ' << setw( spacing ) << (~orders.asks[i].order_price).to_real()
                ss << ' ' << setw( spacing ) << orders.asks[i].real_price
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].ezira, EZIRA_SYMBOL ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].ezira, SYMBOL ).to_string()
                   << ' ' << setw( spacing ) << asset( orders.asks[i].EZD, EZD_SYMBOL ).to_string()
                   << ' ' << setw( spacing ) << ask_sum.to_string();
             }
@@ -1298,7 +1298,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
    op.posting = authority( 1, posting, 1 );
    op.memo_key = memo;
    op.json_metadata = json_meta;
-   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( EZIRA_CREATE_ACCOUNT_WITH_EZIRA_MODIFIER, EZIRA_SYMBOL );
+   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL );
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -2275,7 +2275,7 @@ annotated_signed_transaction wallet_api::vote( string voter, string author, stri
    op.voter = voter;
    op.author = author;
    op.permlink = permlink;
-   op.weight = weight * EZIRA_1_PERCENT;
+   op.weight = weight * PERCENT_1;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -2361,7 +2361,7 @@ annotated_signed_transaction      wallet_api::send_private_message( string from,
 
    custom_operation op;
    op.required_auths.insert(from);
-   op.id = EZIRA_PRIVATE_MESSAGE_COP_ID;
+   op.id = PRIVATE_MESSAGE_COP_ID;
 
 
    private_message_operation pmo;
