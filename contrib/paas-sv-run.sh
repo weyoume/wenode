@@ -7,7 +7,7 @@ if [[ ! $? -eq 0 ]]; then
   sleep 30
   SAVED_PID=`cat /tmp/eznodepid`
   if [[ -e /tmp/core.$SAVED_PID ]]; then
-    gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" /usr/local/eznode-full/bin/eznode /tmp/core.$SAVED_PID >> /tmp/stacktrace
+    gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" /usr/local/eznode/bin/eznode /tmp/core.$SAVED_PID >> /tmp/stacktrace
     STACKTRACE=`cat /tmp/stacktrace`
     echo NOTIFYALERT! eznodesync stacktrace from coredump:
     for ((i=0;i<${#STACKTRACE};i+=120)); do

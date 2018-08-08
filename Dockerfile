@@ -114,7 +114,7 @@ RUN \
     mkdir build && \
     cd build && \
     cmake \
-        -DCMAKE_INSTALL_PREFIX=/usr/local/eznode-full \
+        -DCMAKE_INSTALL_PREFIX=/usr/local/eznode \
         -DCMAKE_BUILD_TYPE=Release \
         -DLOW_MEMORY_NODE=OFF \
         -DCLEAR_VOTES=OFF \
