@@ -18,7 +18,7 @@ recommended for witnesses and seed-nodes.
 
 Clears old votes from memory that are no longer required for consensus.
 
-### BUILD_EZIRA_TESTNET=[OFF/ON]
+### BUILD_TESTNET=[OFF/ON]
 
 Builds ezira for use in a private testnet. Also required for building unit tests.
 

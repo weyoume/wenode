@@ -44,18 +44,18 @@ namespace ezira { namespace chain {
          time_point_sec    last_owner_proved = time_point_sec::min();
          time_point_sec    last_active_proved = time_point_sec::min();
          account_name_type recovery_account;
-         account_name_type reset_account = EZIRA_NULL_ACCOUNT;
+         account_name_type reset_account = NULL_ACCOUNT;
          time_point_sec    last_account_recovery;
          uint32_t          comment_count = 0;
          uint32_t          lifetime_vote_count = 0;
          uint32_t          post_count = 0;
 
          bool              can_vote = true;
-         uint16_t          voting_power = EZIRA_100_PERCENT;   ///< current voting power of this account, it falls after every vote
+         uint16_t          voting_power = PERCENT_100;   ///< current voting power of this account, it falls after every vote
          time_point_sec    last_vote_time; ///< used to increase the voting power of this account the longer it goes without voting.
 
-         asset             balance = asset( 0, EZIRA_SYMBOL );  ///< total liquid shares held by this account
-         asset             savings_balance = asset( 0, EZIRA_SYMBOL );  ///< total liquid shares held by this account
+         asset             balance = asset( 0, SYMBOL );  ///< total liquid shares held by this account
+         asset             savings_balance = asset( 0, SYMBOL );  ///< total liquid shares held by this account
 
          /**
           *  EZD Deposits pay interest based upon the interest rate set by witnesses. The purpose of these
@@ -65,7 +65,7 @@ namespace ezira { namespace chain {
           *  interest = interest_rate * EZD_seconds / seconds_per_year
           *
           *  Every time the EZD_balance is updated the EZD_seconds is also updated. If at least
-          *  EZIRA_MIN_COMPOUNDING_INTERVAL_SECONDS has past since EZD_last_interest_payment then
+          *  MIN_COMPOUNDING_INTERVAL_SECONDS has past since EZD_last_interest_payment then
           *  interest is added to EZD_balance.
           *
           *  @defgroup EZD_data EZD Balance Data
@@ -86,9 +86,9 @@ namespace ezira { namespace chain {
          ///@}
 
          asset             reward_EZD_balance = asset( 0, EZD_SYMBOL );
-         asset             reward_ezira_balance = asset( 0, EZIRA_SYMBOL );
+         asset             reward_ezira_balance = asset( 0, SYMBOL );
          asset             reward_vesting_balance = asset( 0, VESTS_SYMBOL );
-         asset             reward_vesting_ezira = asset( 0, EZIRA_SYMBOL );
+         asset             reward_vesting_ezira = asset( 0, SYMBOL );
 
          share_type        curation_rewards = 0;
          share_type        posting_rewards = 0;
@@ -103,7 +103,7 @@ namespace ezira { namespace chain {
          share_type        to_withdraw = 0; /// Might be able to look this up with operation history.
          uint16_t          withdraw_routes = 0;
 
-         fc::array<share_type, EZIRA_MAX_PROXY_RECURSION_DEPTH> proxied_vsf_votes;// = std::vector<share_type>( EZIRA_MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total VFS votes proxied to this account
+         fc::array<share_type, MAX_PROXY_RECURSION_DEPTH> proxied_vsf_votes;// = std::vector<share_type>( MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total VFS votes proxied to this account
 
          uint16_t          witnesses_voted_for = 0;
 

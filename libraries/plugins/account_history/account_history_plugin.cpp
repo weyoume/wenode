@@ -13,7 +13,7 @@
 
 #include <boost/algorithm/string.hpp>
 
-#define EZIRA_NAMESPACE_PREFIX "ezira::protocol::"
+#define NAMESPACE_PREFIX "ezira::protocol::"
 
 namespace ezira { namespace account_history {
 
@@ -222,7 +222,7 @@ void account_history_plugin::plugin_initialize(const boost::program_options::var
          for( const string& op : ops )
          {
             if( op.size() )
-               my->_op_list.insert( EZIRA_NAMESPACE_PREFIX + op );
+               my->_op_list.insert( NAMESPACE_PREFIX + op );
          }
       }
 
@@ -240,7 +240,7 @@ void account_history_plugin::plugin_initialize(const boost::program_options::var
          for( const string& op : ops )
          {
             if( op.size() )
-               my->_op_list.insert( EZIRA_NAMESPACE_PREFIX + op );
+               my->_op_list.insert( NAMESPACE_PREFIX + op );
          }
       }
 
@@ -262,4 +262,4 @@ flat_map< account_name_type, account_name_type > account_history_plugin::tracked
 
 } }
 
-EZIRA_DEFINE_PLUGIN( account_history, ezira::account_history::account_history_plugin )
+DEFINE_PLUGIN( account_history, ezira::account_history::account_history_plugin )

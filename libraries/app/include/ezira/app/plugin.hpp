@@ -142,7 +142,7 @@ if( options.count(name) ) { \
 
 } } //ezira::app
 
-#define EZIRA_DEFINE_PLUGIN( plugin_name, plugin_class ) \
+#define DEFINE_PLUGIN( plugin_name, plugin_class ) \
    namespace ezira { namespace plugin { \
    std::shared_ptr< ezira::app::abstract_plugin > create_ ## plugin_name ## _plugin( app::application* app )  \
    { return std::make_shared< plugin_class >( app ); } \

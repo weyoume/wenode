@@ -185,6 +185,6 @@ flat_map<string,string> private_message_plugin::tracked_accounts() const
 
 } }
 
-EZIRA_DEFINE_PLUGIN( private_message, ezira::private_message::private_message_plugin )
+DEFINE_PLUGIN( private_message, ezira::private_message::private_message_plugin )
 
 DEFINE_OPERATION_TYPE( ezira::private_message::private_message_plugin_operation )

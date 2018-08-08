@@ -118,7 +118,7 @@ namespace ezira { namespace app {
     ezira_version_info login_api::get_version()
     {
        return ezira_version_info(
-         fc::string( EZIRA_BLOCKCHAIN_VERSION ),
+         fc::string( BLOCKCHAIN_VERSION ),
          fc::string( graphene::utilities::git_revision_sha ),
          fc::string( fc::git_revision_sha ) );
     }

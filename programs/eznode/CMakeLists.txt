@@ -9,7 +9,7 @@ if( GPERFTOOLS_FOUND )
     list( APPEND PLATFORM_SPECIFIC_LIBS tcmalloc )
 endif()
 
-if( EZIRA_STATIC_BUILD )
+if( STATIC_BUILD )
    target_link_libraries( eznode PRIVATE
       "-static-libstdc++ -static-libgcc"
       ezira_plugins
@@ -23,7 +23,7 @@ if( EZIRA_STATIC_BUILD )
       ${CMAKE_DL_LIBS}
       ${PLATFORM_SPECIFIC_LIBS}
    )
-else( EZIRA_STATIC_BUILD )
+else( STATIC_BUILD )
    target_link_libraries( eznode PRIVATE
       ezira_plugins
       ezira_mf_plugins
@@ -36,7 +36,7 @@ else( EZIRA_STATIC_BUILD )
       ${CMAKE_DL_LIBS}
       ${PLATFORM_SPECIFIC_LIBS}
    )
-endif( EZIRA_STATIC_BUILD )
+endif( STATIC_BUILD )
 
 install( TARGETS
    eznode

@@ -100,7 +100,7 @@ namespace ezira {
             friend bool operator != ( const public_key_type& p1, const public_key_type& p2);
       };
 
-      #define EZIRA_INIT_PUBLIC_KEY (ezira::protocol::public_key_type(EZIRA_INIT_PUBLIC_KEY_STR))
+      #define INIT_PUBLIC_KEY (ezira::protocol::public_key_type(INIT_PUBLIC_KEY_STR))
 
       struct extended_public_key_type
       {

@@ -15,7 +15,7 @@ namespace ezira { namespace protocol {
 
    inline void validate_permlink( const string& permlink )
    {
-      FC_ASSERT( permlink.size() < EZIRA_MAX_PERMLINK_LENGTH, "permlink is too long" );
+      FC_ASSERT( permlink.size() < MAX_PERMLINK_LENGTH, "permlink is too long" );
       FC_ASSERT( fc::is_utf8( permlink ), "permlink not formatted in UTF8" );
    }
 
@@ -128,7 +128,7 @@ namespace ezira { namespace protocol {
       string            permlink;
 
       asset             max_accepted_payout    = asset( 1000000000, EZD_SYMBOL );       /// EZD value of the maximum payout this post will receive
-      uint16_t          percent_ezira_dollars  = EZIRA_100_PERCENT; /// the percent of Ezira Dollars to key, unkept amounts will be received as Ezira Power
+      uint16_t          percent_ezira_dollars  = PERCENT_100; /// the percent of Ezira Dollars to key, unkept amounts will be received as Ezira Power
       bool              allow_votes            = true;      /// allows a post to receive votes;
       bool              allow_curation_rewards = true; /// allows voters to recieve curation rewards. Rewards return to reward fund.
       comment_options_extensions_type extensions;
@@ -232,7 +232,7 @@ namespace ezira { namespace protocol {
       uint32_t          escrow_id = 30;
 
       asset             EZD_amount = asset( 0, EZD_SYMBOL );
-      asset             ezira_amount = asset( 0, EZIRA_SYMBOL );
+      asset             ezira_amount = asset( 0, SYMBOL );
       asset             fee;
 
       time_point_sec    ratification_deadline;
@@ -304,7 +304,7 @@ namespace ezira { namespace protocol {
 
       uint32_t          escrow_id = 30;
       asset             EZD_amount = asset( 0, EZD_SYMBOL ); ///< the amount of EZD to release
-      asset             ezira_amount = asset( 0, EZIRA_SYMBOL ); ///< the amount of ezira to release
+      asset             ezira_amount = asset( 0, SYMBOL ); ///< the amount of ezira to release
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(who); }
@@ -382,21 +382,21 @@ namespace ezira { namespace protocol {
        *  ability to vote and make transactions.
        */
       asset             account_creation_fee =
-         asset( EZIRA_MIN_ACCOUNT_CREATION_FEE, EZIRA_SYMBOL );
+         asset( MIN_ACCOUNT_CREATION_FEE, SYMBOL );
 
       /**
        *  This witnesses vote for the maximum_block_size which is used by the network
        *  to tune rate limiting and capacity
        */
-      uint32_t          maximum_block_size = EZIRA_MIN_BLOCK_SIZE_LIMIT * 2;
-      uint16_t          EZD_interest_rate  = EZIRA_DEFAULT_EZD_INTEREST_RATE;
+      uint32_t          maximum_block_size = MIN_BLOCK_SIZE_LIMIT * 2;
+      uint16_t          EZD_interest_rate  = DEFAULT_EZD_INTEREST_RATE;
 
       void validate()const
       {
-         FC_ASSERT( account_creation_fee.amount >= EZIRA_MIN_ACCOUNT_CREATION_FEE);
-         FC_ASSERT( maximum_block_size >= EZIRA_MIN_BLOCK_SIZE_LIMIT);
+         FC_ASSERT( account_creation_fee.amount >= MIN_ACCOUNT_CREATION_FEE);
+         FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT);
          FC_ASSERT( EZD_interest_rate >= 0 );
-         FC_ASSERT( EZD_interest_rate <= EZIRA_100_PERCENT );
+         FC_ASSERT( EZD_interest_rate <= PERCENT_100 );
       }
    };
 
@@ -521,7 +521,7 @@ namespace ezira { namespace protocol {
 
    /**
     *  This operation instructs the blockchain to start a conversion between EZIRA and EZD,
-    *  The funds are deposited after EZIRA_CONVERSION_DELAY
+    *  The funds are deposited after CONVERSION_DELAY
     */
    struct convert_operation : public base_operation
    {
@@ -683,7 +683,7 @@ namespace ezira { namespace protocol {
    /**
     * This operation is used to report a miner who signs two blocks
     * at the same time. To be valid, the violation must be reported within
-    * EZIRA_MAX_WITNESSES blocks of the head block (1 round) and the
+    * MAX_WITNESSES blocks of the head block (1 round) and the
     * producer must be in the ACTIVE witness set.
     *
     * Users not in the ACTIVE witness set should not have to worry about their

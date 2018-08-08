@@ -107,4 +107,4 @@ const flat_set< std::string >& account_statistics_plugin::get_tracked_accounts()
 
 } } // ezira::account_statistics
 
-EZIRA_DEFINE_PLUGIN( account_statistics, ezira::account_statistics::account_statistics_plugin );
+DEFINE_PLUGIN( account_statistics, ezira::account_statistics::account_statistics_plugin );

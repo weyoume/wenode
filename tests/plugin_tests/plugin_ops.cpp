@@ -78,7 +78,7 @@ test_plugin::test_plugin( application* app ) : plugin( app )
 
 } } // ezira::plugin_tests
 
-EZIRA_DEFINE_PLUGIN( test, ezira::plugin_tests::test_plugin )
+DEFINE_PLUGIN( test, ezira::plugin_tests::test_plugin )
 
 FC_REFLECT( ezira::plugin_tests::test_a_operation, (account) )
 FC_REFLECT( ezira::plugin_tests::test_b_operation, (account) )

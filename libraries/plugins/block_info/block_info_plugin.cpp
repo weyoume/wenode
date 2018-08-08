@@ -55,4 +55,4 @@ void block_info_plugin::on_applied_block( const chain::signed_block& b )
 
 } } } // ezira::plugin::block_info
 
-EZIRA_DEFINE_PLUGIN( block_info, ezira::plugin::block_info::block_info_plugin )
+DEFINE_PLUGIN( block_info, ezira::plugin::block_info::block_info_plugin )

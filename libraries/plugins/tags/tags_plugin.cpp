@@ -391,7 +391,7 @@ struct operation_visitor
 
    void operator()( const transfer_operation& op )const
    {
-      if( op.to == EZIRA_NULL_ACCOUNT && op.amount.symbol == EZD_SYMBOL )
+      if( op.to == NULL_ACCOUNT && op.amount.symbol == EZD_SYMBOL )
       {
          vector<string> part; part.reserve(4);
          auto path = op.memo;
@@ -535,4 +535,4 @@ void tags_plugin::plugin_startup()
 
 } } /// ezira::tags
 
-EZIRA_DEFINE_PLUGIN( tags, ezira::tags::tags_plugin )
+DEFINE_PLUGIN( tags, ezira::tags::tags_plugin )

@@ -94,7 +94,7 @@ class reserve_ratio_object : public object< reserve_ratio_object_type, reserve_r
 
       /**
        *   Any time average_block_size <= 50% maximum_block_size this value grows by 1 until it
-       *   reaches EZIRA_MAX_RESERVE_RATIO.  Any time average_block_size is greater than
+       *   reaches MAX_RESERVE_RATIO.  Any time average_block_size is greater than
        *   50% it falls by 1%.  Upward adjustments happen once per round, downward adjustments
        *   happen every block.
        */
@@ -103,7 +103,7 @@ class reserve_ratio_object : public object< reserve_ratio_object_type, reserve_r
       /**
        * The maximum bandwidth the blockchain can support is:
        *
-       *    max_bandwidth = maximum_block_size * EZIRA_BANDWIDTH_AVERAGE_WINDOW_SECONDS / EZIRA_BLOCK_INTERVAL
+       *    max_bandwidth = maximum_block_size * BANDWIDTH_AVERAGE_WINDOW_SECONDS / BLOCK_INTERVAL
        *
        * The maximum virtual bandwidth is:
        *

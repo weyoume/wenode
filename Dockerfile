@@ -2,8 +2,8 @@ FROM phusion/baseimage:0.9.19
 
 #ARG BLOCKCHAIN=https://example.com/eznode-blockchain.tbz2
 
-ARG EZIRA_STATIC_BUILD=ON
-ENV EZIRA_STATIC_BUILD ${EZIRA_STATIC_BUILD}
+ARG STATIC_BUILD=ON
+ENV STATIC_BUILD ${STATIC_BUILD}
 
 ENV LANG=en_US.UTF-8
 
@@ -50,7 +50,7 @@ ADD . /usr/local/src/ezira
 #     cd build && \
 #     cmake \
 #         -DCMAKE_BUILD_TYPE=Release \
-#         -DBUILD_EZIRA_TESTNET=ON \
+#         -DBUILD_TESTNET=ON \
 #         -DLOW_MEMORY_NODE=OFF \
 #         -DCLEAR_VOTES=ON \
 #         -DSKIP_BY_TX_ID=ON \
@@ -72,7 +72,7 @@ ADD . /usr/local/src/ezira
 #     cmake \
 #         -DCMAKE_BUILD_TYPE=Debug \
 #         -DENABLE_COVERAGE_TESTING=ON \
-#         -DBUILD_EZIRA_TESTNET=ON \
+#         -DBUILD_TESTNET=ON \
 #         -DLOW_MEMORY_NODE=OFF \
 #         -DCLEAR_VOTES=ON \
 #         -DSKIP_BY_TX_ID=ON \
@@ -96,8 +96,8 @@ RUN \
     #     -DLOW_MEMORY_NODE=ON \
     #     -DCLEAR_VOTES=ON \
     #     -DSKIP_BY_TX_ID=OFF \
-    #     -DBUILD_EZIRA_TESTNET=ON \
-    #     -DEZIRA_STATIC_BUILD=${EZIRA_STATIC_BUILD} \
+    #     -DBUILD_TESTNET=ON \
+    #     -DSTATIC_BUILD=${STATIC_BUILD} \
     #     .. \
     # && \
     # make -j$(nproc) && \
@@ -119,8 +119,8 @@ RUN \
         -DLOW_MEMORY_NODE=OFF \
         -DCLEAR_VOTES=OFF \
         -DSKIP_BY_TX_ID=ON \
-        -DBUILD_EZIRA_TESTNET=OFF \
-        -DEZIRA_STATIC_BUILD=${EZIRA_STATIC_BUILD} \
+        -DBUILD_TESTNET=OFF \
+        -DSTATIC_BUILD=${STATIC_BUILD} \
         .. \
     && \
     make -j$(nproc) && \

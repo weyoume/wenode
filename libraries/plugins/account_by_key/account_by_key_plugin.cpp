@@ -143,7 +143,7 @@ struct post_operation_visitor
 
    void operator()( const hardfork_operation& op )const
    {
-      if( op.hardfork_id == EZIRA_HARDFORK_0_9 )
+      if( op.hardfork_id == HARDFORK_0_9 )
       {
          auto& db = _plugin.database();
 
@@ -271,4 +271,4 @@ void account_by_key_plugin::plugin_startup()
 
 } } // ezira::account_by_key
 
-EZIRA_DEFINE_PLUGIN( account_by_key, ezira::account_by_key::account_by_key_plugin )
+DEFINE_PLUGIN( account_by_key, ezira::account_by_key::account_by_key_plugin )

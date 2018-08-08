@@ -391,6 +391,6 @@ void follow_plugin::plugin_startup()
 
 } } // ezira::follow
 
-EZIRA_DEFINE_PLUGIN( follow, ezira::follow::follow_plugin )
+DEFINE_PLUGIN( follow, ezira::follow::follow_plugin )
 
 //DEFINE_OPERATION_TYPE( ezira::follow::follow_plugin_operation )

@@ -2,7 +2,7 @@
 
 #include <ezira/protocol/exceptions.hpp>
 
-#define EZIRA_DECLARE_OP_BASE_EXCEPTIONS( op_name )                \
+#define DECLARE_OP_BASE_EXCEPTIONS( op_name )                \
    FC_DECLARE_DERIVED_EXCEPTION(                                      \
       op_name ## _validate_exception,                                 \
       ezira::chain::operation_validate_exception,                  \
@@ -16,7 +16,7 @@
       #op_name "_operation evaluation exception"                      \
       )
 
-#define EZIRA_DECLARE_OP_VALIDATE_EXCEPTION( exc_name, op_name, seqnum, msg ) \
+#define DECLARE_OP_VALIDATE_EXCEPTION( exc_name, op_name, seqnum, msg ) \
    FC_DECLARE_DERIVED_EXCEPTION(                                      \
       op_name ## _ ## exc_name,                                       \
       ezira::chain::op_name ## _validate_exception,                \
@@ -25,7 +25,7 @@
       msg                                                             \
       )
 
-#define EZIRA_DECLARE_OP_EVALUATE_EXCEPTION( exc_name, op_name, seqnum, msg ) \
+#define DECLARE_OP_EVALUATE_EXCEPTION( exc_name, op_name, seqnum, msg ) \
    FC_DECLARE_DERIVED_EXCEPTION(                                      \
       op_name ## _ ## exc_name,                                       \
       ezira::chain::op_name ## _evaluate_exception,                \
@@ -34,7 +34,7 @@
       msg                                                             \
       )
 
-#define EZIRA_DECLARE_INTERNAL_EXCEPTION( exc_name, seqnum, msg )  \
+#define DECLARE_INTERNAL_EXCEPTION( exc_name, seqnum, msg )  \
    FC_DECLARE_DERIVED_EXCEPTION(                                      \
       internal_ ## exc_name,                                          \
       ezira::chain::internal_exception,                            \
@@ -42,7 +42,7 @@
       msg                                                             \
       )
 
-#define EZIRA_TRY_NOTIFY( signal, ... )                                     \
+#define TRY_NOTIFY( signal, ... )                                     \
    try                                                                        \
    {                                                                          \
       signal( __VA_ARGS__ );                                                  \
@@ -80,21 +80,21 @@ namespace ezira { namespace chain {
 
    FC_DECLARE_DERIVED_EXCEPTION( pop_empty_chain,                   ezira::chain::undo_database_exception, 4070001, "there are no blocks to pop" )
 
-   EZIRA_DECLARE_OP_BASE_EXCEPTIONS( transfer );
-//   EZIRA_DECLARE_OP_EVALUATE_EXCEPTION( from_account_not_whitelisted, transfer, 1, "owner mismatch" )
+   DECLARE_OP_BASE_EXCEPTIONS( transfer );
+//   DECLARE_OP_EVALUATE_EXCEPTION( from_account_not_whitelisted, transfer, 1, "owner mismatch" )
 
-   EZIRA_DECLARE_OP_BASE_EXCEPTIONS( account_create );
-   EZIRA_DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, account_create, 1, "Exceeds max authority fan-out" )
-   EZIRA_DECLARE_OP_EVALUATE_EXCEPTION( auth_account_not_found, account_create, 2, "Auth account not found" )
+   DECLARE_OP_BASE_EXCEPTIONS( account_create );
+   DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, account_create, 1, "Exceeds max authority fan-out" )
+   DECLARE_OP_EVALUATE_EXCEPTION( auth_account_not_found, account_create, 2, "Auth account not found" )
 
-   EZIRA_DECLARE_OP_BASE_EXCEPTIONS( account_update );
-   EZIRA_DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, account_update, 1, "Exceeds max authority fan-out" )
-   EZIRA_DECLARE_OP_EVALUATE_EXCEPTION( auth_account_not_found, account_update, 2, "Auth account not found" )
+   DECLARE_OP_BASE_EXCEPTIONS( account_update );
+   DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, account_update, 1, "Exceeds max authority fan-out" )
+   DECLARE_OP_EVALUATE_EXCEPTION( auth_account_not_found, account_update, 2, "Auth account not found" )
 
    FC_DECLARE_DERIVED_EXCEPTION( internal_exception, ezira::chain::chain_exception, 4990000, "internal exception" )
 
-   EZIRA_DECLARE_INTERNAL_EXCEPTION( verify_auth_max_auth_exceeded, 1, "Exceeds max authority fan-out" )
-   EZIRA_DECLARE_INTERNAL_EXCEPTION( verify_auth_account_not_found, 2, "Auth account not found" )
+   DECLARE_INTERNAL_EXCEPTION( verify_auth_max_auth_exceeded, 1, "Exceeds max authority fan-out" )
+   DECLARE_INTERNAL_EXCEPTION( verify_auth_account_not_found, 2, "Auth account not found" )
 
 } } // ezira::chain
 

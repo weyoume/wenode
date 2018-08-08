@@ -84,8 +84,8 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
    share_type           ezira_volume;
    share_type           EZD_volume;
 
-   price high()const { return asset( high_EZD, EZD_SYMBOL ) / asset( high_ezira, EZIRA_SYMBOL ); }
-   price low()const { return asset( low_EZD, EZD_SYMBOL ) / asset( low_ezira, EZIRA_SYMBOL ); }
+   price high()const { return asset( high_EZD, EZD_SYMBOL ) / asset( high_ezira, SYMBOL ); }
+   price low()const { return asset( low_EZD, EZD_SYMBOL ) / asset( low_ezira, SYMBOL ); }
 };
 
 typedef oid< bucket_object > bucket_id_type;

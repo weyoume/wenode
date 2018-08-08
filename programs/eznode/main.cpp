@@ -50,19 +50,19 @@ int main(int argc, char** argv) {
       std::cerr << "------------------------------------------------------\n\n";
       std::cerr << "            STARTING TEST NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
-      auto initminer_private_key = graphene::utilities::key_to_wif( EZIRA_INIT_PRIVATE_KEY );
-      std::cerr << "init public key: " << EZIRA_INIT_PUBLIC_KEY_STR << "\n";
+      auto initminer_private_key = graphene::utilities::key_to_wif( INIT_PRIVATE_KEY );
+      std::cerr << "init public key: " << INIT_PUBLIC_KEY_STR << "\n";
       std::cerr << "init private key: " << initminer_private_key << "\n";
-      std::cerr << "chain id: " << std::string(EZIRA_CHAIN_ID) << "\n";
-      std::cerr << "blockchain version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
+      std::cerr << "chain id: " << std::string(CHAIN_ID) << "\n";
+      std::cerr << "blockchain version: " << fc::string( BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
 		#else
       std::cerr << "------------------------------------------------------\n\n";
       std::cerr << "            STARTING EZIRA NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
-      std::cerr << "init public key: " << EZIRA_INIT_PUBLIC_KEY_STR << "\n";
-      std::cerr << "chain id: " << std::string(EZIRA_CHAIN_ID) << "\n";
-      std::cerr << "blockchain version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
+      std::cerr << "init public key: " << INIT_PUBLIC_KEY_STR << "\n";
+      std::cerr << "chain id: " << std::string(CHAIN_ID) << "\n";
+      std::cerr << "blockchain version: " << fc::string( BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
 		#endif
       bpo::options_description app_options("Ezira Daemon");
@@ -94,7 +94,7 @@ int main(int argc, char** argv) {
 
       if( options.count("version") )
       {
-         std::cout << "ezira_blockchain_version: " << fc::string( EZIRA_BLOCKCHAIN_VERSION ) << "\n";
+         std::cout << "ezira_blockchain_version: " << fc::string( BLOCKCHAIN_VERSION ) << "\n";
          std::cout << "ezira_git_revision:       " << fc::string( graphene::utilities::git_revision_sha ) << "\n";
          std::cout << "fc_git_revision:          " << fc::string( fc::git_revision_sha ) << "\n";
          return 0;

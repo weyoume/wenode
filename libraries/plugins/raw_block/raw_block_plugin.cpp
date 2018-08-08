@@ -30,4 +30,4 @@ void raw_block_plugin::plugin_shutdown()
 
 } } } // ezira::plugin::raw_block
 
-EZIRA_DEFINE_PLUGIN( raw_block, ezira::plugin::raw_block::raw_block_plugin )
+DEFINE_PLUGIN( raw_block, ezira::plugin::raw_block::raw_block_plugin )
