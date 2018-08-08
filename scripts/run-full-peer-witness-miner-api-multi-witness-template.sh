@@ -3,11 +3,11 @@
 docker rm -f ezira-test-node ;
 
 num=99
-offset=1
+offset=0
 witness_names=""
 witness_base_name="ezbuilder"
-for ((n=0;n<$num;n++)); do
-	witness_names+="$witness_base_name$((n+offset)) "
+for ((n=$offset;n<$num;n++)); do
+	witness_names+="$witness_base_name$((n+1)) "
 done
 
 echo [$witness_names]
