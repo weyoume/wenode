@@ -78,13 +78,13 @@
 #define EZIRA_NUM_INIT_EXTRAS									95
 #define EZIRA_INIT_TIME                       (fc::time_point_sec());
 
-#define EZIRA_MAX_WITNESSES                   21
+#define EZIRA_MAX_WITNESSES                   5
 
-#define EZIRA_MAX_VOTED_WITNESSES_HF0         19
+#define EZIRA_MAX_VOTED_WITNESSES_HF0         3
 #define EZIRA_MAX_MINER_WITNESSES_HF0         1
 #define EZIRA_MAX_RUNNER_WITNESSES_HF0        1
 
-#define EZIRA_MAX_VOTED_WITNESSES_HF17        20
+#define EZIRA_MAX_VOTED_WITNESSES_HF17        4
 #define EZIRA_MAX_MINER_WITNESSES_HF17        0
 #define EZIRA_MAX_RUNNER_WITNESSES_HF17       1
 
@@ -213,7 +213,7 @@
 #define EZIRA_MAX_PERMLINK_LENGTH             256
 #define EZIRA_MAX_WITNESS_URL_LENGTH          2048
 
-#define EZIRA_INIT_SUPPLY                     int64_t(500000)
+#define EZIRA_INIT_SUPPLY                     int64_t(100000000)
 #define EZIRA_MAX_SHARE_SUPPLY                int64_t(1000000000000000ll)
 #define EZIRA_MAX_SIG_CHECK_DEPTH             2
 
