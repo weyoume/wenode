@@ -5,7 +5,7 @@ offset=1
 witness_names=""
 witness_base_name="ezbuilder"
 for n in $num ;	do
-	$witness_names+="$witness_base_name$((n+offset))"
+	witness_names+="$witness_base_name$((n+offset)) "
 done
 
 echo $witness_names
