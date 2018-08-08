@@ -125,56 +125,56 @@ RUN \
         .. \
     && \
     make -j$(nproc) && \
-    make install && \
+    make install eznode cli_wallet && \
     rm -rf /usr/local/src/ezira
 
-# RUN \
-#     apt-get remove -y \
-#         automake \
-#         autotools-dev \
-#         bsdmainutils \
-#         build-essential \
-#         cmake \
-#         doxygen \
-#         dpkg-dev \
-#         git \
-#         libboost-all-dev \
-#         libc6-dev \
-#         libexpat1-dev \
-#         libgcc-5-dev \
-#         libhwloc-dev \
-#         libibverbs-dev \
-#         libicu-dev \
-#         libltdl-dev \
-#         libncurses5-dev \
-#         libnuma-dev \
-#         libopenmpi-dev \
-#         libpython-dev \
-#         libpython2.7-dev \
-#         libreadline-dev \
-#         libreadline6-dev \
-#         libssl-dev \
-#         libstdc++-5-dev \
-#         libtinfo-dev \
-#         libtool \
-#         linux-libc-dev \
-#         m4 \
-#         make \
-#         manpages \
-#         manpages-dev \
-#         mpi-default-dev \
-#         python-dev \
-#         python2.7-dev \
-#         python3-dev \
-#     && \
-#     apt-get autoremove -y && \
-#     rm -rf \
-#         /var/lib/apt/lists/* \
-#         /tmp/* \
-#         /var/tmp/* \
-#         /var/cache/* \
-#         /usr/include \
-#         /usr/local/include
+RUN \
+    apt-get remove -y \
+        automake \
+        autotools-dev \
+        bsdmainutils \
+        build-essential \
+        cmake \
+        doxygen \
+        dpkg-dev \
+        git \
+        libboost-all-dev \
+        libc6-dev \
+        libexpat1-dev \
+        libgcc-5-dev \
+        libhwloc-dev \
+        libibverbs-dev \
+        libicu-dev \
+        libltdl-dev \
+        libncurses5-dev \
+        libnuma-dev \
+        libopenmpi-dev \
+        libpython-dev \
+        libpython2.7-dev \
+        libreadline-dev \
+        libreadline6-dev \
+        libssl-dev \
+        libstdc++-5-dev \
+        libtinfo-dev \
+        libtool \
+        linux-libc-dev \
+        m4 \
+        make \
+        manpages \
+        manpages-dev \
+        mpi-default-dev \
+        python-dev \
+        python2.7-dev \
+        python3-dev \
+    && \
+    apt-get autoremove -y && \
+    rm -rf \
+        /var/lib/apt/lists/* \
+        /tmp/* \
+        /var/tmp/* \
+        /var/cache/* \
+        /usr/include \
+        /usr/local/include
 
 RUN useradd -s /bin/bash -m -d /var/lib/eznode eznode
 
