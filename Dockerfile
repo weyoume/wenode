@@ -203,8 +203,8 @@ ADD contrib/config-for-broadcaster.ini /etc/eznode/config-for-broadcaster.ini
 ADD contrib/config-for-ahnode.ini /etc/eznode/config-for-ahnode.ini
 
 # add normal startup script that starts via sv
-ADD contrib/ezira-sv-run.sh /usr/local/bin/ezira-sv-run.sh
-RUN chmod +x /usr/local/bin/ezira-sv-run.sh
+ADD contrib/eznode-sv-run.sh /usr/local/bin/eznode-sv-run.sh
+RUN chmod +x /usr/local/bin/eznode-sv-run.sh
 
 # add nginx templates
 ADD contrib/eznode.nginx.conf /etc/nginx/eznode.nginx.conf
