@@ -1,0 +1,1 @@
+docker logs -f --tail 3000 ezira-test-node
