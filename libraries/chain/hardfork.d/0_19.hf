@@ -1,7 +1,7 @@
 #ifndef HARDFORK_0_19
 #define HARDFORK_0_19 19
 
-#define HARDFORK_0_19_TIME 190000
+#define HARDFORK_0_19_TIME 190
 
 #define HARDFORK_0_19__822 (HARDFORK_0_19)
 #define HARDFORK_0_19__876 (HARDFORK_0_19)
@@ -16,7 +16,7 @@
 #define HARDFORK_0_19_VERSION hardfork_version( 0, 19 )
 
 #define HF_19_RECENT_CLAIMS (fc::uint128_t(uint64_t(0)))
-#define HARDFORK_0_19_ACTUAL_TIME (fc::time_point_sec(190000))
+#define HARDFORK_0_19_ACTUAL_TIME (fc::time_point_sec(190))
 #define HF_19_SQRT_PRE_CALC (fc::time_point_sec( HARDFORK_0_19_ACTUAL_TIME ))
 
 #endif

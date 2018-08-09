@@ -15,7 +15,7 @@
 #define HARDFORK_0_14__410 (HARDFORK_0_14)
 
 
-#define HARDFORK_0_14_TIME  140000
+#define HARDFORK_0_14_TIME  140
 
 #define HARDFORK_0_14_VERSION hardfork_version( 0, 14 )
 
