@@ -17,6 +17,7 @@ echo [$witness_names]
 docker run \
 	--env USE_WAY_TOO_MUCH_RAM=1 \
         --env USE_FULL_WEB_NODE=1 \
+				--env USE_NGINX_FRONTEND=1 \
         --env PRIVATE_KEY="5JbDVBTnNJh2WCPjHqEpSBKgnmm6cVE3tGNTW4HQZ9kYzDnAM11" \
         --env WITNESS_NAMES="$witness_names" \
        	--env WITNESS_NAME="ezbuilder" \
