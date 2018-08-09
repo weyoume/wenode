@@ -11,9 +11,9 @@
 #define INIT_PUBLIC_KEY_STR             (std::string( ezira::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 #define CHAIN_ID                        (fc::sha256::hash("eztestnet"))
 
-#define VESTS_SYMBOL  (uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< VESTS with 6 digits of precision
-#define SYMBOL  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< EZIRA with 3 digits of precision
-#define EZD_SYMBOL    (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test Backed Dollars with 3 digits of precision
+#define SYMBOL_VESTS  (uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< VESTS with 6 digits of precision
+#define SYMBOL_EZIRA  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< EZIRA with 3 digits of precision
+#define SYMBOL_EZD    (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test Backed Dollars with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "EZT"
 
@@ -40,14 +40,15 @@
 
 #define INIT_PUBLIC_KEY_STR             "EZT8AqecLobkeTBmffuuxdhdYG3fttawrtST77cm83DHpVTcyNNzz"
 #define CHAIN_ID                        (fc::sha256::hash("eztestnet"))
-#define VESTS_SYMBOL  (uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< VESTS with 6 digits of precision
-#define SYMBOL  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('I') << 24) | (uint64_t('R') << 32) | (uint64_t('A') << 40)) ///< EZIRA with 3 digits of precision
-#define EZD_SYMBOL    (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) ) ///< EZIRA Backed Dollars with 3 digits of precision
+#define SYMBOL_VESTS  									(uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('T') << 40)) ///< VESTS with 6 digits of precision
+#define SYMBOL_EZIRA  									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40)) ///< EZIRA with 3 digits of precision
+#define SYMBOL_EZC    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('C') << 24) | (uint64_t('T') << 32) ) ///< EZIRA Backed Dollars with 3 digits of precision
+#define SYMBOL_EZD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< EZIRA Backed Dollars with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "EZT"
 
-#define GENESIS_TIME                    (fc::time_point_sec(1532229209))
-#define MINING_TIME                     (fc::time_point_sec(1532230307))
+#define GENESIS_TIME                    (fc::time_point_sec(0))
+#define MINING_TIME                     (fc::time_point_sec(1000))
 #define CASHOUT_WINDOW_SECONDS_PRE_HF12 (60*60*24)    /// 1 day
 #define CASHOUT_WINDOW_SECONDS_PRE_HF17 (60*60*12)    /// 12 hours
 #define CASHOUT_WINDOW_SECONDS          (60*60*24*7)  /// 7 days
@@ -74,17 +75,17 @@
 #define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 30)
 
 #define INIT_MINER_NAME                 "ezbuilder"
-#define NUM_INIT_MINERS                 100
+#define NUM_INIT_MINERS                 50
 #define NUM_INIT_EXTRAS									0
 #define INIT_TIME                       (fc::time_point_sec());
 
-#define MAX_WITNESSES                   100
+#define MAX_WITNESSES                   50
 
-#define MAX_VOTED_WITNESSES_HF0         98
+#define MAX_VOTED_WITNESSES_HF0         48
 #define MAX_MINER_WITNESSES_HF0         1
 #define MAX_RUNNER_WITNESSES_HF0        1
 
-#define MAX_VOTED_WITNESSES_HF17        99
+#define MAX_VOTED_WITNESSES_HF17        49
 #define MAX_MINER_WITNESSES_HF17        0
 #define MAX_RUNNER_WITNESSES_HF17       1
 
@@ -140,7 +141,7 @@
 #define CREATE_ACCOUNT_DELEGATION_RATIO    5
 #define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(30)
 
-#define MINING_REWARD                   asset( 1000, SYMBOL )
+#define MINING_REWARD                   asset( 1000, SYMBOL_EZIRA )
 #define EQUIHASH_N                      140
 #define EQUIHASH_K                      6
 
@@ -148,14 +149,14 @@
 #define MIN_LIQUIDITY_REWARD_PERIOD_SEC (fc::seconds(60)) // 1 minute required on books to receive volume
 #define LIQUIDITY_REWARD_PERIOD_SEC     (60*60)
 #define LIQUIDITY_REWARD_BLOCKS         (LIQUIDITY_REWARD_PERIOD_SEC/BLOCK_INTERVAL)
-#define MIN_LIQUIDITY_REWARD            (asset( 1000*LIQUIDITY_REWARD_BLOCKS, SYMBOL )) // Minumum reward to be paid out to liquidity providers
+#define MIN_LIQUIDITY_REWARD            (asset( 1000*LIQUIDITY_REWARD_BLOCKS, SYMBOL_EZIRA )) // Minumum reward to be paid out to liquidity providers
 #define MIN_CONTENT_REWARD              MINING_REWARD
 #define MIN_CURATE_REWARD               MINING_REWARD
 #define MIN_PRODUCER_REWARD             MINING_REWARD
 #define MIN_POW_REWARD                  MINING_REWARD
 
-#define ACTIVE_CHALLENGE_FEE            asset( 2000, SYMBOL )
-#define OWNER_CHALLENGE_FEE             asset( 30000, SYMBOL )
+#define ACTIVE_CHALLENGE_FEE            asset( 2000, SYMBOL_EZIRA )
+#define OWNER_CHALLENGE_FEE             asset( 30000, SYMBOL_EZIRA )
 #define ACTIVE_CHALLENGE_COOLDOWN       fc::days(1)
 #define OWNER_CHALLENGE_COOLDOWN        fc::days(1)
 
@@ -201,7 +202,7 @@
 #define PRODUCER_APR_PERCENT             750
 #define POW_APR_PERCENT                  750
 
-#define MIN_PAYOUT_EZD                  (asset(20,EZD_SYMBOL))
+#define MIN_PAYOUT_EZD                  (asset(20,SYMBOL_EZD))
 
 #define EZD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing EZD at 5% Market Cap
 #define EZD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of EZD at 2% Market Cap

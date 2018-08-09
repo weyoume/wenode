@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
 
       account_create_operation op;
 
-      op.fee = asset( 100, SYMBOL );
+      op.fee = asset( 100, SYMBOL_EZIRA );
       op.new_account_name = "alice";
       op.creator = INIT_MINER_NAME;
       op.owner = authority( 1, priv_key.get_public_key(), 1 );
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       BOOST_TEST_MESSAGE( "--- Test failure when creator cannot cover fee" );
       tx.signatures.clear();
       tx.operations.clear();
-      op.fee = asset( db.get_account( INIT_MINER_NAME ).balance.amount + 1, SYMBOL );
+      op.fee = asset( db.get_account( INIT_MINER_NAME ).balance.amount + 1, SYMBOL_EZIRA );
       op.new_account_name = "bob";
       tx.operations.push_back( op );
       tx.sign( init_account_priv_key, db.get_chain_id() );
@@ -1316,8 +1316,8 @@ BOOST_AUTO_TEST_CASE( transfer_to_vesting_apply )
 
       BOOST_REQUIRE( alice.balance == ASSET( "10.000 TESTS" ) );
 
-      auto shares = asset( gpo.total_vesting_shares.amount, VESTS_SYMBOL );
-      auto vests = asset( gpo.total_vesting_fund_ezira.amount, SYMBOL );
+      auto shares = asset( gpo.total_vesting_shares.amount, SYMBOL_VESTS );
+      auto vests = asset( gpo.total_vesting_fund_ezira.amount, SYMBOL_EZIRA );
       auto alice_shares = alice.vesting_shares;
       auto bob_shares = bob.vesting_shares;
 
@@ -1344,7 +1344,7 @@ BOOST_AUTO_TEST_CASE( transfer_to_vesting_apply )
       validate_database();
 
       op.to = "bob";
-      op.amount = asset( 2000, SYMBOL );
+      op.amount = asset( 2000, SYMBOL_EZIRA );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -1352,7 +1352,7 @@ BOOST_AUTO_TEST_CASE( transfer_to_vesting_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      new_vest = asset( ( op.amount * ( shares / vests ) ).amount, VESTS_SYMBOL );
+      new_vest = asset( ( op.amount * ( shares / vests ) ).amount, SYMBOL_VESTS );
       shares += new_vest;
       vests += op.amount;
       bob_shares += new_vest;
@@ -1451,7 +1451,7 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
 
       withdraw_vesting_operation op;
       op.account = "alice";
-      op.vesting_shares = asset( -1, VESTS_SYMBOL );
+      op.vesting_shares = asset( -1, SYMBOL_VESTS );
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -1461,7 +1461,7 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
 
 
       BOOST_TEST_MESSAGE( "--- Test withdraw of existing VESTS" );
-      op.vesting_shares = asset( alice.vesting_shares.amount / 2, VESTS_SYMBOL );
+      op.vesting_shares = asset( alice.vesting_shares.amount / 2, SYMBOL_VESTS );
 
       auto old_vesting_shares = alice.vesting_shares;
 
@@ -1481,7 +1481,7 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.vesting_shares = asset( alice.vesting_shares.amount / 3, VESTS_SYMBOL );
+      op.vesting_shares = asset( alice.vesting_shares.amount / 3, SYMBOL_VESTS );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -1498,7 +1498,7 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.vesting_shares = asset( alice.vesting_shares.amount * 2, VESTS_SYMBOL );
+      op.vesting_shares = asset( alice.vesting_shares.amount * 2, SYMBOL_VESTS );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -1513,7 +1513,7 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.vesting_shares = asset( 0, VESTS_SYMBOL );
+      op.vesting_shares = asset( 0, SYMBOL_VESTS );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -1649,7 +1649,7 @@ BOOST_AUTO_TEST_CASE( witness_update_apply )
       op.url = "foo.bar";
       op.fee = ASSET( "1.000 TESTS" );
       op.block_signing_key = signing_key.get_public_key();
-      op.props.account_creation_fee = asset( MIN_ACCOUNT_CREATION_FEE + 10, SYMBOL);
+      op.props.account_creation_fee = asset( MIN_ACCOUNT_CREATION_FEE + 10, SYMBOL_EZIRA);
       op.props.maximum_block_size = MIN_BLOCK_SIZE_LIMIT + 100;
 
       signed_transaction tx;
@@ -2615,7 +2615,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == op.amount_to_sell.amount );
       BOOST_REQUIRE( limit_order->sell_price == price( op.amount_to_sell / op.min_to_receive ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
@@ -2635,7 +2635,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 10000 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), op.min_to_receive ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
@@ -2679,7 +2679,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 5000 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), ASSET( "15.000 TBD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "7.500 TBD" ).amount.value );
@@ -2709,7 +2709,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == 1 );
       BOOST_REQUIRE( limit_order->for_sale.value == 7500 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "15.000 TBD" ), ASSET( "10.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "15.000 TBD" ).amount.value );
@@ -2766,7 +2766,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == 4 );
       BOOST_REQUIRE( limit_order->for_sale.value == 1000 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "12.000 TBD" ), ASSET( "10.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "975.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "33.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "25.000 TESTS" ).amount.value );
@@ -2814,7 +2814,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == 5 );
       BOOST_REQUIRE( limit_order->for_sale.value == 9091 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "20.000 TESTS" ), ASSET( "22.000 TBD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "955.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "45.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
@@ -2949,7 +2949,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == op.amount_to_sell.amount );
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
@@ -2969,7 +2969,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 10000 );
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
@@ -3013,7 +3013,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 5000 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "2.000 TESTS" ), ASSET( "3.000 TBD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "7.500 TBD" ).amount.value );
@@ -3043,7 +3043,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == 1 );
       BOOST_REQUIRE( limit_order->for_sale.value == 7500 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "3.000 TBD" ), ASSET( "2.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "15.000 TBD" ).amount.value );
@@ -3100,7 +3100,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == 4 );
       BOOST_REQUIRE( limit_order->for_sale.value == 1000 );
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "975.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "33.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "25.000 TESTS" ).amount.value );
@@ -3148,7 +3148,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == 5 );
       BOOST_REQUIRE( limit_order->for_sale.value == 9091 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "1.000 TESTS" ), ASSET( "1.100 TBD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( EZD_SYMBOL, SYMBOL ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_EZIRA ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "955.000 TESTS" ).amount.value );
       BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "45.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
@@ -3666,21 +3666,21 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.escrow_expiration = db.head_block_time() + 200;
 
       BOOST_TEST_MESSAGE( "--- failure when EZD symbol != EZD" );
-      op.EZD_amount.symbol = SYMBOL;
+      op.EZD_amount.symbol = SYMBOL_EZIRA;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when ezira symbol != EZIRA" );
-      op.EZD_amount.symbol = EZD_SYMBOL;
-      op.ezira_amount.symbol = EZD_SYMBOL;
+      op.EZD_amount.symbol = SYMBOL_EZD;
+      op.ezira_amount.symbol = SYMBOL_EZD;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when fee symbol != EZD and fee symbol != EZIRA" );
-      op.ezira_amount.symbol = SYMBOL;
-      op.fee.symbol = VESTS_SYMBOL;
+      op.ezira_amount.symbol = SYMBOL_EZIRA;
+      op.fee.symbol = SYMBOL_VESTS;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when EZD == 0 and ezira == 0" );
-      op.fee.symbol = SYMBOL;
+      op.fee.symbol = SYMBOL_EZIRA;
       op.EZD_amount.amount = 0;
       op.ezira_amount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
@@ -4476,13 +4476,13 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
 
 
       BOOST_TEST_MESSAGE( "--- failure when ezira is not ezira symbol" );
-      op.EZD_amount.symbol = EZD_SYMBOL;
+      op.EZD_amount.symbol = SYMBOL_EZD;
       op.ezira_amount = ASSET( "1.000 TBD" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
       BOOST_TEST_MESSAGE( "--- success" );
-      op.ezira_amount.symbol = SYMBOL;
+      op.ezira_amount.symbol = SYMBOL_EZIRA;
       op.validate();
    }
    FC_LOG_AND_RETHROW()
@@ -5884,7 +5884,7 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_authorities )
 
      account_create_with_delegation_operation op;
      op.fee = ASSET("0.000 TESTS");
-     op.delegation = asset(100, VESTS_SYMBOL);
+     op.delegation = asset(100, SYMBOL_VESTS);
      op.creator = "alice";
      op.new_account_name = "bob";
      op.owner = authority( 1, priv_key.get_public_key(), 1 );
@@ -6003,8 +6003,8 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
       BOOST_TEST_MESSAGE( "--- Test success using only EZIRA to reach target delegation." );
 
       tx.clear();
-      op.fee=asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL );
-      op.delegation = asset(0, VESTS_SYMBOL);
+      op.fee=asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_EZIRA );
+      op.delegation = asset(0, SYMBOL_VESTS);
       op.new_account_name = "sam";
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.operations.push_back( op );
@@ -6023,7 +6023,7 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- Test failure when insufficient fee fo reach target delegation." );
-      fund( "alice" , asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO , SYMBOL ));
+      fund( "alice" , asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO , SYMBOL_EZIRA ));
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       validate_database();
@@ -6157,7 +6157,7 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_validate )
 
       op.delegator = "alice";
       op.delegatee = "bob";
-      op.vesting_shares = asset( -1, VESTS_SYMBOL );
+      op.vesting_shares = asset( -1, SYMBOL_VESTS );
       REQUIRE_THROW( op.validate(), fc::assert_exception );
    }
    FC_LOG_AND_RETHROW()
@@ -6330,7 +6330,7 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
 
       BOOST_TEST_MESSAGE( "--- Testing failure delegating more vesting shares than account has." );
       tx.clear();
-      op.vesting_shares = asset( sam_vest.amount + 1, VESTS_SYMBOL );
+      op.vesting_shares = asset( sam_vest.amount + 1, SYMBOL_VESTS );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
@@ -6338,7 +6338,7 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
 
       BOOST_TEST_MESSAGE( "--- Test failure delegating vesting shares that are part of a power down" );
       tx.clear();
-      sam_vest = asset( sam_vest.amount / 2, VESTS_SYMBOL );
+      sam_vest = asset( sam_vest.amount / 2, SYMBOL_VESTS );
       withdraw_vesting_operation withdraw;
       withdraw.account = "sam";
       withdraw.vesting_shares = sam_vest;
@@ -6347,7 +6347,7 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
       db.push_transaction( tx, 0 );
 
       tx.clear();
-      op.vesting_shares = asset( sam_vest.amount + 2, VESTS_SYMBOL );
+      op.vesting_shares = asset( sam_vest.amount + 2, SYMBOL_VESTS );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
@@ -6368,7 +6368,7 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
       db.push_transaction( tx, 0 );
 
       tx.clear();
-      withdraw.vesting_shares = asset( sam_vest.amount, VESTS_SYMBOL );
+      withdraw.vesting_shares = asset( sam_vest.amount, SYMBOL_VESTS );
       tx.operations.push_back( withdraw );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );

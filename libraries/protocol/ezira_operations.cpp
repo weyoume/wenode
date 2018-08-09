@@ -13,7 +13,7 @@ namespace ezira { namespace protocol {
    void account_create_operation::validate() const
    {
       validate_account_name( new_account_name );
-      FC_ASSERT( is_asset_type( fee, SYMBOL ), "Account creation fee must be EZIRA" );
+      FC_ASSERT( is_asset_type( fee, SYMBOL_EZIRA ), "Account creation fee must be EZIRA" );
       owner.validate();
       active.validate();
 
@@ -22,15 +22,15 @@ namespace ezira { namespace protocol {
          FC_ASSERT( fc::is_utf8(json_metadata), "JSON Metadata not formatted in UTF8" );
          FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
       }
-      FC_ASSERT( fee >= asset( 0, SYMBOL ), "Account creation fee cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, SYMBOL_EZIRA ), "Account creation fee cannot be negative" );
    }
 
    void account_create_with_delegation_operation::validate() const
    {
       validate_account_name( new_account_name );
       validate_account_name( creator );
-      FC_ASSERT( is_asset_type( fee, SYMBOL ), "Account creation fee must be EZIRA" );
-      FC_ASSERT( is_asset_type( delegation, VESTS_SYMBOL ), "Delegation must be VESTS" );
+      FC_ASSERT( is_asset_type( fee, SYMBOL_EZIRA ), "Account creation fee must be EZIRA" );
+      FC_ASSERT( is_asset_type( delegation, SYMBOL_VESTS ), "Delegation must be VESTS" );
 
       owner.validate();
       active.validate();
@@ -42,8 +42,8 @@ namespace ezira { namespace protocol {
          FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
       }
 
-      FC_ASSERT( fee >= asset( 0, SYMBOL ), "Account creation fee cannot be negative" );
-      FC_ASSERT( delegation >= asset( 0, VESTS_SYMBOL ), "Delegation cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, SYMBOL_EZIRA ), "Account creation fee cannot be negative" );
+      FC_ASSERT( delegation >= asset( 0, SYMBOL_VESTS ), "Delegation cannot be negative" );
    }
 
    void account_update_operation::validate() const
@@ -121,7 +121,7 @@ namespace ezira { namespace protocol {
    {
       validate_account_name( author );
       FC_ASSERT( percent_ezira_dollars <= PERCENT_100, "Percent cannot exceed 100%" );
-      FC_ASSERT( max_accepted_payout.symbol == EZD_SYMBOL, "Max accepted payout must be in EZD" );
+      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_EZD, "Max accepted payout must be in EZD" );
       FC_ASSERT( max_accepted_payout.amount.value >= 0, "Cannot accept less than 0 payout" );
       validate_permlink( permlink );
       for( auto& e : extensions )
@@ -158,7 +158,7 @@ namespace ezira { namespace protocol {
    { try {
       validate_account_name( from );
       validate_account_name( to );
-      FC_ASSERT( amount.symbol != VESTS_SYMBOL, "transferring of Ezira Power (STMP) is not allowed." );
+      FC_ASSERT( amount.symbol != SYMBOL_VESTS, "transferring of Ezira Power (STMP) is not allowed." );
       FC_ASSERT( amount.amount > 0, "Cannot transfer a negative amount (aka: stealing)" );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
@@ -167,15 +167,15 @@ namespace ezira { namespace protocol {
    void transfer_to_vesting_operation::validate() const
    {
       validate_account_name( from );
-      FC_ASSERT( is_asset_type( amount, SYMBOL ), "Amount must be EZIRA" );
+      FC_ASSERT( is_asset_type( amount, SYMBOL_EZIRA ), "Amount must be EZIRA" );
       if ( to != account_name_type() ) validate_account_name( to );
-      FC_ASSERT( amount > asset( 0, SYMBOL ), "Must transfer a nonzero amount" );
+      FC_ASSERT( amount > asset( 0, SYMBOL_EZIRA ), "Must transfer a nonzero amount" );
    }
 
    void withdraw_vesting_operation::validate() const
    {
       validate_account_name( account );
-      FC_ASSERT( is_asset_type( vesting_shares, VESTS_SYMBOL), "Amount must be VESTS"  );
+      FC_ASSERT( is_asset_type( vesting_shares, SYMBOL_VESTS), "Amount must be VESTS"  );
    }
 
    void set_withdraw_vesting_route_operation::validate() const
@@ -190,7 +190,7 @@ namespace ezira { namespace protocol {
       validate_account_name( owner );
       FC_ASSERT( url.size() > 0, "URL size must be greater than 0" );
       FC_ASSERT( fc::is_utf8( url ), "URL is not valid UTF8" );
-      FC_ASSERT( fee >= asset( 0, SYMBOL ), "Fee cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, SYMBOL_EZIRA ), "Fee cannot be negative" );
       props.validate();
    }
 
@@ -352,8 +352,8 @@ namespace ezira { namespace protocol {
    void feed_publish_operation::validate()const
    {
       validate_account_name( publisher );
-      FC_ASSERT( ( is_asset_type( exchange_rate.base, SYMBOL ) && is_asset_type( exchange_rate.quote, EZD_SYMBOL ) )
-         || ( is_asset_type( exchange_rate.base, EZD_SYMBOL ) && is_asset_type( exchange_rate.quote, SYMBOL ) ),
+      FC_ASSERT( ( is_asset_type( exchange_rate.base, SYMBOL_EZIRA ) && is_asset_type( exchange_rate.quote, SYMBOL_EZD ) )
+         || ( is_asset_type( exchange_rate.base, SYMBOL_EZD ) && is_asset_type( exchange_rate.quote, SYMBOL_EZIRA ) ),
          "Price feed must be a EZIRA/EZD price" );
       exchange_rate.validate();
    }
@@ -361,8 +361,8 @@ namespace ezira { namespace protocol {
    void limit_order_create_operation::validate()const
    {
       validate_account_name( owner );
-      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL ) && is_asset_type( min_to_receive, EZD_SYMBOL ) )
-         || ( is_asset_type( amount_to_sell, EZD_SYMBOL ) && is_asset_type( min_to_receive, SYMBOL ) ),
+      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_EZIRA ) && is_asset_type( min_to_receive, SYMBOL_EZD ) )
+         || ( is_asset_type( amount_to_sell, SYMBOL_EZD ) && is_asset_type( min_to_receive, SYMBOL_EZIRA ) ),
          "Limit order must be for the EZIRA:EZD market" );
       (amount_to_sell / min_to_receive).validate();
    }
@@ -372,8 +372,8 @@ namespace ezira { namespace protocol {
       FC_ASSERT( amount_to_sell.symbol == exchange_rate.base.symbol, "Sell asset must be the base of the price" );
       exchange_rate.validate();
 
-      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL ) && is_asset_type( exchange_rate.quote, EZD_SYMBOL ) ) ||
-                 ( is_asset_type( amount_to_sell, EZD_SYMBOL ) && is_asset_type( exchange_rate.quote, SYMBOL ) ),
+      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_EZIRA ) && is_asset_type( exchange_rate.quote, SYMBOL_EZD ) ) ||
+                 ( is_asset_type( amount_to_sell, SYMBOL_EZD ) && is_asset_type( exchange_rate.quote, SYMBOL_EZIRA ) ),
                  "Limit order must be for the EZIRA:EZD market" );
 
       FC_ASSERT( (amount_to_sell * exchange_rate).amount > 0, "Amount to sell cannot round to 0 when traded" );
@@ -389,7 +389,7 @@ namespace ezira { namespace protocol {
       validate_account_name( owner );
       /// only allow conversion from EZD to EZIRA, allowing the opposite can enable traders to abuse
       /// market fluxuations through converting large quantities without moving the price.
-      FC_ASSERT( is_asset_type( amount, EZD_SYMBOL ), "Can only convert EZD to EZIRA" );
+      FC_ASSERT( is_asset_type( amount, SYMBOL_EZD ), "Can only convert EZD to EZIRA" );
       FC_ASSERT( amount.amount > 0, "Must convert some EZD" );
    }
 
@@ -413,9 +413,9 @@ namespace ezira { namespace protocol {
       FC_ASSERT( ezira_amount.amount >= 0, "ezira amount cannot be negative" );
       FC_ASSERT( EZD_amount.amount > 0 || ezira_amount.amount > 0, "escrow must transfer a non-zero amount" );
       FC_ASSERT( from != agent && to != agent, "agent must be a third party" );
-      FC_ASSERT( (fee.symbol == SYMBOL) || (fee.symbol == EZD_SYMBOL), "fee must be EZIRA or EZD" );
-      FC_ASSERT( EZD_amount.symbol == EZD_SYMBOL, "EZD amount must contain EZD" );
-      FC_ASSERT( ezira_amount.symbol == SYMBOL, "ezira amount must contain EZIRA" );
+      FC_ASSERT( (fee.symbol == SYMBOL_EZIRA) || (fee.symbol == SYMBOL_EZD), "fee must be EZIRA or EZD" );
+      FC_ASSERT( EZD_amount.symbol == SYMBOL_EZD, "EZD amount must contain EZD" );
+      FC_ASSERT( ezira_amount.symbol == SYMBOL_EZIRA, "ezira amount must contain EZIRA" );
       FC_ASSERT( ratification_deadline < escrow_expiration, "ratification deadline must be before escrow expiration" );
       if ( json_meta.size() > 0 )
       {
@@ -454,8 +454,8 @@ namespace ezira { namespace protocol {
       FC_ASSERT( EZD_amount.amount >= 0, "EZD amount cannot be negative" );
       FC_ASSERT( ezira_amount.amount >= 0, "ezira amount cannot be negative" );
       FC_ASSERT( EZD_amount.amount > 0 || ezira_amount.amount > 0, "escrow must release a non-zero amount" );
-      FC_ASSERT( EZD_amount.symbol == EZD_SYMBOL, "EZD amount must contain EZD" );
-      FC_ASSERT( ezira_amount.symbol == SYMBOL, "ezira amount must contain EZIRA" );
+      FC_ASSERT( EZD_amount.symbol == SYMBOL_EZD, "EZD amount must contain EZD" );
+      FC_ASSERT( ezira_amount.symbol == SYMBOL_EZIRA, "ezira amount must contain EZIRA" );
    }
 
    void request_account_recovery_operation::validate()const
@@ -486,7 +486,7 @@ namespace ezira { namespace protocol {
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( amount.symbol == SYMBOL || amount.symbol == EZD_SYMBOL );
+      FC_ASSERT( amount.symbol == SYMBOL_EZIRA || amount.symbol == SYMBOL_EZD );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    }
@@ -494,7 +494,7 @@ namespace ezira { namespace protocol {
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( amount.symbol == SYMBOL || amount.symbol == EZD_SYMBOL );
+      FC_ASSERT( amount.symbol == SYMBOL_EZIRA || amount.symbol == SYMBOL_EZD );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    }
@@ -528,9 +528,9 @@ namespace ezira { namespace protocol {
    void claim_reward_balance_operation::validate()const
    {
       validate_account_name( account );
-      FC_ASSERT( is_asset_type( reward_ezira, SYMBOL ), "Reward Ezira must be EZIRA" );
-      FC_ASSERT( is_asset_type( reward_EZD, EZD_SYMBOL ), "Reward Ezira must be EZD" );
-      FC_ASSERT( is_asset_type( reward_vests, VESTS_SYMBOL ), "Reward Ezira must be VESTS" );
+      FC_ASSERT( is_asset_type( reward_ezira, SYMBOL_EZIRA ), "Reward Ezira must be EZIRA" );
+      FC_ASSERT( is_asset_type( reward_EZD, SYMBOL_EZD ), "Reward Ezira must be EZD" );
+      FC_ASSERT( is_asset_type( reward_vests, SYMBOL_VESTS ), "Reward Ezira must be VESTS" );
       FC_ASSERT( reward_ezira.amount >= 0, "Cannot claim a negative amount" );
       FC_ASSERT( reward_EZD.amount >= 0, "Cannot claim a negative amount" );
       FC_ASSERT( reward_vests.amount >= 0, "Cannot claim a negative amount" );
@@ -542,8 +542,8 @@ namespace ezira { namespace protocol {
       validate_account_name( delegator );
       validate_account_name( delegatee );
       FC_ASSERT( delegator != delegatee, "You cannot delegate VESTS to yourself" );
-      FC_ASSERT( is_asset_type( vesting_shares, VESTS_SYMBOL ), "Delegation must be VESTS" );
-      FC_ASSERT( vesting_shares >= asset( 0, VESTS_SYMBOL ), "Delegation cannot be negative" );
+      FC_ASSERT( is_asset_type( vesting_shares, SYMBOL_VESTS ), "Delegation must be VESTS" );
+      FC_ASSERT( vesting_shares >= asset( 0, SYMBOL_VESTS ), "Delegation cannot be negative" );
    }
 
 } } // ezira::protocol

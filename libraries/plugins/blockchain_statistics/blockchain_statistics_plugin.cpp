@@ -53,7 +53,7 @@ struct operation_process
       {
          b.transfers++;
 
-         if( op.amount.symbol == SYMBOL )
+         if( op.amount.symbol == SYMBOL_EZIRA )
             b.ezira_transferred += op.amount.amount;
          else
             b.EZD_transferred += op.amount.amount;
@@ -191,7 +191,7 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.vesting_withdrawals_processed++;
-         if( op.deposited.symbol == SYMBOL )
+         if( op.deposited.symbol == SYMBOL_EZIRA )
             b.vests_withdrawn += op.withdrawn.amount;
          else
             b.vests_transferred += op.withdrawn.amount;

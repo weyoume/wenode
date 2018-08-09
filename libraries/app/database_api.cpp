@@ -739,7 +739,7 @@ vector<extended_limit_order> database_api::get_open_orders( string owner )const
       while( itr != idx.end() && itr->seller == owner ) {
          result.push_back( *itr );
 
-         if( itr->sell_price.base.symbol == SYMBOL )
+         if( itr->sell_price.base.symbol == SYMBOL_EZIRA )
             result.back().real_price = (~result.back().sell_price).to_real();
          else
             result.back().real_price = (result.back().sell_price).to_real();
@@ -754,8 +754,8 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
    FC_ASSERT( limit <= 1000 );
    order_book result;
 
-   auto max_sell = price::max( EZD_SYMBOL, SYMBOL );
-   auto max_buy = price::max( SYMBOL, EZD_SYMBOL );
+   auto max_sell = price::max( SYMBOL_EZD, SYMBOL_EZIRA );
+   auto max_buy = price::max( SYMBOL_EZIRA, SYMBOL_EZD );
 
    const auto& limit_price_idx = _db.get_index<limit_order_index>().indices().get<by_price>();
    auto sell_itr = limit_price_idx.lower_bound(max_sell);
@@ -765,26 +765,26 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
 //   if( sell_itr != end ) idump((*sell_itr));
 //   if( buy_itr != end ) idump((*buy_itr));
 
-   while(  sell_itr != end && sell_itr->sell_price.base.symbol == EZD_SYMBOL && result.bids.size() < limit )
+   while(  sell_itr != end && sell_itr->sell_price.base.symbol == SYMBOL_EZD && result.bids.size() < limit )
    {
       auto itr = sell_itr;
       order cur;
       cur.order_price = itr->sell_price;
       cur.real_price  = (cur.order_price).to_real();
       cur.EZD = itr->for_sale;
-      cur.ezira = ( asset( itr->for_sale, EZD_SYMBOL ) * cur.order_price ).amount;
+      cur.ezira = ( asset( itr->for_sale, SYMBOL_EZD ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.bids.push_back( cur );
       ++sell_itr;
    }
-   while(  buy_itr != end && buy_itr->sell_price.base.symbol == SYMBOL && result.asks.size() < limit )
+   while(  buy_itr != end && buy_itr->sell_price.base.symbol == SYMBOL_EZIRA && result.asks.size() < limit )
    {
       auto itr = buy_itr;
       order cur;
       cur.order_price = itr->sell_price;
       cur.real_price  = (~cur.order_price).to_real();
       cur.ezira   = itr->for_sale;
-      cur.EZD     = ( asset( itr->for_sale, SYMBOL ) * cur.order_price ).amount;
+      cur.EZD     = ( asset( itr->for_sale, SYMBOL_EZIRA ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.asks.push_back( cur );
       ++buy_itr;
@@ -1072,7 +1072,7 @@ void database_api::set_pending_payout( discussion& d )const
       const auto& cidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_comment>();
       auto itr = cidx.lower_bound( d.id );
       if( itr != cidx.end() && itr->comment == d.id )  {
-         d.promoted = asset( itr->promoted_balance, EZD_SYMBOL );
+         d.promoted = asset( itr->promoted_balance, SYMBOL_EZD );
       }
    }
 
@@ -1343,7 +1343,7 @@ vector<discussion> database_api::get_discussions( const discussion_query& query,
       try
       {
          result.push_back( get_discussion( tidx_itr->comment, truncate_body ) );
-         result.back().promoted = asset(tidx_itr->promoted_balance, EZD_SYMBOL );
+         result.back().promoted = asset(tidx_itr->promoted_balance, SYMBOL_EZD );
 
          if( filter( result.back() ) )
          {

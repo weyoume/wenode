@@ -16,7 +16,7 @@ fc::variant_object get_config()
    result[ "IS_TEST_NET" ] = false;
 #endif
 
-   result["EZD_SYMBOL"] = EZD_SYMBOL;
+   result["SYMBOL_EZD"] = SYMBOL_EZD;
    result["PERCENT_100"] = PERCENT_100;
    result["PERCENT_1"] = PERCENT_1;
    result["PERCENT_10_OF_PERCENT_1"] = PERCENT_10_OF_PERCENT_1;
@@ -175,8 +175,8 @@ fc::variant_object get_config()
    result["VOTE_CHANGE_LOCKOUT_PERIOD"] = VOTE_CHANGE_LOCKOUT_PERIOD;
    result["VOTE_DUST_THRESHOLD"] = VOTE_DUST_THRESHOLD;
    result["VOTE_REGENERATION_SECONDS"] = VOTE_REGENERATION_SECONDS;
-   result["SYMBOL"] = SYMBOL;
-   result["VESTS_SYMBOL"] = VESTS_SYMBOL;
+   result["SYMBOL_EZIRA"] = SYMBOL_EZIRA;
+   result["SYMBOL_VESTS"] = SYMBOL_VESTS;
    result["VIRTUAL_SCHEDULE_LAP_LENGTH"] = VIRTUAL_SCHEDULE_LAP_LENGTH;
    result["VIRTUAL_SCHEDULE_LAP_LENGTH2"] = VIRTUAL_SCHEDULE_LAP_LENGTH2;
 
