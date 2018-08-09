@@ -298,7 +298,7 @@ public:
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
       result["median_EZD_price"] = _remote_db->get_current_median_history_price();
       result["account_creation_fee"] = _remote_db->get_chain_properties().account_creation_fee;
-      result["post_reward_fund"] = fc::variant(_remote_db->get_reward_fund( POST_REWARD_FUND_NAME )).get_object();
+      // result["post_reward_fund"] = fc::variant(_remote_db->get_reward_fund( POST_REWARD_FUND_NAME )).get_object();
       return result;
    }
 
