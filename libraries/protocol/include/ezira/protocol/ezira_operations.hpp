@@ -127,7 +127,7 @@ namespace ezira { namespace protocol {
       account_name_type author;
       string            permlink;
 
-      asset             max_accepted_payout    = asset( 1000000000, EZD_SYMBOL );       /// EZD value of the maximum payout this post will receive
+      asset             max_accepted_payout    = asset( 1000000000, SYMBOL_EZD );       /// EZD value of the maximum payout this post will receive
       uint16_t          percent_ezira_dollars  = PERCENT_100; /// the percent of Ezira Dollars to key, unkept amounts will be received as Ezira Power
       bool              allow_votes            = true;      /// allows a post to receive votes;
       bool              allow_curation_rewards = true; /// allows voters to recieve curation rewards. Rewards return to reward fund.
@@ -201,8 +201,8 @@ namespace ezira { namespace protocol {
       string            memo;
 
       void              validate()const;
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ if(amount.symbol != VESTS_SYMBOL) a.insert(from); }
-      void get_required_owner_authorities( flat_set<account_name_type>& a )const { if(amount.symbol == VESTS_SYMBOL) a.insert(from); }
+      void get_required_active_authorities( flat_set<account_name_type>& a )const{ if(amount.symbol != SYMBOL_VESTS) a.insert(from); }
+      void get_required_owner_authorities( flat_set<account_name_type>& a )const { if(amount.symbol == SYMBOL_VESTS) a.insert(from); }
    };
 
 
@@ -231,8 +231,8 @@ namespace ezira { namespace protocol {
       account_name_type agent;
       uint32_t          escrow_id = 30;
 
-      asset             EZD_amount = asset( 0, EZD_SYMBOL );
-      asset             ezira_amount = asset( 0, SYMBOL );
+      asset             EZD_amount = asset( 0, SYMBOL_EZD );
+      asset             ezira_amount = asset( 0, SYMBOL_EZIRA );
       asset             fee;
 
       time_point_sec    ratification_deadline;
@@ -303,8 +303,8 @@ namespace ezira { namespace protocol {
       account_name_type receiver; ///< the account that should receive funds (might be from, might be to)
 
       uint32_t          escrow_id = 30;
-      asset             EZD_amount = asset( 0, EZD_SYMBOL ); ///< the amount of EZD to release
-      asset             ezira_amount = asset( 0, SYMBOL ); ///< the amount of ezira to release
+      asset             EZD_amount = asset( 0, SYMBOL_EZD ); ///< the amount of EZD to release
+      asset             ezira_amount = asset( 0, SYMBOL_EZIRA ); ///< the amount of ezira to release
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(who); }
@@ -382,7 +382,7 @@ namespace ezira { namespace protocol {
        *  ability to vote and make transactions.
        */
       asset             account_creation_fee =
-         asset( MIN_ACCOUNT_CREATION_FEE, SYMBOL );
+         asset( MIN_ACCOUNT_CREATION_FEE, SYMBOL_EZIRA );
 
       /**
        *  This witnesses vote for the maximum_block_size which is used by the network

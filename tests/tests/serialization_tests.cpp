@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( serialization_raw_test )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,SYMBOL);
+      op.amount = asset(100,SYMBOL_EZIRA);
 
       trx.operations.push_back( op );
       auto packed = fc::raw::pack( trx );
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,SYMBOL);
+      op.amount = asset(100,SYMBOL_EZIRA);
 
       fc::variant test(op.amount);
       auto tmp = test.as<asset>();
@@ -131,18 +131,18 @@ BOOST_AUTO_TEST_CASE( asset_test )
       BOOST_CHECK_EQUAL( ezira.decimals(), 3 );
       BOOST_CHECK_EQUAL( ezira.symbol_name(), "TESTS" );
       BOOST_CHECK_EQUAL( ezira.to_string(), "123.456 TESTS" );
-      BOOST_CHECK_EQUAL( ezira.symbol, SYMBOL);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL).to_string(), "0.050 TESTS" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL).to_string(), "50.000 TESTS" );
+      BOOST_CHECK_EQUAL( ezira.symbol, SYMBOL_EZIRA);
+      BOOST_CHECK_EQUAL( asset(50, SYMBOL_EZIRA).to_string(), "0.050 TESTS" );
+      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_EZIRA).to_string(), "50.000 TESTS" );
 
       BOOST_CHECK( std::abs( EZD.to_real() - 654.321 ) < 0.0005 );
       BOOST_CHECK_EQUAL( EZD.amount.value, 654321 );
       BOOST_CHECK_EQUAL( EZD.decimals(), 3 );
       BOOST_CHECK_EQUAL( EZD.symbol_name(), "TBD" );
       BOOST_CHECK_EQUAL( EZD.to_string(), "654.321 TBD" );
-      BOOST_CHECK_EQUAL( EZD.symbol, EZD_SYMBOL);
-      BOOST_CHECK_EQUAL( asset(50, EZD_SYMBOL).to_string(), "0.050 TBD" );
-      BOOST_CHECK_EQUAL( asset(50000, EZD_SYMBOL).to_string(), "50.000 TBD" );
+      BOOST_CHECK_EQUAL( EZD.symbol, SYMBOL_EZD);
+      BOOST_CHECK_EQUAL( asset(50, SYMBOL_EZD).to_string(), "0.050 TBD" );
+      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_EZD).to_string(), "50.000 TBD" );
 
       BOOST_CHECK_THROW( ezira.set_decimals(100), fc::exception );
       char* ezira_sy = (char*) &ezira.symbol;

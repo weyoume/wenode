@@ -270,7 +270,7 @@ namespace ezira { namespace chain {
 
          reward_fund_id_type     id;
          reward_fund_name_type   name;
-         asset                   reward_balance = asset( 0, SYMBOL );
+         asset                   reward_balance = asset( 0, SYMBOL_EZIRA );
          fc::uint128_t           recent_claims = 0;
          time_point_sec          last_update;
          uint128_t               content_constant = 0;

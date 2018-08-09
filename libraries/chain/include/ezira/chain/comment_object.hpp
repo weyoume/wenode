@@ -82,9 +82,9 @@ namespace ezira { namespace chain {
          uint16_t          reward_weight = 0;
 
          /** tracks the total payout this comment has received over time, measured in EZD */
-         asset             total_payout_value = asset(0, EZD_SYMBOL);
-         asset             curator_payout_value = asset(0, EZD_SYMBOL);
-         asset             beneficiary_payout_value = asset( 0, EZD_SYMBOL );
+         asset             total_payout_value = asset(0, SYMBOL_EZD);
+         asset             curator_payout_value = asset(0, SYMBOL_EZD);
+         asset             beneficiary_payout_value = asset( 0, SYMBOL_EZD );
 
          share_type        author_rewards = 0;
 
@@ -92,7 +92,7 @@ namespace ezira { namespace chain {
 
          id_type           root_comment;
 
-         asset             max_accepted_payout = asset( 1000000000, EZD_SYMBOL );       /// EZD value of the maximum payout this post will receive
+         asset             max_accepted_payout = asset( 1000000000, SYMBOL_EZD );       /// EZD value of the maximum payout this post will receive
          uint16_t          percent_ezira_dollars = PERCENT_100; /// the percent of Ezira Dollars to key, unkept amounts will be received as Ezira Power
          bool              allow_replies = true;      /// allows a post to disable replies.
          bool              allow_votes   = true;      /// allows a post to receive votes;

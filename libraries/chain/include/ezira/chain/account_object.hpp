@@ -54,8 +54,8 @@ namespace ezira { namespace chain {
          uint16_t          voting_power = PERCENT_100;   ///< current voting power of this account, it falls after every vote
          time_point_sec    last_vote_time; ///< used to increase the voting power of this account the longer it goes without voting.
 
-         asset             balance = asset( 0, SYMBOL );  ///< total liquid shares held by this account
-         asset             savings_balance = asset( 0, SYMBOL );  ///< total liquid shares held by this account
+         asset             balance = asset( 0, SYMBOL_EZIRA );  ///< total liquid shares held by this account
+         asset             savings_balance = asset( 0, SYMBOL_EZIRA );  ///< total liquid shares held by this account
 
          /**
           *  EZD Deposits pay interest based upon the interest rate set by witnesses. The purpose of these
@@ -71,13 +71,13 @@ namespace ezira { namespace chain {
           *  @defgroup EZD_data EZD Balance Data
           */
          ///@{
-         asset             EZD_balance = asset( 0, EZD_SYMBOL ); /// total EZD balance
+         asset             EZD_balance = asset( 0, SYMBOL_EZD ); /// total EZD balance
          uint128_t         EZD_seconds; ///< total EZD * how long it has been hel
          time_point_sec    EZD_seconds_last_update; ///< the last time the EZD_seconds was updated
          time_point_sec    EZD_last_interest_payment; ///< used to pay interest at most once per month
 
 
-         asset             savings_EZD_balance = asset( 0, EZD_SYMBOL ); /// total EZD balance
+         asset             savings_EZD_balance = asset( 0, SYMBOL_EZD ); /// total EZD balance
          uint128_t         savings_EZD_seconds; ///< total EZD * how long it has been hel
          time_point_sec    savings_EZD_seconds_last_update; ///< the last time the EZD_seconds was updated
          time_point_sec    savings_EZD_last_interest_payment; ///< used to pay interest at most once per month
@@ -85,19 +85,19 @@ namespace ezira { namespace chain {
          uint8_t           savings_withdraw_requests = 0;
          ///@}
 
-         asset             reward_EZD_balance = asset( 0, EZD_SYMBOL );
-         asset             reward_ezira_balance = asset( 0, SYMBOL );
-         asset             reward_vesting_balance = asset( 0, VESTS_SYMBOL );
-         asset             reward_vesting_ezira = asset( 0, SYMBOL );
+         asset             reward_EZD_balance = asset( 0, SYMBOL_EZD );
+         asset             reward_ezira_balance = asset( 0, SYMBOL_EZIRA );
+         asset             reward_vesting_balance = asset( 0, SYMBOL_VESTS );
+         asset             reward_vesting_ezira = asset( 0, SYMBOL_EZIRA );
 
          share_type        curation_rewards = 0;
          share_type        posting_rewards = 0;
 
-         asset             vesting_shares = asset( 0, VESTS_SYMBOL ); ///< total vesting shares held by this account, controls its voting power
-         asset             delegated_vesting_shares = asset( 0, VESTS_SYMBOL );
-         asset             received_vesting_shares = asset( 0, VESTS_SYMBOL );
+         asset             vesting_shares = asset( 0, SYMBOL_VESTS ); ///< total vesting shares held by this account, controls its voting power
+         asset             delegated_vesting_shares = asset( 0, SYMBOL_VESTS );
+         asset             received_vesting_shares = asset( 0, SYMBOL_VESTS );
 
-         asset             vesting_withdraw_rate = asset( 0, VESTS_SYMBOL ); ///< at the time this is updated it can be at most vesting_shares/104
+         asset             vesting_withdraw_rate = asset( 0, SYMBOL_VESTS ); ///< at the time this is updated it can be at most vesting_shares/104
          time_point_sec    next_vesting_withdrawal = fc::time_point_sec::maximum(); ///< after every withdrawal this is incremented by 1 week
          share_type        withdrawn = 0; /// Track how many shares have been withdrawn
          share_type        to_withdraw = 0; /// Might be able to look this up with operation history.

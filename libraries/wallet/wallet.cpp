@@ -727,8 +727,8 @@ public:
 
          auto accounts = result.as<vector<account_api_obj>>();
          asset total_ezira;
-         asset total_vest(0, VESTS_SYMBOL );
-         asset total_EZD(0, EZD_SYMBOL );
+         asset total_vest(0, SYMBOL_VESTS );
+         asset total_EZD(0, SYMBOL_EZD );
          for( const auto& a : accounts ) {
             total_ezira += a.balance;
             total_vest  += a.vesting_shares;
@@ -780,7 +780,7 @@ public:
              ss << ' ' << setw( 10 ) << o.orderid;
              ss << ' ' << setw( 10 ) << o.real_price;
              ss << ' ' << setw( 10 ) << fc::variant( asset( o.for_sale, o.sell_price.base.symbol ) ).as_string();
-             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL ? "SELL" : "BUY");
+             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL_EZIRA ? "SELL" : "BUY");
              ss << "\n";
           }
           return ss.str();
@@ -788,8 +788,8 @@ public:
       m["get_order_book"] = []( variant result, const fc::variants& a ) {
          auto orders = result.as< order_book >();
          std::stringstream ss;
-         asset bid_sum = asset( 0, EZD_SYMBOL );
-         asset ask_sum = asset( 0, EZD_SYMBOL );
+         asset bid_sum = asset( 0, SYMBOL_EZD );
+         asset ask_sum = asset( 0, SYMBOL_EZD );
          int spacing = 24;
 
          ss << setiosflags( ios::fixed ) << setiosflags( ios::left ) ;
@@ -810,11 +810,11 @@ public:
          {
             if ( i < orders.bids.size() )
             {
-               bid_sum += asset( orders.bids[i].EZD, EZD_SYMBOL );
+               bid_sum += asset( orders.bids[i].EZD, SYMBOL_EZD );
                ss
                   << ' ' << setw( spacing ) << bid_sum.to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].EZD, EZD_SYMBOL ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].ezira, SYMBOL ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].EZD, SYMBOL_EZD ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].ezira, SYMBOL_EZIRA ).to_string()
                   << ' ' << setw( spacing ) << orders.bids[i].real_price; //(~orders.bids[i].order_price).to_real();
             }
             else
@@ -826,11 +826,11 @@ public:
 
             if ( i < orders.asks.size() )
             {
-               ask_sum += asset( orders.asks[i].EZD, EZD_SYMBOL );
+               ask_sum += asset( orders.asks[i].EZD, SYMBOL_EZD );
                //ss << ' ' << setw( spacing ) << (~orders.asks[i].order_price).to_real()
                ss << ' ' << setw( spacing ) << orders.asks[i].real_price
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].ezira, SYMBOL ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].EZD, EZD_SYMBOL ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].ezira, SYMBOL_EZIRA ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].EZD, SYMBOL_EZD ).to_string()
                   << ' ' << setw( spacing ) << ask_sum.to_string();
             }
 
@@ -1298,7 +1298,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
    op.posting = authority( 1, posting, 1 );
    op.memo_key = memo;
    op.json_metadata = json_meta;
-   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL );
+   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL_EZIRA );
 
    signed_transaction tx;
    tx.operations.push_back(op);

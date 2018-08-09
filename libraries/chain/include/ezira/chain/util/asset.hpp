@@ -9,17 +9,17 @@ using ezira::protocol::price;
 
 inline asset to_EZD( const price& p, const asset& ezira )
 {
-   FC_ASSERT( ezira.symbol == SYMBOL );
+   FC_ASSERT( ezira.symbol == SYMBOL_EZIRA );
    if( p.is_null() )
-      return asset( 0, EZD_SYMBOL );
+      return asset( 0, SYMBOL_EZD );
    return ezira * p;
 }
 
 inline asset to_ezira( const price& p, const asset& EZD )
 {
-   FC_ASSERT( EZD.symbol == EZD_SYMBOL );
+   FC_ASSERT( EZD.symbol == SYMBOL_EZD );
    if( p.is_null() )
-      return asset( 0, SYMBOL );
+      return asset( 0, SYMBOL_EZIRA );
    return EZD * p;
 }
 

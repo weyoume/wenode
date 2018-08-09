@@ -34,8 +34,8 @@ market_ticker market_history_api_impl::get_ticker() const
 
    if( itr != bucket_idx.end() )
    {
-      auto open = ( asset( itr->open_EZD, EZD_SYMBOL ) / asset( itr->open_ezira, SYMBOL ) ).to_real();
-      result.latest = ( asset( itr->close_EZD, EZD_SYMBOL ) / asset( itr->close_ezira, SYMBOL ) ).to_real();
+      auto open = ( asset( itr->open_EZD, SYMBOL_EZD ) / asset( itr->open_ezira, SYMBOL_EZIRA ) ).to_real();
+      result.latest = ( asset( itr->close_EZD, SYMBOL_EZD ) / asset( itr->close_ezira, SYMBOL_EZIRA ) ).to_real();
       result.percent_change = ( ( result.latest - open ) / open ) * 100;
    }
    else
@@ -84,28 +84,28 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
    FC_ASSERT( limit <= 500 );
 
    const auto& order_idx = app.chain_database()->get_index< ezira::chain::limit_order_index >().indices().get< ezira::chain::by_price >();
-   auto itr = order_idx.lower_bound( price::max( EZD_SYMBOL, SYMBOL ) );
+   auto itr = order_idx.lower_bound( price::max( SYMBOL_EZD, SYMBOL_EZIRA ) );
 
    order_book result;
 
-   while( itr != order_idx.end() && itr->sell_price.base.symbol == EZD_SYMBOL && result.bids.size() < limit )
+   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_EZD && result.bids.size() < limit )
    {
       order cur;
       cur.price = itr->sell_price.base.to_real() / itr->sell_price.quote.to_real();
-      cur.ezira = ( asset( itr->for_sale, EZD_SYMBOL ) * itr->sell_price ).amount;
+      cur.ezira = ( asset( itr->for_sale, SYMBOL_EZD ) * itr->sell_price ).amount;
       cur.EZD = itr->for_sale;
       result.bids.push_back( cur );
       ++itr;
    }
 
-   itr = order_idx.lower_bound( price::max( SYMBOL, EZD_SYMBOL ) );
+   itr = order_idx.lower_bound( price::max( SYMBOL_EZIRA, SYMBOL_EZD ) );
 
-   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL && result.asks.size() < limit )
+   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_EZIRA && result.asks.size() < limit )
    {
       order cur;
       cur.price = itr->sell_price.quote.to_real() / itr->sell_price.base.to_real();
       cur.ezira = itr->for_sale;
-      cur.EZD = ( asset( itr->for_sale, SYMBOL ) * itr->sell_price ).amount;
+      cur.EZD = ( asset( itr->for_sale, SYMBOL_EZIRA ) * itr->sell_price ).amount;
       result.asks.push_back( cur );
       ++itr;
    }

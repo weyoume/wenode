@@ -77,9 +77,9 @@ void witness_update_evaluator::do_apply( const witness_update_operation& o )
 
    if ( _db.has_hardfork( HARDFORK_0_14__410 ) )
    {
-      FC_ASSERT( o.props.account_creation_fee.symbol == SYMBOL );
+      FC_ASSERT( o.props.account_creation_fee.symbol == SYMBOL_EZIRA );
    }
-   else if( o.props.account_creation_fee.symbol != SYMBOL )
+   else if( o.props.account_creation_fee.symbol != SYMBOL_EZIRA )
    {
       // after HF, above check can be moved to validate() if reindex doesn't show this warning
       wlog( "Wrong fee symbol in block ${b}", ("b", _db.head_block_num()+1) );
@@ -118,8 +118,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    if( _db.has_hardfork( HARDFORK_0_19__987) )
    {
       const witness_schedule_object& wso = _db.get_witness_schedule_object();
-      FC_ASSERT( o.fee >= asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL ), "Insufficient Fee: ${f} required, ${p} provided.",
-                 ("f", wso.median_props.account_creation_fee * asset( CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL ) )
+      FC_ASSERT( o.fee >= asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL_EZIRA ), "Insufficient Fee: ${f} required, ${p} provided.",
+                 ("f", wso.median_props.account_creation_fee * asset( CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL_EZIRA ) )
                  ("p", o.fee) );
    }
    else if( _db.has_hardfork( HARDFORK_0_1 ) )
@@ -196,13 +196,13 @@ void account_create_with_delegation_evaluator::do_apply( const account_create_wi
                ( "creator.balance", creator.balance )
                ( "required", o.fee ) );
 
-   FC_ASSERT( creator.vesting_shares - creator.delegated_vesting_shares - asset( creator.to_withdraw - creator.withdrawn, VESTS_SYMBOL ) >= o.delegation, "Insufficient vesting shares to delegate to new account.",
+   FC_ASSERT( creator.vesting_shares - creator.delegated_vesting_shares - asset( creator.to_withdraw - creator.withdrawn, SYMBOL_VESTS ) >= o.delegation, "Insufficient vesting shares to delegate to new account.",
                ( "creator.vesting_shares", creator.vesting_shares )
                ( "creator.delegated_vesting_shares", creator.delegated_vesting_shares )( "required", o.delegation ) );
 
-   auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL ) * props.get_vesting_share_price();
+   auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_EZIRA ) * props.get_vesting_share_price();
 
-   auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL ) * props.get_vesting_share_price() + o.delegation;
+   auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_EZIRA ) * props.get_vesting_share_price() + o.delegation;
 
    FC_ASSERT( current_delegation >= target_delegation, "Inssufficient Delegation ${f} required, ${p} provided.",
                ("f", target_delegation )
@@ -694,7 +694,7 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 
       asset ezira_spent = o.ezira_amount;
       asset EZD_spent = o.EZD_amount;
-      if( o.fee.symbol == SYMBOL )
+      if( o.fee.symbol == SYMBOL_EZIRA )
          ezira_spent += o.fee;
       else
          EZD_spent += o.fee;
@@ -883,7 +883,7 @@ void transfer_to_vesting_evaluator::do_apply( const transfer_to_vesting_operatio
    const auto& from_account = _db.get_account(o.from);
    const auto& to_account = o.to.size() ? _db.get_account(o.to) : from_account;
 
-   FC_ASSERT( _db.get_balance( from_account, SYMBOL) >= o.amount, "Account does not have sufficient EZIRA for transfer." );
+   FC_ASSERT( _db.get_balance( from_account, SYMBOL_EZIRA) >= o.amount, "Account does not have sufficient EZIRA for transfer." );
    _db.adjust_balance( from_account, -o.amount );
    _db.create_vesting( to_account, o.amount );
 }
@@ -909,7 +909,7 @@ void withdraw_vesting_evaluator::do_apply( const withdraw_vesting_operation& o )
       return;
    }
 
-   FC_ASSERT( account.vesting_shares >= asset( 0, VESTS_SYMBOL ), "Account does not have sufficient Ezira Power for withdraw." );
+   FC_ASSERT( account.vesting_shares >= asset( 0, SYMBOL_VESTS ), "Account does not have sufficient Ezira Power for withdraw." );
    FC_ASSERT( account.vesting_shares - account.delegated_vesting_shares >= o.vesting_shares, "Account does not have sufficient Ezira Power for withdraw." );
 
    if( !account.mined && _db.has_hardfork( HARDFORK_0_1 ) )
@@ -930,7 +930,7 @@ void withdraw_vesting_evaluator::do_apply( const withdraw_vesting_operation& o )
          FC_ASSERT( account.vesting_withdraw_rate.amount  != 0, "This operation would not change the vesting withdraw rate." );
 
       _db.modify( account, [&]( account_object& a ) {
-         a.vesting_withdraw_rate = asset( 0, VESTS_SYMBOL );
+         a.vesting_withdraw_rate = asset( 0, SYMBOL_VESTS );
          a.next_vesting_withdrawal = time_point_sec::maximum();
          a.to_withdraw = 0;
          a.withdrawn = 0;
@@ -944,7 +944,7 @@ void withdraw_vesting_evaluator::do_apply( const withdraw_vesting_operation& o )
 
       _db.modify( account, [&]( account_object& a )
       {
-         auto new_vesting_withdraw_rate = asset( o.vesting_shares.amount / vesting_withdraw_intervals, VESTS_SYMBOL );
+         auto new_vesting_withdraw_rate = asset( o.vesting_shares.amount / vesting_withdraw_intervals, SYMBOL_VESTS );
 
          if( new_vesting_withdraw_rate.amount == 0 )
             new_vesting_withdraw_rate.amount = 1;
@@ -2158,12 +2158,12 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
    FC_ASSERT( op.reward_vests <= acnt.reward_vesting_balance, "Cannot claim that much VESTS. Claim: ${c} Actual: ${a}",
       ("c", op.reward_vests)("a", acnt.reward_vesting_balance) );
 
-   asset reward_vesting_ezira_to_move = asset( 0, SYMBOL );
+   asset reward_vesting_ezira_to_move = asset( 0, SYMBOL_EZIRA );
    if( op.reward_vests == acnt.reward_vesting_balance )
       reward_vesting_ezira_to_move = acnt.reward_vesting_ezira;
    else
       reward_vesting_ezira_to_move = asset( ( ( uint128_t( op.reward_vests.amount.value ) * uint128_t( acnt.reward_vesting_ezira.amount.value ) )
-         / uint128_t( acnt.reward_vesting_balance.amount.value ) ).to_uint64(), SYMBOL );
+         / uint128_t( acnt.reward_vesting_balance.amount.value ) ).to_uint64(), SYMBOL_EZIRA );
 
    _db.adjust_reward_balance( acnt, -op.reward_ezira );
    _db.adjust_reward_balance( acnt, -op.reward_EZD );
@@ -2195,11 +2195,11 @@ void delegate_vesting_shares_evaluator::do_apply( const delegate_vesting_shares_
    const auto& delegatee = _db.get_account( op.delegatee );
    auto delegation = _db.find< vesting_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
 
-   auto available_shares = delegator.vesting_shares - delegator.delegated_vesting_shares - asset( delegator.to_withdraw - delegator.withdrawn, VESTS_SYMBOL );
+   auto available_shares = delegator.vesting_shares - delegator.delegated_vesting_shares - asset( delegator.to_withdraw - delegator.withdrawn, SYMBOL_VESTS );
 
    const auto& wso = _db.get_witness_schedule_object();
    const auto& gpo = _db.get_dynamic_global_properties();
-   auto min_delegation = asset( wso.median_props.account_creation_fee.amount * 10, SYMBOL ) * gpo.get_vesting_share_price();
+   auto min_delegation = asset( wso.median_props.account_creation_fee.amount * 10, SYMBOL_EZIRA ) * gpo.get_vesting_share_price();
    auto min_update = wso.median_props.account_creation_fee * gpo.get_vesting_share_price();
 
    // If delegation doesn't exist, create it

@@ -42,7 +42,7 @@ uint128_t evaluate_reward_curve( const uint128_t& rshares, const curve_id& curve
 
 inline bool is_comment_payout_dust( const price& p, uint64_t ezira_payout )
 {
-   return to_EZD( p, asset( ezira_payout, SYMBOL ) ) < MIN_PAYOUT_EZD;
+   return to_EZD( p, asset( ezira_payout, SYMBOL_EZIRA ) ) < MIN_PAYOUT_EZD;
 }
 
 } } } // ezira::chain::util
