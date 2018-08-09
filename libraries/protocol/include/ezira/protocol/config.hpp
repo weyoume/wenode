@@ -141,7 +141,7 @@
 #define CREATE_ACCOUNT_DELEGATION_RATIO    5
 #define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(30)
 
-#define MINING_REWARD                   asset( 1000, SYMBOL_EZIRA )
+#define MINING_REWARD                   asset( 10000, SYMBOL_EZIRA )
 #define EQUIHASH_N                      140
 #define EQUIHASH_K                      6
 

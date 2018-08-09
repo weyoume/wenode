@@ -287,6 +287,7 @@ public:
    {
       auto dynamic_props = _remote_db->get_dynamic_global_properties();
       fc::mutable_variant_object result(fc::variant(dynamic_props).get_object());
+      result["chain_id"] = CHAIN_ID
       result["witness_majority_version"] = fc::string( _remote_db->get_witness_schedule().majority_version );
       result["hardfork_version"] = fc::string( _remote_db->get_hardfork_version() );
       result["head_block_num"] = dynamic_props.head_block_number;
