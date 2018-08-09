@@ -4,8 +4,8 @@ docker rm -f ezira-test-node ;
 
 
 # will make ezbuilder1 - ezbuilder99 if end=100 and start=0
-end=100
 start=0
+end=100
 witness_names=""
 witness_base_name="ezbuilder"
 for ((n=$start;n<$end;n++)); do
