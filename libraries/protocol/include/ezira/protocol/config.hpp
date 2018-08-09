@@ -77,7 +77,7 @@
 #define INIT_MINER_NAME                 "ezbuilder"
 #define NUM_INIT_MINERS                 50
 #define NUM_INIT_EXTRAS									0
-#define INIT_TIME                       (fc::time_point_sec());
+#define INIT_TIME                       (fc::time_point_sec(0));
 
 #define MAX_WITNESSES                   50
 
