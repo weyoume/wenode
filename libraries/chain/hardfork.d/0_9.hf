@@ -2,7 +2,7 @@
 #define HARDFORK_0_9 9
 #define HARDFORK_0_9__141 HARDFORK_0_9
 
-#define HARDFORK_0_9_TIME 0 
+#define HARDFORK_0_9_TIME 90000
 #define HARDFORK_0_9_VERSION hardfork_version( 0, 9 )
 
 namespace hardfork9

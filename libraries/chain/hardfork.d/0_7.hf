@@ -3,6 +3,6 @@
 #define HARDFORK_0_7__117 HARDFORK_0_7
 #define FIRST_CASHOUT_TIME HARDFORK_0_7
 
-#define HARDFORK_0_7_TIME 0  //July 4th
+#define HARDFORK_0_7_TIME 70000
 #define HARDFORK_0_7_VERSION hardfork_version( 0, 7 )
 #endif
