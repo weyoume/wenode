@@ -1,5 +1,5 @@
-#include <ezira/account_by_key/account_by_key_api.hpp>
-#include <ezira/account_by_key/account_by_key_objects.hpp>
+#include <eznode/account_by_key/account_by_key_api.hpp>
+#include <eznode/account_by_key/account_by_key_objects.hpp>
 
 namespace ezira { namespace account_by_key {
 
@@ -9,12 +9,12 @@ namespace detail
 class account_by_key_api_impl
 {
    public:
-      account_by_key_api_impl( ezira::app::application& app )
+      account_by_key_api_impl( eznode::app::application& app )
          :_app( app ) {}
 
       vector< vector< account_name_type > > get_key_references( vector< public_key_type >& keys )const;
 
-      ezira::app::application& _app;
+      eznode::app::application& _app;
 };
 
 vector< vector< account_name_type > > account_by_key_api_impl::get_key_references( vector< public_key_type >& keys )const
@@ -43,7 +43,7 @@ vector< vector< account_name_type > > account_by_key_api_impl::get_key_reference
 
 } // detail
 
-account_by_key_api::account_by_key_api( const ezira::app::api_context& ctx )
+account_by_key_api::account_by_key_api( const eznode::app::api_context& ctx )
 {
    my = std::make_shared< detail::account_by_key_api_impl >( ctx.app );
 }
@@ -58,4 +58,4 @@ vector< vector< account_name_type > > account_by_key_api::get_key_references( ve
    });
 }
 
-} } // ezira::account_by_key
+} } // eznode::account_by_key

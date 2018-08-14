@@ -15,16 +15,16 @@ endif( MSVC )
 set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/ezira/chain/hardfork.hpp" PROPERTIES GENERATED TRUE )
 
 ## SORT .cpp by most likely to change / break compile
-add_library( ezira_chain
+add_library( eznode_chain
 
              # As database takes the longest to compile, start it first
              database.cpp
              fork_database.cpp
              witness_schedule.cpp
 
-             ezira_evaluator.cpp
+             eznode_evaluator.cpp
 
-             ezira_objects.cpp
+             eznode_objects.cpp
              shared_authority.cpp
              block_log.cpp
 
@@ -35,9 +35,9 @@ add_library( ezira_chain
              "${CMAKE_CURRENT_BINARY_DIR}/include/ezira/chain/hardfork.hpp"
            )
 
-add_dependencies( ezira_chain ezira_protocol build_hardfork_hpp )
-target_link_libraries( ezira_chain ezira_protocol fc chainbase graphene_schema ${PATCH_MERGE_LIB} )
-target_include_directories( ezira_chain
+add_dependencies( eznode_chain eznode_protocol build_hardfork_hpp )
+target_link_libraries( eznode_chain eznode_protocol fc chainbase graphene_schema ${PATCH_MERGE_LIB} )
+target_include_directories( eznode_chain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
 if(MSVC)
@@ -45,7 +45,7 @@ if(MSVC)
 endif(MSVC)
 
 INSTALL( TARGETS
-   ezira_chain
+   eznode_chain
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib

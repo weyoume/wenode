@@ -1,4 +1,4 @@
-#include <ezira/protocol/version.hpp>
+#include <eznode/protocol/version.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/variant.hpp>
@@ -42,16 +42,16 @@ version::operator fc::string()const
    return s.str();
 }
 
-} } // ezira::protocol
+} } // eznode::protocol
 
 namespace fc
 {
-   void to_variant( const ezira::protocol::version& v, variant& var )
+   void to_variant( const eznode::protocol::version& v, variant& var )
    {
       var = fc::string( v );
    }
 
-   void from_variant( const variant& var, ezira::protocol::version& v )
+   void from_variant( const variant& var, eznode::protocol::version& v )
    {
       uint32_t major = 0, hardfork = 0, revision = 0;
       char dot_a = 0, dot_b = 0;
@@ -69,14 +69,14 @@ namespace fc
       v.v_num = 0 | ( major << 24 ) | ( hardfork << 16 ) | revision;
    }
 
-   void to_variant( const ezira::protocol::hardfork_version& hv, variant& var )
+   void to_variant( const eznode::protocol::hardfork_version& hv, variant& var )
    {
-      to_variant( (const ezira::protocol::version&) hv, var );
+      to_variant( (const eznode::protocol::version&) hv, var );
    }
 
-   void from_variant( const variant& var, ezira::protocol::hardfork_version& hv )
+   void from_variant( const variant& var, eznode::protocol::hardfork_version& hv )
    {
-      ezira::protocol::version ver;
+      eznode::protocol::version ver;
       from_variant( var, ver );
       hv.v_num = ver.v_num & 0xffff0000;
    }

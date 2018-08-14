@@ -1,7 +1,7 @@
 
 
-#include <ezira/plugins/raw_block/raw_block_api.hpp>
-#include <ezira/plugins/raw_block/raw_block_plugin.hpp>
+#include <eznode/plugins/raw_block/raw_block_api.hpp>
+#include <eznode/plugins/raw_block/raw_block_plugin.hpp>
 
 #include <string>
 
@@ -28,6 +28,6 @@ void raw_block_plugin::plugin_shutdown()
 {
 }
 
-} } } // ezira::plugin::raw_block
+} } } // eznode::plugin::raw_block
 
-DEFINE_PLUGIN( raw_block, ezira::plugin::raw_block::raw_block_plugin )
+DEFINE_PLUGIN( raw_block, eznode::plugin::raw_block::raw_block_plugin )

@@ -1,6 +1,6 @@
-#include <ezira/protocol/operations.hpp>
+#include <eznode/protocol/operations.hpp>
 
-#include <ezira/protocol/operation_util_impl.hpp>
+#include <eznode/protocol/operation_util_impl.hpp>
 
 namespace ezira { namespace protocol {
 
@@ -32,6 +32,6 @@ bool is_virtual_operation( const operation& op )
    return op.visit( is_vop_visitor() );
 }
 
-} } // ezira::protocol
+} } // eznode::protocol
 
-DEFINE_OPERATION_TYPE( ezira::protocol::operation )
+DEFINE_OPERATION_TYPE( eznode::protocol::operation )

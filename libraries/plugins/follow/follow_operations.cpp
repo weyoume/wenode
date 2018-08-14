@@ -1,6 +1,6 @@
-#include <ezira/follow/follow_operations.hpp>
+#include <eznode/follow/follow_operations.hpp>
 
-#include <ezira/protocol/operation_util_impl.hpp>
+#include <eznode/protocol/operation_util_impl.hpp>
 
 namespace ezira { namespace follow {
 
@@ -14,6 +14,6 @@ void reblog_operation::validate()const
    FC_ASSERT( account != author, "You cannot reblog your own content" );
 }
 
-} } //ezira::follow
+} } //eznode::follow
 
-DEFINE_OPERATION_TYPE( ezira::follow::follow_plugin_operation )
+DEFINE_OPERATION_TYPE( eznode::follow::follow_plugin_operation )

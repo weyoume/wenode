@@ -1,8 +1,8 @@
-#include <ezira/protocol/get_config.hpp>
-#include <ezira/protocol/config.hpp>
-#include <ezira/protocol/asset.hpp>
-#include <ezira/protocol/types.hpp>
-#include <ezira/protocol/version.hpp>
+#include <eznode/protocol/get_config.hpp>
+#include <eznode/protocol/config.hpp>
+#include <eznode/protocol/asset.hpp>
+#include <eznode/protocol/types.hpp>
+#include <eznode/protocol/version.hpp>
 
 namespace ezira { namespace protocol {
 
@@ -175,12 +175,12 @@ fc::variant_object get_config()
    result["VOTE_CHANGE_LOCKOUT_PERIOD"] = VOTE_CHANGE_LOCKOUT_PERIOD;
    result["VOTE_DUST_THRESHOLD"] = VOTE_DUST_THRESHOLD;
    result["VOTE_REGENERATION_SECONDS"] = VOTE_REGENERATION_SECONDS;
-   result["SYMBOL_EZIRA"] = SYMBOL_EZIRA;
-   result["SYMBOL_VESTS"] = SYMBOL_VESTS;
+   result["SYMBOL_ECO"] = SYMBOL_ECO;
+   result["SYMBOL_EZP"] = SYMBOL_EZP;
    result["VIRTUAL_SCHEDULE_LAP_LENGTH"] = VIRTUAL_SCHEDULE_LAP_LENGTH;
    result["VIRTUAL_SCHEDULE_LAP_LENGTH2"] = VIRTUAL_SCHEDULE_LAP_LENGTH2;
 
    return result;
 }
 
-} } // ezira::protocol
+} } // eznode::protocol

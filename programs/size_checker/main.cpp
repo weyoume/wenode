@@ -27,7 +27,7 @@
 #include <fc/variant.hpp>
 #include <fc/variant_object.hpp>
 
-#include <ezira/protocol/protocol.hpp>
+#include <eznode/protocol/protocol.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -35,7 +35,7 @@
 #include <string>
 #include <vector>
 
-using namespace ezira::protocol;
+using namespace eznode::protocol;
 
 std::vector< fc::variant_object > g_op_types;
 
@@ -68,7 +68,7 @@ int main( int argc, char** argv )
 {
    try
    {
-      ezira::protocol::operation op;
+      eznode::protocol::operation op;
 
 
       std::vector<uint64_t> witnesses; witnesses.resize(50);

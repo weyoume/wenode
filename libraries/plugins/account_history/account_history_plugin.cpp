@@ -1,26 +1,26 @@
-#include <ezira/account_history/account_history_plugin.hpp>
+#include <eznode/account_history/account_history_plugin.hpp>
 
-#include <ezira/app/impacted.hpp>
+#include <eznode/app/impacted.hpp>
 
-#include <ezira/protocol/config.hpp>
+#include <eznode/protocol/config.hpp>
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/operation_notification.hpp>
-#include <ezira/chain/history_object.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/operation_notification.hpp>
+#include <eznode/chain/history_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
 
 #include <boost/algorithm/string.hpp>
 
-#define NAMESPACE_PREFIX "ezira::protocol::"
+#define NAMESPACE_PREFIX "eznode::protocol::"
 
 namespace ezira { namespace account_history {
 
 namespace detail
 {
 
-using namespace ezira::protocol;
+using namespace eznode::protocol;
 
 class account_history_plugin_impl
 {
@@ -30,7 +30,7 @@ class account_history_plugin_impl
       { }
       virtual ~account_history_plugin_impl();
 
-      ezira::chain::database& database()
+      eznode::chain::database& database()
       {
          return _self.database();
       }
@@ -124,7 +124,7 @@ struct operation_visitor_filter : operation_visitor
 void account_history_plugin_impl::on_operation( const operation_notification& note )
 {
    flat_set<account_name_type> impacted;
-   ezira::chain::database& db = database();
+   eznode::chain::database& db = database();
 
    const operation_object* new_obj = nullptr;
    app::operation_get_impacted_accounts( note.op, impacted );
@@ -262,4 +262,4 @@ flat_map< account_name_type, account_name_type > account_history_plugin::tracked
 
 } }
 
-DEFINE_PLUGIN( account_history, ezira::account_history::account_history_plugin )
+DEFINE_PLUGIN( account_history, eznode::account_history::account_history_plugin )

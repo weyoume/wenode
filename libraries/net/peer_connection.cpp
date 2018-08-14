@@ -24,7 +24,7 @@
 #include <graphene/net/peer_connection.hpp>
 #include <graphene/net/exceptions.hpp>
 #include <graphene/net/config.hpp>
-#include <ezira/protocol/config.hpp>
+#include <eznode/protocol/config.hpp>
 
 #include <fc/thread/thread.hpp>
 

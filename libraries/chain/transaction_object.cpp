@@ -1,4 +1,4 @@
-#include <ezira/chain/transaction_object.hpp>
+#include <eznode/chain/transaction_object.hpp>
 
 namespace ezira { namespace chain {
 
@@ -69,4 +69,4 @@ const object*transaction_index::get(object_id_type id) const
    return &*itr;
 }
 
-} } // ezira::chain
+} } // eznode::chain

@@ -13,8 +13,8 @@ my $outFile = new IO::File($outputFileName, "w")
 my $fileHeader = <<'END';
 /** GENERATED FILE **/
 #include <set>
-#include <ezira/wallet/api_documentation.hpp>
-#include <ezira/wallet/wallet.hpp>
+#include <eznode/wallet/api_documentation.hpp>
+#include <eznode/wallet/wallet.hpp>
 
 namespace ezira { namespace wallet {
    namespace detail
@@ -38,7 +38,7 @@ $outFile->print($fileHeader);
 
 for my $class (@{$doxydocs->{classes}})
 {
-  if ($class->{name} eq 'ezira::wallet::wallet_api')
+  if ($class->{name} eq 'eznode::wallet::wallet_api')
   {
     for my $member (@{$class->{public_methods}->{members}})
     {
@@ -84,7 +84,7 @@ my $fileFooter = <<'END';
           ++iter;
    }
 
-} } // end namespace ezira::wallet
+} } // end namespace eznode::wallet
 END
 $outFile->print($fileFooter);
 $outFile->close();

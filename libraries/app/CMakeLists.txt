@@ -1,6 +1,6 @@
 file(GLOB HEADERS "include/ezira/app/*.hpp")
 
-add_library( ezira_app
+add_library( eznode_app
              database_api.cpp
              api.cpp
              application.cpp
@@ -9,8 +9,8 @@ add_library( ezira_app
              ${HEADERS}
            )
 
-target_link_libraries( ezira_app ezira_chain ezira_protocol ezira_tags ezira_follow ezira_witness ezira_mf_plugins fc graphene_net graphene_utilities )
-target_include_directories( ezira_app
+target_link_libraries( eznode_app eznode_chain eznode_protocol eznode_tags eznode_follow eznode_witness eznode_mf_plugins fc graphene_net graphene_utilities )
+target_include_directories( eznode_app
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 if(MSVC)
@@ -18,7 +18,7 @@ if(MSVC)
 endif(MSVC)
 
 INSTALL( TARGETS
-   ezira_app
+   eznode_app
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib

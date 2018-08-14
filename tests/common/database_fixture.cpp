@@ -3,10 +3,10 @@
 
 #include <graphene/utilities/tempdir.hpp>
 
-#include <ezira/chain/ezira_objects.hpp>
-#include <ezira/chain/history_object.hpp>
-#include <ezira/account_history/account_history_plugin.hpp>
-#include <ezira/witness/witness_plugin.hpp>
+#include <eznode/chain/eznode_objects.hpp>
+#include <eznode/chain/history_object.hpp>
+#include <eznode/account_history/account_history_plugin.hpp>
+#include <eznode/witness/witness_plugin.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -17,9 +17,9 @@
 
 #include "database_fixture.hpp"
 
-#include <ezira/protocol/config.hpp>
+#include <eznode/protocol/config.hpp>
 
-//using namespace ezira::chain::test;
+//using namespace eznode::chain::test;
 
 uint32_t TESTING_GENESIS_TIMESTAMP = 1431700000;
 
@@ -41,9 +41,9 @@ clean_database_fixture::clean_database_fixture()
       if( arg == "--show-test-names" )
          std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
    }
-   auto ahplugin = app.register_plugin< ezira::account_history::account_history_plugin >();
-   db_plugin = app.register_plugin< ezira::plugin::debug_node::debug_node_plugin >();
-   auto wit_plugin = app.register_plugin< ezira::witness::witness_plugin >();
+   auto ahplugin = app.register_plugin< eznode::account_history::account_history_plugin >();
+   db_plugin = app.register_plugin< eznode::plugin::debug_node::debug_node_plugin >();
+   auto wit_plugin = app.register_plugin< eznode::witness::witness_plugin >();
    init_account_pub_key = init_account_priv_key.get_public_key();
 
    boost::program_options::variables_map options;
@@ -140,7 +140,7 @@ live_database_fixture::live_database_fixture()
       _chain_dir = fc::current_path() / "test_blockchain";
       FC_ASSERT( fc::exists( _chain_dir ), "Requires blockchain to test on in ./test_blockchain" );
 
-      auto ahplugin = app.register_plugin< ezira::account_history::account_history_plugin >();
+      auto ahplugin = app.register_plugin< eznode::account_history::account_history_plugin >();
       ahplugin->plugin_initialize( boost::program_options::variables_map() );
 
       db.open( _chain_dir, _chain_dir );
@@ -230,8 +230,8 @@ const account_object& database_fixture::account_create(
          account_create_with_delegation_operation op;
          op.new_account_name = name;
          op.creator = creator;
-         op.fee = asset( fee, SYMBOL_EZIRA );
-         op.delegation = asset( 0, SYMBOL_VESTS );
+         op.fee = asset( fee, SYMBOL_ECO );
+         op.delegation = asset( 0, SYMBOL_EZP );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
@@ -245,7 +245,7 @@ const account_object& database_fixture::account_create(
          account_create_operation op;
          op.new_account_name = name;
          op.creator = creator;
-         op.fee = asset( fee, SYMBOL_EZIRA );
+         op.fee = asset( fee, SYMBOL_ECO );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
@@ -310,7 +310,7 @@ const witness_object& database_fixture::witness_create(
       op.owner = owner;
       op.url = url;
       op.block_signing_key = signing_key;
-      op.fee = asset( fee, SYMBOL_EZIRA );
+      op.fee = asset( fee, SYMBOL_ECO );
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -348,7 +348,7 @@ void database_fixture::fund(
       {
          db.modify( db.get_account( account_name ), [&]( account_object& a )
          {
-            if( amount.symbol == SYMBOL_EZIRA )
+            if( amount.symbol == SYMBOL_ECO )
                a.balance += amount;
             else if( amount.symbol == SYMBOL_EZD )
             {
@@ -359,7 +359,7 @@ void database_fixture::fund(
 
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
          {
-            if( amount.symbol == SYMBOL_EZIRA )
+            if( amount.symbol == SYMBOL_ECO )
                gpo.current_supply += amount;
             else if( amount.symbol == SYMBOL_EZD )
                gpo.current_EZD_supply += amount;
@@ -371,7 +371,7 @@ void database_fixture::fund(
             if( median_feed.current_median_history.is_null() )
                db.modify( median_feed, [&]( feed_history_object& f )
                {
-                  f.current_median_history = price( asset( 1, SYMBOL_EZD ), asset( 1, SYMBOL_EZIRA ) );
+                  f.current_median_history = price( asset( 1, SYMBOL_EZD ), asset( 1, SYMBOL_ECO ) );
                });
          }
 
@@ -390,7 +390,7 @@ void database_fixture::convert(
       const account_object& account = db.get_account( account_name );
 
 
-      if ( amount.symbol == SYMBOL_EZIRA )
+      if ( amount.symbol == SYMBOL_ECO )
       {
          db.adjust_balance( account, -amount );
          db.adjust_balance( account, db.to_EZD( amount ) );
@@ -400,9 +400,9 @@ void database_fixture::convert(
       else if ( amount.symbol == SYMBOL_EZD )
       {
          db.adjust_balance( account, -amount );
-         db.adjust_balance( account, db.to_ezira( amount ) );
+         db.adjust_balance( account, db.to_ECO( amount ) );
          db.adjust_supply( -amount );
-         db.adjust_supply( db.to_ezira( amount ) );
+         db.adjust_supply( db.to_ECO( amount ) );
       }
    } FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
@@ -434,7 +434,7 @@ void database_fixture::vest( const string& from, const share_type& amount )
       transfer_to_vesting_operation op;
       op.from = from;
       op.to = "";
-      op.amount = asset( amount, SYMBOL_EZIRA );
+      op.amount = asset( amount, SYMBOL_ECO );
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -446,7 +446,7 @@ void database_fixture::vest( const string& from, const share_type& amount )
 
 void database_fixture::vest( const string& account, const asset& amount )
 {
-   if( amount.symbol != SYMBOL_EZIRA )
+   if( amount.symbol != SYMBOL_ECO )
       return;
 
    db_plugin->debug_update( [=]( database& db )
@@ -519,7 +519,7 @@ vector< operation > database_fixture::get_last_operations( uint32_t num_ops )
    while( itr != acc_hist_idx.begin() && ops.size() < num_ops )
    {
       itr--;
-      ops.push_back( fc::raw::unpack< ezira::chain::operation >( db.get(itr->op).serialized_op ) );
+      ops.push_back( fc::raw::unpack< eznode::chain::operation >( db.get(itr->op).serialized_op ) );
    }
 
    return ops;
@@ -546,6 +546,6 @@ void _push_transaction( database& db, const signed_transaction& tx, uint32_t ski
    db.push_transaction( tx, skip_flags );
 } FC_CAPTURE_AND_RETHROW((tx)) }
 
-} // ezira::chain::test
+} // eznode::chain::test
 
-} } // ezira::chain
+} } // eznode::chain

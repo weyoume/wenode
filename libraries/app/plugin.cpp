@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-#include <ezira/app/plugin.hpp>
+#include <eznode/app/plugin.hpp>
 
 #include <fc/vector.hpp>
 
@@ -66,4 +66,4 @@ void plugin::plugin_set_program_options(
    return;
 }
 
-} } // ezira::app
+} } // eznode::app

@@ -1,5 +1,5 @@
 
-#include <ezira/protocol/sign_state.hpp>
+#include <eznode/protocol/sign_state.hpp>
 
 namespace ezira { namespace protocol {
 
@@ -82,4 +82,4 @@ sign_state::sign_state(
    approved_by.insert( "temp"  );
 }
 
-} } // ezira::protocol
+} } // eznode::protocol

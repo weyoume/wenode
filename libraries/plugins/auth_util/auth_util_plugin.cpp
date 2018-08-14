@@ -1,7 +1,7 @@
 
 
-#include <ezira/plugins/auth_util/auth_util_api.hpp>
-#include <ezira/plugins/auth_util/auth_util_plugin.hpp>
+#include <eznode/plugins/auth_util/auth_util_api.hpp>
+#include <eznode/plugins/auth_util/auth_util_plugin.hpp>
 
 #include <string>
 
@@ -28,6 +28,6 @@ void auth_util_plugin::plugin_shutdown()
 {
 }
 
-} } } // ezira::plugin::auth_util
+} } } // eznode::plugin::auth_util
 
-DEFINE_PLUGIN( auth_util, ezira::plugin::auth_util::auth_util_plugin )
+DEFINE_PLUGIN( auth_util, eznode::plugin::auth_util::auth_util_plugin )

@@ -10,8 +10,8 @@ Ezira is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" soci
 
 # Public Announcement & Discussion
 
-Ezira was announced on the
-[Bitcointalk forum](https://bitcointalk.org/index.php?topic=1410943.new) prior to
+Ezira was announced on
+[Ezira.io](https://ezira.io) prior to
 the start of any mining.
 
 # No Support & No Warranty
@@ -26,7 +26,7 @@ IN THE SOFTWARE.
 
 # Whitepaper
 
-You can read the Ezira Whitepaper at [Ezira.io/EziraWhitePaper.pdf](https://ezira.io/EziraWhitePaper.pdf).
+You can read the Ezira Whitepaper at [Ezira.io/ezira.pdf](https://ezira.io/whitepaper.pdf).
 
 # Quickstart
 

@@ -17,7 +17,7 @@ add_library( {plugin_provider}_{plugin_name}
              {plugin_name}_api.cpp
            )
 
-target_link_libraries( {plugin_provider}_{plugin_name} ezira_app ezira_chain ezira_protocol )
+target_link_libraries( {plugin_provider}_{plugin_name} eznode_app eznode_chain eznode_protocol )
 target_include_directories( {plugin_provider}_{plugin_name}
                             PUBLIC "${{CMAKE_CURRENT_SOURCE_DIR}}/include" )
 """,
@@ -41,7 +41,7 @@ class {plugin_name}_api_impl;
 class {plugin_name}_api
 {{
    public:
-      {plugin_name}_api( const ezira::app::api_context& ctx );
+      {plugin_name}_api( const eznode::app::api_context& ctx );
 
       void on_api_startup();
 
@@ -62,7 +62,7 @@ FC_API( {plugin_provider}::plugin::{plugin_name}::{plugin_name}_api,
 """
 #pragma once
 
-#include <ezira/app/plugin.hpp>
+#include <eznode/app/plugin.hpp>
 
 namespace {plugin_provider} {{ namespace plugin {{ namespace {plugin_name} {{
 
@@ -70,10 +70,10 @@ namespace detail {{
 class {plugin_name}_plugin_impl;
 }}
 
-class {plugin_name}_plugin : public ezira::app::plugin
+class {plugin_name}_plugin : public eznode::app::plugin
 {{
    public:
-      {plugin_name}_plugin( ezira::app::application* app );
+      {plugin_name}_plugin( eznode::app::application* app );
       virtual ~{plugin_name}_plugin();
 
       virtual std::string plugin_name()const override;
@@ -90,8 +90,8 @@ class {plugin_name}_plugin : public ezira::app::plugin
 
 "{plugin_name}_api.cpp" :
 """
-#include <ezira/app/api_context.hpp>
-#include <ezira/app/application.hpp>
+#include <eznode/app/api_context.hpp>
+#include <eznode/app/application.hpp>
 
 #include <{plugin_provider}/plugins/{plugin_name}/{plugin_name}_api.hpp>
 #include <{plugin_provider}/plugins/{plugin_name}/{plugin_name}_plugin.hpp>
@@ -103,14 +103,14 @@ namespace detail {{
 class {plugin_name}_api_impl
 {{
    public:
-      {plugin_name}_api_impl( ezira::app::application& _app );
+      {plugin_name}_api_impl( eznode::app::application& _app );
 
       std::shared_ptr< {plugin_provider}::plugin::{plugin_name}::{plugin_name}_plugin > get_plugin();
 
-      ezira::app::application& app;
+      eznode::app::application& app;
 }};
 
-{plugin_name}_api_impl::{plugin_name}_api_impl( ezira::app::application& _app ) : app( _app )
+{plugin_name}_api_impl::{plugin_name}_api_impl( eznode::app::application& _app ) : app( _app )
 {{}}
 
 std::shared_ptr< {plugin_provider}::plugin::{plugin_name}::{plugin_name}_plugin > {plugin_name}_api_impl::get_plugin()
@@ -120,7 +120,7 @@ std::shared_ptr< {plugin_provider}::plugin::{plugin_name}::{plugin_name}_plugin 
 
 }} // detail
 
-{plugin_name}_api::{plugin_name}_api( const ezira::app::api_context& ctx )
+{plugin_name}_api::{plugin_name}_api( const eznode::app::api_context& ctx )
 {{
    my = std::make_shared< detail::{plugin_name}_api_impl >(ctx.app);
 }}
@@ -145,7 +145,7 @@ namespace detail {{
 class {plugin_name}_plugin_impl
 {{
    public:
-      {plugin_name}_plugin_impl( ezira::app::application& app );
+      {plugin_name}_plugin_impl( eznode::app::application& app );
       virtual ~{plugin_name}_plugin_impl();
 
       virtual std::string plugin_name()const;
@@ -154,11 +154,11 @@ class {plugin_name}_plugin_impl
       virtual void plugin_shutdown();
       void on_applied_block( const chain::signed_block& b );
 
-      ezira::app::application& _app;
+      eznode::app::application& _app;
       boost::signals2::scoped_connection _applied_block_conn;
 }};
 
-{plugin_name}_plugin_impl::{plugin_name}_plugin_impl( ezira::app::application& app )
+{plugin_name}_plugin_impl::{plugin_name}_plugin_impl( eznode::app::application& app )
   : _app(app) {{}}
 
 {plugin_name}_plugin_impl::~{plugin_name}_plugin_impl() {{}}
@@ -189,7 +189,7 @@ void {plugin_name}_plugin_impl::on_applied_block( const chain::signed_block& b )
 
 }}
 
-{plugin_name}_plugin::{plugin_name}_plugin( ezira::app::application* app )
+{plugin_name}_plugin::{plugin_name}_plugin( eznode::app::application* app )
    : plugin(app)
 {{
    FC_ASSERT( app != nullptr );

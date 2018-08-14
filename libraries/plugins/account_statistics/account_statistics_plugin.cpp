@@ -1,9 +1,9 @@
-#include <ezira/account_statistics/account_statistics_api.hpp>
+#include <eznode/account_statistics/account_statistics_api.hpp>
 
-#include <ezira/chain/account_object.hpp>
-#include <ezira/chain/comment_object.hpp>
+#include <eznode/chain/account_object.hpp>
+#include <eznode/chain/comment_object.hpp>
 
-#include <ezira/chain/database.hpp>
+#include <eznode/chain/database.hpp>
 
 namespace ezira { namespace account_statistics {
 
@@ -105,6 +105,6 @@ const flat_set< std::string >& account_statistics_plugin::get_tracked_accounts()
    return _my->_tracked_accounts;
 }
 
-} } // ezira::account_statistics
+} } // eznode::account_statistics
 
-DEFINE_PLUGIN( account_statistics, ezira::account_statistics::account_statistics_plugin );
+DEFINE_PLUGIN( account_statistics, eznode::account_statistics::account_statistics_plugin );

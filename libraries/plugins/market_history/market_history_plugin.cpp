@@ -1,14 +1,14 @@
-#include <ezira/market_history/market_history_api.hpp>
+#include <eznode/market_history/market_history_api.hpp>
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/index.hpp>
-#include <ezira/chain/operation_notification.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/index.hpp>
+#include <eznode/chain/operation_notification.hpp>
 
 namespace ezira { namespace market_history {
 
 namespace detail {
 
-using ezira::protocol::fill_order_operation;
+using eznode::protocol::fill_order_operation;
 
 class market_history_plugin_impl
 {
@@ -61,30 +61,30 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                b.open = open;
                b.seconds = bucket;
 
-               if( op.open_pays.symbol == SYMBOL_EZIRA )
+               if( op.open_pays.symbol == SYMBOL_ECO )
                {
-                  b.high_ezira = op.open_pays.amount;
+                  b.high_ECO = op.open_pays.amount;
                   b.high_EZD = op.current_pays.amount;
-                  b.low_ezira = op.open_pays.amount;
+                  b.low_ECO = op.open_pays.amount;
                   b.low_EZD = op.current_pays.amount;
-                  b.open_ezira = op.open_pays.amount;
+                  b.open_ECO = op.open_pays.amount;
                   b.open_EZD = op.current_pays.amount;
-                  b.close_ezira = op.open_pays.amount;
+                  b.close_ECO = op.open_pays.amount;
                   b.close_EZD = op.current_pays.amount;
-                  b.ezira_volume = op.open_pays.amount;
+                  b.ECO_volume = op.open_pays.amount;
                   b.EZD_volume = op.current_pays.amount;
                }
                else
                {
-                  b.high_ezira = op.current_pays.amount;
+                  b.high_ECO = op.current_pays.amount;
                   b.high_EZD = op.open_pays.amount;
-                  b.low_ezira = op.current_pays.amount;
+                  b.low_ECO = op.current_pays.amount;
                   b.low_EZD = op.open_pays.amount;
-                  b.open_ezira = op.current_pays.amount;
+                  b.open_ECO = op.current_pays.amount;
                   b.open_EZD = op.open_pays.amount;
-                  b.close_ezira = op.current_pays.amount;
+                  b.close_ECO = op.current_pays.amount;
                   b.close_EZD = op.open_pays.amount;
-                  b.ezira_volume = op.current_pays.amount;
+                  b.ECO_volume = op.current_pays.amount;
                   b.EZD_volume = op.open_pays.amount;
                }
             });
@@ -93,41 +93,41 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
          {
             db.modify( *itr, [&]( bucket_object& b )
             {
-               if( op.open_pays.symbol == SYMBOL_EZIRA )
+               if( op.open_pays.symbol == SYMBOL_ECO )
                {
-                  b.ezira_volume += op.open_pays.amount;
+                  b.ECO_volume += op.open_pays.amount;
                   b.EZD_volume += op.current_pays.amount;
-                  b.close_ezira = op.open_pays.amount;
+                  b.close_ECO = op.open_pays.amount;
                   b.close_EZD = op.current_pays.amount;
 
                   if( b.high() < price( op.current_pays, op.open_pays ) )
                   {
-                     b.high_ezira = op.open_pays.amount;
+                     b.high_ECO = op.open_pays.amount;
                      b.high_EZD = op.current_pays.amount;
                   }
 
                   if( b.low() > price( op.current_pays, op.open_pays ) )
                   {
-                     b.low_ezira = op.open_pays.amount;
+                     b.low_ECO = op.open_pays.amount;
                      b.low_EZD = op.current_pays.amount;
                   }
                }
                else
                {
-                  b.ezira_volume += op.current_pays.amount;
+                  b.ECO_volume += op.current_pays.amount;
                   b.EZD_volume += op.open_pays.amount;
-                  b.close_ezira = op.current_pays.amount;
+                  b.close_ECO = op.current_pays.amount;
                   b.close_EZD = op.open_pays.amount;
 
                   if( b.high() < price( op.open_pays, op.current_pays ) )
                   {
-                     b.high_ezira = op.current_pays.amount;
+                     b.high_ECO = op.current_pays.amount;
                      b.high_EZD = op.open_pays.amount;
                   }
 
                   if( b.low() > price( op.open_pays, op.current_pays ) )
                   {
-                     b.low_ezira = op.current_pays.amount;
+                     b.low_ECO = op.current_pays.amount;
                      b.low_EZD = op.open_pays.amount;
                   }
                }
@@ -215,6 +215,6 @@ uint32_t market_history_plugin::get_max_history_per_bucket() const
    return _my->_maximum_history_per_bucket_size;
 }
 
-} } // ezira::market_history
+} } // eznode::market_history
 
-DEFINE_PLUGIN( market_history, ezira::market_history::market_history_plugin )
+DEFINE_PLUGIN( market_history, eznode::market_history::market_history_plugin )

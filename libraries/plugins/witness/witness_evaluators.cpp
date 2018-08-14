@@ -1,7 +1,7 @@
-#include <ezira/witness/witness_operations.hpp>
-#include <ezira/witness/witness_objects.hpp>
+#include <eznode/witness/witness_operations.hpp>
+#include <eznode/witness/witness_objects.hpp>
 
-#include <ezira/chain/comment_object.hpp>
+#include <eznode/chain/comment_object.hpp>
 
 namespace ezira { namespace witness {
 
@@ -30,4 +30,4 @@ void enable_content_editing_evaluator::do_apply( const enable_content_editing_op
    FC_CAPTURE_AND_RETHROW( (o) )
 }
 
-} } // ezira::witness
+} } // eznode::witness

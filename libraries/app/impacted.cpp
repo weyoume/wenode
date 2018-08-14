@@ -22,16 +22,16 @@
  * THE SOFTWARE.
  */
 
-#include <ezira/protocol/authority.hpp>
+#include <eznode/protocol/authority.hpp>
 
-#include <ezira/app/impacted.hpp>
+#include <eznode/app/impacted.hpp>
 
 #include <fc/utility.hpp>
 
 namespace ezira { namespace app {
 
 using namespace fc;
-using namespace ezira::protocol;
+using namespace eznode::protocol;
 
 // TODO:  Review all of these, especially no-ops
 struct get_impacted_account_visitor

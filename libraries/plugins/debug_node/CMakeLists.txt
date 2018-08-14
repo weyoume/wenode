@@ -1,16 +1,16 @@
 file(GLOB HEADERS "include/ezira/plugins/debug_node/*.hpp")
 
-add_library( ezira_debug_node
+add_library( eznode_debug_node
              ${HEADERS}
              debug_node_plugin.cpp
              debug_node_api.cpp
            )
 
-target_link_libraries( ezira_debug_node ezira_app ezira_chain ezira_protocol fc )
-target_include_directories( ezira_debug_node
+target_link_libraries( eznode_debug_node eznode_app eznode_chain eznode_protocol fc )
+target_include_directories( eznode_debug_node
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
-install( TARGETS ezira_debug_node
+install( TARGETS eznode_debug_node
          RUNTIME DESTINATION bin
          LIBRARY DESTINATION lib
          ARCHIVE DESTINATION lib

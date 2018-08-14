@@ -1,14 +1,14 @@
 file(GLOB HEADERS "include/ezira/tags/*.hpp")
 
-add_library( ezira_tags
+add_library( eznode_tags
              tags_plugin.cpp )
 
-target_link_libraries( ezira_tags ezira_chain ezira_protocol ezira_app )
-target_include_directories( ezira_tags
+target_link_libraries( eznode_tags eznode_chain eznode_protocol eznode_app )
+target_include_directories( eznode_tags
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 install( TARGETS
-   ezira_tags
+   eznode_tags
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib

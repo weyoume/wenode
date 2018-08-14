@@ -1,9 +1,9 @@
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/witness_objects.hpp>
-#include <ezira/chain/witness_schedule.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/witness_objects.hpp>
+#include <eznode/chain/witness_schedule.hpp>
 
-#include <ezira/protocol/config.hpp>
+#include <eznode/protocol/config.hpp>
 
 namespace ezira { namespace chain {
 

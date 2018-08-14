@@ -23,17 +23,17 @@ else()
                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/api_documentation_standin.cpp )
 endif()
 
-add_library( ezira_wallet wallet.cpp ${CMAKE_CURRENT_BINARY_DIR}/api_documentation.cpp ${HEADERS} )
-# I don't know why ezira_app is required twice in the following line, I just know the linker breaks if it isn't.
-target_link_libraries( ezira_wallet PRIVATE ezira_app graphene_net ezira_chain ezira_protocol graphene_utilities fc ezira_private_message ezira_app ezira_follow ezira_account_by_key ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
-target_include_directories( ezira_wallet PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+add_library( eznode_wallet wallet.cpp ${CMAKE_CURRENT_BINARY_DIR}/api_documentation.cpp ${HEADERS} )
+# I don't know why eznode_app is required twice in the following line, I just know the linker breaks if it isn't.
+target_link_libraries( eznode_wallet PRIVATE eznode_app graphene_net eznode_chain eznode_protocol graphene_utilities fc eznode_private_message eznode_app eznode_follow eznode_account_by_key ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
+target_include_directories( eznode_wallet PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 if(MSVC)
   set_source_files_properties( wallet.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
 endif(MSVC)
 
 install( TARGETS
-   ezira_wallet
+   eznode_wallet
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib

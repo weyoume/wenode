@@ -1,4 +1,4 @@
-#include <ezira/chain/block_log.hpp>
+#include <eznode/chain/block_log.hpp>
 #include <fstream>
 #include <fc/io/raw.hpp>
 
@@ -305,4 +305,4 @@ namespace ezira { namespace chain {
       }
       FC_LOG_AND_RETHROW()
    }
-} } // ezira::chain
+} } // eznode::chain

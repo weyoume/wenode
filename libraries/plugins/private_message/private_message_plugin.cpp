@@ -22,17 +22,17 @@
  * THE SOFTWARE.
  */
 
-#include <ezira/private_message/private_message_evaluators.hpp>
-#include <ezira/private_message/private_message_operations.hpp>
-#include <ezira/private_message/private_message_plugin.hpp>
+#include <eznode/private_message/private_message_evaluators.hpp>
+#include <eznode/private_message/private_message_operations.hpp>
+#include <eznode/private_message/private_message_plugin.hpp>
 
-#include <ezira/app/impacted.hpp>
+#include <eznode/app/impacted.hpp>
 
-#include <ezira/protocol/config.hpp>
+#include <eznode/protocol/config.hpp>
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/index.hpp>
-#include <ezira/chain/generic_custom_operation_interpreter.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/index.hpp>
+#include <eznode/chain/generic_custom_operation_interpreter.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
@@ -48,20 +48,20 @@ class private_message_plugin_impl
       private_message_plugin_impl(private_message_plugin& _plugin);
       virtual ~private_message_plugin_impl();
 
-      ezira::chain::database& database()
+      eznode::chain::database& database()
       {
          return _self.database();
       }
 
       private_message_plugin&                                                             _self;
-      std::shared_ptr< generic_custom_operation_interpreter< ezira::private_message::private_message_plugin_operation > >   _custom_operation_interpreter;
+      std::shared_ptr< generic_custom_operation_interpreter< eznode::private_message::private_message_plugin_operation > >   _custom_operation_interpreter;
       flat_map<string,string>                                                             _tracked_accounts;
 };
 
 private_message_plugin_impl::private_message_plugin_impl( private_message_plugin& _plugin )
    : _self( _plugin )
 {
-   _custom_operation_interpreter = std::make_shared< generic_custom_operation_interpreter< ezira::private_message::private_message_plugin_operation > >( database() );
+   _custom_operation_interpreter = std::make_shared< generic_custom_operation_interpreter< eznode::private_message::private_message_plugin_operation > >( database() );
 
    _custom_operation_interpreter->register_evaluator< private_message_evaluator >( &_self );
 
@@ -185,6 +185,6 @@ flat_map<string,string> private_message_plugin::tracked_accounts() const
 
 } }
 
-DEFINE_PLUGIN( private_message, ezira::private_message::private_message_plugin )
+DEFINE_PLUGIN( private_message, eznode::private_message::private_message_plugin )
 
-DEFINE_OPERATION_TYPE( ezira::private_message::private_message_plugin_operation )
+DEFINE_OPERATION_TYPE( eznode::private_message::private_message_plugin_operation )

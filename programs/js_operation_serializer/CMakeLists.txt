@@ -4,7 +4,7 @@ if( UNIX AND NOT APPLE )
 endif()
 
 target_link_libraries( js_operation_serializer
-                       PRIVATE ezira_app graphene_net ezira_chain ezira_protocol graphene_utilities ezira_wallet fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
+                       PRIVATE eznode_app graphene_net eznode_chain eznode_protocol graphene_utilities eznode_wallet fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
 
 install( TARGETS
    js_operation_serializer

@@ -2,15 +2,15 @@
 #include <graphene/utilities/key_conversion.hpp>
 #include <graphene/utilities/words.hpp>
 
-#include <ezira/app/api.hpp>
-#include <ezira/protocol/base.hpp>
-#include <ezira/follow/follow_operations.hpp>
-#include <ezira/private_message/private_message_operations.hpp>
-#include <ezira/wallet/wallet.hpp>
-#include <ezira/wallet/api_documentation.hpp>
-#include <ezira/wallet/reflect_util.hpp>
+#include <eznode/app/api.hpp>
+#include <eznode/protocol/base.hpp>
+#include <eznode/follow/follow_operations.hpp>
+#include <eznode/private_message/private_message_operations.hpp>
+#include <eznode/wallet/wallet.hpp>
+#include <eznode/wallet/api_documentation.hpp>
+#include <eznode/wallet/reflect_util.hpp>
 
-#include <ezira/account_by_key/account_by_key_api.hpp>
+#include <eznode/account_by_key/account_by_key_api.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -312,8 +312,8 @@ public:
       fc::mutable_variant_object result;
       result["blockchain_version"]       = BLOCKCHAIN_VERSION;
       result["client_version"]           = client_version;
-      result["ezira_revision"]           = graphene::utilities::git_revision_sha;
-      result["ezira_revision_age"]       = fc::get_approximate_relative_time_string( fc::time_point_sec( graphene::utilities::git_revision_unix_timestamp ) );
+      result["eznode_revision"]           = graphene::utilities::git_revision_sha;
+      result["eznode_revision_age"]       = fc::get_approximate_relative_time_string( fc::time_point_sec( graphene::utilities::git_revision_unix_timestamp ) );
       result["fc_revision"]              = fc::git_revision_sha;
       result["fc_revision_age"]          = fc::get_approximate_relative_time_string( fc::time_point_sec( fc::git_revision_unix_timestamp ) );
       result["compile_date"]             = "compiled on " __DATE__ " at " __TIME__;
@@ -336,7 +336,7 @@ public:
       {
          auto v = _remote_api->get_version();
          result["server_blockchain_version"] = v.blockchain_version;
-         result["server_ezira_revision"] = v.ezira_revision;
+         result["server_eznode_revision"] = v.eznode_revision;
          result["server_fc_revision"] = v.fc_revision;
       }
       catch( fc::exception& )
@@ -389,7 +389,7 @@ public:
       fc::optional<fc::ecc::private_key> optional_private_key = wif_to_key(wif_key);
       if (!optional_private_key)
          FC_THROW("Invalid private key");
-      ezira::chain::public_key_type wif_pub_key = optional_private_key->get_public_key();
+      eznode::chain::public_key_type wif_pub_key = optional_private_key->get_public_key();
 
       _keys[wif_pub_key] = wif_key;
       return true;
@@ -460,7 +460,7 @@ public:
       for (int key_index = 0; ; ++key_index)
       {
          fc::ecc::private_key derived_private_key = derive_private_key(key_to_wif(parent_key), key_index);
-         ezira::chain::public_key_type derived_public_key = derived_private_key.get_public_key();
+         eznode::chain::public_key_type derived_public_key = derived_private_key.get_public_key();
          if( _keys.find(derived_public_key) == _keys.end() )
          {
             if (number_of_consecutive_unused_keys)
@@ -496,9 +496,9 @@ public:
          int memo_key_index = find_first_unused_derived_key_index(active_privkey);
          fc::ecc::private_key memo_privkey = derive_private_key( key_to_wif(active_privkey), memo_key_index);
 
-         ezira::chain::public_key_type owner_pubkey = owner_privkey.get_public_key();
-         ezira::chain::public_key_type active_pubkey = active_privkey.get_public_key();
-         ezira::chain::public_key_type memo_pubkey = memo_privkey.get_public_key();
+         eznode::chain::public_key_type owner_pubkey = owner_privkey.get_public_key();
+         eznode::chain::public_key_type active_pubkey = active_privkey.get_public_key();
+         eznode::chain::public_key_type memo_pubkey = memo_privkey.get_public_key();
 
          account_create_operation account_create_op;
 
@@ -727,11 +727,11 @@ public:
          std::stringstream out;
 
          auto accounts = result.as<vector<account_api_obj>>();
-         asset total_ezira;
-         asset total_vest(0, SYMBOL_VESTS );
+         asset total_ECO;
+         asset total_vest(0, SYMBOL_EZP );
          asset total_EZD(0, SYMBOL_EZD );
          for( const auto& a : accounts ) {
-            total_ezira += a.balance;
+            total_ECO += a.balance;
             total_vest  += a.vesting_shares;
             total_EZD  += a.EZD_balance;
             out << std::left << std::setw( 17 ) << std::string(a.name)
@@ -741,7 +741,7 @@ public:
          }
          out << "-------------------------------------------------------------------------\n";
             out << std::left << std::setw( 17 ) << "TOTAL"
-                << std::right << std::setw(18) << fc::variant(total_ezira).as_string() <<" "
+                << std::right << std::setw(18) << fc::variant(total_ECO).as_string() <<" "
                 << std::right << std::setw(26) << fc::variant(total_vest).as_string() <<" "
                 << std::right << std::setw(16) << fc::variant(total_EZD).as_string() <<"\n";
          return out.str();
@@ -781,7 +781,7 @@ public:
              ss << ' ' << setw( 10 ) << o.orderid;
              ss << ' ' << setw( 10 ) << o.real_price;
              ss << ' ' << setw( 10 ) << fc::variant( asset( o.for_sale, o.sell_price.base.symbol ) ).as_string();
-             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL_EZIRA ? "SELL" : "BUY");
+             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL_ECO ? "SELL" : "BUY");
              ss << "\n";
           }
           return ss.str();
@@ -799,10 +799,10 @@ public:
             << ' '
             << setw( spacing + 3 ) << "Sum(EZD)"
             << setw( spacing + 1) << "EZD"
-            << setw( spacing + 1 ) << "EZIRA"
+            << setw( spacing + 1 ) << "ECO"
             << setw( spacing + 1 ) << "Price"
             << setw( spacing + 1 ) << "Price"
-            << setw( spacing + 1 ) << "EZIRA "
+            << setw( spacing + 1 ) << "ECO "
             << setw( spacing + 1 ) << "EZD " << "Sum(EZD)"
             << "\n====================================================================================================="
             << "|=====================================================================================================\n";
@@ -815,7 +815,7 @@ public:
                ss
                   << ' ' << setw( spacing ) << bid_sum.to_string()
                   << ' ' << setw( spacing ) << asset( orders.bids[i].EZD, SYMBOL_EZD ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].ezira, SYMBOL_EZIRA ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].ECO, SYMBOL_ECO ).to_string()
                   << ' ' << setw( spacing ) << orders.bids[i].real_price; //(~orders.bids[i].order_price).to_real();
             }
             else
@@ -830,7 +830,7 @@ public:
                ask_sum += asset( orders.asks[i].EZD, SYMBOL_EZD );
                //ss << ' ' << setw( spacing ) << (~orders.asks[i].order_price).to_real()
                ss << ' ' << setw( spacing ) << orders.asks[i].real_price
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].ezira, SYMBOL_EZIRA ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].ECO, SYMBOL_ECO ).to_string()
                   << ' ' << setw( spacing ) << asset( orders.asks[i].EZD, SYMBOL_EZD ).to_string()
                   << ' ' << setw( spacing ) << ask_sum.to_string();
             }
@@ -967,7 +967,7 @@ public:
    const string _wallet_filename_extension = ".wallet";
 };
 
-} } } // ezira::wallet::detail
+} } } // eznode::wallet::detail
 
 
 
@@ -1299,7 +1299,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
    op.posting = authority( 1, posting, 1 );
    op.memo_key = memo;
    op.json_metadata = json_meta;
-   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL_EZIRA );
+   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_MODIFIER, SYMBOL_ECO );
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -1314,7 +1314,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
  * wallet.
  */
 annotated_signed_transaction wallet_api::create_account_with_keys_delegated( string creator,
-                                      asset ezira_fee,
+                                      asset ECO_fee,
                                       asset delegated_vests,
                                       string new_account_name,
                                       string json_meta,
@@ -1333,7 +1333,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys_delegated( str
    op.posting = authority( 1, posting, 1 );
    op.memo_key = memo;
    op.json_metadata = json_meta;
-   op.fee = ezira_fee;
+   op.fee = ECO_fee;
    op.delegation = delegated_vests;
 
    signed_transaction tx;
@@ -1700,7 +1700,7 @@ annotated_signed_transaction wallet_api::create_account( string creator, string 
  *  This method will genrate new owner, active, and memo keys for the new account which
  *  will be controlable by this wallet.
  */
-annotated_signed_transaction wallet_api::create_account_delegated( string creator, asset ezira_fee, asset delegated_vests, string new_account_name, string json_meta, bool broadcast )
+annotated_signed_transaction wallet_api::create_account_delegated( string creator, asset ECO_fee, asset delegated_vests, string new_account_name, string json_meta, bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
    auto owner = suggest_brain_key();
@@ -1711,7 +1711,7 @@ annotated_signed_transaction wallet_api::create_account_delegated( string creato
    import_key( active.wif_priv_key );
    import_key( posting.wif_priv_key );
    import_key( memo.wif_priv_key );
-   return create_account_with_keys_delegated( creator, ezira_fee, delegated_vests, new_account_name, json_meta,  owner.pub_key, active.pub_key, posting.pub_key, memo.pub_key, broadcast );
+   return create_account_with_keys_delegated( creator, ECO_fee, delegated_vests, new_account_name, json_meta,  owner.pub_key, active.pub_key, posting.pub_key, memo.pub_key, broadcast );
 } FC_CAPTURE_AND_RETHROW( (creator)(new_account_name)(json_meta) ) }
 
 
@@ -1872,7 +1872,7 @@ annotated_signed_transaction wallet_api::escrow_transfer(
       string agent,
       uint32_t escrow_id,
       asset EZD_amount,
-      asset ezira_amount,
+      asset ECO_amount,
       asset fee,
       time_point_sec ratification_deadline,
       time_point_sec escrow_expiration,
@@ -1887,7 +1887,7 @@ annotated_signed_transaction wallet_api::escrow_transfer(
    op.agent = agent;
    op.escrow_id = escrow_id;
    op.EZD_amount = EZD_amount;
-   op.ezira_amount = ezira_amount;
+   op.ECO_amount = ECO_amount;
    op.fee = fee;
    op.ratification_deadline = ratification_deadline;
    op.escrow_expiration = escrow_expiration;
@@ -1957,7 +1957,7 @@ annotated_signed_transaction wallet_api::escrow_release(
    string receiver,
    uint32_t escrow_id,
    asset EZD_amount,
-   asset ezira_amount,
+   asset ECO_amount,
    bool broadcast
 )
 {
@@ -1970,7 +1970,7 @@ annotated_signed_transaction wallet_api::escrow_release(
    op.receiver = receiver;
    op.escrow_id = escrow_id;
    op.EZD_amount = EZD_amount;
-   op.ezira_amount = ezira_amount;
+   op.ECO_amount = ECO_amount;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -2161,14 +2161,14 @@ annotated_signed_transaction wallet_api::decline_voting_rights( string account, 
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::claim_reward_balance( string account, asset reward_ezira, asset reward_EZD, asset reward_vests, bool broadcast )
+annotated_signed_transaction wallet_api::claim_reward_balance( string account, asset reward_ECO, asset reward_EZD, asset reward_EZP, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
    claim_reward_balance_operation op;
    op.account = account;
-   op.reward_ezira = reward_ezira;
+   op.reward_ECO = reward_ECO;
    op.reward_EZD = reward_EZD;
-   op.reward_vests = reward_vests;
+   op.reward_EZP = reward_EZP;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -2469,5 +2469,5 @@ vector<extended_message_object>   wallet_api::get_outbox( string account, fc::ti
    return result;
 }
 
-} } // ezira::wallet
+} } // eznode::wallet
 

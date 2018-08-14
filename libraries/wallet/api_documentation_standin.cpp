@@ -23,8 +23,8 @@
  */
 #include <iomanip>
 #include <boost/algorithm/string/join.hpp>
-#include <ezira/wallet/wallet.hpp>
-#include <ezira/wallet/api_documentation.hpp>
+#include <eznode/wallet/wallet.hpp>
+#include <eznode/wallet/api_documentation.hpp>
 
 namespace ezira { namespace wallet {
    namespace detail {
@@ -88,4 +88,4 @@ namespace ezira { namespace wallet {
                 std::inserter(method_descriptions, method_descriptions.end()));
    }
 
-} } // end namespace ezira::wallet
+} } // end namespace eznode::wallet

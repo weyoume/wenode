@@ -23,16 +23,16 @@
  */
 #include <cctype>
 
-#include <ezira/app/api.hpp>
-#include <ezira/app/api_access.hpp>
-#include <ezira/app/application.hpp>
-#include <ezira/app/impacted.hpp>
+#include <eznode/app/api.hpp>
+#include <eznode/app/api_access.hpp>
+#include <eznode/app/application.hpp>
+#include <eznode/app/impacted.hpp>
 
-#include <ezira/protocol/get_config.hpp>
+#include <eznode/protocol/get_config.hpp>
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/ezira_objects.hpp>
-#include <ezira/chain/transaction_object.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/eznode_objects.hpp>
+#include <eznode/chain/transaction_object.hpp>
 #include <fc/time.hpp>
 
 #include <graphene/utilities/key_conversion.hpp>
@@ -115,9 +115,9 @@ namespace ezira { namespace app {
        return it->second;
     }
 
-    ezira_version_info login_api::get_version()
+    eznode_version_info login_api::get_version()
     {
-       return ezira_version_info(
+       return eznode_version_info(
          fc::string( BLOCKCHAIN_VERSION ),
          fc::string( graphene::utilities::git_revision_sha ),
          fc::string( fc::git_revision_sha ) );
@@ -333,4 +333,4 @@ namespace ezira { namespace app {
        return _app.p2p_node()->set_advanced_node_parameters(params);
     }
 
-} } // ezira::app
+} } // eznode::app
