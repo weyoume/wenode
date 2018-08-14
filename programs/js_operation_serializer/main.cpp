@@ -21,13 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <ezira/protocol/protocol.hpp>
-#include <ezira/chain/ezira_objects.hpp>
+#include <eznode/protocol/protocol.hpp>
+#include <eznode/chain/eznode_objects.hpp>
 #include <fc/smart_ref_impl.hpp>
 #include <iostream>
 
-using namespace ezira::chain;
-using namespace ezira::protocol;
+using namespace eznode::chain;
+using namespace eznode::protocol;
 
 using std::string;
 using std::map;
@@ -57,7 +57,7 @@ string remove_namespace( string str )
    str = remove_tail_if( str, '_', "t" );
    str = remove_tail_if( str, '_', "object" );
    str = remove_tail_if( str, '_', "type" );
-   str = remove_namespace_if( str, "ezira::chain" );
+   str = remove_namespace_if( str, "eznode::chain" );
    str = remove_namespace_if( str, "chainbase" );
    str = remove_namespace_if( str, "std" );
    str = remove_namespace_if( str, "fc" );
@@ -77,7 +77,7 @@ void register_serializer();
 
 
 map<string, size_t >                st;
-ezira::vector<std::function<void()>>       serializers;
+eznode::vector<std::function<void()>>       serializers;
 
 bool register_serializer( const string& name, std::function<void()> sr )
 {

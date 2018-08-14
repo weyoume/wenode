@@ -1,22 +1,22 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <ezira/chain/account_object.hpp>
-#include <ezira/chain/comment_object.hpp>
-#include <ezira/protocol/ezira_operations.hpp>
+#include <eznode/chain/account_object.hpp>
+#include <eznode/chain/comment_object.hpp>
+#include <eznode/protocol/eznode_operations.hpp>
 
-#include <ezira/market_history/market_history_plugin.hpp>
+#include <eznode/market_history/market_history_plugin.hpp>
 
 #include "../common/database_fixture.hpp"
 
-using namespace ezira::chain;
-using namespace ezira::protocol;
+using namespace eznode::chain;
+using namespace eznode::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( market_history, clean_database_fixture )
 
 BOOST_AUTO_TEST_CASE( mh_test )
 {
-   using namespace ezira::market_history;
+   using namespace eznode::market_history;
 
    try
    {
@@ -131,155 +131,155 @@ BOOST_AUTO_TEST_CASE( mh_test )
 
       BOOST_REQUIRE( bucket->seconds == 15 );
       BOOST_REQUIRE( bucket->open == time_a );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "1.500 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "1.500 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "1.500 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "1.500 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.750 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 15 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "0.500 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "0.500 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "0.500 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "0.500 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.250 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 15 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) + 60 );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "0.450 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "0.450 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "0.450 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "0.450 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "0.950 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "0.950 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.500 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 60 );
       BOOST_REQUIRE( bucket->open == time_a );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "1.500 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "1.500 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "1.500 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "1.500 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.750 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 60 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "0.500 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "0.500 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "0.500 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "0.500 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.250 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 60 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) + 60 );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "0.450 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "0.450 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "0.450 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "0.450 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "0.950 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "0.950 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.500 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 300 );
       BOOST_REQUIRE( bucket->open == time_a );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "1.500 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "1.500 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "1.500 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "1.500 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.750 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 300 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "0.450 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "0.450 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "0.450 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "0.450 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "1.450 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "1.450 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.750 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 3600 );
       BOOST_REQUIRE( bucket->open == time_a );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "1.500 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "1.500 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "1.500 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "1.500 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.750 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 3600 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 60 ) );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "0.450 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "0.450 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "0.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "0.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "0.450 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "0.450 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "1.450 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "1.450 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "0.750 TBD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 86400 );
       BOOST_REQUIRE( bucket->open == GENESIS_TIME );
-      BOOST_REQUIRE( bucket->high_ezira == ASSET( "0.450 TESTS " ).amount );
+      BOOST_REQUIRE( bucket->high_ECO == ASSET( "0.450 TESTS " ).amount );
       BOOST_REQUIRE( bucket->high_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->low_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->low_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->low_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->open_ezira == ASSET( "1.500 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->open_ECO == ASSET( "1.500 TESTS" ).amount );
       BOOST_REQUIRE( bucket->open_EZD == ASSET( "0.750 TBD" ).amount );
-      BOOST_REQUIRE( bucket->close_ezira == ASSET( "0.450 TESTS").amount );
+      BOOST_REQUIRE( bucket->close_ECO == ASSET( "0.450 TESTS").amount );
       BOOST_REQUIRE( bucket->close_EZD == ASSET( "0.250 TBD" ).amount );
-      BOOST_REQUIRE( bucket->ezira_volume == ASSET( "2.950 TESTS" ).amount );
+      BOOST_REQUIRE( bucket->ECO_volume == ASSET( "2.950 TESTS" ).amount );
       BOOST_REQUIRE( bucket->EZD_volume == ASSET( "1.500 TBD" ).amount );
       bucket++;
 

@@ -1,26 +1,26 @@
-#include <ezira/protocol/ezira_operations.hpp>
+#include <eznode/protocol/eznode_operations.hpp>
 
-#include <ezira/chain/block_summary_object.hpp>
-#include <ezira/chain/compound.hpp>
-#include <ezira/chain/custom_operation_interpreter.hpp>
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/database_exceptions.hpp>
-#include <ezira/chain/db_with.hpp>
-#include <ezira/chain/evaluator_registry.hpp>
-#include <ezira/chain/global_property_object.hpp>
-#include <ezira/chain/history_object.hpp>
-#include <ezira/chain/index.hpp>
-#include <ezira/chain/ezira_evaluator.hpp>
-#include <ezira/chain/ezira_objects.hpp>
-#include <ezira/chain/transaction_object.hpp>
-#include <ezira/chain/shared_db_merkle.hpp>
-#include <ezira/chain/operation_notification.hpp>
-#include <ezira/chain/witness_schedule.hpp>
+#include <eznode/chain/block_summary_object.hpp>
+#include <eznode/chain/compound.hpp>
+#include <eznode/chain/custom_operation_interpreter.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/database_exceptions.hpp>
+#include <eznode/chain/db_with.hpp>
+#include <eznode/chain/evaluator_registry.hpp>
+#include <eznode/chain/global_property_object.hpp>
+#include <eznode/chain/history_object.hpp>
+#include <eznode/chain/index.hpp>
+#include <eznode/chain/eznode_evaluator.hpp>
+#include <eznode/chain/eznode_objects.hpp>
+#include <eznode/chain/transaction_object.hpp>
+#include <eznode/chain/shared_db_merkle.hpp>
+#include <eznode/chain/operation_notification.hpp>
+#include <eznode/chain/witness_schedule.hpp>
 
-#include <ezira/chain/util/asset.hpp>
-#include <ezira/chain/util/reward.hpp>
-#include <ezira/chain/util/uint256.hpp>
-#include <ezira/chain/util/reward.hpp>
+#include <eznode/chain/util/asset.hpp>
+#include <eznode/chain/util/reward.hpp>
+#include <eznode/chain/util/uint256.hpp>
+#include <eznode/chain/util/reward.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/uint128.hpp>
@@ -60,9 +60,9 @@ struct db_schema
 
 } }
 
-FC_REFLECT( ezira::chain::object_schema_repr, (space_type)(type) )
-FC_REFLECT( ezira::chain::operation_schema_repr, (id)(type) )
-FC_REFLECT( ezira::chain::db_schema, (types)(object_types)(operation_type)(custom_operation_types) )
+FC_REFLECT( eznode::chain::object_schema_repr, (space_type)(type) )
+FC_REFLECT( eznode::chain::operation_schema_repr, (id)(type) )
+FC_REFLECT( eznode::chain::db_schema, (types)(object_types)(operation_type)(custom_operation_types) )
 
 namespace ezira { namespace chain {
 
@@ -71,8 +71,8 @@ using boost::container::flat_set;
 struct reward_fund_context
 {
    uint128_t   recent_claims = 0;
-   asset       reward_balance = asset( 0, SYMBOL_EZIRA );
-   share_type  ezira_awarded = 0;
+   asset       reward_balance = asset( 0, SYMBOL_ECO );
+   share_type  ECO_awarded = 0;
 };
 
 class database_impl
@@ -970,16 +970,16 @@ uint32_t database::get_slot_at_time(fc::time_point_sec when)const
 }
 
 /**
- *  Converts EZIRA into EZD and adds it to to_account while reducing the EZIRA supply
- *  by EZIRA and increasing the EZD supply by the specified amount.
+ *  Converts ECO into EZD and adds it to to_account while reducing the ECO supply
+ *  by ECO and increasing the EZD supply by the specified amount.
  */
-std::pair< asset, asset > database::create_EZD( const account_object& to_account, asset ezira, bool to_reward_balance )
+std::pair< asset, asset > database::create_EZD( const account_object& to_account, asset ECO, bool to_reward_balance )
 {
-   std::pair< asset, asset > assets( asset( 0, SYMBOL_EZD ), asset( 0, SYMBOL_EZIRA ) );
+   std::pair< asset, asset > assets( asset( 0, SYMBOL_EZD ), asset( 0, SYMBOL_ECO ) );
 
    try
    {
-      if( ezira.amount == 0 )
+      if( ECO.amount == 0 )
          return assets;
 
       const auto& median_price = get_feed_history().current_median_history;
@@ -987,50 +987,50 @@ std::pair< asset, asset > database::create_EZD( const account_object& to_account
 
       if( !median_price.is_null() )
       {
-         auto to_EZD = ( gpo.EZD_print_rate * ezira.amount ) / PERCENT_100;
-         auto to_ezira = ezira.amount - to_EZD;
+         auto to_EZD = ( gpo.EZD_print_rate * ECO.amount ) / PERCENT_100;
+         auto to_ECO = ECO.amount - to_EZD;
 
-         auto EZD = asset( to_EZD, SYMBOL_EZIRA ) * median_price;
+         auto EZD = asset( to_EZD, SYMBOL_ECO ) * median_price;
 
          if( to_reward_balance )
          {
             adjust_reward_balance( to_account, EZD );
-            adjust_reward_balance( to_account, asset( to_ezira, SYMBOL_EZIRA ) );
+            adjust_reward_balance( to_account, asset( to_ECO, SYMBOL_ECO ) );
          }
          else
          {
             adjust_balance( to_account, EZD );
-            adjust_balance( to_account, asset( to_ezira, SYMBOL_EZIRA ) );
+            adjust_balance( to_account, asset( to_ECO, SYMBOL_ECO ) );
          }
 
-         adjust_supply( asset( -to_EZD, SYMBOL_EZIRA ) );
+         adjust_supply( asset( -to_EZD, SYMBOL_ECO ) );
          adjust_supply( EZD );
          assets.first = EZD;
-         assets.second = to_ezira;
+         assets.second = to_ECO;
       }
       else
       {
-         adjust_balance( to_account, ezira );
-         assets.second = ezira;
+         adjust_balance( to_account, ECO );
+         assets.second = ECO;
       }
    }
-   FC_CAPTURE_LOG_AND_RETHROW( (to_account.name)(ezira) )
+   FC_CAPTURE_LOG_AND_RETHROW( (to_account.name)(ECO) )
 
    return assets;
 }
 
 /**
  * @param to_account - the account to receive the new vesting shares
- * @param EZIRA - EZIRA to be converted to vesting shares
+ * @param ECO - ECO to be converted to vesting shares
  */
-asset database::create_vesting( const account_object& to_account, asset ezira, bool to_reward_balance )
+asset database::create_vesting( const account_object& to_account, asset ECO, bool to_reward_balance )
 {
    try
    {
       const auto& cprops = get_dynamic_global_properties();
 
       /**
-       *  The ratio of total_vesting_shares / total_vesting_fund_ezira should not
+       *  The ratio of total_vesting_shares / total_vesting_fund_ECO should not
        *  change as the result of the user adding funds
        *
        *  V / C  = (V+Vn) / (C+Cn)
@@ -1042,14 +1042,14 @@ asset database::create_vesting( const account_object& to_account, asset ezira, b
        *
        *  128 bit math is requred due to multiplying of 64 bit numbers. This is done in asset and price.
        */
-      asset new_vesting = ezira * ( to_reward_balance ? cprops.get_reward_vesting_share_price() : cprops.get_vesting_share_price() );
+      asset new_vesting = ECO * ( to_reward_balance ? cprops.get_reward_vesting_share_price() : cprops.get_vesting_share_price() );
 
       modify( to_account, [&]( account_object& to )
       {
          if( to_reward_balance )
          {
-            to.reward_vesting_balance += new_vesting;
-            to.reward_vesting_ezira += ezira;
+            to.reward_EZP_balance += new_vesting;
+            to.reward_vesting_ECO_balance += ECO;
          }
          else
             to.vesting_shares += new_vesting;
@@ -1060,11 +1060,11 @@ asset database::create_vesting( const account_object& to_account, asset ezira, b
          if( to_reward_balance )
          {
             props.pending_rewarded_vesting_shares += new_vesting;
-            props.pending_rewarded_vesting_ezira += ezira;
+            props.pending_rewarded_vesting_ECO += ECO;
          }
          else
          {
-            props.total_vesting_fund_ezira += ezira;
+            props.total_vesting_fund_ECO += ECO;
             props.total_vesting_shares += new_vesting;
          }
       } );
@@ -1074,7 +1074,7 @@ asset database::create_vesting( const account_object& to_account, asset ezira, b
 
       return new_vesting;
    }
-   FC_CAPTURE_AND_RETHROW( (to_account.name)(ezira) )
+   FC_CAPTURE_AND_RETHROW( (to_account.name)(ECO) )
 }
 
 fc::sha256 database::get_pow_target()const
@@ -1215,18 +1215,18 @@ void database::clear_null_account_balance()
    if( !has_hardfork( HARDFORK_0_14__327 ) ) return;
 
    const auto& null_account = get_account( NULL_ACCOUNT );
-   asset total_ezira( 0, SYMBOL_EZIRA );
+   asset total_ECO( 0, SYMBOL_ECO );
    asset total_EZD( 0, SYMBOL_EZD );
 
    if( null_account.balance.amount > 0 )
    {
-      total_ezira += null_account.balance;
+      total_ECO += null_account.balance;
       adjust_balance( null_account, -null_account.balance );
    }
 
    if( null_account.savings_balance.amount > 0 )
    {
-      total_ezira += null_account.savings_balance;
+      total_ECO += null_account.savings_balance;
       adjust_savings_balance( null_account, -null_account.savings_balance );
    }
 
@@ -1245,12 +1245,12 @@ void database::clear_null_account_balance()
    if( null_account.vesting_shares.amount > 0 )
    {
       const auto& gpo = get_dynamic_global_properties();
-      auto converted_ezira = null_account.vesting_shares * gpo.get_vesting_share_price();
+      auto converted_ECO = null_account.vesting_shares * gpo.get_vesting_share_price();
 
       modify( gpo, [&]( dynamic_global_property_object& g )
       {
          g.total_vesting_shares -= null_account.vesting_shares;
-         g.total_vesting_fund_ezira -= converted_ezira;
+         g.total_vesting_fund_ECO -= converted_ECO;
       });
 
       modify( null_account, [&]( account_object& a )
@@ -1258,13 +1258,13 @@ void database::clear_null_account_balance()
          a.vesting_shares.amount = 0;
       });
 
-      total_ezira += converted_ezira;
+      total_ECO += converted_ECO;
    }
 
-   if( null_account.reward_ezira_balance.amount > 0 )
+   if( null_account.reward_ECO_balance.amount > 0 )
    {
-      total_ezira += null_account.reward_ezira_balance;
-      adjust_reward_balance( null_account, -null_account.reward_ezira_balance );
+      total_ECO += null_account.reward_ECO_balance;
+      adjust_reward_balance( null_account, -null_account.reward_ECO_balance );
    }
 
    if( null_account.reward_EZD_balance.amount > 0 )
@@ -1273,27 +1273,27 @@ void database::clear_null_account_balance()
       adjust_reward_balance( null_account, -null_account.reward_EZD_balance );
    }
 
-   if( null_account.reward_vesting_balance.amount > 0 )
+   if( null_account.reward_EZP_balance.amount > 0 )
    {
       const auto& gpo = get_dynamic_global_properties();
 
-      total_ezira += null_account.reward_vesting_ezira;
+      total_ECO += null_account.reward_vesting_ECO_balance;
 
       modify( gpo, [&]( dynamic_global_property_object& g )
       {
-         g.pending_rewarded_vesting_shares -= null_account.reward_vesting_balance;
-         g.pending_rewarded_vesting_ezira -= null_account.reward_vesting_ezira;
+         g.pending_rewarded_vesting_shares -= null_account.reward_EZP_balance;
+         g.pending_rewarded_vesting_ECO -= null_account.reward_vesting_ECO_balance;
       });
 
       modify( null_account, [&]( account_object& a )
       {
-         a.reward_vesting_ezira.amount = 0;
-         a.reward_vesting_balance.amount = 0;
+         a.reward_vesting_ECO_balance.amount = 0;
+         a.reward_EZP_balance.amount = 0;
       });
    }
 
-   if( total_ezira.amount > 0 )
-      adjust_supply( -total_ezira );
+   if( total_ECO.amount > 0 )
+      adjust_supply( -total_ECO );
 
    if( total_EZD.amount > 0 )
       adjust_supply( -total_EZD );
@@ -1359,11 +1359,11 @@ void database::process_vesting_withdrawals()
       else
          to_withdraw = std::min( from_account.vesting_shares.amount, from_account.vesting_withdraw_rate.amount ).value;
 
-      share_type vests_deposited_as_ezira = 0;
+      share_type vests_deposited_as_ECO = 0;
       share_type vests_deposited_as_vests = 0;
-      asset total_ezira_converted = asset( 0, SYMBOL_EZIRA );
+      asset total_ECO_converted = asset( 0, SYMBOL_ECO );
 
-      // Do two passes, the first for vests, the second for ezira. Try to maintain as much accuracy for vests as possible.
+      // Do two passes, the first for vests, the second for ECO. Try to maintain as much accuracy for vests as possible.
       for( auto itr = didx.upper_bound( boost::make_tuple( from_account.id, account_id_type() ) );
            itr != didx.end() && itr->from_account == from_account.id;
            ++itr )
@@ -1384,7 +1384,7 @@ void database::process_vesting_withdrawals()
 
                adjust_proxied_witness_votes( to_account, to_deposit );
 
-               push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, to_account.name, asset( to_deposit, SYMBOL_VESTS ), asset( to_deposit, SYMBOL_VESTS ) ) );
+               push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, to_account.name, asset( to_deposit, SYMBOL_EZP ), asset( to_deposit, SYMBOL_EZP ) ) );
             }
          }
       }
@@ -1398,37 +1398,37 @@ void database::process_vesting_withdrawals()
             const auto& to_account = get(itr->to_account);
 
             share_type to_deposit = ( ( fc::uint128_t ( to_withdraw.value ) * itr->percent ) / PERCENT_100 ).to_uint64();
-            vests_deposited_as_ezira += to_deposit;
-            auto converted_ezira = asset( to_deposit, SYMBOL_VESTS ) * cprops.get_vesting_share_price();
-            total_ezira_converted += converted_ezira;
+            vests_deposited_as_ECO += to_deposit;
+            auto converted_ECO = asset( to_deposit, SYMBOL_EZP ) * cprops.get_vesting_share_price();
+            total_ECO_converted += converted_ECO;
 
             if( to_deposit > 0 )
             {
                modify( to_account, [&]( account_object& a )
                {
-                  a.balance += converted_ezira;
+                  a.balance += converted_ECO;
                });
 
                modify( cprops, [&]( dynamic_global_property_object& o )
                {
-                  o.total_vesting_fund_ezira -= converted_ezira;
+                  o.total_vesting_fund_ECO -= converted_ECO;
                   o.total_vesting_shares.amount -= to_deposit;
                });
 
-               push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, to_account.name, asset( to_deposit, SYMBOL_VESTS), converted_ezira ) );
+               push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, to_account.name, asset( to_deposit, SYMBOL_EZP), converted_ECO ) );
             }
          }
       }
 
-      share_type to_convert = to_withdraw - vests_deposited_as_ezira - vests_deposited_as_vests;
+      share_type to_convert = to_withdraw - vests_deposited_as_ECO - vests_deposited_as_vests;
       FC_ASSERT( to_convert >= 0, "Deposited more vests than were supposed to be withdrawn" );
 
-      auto converted_ezira = asset( to_convert, SYMBOL_VESTS ) * cprops.get_vesting_share_price();
+      auto converted_ECO = asset( to_convert, SYMBOL_EZP ) * cprops.get_vesting_share_price();
 
       modify( from_account, [&]( account_object& a )
       {
          a.vesting_shares.amount -= to_withdraw;
-         a.balance += converted_ezira;
+         a.balance += converted_ECO;
          a.withdrawn += to_withdraw;
 
          if( a.withdrawn >= a.to_withdraw || a.vesting_shares.amount == 0 )
@@ -1444,14 +1444,14 @@ void database::process_vesting_withdrawals()
 
       modify( cprops, [&]( dynamic_global_property_object& o )
       {
-         o.total_vesting_fund_ezira -= converted_ezira;
+         o.total_vesting_fund_ECO -= converted_ECO;
          o.total_vesting_shares.amount -= to_convert;
       });
 
       if( to_withdraw > 0 )
          adjust_proxied_witness_votes( from_account, -to_withdraw );
 
-      push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, from_account.name, asset( to_withdraw, SYMBOL_VESTS ), converted_ezira ) );
+      push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, from_account.name, asset( to_withdraw, SYMBOL_EZP ), converted_ECO ) );
    }
 }
 
@@ -1498,7 +1498,7 @@ share_type database::pay_curators( const comment_object& c, share_type& max_rewa
             {
                unclaimed_rewards -= claim;
                const auto& voter = get(itr->voter);
-               auto reward = create_vesting( voter, asset( claim, SYMBOL_EZIRA ), has_hardfork( HARDFORK_0_17__659 ) );
+               auto reward = create_vesting( voter, asset( claim, SYMBOL_ECO ), has_hardfork( HARDFORK_0_17__659 ) );
 
                push_virtual_operation( curation_reward_operation( voter.name, reward, c.author, to_string( c.permlink ) ) );
 
@@ -1564,17 +1564,17 @@ share_type database::cashout_comment_helper( util::comment_reward_context& ctx, 
 
             author_tokens -= total_beneficiary;
 
-            auto EZD_ezira     = ( author_tokens * comment.percent_ezira_dollars ) / ( 2 * PERCENT_100 ) ;
-            auto vesting_ezira = author_tokens - EZD_ezira;
+            auto EZD_ECO     = ( author_tokens * comment.percent_EZD ) / ( 2 * PERCENT_100 ) ;
+            auto vesting_ECO = author_tokens - EZD_ECO;
 
             const auto& author = get_account( comment.author );
-            auto vest_created = create_vesting( author, vesting_ezira, has_hardfork( HARDFORK_0_17__659 ) );
-            auto EZD_payout = create_EZD( author, EZD_ezira, has_hardfork( HARDFORK_0_17__659 ) );
+            auto vest_created = create_vesting( author, vesting_ECO, has_hardfork( HARDFORK_0_17__659 ) );
+            auto EZD_payout = create_EZD( author, EZD_ECO, has_hardfork( HARDFORK_0_17__659 ) );
 
-            adjust_total_payout( comment, EZD_payout.first + to_EZD( EZD_payout.second + asset( vesting_ezira, SYMBOL_EZIRA ) ), to_EZD( asset( curation_tokens, SYMBOL_EZIRA ) ), to_EZD( asset( total_beneficiary, SYMBOL_EZIRA ) ) );
+            adjust_total_payout( comment, EZD_payout.first + to_EZD( EZD_payout.second + asset( vesting_ECO, SYMBOL_ECO ) ), to_EZD( asset( curation_tokens, SYMBOL_ECO ) ), to_EZD( asset( total_beneficiary, SYMBOL_ECO ) ) );
 
             push_virtual_operation( author_reward_operation( comment.author, to_string( comment.permlink ), EZD_payout.first, EZD_payout.second, vest_created ) );
-            push_virtual_operation( comment_reward_operation( comment.author, to_string( comment.permlink ), to_EZD( asset( claimed_reward, SYMBOL_EZIRA ) ) ) );
+            push_virtual_operation( comment_reward_operation( comment.author, to_string( comment.permlink ), to_EZD( asset( claimed_reward, SYMBOL_ECO ) ) ) );
 
             #ifndef IS_LOW_MEM
                modify( comment, [&]( comment_object& c )
@@ -1660,10 +1660,10 @@ void database::process_comment_cashout()
 
    const auto& gpo = get_dynamic_global_properties();
    util::comment_reward_context ctx;
-   ctx.current_ezira_price = get_feed_history().current_median_history;
+   ctx.current_ECO_price = get_feed_history().current_median_history;
 
    vector< reward_fund_context > funds;
-   vector< share_type > ezira_awarded;
+   vector< share_type > ECO_awarded;
    const auto& reward_idx = get_index< reward_fund_index, by_id >();
 
    // Decay recent rshares of each fund
@@ -1733,8 +1733,8 @@ void database::process_comment_cashout()
       {
          auto fund_id = get_reward_fund( *current ).id._id;
          ctx.total_reward_shares2 = funds[ fund_id ].recent_claims;
-         ctx.total_reward_fund_ezira = funds[ fund_id ].reward_balance;
-         funds[ fund_id ].ezira_awarded += cashout_comment_helper( ctx, *current );
+         ctx.total_reward_fund_ECO = funds[ fund_id ].reward_balance;
+         funds[ fund_id ].ECO_awarded += cashout_comment_helper( ctx, *current );
       }
       else
       {
@@ -1743,7 +1743,7 @@ void database::process_comment_cashout()
          {
             const auto& comment = *itr; ++itr;
             ctx.total_reward_shares2 = gpo.total_reward_shares2;
-            ctx.total_reward_fund_ezira = gpo.total_reward_fund_ezira;
+            ctx.total_reward_fund_ECO = gpo.total_reward_fund_ECO;
 
             auto reward = cashout_comment_helper( ctx, comment );
 
@@ -1751,7 +1751,7 @@ void database::process_comment_cashout()
             {
                modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& p )
                {
-                  p.total_reward_fund_ezira.amount -= reward;
+                  p.total_reward_fund_ECO.amount -= reward;
                });
             }
          }
@@ -1768,14 +1768,14 @@ void database::process_comment_cashout()
          modify( get< reward_fund_object, by_id >( reward_fund_id_type( i ) ), [&]( reward_fund_object& rfo )
          {
             rfo.recent_claims = funds[ i ].recent_claims;
-            rfo.reward_balance -= funds[ i ].ezira_awarded;
+            rfo.reward_balance -= funds[ i ].ECO_awarded;
          });
       }
    }
 }
 
 /**
- *  Overall the network has an inflation rate of 102% of virtual ezira per year
+ *  Overall the network has an inflation rate of 102% of virtual ECO per year
  *  90% of inflation is directed to vesting shares
  *  10% of inflation is directed to subjective proof of work voting
  *  1% of inflation is directed to liquidity providers
@@ -1802,12 +1802,12 @@ void database::process_funds()
       // below subtraction cannot underflow int64_t because inflation_rate_adjustment is <2^32
       int64_t current_inflation_rate = std::max( start_inflation_rate - inflation_rate_adjustment, inflation_rate_floor );
 
-      auto new_ezira = ( props.virtual_supply.amount * current_inflation_rate ) / ( int64_t( PERCENT_100 ) * int64_t( BLOCKS_PER_YEAR ) );
-      auto content_reward = ( new_ezira * CONTENT_REWARD_PERCENT ) / PERCENT_100;
+      auto new_ECO = ( props.virtual_supply.amount * current_inflation_rate ) / ( int64_t( PERCENT_100 ) * int64_t( BLOCKS_PER_YEAR ) );
+      auto content_reward = ( new_ECO * CONTENT_REWARD_PERCENT ) / PERCENT_100;
       if( has_hardfork( HARDFORK_0_17__774 ) )
          content_reward = pay_reward_funds( content_reward ); /// 75% to content creator
-      auto vesting_reward = ( new_ezira * VESTING_FUND_PERCENT ) / PERCENT_100; /// 15% to vesting fund
-      auto witness_reward = new_ezira - content_reward - vesting_reward; /// Remaining 10% to witness pay
+      auto vesting_reward = ( new_ECO * VESTING_FUND_PERCENT ) / PERCENT_100; /// 15% to vesting fund
+      auto witness_reward = new_ECO - content_reward - vesting_reward; /// Remaining 10% to witness pay
 
       const auto& cwit = get_witness( props.current_witness );
       witness_reward *= MAX_WITNESSES;
@@ -1823,18 +1823,18 @@ void database::process_funds()
 
       witness_reward /= wso.witness_pay_normalization_factor;
 
-      new_ezira = content_reward + vesting_reward + witness_reward;
+      new_ECO = content_reward + vesting_reward + witness_reward;
 
       modify( props, [&]( dynamic_global_property_object& p )
       {
-         p.total_vesting_fund_ezira += asset( vesting_reward, SYMBOL_EZIRA );
+         p.total_vesting_fund_ECO += asset( vesting_reward, SYMBOL_ECO );
          if( !has_hardfork( HARDFORK_0_17__774 ) )
-            p.total_reward_fund_ezira  += asset( content_reward, SYMBOL_EZIRA );
-         p.current_supply           += asset( new_ezira, SYMBOL_EZIRA );
-         p.virtual_supply           += asset( new_ezira, SYMBOL_EZIRA );
+            p.total_reward_fund_ECO  += asset( content_reward, SYMBOL_ECO );
+         p.current_supply           += asset( new_ECO, SYMBOL_ECO );
+         p.virtual_supply           += asset( new_ECO, SYMBOL_ECO );
       });
 
-      const auto& producer_reward = create_vesting( get_account( cwit.owner ), asset( witness_reward, SYMBOL_EZIRA ) );
+      const auto& producer_reward = create_vesting( get_account( cwit.owner ), asset( witness_reward, SYMBOL_ECO ) );
       push_virtual_operation( producer_reward_operation( cwit.owner, producer_reward ) );
 
    }
@@ -1854,8 +1854,8 @@ void database::process_funds()
 
       modify( props, [&]( dynamic_global_property_object& p )
       {
-          p.total_vesting_fund_ezira += vesting_reward;
-          p.total_reward_fund_ezira  += content_reward;
+          p.total_vesting_fund_ECO += vesting_reward;
+          p.total_reward_fund_ECO  += content_reward;
           p.current_supply += content_reward + witness_pay + vesting_reward;
           p.virtual_supply += content_reward + witness_pay + vesting_reward;
       } );
@@ -1886,11 +1886,11 @@ void database::process_savings_withdraws()
 asset database::get_liquidity_reward()const
 {
    if( has_hardfork( HARDFORK_0_12__178 ) )
-      return asset( 0, SYMBOL_EZIRA );
+      return asset( 0, SYMBOL_ECO );
 
    const auto& props = get_dynamic_global_properties();
    static_assert( LIQUIDITY_REWARD_PERIOD_SEC == 60*60, "this code assumes a 1 hour time interval" );
-   asset percent( protocol::calc_percent_reward_per_hour< LIQUIDITY_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_EZIRA );
+   asset percent( protocol::calc_percent_reward_per_hour< LIQUIDITY_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_ECO );
    return std::max( percent, MIN_LIQUIDITY_REWARD );
 }
 
@@ -1898,7 +1898,7 @@ asset database::get_content_reward()const
 {
    const auto& props = get_dynamic_global_properties();
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
-   asset percent( protocol::calc_percent_reward_per_block< CONTENT_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_EZIRA );
+   asset percent( protocol::calc_percent_reward_per_block< CONTENT_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_ECO );
    return std::max( percent, MIN_CONTENT_REWARD );
 }
 
@@ -1906,7 +1906,7 @@ asset database::get_curation_reward()const
 {
    const auto& props = get_dynamic_global_properties();
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
-   asset percent( protocol::calc_percent_reward_per_block< CURATE_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_EZIRA);
+   asset percent( protocol::calc_percent_reward_per_block< CURATE_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_ECO);
    return std::max( percent, MIN_CURATE_REWARD );
 }
 
@@ -1914,7 +1914,7 @@ asset database::get_producer_reward()
 {
    const auto& props = get_dynamic_global_properties();
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
-   asset percent( protocol::calc_percent_reward_per_block< PRODUCER_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_EZIRA);
+   asset percent( protocol::calc_percent_reward_per_block< PRODUCER_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_ECO);
    auto pay = std::max( percent, MIN_PRODUCER_REWARD );
    const auto& witness_account = get_account( props.current_witness );
 
@@ -1942,12 +1942,12 @@ asset database::get_pow_reward()const
 #ifndef IS_TEST_NET
    /// 0 block rewards until at least MAX_WITNESSES have produced a POW
    if( props.num_pow_witnesses < MAX_WITNESSES && props.head_block_number < START_VESTING_BLOCK )
-      return asset( 0, SYMBOL_EZIRA );
+      return asset( 0, SYMBOL_ECO );
 #endif
 
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
   //  static_assert( MAX_WITNESSES == 21, "this code assumes 21 per round" );
-   asset percent( calc_percent_reward_per_round< POW_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_EZIRA);
+   asset percent( calc_percent_reward_per_round< POW_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_ECO);
    return std::max( percent, MIN_POW_REWARD );
 }
 
@@ -1974,7 +1974,7 @@ void database::pay_liquidity_reward()
          adjust_balance( get(itr->owner), reward );
          modify( *itr, [&]( liquidity_reward_balance_object& obj )
          {
-            obj.ezira_volume = 0;
+            obj.ECO_volume = 0;
             obj.EZD_volume   = 0;
             obj.last_update  = head_block_time();
             obj.weight = 0;
@@ -2007,12 +2007,12 @@ share_type database::pay_reward_funds( share_type reward )
 
       modify( *itr, [&]( reward_fund_object& rfo )
       {
-         rfo.reward_balance += asset( r, SYMBOL_EZIRA );
+         rfo.reward_balance += asset( r, SYMBOL_ECO );
       });
 
       used_rewards += r;
 
-      // Sanity check to ensure we aren't printing more EZIRA than has been allocated through inflation
+      // Sanity check to ensure we aren't printing more eCoin than has been allocated through inflation
       FC_ASSERT( used_rewards <= reward );
    }
 
@@ -2021,7 +2021,7 @@ share_type database::pay_reward_funds( share_type reward )
 
 /**
  *  Iterates over all conversion requests with a conversion date before
- *  the head block time and then converts them to/from ezira/EZD at the
+ *  the head block time and then converts them to/from eCoin/EZD at the
  *  current median price feed history price times the premium
  */
 void database::process_conversions()
@@ -2035,7 +2035,7 @@ void database::process_conversions()
       return;
 
    asset net_EZD( 0, SYMBOL_EZD );
-   asset net_ezira( 0, SYMBOL_EZIRA );
+   asset net_ECO( 0, SYMBOL_ECO );
 
    while( itr != request_by_date.end() && itr->conversion_date <= now )
    {
@@ -2045,7 +2045,7 @@ void database::process_conversions()
       adjust_balance( user, amount_to_issue );
 
       net_EZD   += itr->amount;
-      net_ezira += amount_to_issue;
+      net_ECO += amount_to_issue;
 
       push_virtual_operation( fill_convert_request_operation ( user.name, itr->requestid, itr->amount, amount_to_issue ) );
 
@@ -2056,21 +2056,21 @@ void database::process_conversions()
    const auto& props = get_dynamic_global_properties();
    modify( props, [&]( dynamic_global_property_object& p )
    {
-       p.current_supply += net_ezira;
+       p.current_supply += net_ECO;
        p.current_EZD_supply -= net_EZD;
-       p.virtual_supply += net_ezira;
+       p.virtual_supply += net_ECO;
        p.virtual_supply -= net_EZD * get_feed_history().current_median_history;
    } );
 }
 
-asset database::to_EZD( const asset& ezira )const
+asset database::to_EZD( const asset& ECO )const
 {
-   return util::to_EZD( get_feed_history().current_median_history, ezira );
+   return util::to_EZD( get_feed_history().current_median_history, ECO );
 }
 
-asset database::to_ezira( const asset& EZD )const
+asset database::to_ECO( const asset& EZD )const
 {
-   return util::to_ezira( get_feed_history().current_median_history, EZD );
+   return util::to_ECO( get_feed_history().current_median_history, EZD );
 }
 
 void database::account_recovery_processing()
@@ -2122,7 +2122,7 @@ void database::expire_escrow_ratification()
       ++escrow_itr;
 
       const auto& from_account = get_account( old_escrow.from );
-      adjust_balance( from_account, old_escrow.ezira_balance );
+      adjust_balance( from_account, old_escrow.ECO_balance );
       adjust_balance( from_account, old_escrow.EZD_balance );
       adjust_balance( from_account, old_escrow.pending_fee );
 
@@ -2401,7 +2401,7 @@ void database::init_genesis( uint64_t init_supply )
          {
             a.name = INIT_MINER_NAME + ( i ? fc::to_string( i ) : std::string() );
             a.memo_key = init_public_key;
-            a.balance  = asset( init_supply / (NUM_INIT_MINERS + NUM_INIT_EXTRAS), SYMBOL_EZIRA );
+            a.balance  = asset( init_supply / (NUM_INIT_MINERS + NUM_INIT_EXTRAS), SYMBOL_ECO );
          } );
 
          create< account_authority_object >( [&]( account_authority_object& auth )
@@ -2427,7 +2427,7 @@ void database::init_genesis( uint64_t init_supply )
          p.time = GENESIS_TIME;
          p.recent_slots_filled = fc::uint128::max_value();
          p.participation_count = 128;
-         p.current_supply = asset( init_supply, SYMBOL_EZIRA );
+         p.current_supply = asset( init_supply, SYMBOL_ECO );
          p.virtual_supply = p.current_supply;
          p.maximum_block_size = MAX_BLOCK_SIZE;
       } );
@@ -2787,11 +2787,11 @@ try {
       modify( get_feed_history(), [&]( feed_history_object& fho )
       {
          fho.price_history.push_back( median_feed );
-         size_t ezira_feed_history_window = FEED_HISTORY_WINDOW_PRE_HF_16;
+         size_t ECO_feed_history_window = FEED_HISTORY_WINDOW_PRE_HF_16;
          if( has_hardfork( HARDFORK_0_16__551) )
-            ezira_feed_history_window = FEED_HISTORY_WINDOW;
+            ECO_feed_history_window = FEED_HISTORY_WINDOW;
 
-         if( fho.price_history.size() > ezira_feed_history_window )
+         if( fho.price_history.size() > ECO_feed_history_window )
             fho.price_history.pop_front();
 
          if( fho.price_history.size() )
@@ -3010,7 +3010,7 @@ void database::update_virtual_supply()
    modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& dgp )
    {
       dgp.virtual_supply = dgp.current_supply
-         + ( get_feed_history().current_median_history.is_null() ? asset( 0, SYMBOL_EZIRA ) : dgp.current_EZD_supply * get_feed_history().current_median_history );
+         + ( get_feed_history().current_median_history.is_null() ? asset( 0, SYMBOL_ECO ) : dgp.current_EZD_supply * get_feed_history().current_median_history );
 
       auto median_price = get_feed_history().current_median_history;
 
@@ -3181,7 +3181,7 @@ int database::match( const limit_order_object& new_order, const limit_order_obje
        ( (age >= MIN_LIQUIDITY_REWARD_PERIOD_SEC && !has_hardfork( HARDFORK_0_10__149)) ||
        (age >= MIN_LIQUIDITY_REWARD_PERIOD_SEC_HF10 && has_hardfork( HARDFORK_0_10__149) ) ) )
    {
-      if( old_order_receives.symbol == SYMBOL_EZIRA )
+      if( old_order_receives.symbol == SYMBOL_ECO )
       {
          adjust_liquidity_reward( get_account( old_order.seller ), old_order_receives, false );
          adjust_liquidity_reward( get_account( new_order.seller ), -old_order_receives, false );
@@ -3214,14 +3214,14 @@ void database::adjust_liquidity_reward( const account_object& owner, const asset
          if( head_block_time() - r.last_update >= LIQUIDITY_TIMEOUT_SEC )
          {
             r.EZD_volume = 0;
-            r.ezira_volume = 0;
+            r.ECO_volume = 0;
             r.weight = 0;
          }
 
          if( is_sdb )
             r.EZD_volume += volume.amount.value;
          else
-            r.ezira_volume += volume.amount.value;
+            r.ECO_volume += volume.amount.value;
 
          r.update_weight( has_hardfork( HARDFORK_0_10__141 ) );
          r.last_update = head_block_time();
@@ -3235,7 +3235,7 @@ void database::adjust_liquidity_reward( const account_object& owner, const asset
          if( is_sdb )
             r.EZD_volume = volume.amount.value;
          else
-            r.ezira_volume = volume.amount.value;
+            r.ECO_volume = volume.amount.value;
 
          r.update_weight( has_hardfork( HARDFORK_0_9__141 ) );
          r.last_update = head_block_time();
@@ -3337,7 +3337,7 @@ void database::adjust_balance( const account_object& a, const asset& delta )
    {
       switch( delta.symbol )
       {
-         case SYMBOL_EZIRA:
+         case SYMBOL_ECO:
             acnt.balance += delta;
             break;
          case SYMBOL_EZD:
@@ -3382,7 +3382,7 @@ void database::adjust_savings_balance( const account_object& a, const asset& del
    {
       switch( delta.symbol )
       {
-         case SYMBOL_EZIRA:
+         case SYMBOL_ECO:
             acnt.savings_balance += delta;
             break;
          case SYMBOL_EZD:
@@ -3427,8 +3427,8 @@ void database::adjust_reward_balance( const account_object& a, const asset& delt
    {
       switch( delta.symbol )
       {
-         case SYMBOL_EZIRA:
-            acnt.reward_ezira_balance += delta;
+         case SYMBOL_ECO:
+            acnt.reward_ECO_balance += delta;
             break;
          case SYMBOL_EZD:
             acnt.reward_EZD_balance += delta;
@@ -3451,12 +3451,12 @@ void database::adjust_supply( const asset& delta, bool adjust_vesting )
    {
       switch( delta.symbol )
       {
-         case SYMBOL_EZIRA:
+         case SYMBOL_ECO:
          {
-            asset new_vesting( (adjust_vesting && delta.amount > 0) ? delta.amount * 9 : 0, SYMBOL_EZIRA );
+            asset new_vesting( (adjust_vesting && delta.amount > 0) ? delta.amount * 9 : 0, SYMBOL_ECO );
             props.current_supply += delta + new_vesting;
             props.virtual_supply += delta + new_vesting;
-            props.total_vesting_fund_ezira += new_vesting;
+            props.total_vesting_fund_ECO += new_vesting;
             assert( props.current_supply.amount.value >= 0 );
             break;
          }
@@ -3476,7 +3476,7 @@ asset database::get_balance( const account_object& a, asset_symbol_type symbol )
 {
    switch( symbol )
    {
-      case SYMBOL_EZIRA:
+      case SYMBOL_ECO:
          return a.balance;
       case SYMBOL_EZD:
          return a.EZD_balance;
@@ -3489,7 +3489,7 @@ asset database::get_savings_balance( const account_object& a, asset_symbol_type 
 {
    switch( symbol )
    {
-      case SYMBOL_EZIRA:
+      case SYMBOL_ECO:
          return a.savings_balance;
       case SYMBOL_EZD:
          return a.savings_EZD_balance;
@@ -3781,7 +3781,7 @@ void database::apply_hardfork( uint32_t hardfork )
                rfo.content_constant = CONTENT_CONSTANT_HF0;
                rfo.percent_curation_rewards = PERCENT_1 * 25;
                rfo.percent_content_rewards = PERCENT_100;
-               rfo.reward_balance = gpo.total_reward_fund_ezira;
+               rfo.reward_balance = gpo.total_reward_fund_ECO;
 #ifndef IS_TEST_NET
                rfo.recent_claims = HF_17_RECENT_CLAIMS;
 #endif
@@ -3795,7 +3795,7 @@ void database::apply_hardfork( uint32_t hardfork )
 
             modify( gpo, [&]( dynamic_global_property_object& g )
             {
-               g.total_reward_fund_ezira = asset( 0, SYMBOL_EZIRA );
+               g.total_reward_fund_ECO = asset( 0, SYMBOL_ECO );
                g.total_reward_shares2 = 0;
             });
 
@@ -3916,10 +3916,10 @@ void database::validate_invariants()const
    try
    {
       const auto& account_idx = get_index<account_index>().indices().get<by_name>();
-      asset total_supply = asset( 0, SYMBOL_EZIRA );
+      asset total_supply = asset( 0, SYMBOL_ECO );
       asset total_EZD = asset( 0, SYMBOL_EZD );
-      asset total_vesting = asset( 0, SYMBOL_VESTS );
-      asset pending_vesting_ezira = asset( 0, SYMBOL_EZIRA );
+      asset total_vesting = asset( 0, SYMBOL_EZP );
+      asset pending_vesting_ECO = asset( 0, SYMBOL_ECO );
       share_type total_vsf_votes = share_type( 0 );
 
       auto gpo = get_dynamic_global_properties();
@@ -3933,13 +3933,13 @@ void database::validate_invariants()const
       {
          total_supply += itr->balance;
          total_supply += itr->savings_balance;
-         total_supply += itr->reward_ezira_balance;
+         total_supply += itr->reward_ECO_balance;
          total_EZD += itr->EZD_balance;
          total_EZD += itr->savings_EZD_balance;
          total_EZD += itr->reward_EZD_balance;
          total_vesting += itr->vesting_shares;
-         total_vesting += itr->reward_vesting_balance;
-         pending_vesting_ezira += itr->reward_vesting_ezira;
+         total_vesting += itr->reward_EZP_balance;
+         pending_vesting_ECO += itr->reward_vesting_ECO_balance;
          total_vsf_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
                                  itr->witness_vote_weight() :
                                  ( MAX_PROXY_RECURSION_DEPTH > 0 ?
@@ -3951,7 +3951,7 @@ void database::validate_invariants()const
 
       for( auto itr = convert_request_idx.begin(); itr != convert_request_idx.end(); ++itr )
       {
-         if( itr->amount.symbol == SYMBOL_EZIRA )
+         if( itr->amount.symbol == SYMBOL_ECO )
             total_supply += itr->amount;
          else if( itr->amount.symbol == SYMBOL_EZD )
             total_EZD += itr->amount;
@@ -3963,9 +3963,9 @@ void database::validate_invariants()const
 
       for( auto itr = limit_order_idx.begin(); itr != limit_order_idx.end(); ++itr )
       {
-         if( itr->sell_price.base.symbol == SYMBOL_EZIRA )
+         if( itr->sell_price.base.symbol == SYMBOL_ECO )
          {
-            total_supply += asset( itr->for_sale, SYMBOL_EZIRA );
+            total_supply += asset( itr->for_sale, SYMBOL_ECO );
          }
          else if ( itr->sell_price.base.symbol == SYMBOL_EZD )
          {
@@ -3977,27 +3977,27 @@ void database::validate_invariants()const
 
       for( auto itr = escrow_idx.begin(); itr != escrow_idx.end(); ++itr )
       {
-         total_supply += itr->ezira_balance;
+         total_supply += itr->ECO_balance;
          total_EZD += itr->EZD_balance;
 
-         if( itr->pending_fee.symbol == SYMBOL_EZIRA )
+         if( itr->pending_fee.symbol == SYMBOL_ECO )
             total_supply += itr->pending_fee;
          else if( itr->pending_fee.symbol == SYMBOL_EZD )
             total_EZD += itr->pending_fee;
          else
-            FC_ASSERT( false, "found escrow pending fee that is not EZD or EZIRA" );
+            FC_ASSERT( false, "found escrow pending fee that is not EZD or eCoin" );
       }
 
       const auto& savings_withdraw_idx = get_index< savings_withdraw_index >().indices().get< by_id >();
 
       for( auto itr = savings_withdraw_idx.begin(); itr != savings_withdraw_idx.end(); ++itr )
       {
-         if( itr->amount.symbol == SYMBOL_EZIRA )
+         if( itr->amount.symbol == SYMBOL_ECO )
             total_supply += itr->amount;
          else if( itr->amount.symbol == SYMBOL_EZD )
             total_EZD += itr->amount;
          else
-            FC_ASSERT( false, "found savings withdraw that is not EZD or EZIRA" );
+            FC_ASSERT( false, "found savings withdraw that is not EZD or eCoin" );
       }
       fc::uint128_t total_rshares2;
 
@@ -4019,13 +4019,13 @@ void database::validate_invariants()const
          total_supply += itr->reward_balance;
       }
 
-      total_supply += gpo.total_vesting_fund_ezira + gpo.total_reward_fund_ezira + gpo.pending_rewarded_vesting_ezira;
+      total_supply += gpo.total_vesting_fund_ECO + gpo.total_reward_fund_ECO + gpo.pending_rewarded_vesting_ECO;
 
       FC_ASSERT( gpo.current_supply == total_supply, "", ("gpo.current_supply",gpo.current_supply)("total_supply",total_supply) );
       FC_ASSERT( gpo.current_EZD_supply == total_EZD, "", ("gpo.current_EZD_supply",gpo.current_EZD_supply)("total_EZD",total_EZD) );
       FC_ASSERT( gpo.total_vesting_shares + gpo.pending_rewarded_vesting_shares == total_vesting, "", ("gpo.total_vesting_shares",gpo.total_vesting_shares)("total_vesting",total_vesting) );
       FC_ASSERT( gpo.total_vesting_shares.amount == total_vsf_votes, "", ("total_vesting_shares",gpo.total_vesting_shares)("total_vsf_votes",total_vsf_votes) );
-      FC_ASSERT( gpo.pending_rewarded_vesting_ezira == pending_vesting_ezira, "", ("pending_rewarded_vesting_ezira",gpo.pending_rewarded_vesting_ezira)("pending_vesting_ezira", pending_vesting_ezira));
+      FC_ASSERT( gpo.pending_rewarded_vesting_ECO == pending_vesting_ECO, "", ("pending_rewarded_vesting_ECO",gpo.pending_rewarded_vesting_ECO)("pending_vesting_ECO", pending_vesting_ECO));
 
       FC_ASSERT( gpo.virtual_supply >= gpo.current_supply );
       if ( !get_feed_history().current_median_history.is_null() )
@@ -4055,7 +4055,7 @@ void database::perform_vesting_share_split( uint32_t magnitude )
             a.vesting_shares.amount *= magnitude;
             a.withdrawn             *= magnitude;
             a.to_withdraw           *= magnitude;
-            a.vesting_withdraw_rate  = asset( a.to_withdraw / VESTING_WITHDRAW_INTERVALS_PRE_HF_16, SYMBOL_VESTS );
+            a.vesting_withdraw_rate  = asset( a.to_withdraw / VESTING_WITHDRAW_INTERVALS_PRE_HF_16, SYMBOL_EZP );
             if( a.vesting_withdraw_rate.amount == 0 )
                a.vesting_withdraw_rate.amount = 1;
 
@@ -4189,4 +4189,4 @@ void database::retally_witness_vote_counts( bool force )
    }
 }
 
-} } //ezira::chain
+} } //ECO::chain

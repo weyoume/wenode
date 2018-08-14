@@ -38,9 +38,9 @@
 
 #include <graphene/utilities/key_conversion.hpp>
 
-#include <ezira/app/api.hpp>
-#include <ezira/protocol/protocol.hpp>
-#include <ezira/wallet/wallet.hpp>
+#include <eznode/app/api.hpp>
+#include <eznode/protocol/protocol.hpp>
+#include <eznode/wallet/wallet.hpp>
 
 #include <fc/interprocess/signals.hpp>
 #include <boost/program_options.hpp>
@@ -59,9 +59,9 @@
 
 
 using namespace graphene::utilities;
-using namespace ezira::app;
-using namespace ezira::chain;
-using namespace ezira::wallet;
+using namespace eznode::app;
+using namespace eznode::chain;
+using namespace eznode::wallet;
 using namespace std;
 namespace bpo = boost::program_options;
 

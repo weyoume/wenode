@@ -8,7 +8,7 @@ If there is an existing feature that is not working correctly, or a glitch in th
 
 ## Enhancement Suggestions
 
-Do **not** use the issue tracker to suggest enhancements or improvements to the platform. The best place for these discussions is on Ezira.io. If there is a well vetted idea that has the support of the community that you feel should be considered by the development team, please email it to [sneak@ezira.io](mailto:sneak@ezira.io) for review.
+Do **not** use the issue tracker to suggest enhancements or improvements to the platform. The best place for these discussions is on Ezira.io. If there is a well vetted idea that has the support of the community that you feel should be considered by the development team, please email it to [info@ezira.io](mailto:info@ezira.io) for review.
 
 ## Implementation Discussion
 

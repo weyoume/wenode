@@ -1,4 +1,4 @@
-#include <ezira/protocol/asset.hpp>
+#include <eznode/protocol/asset.hpp>
 #include <boost/rational.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
@@ -195,4 +195,4 @@ namespace ezira { namespace protocol {
       } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
 
 
-} } // ezira::protocol
+} } // eznode::protocol

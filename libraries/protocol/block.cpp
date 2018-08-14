@@ -1,4 +1,4 @@
-#include <ezira/protocol/block.hpp>
+#include <eznode/protocol/block.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/bitutil.hpp>
 #include <algorithm>
@@ -66,4 +66,4 @@ namespace ezira { namespace protocol {
       return checksum_type::hash( ids[0] );
    }
 
-} } // ezira::protocol
+} } // eznode::protocol

@@ -24,13 +24,13 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <ezira/protocol/exceptions.hpp>
+#include <eznode/protocol/exceptions.hpp>
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/ezira_objects.hpp>
-#include <ezira/chain/history_object.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/eznode_objects.hpp>
+#include <eznode/chain/history_object.hpp>
 
-#include <ezira/account_history/account_history_plugin.hpp>
+#include <eznode/account_history/account_history_plugin.hpp>
 
 #include <graphene/utilities/tempdir.hpp>
 
@@ -39,8 +39,8 @@
 #include "../common/database_fixture.hpp"
 
 using namespace ezira;
-using namespace ezira::chain;
-using namespace ezira::protocol;
+using namespace eznode::chain;
+using namespace eznode::protocol;
 
 #define TEST_SHARED_MEM_SIZE (1024 * 1024 * 8)
 
@@ -313,7 +313,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       transfer_operation t;
       t.from = INIT_MINER_NAME;
       t.to = "alice";
-      t.amount = asset(500,SYMBOL_EZIRA);
+      t.amount = asset(500,SYMBOL_ECO);
       trx.operations.push_back(t);
       trx.set_expiration( db1.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
@@ -326,8 +326,8 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       CHECK_THROW(PUSH_TX( db1, trx, skip_sigs ), fc::exception);
       CHECK_THROW(PUSH_TX( db2, trx, skip_sigs ), fc::exception);
-      BOOST_CHECK_EQUAL(db1.get_balance( "alice", SYMBOL_EZIRA ).amount.value, 500);
-      BOOST_CHECK_EQUAL(db2.get_balance( "alice", SYMBOL_EZIRA ).amount.value, 500);
+      BOOST_CHECK_EQUAL(db1.get_balance( "alice", SYMBOL_ECO ).amount.value, 500);
+      BOOST_CHECK_EQUAL(db2.get_balance( "alice", SYMBOL_ECO ).amount.value, 500);
    } catch (fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
@@ -372,7 +372,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       transfer_operation t;
       t.from = INIT_MINER_NAME;
       t.to = "alice";
-      t.amount = asset(50,SYMBOL_EZIRA);
+      t.amount = asset(50,SYMBOL_ECO);
       trx.operations.push_back(t);
       trx.set_expiration( db1.head_block_time() + fc::seconds(2) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
@@ -404,7 +404,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(1000,SYMBOL_EZIRA);
+      op.amount = asset(1000,SYMBOL_ECO);
       signed_transaction tx;
       tx.operations.push_back( op );
 
@@ -467,7 +467,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    transfer_operation t;
    t.from = INIT_MINER_NAME;
    t.to = "bob";
-   t.amount = asset(amount,SYMBOL_EZIRA);
+   t.amount = asset(amount,SYMBOL_ECO);
    trx.operations.push_back(t);
    trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
    trx.validate();
@@ -477,7 +477,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    trx.operations.clear();
    t.from = "bob";
    t.to = INIT_MINER_NAME;
-   t.amount = asset(amount,SYMBOL_EZIRA);
+   t.amount = asset(amount,SYMBOL_ECO);
    trx.operations.push_back(t);
    trx.validate();
 
@@ -715,8 +715,8 @@ BOOST_FIXTURE_TEST_CASE( hardfork_test, database_fixture )
          if( arg == "--show-test-names" )
             std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
       }
-      auto ahplugin = app.register_plugin< ezira::account_history::account_history_plugin >();
-      db_plugin = app.register_plugin< ezira::plugin::debug_node::debug_node_plugin >();
+      auto ahplugin = app.register_plugin< eznode::account_history::account_history_plugin >();
+      db_plugin = app.register_plugin< eznode::plugin::debug_node::debug_node_plugin >();
       init_account_pub_key = init_account_priv_key.get_public_key();
 
       boost::program_options::variables_map options;
@@ -803,7 +803,7 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
       transfer_operation op;
       op.from = INIT_MINER_NAME;
       op.to = TEMP_ACCOUNT;
-      op.amount = asset( 1000, SYMBOL_EZIRA );
+      op.amount = asset( 1000, SYMBOL_ECO );
 
       // tx minus op is 79 bytes
       // op is 33 bytes (32 for op + 1 byte static variant tag)

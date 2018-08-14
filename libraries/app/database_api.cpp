@@ -1,10 +1,10 @@
-#include <ezira/app/api_context.hpp>
-#include <ezira/app/application.hpp>
-#include <ezira/app/database_api.hpp>
+#include <eznode/app/api_context.hpp>
+#include <eznode/app/application.hpp>
+#include <eznode/app/database_api.hpp>
 
-#include <ezira/protocol/get_config.hpp>
+#include <eznode/protocol/get_config.hpp>
 
-#include <ezira/chain/util/reward.hpp>
+#include <eznode/chain/util/reward.hpp>
 
 #include <fc/bloom_filter.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -29,7 +29,7 @@ class database_api_impl;
 class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 {
    public:
-      database_api_impl( const ezira::app::api_context& ctx  );
+      database_api_impl( const eznode::app::api_context& ctx  );
       ~database_api_impl();
 
       // Subscriptions
@@ -76,8 +76,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       std::function<void(const fc::variant&)> _block_applied_callback;
 
-      ezira::chain::database&                _db;
-      std::shared_ptr< ezira::follow::follow_api > _follow_api;
+      eznode::chain::database&                _db;
+      std::shared_ptr< eznode::follow::follow_api > _follow_api;
 
       boost::signals2::scoped_connection       _block_applied_connection;
 
@@ -140,12 +140,12 @@ void database_api_impl::set_block_applied_callback( std::function<void(const var
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-database_api::database_api( const ezira::app::api_context& ctx )
+database_api::database_api( const eznode::app::api_context& ctx )
    : my( new database_api_impl( ctx ) ) {}
 
 database_api::~database_api() {}
 
-database_api_impl::database_api_impl( const ezira::app::api_context& ctx )
+database_api_impl::database_api_impl( const eznode::app::api_context& ctx )
    : _db( *ctx.app.chain_database() )
 {
    wlog("creating database api ${x}", ("x",int64_t(this)) );
@@ -155,7 +155,7 @@ database_api_impl::database_api_impl( const ezira::app::api_context& ctx )
    try
    {
       ctx.app.get_plugin< follow::follow_plugin >( FOLLOW_PLUGIN_NAME );
-      _follow_api = std::make_shared< ezira::follow::follow_api >( ctx );
+      _follow_api = std::make_shared< eznode::follow::follow_api >( ctx );
    }
    catch( fc::assert_exception ) { ilog("Follow Plugin not loaded"); }
 }
@@ -247,7 +247,7 @@ fc::variant_object database_api::get_config()const
 
 fc::variant_object database_api_impl::get_config()const
 {
-   return ezira::protocol::get_config();
+   return eznode::protocol::get_config();
 }
 
 dynamic_global_property_api_obj database_api::get_dynamic_global_properties()const
@@ -405,7 +405,7 @@ vector<account_id_type> database_api_impl::get_account_references( account_id_ty
 {
    /*const auto& idx = _db.get_index<account_index>();
    const auto& aidx = dynamic_cast<const primary_index<account_index>&>(idx);
-   const auto& refs = aidx.get_secondary_index<ezira::chain::account_member_index>();
+   const auto& refs = aidx.get_secondary_index<eznode::chain::account_member_index>();
    auto itr = refs.account_to_account_memberships.find(account_id);
    vector<account_id_type> result;
 
@@ -415,7 +415,7 @@ vector<account_id_type> database_api_impl::get_account_references( account_id_ty
       for( auto item : itr->second ) result.push_back(item);
    }
    return result;*/
-   FC_ASSERT( false, "database_api::get_account_references --- Needs to be refactored for ezira." );
+   FC_ASSERT( false, "database_api::get_account_references --- Needs to be refactored for eznode." );
 }
 
 vector<optional<account_api_obj>> database_api::lookup_account_names(const vector<string>& account_names)const
@@ -739,7 +739,7 @@ vector<extended_limit_order> database_api::get_open_orders( string owner )const
       while( itr != idx.end() && itr->seller == owner ) {
          result.push_back( *itr );
 
-         if( itr->sell_price.base.symbol == SYMBOL_EZIRA )
+         if( itr->sell_price.base.symbol == SYMBOL_ECO )
             result.back().real_price = (~result.back().sell_price).to_real();
          else
             result.back().real_price = (result.back().sell_price).to_real();
@@ -754,8 +754,8 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
    FC_ASSERT( limit <= 1000 );
    order_book result;
 
-   auto max_sell = price::max( SYMBOL_EZD, SYMBOL_EZIRA );
-   auto max_buy = price::max( SYMBOL_EZIRA, SYMBOL_EZD );
+   auto max_sell = price::max( SYMBOL_EZD, SYMBOL_ECO );
+   auto max_buy = price::max( SYMBOL_ECO, SYMBOL_EZD );
 
    const auto& limit_price_idx = _db.get_index<limit_order_index>().indices().get<by_price>();
    auto sell_itr = limit_price_idx.lower_bound(max_sell);
@@ -772,19 +772,19 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
       cur.order_price = itr->sell_price;
       cur.real_price  = (cur.order_price).to_real();
       cur.EZD = itr->for_sale;
-      cur.ezira = ( asset( itr->for_sale, SYMBOL_EZD ) * cur.order_price ).amount;
+      cur.ECO = ( asset( itr->for_sale, SYMBOL_EZD ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.bids.push_back( cur );
       ++sell_itr;
    }
-   while(  buy_itr != end && buy_itr->sell_price.base.symbol == SYMBOL_EZIRA && result.asks.size() < limit )
+   while(  buy_itr != end && buy_itr->sell_price.base.symbol == SYMBOL_ECO && result.asks.size() < limit )
    {
       auto itr = buy_itr;
       order cur;
       cur.order_price = itr->sell_price;
       cur.real_price  = (~cur.order_price).to_real();
-      cur.ezira   = itr->for_sale;
-      cur.EZD     = ( asset( itr->for_sale, SYMBOL_EZIRA ) * cur.order_price ).amount;
+      cur.ECO   = itr->for_sale;
+      cur.EZD     = ( asset( itr->for_sale, SYMBOL_ECO ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.asks.push_back( cur );
       ++buy_itr;
@@ -1083,7 +1083,7 @@ void database_api::set_pending_payout( discussion& d )const
    if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       pot = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) ).reward_balance;
    else
-      pot = props.total_reward_fund_ezira;
+      pot = props.total_reward_fund_ECO;
 
    if( !hist.current_median_history.is_null() ) pot = pot * hist.current_median_history;
 
@@ -1099,10 +1099,10 @@ void database_api::set_pending_payout( discussion& d )const
       if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       {
          const auto& rf = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) );
-         vshares = d.net_rshares.value > 0 ? ezira::chain::util::evaluate_reward_curve( d.net_rshares.value, rf.author_reward_curve, rf.content_constant ) : 0;
+         vshares = d.net_rshares.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_rshares.value, rf.author_reward_curve, rf.content_constant ) : 0;
       }
       else
-         vshares = d.net_rshares.value > 0 ? ezira::chain::util::evaluate_reward_curve( d.net_rshares.value ) : 0;
+         vshares = d.net_rshares.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_rshares.value ) : 0;
 
       u256 r2 = to256(vshares); //to256(abs_net_rshares);
       r2 *= pot.amount.value;
@@ -2373,4 +2373,4 @@ annotated_signed_transaction database_api::get_transaction( transaction_id_type 
 }
 
 
-} } // ezira::app
+} } // eznode::app

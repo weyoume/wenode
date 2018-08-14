@@ -10,22 +10,22 @@
 
 #include <graphene/utilities/key_conversion.hpp>
 
-#include <ezira/protocol/transaction.hpp>
-#include <ezira/protocol/types.hpp>
+#include <eznode/protocol/transaction.hpp>
+#include <eznode/protocol/types.hpp>
 
 struct tx_signing_request
 {
-   ezira::protocol::transaction     tx;
+   eznode::protocol::transaction     tx;
    std::string                        wif;
 };
 
 struct tx_signing_result
 {
-   ezira::protocol::transaction     tx;
+   eznode::protocol::transaction     tx;
    fc::sha256                         digest;
    fc::sha256                         sig_digest;
-   ezira::protocol::public_key_type key;
-   ezira::protocol::signature_type  sig;
+   eznode::protocol::public_key_type key;
+   eznode::protocol::signature_type  sig;
 };
 
 FC_REFLECT( tx_signing_request, (tx)(wif) )
@@ -53,7 +53,7 @@ int main(int argc, char** argv, char** envp)
 
       fc::ecc::private_key priv_key = *graphene::utilities::wif_to_key( sreq.wif );
       sres.sig = priv_key.sign_compact( sres.sig_digest );
-      sres.key = ezira::protocol::public_key_type( priv_key.get_public_key() );
+      sres.key = eznode::protocol::public_key_type( priv_key.get_public_key() );
       std::cout << fc::json::to_string( sres ) << std::endl;
    }
    return 0;

@@ -1,17 +1,17 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <ezira/protocol/exceptions.hpp>
+#include <eznode/protocol/exceptions.hpp>
 
-#include <ezira/chain/block_summary_object.hpp>
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/hardfork.hpp>
-#include <ezira/chain/history_object.hpp>
-#include <ezira/chain/ezira_objects.hpp>
+#include <eznode/chain/block_summary_object.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/hardfork.hpp>
+#include <eznode/chain/history_object.hpp>
+#include <eznode/chain/eznode_objects.hpp>
 
-#include <ezira/chain/util/reward.hpp>
+#include <eznode/chain/util/reward.hpp>
 
-#include <ezira/plugins/debug_node/debug_node_plugin.hpp>
+#include <eznode/plugins/debug_node/debug_node_plugin.hpp>
 
 #include <fc/crypto/digest.hpp>
 
@@ -20,8 +20,8 @@
 #include <cmath>
 
 using namespace ezira;
-using namespace ezira::chain;
-using namespace ezira::protocol;
+using namespace eznode::chain;
+using namespace eznode::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( operation_time_tests, clean_database_fixture )
 
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
          db.push_transaction( tx, 0 );
       }
 
-      auto reward_ezira = db.get_dynamic_global_properties().total_reward_fund_ezira;
+      auto reward_ECO = db.get_dynamic_global_properties().total_reward_fund_ECO;
 
       // generate a few blocks to seed the reward fund
       generate_blocks(10);
@@ -132,12 +132,12 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       for( const auto& author : authors )
       {
          const account_object& a = db.get_account(author.name);
-         ilog( "${n} : ${ezira} ${EZD}", ("n", author.name)("ezira", a.reward_ezira_balance)("EZD", a.reward_EZD_balance) );
+         ilog( "${n} : ${ezira} ${EZD}", ("n", author.name)("ezira", a.reward_ECO_balance)("EZD", a.reward_EZD_balance) );
       }
       for( const auto& voter : voters )
       {
          const account_object& a = db.get_account(voter.name);
-         ilog( "${n} : ${ezira} ${EZD}", ("n", voter.name)("ezira", a.reward_ezira_balance)("EZD", a.reward_EZD_balance) );
+         ilog( "${n} : ${ezira} ${EZD}", ("n", voter.name)("ezira", a.reward_ECO_balance)("EZD", a.reward_EZD_balance) );
       }
       */
 
@@ -457,23 +457,23 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
 
       //generate_blocks( db.get_comment( "bob", string( "test" ) ).cashout_time - BLOCK_INTERVAL, true );
 
-      auto reward_ezira = db.get_dynamic_global_properties().total_reward_fund_ezira + ASSET( "1.667 TESTS" );
+      auto reward_ECO = db.get_dynamic_global_properties().total_reward_fund_ECO + ASSET( "1.667 TESTS" );
       auto total_rshares2 = db.get_dynamic_global_properties().total_reward_shares2;
       auto bob_comment_rshares = db.get_comment( "bob", string( "test" ) ).net_rshares;
       auto bob_vest_shares = db.get_account( "bob" ).vesting_shares;
       auto bob_EZD_balance = db.get_account( "bob" ).EZD_balance;
 
-      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_rshares.value ) * bob_comment_rshares.value * reward_ezira.amount.value ) / total_rshares2 ).to_uint64(), SYMBOL_EZIRA );
-      auto bob_comment_discussion_rewards = asset( bob_comment_payout.amount / 4, SYMBOL_EZIRA );
+      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_rshares.value ) * bob_comment_rshares.value * reward_ECO.amount.value ) / total_rshares2 ).to_uint64(), SYMBOL_ECO );
+      auto bob_comment_discussion_rewards = asset( bob_comment_payout.amount / 4, SYMBOL_ECO );
       bob_comment_payout -= bob_comment_discussion_rewards;
-      auto bob_comment_EZD_reward = db.to_EZD( asset( bob_comment_payout.amount / 2, SYMBOL_EZIRA ) );
-      auto bob_comment_vesting_reward = ( bob_comment_payout - asset( bob_comment_payout.amount / 2, SYMBOL_EZIRA) ) * db.get_dynamic_global_properties().get_vesting_share_price();
+      auto bob_comment_EZD_reward = db.to_EZD( asset( bob_comment_payout.amount / 2, SYMBOL_ECO ) );
+      auto bob_comment_vesting_reward = ( bob_comment_payout - asset( bob_comment_payout.amount / 2, SYMBOL_ECO) ) * db.get_dynamic_global_properties().get_vesting_share_price();
 
       BOOST_TEST_MESSAGE( "Cause first payout" );
 
       generate_block();
 
-      BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_ezira == reward_ezira - bob_comment_payout );
+      BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_ECO == reward_ECO - bob_comment_payout );
       BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).total_payout_value == bob_comment_vesting_reward * db.get_dynamic_global_properties().get_vesting_share_price() + bob_comment_EZD_reward * exchange_rate );
       BOOST_REQUIRE( db.get_account( "bob" ).vesting_shares == bob_vest_shares + bob_comment_vesting_reward );
       BOOST_REQUIRE( db.get_account( "bob" ).EZD_balance == bob_EZD_balance + bob_comment_EZD_reward );
@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).net_rshares.value > 0 );
       validate_database();
 
-      auto reward_ezira = db.get_dynamic_global_properties().total_reward_fund_ezira + ASSET( "2.000 TESTS" );
+      auto reward_ECO = db.get_dynamic_global_properties().total_reward_fund_ECO + ASSET( "2.000 TESTS" );
       auto total_rshares2 = db.get_dynamic_global_properties().total_reward_shares2;
       auto bob_comment_vote_total = db.get_comment( "bob", string( "test" ) ).total_vote_weight;
       auto bob_comment_rshares = db.get_comment( "bob", string( "test" ) ).net_rshares;
@@ -674,17 +674,17 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       auto sam_vest_shares = db.get_account( "sam" ).vesting_shares;
       auto dave_vest_shares = db.get_account( "dave" ).vesting_shares;
 
-      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_rshares.value ) * bob_comment_rshares.value * reward_ezira.amount.value ) / total_rshares2 ).to_uint64(), SYMBOL_EZIRA );
-      auto bob_comment_vote_rewards = asset( bob_comment_payout.amount / 2, SYMBOL_EZIRA );
+      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_rshares.value ) * bob_comment_rshares.value * reward_ECO.amount.value ) / total_rshares2 ).to_uint64(), SYMBOL_ECO );
+      auto bob_comment_vote_rewards = asset( bob_comment_payout.amount / 2, SYMBOL_ECO );
       bob_comment_payout -= bob_comment_vote_rewards;
-      auto bob_comment_EZD_reward = asset( bob_comment_payout.amount / 2, SYMBOL_EZIRA ) * exchange_rate;
-      auto bob_comment_vesting_reward = ( bob_comment_payout - asset( bob_comment_payout.amount / 2, SYMBOL_EZIRA ) ) * db.get_dynamic_global_properties().get_vesting_share_price();
+      auto bob_comment_EZD_reward = asset( bob_comment_payout.amount / 2, SYMBOL_ECO ) * exchange_rate;
+      auto bob_comment_vesting_reward = ( bob_comment_payout - asset( bob_comment_payout.amount / 2, SYMBOL_ECO ) ) * db.get_dynamic_global_properties().get_vesting_share_price();
       auto unclaimed_payments = bob_comment_vote_rewards;
-      auto alice_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_EZIRA );
+      auto alice_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_ECO );
       auto alice_vote_vesting = alice_vote_reward * db.get_dynamic_global_properties().get_vesting_share_price();
-      auto bob_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_EZIRA );
+      auto bob_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_ECO );
       auto bob_vote_vesting = bob_vote_reward * db.get_dynamic_global_properties().get_vesting_share_price();
-      auto sam_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_EZIRA );
+      auto sam_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_ECO );
       auto sam_vote_vesting = sam_vote_reward * db.get_dynamic_global_properties().get_vesting_share_price();
       unclaimed_payments -= ( alice_vote_reward + bob_vote_reward + sam_vote_reward );
 
@@ -694,7 +694,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
 
       auto bob_comment_reward = get_last_operations( 1 )[0].get< comment_reward_operation >();
 
-      BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_ezira.amount.value == reward_ezira.amount.value - ( bob_comment_payout + bob_comment_vote_rewards - unclaimed_payments ).amount.value );
+      BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_ECO.amount.value == reward_ECO.amount.value - ( bob_comment_payout + bob_comment_vote_rewards - unclaimed_payments ).amount.value );
       BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).total_payout_value.amount.value == ( ( bob_comment_vesting_reward * db.get_dynamic_global_properties().get_vesting_share_price() ) + ( bob_comment_EZD_reward * exchange_rate ) ).amount.value );
       BOOST_REQUIRE( db.get_account( "bob" ).EZD_balance.amount.value == ( bob_EZD_balance + bob_comment_EZD_reward ).amount.value );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rshares.value > 0 );
@@ -733,7 +733,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
 
       BOOST_TEST_MESSAGE( "Generate block to cause payout" );
 
-      reward_ezira = db.get_dynamic_global_properties().total_reward_fund_ezira + ASSET( "2.000 TESTS" );
+      reward_ECO = db.get_dynamic_global_properties().total_reward_fund_ECO + ASSET( "2.000 TESTS" );
       total_rshares2 = db.get_dynamic_global_properties().total_reward_shares2;
       auto alice_comment_vote_total = db.get_comment( "alice", string( "test" ) ).total_vote_weight;
       auto alice_comment_rshares = db.get_comment( "alice", string( "test" ) ).net_rshares;
@@ -744,31 +744,31 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       dave_vest_shares = db.get_account( "dave" ).vesting_shares;
 
       u256 rs( alice_comment_rshares.value );
-      u256 rf( reward_ezira.amount.value );
+      u256 rf( reward_ECO.amount.value );
       u256 trs2 = total_rshares2.hi;
       trs2 = ( trs2 << 64 ) + total_rshares2.lo;
       auto rs2 = rs*rs;
 
-      auto alice_comment_payout = asset( static_cast< uint64_t >( ( rf * rs2 ) / trs2 ), SYMBOL_EZIRA );
-      auto alice_comment_vote_rewards = asset( alice_comment_payout.amount / 2, SYMBOL_EZIRA );
+      auto alice_comment_payout = asset( static_cast< uint64_t >( ( rf * rs2 ) / trs2 ), SYMBOL_ECO );
+      auto alice_comment_vote_rewards = asset( alice_comment_payout.amount / 2, SYMBOL_ECO );
       alice_comment_payout -= alice_comment_vote_rewards;
-      auto alice_comment_EZD_reward = asset( alice_comment_payout.amount / 2, SYMBOL_EZIRA ) * exchange_rate;
-      auto alice_comment_vesting_reward = ( alice_comment_payout - asset( alice_comment_payout.amount / 2, SYMBOL_EZIRA ) ) * db.get_dynamic_global_properties().get_vesting_share_price();
+      auto alice_comment_EZD_reward = asset( alice_comment_payout.amount / 2, SYMBOL_ECO ) * exchange_rate;
+      auto alice_comment_vesting_reward = ( alice_comment_payout - asset( alice_comment_payout.amount / 2, SYMBOL_ECO ) ) * db.get_dynamic_global_properties().get_vesting_share_price();
       unclaimed_payments = alice_comment_vote_rewards;
-      alice_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_EZIRA );
+      alice_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_ECO );
       alice_vote_vesting = alice_vote_reward * db.get_dynamic_global_properties().get_vesting_share_price();
-      bob_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_EZIRA );
+      bob_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_ECO );
       bob_vote_vesting = bob_vote_reward * db.get_dynamic_global_properties().get_vesting_share_price();
-      sam_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_EZIRA );
+      sam_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_ECO );
       sam_vote_vesting = sam_vote_reward * db.get_dynamic_global_properties().get_vesting_share_price();
-      auto dave_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "dave" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_EZIRA );
+      auto dave_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "dave" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_ECO );
       auto dave_vote_vesting = dave_vote_reward * db.get_dynamic_global_properties().get_vesting_share_price();
       unclaimed_payments -= ( alice_vote_reward + bob_vote_reward + sam_vote_reward + dave_vote_reward );
 
       generate_block();
       auto alice_comment_reward = get_last_operations( 1 )[0].get< comment_reward_operation >();
 
-      BOOST_REQUIRE( ( db.get_dynamic_global_properties().total_reward_fund_ezira + alice_comment_payout + alice_comment_vote_rewards - unclaimed_payments ).amount.value == reward_ezira.amount.value );
+      BOOST_REQUIRE( ( db.get_dynamic_global_properties().total_reward_fund_ECO + alice_comment_payout + alice_comment_vote_rewards - unclaimed_payments ).amount.value == reward_ECO.amount.value );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).total_payout_value.amount.value == ( ( alice_comment_vesting_reward * db.get_dynamic_global_properties().get_vesting_share_price() ) + ( alice_comment_EZD_reward * exchange_rate ) ).amount.value );
       BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance.amount.value == ( alice_EZD_balance + alice_comment_EZD_reward ).amount.value );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rshares.value == 0 );
@@ -945,7 +945,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       generate_blocks( db.get_comment( "alice", string( "test" ) ).cashout_time - fc::seconds( BLOCK_INTERVAL ), true );
 
       auto gpo = db.get_dynamic_global_properties();
-      uint128_t reward_ezira = gpo.total_reward_fund_ezira.amount.value + ASSET( "2.000 TESTS" ).amount.value;
+      uint128_t reward_ECO = gpo.total_reward_fund_ECO.amount.value + ASSET( "2.000 TESTS" ).amount.value;
       uint128_t total_rshares2 = gpo.total_reward_shares2;
 
       auto alice_comment = db.get_comment( "alice", string( "test" ) );
@@ -956,35 +956,35 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       const auto& vote_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
 
       // Calculate total comment rewards and voting rewards.
-      auto alice_comment_reward = ( ( reward_ezira * alice_comment.net_rshares.value * alice_comment.net_rshares.value ) / total_rshares2 ).to_uint64();
+      auto alice_comment_reward = ( ( reward_ECO * alice_comment.net_rshares.value * alice_comment.net_rshares.value ) / total_rshares2 ).to_uint64();
       total_rshares2 -= uint128_t( alice_comment.net_rshares.value ) * ( alice_comment.net_rshares.value );
-      reward_ezira -= alice_comment_reward;
+      reward_ECO -= alice_comment_reward;
       auto alice_comment_vote_rewards = alice_comment_reward / 2;
       alice_comment_reward -= alice_comment_vote_rewards;
 
-      auto alice_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_EZIRA );
-      auto bob_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_EZIRA );
-      reward_ezira += alice_comment_vote_rewards - ( alice_vote_alice_reward + bob_vote_alice_reward ).amount.value;
+      auto alice_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_ECO );
+      auto bob_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_ECO );
+      reward_ECO += alice_comment_vote_rewards - ( alice_vote_alice_reward + bob_vote_alice_reward ).amount.value;
 
-      auto bob_comment_reward = ( ( reward_ezira * bob_comment.net_rshares.value * bob_comment.net_rshares.value ) / total_rshares2 ).to_uint64();
+      auto bob_comment_reward = ( ( reward_ECO * bob_comment.net_rshares.value * bob_comment.net_rshares.value ) / total_rshares2 ).to_uint64();
       total_rshares2 -= uint128_t( bob_comment.net_rshares.value ) * bob_comment.net_rshares.value;
-      reward_ezira -= bob_comment_reward;
+      reward_ECO -= bob_comment_reward;
       auto bob_comment_vote_rewards = bob_comment_reward / 2;
       bob_comment_reward -= bob_comment_vote_rewards;
 
-      auto alice_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_EZIRA );
-      auto bob_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_EZIRA );
-      auto sam_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_EZIRA );
-      reward_ezira += bob_comment_vote_rewards - ( alice_vote_bob_reward + bob_vote_bob_reward + sam_vote_bob_reward ).amount.value;
+      auto alice_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_ECO );
+      auto bob_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_ECO );
+      auto sam_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_ECO );
+      reward_ECO += bob_comment_vote_rewards - ( alice_vote_bob_reward + bob_vote_bob_reward + sam_vote_bob_reward ).amount.value;
 
-      auto dave_comment_reward = ( ( reward_ezira * dave_comment.net_rshares.value * dave_comment.net_rshares.value ) / total_rshares2 ).to_uint64();
+      auto dave_comment_reward = ( ( reward_ECO * dave_comment.net_rshares.value * dave_comment.net_rshares.value ) / total_rshares2 ).to_uint64();
       total_rshares2 -= uint128_t( dave_comment.net_rshares.value ) * dave_comment.net_rshares.value;
-      reward_ezira -= dave_comment_reward;
+      reward_ECO -= dave_comment_reward;
       auto dave_comment_vote_rewards = dave_comment_reward / 2;
       dave_comment_reward -= dave_comment_vote_rewards;
 
-      auto bob_vote_dave_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "dave", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * dave_comment_vote_rewards ) / dave_comment.total_vote_weight ), SYMBOL_EZIRA );
-      reward_ezira += dave_comment_vote_rewards - bob_vote_dave_reward.amount.value;
+      auto bob_vote_dave_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "dave", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * dave_comment_vote_rewards ) / dave_comment.total_vote_weight ), SYMBOL_ECO );
+      reward_ECO += dave_comment_vote_rewards - bob_vote_dave_reward.amount.value;
 
       // Calculate rewards paid to parent posts
       auto alice_pays_alice_EZD = alice_comment_reward / 2;
@@ -1013,13 +1013,13 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       dave_pays_bob_vest -= dave_pays_alice_vest;
 
       // Calculate total comment payouts
-      auto alice_comment_total_payout = db.to_EZD( asset( alice_pays_alice_EZD + alice_pays_alice_vest, SYMBOL_EZIRA ) );
-      alice_comment_total_payout += db.to_EZD( asset( bob_pays_alice_EZD + bob_pays_alice_vest, SYMBOL_EZIRA ) );
-      alice_comment_total_payout += db.to_EZD( asset( dave_pays_alice_EZD + dave_pays_alice_vest, SYMBOL_EZIRA ) );
-      auto bob_comment_total_payout = db.to_EZD( asset( bob_pays_bob_EZD + bob_pays_bob_vest, SYMBOL_EZIRA ) );
-      bob_comment_total_payout += db.to_EZD( asset( dave_pays_bob_EZD + dave_pays_bob_vest, SYMBOL_EZIRA ) );
-      auto sam_comment_total_payout = db.to_EZD( asset( dave_pays_sam_EZD + dave_pays_sam_vest, SYMBOL_EZIRA ) );
-      auto dave_comment_total_payout = db.to_EZD( asset( dave_pays_dave_EZD + dave_pays_dave_vest, SYMBOL_EZIRA ) );
+      auto alice_comment_total_payout = db.to_EZD( asset( alice_pays_alice_EZD + alice_pays_alice_vest, SYMBOL_ECO ) );
+      alice_comment_total_payout += db.to_EZD( asset( bob_pays_alice_EZD + bob_pays_alice_vest, SYMBOL_ECO ) );
+      alice_comment_total_payout += db.to_EZD( asset( dave_pays_alice_EZD + dave_pays_alice_vest, SYMBOL_ECO ) );
+      auto bob_comment_total_payout = db.to_EZD( asset( bob_pays_bob_EZD + bob_pays_bob_vest, SYMBOL_ECO ) );
+      bob_comment_total_payout += db.to_EZD( asset( dave_pays_bob_EZD + dave_pays_bob_vest, SYMBOL_ECO ) );
+      auto sam_comment_total_payout = db.to_EZD( asset( dave_pays_sam_EZD + dave_pays_sam_vest, SYMBOL_ECO ) );
+      auto dave_comment_total_payout = db.to_EZD( asset( dave_pays_dave_EZD + dave_pays_dave_vest, SYMBOL_ECO ) );
 
       auto alice_starting_vesting = db.get_account( "alice" ).vesting_shares;
       auto alice_starting_EZD = db.get_account( "alice" ).EZD_balance;
@@ -1148,23 +1148,23 @@ BOOST_AUTO_TEST_CASE( nested_comments )
 
       BOOST_TEST_MESSAGE( "Checking account balances" );
 
-      auto alice_total_EZD = alice_starting_EZD + asset( alice_pays_alice_EZD + bob_pays_alice_EZD + dave_pays_alice_EZD, SYMBOL_EZIRA ) * exchange_rate;
-      auto alice_total_vesting = alice_starting_vesting + asset( alice_pays_alice_vest + bob_pays_alice_vest + dave_pays_alice_vest + alice_vote_alice_reward.amount + alice_vote_bob_reward.amount, SYMBOL_EZIRA ) * gpo.get_vesting_share_price();
+      auto alice_total_EZD = alice_starting_EZD + asset( alice_pays_alice_EZD + bob_pays_alice_EZD + dave_pays_alice_EZD, SYMBOL_ECO ) * exchange_rate;
+      auto alice_total_vesting = alice_starting_vesting + asset( alice_pays_alice_vest + bob_pays_alice_vest + dave_pays_alice_vest + alice_vote_alice_reward.amount + alice_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_vesting_share_price();
       BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance.amount.value == alice_total_EZD.amount.value );
       BOOST_REQUIRE( db.get_account( "alice" ).vesting_shares.amount.value == alice_total_vesting.amount.value );
 
-      auto bob_total_EZD = bob_starting_EZD + asset( bob_pays_bob_EZD + dave_pays_bob_EZD, SYMBOL_EZIRA ) * exchange_rate;
-      auto bob_total_vesting = bob_starting_vesting + asset( bob_pays_bob_vest + dave_pays_bob_vest + bob_vote_alice_reward.amount + bob_vote_bob_reward.amount + bob_vote_dave_reward.amount, SYMBOL_EZIRA ) * gpo.get_vesting_share_price();
+      auto bob_total_EZD = bob_starting_EZD + asset( bob_pays_bob_EZD + dave_pays_bob_EZD, SYMBOL_ECO ) * exchange_rate;
+      auto bob_total_vesting = bob_starting_vesting + asset( bob_pays_bob_vest + dave_pays_bob_vest + bob_vote_alice_reward.amount + bob_vote_bob_reward.amount + bob_vote_dave_reward.amount, SYMBOL_ECO ) * gpo.get_vesting_share_price();
       BOOST_REQUIRE( db.get_account( "bob" ).EZD_balance.amount.value == bob_total_EZD.amount.value );
       BOOST_REQUIRE( db.get_account( "bob" ).vesting_shares.amount.value == bob_total_vesting.amount.value );
 
-      auto sam_total_EZD = sam_starting_EZD + asset( dave_pays_sam_EZD, SYMBOL_EZIRA ) * exchange_rate;
-      auto sam_total_vesting = bob_starting_vesting + asset( dave_pays_sam_vest + sam_vote_bob_reward.amount, SYMBOL_EZIRA ) * gpo.get_vesting_share_price();
+      auto sam_total_EZD = sam_starting_EZD + asset( dave_pays_sam_EZD, SYMBOL_ECO ) * exchange_rate;
+      auto sam_total_vesting = bob_starting_vesting + asset( dave_pays_sam_vest + sam_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_vesting_share_price();
       BOOST_REQUIRE( db.get_account( "sam" ).EZD_balance.amount.value == sam_total_EZD.amount.value );
       BOOST_REQUIRE( db.get_account( "sam" ).vesting_shares.amount.value == sam_total_vesting.amount.value );
 
-      auto dave_total_EZD = dave_starting_EZD + asset( dave_pays_dave_EZD, SYMBOL_EZIRA ) * exchange_rate;
-      auto dave_total_vesting = dave_starting_vesting + asset( dave_pays_dave_vest, SYMBOL_EZIRA ) * gpo.get_vesting_share_price();
+      auto dave_total_EZD = dave_starting_EZD + asset( dave_pays_dave_EZD, SYMBOL_ECO ) * exchange_rate;
+      auto dave_total_vesting = dave_starting_vesting + asset( dave_pays_dave_vest, SYMBOL_ECO ) * gpo.get_vesting_share_price();
       BOOST_REQUIRE( db.get_account( "dave" ).EZD_balance.amount.value == dave_total_EZD.amount.value );
       BOOST_REQUIRE( db.get_account( "dave" ).vesting_shares.amount.value == dave_total_vesting.amount.value );
    }
@@ -1188,7 +1188,7 @@ BOOST_AUTO_TEST_CASE( vesting_withdrawals )
       signed_transaction tx;
       withdraw_vesting_operation op;
       op.account = "alice";
-      op.vesting_shares = asset( new_alice.vesting_shares.amount / 2, SYMBOL_VESTS );
+      op.vesting_shares = asset( new_alice.vesting_shares.amount / 2, SYMBOL_EZP );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -1356,11 +1356,11 @@ BOOST_AUTO_TEST_CASE( vesting_withdraw_route )
          const auto& sam = db.get_account( "sam" );
 
          BOOST_REQUIRE( alice.vesting_shares == old_alice_vesting - vesting_withdraw_rate );
-         BOOST_REQUIRE( alice.balance == old_alice_balance + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 20 ) / PERCENT_100, SYMBOL_VESTS ) * db.get_dynamic_global_properties().get_vesting_share_price() );
-         BOOST_REQUIRE( bob.vesting_shares == old_bob_vesting + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_VESTS ) );
+         BOOST_REQUIRE( alice.balance == old_alice_balance + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 20 ) / PERCENT_100, SYMBOL_EZP ) * db.get_dynamic_global_properties().get_vesting_share_price() );
+         BOOST_REQUIRE( bob.vesting_shares == old_bob_vesting + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_EZP ) );
          BOOST_REQUIRE( bob.balance == old_bob_balance );
          BOOST_REQUIRE( sam.vesting_shares == old_sam_vesting );
-         BOOST_REQUIRE( sam.balance ==  old_sam_balance + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 30 ) / PERCENT_100, SYMBOL_VESTS ) * db.get_dynamic_global_properties().get_vesting_share_price() );
+         BOOST_REQUIRE( sam.balance ==  old_sam_balance + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 30 ) / PERCENT_100, SYMBOL_EZP ) * db.get_dynamic_global_properties().get_vesting_share_price() );
 
          old_alice_balance = alice.balance;
          old_alice_vesting = alice.vesting_shares;
@@ -1401,10 +1401,10 @@ BOOST_AUTO_TEST_CASE( vesting_withdraw_route )
 
          BOOST_REQUIRE( alice.vesting_shares == old_alice_vesting - vesting_withdraw_rate );
          BOOST_REQUIRE( alice.balance == old_alice_balance );
-         BOOST_REQUIRE( bob.vesting_shares == old_bob_vesting + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_VESTS ) );
+         BOOST_REQUIRE( bob.vesting_shares == old_bob_vesting + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_EZP ) );
          BOOST_REQUIRE( bob.balance == old_bob_balance );
          BOOST_REQUIRE( sam.vesting_shares == old_sam_vesting );
-         BOOST_REQUIRE( sam.balance ==  old_sam_balance + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_VESTS ) * db.get_dynamic_global_properties().get_vesting_share_price() );
+         BOOST_REQUIRE( sam.balance ==  old_sam_balance + asset( ( vesting_withdraw_rate.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_EZP ) * db.get_dynamic_global_properties().get_vesting_share_price() );
       }
    }
    FC_LOG_AND_RETHROW()
@@ -1455,13 +1455,13 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
          txs.push_back( signed_transaction() );
       }
 
-      ops[0].exchange_rate = price( asset( 100000, SYMBOL_EZIRA ), asset( 1000, SYMBOL_EZD ) );
-      ops[1].exchange_rate = price( asset( 105000, SYMBOL_EZIRA ), asset( 1000, SYMBOL_EZD ) );
-      ops[2].exchange_rate = price( asset(  98000, SYMBOL_EZIRA ), asset( 1000, SYMBOL_EZD ) );
-      ops[3].exchange_rate = price( asset(  97000, SYMBOL_EZIRA ), asset( 1000, SYMBOL_EZD ) );
-      ops[4].exchange_rate = price( asset(  99000, SYMBOL_EZIRA ), asset( 1000, SYMBOL_EZD ) );
-      ops[5].exchange_rate = price( asset(  97500, SYMBOL_EZIRA ), asset( 1000, SYMBOL_EZD ) );
-      ops[6].exchange_rate = price( asset( 102000, SYMBOL_EZIRA ), asset( 1000, SYMBOL_EZD ) );
+      ops[0].exchange_rate = price( asset( 100000, SYMBOL_ECO ), asset( 1000, SYMBOL_EZD ) );
+      ops[1].exchange_rate = price( asset( 105000, SYMBOL_ECO ), asset( 1000, SYMBOL_EZD ) );
+      ops[2].exchange_rate = price( asset(  98000, SYMBOL_ECO ), asset( 1000, SYMBOL_EZD ) );
+      ops[3].exchange_rate = price( asset(  97000, SYMBOL_ECO ), asset( 1000, SYMBOL_EZD ) );
+      ops[4].exchange_rate = price( asset(  99000, SYMBOL_ECO ), asset( 1000, SYMBOL_EZD ) );
+      ops[5].exchange_rate = price( asset(  97500, SYMBOL_ECO ), asset( 1000, SYMBOL_EZD ) );
+      ops[6].exchange_rate = price( asset( 102000, SYMBOL_ECO ), asset( 1000, SYMBOL_EZD ) );
 
       for( int i = 0; i < 7; i++ )
       {
@@ -1477,8 +1477,8 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
       BOOST_TEST_MESSAGE( "Get feed history object" );
       feed_history_object feed_history = db.get_feed_history();
       BOOST_TEST_MESSAGE( "Check state" );
-      BOOST_REQUIRE( feed_history.current_median_history == price( asset( 99000, SYMBOL_EZIRA), asset( 1000, SYMBOL_EZD ) ) );
-      BOOST_REQUIRE( feed_history.price_history[ 0 ] == price( asset( 99000, SYMBOL_EZIRA), asset( 1000, SYMBOL_EZD ) ) );
+      BOOST_REQUIRE( feed_history.current_median_history == price( asset( 99000, SYMBOL_ECO), asset( 1000, SYMBOL_EZD ) ) );
+      BOOST_REQUIRE( feed_history.price_history[ 0 ] == price( asset( 99000, SYMBOL_ECO), asset( 1000, SYMBOL_EZD ) ) );
       validate_database();
 
       for ( int i = 0; i < 23; i++ )
@@ -1571,7 +1571,7 @@ BOOST_AUTO_TEST_CASE( convert_delay )
    FC_LOG_AND_RETHROW();
 }
 
-BOOST_AUTO_TEST_CASE( ezira_inflation )
+BOOST_AUTO_TEST_CASE( eznode_inflation )
 {
    try
    {
@@ -1584,22 +1584,22 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
       auto old_witness_balance = db.get_account( witness_name ).balance;
       auto old_witness_shares = db.get_account( witness_name ).vesting_shares;
 
-      auto new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) )
-         + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) );
-      auto witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) );
-      auto witness_pay_shares = asset( 0, SYMBOL_VESTS );
-      auto new_vesting_ezira = asset( 0, SYMBOL_EZIRA );
+      auto new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) )
+         + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
+      auto witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
+      auto witness_pay_shares = asset( 0, SYMBOL_EZP );
+      auto new_vesting_ECO = asset( 0, SYMBOL_ECO );
       auto new_vesting_shares = gpo.total_vesting_shares;
 
       if ( db.get_account( witness_name ).vesting_shares.amount.value == 0 )
       {
-         new_vesting_ezira += witness_pay;
-         new_vesting_shares += witness_pay * ( gpo.total_vesting_shares / gpo.total_vesting_fund_ezira );
+         new_vesting_ECO += witness_pay;
+         new_vesting_shares += witness_pay * ( gpo.total_vesting_shares / gpo.total_vesting_fund_ECO );
       }
 
-      auto new_supply = gpo.current_supply + new_rewards + witness_pay + new_vesting_ezira;
-      new_rewards += gpo.total_reward_fund_ezira;
-      new_vesting_ezira += gpo.total_vesting_fund_ezira;
+      auto new_supply = gpo.current_supply + new_rewards + witness_pay + new_vesting_ECO;
+      new_rewards += gpo.total_reward_fund_ECO;
+      new_vesting_ECO += gpo.total_vesting_fund_ECO;
 
       generate_block();
 
@@ -1607,8 +1607,8 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
 
       BOOST_REQUIRE( gpo.current_supply.amount.value == new_supply.amount.value );
       BOOST_REQUIRE( gpo.virtual_supply.amount.value == new_supply.amount.value );
-      BOOST_REQUIRE( gpo.total_reward_fund_ezira.amount.value == new_rewards.amount.value );
-      BOOST_REQUIRE( gpo.total_vesting_fund_ezira.amount.value == new_vesting_ezira.amount.value );
+      BOOST_REQUIRE( gpo.total_reward_fund_ECO.amount.value == new_rewards.amount.value );
+      BOOST_REQUIRE( gpo.total_vesting_fund_ECO.amount.value == new_vesting_ECO.amount.value );
       BOOST_REQUIRE( gpo.total_vesting_shares.amount.value == new_vesting_shares.amount.value );
       BOOST_REQUIRE( db.get_account( witness_name ).balance.amount.value == ( old_witness_balance + witness_pay ).amount.value );
 
@@ -1622,24 +1622,24 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
          old_witness_shares = db.get_account( witness_name ).vesting_shares;
 
 
-         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) )
-            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) );
-         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) );
-         new_vesting_ezira = asset( 0, SYMBOL_EZIRA );
+         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) )
+            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
+         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
+         new_vesting_ECO = asset( 0, SYMBOL_ECO );
          new_vesting_shares = gpo.total_vesting_shares;
 
          if ( db.get_account( witness_name ).vesting_shares.amount.value == 0 )
          {
-            new_vesting_ezira += witness_pay;
+            new_vesting_ECO += witness_pay;
             witness_pay_shares = witness_pay * gpo.get_vesting_share_price();
             new_vesting_shares += witness_pay_shares;
             new_supply += witness_pay;
-            witness_pay = asset( 0, SYMBOL_EZIRA );
+            witness_pay = asset( 0, SYMBOL_ECO );
          }
 
-         new_supply = gpo.current_supply + new_rewards + witness_pay + new_vesting_ezira;
-         new_rewards += gpo.total_reward_fund_ezira;
-         new_vesting_ezira += gpo.total_vesting_fund_ezira;
+         new_supply = gpo.current_supply + new_rewards + witness_pay + new_vesting_ECO;
+         new_rewards += gpo.total_reward_fund_ECO;
+         new_vesting_ECO += gpo.total_vesting_fund_ECO;
 
          generate_block();
 
@@ -1647,8 +1647,8 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
 
          BOOST_REQUIRE( gpo.current_supply.amount.value == new_supply.amount.value );
          BOOST_REQUIRE( gpo.virtual_supply.amount.value == new_supply.amount.value );
-         BOOST_REQUIRE( gpo.total_reward_fund_ezira.amount.value == new_rewards.amount.value );
-         BOOST_REQUIRE( gpo.total_vesting_fund_ezira.amount.value == new_vesting_ezira.amount.value );
+         BOOST_REQUIRE( gpo.total_reward_fund_ECO.amount.value == new_rewards.amount.value );
+         BOOST_REQUIRE( gpo.total_vesting_fund_ECO.amount.value == new_vesting_ECO.amount.value );
          BOOST_REQUIRE( gpo.total_vesting_shares.amount.value == new_vesting_shares.amount.value );
          BOOST_REQUIRE( db.get_account( witness_name ).balance.amount.value == ( old_witness_balance + witness_pay ).amount.value );
          BOOST_REQUIRE( db.get_account( witness_name ).vesting_shares.amount.value == ( old_witness_shares + witness_pay_shares ).amount.value );
@@ -1664,25 +1664,25 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
          witness_name = db.get_scheduled_witness(1);
          old_witness_balance = db.get_account( witness_name ).balance;
 
-         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) )
-            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) );
-         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) );
-         auto witness_pay_shares = asset( 0, SYMBOL_VESTS );
-         new_vesting_ezira = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_EZIRA );
+         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) )
+            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
+         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
+         auto witness_pay_shares = asset( 0, SYMBOL_EZP );
+         new_vesting_ECO = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_ECO );
          new_vesting_shares = gpo.total_vesting_shares;
 
          if ( db.get_account( witness_name ).vesting_shares.amount.value == 0 )
          {
-            new_vesting_ezira += witness_pay;
+            new_vesting_ECO += witness_pay;
             witness_pay_shares = witness_pay * gpo.get_vesting_share_price();
             new_vesting_shares += witness_pay_shares;
             new_supply += witness_pay;
-            witness_pay = asset( 0, SYMBOL_EZIRA );
+            witness_pay = asset( 0, SYMBOL_ECO );
          }
 
-         new_supply = gpo.current_supply + new_rewards + witness_pay + new_vesting_ezira;
-         new_rewards += gpo.total_reward_fund_ezira;
-         new_vesting_ezira += gpo.total_vesting_fund_ezira;
+         new_supply = gpo.current_supply + new_rewards + witness_pay + new_vesting_ECO;
+         new_rewards += gpo.total_reward_fund_ECO;
+         new_vesting_ECO += gpo.total_vesting_fund_ECO;
 
          generate_block();
 
@@ -1690,8 +1690,8 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
 
          BOOST_REQUIRE( gpo.current_supply.amount.value == new_supply.amount.value );
          BOOST_REQUIRE( gpo.virtual_supply.amount.value == new_supply.amount.value );
-         BOOST_REQUIRE( gpo.total_reward_fund_ezira.amount.value == new_rewards.amount.value );
-         BOOST_REQUIRE( gpo.total_vesting_fund_ezira.amount.value == new_vesting_ezira.amount.value );
+         BOOST_REQUIRE( gpo.total_reward_fund_ECO.amount.value == new_rewards.amount.value );
+         BOOST_REQUIRE( gpo.total_vesting_fund_ECO.amount.value == new_vesting_ECO.amount.value );
          BOOST_REQUIRE( gpo.total_vesting_shares.amount.value == new_vesting_shares.amount.value );
          BOOST_REQUIRE( db.get_account( witness_name ).balance.amount.value == ( old_witness_balance + witness_pay ).amount.value );
          BOOST_REQUIRE( db.get_account( witness_name ).vesting_shares.amount.value == ( old_witness_shares + witness_pay_shares ).amount.value );
@@ -1705,15 +1705,15 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
          witness_name = db.get_scheduled_witness(1);
          old_witness_balance = db.get_account( witness_name ).balance;
 
-         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) )
-            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) );
-         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_EZIRA ) );
+         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) )
+            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
+         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
          witness_pay_shares = witness_pay * gpo.get_vesting_share_price();
-         new_vesting_ezira = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_EZIRA ) + witness_pay;
+         new_vesting_ECO = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_ECO ) + witness_pay;
          new_vesting_shares = gpo.total_vesting_shares + witness_pay_shares;
-         new_supply = gpo.current_supply + new_rewards + new_vesting_ezira;
-         new_rewards += gpo.total_reward_fund_ezira;
-         new_vesting_ezira += gpo.total_vesting_fund_ezira;
+         new_supply = gpo.current_supply + new_rewards + new_vesting_ECO;
+         new_rewards += gpo.total_reward_fund_ECO;
+         new_vesting_ECO += gpo.total_vesting_fund_ECO;
 
          generate_block();
 
@@ -1721,8 +1721,8 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
 
          BOOST_REQUIRE( gpo.current_supply.amount.value == new_supply.amount.value );
          BOOST_REQUIRE( gpo.virtual_supply.amount.value == new_supply.amount.value );
-         BOOST_REQUIRE( gpo.total_reward_fund_ezira.amount.value == new_rewards.amount.value );
-         BOOST_REQUIRE( gpo.total_vesting_fund_ezira.amount.value == new_vesting_ezira.amount.value );
+         BOOST_REQUIRE( gpo.total_reward_fund_ECO.amount.value == new_rewards.amount.value );
+         BOOST_REQUIRE( gpo.total_vesting_fund_ECO.amount.value == new_vesting_ECO.amount.value );
          BOOST_REQUIRE( gpo.total_vesting_shares.amount.value == new_vesting_shares.amount.value );
          BOOST_REQUIRE( db.get_account( witness_name ).vesting_shares.amount.value == ( old_witness_shares + witness_pay_shares ).amount.value );
 
@@ -1731,8 +1731,8 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
 
       virtual_supply = gpo.virtual_supply;
       vesting_shares = gpo.total_vesting_shares;
-      vesting_ezira = gpo.total_vesting_fund_ezira;
-      reward_ezira = gpo.total_reward_fund_ezira;
+      vesting_ECO = gpo.total_vesting_fund_ECO;
+      reward_ECO = gpo.total_reward_fund_ECO;
 
       witness_name = db.get_scheduled_witness(1);
       old_witness_shares = db.get_account( witness_name ).vesting_shares;
@@ -1741,14 +1741,14 @@ BOOST_AUTO_TEST_CASE( ezira_inflation )
 
       gpo = db.get_dynamic_global_properties();
 
-      BOOST_REQUIRE_EQUAL( gpo.total_vesting_fund_ezira.amount.value,
-         ( vesting_ezira.amount.value
+      BOOST_REQUIRE_EQUAL( gpo.total_vesting_fund_ECO.amount.value,
+         ( vesting_ECO.amount.value
             + ( ( ( uint128_t( virtual_supply.amount.value ) / 10 ) / BLOCKS_PER_YEAR ) * 9 )
             + ( uint128_t( virtual_supply.amount.value ) / 100 / BLOCKS_PER_YEAR ) ).to_uint64() );
-      BOOST_REQUIRE_EQUAL( gpo.total_reward_fund_ezira.amount.value,
-         reward_ezira.amount.value + virtual_supply.amount.value / 10 / BLOCKS_PER_YEAR + virtual_supply.amount.value / 10 / BLOCKS_PER_DAY );
+      BOOST_REQUIRE_EQUAL( gpo.total_reward_fund_ECO.amount.value,
+         reward_ECO.amount.value + virtual_supply.amount.value / 10 / BLOCKS_PER_YEAR + virtual_supply.amount.value / 10 / BLOCKS_PER_DAY );
       BOOST_REQUIRE_EQUAL( db.get_account( witness_name ).vesting_shares.amount.value,
-         old_witness_shares.amount.value + ( asset( ( ( virtual_supply.amount.value / BLOCKS_PER_YEAR ) * PERCENT_1 ) / PERCENT_100, SYMBOL_EZIRA ) * ( vesting_shares / vesting_ezira ) ).amount.value );
+         old_witness_shares.amount.value + ( asset( ( ( virtual_supply.amount.value / BLOCKS_PER_YEAR ) * PERCENT_1 ) / PERCENT_100, SYMBOL_ECO ) * ( vesting_shares / vesting_ECO ) ).amount.value );
       validate_database();
       */
    }
@@ -1869,16 +1869,16 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       fund( "dave", alice_EZD.amount );
 
       int64_t alice_EZD_volume = 0;
-      int64_t alice_ezira_volume = 0;
+      int64_t alice_ECO_volume = 0;
       time_point_sec alice_reward_last_update = fc::time_point_sec::min();
       int64_t bob_EZD_volume = 0;
-      int64_t bob_ezira_volume = 0;
+      int64_t bob_ECO_volume = 0;
       time_point_sec bob_reward_last_update = fc::time_point_sec::min();
       int64_t sam_EZD_volume = 0;
-      int64_t sam_ezira_volume = 0;
+      int64_t sam_ECO_volume = 0;
       time_point_sec sam_reward_last_update = fc::time_point_sec::min();
       int64_t dave_EZD_volume = 0;
-      int64_t dave_ezira_volume = 0;
+      int64_t dave_ECO_volume = 0;
       time_point_sec dave_reward_last_update = fc::time_point_sec::min();
 
       BOOST_TEST_MESSAGE( "Creating Limit Order for EZIRA that will stay on the books for 30 minutes exactly." );
@@ -1915,9 +1915,9 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       tx.sign( bob_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      alice_ezira_volume += ( asset( alice_EZD.amount / 20, SYMBOL_EZD ) * exchange_rate ).amount.value;
+      alice_ECO_volume += ( asset( alice_EZD.amount / 20, SYMBOL_EZD ) * exchange_rate ).amount.value;
       alice_reward_last_update = db.head_block_time();
-      bob_ezira_volume -= ( asset( alice_EZD.amount / 20, SYMBOL_EZD ) * exchange_rate ).amount.value;
+      bob_ECO_volume -= ( asset( alice_EZD.amount / 20, SYMBOL_EZD ) * exchange_rate ).amount.value;
       bob_reward_last_update = db.head_block_time();
 
       auto ops = get_last_operations( 1 );
@@ -1928,14 +1928,14 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward->EZD_volume == alice_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == alice_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == alice_ECO_volume );
       BOOST_CHECK( reward->last_update == alice_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward->EZD_volume == bob_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == bob_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == bob_ECO_volume );
       BOOST_CHECK( reward->last_update == bob_reward_last_update );*/
 
       auto fill_order_op = ops[0].get< fill_order_operation >();
@@ -1953,7 +1953,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_TEST_MESSAGE( "Creating Limit Order for EZD that will stay on the books for 60 minutes." );
 
       op.owner = "sam";
-      op.amount_to_sell = asset( ( alice_EZD.amount.value / 20 ), SYMBOL_EZIRA );
+      op.amount_to_sell = asset( ( alice_EZD.amount.value / 20 ), SYMBOL_ECO );
       op.min_to_receive = asset( ( alice_EZD.amount.value / 20 ), SYMBOL_EZD );
       op.orderid = 3;
 
@@ -1971,7 +1971,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       op.owner = "bob";
       op.orderid = 4;
-      op.amount_to_sell = asset( ( alice_EZD.amount.value / 10 ) * 3 - alice_EZD.amount.value / 20, SYMBOL_EZIRA );
+      op.amount_to_sell = asset( ( alice_EZD.amount.value / 10 ) * 3 - alice_EZD.amount.value / 20, SYMBOL_ECO );
       op.min_to_receive = asset( ( alice_EZD.amount.value / 10 ) * 3 - alice_EZD.amount.value / 20, SYMBOL_EZD );
 
       tx.signatures.clear();
@@ -1990,7 +1990,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       op.owner = "alice";
       op.orderid = 5;
       op.amount_to_sell = asset( ( alice_EZD.amount.value / 10 ) * 3, SYMBOL_EZD );
-      op.min_to_receive = asset( ( alice_EZD.amount.value / 10 ) * 3, SYMBOL_EZIRA );
+      op.min_to_receive = asset( ( alice_EZD.amount.value / 10 ) * 3, SYMBOL_ECO );
 
       tx.signatures.clear();
       tx.operations.clear();
@@ -2010,7 +2010,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       fill_order_op = ops[1].get< fill_order_operation >();
       BOOST_REQUIRE( fill_order_op.open_owner == "bob" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 4 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( ( alice_EZD.amount.value / 10 ) * 3 - alice_EZD.amount.value / 20, SYMBOL_EZIRA ).amount.value );
+      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( ( alice_EZD.amount.value / 10 ) * 3 - alice_EZD.amount.value / 20, SYMBOL_ECO ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 5 );
       BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( ( alice_EZD.amount.value / 10 ) * 3 - alice_EZD.amount.value / 20, SYMBOL_EZD ).amount.value );
@@ -2018,7 +2018,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       fill_order_op = ops[3].get< fill_order_operation >();
       BOOST_REQUIRE( fill_order_op.open_owner == "sam" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 3 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_EZIRA ).amount.value );
+      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_ECO ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 5 );
       BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_EZD ).amount.value );
@@ -2027,28 +2027,28 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward->EZD_volume == alice_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == alice_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == alice_ECO_volume );
       BOOST_CHECK( reward->last_update == alice_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward->EZD_volume == bob_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == bob_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == bob_ECO_volume );
       BOOST_CHECK( reward->last_update == bob_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward->EZD_volume == sam_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == sam_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == sam_ECO_volume );
       BOOST_CHECK( reward->last_update == sam_reward_last_update );*/
 
       BOOST_TEST_MESSAGE( "Testing a partial fill before minimum time and full fill after minimum time" );
 
       op.orderid = 6;
       op.amount_to_sell = asset( alice_EZD.amount.value / 20 * 2, SYMBOL_EZD );
-      op.min_to_receive = asset( alice_EZD.amount.value / 20 * 2, SYMBOL_EZIRA );
+      op.min_to_receive = asset( alice_EZD.amount.value / 20 * 2, SYMBOL_ECO );
 
       tx.signatures.clear();
       tx.operations.clear();
@@ -2061,7 +2061,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       op.owner = "bob";
       op.orderid = 7;
-      op.amount_to_sell = asset( alice_EZD.amount.value / 20, SYMBOL_EZIRA );
+      op.amount_to_sell = asset( alice_EZD.amount.value / 20, SYMBOL_ECO );
       op.min_to_receive = asset( alice_EZD.amount.value / 20, SYMBOL_EZD );
 
       tx.signatures.clear();
@@ -2081,27 +2081,27 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_EZD ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "bob" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 7 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_EZIRA ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_ECO ).amount.value );
 
       reward = liquidity_idx.find( db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward->EZD_volume == alice_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == alice_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == alice_ECO_volume );
       BOOST_CHECK( reward->last_update == alice_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward->EZD_volume == bob_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == bob_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == bob_ECO_volume );
       BOOST_CHECK( reward->last_update == bob_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward->EZD_volume == sam_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == sam_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == sam_ECO_volume );
       BOOST_CHECK( reward->last_update == sam_reward_last_update );*/
 
       generate_blocks( db.head_block_time() + MIN_LIQUIDITY_REWARD_PERIOD_SEC_HF10, true );
@@ -2116,9 +2116,9 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      alice_ezira_volume += alice_EZD.amount.value / 20;
+      alice_ECO_volume += alice_EZD.amount.value / 20;
       alice_reward_last_update = db.head_block_time();
-      sam_ezira_volume -= alice_EZD.amount.value / 20;
+      sam_ECO_volume -= alice_EZD.amount.value / 20;
       sam_reward_last_update = db.head_block_time();
 
       ops = get_last_operations( 2 );
@@ -2129,27 +2129,27 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_EZD ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "sam" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 8 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_EZIRA ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_EZD.amount.value / 20, SYMBOL_ECO ).amount.value );
 
       reward = liquidity_idx.find( db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward->EZD_volume == alice_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == alice_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == alice_ECO_volume );
       BOOST_CHECK( reward->last_update == alice_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward->EZD_volume == bob_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == bob_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == bob_ECO_volume );
       BOOST_CHECK( reward->last_update == bob_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward->EZD_volume == sam_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == sam_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == sam_ECO_volume );
       BOOST_CHECK( reward->last_update == sam_reward_last_update );*/
 
       BOOST_TEST_MESSAGE( "Trading to give Alice and Bob positive volumes to receive rewards" );
@@ -2167,7 +2167,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       db.push_transaction( tx, 0 );
 
       op.owner = "alice";
-      op.amount_to_sell = asset( 8 * ( alice_EZD.amount.value / 20 ), SYMBOL_EZIRA );
+      op.amount_to_sell = asset( 8 * ( alice_EZD.amount.value / 20 ), SYMBOL_ECO );
       op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_EZD );
       op.orderid = 9;
       tx.operations.clear();
@@ -2180,7 +2180,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       op.owner = "dave";
       op.amount_to_sell = asset( 7 * ( alice_EZD.amount.value / 20 ), SYMBOL_EZD );;
-      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_EZIRA );
+      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_ECO );
       op.orderid = 10;
       tx.operations.clear();
       tx.signatures.clear();
@@ -2208,28 +2208,28 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward->EZD_volume == alice_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == alice_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == alice_ECO_volume );
       BOOST_CHECK( reward->last_update == alice_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward->EZD_volume == bob_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == bob_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == bob_ECO_volume );
       BOOST_CHECK( reward->last_update == bob_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward->EZD_volume == sam_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == sam_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == sam_ECO_volume );
       BOOST_CHECK( reward->last_update == sam_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "dave" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "dave" ).id );
       BOOST_REQUIRE( reward->EZD_volume == dave_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == dave_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == dave_ECO_volume );
       BOOST_CHECK( reward->last_update == dave_reward_last_update );*/
 
       op.owner = "bob";
@@ -2261,28 +2261,28 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward->EZD_volume == alice_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == alice_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == alice_ECO_volume );
       BOOST_CHECK( reward->last_update == alice_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward->EZD_volume == bob_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == bob_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == bob_ECO_volume );
       BOOST_CHECK( reward->last_update == bob_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward->EZD_volume == sam_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == sam_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == sam_ECO_volume );
       BOOST_CHECK( reward->last_update == sam_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "dave" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "dave" ).id );
       BOOST_REQUIRE( reward->EZD_volume == dave_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == dave_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == dave_ECO_volume );
       BOOST_CHECK( reward->last_update == dave_reward_last_update );*/
 
       transfer.to = "bob";
@@ -2298,7 +2298,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       op.owner = "bob";
       op.orderid = 12;
       op.amount_to_sell = asset( 3 * ( alice_EZD.amount / 40 ), SYMBOL_EZD );
-      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_EZIRA );
+      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_ECO );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2317,9 +2317,9 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       tx.sign( dave_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      bob_ezira_volume += op.amount_to_sell.amount.value;
+      bob_ECO_volume += op.amount_to_sell.amount.value;
       bob_reward_last_update = db.head_block_time();
-      dave_ezira_volume -= op.amount_to_sell.amount.value;
+      dave_ECO_volume -= op.amount_to_sell.amount.value;
       dave_reward_last_update = db.head_block_time();
 
       ops = get_last_operations( 1 );
@@ -2336,28 +2336,28 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward->EZD_volume == alice_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == alice_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == alice_ECO_volume );
       BOOST_CHECK( reward->last_update == alice_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "bob" ).id );
       BOOST_REQUIRE( reward->EZD_volume == bob_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == bob_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == bob_ECO_volume );
       BOOST_CHECK( reward->last_update == bob_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward->EZD_volume == sam_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == sam_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == sam_ECO_volume );
       BOOST_CHECK( reward->last_update == sam_reward_last_update );*/
 
       reward = liquidity_idx.find( db.get_account( "dave" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
       /*BOOST_REQUIRE( reward->owner == db.get_account( "dave" ).id );
       BOOST_REQUIRE( reward->EZD_volume == dave_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == dave_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == dave_ECO_volume );
       BOOST_CHECK( reward->last_update == dave_reward_last_update );*/
 
       auto alice_balance = db.get_account( "alice" ).balance;
@@ -2404,9 +2404,9 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       REQUIRE_THROW( ops[0].get< liquidity_reward_operation>(), fc::exception );
       //BOOST_REQUIRE( ops[0].get< liquidity_reward_operation>().payout.amount.value == MIN_LIQUIDITY_REWARD.amount.value );
 
-      alice_ezira_volume = 0;
+      alice_ECO_volume = 0;
       alice_EZD_volume = 0;
-      bob_ezira_volume = 0;
+      bob_ECO_volume = 0;
       bob_EZD_volume = 0;
 
       BOOST_TEST_MESSAGE( "Testing liquidity timeout" );
@@ -2430,7 +2430,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       /*BOOST_REQUIRE( reward == liquidity_idx.end() );
       BOOST_REQUIRE( reward->owner == db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward->EZD_volume == sam_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == sam_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == sam_ECO_volume );
       BOOST_CHECK( reward->last_update == sam_reward_last_update );*/
 
       generate_block();
@@ -2438,7 +2438,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       op.owner = "alice";
       op.orderid = 15;
       op.amount_to_sell.symbol = SYMBOL_EZD;
-      op.min_to_receive.symbol = SYMBOL_EZIRA;
+      op.min_to_receive.symbol = SYMBOL_ECO;
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2447,14 +2447,14 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       db.push_transaction( tx, 0 );
 
       sam_EZD_volume = ASSET( "1.000 TBD" ).amount.value;
-      sam_ezira_volume = 0;
+      sam_ECO_volume = 0;
       sam_reward_last_update = db.head_block_time();
 
       reward = liquidity_idx.find( db.get_account( "sam" ).id );
       /*BOOST_REQUIRE( reward == liquidity_idx.end() );
       BOOST_REQUIRE( reward->owner == db.get_account( "sam" ).id );
       BOOST_REQUIRE( reward->EZD_volume == sam_EZD_volume );
-      BOOST_REQUIRE( reward->ezira_volume == sam_ezira_volume );
+      BOOST_REQUIRE( reward->ECO_volume == sam_ECO_volume );
       BOOST_CHECK( reward->last_update == sam_reward_last_update );*/
    }
    FC_LOG_AND_RETHROW();
@@ -2668,7 +2668,7 @@ BOOST_AUTO_TEST_CASE( EZD_stability )
       resize_shared_mem( 1024 * 1024 * 512 ); // Due to number of blocks in the test, it requires a large file. (64 MB)
 
       // Using the debug node plugin to manually set account balances to create required market conditions for this test
-      auto db_plugin = app.register_plugin< ezira::plugin::debug_node::debug_node_plugin >();
+      auto db_plugin = app.register_plugin< eznode::plugin::debug_node::debug_node_plugin >();
       boost::program_options::variables_map options;
       db_plugin->logging = false;
       db_plugin->plugin_initialize( options );
@@ -2722,7 +2722,7 @@ BOOST_AUTO_TEST_CASE( EZD_stability )
 
       BOOST_TEST_MESSAGE( "Changing sam and gpo to set up market cap conditions" );
 
-      asset EZD_balance = asset( ( gpo.virtual_supply.amount * ( EZD_STOP_PERCENT + 30 ) ) / PERCENT_100, SYMBOL_EZIRA ) * exchange_rate;
+      asset EZD_balance = asset( ( gpo.virtual_supply.amount * ( EZD_STOP_PERCENT + 30 ) ) / PERCENT_100, SYMBOL_ECO ) * exchange_rate;
       db_plugin->debug_update( [=]( database& db )
       {
          db.modify( db.get_account( "sam" ), [&]( account_object& a )
@@ -2744,11 +2744,11 @@ BOOST_AUTO_TEST_CASE( EZD_stability )
 
       db_plugin->debug_generate_blocks( debug_key, 1, database::skip_witness_signature );
 
-      auto comment_reward = ( gpo.total_reward_fund_ezira.amount + 2000 ) - ( ( gpo.total_reward_fund_ezira.amount + 2000 ) * 25 * PERCENT_1 ) / PERCENT_100 ;
+      auto comment_reward = ( gpo.total_reward_fund_ECO.amount + 2000 ) - ( ( gpo.total_reward_fund_ECO.amount + 2000 ) * 25 * PERCENT_1 ) / PERCENT_100 ;
       comment_reward /= 2;
       auto EZD_reward = ( comment_reward * gpo.EZD_print_rate ) / PERCENT_100;
-      auto alice_EZD = db.get_account( "alice" ).EZD_balance + db.get_account( "alice" ).reward_EZD_balance + asset( EZD_reward, SYMBOL_EZIRA ) * exchange_rate;
-      auto alice_ezira = db.get_account( "alice" ).balance + db.get_account( "alice" ).reward_ezira_balance ;
+      auto alice_EZD = db.get_account( "alice" ).EZD_balance + db.get_account( "alice" ).reward_EZD_balance + asset( EZD_reward, SYMBOL_ECO ) * exchange_rate;
+      auto alice_ECO = db.get_account( "alice" ).balance + db.get_account( "alice" ).reward_ECO_balance ;
 
       BOOST_TEST_MESSAGE( "Checking printing EZD has slowed" );
       BOOST_REQUIRE( db.get_dynamic_global_properties().EZD_print_rate < PERCENT_100 );
@@ -2759,7 +2759,7 @@ BOOST_AUTO_TEST_CASE( EZD_stability )
       validate_database();
 
       BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance + db.get_account( "alice" ).reward_EZD_balance == alice_EZD );
-      BOOST_REQUIRE( db.get_account( "alice" ).balance + db.get_account( "alice" ).reward_ezira_balance > alice_ezira );
+      BOOST_REQUIRE( db.get_account( "alice" ).balance + db.get_account( "alice" ).reward_ECO_balance > alice_ECO );
 
       BOOST_TEST_MESSAGE( "Letting percent market cap fall to 2% to verify printing of EZD turns back on" );
 
@@ -2907,10 +2907,10 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       {
          db.modify( db.get_account( NULL_ACCOUNT ), [&]( account_object& a )
          {
-            a.reward_ezira_balance = ASSET( "1.000 TESTS" );
+            a.reward_ECO_balance = ASSET( "1.000 TESTS" );
             a.reward_EZD_balance = ASSET( "1.000 TBD" );
-            a.reward_vesting_balance = ASSET( "1.000000 VESTS" );
-            a.reward_vesting_ezira = ASSET( "1.000 TESTS" );
+            a.reward_EZP_balance = ASSET( "1.000000 VESTS" );
+            a.reward_vesting_ECO_balance = ASSET( "1.000 TESTS" );
          });
 
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
@@ -2919,7 +2919,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
             gpo.virtual_supply += ASSET( "3.000 TESTS" );
             gpo.current_EZD_supply += ASSET( "1.000 TBD" );
             gpo.pending_rewarded_vesting_shares += ASSET( "1.000000 VESTS" );
-            gpo.pending_rewarded_vesting_ezira += ASSET( "1.000 TESTS" );
+            gpo.pending_rewarded_vesting_ECO += ASSET( "1.000 TESTS" );
          });
       });
 
@@ -2931,9 +2931,9 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).savings_balance == ASSET( "4.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).savings_EZD_balance == ASSET( "5.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_EZD_balance == ASSET( "1.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_ezira_balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_vesting_balance == ASSET( "1.000000 VESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_vesting_ezira == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_ECO_balance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_EZP_balance == ASSET( "1.000000 VESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_vesting_ECO_balance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "2.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "3.000 TBD" ) );
 
@@ -2947,9 +2947,9 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).savings_balance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).savings_EZD_balance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_EZD_balance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_ezira_balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_vesting_balance == ASSET( "0.000000 VESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_vesting_ezira == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_ECO_balance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_EZP_balance == ASSET( "0.000000 VESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).reward_vesting_ECO_balance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "2.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "3.000 TBD" ) );
    }

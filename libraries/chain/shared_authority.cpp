@@ -1,4 +1,4 @@
-#include <ezira/chain/shared_authority.hpp>
+#include <eznode/chain/shared_authority.hpp>
 
 namespace ezira { namespace chain {
 
@@ -90,4 +90,4 @@ bool operator == ( const shared_authority& a, const authority& b )
    return authority( a ) == b;
 }
 
-} } // ezira::chain
+} } // eznode::chain

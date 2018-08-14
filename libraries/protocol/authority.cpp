@@ -1,4 +1,4 @@
-#include <ezira/protocol/authority.hpp>
+#include <eznode/protocol/authority.hpp>
 
 namespace ezira { namespace protocol {
 
@@ -116,4 +116,4 @@ bool operator == ( const authority& a, const authority& b )
             ( a.key_auths      == b.key_auths );
 }
 
-} } // ezira::protocol
+} } // eznode::protocol

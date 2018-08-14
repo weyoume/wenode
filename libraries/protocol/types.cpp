@@ -1,5 +1,5 @@
-#include <ezira/protocol/config.hpp>
-#include <ezira/protocol/types.hpp>
+#include <eznode/protocol/config.hpp>
+#include <eznode/protocol/types.hpp>
 
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/ripemd160.hpp>
@@ -174,38 +174,38 @@ namespace ezira { namespace protocol {
        return p1.key_data != p2.key_data;
     }
 
-} } // ezira::protocol
+} } // eznode::protocol
 
 namespace fc
 {
     using namespace std;
-    void to_variant( const ezira::protocol::public_key_type& var,  fc::variant& vo )
+    void to_variant( const eznode::protocol::public_key_type& var,  fc::variant& vo )
     {
         vo = std::string( var );
     }
 
-    void from_variant( const fc::variant& var,  ezira::protocol::public_key_type& vo )
+    void from_variant( const fc::variant& var,  eznode::protocol::public_key_type& vo )
     {
-        vo = ezira::protocol::public_key_type( var.as_string() );
+        vo = eznode::protocol::public_key_type( var.as_string() );
     }
 
-    void to_variant( const ezira::protocol::extended_public_key_type& var, fc::variant& vo )
+    void to_variant( const eznode::protocol::extended_public_key_type& var, fc::variant& vo )
     {
        vo = std::string( var );
     }
 
-    void from_variant( const fc::variant& var, ezira::protocol::extended_public_key_type& vo )
+    void from_variant( const fc::variant& var, eznode::protocol::extended_public_key_type& vo )
     {
-       vo = ezira::protocol::extended_public_key_type( var.as_string() );
+       vo = eznode::protocol::extended_public_key_type( var.as_string() );
     }
 
-    void to_variant( const ezira::protocol::extended_private_key_type& var, fc::variant& vo )
+    void to_variant( const eznode::protocol::extended_private_key_type& var, fc::variant& vo )
     {
        vo = std::string( var );
     }
 
-    void from_variant( const fc::variant& var, ezira::protocol::extended_private_key_type& vo )
+    void from_variant( const fc::variant& var, eznode::protocol::extended_private_key_type& vo )
     {
-       vo = ezira::protocol::extended_private_key_type( var.as_string() );
+       vo = eznode::protocol::extended_private_key_type( var.as_string() );
     }
 } // fc

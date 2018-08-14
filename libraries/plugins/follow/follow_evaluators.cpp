@@ -1,8 +1,8 @@
-#include <ezira/follow/follow_operations.hpp>
-#include <ezira/follow/follow_objects.hpp>
+#include <eznode/follow/follow_operations.hpp>
+#include <eznode/follow/follow_objects.hpp>
 
-#include <ezira/chain/account_object.hpp>
-#include <ezira/chain/comment_object.hpp>
+#include <eznode/chain/account_object.hpp>
+#include <eznode/chain/comment_object.hpp>
 
 namespace ezira { namespace follow {
 
@@ -221,4 +221,4 @@ void reblog_evaluator::do_apply( const reblog_operation& o )
    FC_CAPTURE_AND_RETHROW( (o) )
 }
 
-} } // ezira::follow
+} } // eznode::follow

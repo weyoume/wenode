@@ -1,6 +1,6 @@
-#include <ezira/chain/fork_database.hpp>
+#include <eznode/chain/fork_database.hpp>
 
-#include <ezira/chain/database_exceptions.hpp>
+#include <eznode/chain/database_exceptions.hpp>
 
 namespace ezira { namespace chain {
 
@@ -240,4 +240,4 @@ void fork_database::remove(block_id_type id)
    _index.get<block_id>().erase(id);
 }
 
-} } // ezira::chain
+} } // eznode::chain

@@ -1,9 +1,9 @@
 
-#include <ezira/app/api_context.hpp>
-#include <ezira/app/application.hpp>
+#include <eznode/app/api_context.hpp>
+#include <eznode/app/application.hpp>
 
-#include <ezira/plugins/block_info/block_info_api.hpp>
-#include <ezira/plugins/block_info/block_info_plugin.hpp>
+#include <eznode/plugins/block_info/block_info_api.hpp>
+#include <eznode/plugins/block_info/block_info_plugin.hpp>
 
 namespace ezira { namespace plugin { namespace block_info {
 
@@ -12,20 +12,20 @@ namespace detail {
 class block_info_api_impl
 {
    public:
-      block_info_api_impl( ezira::app::application& _app );
+      block_info_api_impl( eznode::app::application& _app );
 
-      std::shared_ptr< ezira::plugin::block_info::block_info_plugin > get_plugin();
+      std::shared_ptr< eznode::plugin::block_info::block_info_plugin > get_plugin();
 
       void get_block_info( const get_block_info_args& args, std::vector< block_info >& result );
       void get_blocks_with_info( const get_block_info_args& args, std::vector< block_with_info >& result );
 
-      ezira::app::application& app;
+      eznode::app::application& app;
 };
 
-block_info_api_impl::block_info_api_impl( ezira::app::application& _app ) : app( _app )
+block_info_api_impl::block_info_api_impl( eznode::app::application& _app ) : app( _app )
 {}
 
-std::shared_ptr< ezira::plugin::block_info::block_info_plugin > block_info_api_impl::get_plugin()
+std::shared_ptr< eznode::plugin::block_info::block_info_plugin > block_info_api_impl::get_plugin()
 {
    return app.get_plugin< block_info_plugin >( "block_info" );
 }
@@ -66,7 +66,7 @@ void block_info_api_impl::get_blocks_with_info( const get_block_info_args& args,
 
 } // detail
 
-block_info_api::block_info_api( const ezira::app::api_context& ctx )
+block_info_api::block_info_api( const eznode::app::api_context& ctx )
 {
    my = std::make_shared< detail::block_info_api_impl >(ctx.app);
 }
@@ -87,4 +87,4 @@ std::vector< block_with_info > block_info_api::get_blocks_with_info( get_block_i
 
 void block_info_api::on_api_startup() { }
 
-} } } // ezira::plugin::block_info
+} } } // eznode::plugin::block_info

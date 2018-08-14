@@ -29,6 +29,13 @@
 		"iterator": "cpp",
 		"regex": "cpp",
 		"valarray": "cpp",
-		"ios": "cpp"
+		"ios": "cpp",
+		"__functional_base": "cpp",
+		"future": "cpp",
+		"istream": "cpp",
+		"locale": "cpp",
+		"memory": "cpp",
+		"tuple": "cpp",
+		"utility": "cpp"
 	}
 }

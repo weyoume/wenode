@@ -1,7 +1,7 @@
 
-#include <ezira/chain/compound.hpp>
-#include <ezira/protocol/asset.hpp>
-#include <ezira/protocol/types.hpp>
+#include <eznode/chain/compound.hpp>
+#include <eznode/protocol/asset.hpp>
+#include <eznode/protocol/types.hpp>
 
 #include <fc/io/json.hpp>
 #include <fc/variant_object.hpp>
@@ -21,11 +21,11 @@
 #define VPOW_OFF        9
 #define REWARD_TYPES   10
 
-using ezira::protocol::asset;
-using ezira::protocol::share_type;
-using ezira::protocol::calc_percent_reward_per_block;
-using ezira::protocol::calc_percent_reward_per_round;
-using ezira::protocol::calc_percent_reward_per_hour;
+using eznode::protocol::asset;
+using eznode::protocol::share_type;
+using eznode::protocol::calc_percent_reward_per_block;
+using eznode::protocol::calc_percent_reward_per_round;
+using eznode::protocol::calc_percent_reward_per_hour;
 
 /*
 Explanation of output

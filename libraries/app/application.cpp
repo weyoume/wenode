@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <ezira/app/api.hpp>
-#include <ezira/app/api_access.hpp>
-#include <ezira/app/application.hpp>
-#include <ezira/app/plugin.hpp>
+#include <eznode/app/api.hpp>
+#include <eznode/app/api_access.hpp>
+#include <eznode/app/application.hpp>
+#include <eznode/app/plugin.hpp>
 
-#include <ezira/chain/ezira_objects.hpp>
-#include <ezira/chain/ezira_object_types.hpp>
-#include <ezira/chain/database_exceptions.hpp>
+#include <eznode/chain/eznode_objects.hpp>
+#include <eznode/chain/eznode_object_types.hpp>
+#include <eznode/chain/database_exceptions.hpp>
 
 #include <fc/time.hpp>
 
@@ -517,7 +517,7 @@ namespace detail {
                }
 
                return result;
-            } catch ( const ezira::chain::unlinkable_block_exception& e ) {
+            } catch ( const eznode::chain::unlinkable_block_exception& e ) {
                // translate to a graphene::net exception
                fc_elog(fc::logger::get("sync"),
                      "Error when pushing block, current head block is ${head}:\n${e}",
@@ -921,7 +921,7 @@ namespace detail {
       api_access _apiaccess;
 
       //std::shared_ptr<graphene::db::object_database>   _pending_trx_db;
-      std::shared_ptr<ezira::chain::database>        _chain_db;
+      std::shared_ptr<eznode::chain::database>        _chain_db;
       std::shared_ptr<graphene::net::node>             _p2p_network;
       std::shared_ptr<fc::http::websocket_server>      _websocket_server;
       std::shared_ptr<fc::http::websocket_tls_server>  _websocket_tls_server;

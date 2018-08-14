@@ -1,4 +1,4 @@
-#include <ezira/blockchain_statistics/blockchain_statistics_api.hpp>
+#include <eznode/blockchain_statistics/blockchain_statistics_api.hpp>
 
 namespace ezira { namespace blockchain_statistics {
 
@@ -7,14 +7,14 @@ namespace detail
    class blockchain_statistics_api_impl
    {
       public:
-         blockchain_statistics_api_impl( ezira::app::application& app )
+         blockchain_statistics_api_impl( eznode::app::application& app )
             :_app( app ) {}
 
          statistics get_stats_for_time( fc::time_point_sec open, uint32_t interval )const;
          statistics get_stats_for_interval( fc::time_point_sec start, fc::time_point_sec end )const;
          statistics get_lifetime_stats()const;
 
-         ezira::app::application& _app;
+         eznode::app::application& _app;
    };
 
    statistics blockchain_statistics_api_impl::get_stats_for_time( fc::time_point_sec open, uint32_t interval )const
@@ -66,7 +66,7 @@ namespace detail
    }
 } // detail
 
-blockchain_statistics_api::blockchain_statistics_api( const ezira::app::api_context& ctx )
+blockchain_statistics_api::blockchain_statistics_api( const eznode::app::api_context& ctx )
 {
    my = std::make_shared< detail::blockchain_statistics_api_impl >( ctx.app );
 }
@@ -104,7 +104,7 @@ statistics& statistics::operator +=( const bucket_object& b )
    this->operations                             += b.operations;
    this->transactions                           += b.transactions;
    this->transfers                              += b.transfers;
-   this->ezira_transferred                      += b.ezira_transferred;
+   this->ECO_transferred                        += b.ECO_transferred;
    this->EZD_transferred                        += b.EZD_transferred;
    this->EZD_paid_as_interest                   += b.EZD_paid_as_interest;
    this->accounts_created                       += b.paid_accounts_created + b.mined_accounts_created;
@@ -134,7 +134,7 @@ statistics& statistics::operator +=( const bucket_object& b )
    this->vests_paid_to_curators                 += b.vests_paid_to_curators;
    this->liquidity_rewards_paid                 += b.liquidity_rewards_paid;
    this->transfers_to_vesting                   += b.transfers_to_vesting;
-   this->ezira_vested                           += b.ezira_vested;
+   this->ECO_vested                           += b.ECO_vested;
    this->new_vesting_withdrawal_requests        += b.new_vesting_withdrawal_requests;
    this->vesting_withdraw_rate_delta            += b.vesting_withdraw_rate_delta;
    this->modified_vesting_withdrawal_requests   += b.modified_vesting_withdrawal_requests;
@@ -145,7 +145,7 @@ statistics& statistics::operator +=( const bucket_object& b )
    this->EZD_conversion_requests_created        += b.EZD_conversion_requests_created;
    this->EZD_to_be_converted                    += b.EZD_to_be_converted;
    this->EZD_conversion_requests_filled         += b.EZD_conversion_requests_filled;
-   this->ezira_converted                        += b.ezira_converted;
+   this->ECO_converted                        += b.ECO_converted;
    this->limit_orders_created                   += b.limit_orders_created;
    this->limit_orders_filled                    += b.limit_orders_filled;
    this->limit_orders_cancelled                 += b.limit_orders_cancelled;
@@ -155,4 +155,4 @@ statistics& statistics::operator +=( const bucket_object& b )
    return ( *this );
 }
 
-} } // ezira::blockchain_statistics
+} } // eznode::blockchain_statistics

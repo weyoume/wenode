@@ -1,20 +1,20 @@
-#include <ezira/blockchain_statistics/blockchain_statistics_api.hpp>
+#include <eznode/blockchain_statistics/blockchain_statistics_api.hpp>
 
-#include <ezira/app/impacted.hpp>
-#include <ezira/chain/account_object.hpp>
-#include <ezira/chain/comment_object.hpp>
-#include <ezira/chain/history_object.hpp>
+#include <eznode/app/impacted.hpp>
+#include <eznode/chain/account_object.hpp>
+#include <eznode/chain/comment_object.hpp>
+#include <eznode/chain/history_object.hpp>
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/index.hpp>
-#include <ezira/chain/operation_notification.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/index.hpp>
+#include <eznode/chain/operation_notification.hpp>
 
 namespace ezira { namespace blockchain_statistics {
 
 namespace detail
 {
 
-using namespace ezira::protocol;
+using namespace eznode::protocol;
 
 class blockchain_statistics_plugin_impl
 {
@@ -53,8 +53,8 @@ struct operation_process
       {
          b.transfers++;
 
-         if( op.amount.symbol == SYMBOL_EZIRA )
-            b.ezira_transferred += op.amount.amount;
+         if( op.amount.symbol == SYMBOL_ECO )
+            b.ECO_transferred += op.amount.amount;
          else
             b.EZD_transferred += op.amount.amount;
       });
@@ -180,7 +180,7 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.transfers_to_vesting++;
-         b.ezira_vested += op.amount.amount;
+         b.ECO_vested += op.amount.amount;
       });
    }
 
@@ -191,7 +191,7 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.vesting_withdrawals_processed++;
-         if( op.deposited.symbol == SYMBOL_EZIRA )
+         if( op.deposited.symbol == SYMBOL_ECO )
             b.vests_withdrawn += op.withdrawn.amount;
          else
             b.vests_transferred += op.withdrawn.amount;
@@ -239,7 +239,7 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.EZD_conversion_requests_filled++;
-         b.ezira_converted += op.amount_out.amount;
+         b.ECO_converted += op.amount_out.amount;
       });
    }
 };
@@ -468,6 +468,6 @@ uint32_t blockchain_statistics_plugin::get_max_history_per_bucket() const
    return _my->_maximum_history_per_bucket_size;
 }
 
-} } // ezira::blockchain_statistics
+} } // eznode::blockchain_statistics
 
-DEFINE_PLUGIN( blockchain_statistics, ezira::blockchain_statistics::blockchain_statistics_plugin );
+DEFINE_PLUGIN( blockchain_statistics, eznode::blockchain_statistics::blockchain_statistics_plugin );

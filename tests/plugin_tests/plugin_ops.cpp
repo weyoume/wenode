@@ -1,19 +1,19 @@
 #ifdef IS_TEST_NET
-#include <ezira/app/plugin.hpp>
-#include <ezira/chain/generic_custom_operation_interpreter.hpp>
-#include <ezira/chain/account_object.hpp>
+#include <eznode/app/plugin.hpp>
+#include <eznode/chain/generic_custom_operation_interpreter.hpp>
+#include <eznode/chain/account_object.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include "../common/database_fixture.hpp"
 
-using namespace ezira::chain;
-using namespace ezira::chain::test;
+using namespace eznode::chain;
+using namespace eznode::chain::test;
 /*
 namespace ezira { namespace plugin_tests {
 
-using namespace ezira::app;
-using namespace ezira::chain;
+using namespace eznode::app;
+using namespace eznode::chain;
 
 struct test_a_operation : base_operation
 {
@@ -76,16 +76,16 @@ test_plugin::test_plugin( application* app ) : plugin( app )
    database().set_custom_operation_interpreter( plugin_name(), _evaluator_registry );
 }
 
-} } // ezira::plugin_tests
+} } // eznode::plugin_tests
 
-DEFINE_PLUGIN( test, ezira::plugin_tests::test_plugin )
+DEFINE_PLUGIN( test, eznode::plugin_tests::test_plugin )
 
-FC_REFLECT( ezira::plugin_tests::test_a_operation, (account) )
-FC_REFLECT( ezira::plugin_tests::test_b_operation, (account) )
+FC_REFLECT( eznode::plugin_tests::test_a_operation, (account) )
+FC_REFLECT( eznode::plugin_tests::test_b_operation, (account) )
 
-DECLARE_OPERATION_TYPE( ezira::plugin_tests::test_op );
-FC_REFLECT_TYPENAME( ezira::plugin_tests::test_op );
-DEFINE_OPERATION_TYPE( ezira::plugin_tests::test_op );
+DECLARE_OPERATION_TYPE( eznode::plugin_tests::test_op );
+FC_REFLECT_TYPENAME( eznode::plugin_tests::test_op );
+DEFINE_OPERATION_TYPE( eznode::plugin_tests::test_op );
 */
 
 BOOST_FIXTURE_TEST_SUITE( plugin_ops, clean_database_fixture );

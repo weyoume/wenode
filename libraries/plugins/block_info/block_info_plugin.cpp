@@ -1,10 +1,10 @@
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/global_property_object.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/global_property_object.hpp>
 
-#include <ezira/plugins/block_info/block_info.hpp>
-#include <ezira/plugins/block_info/block_info_api.hpp>
-#include <ezira/plugins/block_info/block_info_plugin.hpp>
+#include <eznode/plugins/block_info/block_info.hpp>
+#include <eznode/plugins/block_info/block_info_api.hpp>
+#include <eznode/plugins/block_info/block_info_plugin.hpp>
 
 #include <string>
 
@@ -53,6 +53,6 @@ void block_info_plugin::on_applied_block( const chain::signed_block& b )
    return;
 }
 
-} } } // ezira::plugin::block_info
+} } } // eznode::plugin::block_info
 
-DEFINE_PLUGIN( block_info, ezira::plugin::block_info::block_info_plugin )
+DEFINE_PLUGIN( block_info, eznode::plugin::block_info::block_info_plugin )

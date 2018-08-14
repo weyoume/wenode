@@ -1,7 +1,7 @@
-#include <ezira/app/application.hpp>
+#include <eznode/app/application.hpp>
 
-#include <ezira/witness/witness_plugin.hpp>
-#include <ezira/manifest/plugins.hpp>
+#include <eznode/witness/witness_plugin.hpp>
+#include <eznode/manifest/plugins.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
@@ -11,7 +11,7 @@
 #include <fc/log/logger.hpp>
 #include <fc/log/logger_config.hpp>
 
-#include <ezira/protocol/version.hpp>
+#include <eznode/protocol/version.hpp>
 #include <graphene/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
@@ -34,14 +34,14 @@
 #include <graphene/utilities/key_conversion.hpp>
 
 using namespace ezira;
-using ezira::protocol::version;
+using eznode::protocol::version;
 namespace bpo = boost::program_options;
 
 void write_default_logging_config_to_stream(std::ostream& out);
 fc::optional<fc::logging_config> load_logging_config_from_ini_file(const fc::path& config_ini_filename);
 
 int main(int argc, char** argv) {
-   ezira::plugin::initialize_plugin_factories();
+   eznode::plugin::initialize_plugin_factories();
    app::application* node = new app::application();
    fc::oexception unhandled_exception;
    try {
@@ -75,8 +75,8 @@ int main(int argc, char** argv) {
 
       bpo::variables_map options;
 
-      for( const std::string& plugin_name : ezira::plugin::get_available_plugins() )
-         node->register_abstract_plugin( ezira::plugin::create_plugin( plugin_name, node ) );
+      for( const std::string& plugin_name : eznode::plugin::get_available_plugins() )
+         node->register_abstract_plugin( eznode::plugin::create_plugin( plugin_name, node ) );
 
       try
       {
@@ -94,8 +94,8 @@ int main(int argc, char** argv) {
 
       if( options.count("version") )
       {
-         std::cout << "ezira_blockchain_version: " << fc::string( BLOCKCHAIN_VERSION ) << "\n";
-         std::cout << "ezira_git_revision:       " << fc::string( graphene::utilities::git_revision_sha ) << "\n";
+         std::cout << "eznode_blockchain_version: " << fc::string( BLOCKCHAIN_VERSION ) << "\n";
+         std::cout << "eznode_git_revision:       " << fc::string( graphene::utilities::git_revision_sha ) << "\n";
          std::cout << "fc_git_revision:          " << fc::string( fc::git_revision_sha ) << "\n";
          return 0;
       }

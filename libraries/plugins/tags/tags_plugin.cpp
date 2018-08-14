@@ -1,15 +1,15 @@
-#include <ezira/tags/tags_plugin.hpp>
+#include <eznode/tags/tags_plugin.hpp>
 
-#include <ezira/app/impacted.hpp>
+#include <eznode/app/impacted.hpp>
 
-#include <ezira/protocol/config.hpp>
+#include <eznode/protocol/config.hpp>
 
-#include <ezira/chain/database.hpp>
-#include <ezira/chain/hardfork.hpp>
-#include <ezira/chain/index.hpp>
-#include <ezira/chain/operation_notification.hpp>
-#include <ezira/chain/account_object.hpp>
-#include <ezira/chain/comment_object.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/chain/hardfork.hpp>
+#include <eznode/chain/index.hpp>
+#include <eznode/chain/operation_notification.hpp>
+#include <eznode/chain/account_object.hpp>
+#include <eznode/chain/comment_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
@@ -23,7 +23,7 @@ namespace ezira { namespace tags {
 
 namespace detail {
 
-using namespace ezira::protocol;
+using namespace eznode::protocol;
 
 class tags_plugin_impl
 {
@@ -33,7 +33,7 @@ class tags_plugin_impl
       { }
       virtual ~tags_plugin_impl();
 
-      ezira::chain::database& database()
+      eznode::chain::database& database()
       {
          return _self.database();
       }
@@ -533,6 +533,6 @@ void tags_plugin::plugin_startup()
 {
 }
 
-} } /// ezira::tags
+} } /// eznode::tags
 
-DEFINE_PLUGIN( tags, ezira::tags::tags_plugin )
+DEFINE_PLUGIN( tags, eznode::tags::tags_plugin )

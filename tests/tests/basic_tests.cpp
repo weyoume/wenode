@@ -24,10 +24,10 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <ezira/chain/database.hpp>
-#include <ezira/protocol/protocol.hpp>
+#include <eznode/chain/database.hpp>
+#include <eznode/protocol/protocol.hpp>
 
-#include <ezira/protocol/ezira_operations.hpp>
+#include <eznode/protocol/eznode_operations.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/hex.hpp>
@@ -37,8 +37,8 @@
 #include <random>
 
 using namespace ezira;
-using namespace ezira::chain;
-using namespace ezira::protocol;
+using namespace eznode::chain;
+using namespace eznode::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( basic_tests, clean_database_fixture )
 

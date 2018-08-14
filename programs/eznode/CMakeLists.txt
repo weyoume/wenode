@@ -12,26 +12,26 @@ endif()
 if( STATIC_BUILD )
    target_link_libraries( eznode PRIVATE
       "-static-libstdc++ -static-libgcc"
-      ezira_plugins
-      ezira_mf_plugins
-      ezira_app
-      ezira_witness
-      ezira_account_history
-      ezira_chain
-      ezira_protocol
+      eznode_plugins
+      eznode_mf_plugins
+      eznode_app
+      eznode_witness
+      eznode_account_history
+      eznode_chain
+      eznode_protocol
       fc
       ${CMAKE_DL_LIBS}
       ${PLATFORM_SPECIFIC_LIBS}
    )
 else( STATIC_BUILD )
    target_link_libraries( eznode PRIVATE
-      ezira_plugins
-      ezira_mf_plugins
-      ezira_app
-      ezira_witness
-      ezira_account_history
-      ezira_chain
-      ezira_protocol
+      eznode_plugins
+      eznode_mf_plugins
+      eznode_app
+      eznode_witness
+      eznode_account_history
+      eznode_chain
+      eznode_protocol
       fc
       ${CMAKE_DL_LIBS}
       ${PLATFORM_SPECIFIC_LIBS}
