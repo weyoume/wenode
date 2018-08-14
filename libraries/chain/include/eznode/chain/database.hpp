@@ -18,7 +18,7 @@
 
 #include <map>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
    using eznode::protocol::signed_transaction;
    using eznode::protocol::operation;

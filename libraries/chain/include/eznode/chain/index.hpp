@@ -2,7 +2,7 @@
 
 #include <eznode/chain/database.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 template< typename MultiIndexType >
 void _add_index_impl( database& db )

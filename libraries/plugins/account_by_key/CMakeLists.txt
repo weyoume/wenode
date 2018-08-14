@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/account_by_key/*.hpp")
+file(GLOB HEADERS "include/eznode/account_by_key/*.hpp")
 
 add_library( eznode_account_by_key
              account_by_key_plugin.cpp

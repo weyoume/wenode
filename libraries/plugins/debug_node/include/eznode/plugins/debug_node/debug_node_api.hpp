@@ -12,11 +12,11 @@
 
 #include <eznode/chain/witness_objects.hpp>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
    struct api_context;
 } }
 
-namespace ezira { namespace plugin { namespace debug_node {
+namespace eznode { namespace plugin { namespace debug_node {
 
 namespace detail {
 class debug_node_api_impl;

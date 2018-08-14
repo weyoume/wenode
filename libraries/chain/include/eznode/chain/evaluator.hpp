@@ -2,7 +2,7 @@
 #include <eznode/protocol/exceptions.hpp>
 #include <eznode/protocol/operations.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 class database;
 

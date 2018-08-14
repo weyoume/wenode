@@ -8,7 +8,7 @@
 #include <boost/multi_index/mem_fun.hpp>
 
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
    using boost::multi_index_container;
    using namespace boost::multi_index;
 

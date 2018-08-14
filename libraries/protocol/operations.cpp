@@ -2,7 +2,7 @@
 
 #include <eznode/protocol/operation_util_impl.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 struct is_market_op_visitor {
    typedef bool result_type;

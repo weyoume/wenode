@@ -3,7 +3,7 @@
 
 #include <eznode/manifest/plugins.hpp>
 
-namespace ezira { namespace plugin {
+namespace eznode { namespace plugin {
 
 {% for plugin in plugins %}
 std::shared_ptr< eznode::app::abstract_plugin > create_{{ plugin["plugin_name"] }}_plugin( eznode::app::application* app );

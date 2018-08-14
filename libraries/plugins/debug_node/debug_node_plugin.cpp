@@ -17,7 +17,7 @@
 #include <sstream>
 #include <string>
 
-namespace ezira { namespace plugin { namespace debug_node {
+namespace eznode { namespace plugin { namespace debug_node {
 
 namespace detail {
 class debug_node_plugin_impl

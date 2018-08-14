@@ -54,7 +54,7 @@ namespace fc
    }
 }
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 /**
  * This class is an in-place memory allocation of a fixed length character string.

@@ -1,7 +1,7 @@
 
 #include <eznode/protocol/sign_state.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 bool sign_state::signed_by( const public_key_type& k )
 {

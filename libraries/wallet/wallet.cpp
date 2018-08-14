@@ -60,7 +60,7 @@
 
 #define BRAIN_KEY_WORD_COUNT 16
 
-namespace ezira { namespace wallet {
+namespace eznode { namespace wallet {
 
 namespace detail {
 
@@ -971,7 +971,7 @@ public:
 
 
 
-namespace ezira { namespace wallet {
+namespace eznode { namespace wallet {
 
 wallet_api::wallet_api(const wallet_data& initial_data, fc::api<login_api> rapi)
    : my(new detail::wallet_api_impl(*this, initial_data, rapi))

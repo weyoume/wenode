@@ -3,7 +3,7 @@
 
 #include <eznode/chain/comment_object.hpp>
 
-namespace ezira { namespace witness {
+namespace eznode { namespace witness {
 
 void enable_content_editing_evaluator::do_apply( const enable_content_editing_operation& o )
 {

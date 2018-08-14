@@ -3,7 +3,7 @@
 #include <eznode/protocol/authority.hpp>
 #include <eznode/protocol/types.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 typedef std::function<authority(const string&)> authority_getter;
 

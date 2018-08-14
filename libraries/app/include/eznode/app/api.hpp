@@ -41,7 +41,7 @@
 #include <string>
 #include <vector>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
    using namespace eznode::chain;
    using namespace fc::ecc;
    using namespace std;

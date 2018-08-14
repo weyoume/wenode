@@ -5,7 +5,7 @@
 
 #include <eznode/chain/database.hpp>
 
-namespace ezira { namespace account_statistics {
+namespace eznode { namespace account_statistics {
 
 namespace detail
 {

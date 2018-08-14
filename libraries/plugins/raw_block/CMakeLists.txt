@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/plugins/raw_block/*.hpp")
+file(GLOB HEADERS "include/eznode/plugins/raw_block/*.hpp")
 
 add_library( eznode_raw_block
              ${HEADERS}

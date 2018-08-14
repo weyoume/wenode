@@ -48,7 +48,7 @@
 #define DISTANCE_CALC_PRECISION (10000)
 
 
-namespace ezira { namespace witness {
+namespace eznode { namespace witness {
 
 namespace bpo = boost::program_options;
 

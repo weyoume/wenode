@@ -31,7 +31,7 @@
 #include <fc/thread/future.hpp>
 #include <fc/api.hpp>
 
-namespace ezira { namespace private_message {
+namespace eznode { namespace private_message {
 using namespace chain;
 using app::application;
 

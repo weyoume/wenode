@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/protocol/*.hpp")
+file(GLOB HEADERS "include/eznode/protocol/*.hpp")
 
 ## SORT .cpp by most likely to change / break compile
 add_library( eznode_protocol
@@ -30,4 +30,4 @@ INSTALL( TARGETS
    ARCHIVE DESTINATION lib
 )
 
-INSTALL( FILES ${HEADERS} DESTINATION "include/ezira/protocol" )
+INSTALL( FILES ${HEADERS} DESTINATION "include/eznode/protocol" )

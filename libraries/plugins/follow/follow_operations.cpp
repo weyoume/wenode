@@ -2,7 +2,7 @@
 
 #include <eznode/protocol/operation_util_impl.hpp>
 
-namespace ezira { namespace follow {
+namespace eznode { namespace follow {
 
 void follow_operation::validate()const
 {

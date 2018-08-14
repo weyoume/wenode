@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/account_history/*.hpp")
+file(GLOB HEADERS "include/eznode/account_history/*.hpp")
 
 add_library( eznode_account_history
              account_history_plugin.cpp

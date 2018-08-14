@@ -3,7 +3,7 @@
 
 #include <eznode/app/plugin.hpp>
 
-namespace ezira { namespace plugin { namespace auth_util {
+namespace eznode { namespace plugin { namespace auth_util {
 
 using eznode::app::application;
 

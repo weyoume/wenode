@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/delayed_node/*.hpp")
+file(GLOB HEADERS "include/eznode/delayed_node/*.hpp")
 
 add_library( eznode_delayed_node
              delayed_node_plugin.cpp

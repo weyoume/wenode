@@ -15,7 +15,7 @@
 
 #define NAMESPACE_PREFIX "eznode::protocol::"
 
-namespace ezira { namespace account_history {
+namespace eznode { namespace account_history {
 
 namespace detail
 {

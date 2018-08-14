@@ -43,7 +43,7 @@
 #include <graphene/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
     login_api::login_api(const api_context& ctx)
     :_ctx(ctx)

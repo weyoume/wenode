@@ -11,7 +11,7 @@
 #include <eznode/protocol/authority.hpp>
 
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 namespace bip = chainbase::bip;
 using namespace boost::multi_index;

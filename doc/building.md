@@ -20,7 +20,7 @@ Clears old votes from memory that are no longer required for consensus.
 
 ### BUILD_TESTNET=[OFF/ON]
 
-Builds ezira for use in a private testnet. Also required for building unit tests.
+Builds Eznode for use in a private testnet. Also required for building unit tests.
 
 ### SKIP_BY_TX_ID=[OFF/ON]
 

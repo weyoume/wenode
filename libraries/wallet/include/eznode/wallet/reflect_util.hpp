@@ -27,7 +27,7 @@
 // support the wallet, e.g. allow specifying operations by name
 // instead of ID.
 
-namespace ezira { namespace wallet {
+namespace eznode { namespace wallet {
 
 struct static_variant_map
 {

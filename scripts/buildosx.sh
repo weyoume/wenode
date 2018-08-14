@@ -2,7 +2,7 @@
 # an absolute path to the directory your github 
 # repo for the ezira node software resides in
 
-# cd $repos/ezira-node/dev ;
+# cd $repos/eznode/dev ;
 rm -r build/ ;
 mkdir build && cd build ;
 cmake \
@@ -12,6 +12,6 @@ cmake \
 	-DSKIP_BY_TX_ID=ON \
 	..
 
-# -DCMAKE_INSTALL_PREFIX=$repos/ezira-node/dev/made \
+# -DCMAKE_INSTALL_PREFIX=$repos/eznode/dev/made \
 # make -j$(sysctl -n hw.logicalcpu)
 

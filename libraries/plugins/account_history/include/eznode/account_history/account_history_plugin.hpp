@@ -28,7 +28,7 @@
 
 #include <fc/thread/future.hpp>
 
-namespace ezira { namespace account_history {
+namespace eznode { namespace account_history {
 using namespace chain;
 using app::application;
 

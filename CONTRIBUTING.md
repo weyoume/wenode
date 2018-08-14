@@ -24,7 +24,7 @@ Please do a keyword search to see if there is already an existing issue before o
 
 ## Ezira.io vs. Ezira Blockchain
 
-This issue tracker is only intended to track issues for the Ezira blockchain. If the issue is with the Ezira.io website, please open an issue in the [Ezira.io Repository](https://github.com/eziranetwork/ezirait.com/).
+This issue tracker is only intended to track issues for the Ezira blockchain. If the issue is with the Ezira.io website, please open an issue in the [Ezira.io Repository](https://github.com/eziranetwork/ezapp/).
 
 ## Pull Requests
 

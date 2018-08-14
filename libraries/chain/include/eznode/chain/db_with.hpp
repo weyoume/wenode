@@ -13,7 +13,7 @@
  * and put the finally block in a destructor.  Aagh!
  */
 
-namespace ezira { namespace chain { namespace detail {
+namespace eznode { namespace chain { namespace detail {
 /**
  * Class used to help the with_skip_flags implementation.
  * It must be defined in this header because it must be

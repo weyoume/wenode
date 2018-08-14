@@ -1,6 +1,6 @@
 #include <eznode/chain/shared_authority.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 shared_authority::operator authority()const
 {

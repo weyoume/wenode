@@ -4,11 +4,11 @@
 
 #include <fc/api.hpp>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
    struct api_context;
 } }
 
-namespace ezira { namespace blockchain_statistics {
+namespace eznode { namespace blockchain_statistics {
 
 namespace detail
 {

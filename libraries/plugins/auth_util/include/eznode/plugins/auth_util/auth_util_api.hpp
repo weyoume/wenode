@@ -8,11 +8,11 @@
 
 #include <string>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
    struct api_context;
 } }
 
-namespace ezira { namespace plugin { namespace auth_util {
+namespace eznode { namespace plugin { namespace auth_util {
 
 namespace detail {
 class auth_util_api_impl;

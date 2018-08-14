@@ -38,7 +38,7 @@
 
 #include "../common/database_fixture.hpp"
 
-using namespace ezira;
+using namespace eznode;
 using namespace eznode::chain;
 using namespace eznode::protocol;
 

@@ -20,7 +20,7 @@
 #define ACCOUNT_STATISTICS_PLUGIN_NAME "account_stats"
 #endif
 
-namespace ezira { namespace account_statistics {
+namespace eznode { namespace account_statistics {
 
 using namespace chain;
 using app::application;

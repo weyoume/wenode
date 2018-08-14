@@ -12,7 +12,7 @@ index : field
    7  : \0
 */
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
       typedef boost::multiprecision::int128_t  int128_t;
 
       uint8_t asset::decimals()const

@@ -37,7 +37,7 @@
 #include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
 
-namespace ezira { namespace private_message {
+namespace eznode { namespace private_message {
 
 namespace detail
 {

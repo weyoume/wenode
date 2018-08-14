@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 class database;
 

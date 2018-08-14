@@ -28,7 +28,7 @@ target_include_directories( {plugin_provider}_{plugin_name}
 
 #include <fc/api.hpp>
 
-namespace ezira {{ namespace app {{
+namespace eznode {{ namespace app {{
    struct api_context;
 }} }}
 
@@ -230,7 +230,7 @@ import sys
 
 def main(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument("provider", help="Name of plugin provider (ezira for plugins developed by Ezira)")
+    parser.add_argument("provider", help="Name of plugin provider (eziranetwork for plugins developed by the Ezira Network)")
     parser.add_argument("name", help="Name of plugin to create")
     args = parser.parse_args(argv[1:])
     ctx = {

@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/plugins/debug_node/*.hpp")
+file(GLOB HEADERS "include/eznode/plugins/debug_node/*.hpp")
 
 add_library( eznode_debug_node
              ${HEADERS}
@@ -15,4 +15,4 @@ install( TARGETS eznode_debug_node
          LIBRARY DESTINATION lib
          ARCHIVE DESTINATION lib
        )
-INSTALL( FILES ${HEADERS} DESTINATION "include/ezira/plugins/debug_node" )
+INSTALL( FILES ${HEADERS} DESTINATION "include/eznode/plugins/debug_node" )

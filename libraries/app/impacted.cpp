@@ -28,7 +28,7 @@
 
 #include <fc/utility.hpp>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
 using namespace fc;
 using namespace eznode::protocol;

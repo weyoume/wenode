@@ -2,7 +2,7 @@
 
 #include <eznode/chain/evaluator.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 template< typename OperationType >
 class evaluator_registry

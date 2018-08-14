@@ -26,7 +26,7 @@
 #include <eznode/wallet/wallet.hpp>
 #include <eznode/wallet/api_documentation.hpp>
 
-namespace ezira { namespace wallet {
+namespace eznode { namespace wallet {
    namespace detail {
       namespace
       {

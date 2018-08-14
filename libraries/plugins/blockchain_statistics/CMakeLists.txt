@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/blockchain_statistics/*.hpp")
+file(GLOB HEADERS "include/eznode/blockchain_statistics/*.hpp")
 
 add_library( eznode_blockchain_statistics
              blockchain_statistics_plugin.cpp

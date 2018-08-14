@@ -36,7 +36,7 @@
 #include <fc/smart_ref_impl.hpp>
 
 
-namespace ezira { namespace delayed_node {
+namespace eznode { namespace delayed_node {
 namespace bpo = boost::program_options;
 
 namespace detail {

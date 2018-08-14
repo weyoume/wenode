@@ -4,7 +4,7 @@
 
 #include <eznode/account_by_key/account_by_key_api.hpp>
 
-namespace ezira { namespace account_by_key {
+namespace eznode { namespace account_by_key {
 
 #define ACCOUNT_BY_KEY_PLUGIN_NAME "account_by_key"
 

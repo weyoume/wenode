@@ -21,7 +21,7 @@
 
 #define GET_REQUIRED_FEES_MAX_RECURSION 4
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
 class database_api_impl;
 

@@ -1,6 +1,6 @@
 #include <eznode/chain/transaction_object.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 const object* transaction_index::create(const std::function<void (object*)>& constructor, object_id_type)
 {

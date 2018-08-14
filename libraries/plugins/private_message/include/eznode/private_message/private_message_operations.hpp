@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace ezira { namespace private_message {
+namespace eznode { namespace private_message {
 
 struct private_message_operation : public eznode::protocol::base_operation
 {

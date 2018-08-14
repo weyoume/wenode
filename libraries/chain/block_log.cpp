@@ -5,7 +5,7 @@
 #define LOG_READ  (std::ios::in | std::ios::binary)
 #define LOG_WRITE (std::ios::out | std::ios::binary | std::ios::app)
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
    namespace detail {
       class block_log_impl {

@@ -26,7 +26,7 @@
 
 #include <fc/vector.hpp>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
 plugin::plugin( application* app ) : _app( app )
 {

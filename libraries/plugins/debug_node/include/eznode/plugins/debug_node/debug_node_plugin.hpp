@@ -8,7 +8,7 @@
 #include <map>
 #include <fstream>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
    struct chain_properties;
    struct pow2;
    struct signed_block;
@@ -19,7 +19,7 @@ namespace graphene { namespace db {
    class object;
 } }
 
-namespace ezira { namespace plugin { namespace debug_node {
+namespace eznode { namespace plugin { namespace debug_node {
 using app::application;
 
 namespace detail { class debug_node_plugin_impl; }

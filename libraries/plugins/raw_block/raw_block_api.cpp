@@ -5,7 +5,7 @@
 #include <eznode/plugins/raw_block/raw_block_api.hpp>
 #include <eznode/plugins/raw_block/raw_block_plugin.hpp>
 
-namespace ezira { namespace plugin { namespace raw_block {
+namespace eznode { namespace plugin { namespace raw_block {
 
 namespace detail {
 

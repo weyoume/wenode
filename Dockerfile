@@ -1,5 +1,5 @@
-# get an apt-get dependancies pre-loaded image from lopudesigns (one of the devs of ezira) docker
-FROM lopudesigns/ezira-build-ready-image
+# get an apt-get dependancies pre-loaded image from lopudesigns (one of the devs of eznode) docker
+FROM lopudesigns/eznode-build-ready-image
 
 #ARG BLOCKCHAIN=https://example.com/eznode-blockchain.tbz2
 
@@ -42,10 +42,10 @@ ENV LANG=en_US.UTF-8
 #     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
 #     pip3 install gcovr
 
-ADD . /usr/local/src/ezira
+ADD . /usr/local/src/eznode
 
 # RUN \
-#     cd /usr/local/src/ezira && \
+#     cd /usr/local/src/eznode && \
 #     git submodule update --init --recursive && \
 #     mkdir build && \
 #     cd build && \
@@ -59,14 +59,14 @@ ADD . /usr/local/src/ezira
 #     make -j$(nproc) chain_test test_fixed_string && \
 #     ./tests/chain_test && \
 #     ./programs/util/test_fixed_string && \
-#     cd /usr/local/src/ezira && \
+#     cd /usr/local/src/eznode && \
 #     doxygen && \
 #     programs/build_helpers/check_reflect.py && \
 #     programs/build_helpers/get_config_check.sh && \
-#     rm -rf /usr/local/src/ezira/build
+#     rm -rf /usr/local/src/eznode/build
 
 # RUN \
-#     cd /usr/local/src/ezira && \
+#     cd /usr/local/src/eznode && \
 #     git submodule update --init --recursive && \
 #     mkdir build && \
 #     cd build && \
@@ -83,11 +83,11 @@ ADD . /usr/local/src/ezira
 #     ./tests/chain_test && \
 #     mkdir -p /var/cobertura && \
 #     gcovr --object-directory="../" --root=../ --xml-pretty --gcov-exclude=".*tests.*" --gcov-exclude=".*fc.*" --gcov-exclude=".*app*" --gcov-exclude=".*net*" --gcov-exclude=".*plugins*" --gcov-exclude=".*schema*" --gcov-exclude=".*time*" --gcov-exclude=".*utilities*" --gcov-exclude=".*wallet*" --gcov-exclude=".*programs*" --output="/var/cobertura/coverage.xml" && \
-#     cd /usr/local/src/ezira && \
-#     rm -rf /usr/local/src/ezira/build
+#     cd /usr/local/src/eznode && \
+#     rm -rf /usr/local/src/eznode/build
 
 RUN \
-    cd /usr/local/src/ezira && \
+    cd /usr/local/src/eznode && \
     git submodule update --init --recursive && \
     # mkdir build && \
     # cd build && \
@@ -126,7 +126,7 @@ RUN \
     && \
     make -j$(nproc) && \
     make install && \
-    rm -rf /usr/local/src/ezira
+    rm -rf /usr/local/src/eznode
 
 # RUN \
 #     apt-get remove -y \

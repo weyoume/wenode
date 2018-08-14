@@ -3,7 +3,7 @@
 #include <fc/string.hpp>
 #include <fc/time.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 /*
  * This class represents the basic versioning scheme of the Ezira blockchain.

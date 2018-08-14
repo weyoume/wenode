@@ -8,7 +8,7 @@
 
 #include <algorithm>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 digest_type signed_transaction::merkle_digest()const
 {

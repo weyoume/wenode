@@ -65,7 +65,7 @@ re_reflect_derived = re.compile(r"""
 FC_REFLECT_DERIVED\s*[(]
 \s*(eznode::[a-zA-Z0-9_:]+)
 \s*,
-\s*[(]\s*((?:graphene|ezira)::[a-zA-Z0-9_:]+)\s*[)]
+\s*[(]\s*((?:graphene|eznode)::[a-zA-Z0-9_:]+)\s*[)]
 \s*,
 ((?:\s*[(]\s*[a-zA-Z0-9_]+\s*[)])*)
 """, re.VERBOSE)

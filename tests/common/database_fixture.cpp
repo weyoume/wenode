@@ -23,7 +23,7 @@
 
 uint32_t TESTING_GENESIS_TIMESTAMP = 1431700000;
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 using std::cout;
 using std::cerr;

@@ -18,7 +18,7 @@
 #include <eznode/plugins/debug_node/debug_node_api.hpp>
 #include <eznode/plugins/debug_node/debug_node_plugin.hpp>
 
-namespace ezira { namespace plugin { namespace debug_node {
+namespace eznode { namespace plugin { namespace debug_node {
 
 namespace detail {
 

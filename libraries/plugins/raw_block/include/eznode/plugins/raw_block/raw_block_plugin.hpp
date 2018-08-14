@@ -3,7 +3,7 @@
 
 #include <eznode/app/plugin.hpp>
 
-namespace ezira { namespace plugin { namespace raw_block {
+namespace eznode { namespace plugin { namespace raw_block {
 
 using eznode::app::application;
 

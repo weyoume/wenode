@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-namespace ezira { namespace example_plugin {
+namespace eznode { namespace example_plugin {
 
 class hello_api_plugin : public eznode::app::plugin
 {
@@ -68,7 +68,7 @@ FC_API( eznode::example_plugin::hello_api_api,
    (get_message)
    )
 
-namespace ezira { namespace example_plugin {
+namespace eznode { namespace example_plugin {
 
 hello_api_plugin::hello_api_plugin( eznode::app::application* app ) : eznode::app::plugin(app) {}
 hello_api_plugin::~hello_api_plugin() {}
