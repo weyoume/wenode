@@ -19,7 +19,7 @@
 #include <boost/range/iterator_range.hpp>
 #include <boost/algorithm/string.hpp>
 
-namespace ezira { namespace tags {
+namespace eznode { namespace tags {
 
 namespace detail {
 

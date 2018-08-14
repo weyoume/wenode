@@ -19,7 +19,7 @@
 
 #include <cmath>
 
-using namespace ezira;
+using namespace eznode;
 using namespace eznode::chain;
 using namespace eznode::protocol;
 
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       // A,B,D : posters
       // U,V,W : voters
 
-      // set a ridiculously high EZIRA price ($1 / satoshi) to disable dust threshold
+      // set a ridiculously high ECO price ($1 / satoshi) to disable dust threshold
       set_price_feed( price( ASSET( "0.001 TESTS" ), ASSET( "1.000 TBD" ) ) );
 
       for( const auto& voter : voters )
@@ -132,12 +132,12 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       for( const auto& author : authors )
       {
          const account_object& a = db.get_account(author.name);
-         ilog( "${n} : ${ezira} ${EZD}", ("n", author.name)("ezira", a.reward_ECO_balance)("EZD", a.reward_EZD_balance) );
+         ilog( "${n} : ${ECO} ${EZD}", ("n", author.name)("ECO", a.reward_ECO_balance)("EZD", a.reward_EZD_balance) );
       }
       for( const auto& voter : voters )
       {
          const account_object& a = db.get_account(voter.name);
-         ilog( "${n} : ${ezira} ${EZD}", ("n", voter.name)("ezira", a.reward_ECO_balance)("EZD", a.reward_EZD_balance) );
+         ilog( "${n} : ${ECO} ${EZD}", ("n", voter.name)("ECO", a.reward_ECO_balance)("EZD", a.reward_EZD_balance) );
       }
       */
 
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_dust )
 
       generate_blocks( db.get_comment( "alice", string( "test" ) ).cashout_time );
 
-      // If comments are paid out independent of order, then the last satoshi of EZIRA cannot be divided among them
+      // If comments are paid out independent of order, then the last satoshi of ECO cannot be divided among them
       const auto rf = db.get< reward_fund_object, by_name >( POST_REWARD_FUND_NAME );
       BOOST_REQUIRE( rf.reward_balance == ASSET( "0.001 TESTS" ) );
 
@@ -1576,7 +1576,7 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
    try
    {
    /*
-      BOOST_TEST_MESSAGE( "Testing EZIRA Inflation until the vesting start block" );
+      BOOST_TEST_MESSAGE( "Testing ECO Inflation until the vesting start block" );
 
       auto gpo = db.get_dynamic_global_properties();
       auto virtual_supply = gpo.virtual_supply;
@@ -1881,7 +1881,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       int64_t dave_ECO_volume = 0;
       time_point_sec dave_reward_last_update = fc::time_point_sec::min();
 
-      BOOST_TEST_MESSAGE( "Creating Limit Order for EZIRA that will stay on the books for 30 minutes exactly." );
+      BOOST_TEST_MESSAGE( "Creating Limit Order for ECO that will stay on the books for 30 minutes exactly." );
 
       limit_order_create_operation op;
       op.owner = "alice";
@@ -2753,7 +2753,7 @@ BOOST_AUTO_TEST_CASE( EZD_stability )
       BOOST_TEST_MESSAGE( "Checking printing EZD has slowed" );
       BOOST_REQUIRE( db.get_dynamic_global_properties().EZD_print_rate < PERCENT_100 );
 
-      BOOST_TEST_MESSAGE( "Pay out comment and check rewards are paid as EZIRA" );
+      BOOST_TEST_MESSAGE( "Pay out comment and check rewards are paid as ECO" );
       db_plugin->debug_generate_blocks( debug_key, 1, database::skip_witness_signature );
 
       validate_database();

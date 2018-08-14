@@ -31,7 +31,7 @@
 
 #include <fc/exception/exception.hpp>
 
-namespace ezira { namespace wallet {
+namespace eznode { namespace wallet {
 
    struct method_description
    {

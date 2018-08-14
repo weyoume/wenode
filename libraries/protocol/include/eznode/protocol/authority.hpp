@@ -2,7 +2,7 @@
 #include <eznode/protocol/types.hpp>
 #include <fc/interprocess/container.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
    struct authority
    {

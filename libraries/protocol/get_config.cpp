@@ -4,7 +4,7 @@
 #include <eznode/protocol/types.hpp>
 #include <eznode/protocol/version.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 fc::variant_object get_config()
 {

@@ -5,11 +5,11 @@
 
 #include <eznode/plugins/block_info/block_info.hpp>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
    struct api_context;
 } }
 
-namespace ezira { namespace plugin { namespace block_info {
+namespace eznode { namespace plugin { namespace block_info {
 
 namespace detail {
 class block_info_api_impl;

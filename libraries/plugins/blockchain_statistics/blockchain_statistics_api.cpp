@@ -1,6 +1,6 @@
 #include <eznode/blockchain_statistics/blockchain_statistics_api.hpp>
 
-namespace ezira { namespace blockchain_statistics {
+namespace eznode { namespace blockchain_statistics {
 
 namespace detail
 {

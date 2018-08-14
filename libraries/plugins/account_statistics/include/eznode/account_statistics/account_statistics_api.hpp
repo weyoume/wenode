@@ -4,11 +4,11 @@
 
 #include <fc/api.hpp>
 
-namespace ezira{ namespace app {
+namespace eznode{ namespace app {
    struct api_context;
 } }
 
-namespace ezira { namespace account_statistics {
+namespace eznode { namespace account_statistics {
 
 namespace detail
 {

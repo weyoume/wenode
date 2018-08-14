@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
 struct api_access_info
 {

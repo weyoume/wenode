@@ -20,7 +20,7 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace ezira;
+using namespace eznode;
 using namespace eznode::chain;
 using namespace eznode::protocol;
 using fc::string;
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       BOOST_REQUIRE( acct.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
 
-      /// because init_witness has created vesting shares and blocks have been produced, 100 EZIRA is worth less than 100 vesting shares due to rounding
+      /// because init_witness has created vesting shares and blocks have been produced, 100 ECO is worth less than 100 vesting shares due to rounding
       BOOST_REQUIRE( acct.vesting_shares.amount.value == ( op.fee * ( vest_shares / vests ) ).amount.value );
       BOOST_REQUIRE( acct.vesting_withdraw_rate.amount.value == ASSET( "0.000000 VESTS" ).amount.value );
       BOOST_REQUIRE( acct.proxied_vsf_votes_total().value == 0 );
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       BOOST_REQUIRE( acct.memo_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.proxy == "" );
       BOOST_REQUIRE( acct.created == db.head_block_time() );
-      BOOST_REQUIRE( acct.balance.amount.value == ASSET( "0.000 EZIRA " ).amount.value );
+      BOOST_REQUIRE( acct.balance.amount.value == ASSET( "0.000 ECO " ).amount.value );
       BOOST_REQUIRE( acct.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       BOOST_REQUIRE( acct.vesting_shares.amount.value == ( op.fee * ( vest_shares / vests ) ).amount.value );
       BOOST_REQUIRE( acct.vesting_withdraw_rate.amount.value == ASSET( "0.000000 VESTS" ).amount.value );
@@ -2277,7 +2277,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_apply )
       BOOST_TEST_MESSAGE( "--- Test publishing price feed" );
       feed_publish_operation op;
       op.publisher = "alice";
-      op.exchange_rate = price( ASSET( "1000.000 TESTS" ), ASSET( "1.000 TBD" ) ); // 1000 EZIRA : 1 EZD
+      op.exchange_rate = price( ASSET( "1000.000 TESTS" ), ASSET( "1.000 TBD" ) ); // 1000 ECO : 1 EZD
 
       signed_transaction tx;
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -2657,7 +2657,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_TEST_MESSAGE( "--- Test having a partial match to limit order" );
       // Alice has order for 15 EZD at a price of 2:3
-      // Fill 5 EZIRA for 7.5 EZD
+      // Fill 5 ECO for 7.5 EZD
 
       op.owner = "bob";
       op.orderid = 1;
@@ -2991,7 +2991,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_TEST_MESSAGE( "--- Test having a partial match to limit order" );
       // Alice has order for 15 EZD at a price of 2:3
-      // Fill 5 EZIRA for 7.5 EZD
+      // Fill 5 ECO for 7.5 EZD
 
       op.owner = "bob";
       op.orderid = 1;
@@ -3669,17 +3669,17 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.EZD_amount.symbol = SYMBOL_ECO;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when ezira symbol != EZIRA" );
+      BOOST_TEST_MESSAGE( "--- failure when ECO symbol != ECO" );
       op.EZD_amount.symbol = SYMBOL_EZD;
       op.ECO_amount.symbol = SYMBOL_EZD;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when fee symbol != EZD and fee symbol != EZIRA" );
+      BOOST_TEST_MESSAGE( "--- failure when fee symbol != EZD and fee symbol != ECO" );
       op.ECO_amount.symbol = SYMBOL_ECO;
       op.fee.symbol = SYMBOL_EZP;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when EZD == 0 and ezira == 0" );
+      BOOST_TEST_MESSAGE( "--- failure when EZD == 0 and ECO == 0" );
       op.fee.symbol = SYMBOL_ECO;
       op.EZD_amount.amount = 0;
       op.ECO_amount.amount = 0;
@@ -3690,7 +3690,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.ECO_amount.amount = 1000;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when ezira < 0" );
+      BOOST_TEST_MESSAGE( "--- failure when ECO < 0" );
       op.EZD_amount.amount = 1000;
       op.ECO_amount.amount = -100;
       REQUIRE_THROW( op.validate(), fc::exception );
@@ -4454,7 +4454,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
       op.receiver = "bob";
 
 
-      BOOST_TEST_MESSAGE( "--- failure when ezira < 0" );
+      BOOST_TEST_MESSAGE( "--- failure when ECO < 0" );
       op.ECO_amount.amount = -1;
       REQUIRE_THROW( op.validate(), fc::exception );
 
@@ -4465,7 +4465,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "--- failure when ezira == 0 and EZD == 0" );
+      BOOST_TEST_MESSAGE( "--- failure when ECO == 0 and EZD == 0" );
       op.EZD_amount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
 
@@ -4475,7 +4475,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "--- failure when ezira is not ezira symbol" );
+      BOOST_TEST_MESSAGE( "--- failure when ECO is not ECO symbol" );
       op.EZD_amount.symbol = SYMBOL_EZD;
       op.ECO_amount = ASSET( "1.000 TBD" );
       REQUIRE_THROW( op.validate(), fc::exception );
@@ -4729,8 +4729,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-
-      BOOST_TEST_MESSAGE( "--- failure when releasing less ezira than available" );
+      BOOST_TEST_MESSAGE( "--- failure when releasing less ECO than available" );
       op.ECO_amount = ASSET( "0.000 TESTS" );
       op.EZD_amount = ASSET( "1.000 TBD" );
 
@@ -5028,7 +5027,7 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_validate )
       op.validate();
 
 
-      BOOST_TEST_MESSAGE( "success when amount is EZIRA" );
+      BOOST_TEST_MESSAGE( "success when amount is ECO" );
       op.amount = ASSET( "1.000 TESTS" );
       op.validate();
    }
@@ -5110,7 +5109,7 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
       validate_database();
 
 
-      BOOST_TEST_MESSAGE( "--- success transferring EZIRA to self" );
+      BOOST_TEST_MESSAGE( "--- success transferring ECO to self" );
       op.to = "alice";
 
       tx.clear();
@@ -5136,7 +5135,7 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
       validate_database();
 
 
-      BOOST_TEST_MESSAGE( "--- success transferring EZIRA to other" );
+      BOOST_TEST_MESSAGE( "--- success transferring ECO to other" );
       op.to = "bob";
       op.amount = ASSET( "1.000 TESTS" );
 
@@ -5205,7 +5204,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_validate )
       op.validate();
 
 
-      BOOST_TEST_MESSAGE( "success when amount is EZIRA" );
+      BOOST_TEST_MESSAGE( "success when amount is ECO" );
       op.amount = ASSET( "1.000 TESTS" );
       op.validate();
    }
@@ -5299,7 +5298,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "--- success withdrawing EZIRA to self" );
+      BOOST_TEST_MESSAGE( "--- success withdrawing ECO to self" );
       op.to = "alice";
 
       tx.clear();
@@ -5349,7 +5348,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "--- success withdrawing EZIRA to other" );
+      BOOST_TEST_MESSAGE( "--- success withdrawing ECO to other" );
       op.to = "bob";
       op.amount = ASSET( "1.000 TESTS" );
       op.request_id = 3;
@@ -5818,7 +5817,7 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_validate )
       op.reward_EZP.amount = 0;
 
 
-      BOOST_TEST_MESSAGE( "Testing wrong EZIRA symbol" );
+      BOOST_TEST_MESSAGE( "Testing wrong ECO symbol" );
       op.reward_ECO = ASSET( "1.000 WRONG" );
       REQUIRE_THROW( op.validate(), fc::assert_exception );
 
@@ -5935,7 +5934,7 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
       BOOST_TEST_MESSAGE( "Testing: account_create_with_delegation_apply" );
       signed_transaction tx;
       ACTORS( (alice) );
-      // 150 * fee = ( 5 * EZIRA ) + SP
+      // 150 * fee = ( 5 * ECO ) + SP
       auto gpo = db.get_dynamic_global_properties();
       generate_blocks(1);
       fund( "alice", ASSET("1510.000 TESTS") );
@@ -6000,7 +5999,7 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
 
       generate_block();
 
-      BOOST_TEST_MESSAGE( "--- Test success using only EZIRA to reach target delegation." );
+      BOOST_TEST_MESSAGE( "--- Test success using only ECO to reach target delegation." );
 
       tx.clear();
       op.fee=asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_ECO );
@@ -6091,7 +6090,7 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_apply )
       auto alice_vests = db.get_account( "alice" ).vesting_shares;
 
 
-      BOOST_TEST_MESSAGE( "--- Attempting to claim more EZIRA than exists in the reward balance." );
+      BOOST_TEST_MESSAGE( "--- Attempting to claim more ECO than exists in the reward balance." );
 
       claim_reward_balance_operation op;
       signed_transaction tx;

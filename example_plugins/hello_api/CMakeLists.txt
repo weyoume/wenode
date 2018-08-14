@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/plugins/hello_api/*.hpp")
+file(GLOB HEADERS "include/eznode/plugins/hello_api/*.hpp")
 
 add_library( hello_api
              ${HEADERS}

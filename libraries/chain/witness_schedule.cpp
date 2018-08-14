@@ -5,7 +5,7 @@
 
 #include <eznode/protocol/config.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 void reset_virtual_schedule_time( database& db )
 {

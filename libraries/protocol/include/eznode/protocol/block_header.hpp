@@ -1,7 +1,7 @@
 #pragma once
 #include <eznode/protocol/base.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
    struct block_header
    {

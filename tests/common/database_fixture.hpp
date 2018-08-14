@@ -130,7 +130,7 @@ extern uint32_t ( TESTING_GENESIS_TIMESTAMP );
 #define ASSET( s ) \
    asset::from_string( s )
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 using namespace eznode::protocol;
 
@@ -208,7 +208,7 @@ struct database_fixture {
 
    void fund( const string& account_name, const share_type& amount = 500000 );
    void fund( const string& account_name, const asset& amount );
-   void transfer( const string& from, const string& to, const share_type& ezira );
+   void transfer( const string& from, const string& to, const share_type& ECO );
    void convert( const string& account_name, const asset& amount );
    void vest( const string& from, const share_type& amount );
    void vest( const string& account, const asset& amount );

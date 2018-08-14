@@ -6,7 +6,7 @@
 
 #include <eznode/follow/follow_api.hpp>
 
-namespace ezira { namespace follow {
+namespace eznode { namespace follow {
 using eznode::app::application;
 
 #define FOLLOW_PLUGIN_NAME "follow"

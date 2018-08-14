@@ -5,7 +5,7 @@
 
 #include <eznode/app/plugin.hpp>
 
-namespace ezira { namespace witness {
+namespace eznode { namespace witness {
 
 using namespace std;
 using eznode::protocol::base_operation;

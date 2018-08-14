@@ -4,7 +4,7 @@
 #include <eznode/chain/account_object.hpp>
 #include <eznode/chain/comment_object.hpp>
 
-namespace ezira { namespace follow {
+namespace eznode { namespace follow {
 
 void follow_evaluator::do_apply( const follow_operation& o )
 {

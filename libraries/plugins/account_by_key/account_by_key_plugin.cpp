@@ -9,7 +9,7 @@
 #include <graphene/schema/schema.hpp>
 #include <graphene/schema/schema_impl.hpp>
 
-namespace ezira { namespace account_by_key {
+namespace eznode { namespace account_by_key {
 
 namespace detail
 {

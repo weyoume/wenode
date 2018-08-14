@@ -9,7 +9,7 @@
 #include <fc/thread/future.hpp>
 #include <fc/api.hpp>
 
-namespace ezira { namespace tags {
+namespace eznode { namespace tags {
 using namespace eznode::chain;
 using namespace boost::multi_index;
 

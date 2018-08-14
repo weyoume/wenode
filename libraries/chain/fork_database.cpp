@@ -2,7 +2,7 @@
 
 #include <eznode/chain/database_exceptions.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 fork_database::fork_database()
 {

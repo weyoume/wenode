@@ -6,7 +6,7 @@
 #include <fc/exception/exception.hpp>
 #include <fc/io/raw.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
     public_key_type::public_key_type():key_data(){};
 

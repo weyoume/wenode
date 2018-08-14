@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/plugins/auth_util/*.hpp")
+file(GLOB HEADERS "include/eznode/plugins/auth_util/*.hpp")
 
 add_library( eznode_auth_util
              ${HEADERS}

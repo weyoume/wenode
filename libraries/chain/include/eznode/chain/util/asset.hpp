@@ -2,7 +2,7 @@
 
 #include <eznode/protocol/asset.hpp>
 
-namespace ezira { namespace chain { namespace util {
+namespace eznode { namespace chain { namespace util {
 
 using eznode::protocol::asset;
 using eznode::protocol::price;

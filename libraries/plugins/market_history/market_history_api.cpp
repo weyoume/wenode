@@ -2,7 +2,7 @@
 
 #include <eznode/chain/eznode_objects.hpp>
 
-namespace ezira { namespace market_history {
+namespace eznode { namespace market_history {
 
 namespace detail
 {

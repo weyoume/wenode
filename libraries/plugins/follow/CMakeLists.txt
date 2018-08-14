@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/follow/*.hpp")
+file(GLOB HEADERS "include/eznode/follow/*.hpp")
 
 add_library( eznode_follow
              follow_plugin.cpp

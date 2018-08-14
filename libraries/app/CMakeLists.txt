@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/app/*.hpp")
+file(GLOB HEADERS "include/eznode/app/*.hpp")
 
 add_library( eznode_app
              database_api.cpp
@@ -24,4 +24,4 @@ INSTALL( TARGETS
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 )
-INSTALL( FILES ${HEADERS} DESTINATION "include/ezira/app" )
+INSTALL( FILES ${HEADERS} DESTINATION "include/eznode/app" )

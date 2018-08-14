@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ezira { namespace sidechain {
+namespace eznode { namespace sidechain {
   using std::string;
 
 #define side_ids 10

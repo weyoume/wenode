@@ -12,7 +12,7 @@
 #include <eznode/protocol/types.hpp>
 #include <eznode/protocol/version.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 class hardfork_property_object : public object< hardfork_property_object_type, hardfork_property_object >
 {

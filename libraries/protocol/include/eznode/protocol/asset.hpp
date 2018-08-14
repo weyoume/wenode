@@ -2,7 +2,7 @@
 #include <eznode/protocol/types.hpp>
 #include <eznode/protocol/config.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
    typedef uint64_t asset_symbol_type;
 

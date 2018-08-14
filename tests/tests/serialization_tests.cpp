@@ -35,7 +35,7 @@
 
 #include <cmath>
 
-using namespace ezira;
+using namespace eznode;
 using namespace eznode::chain;
 using namespace eznode::protocol;
 

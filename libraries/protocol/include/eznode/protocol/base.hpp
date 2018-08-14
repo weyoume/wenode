@@ -6,7 +6,7 @@
 
 #include <fc/time.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
    struct base_operation
    {

@@ -5,7 +5,7 @@
 
 #include <numeric>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
    struct transaction
    {

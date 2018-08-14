@@ -2,7 +2,7 @@
 
 #include <eznode/protocol/operation_util_impl.hpp>
 
-namespace ezira { namespace witness {
+namespace eznode { namespace witness {
 
 void enable_content_editing_operation::validate()const
 {

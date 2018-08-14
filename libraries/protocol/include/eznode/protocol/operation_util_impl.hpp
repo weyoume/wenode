@@ -39,7 +39,7 @@ namespace fc
    };
 }
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 struct operation_validate_visitor
 {
@@ -118,7 +118,7 @@ void from_variant( const fc::variant& var,  OperationType& vo )            \
    }                                                                       \
 }                                                                          \
                                                                            \
-namespace ezira { namespace protocol {                                      \
+namespace eznode { namespace protocol {                                      \
                                                                            \
 void operation_validate( const OperationType& op )                         \
 {                                                                          \

@@ -19,7 +19,7 @@ is a higher level language that many amateur and skilled programmers use. There 
 been community development of Python libraries to make interfacing with a live node easier.
 This plugin closes the gap by allowing a node to be launched programmatically in Python
 in addition to interfacing with the node. This module utilizes community member Xeroc's
-[Python Ezira library](https://github.com/xeroc/python-eziralib).
+[Python Ezira library](https://github.com/xeroc/python-eznetworklib).
 
 How Do I Use This?
 ------------------
@@ -38,7 +38,7 @@ generates a historgram of block producers to verify the witness scheduling algor
 properly. The purpose of the script is it verify any given hardfork does not have a bug that
 could crash the chain entirely.
 
-[debugnode.py](https://github.com/eziranetwork/ezira/python_scripts/eziradebugnode/debugnode.py#L212)
+[debugnode.py](https://github.com/eziranetwork/ezira/python_scripts/eznodedebugnode/eznodedebugnode.py#L212)
 This script is much simpler. It has the same parsing logic, but has much less test logic.
 All it does is replay the blockchain, periodically printing a status update so the user
 knows it is still working. The script then hangs so the user can interact with the chain

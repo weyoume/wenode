@@ -10,7 +10,7 @@
 using namespace eznode::chain;
 using namespace eznode::chain::test;
 /*
-namespace ezira { namespace plugin_tests {
+namespace eznode { namespace plugin_tests {
 
 using namespace eznode::app;
 using namespace eznode::chain;

@@ -26,7 +26,7 @@
 #include <deque>
 #include <cstdint>
 
-namespace ezira {
+namespace eznode {
 
    using                                    fc::uint128_t;
    typedef boost::multiprecision::uint256_t u256;

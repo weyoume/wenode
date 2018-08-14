@@ -2,7 +2,7 @@
 #include <fc/filesystem.hpp>
 #include <eznode/protocol/block.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
    using namespace eznode::protocol;
 

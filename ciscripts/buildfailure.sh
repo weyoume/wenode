@@ -3,7 +3,7 @@ curl --silent -XPOST -H "Authorization: token $GITHUB_SECRET" https://api.github
   \"state\": \"failure\",
   \"target_url\": \"${BUILD_URL}\",
   \"description\": \"JenkinsCI reports the build has failed!\",
-  \"context\": \"jenkins-ci-ezira\"
+  \"context\": \"jenkins-ci-eznetwork\"
 }"
 rm -rf $WORKSPACE/*
 # make docker cleanup after itself and delete all exited containers

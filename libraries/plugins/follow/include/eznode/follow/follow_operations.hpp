@@ -4,7 +4,7 @@
 
 #include <eznode/follow/follow_plugin.hpp>
 
-namespace ezira { namespace follow {
+namespace eznode { namespace follow {
 
 using namespace std;
 using eznode::protocol::base_operation;

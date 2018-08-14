@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/witness/*.hpp")
+file(GLOB HEADERS "include/eznode/witness/*.hpp")
 
 add_library( eznode_witness
              witness_plugin.cpp

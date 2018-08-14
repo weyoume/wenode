@@ -21,7 +21,7 @@
 
 #include <memory>
 
-namespace ezira { namespace follow {
+namespace eznode { namespace follow {
 
 namespace detail
 {

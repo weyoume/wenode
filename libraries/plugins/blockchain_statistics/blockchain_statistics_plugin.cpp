@@ -9,7 +9,7 @@
 #include <eznode/chain/index.hpp>
 #include <eznode/chain/operation_notification.hpp>
 
-namespace ezira { namespace blockchain_statistics {
+namespace eznode { namespace blockchain_statistics {
 
 namespace detail
 {

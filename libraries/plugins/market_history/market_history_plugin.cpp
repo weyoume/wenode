@@ -4,7 +4,7 @@
 #include <eznode/chain/index.hpp>
 #include <eznode/chain/operation_notification.hpp>
 
-namespace ezira { namespace market_history {
+namespace eznode { namespace market_history {
 
 namespace detail {
 

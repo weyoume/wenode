@@ -33,7 +33,7 @@
 #endif
 #include <graphene/utilities/key_conversion.hpp>
 
-using namespace ezira;
+using namespace eznode;
 using eznode::protocol::version;
 namespace bpo = boost::program_options;
 

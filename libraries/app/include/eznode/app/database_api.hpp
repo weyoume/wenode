@@ -25,7 +25,7 @@
 #include <memory>
 #include <vector>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
 using namespace eznode::chain;
 using namespace eznode::protocol;
@@ -437,7 +437,7 @@ class database_api
 
 } }
 
-FC_REFLECT( eznode::app::order, (order_price)(real_price)(ezira)(EZD)(created) );
+FC_REFLECT( eznode::app::order, (order_price)(real_price)(ECO)(EZD)(created) );
 FC_REFLECT( eznode::app::order_book, (asks)(bids) );
 FC_REFLECT( eznode::app::scheduled_hardfork, (hf_version)(live_time) );
 FC_REFLECT( eznode::app::liquidity_balance, (account)(weight) );

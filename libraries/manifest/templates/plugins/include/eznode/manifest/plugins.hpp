@@ -5,14 +5,14 @@
 #include <string>
 #include <vector>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
 class abstract_plugin;
 class application;
 
 } }
 
-namespace ezira { namespace plugin {
+namespace eznode { namespace plugin {
 
 void initialize_plugin_factories();
 std::shared_ptr< eznode::app::abstract_plugin > create_plugin( const std::string& name, eznode::app::application* app );

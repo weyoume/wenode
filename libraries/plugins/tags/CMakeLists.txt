@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/tags/*.hpp")
+file(GLOB HEADERS "include/eznode/tags/*.hpp")
 
 add_library( eznode_tags
              tags_plugin.cpp )

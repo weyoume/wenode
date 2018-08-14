@@ -2,7 +2,7 @@
 #include <eznode/protocol/authority.hpp>
 #include <boost/interprocess/managed_mapped_file.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
    using eznode::protocol::authority;
    using eznode::protocol::public_key_type;
    using eznode::protocol::account_name_type;

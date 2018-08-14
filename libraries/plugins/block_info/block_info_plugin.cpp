@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace ezira { namespace plugin { namespace block_info {
+namespace eznode { namespace plugin { namespace block_info {
 
 block_info_plugin::block_info_plugin( application* app ) : plugin( app ) {}
 block_info_plugin::~block_info_plugin() {}

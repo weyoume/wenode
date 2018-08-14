@@ -37,7 +37,7 @@
 
 #include <memory>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
 using fc::static_variant;
 using fc::unique_ptr;
@@ -143,7 +143,7 @@ if( options.count(name) ) { \
 } } //eznode::app
 
 #define DEFINE_PLUGIN( plugin_name, plugin_class ) \
-   namespace ezira { namespace plugin { \
+   namespace eznode { namespace plugin { \
    std::shared_ptr< eznode::app::abstract_plugin > create_ ## plugin_name ## _plugin( app::application* app )  \
    { return std::make_shared< plugin_class >( app ); } \
    } }

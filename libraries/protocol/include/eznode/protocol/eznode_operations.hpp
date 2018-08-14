@@ -6,7 +6,7 @@
 #include <fc/utf8.hpp>
 #include <fc/crypto/equihash.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
    inline void validate_account_name( const string& name )
    {
@@ -304,7 +304,7 @@ namespace ezira { namespace protocol {
 
       uint32_t          escrow_id = 30;
       asset             EZD_amount = asset( 0, SYMBOL_EZD ); ///< the amount of EZD to release
-      asset             ECO_amount = asset( 0, SYMBOL_ECO ); ///< the amount of ezira to release
+      asset             ECO_amount = asset( 0, SYMBOL_ECO ); ///< the amount of ECO to release
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(who); }
@@ -354,7 +354,7 @@ namespace ezira { namespace protocol {
     * request for the funds to be transferred directly to another account's
     * balance rather than the withdrawing account. In addition, those funds
     * can be immediately vested again, circumventing the conversion from
-    * vests to ezira and back, guaranteeing they maintain their value.
+    * vests to ECO and back, guaranteeing they maintain their value.
     */
    struct set_withdraw_vesting_route_operation : public base_operation
    {
@@ -507,7 +507,7 @@ namespace ezira { namespace protocol {
 
    /**
     *  Feeds can only be published by the top N witnesses which are included in every round and are
-    *  used to define the exchange rate between ezira and the dollar.
+    *  used to define the exchange rate between ECO and the dollar.
     */
    struct feed_publish_operation : public base_operation
    {
@@ -688,7 +688,7 @@ namespace ezira { namespace protocol {
     *
     * Users not in the ACTIVE witness set should not have to worry about their
     * key getting compromised and being used to produced multiple blocks so
-    * the attacker can report it and steel their vesting ezira.
+    * the attacker can report it and steel their vesting ECO.
     *
     * The result of the operation is to transfer the full VESTING ECO balance
     * of the block producer to the reporter.

@@ -7,11 +7,11 @@
 #include <string>
 #include <vector>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 struct signed_block;
 } }
 
-namespace ezira { namespace plugin { namespace block_info {
+namespace eznode { namespace plugin { namespace block_info {
 
 using eznode::app::application;
 

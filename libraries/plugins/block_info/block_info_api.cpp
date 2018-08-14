@@ -5,7 +5,7 @@
 #include <eznode/plugins/block_info/block_info_api.hpp>
 #include <eznode/plugins/block_info/block_info_plugin.hpp>
 
-namespace ezira { namespace plugin { namespace block_info {
+namespace eznode { namespace plugin { namespace block_info {
 
 namespace detail {
 

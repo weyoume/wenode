@@ -22,7 +22,7 @@ void from_variant( const fc::variant&, OperationType& );                        
                                                                                  \
 } /* fc */                                                                       \
                                                                                  \
-namespace ezira { namespace protocol {                                         \
+namespace eznode { namespace protocol {                                         \
                                                                                  \
 void operation_validate( const OperationType& o );                               \
 void operation_get_required_authorities( const OperationType& op,                \

@@ -3,7 +3,7 @@
 #include <fc/bitutil.hpp>
 #include <algorithm>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
    digest_type block_header::digest()const
    {
       return digest_type::hash(*this);

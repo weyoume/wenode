@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace ezira { namespace plugin { namespace raw_block {
+namespace eznode { namespace plugin { namespace raw_block {
 
 raw_block_plugin::raw_block_plugin( application* app ) : plugin( app ) {}
 raw_block_plugin::~raw_block_plugin() {}

@@ -2,7 +2,7 @@
 #include <eznode/protocol/block_header.hpp>
 #include <eznode/protocol/transaction.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
    struct signed_block : public signed_block_header
    {

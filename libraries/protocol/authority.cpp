@@ -1,6 +1,6 @@
 #include <eznode/protocol/authority.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
 // authority methods
 void authority::add_authority( const public_key_type& k, weight_type w )

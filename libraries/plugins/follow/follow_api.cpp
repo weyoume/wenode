@@ -2,7 +2,7 @@
 
 #include <eznode/follow/follow_api.hpp>
 
-namespace ezira { namespace follow {
+namespace eznode { namespace follow {
 
 namespace detail
 {

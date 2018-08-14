@@ -3,5 +3,5 @@ curl --silent -XPOST -H "Authorization: token $GITHUB_SECRET" https://api.github
   \"state\": \"pending\",
   \"target_url\": \"${BUILD_URL}\",
   \"description\": \"The build is now pending in jenkinsci!\",
-  \"context\": \"jenkins-ci-ezira\"
+  \"context\": \"jenkins-ci-eznetwork\"
 }"

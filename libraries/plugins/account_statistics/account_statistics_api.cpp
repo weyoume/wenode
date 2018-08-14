@@ -1,6 +1,6 @@
 #include <eznode/account_statistics/account_statistics_api.hpp>
 
-namespace ezira { namespace account_statistics {
+namespace eznode { namespace account_statistics {
 
 namespace detail
 {

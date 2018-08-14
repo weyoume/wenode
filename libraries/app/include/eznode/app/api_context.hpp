@@ -12,7 +12,7 @@ class websocket_api_connection;
 
 } }
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
 
 class application;
 

@@ -7,11 +7,11 @@ namespace graphene { namespace schema {
    struct abstract_schema;
 } }
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
    struct custom_json_operation;
 } }
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 class custom_operation_interpreter
 {

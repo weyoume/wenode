@@ -16,7 +16,7 @@ my $fileHeader = <<'END';
 #include <eznode/wallet/api_documentation.hpp>
 #include <eznode/wallet/wallet.hpp>
 
-namespace ezira { namespace wallet {
+namespace eznode { namespace wallet {
    namespace detail
    {
       struct api_method_name_collector_visitor

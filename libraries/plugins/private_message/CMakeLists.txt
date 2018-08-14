@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/private_message/*.hpp")
+file(GLOB HEADERS "include/eznode/private_message/*.hpp")
 
 add_library( eznode_private_message
              private_message_plugin.cpp

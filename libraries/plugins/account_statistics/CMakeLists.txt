@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/ezira/account_statistics/*.hpp")
+file(GLOB HEADERS "include/eznode/account_statistics/*.hpp")
 
 add_library( eznode_account_statistics
              account_statistics_plugin.cpp

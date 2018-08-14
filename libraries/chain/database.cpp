@@ -34,7 +34,7 @@
 #include <fstream>
 #include <functional>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 //namespace db2 = graphene::db2;
 
@@ -64,7 +64,7 @@ FC_REFLECT( eznode::chain::object_schema_repr, (space_type)(type) )
 FC_REFLECT( eznode::chain::operation_schema_repr, (id)(type) )
 FC_REFLECT( eznode::chain::db_schema, (types)(object_types)(operation_type)(custom_operation_types) )
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 using boost::container::flat_set;
 

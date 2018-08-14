@@ -5,7 +5,7 @@
 
 #include <fc/utf8.hpp>
 
-namespace ezira { namespace protocol {
+namespace eznode { namespace protocol {
 
    struct author_reward_operation : public virtual_operation {
       author_reward_operation(){}

@@ -60,7 +60,7 @@
       wlog( "Caught unexpected exception in plugin" );                        \
    }
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
    FC_DECLARE_EXCEPTION( chain_exception, 4000000, "blockchain exception" )
    FC_DECLARE_DERIVED_EXCEPTION( database_query_exception,          eznode::chain::chain_exception, 4010000, "database query exception" )
@@ -104,7 +104,7 @@ namespace ezira { namespace chain {
 #include <fc/exception/exception.hpp>
 #include <eznode/protocol/exceptions.hpp>
 
-namespace ezira { namespace chain {
+namespace eznode { namespace chain {
 
 
 

@@ -1,7 +1,7 @@
 #include <eznode/account_by_key/account_by_key_api.hpp>
 #include <eznode/account_by_key/account_by_key_objects.hpp>
 
-namespace ezira { namespace account_by_key {
+namespace eznode { namespace account_by_key {
 
 namespace detail
 {

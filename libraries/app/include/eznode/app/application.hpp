@@ -35,7 +35,7 @@
 
 #include <boost/program_options.hpp>
 
-namespace ezira { namespace app {
+namespace eznode { namespace app {
    namespace detail { class application_impl; }
    using std::string;
 

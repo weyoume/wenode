@@ -2,7 +2,7 @@
 #include <eznode/chain/util/reward.hpp>
 #include <eznode/chain/util/uint256.hpp>
 
-namespace ezira { namespace chain { namespace util {
+namespace eznode { namespace chain { namespace util {
 
 uint8_t find_msb( const uint128_t& u )
 {
