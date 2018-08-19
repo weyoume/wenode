@@ -23,12 +23,12 @@ namespace eznode { namespace protocol {
    {
       asset             fee;
       account_name_type creator;
-      account_name_type new_account_name;
+      account_name_type newAccountName;
       authority         owner;
       authority         active;
       authority         posting;
-      public_key_type   memo_key;
-      string            json_metadata;
+      public_key_type   memoKey;
+      string            json;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(creator); }
@@ -40,12 +40,12 @@ namespace eznode { namespace protocol {
       asset             fee;
       asset             delegation;
       account_name_type creator;
-      account_name_type new_account_name;
+      account_name_type newAccountName;
       authority         owner;
       authority         active;
       authority         posting;
-      public_key_type   memo_key;
-      string            json_metadata;
+      public_key_type   memoKey;
+      string            json;
 
       extensions_type   extensions;
 
@@ -60,8 +60,8 @@ namespace eznode { namespace protocol {
       optional< authority >         owner;
       optional< authority >         active;
       optional< authority >         posting;
-      public_key_type               memo_key;
-      string                        json_metadata;
+      public_key_type               memoKey;
+      string                        json;
 
       void validate()const;
 
@@ -83,7 +83,7 @@ namespace eznode { namespace protocol {
 
       string            title;
       string            body;
-      string            json_metadata;
+      string            json;
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert(author); }
@@ -238,7 +238,7 @@ namespace eznode { namespace protocol {
       time_point_sec    ratification_deadline;
       time_point_sec    escrow_expiration;
 
-      string            json_meta;
+      string            json;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(from); }
@@ -339,7 +339,7 @@ namespace eznode { namespace protocol {
     *
     * This operation is not valid if the user has no eScore.
     */
-   struct withdraw_ESCOR_operation : public base_operation
+   struct withdrawESCOR_operation : public base_operation
    {
       account_name_type account;
       asset             eScore;
@@ -732,16 +732,16 @@ namespace eznode { namespace protocol {
     */
    struct request_account_recovery_operation : public base_operation
    {
-      account_name_type recovery_account;       ///< The recovery account is listed as the recovery account on the account to recover.
+      account_name_type recoveryAccount;       ///< The recovery account is listed as the recovery account on the account to recover.
 
-      account_name_type account_to_recover;     ///< The account to recover. This is likely due to a compromised owner authority.
+      account_name_type accountToRecover;     ///< The account to recover. This is likely due to a compromised owner authority.
 
       authority         new_owner_authority;    ///< The new owner authority the account to recover wishes to have. This is secret
                                                 ///< known by the account to recover and will be confirmed in a recover_account_operation
 
       extensions_type   extensions;             ///< Extensions. Not currently used.
 
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( recovery_account ); }
+      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( recoveryAccount ); }
 
       void validate() const;
    };
@@ -786,7 +786,7 @@ namespace eznode { namespace protocol {
     */
    struct recover_account_operation : public base_operation
    {
-      account_name_type account_to_recover;        ///< The account to be recovered
+      account_name_type accountToRecover;        ///< The account to be recovered
 
       authority         new_owner_authority;       ///< The new owner authority as specified in the request account recovery operation.
 
@@ -858,13 +858,13 @@ namespace eznode { namespace protocol {
     * witness vote weights. The top voted witness is explicitly the most trusted
     * witness according to stake.
     */
-   struct change_recovery_account_operation : public base_operation
+   struct change_recoveryAccount_operation : public base_operation
    {
-      account_name_type account_to_recover;     ///< The account that would be recovered in case of compromise
-      account_name_type new_recovery_account;   ///< The account that creates the recover request
+      account_name_type accountToRecover;     ///< The account that would be recovered in case of compromise
+      account_name_type new_recoveryAccount;   ///< The account that creates the recover request
       extensions_type   extensions;             ///< Extensions. Not currently used.
 
-      void get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( account_to_recover ); }
+      void get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( accountToRecover ); }
       void validate() const;
    };
 
@@ -966,23 +966,23 @@ FC_REFLECT( eznode::protocol::pow2_operation, (work)(new_owner_key)(props) )
 FC_REFLECT( eznode::protocol::accountCreate_operation,
             (fee)
             (creator)
-            (new_account_name)
+            (newAccountName)
             (owner)
             (active)
             (posting)
-            (memo_key)
-            (json_metadata) )
+            (memoKey)
+            (json) )
 
 FC_REFLECT( eznode::protocol::accountCreateWithDelegation_operation,
             (fee)
             (delegation)
             (creator)
-            (new_account_name)
+            (newAccountName)
             (owner)
             (active)
             (posting)
-            (memo_key)
-            (json_metadata)
+            (memoKey)
+            (json)
             (extensions) )
 
 FC_REFLECT( eznode::protocol::accountUpdate_operation,
@@ -990,17 +990,17 @@ FC_REFLECT( eznode::protocol::accountUpdate_operation,
             (owner)
             (active)
             (posting)
-            (memo_key)
-            (json_metadata) )
+            (memoKey)
+            (json) )
 
 FC_REFLECT( eznode::protocol::transfer_operation, (from)(to)(amount)(memo) )
 FC_REFLECT( eznode::protocol::transferECOtoESCORfund_operation, (from)(to)(amount) )
-FC_REFLECT( eznode::protocol::withdraw_ESCOR_operation, (account)(eScore) )
+FC_REFLECT( eznode::protocol::withdrawESCOR_operation, (account)(eScore) )
 FC_REFLECT( eznode::protocol::setWithdrawESCORasECOroute_operation, (from_account)(to_account)(percent)(autoESCOR) )
 FC_REFLECT( eznode::protocol::witness_update_operation, (owner)(url)(block_signing_key)(props)(fee) )
 FC_REFLECT( eznode::protocol::accountWitnessVote_operation, (account)(witness)(approve) )
 FC_REFLECT( eznode::protocol::account_witness_proxy_operation, (account)(proxy) )
-FC_REFLECT( eznode::protocol::comment_operation, (parent_author)(parent_permlink)(author)(permlink)(title)(body)(json_metadata) )
+FC_REFLECT( eznode::protocol::comment_operation, (parent_author)(parent_permlink)(author)(permlink)(title)(body)(json) )
 FC_REFLECT( eznode::protocol::vote_operation, (voter)(author)(permlink)(weight) )
 FC_REFLECT( eznode::protocol::custom_operation, (required_auths)(id)(data) )
 FC_REFLECT( eznode::protocol::customJson_operation, (required_auths)(required_posting_auths)(id)(json) )
@@ -1016,15 +1016,15 @@ FC_REFLECT( eznode::protocol::comment_payout_beneficiaries, (beneficiaries) )
 FC_REFLECT_TYPENAME( eznode::protocol::comment_options_extension )
 FC_REFLECT( eznode::protocol::comment_options_operation, (author)(permlink)(max_accepted_payout)(percent_EUSD)(allow_votes)(allow_curationRewards)(extensions) )
 
-FC_REFLECT( eznode::protocol::escrow_transfer_operation, (from)(to)(EUSD_amount)(ECOamount)(escrow_id)(agent)(fee)(json_meta)(ratification_deadline)(escrow_expiration) );
+FC_REFLECT( eznode::protocol::escrow_transfer_operation, (from)(to)(EUSD_amount)(ECOamount)(escrow_id)(agent)(fee)(json)(ratification_deadline)(escrow_expiration) );
 FC_REFLECT( eznode::protocol::escrow_approve_operation, (from)(to)(agent)(who)(escrow_id)(approve) );
 FC_REFLECT( eznode::protocol::escrow_dispute_operation, (from)(to)(agent)(who)(escrow_id) );
 FC_REFLECT( eznode::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(EUSD_amount)(ECOamount) );
 FC_REFLECT( eznode::protocol::challenge_authority_operation, (challenger)(challenged)(require_owner) );
 FC_REFLECT( eznode::protocol::prove_authority_operation, (challenged)(require_owner) );
-FC_REFLECT( eznode::protocol::request_account_recovery_operation, (recovery_account)(account_to_recover)(new_owner_authority)(extensions) );
-FC_REFLECT( eznode::protocol::recover_account_operation, (account_to_recover)(new_owner_authority)(recent_owner_authority)(extensions) );
-FC_REFLECT( eznode::protocol::change_recovery_account_operation, (account_to_recover)(new_recovery_account)(extensions) );
+FC_REFLECT( eznode::protocol::request_account_recovery_operation, (recoveryAccount)(accountToRecover)(new_owner_authority)(extensions) );
+FC_REFLECT( eznode::protocol::recover_account_operation, (accountToRecover)(new_owner_authority)(recent_owner_authority)(extensions) );
+FC_REFLECT( eznode::protocol::change_recoveryAccount_operation, (accountToRecover)(new_recoveryAccount)(extensions) );
 FC_REFLECT( eznode::protocol::decline_voting_rights_operation, (account)(decline) );
 FC_REFLECT( eznode::protocol::claimRewardBalance_operation, (account)(ECOreward)(EUSDreward)(ESCORreward) )
 FC_REFLECT( eznode::protocol::delegateESCOR_operation, (delegator)(delegatee)(eScore) );

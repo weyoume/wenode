@@ -15,7 +15,7 @@ namespace eznode { namespace protocol {
 
             transfer_operation,
             transferECOtoESCORfund_operation,
-            withdraw_ESCOR_operation,
+            withdrawESCOR_operation,
 
             limit_order_create_operation,
             limit_order_cancel_operation,
@@ -45,7 +45,7 @@ namespace eznode { namespace protocol {
             prove_authority_operation,
             request_account_recovery_operation,
             recover_account_operation,
-            change_recovery_account_operation,
+            change_recoveryAccount_operation,
             escrow_transfer_operation,
             escrow_dispute_operation,
             escrow_release_operation,

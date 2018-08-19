@@ -351,14 +351,14 @@ void blockchain_statistics_plugin_impl::pre_operation( const operation_notificat
                b.root_comments_deleted++;
          });
       }
-      else if( o.op.which() == operation::tag< withdraw_ESCOR_operation >::value )
+      else if( o.op.which() == operation::tag< withdrawESCOR_operation >::value )
       {
-         withdraw_ESCOR_operation op = o.op.get< withdraw_ESCOR_operation >();
+         withdrawESCOR_operation op = o.op.get< withdrawESCOR_operation >();
          auto& account = db.get_account( op.account );
          const auto& bucket = db.get(bucket_id);
 
-         auto new_ECO_fund_for_ESCOR_withdrawal_rate = op.eScore.amount / ECO_fund_for_ESCOR_WITHDRAW_INTERVALS;
-         if( op.eScore.amount > 0 && new_ECO_fund_for_ESCOR_withdrawal_rate == 0 )
+         auto new_ECO_fund_for_ESCOR_withdrawal_rate = op.ESCOR.amount / ECO_fund_for_ESCOR_WITHDRAW_INTERVALS;
+         if( op.ESCOR.amount > 0 && new_ECO_fund_for_ESCOR_withdrawal_rate == 0 )
             new_ECO_fund_for_ESCOR_withdrawal_rate = 1;
 
          if( !db.has_hardfork( HARDFORK_0_1 ) )
@@ -371,7 +371,7 @@ void blockchain_statistics_plugin_impl::pre_operation( const operation_notificat
             else
                b.new_ESCOR_ECO_fund_withdrawal_requests++;
 
-            // TODO: Figure out how to change delta when a eScore ECO fund withdraw finishes. Have until March 24th 2018 to figure that out...
+            // TODO: Figure out how to change delta when a ESCOR ECO fund withdraw finishes. Have until March 24th 2018 to figure that out...
             b.ESCORwithdrawRateInECO_delta += new_ECO_fund_for_ESCOR_withdrawal_rate - account.ESCORwithdrawRateInECO.amount;
          });
       }

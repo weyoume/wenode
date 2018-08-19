@@ -67,7 +67,7 @@ struct message_body
     fc::time_point    thread_start; /// the sent_time of the original message, if any
     string            subject;
     string            body;
-    string            json_meta;
+    string            json;
     flat_set<string>  cc;
 };
 
@@ -87,8 +87,8 @@ class message_object : public object< message_object_type, message_object >
 
       account_name_type from;
       account_name_type to;
-      public_key_type   from_memo_key;
-      public_key_type   to_memo_key;
+      public_key_type   from_memoKey;
+      public_key_type   to_memoKey;
       uint64_t          sent_time = 0; /// used as seed to secret generation
       time_point_sec    receive_time; /// time received by blockchain
       uint32_t          checksum = 0;
@@ -103,8 +103,8 @@ struct message_api_obj
       id( o.id ),
       from( o.from ),
       to( o.to ),
-      from_memo_key( o.from_memo_key ),
-      to_memo_key( o.to_memo_key ),
+      from_memoKey( o.from_memoKey ),
+      to_memoKey( o.to_memoKey ),
       sent_time( o.sent_time ),
       receive_time( o.receive_time ),
       checksum( o.checksum ),
@@ -116,8 +116,8 @@ struct message_api_obj
    message_id_type   id;
    account_name_type from;
    account_name_type to;
-   public_key_type   from_memo_key;
-   public_key_type   to_memo_key;
+   public_key_type   from_memoKey;
+   public_key_type   to_memoKey;
    uint64_t          sent_time;
    time_point_sec    receive_time;
    uint32_t          checksum;
@@ -210,11 +210,11 @@ class private_message_api : public std::enable_shared_from_this<private_message_
 
 FC_API( eznode::private_message::private_message_api, (get_inbox)(get_outbox) );
 
-FC_REFLECT( eznode::private_message::message_body, (thread_start)(subject)(body)(json_meta)(cc) );
+FC_REFLECT( eznode::private_message::message_body, (thread_start)(subject)(body)(json)(cc) );
 
-FC_REFLECT( eznode::private_message::message_object, (id)(from)(to)(from_memo_key)(to_memo_key)(sent_time)(receive_time)(checksum)(encrypted_message) );
+FC_REFLECT( eznode::private_message::message_object, (id)(from)(to)(from_memoKey)(to_memoKey)(sent_time)(receive_time)(checksum)(encrypted_message) );
 CHAINBASE_SET_INDEX_TYPE( eznode::private_message::message_object, eznode::private_message::message_index );
 
-FC_REFLECT( eznode::private_message::message_api_obj, (id)(from)(to)(from_memo_key)(to_memo_key)(sent_time)(receive_time)(checksum)(encrypted_message) );
+FC_REFLECT( eznode::private_message::message_api_obj, (id)(from)(to)(from_memoKey)(to_memoKey)(sent_time)(receive_time)(checksum)(encrypted_message) );
 
 FC_REFLECT_DERIVED( eznode::private_message::extended_message_object, (eznode::private_message::message_api_obj), (message) );

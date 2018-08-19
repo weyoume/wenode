@@ -212,16 +212,16 @@ namespace eznode { namespace chain {
    /**
     * @breif a route to send withdrawn eScore.
     */
-   class withdraw_ESCOR_route_object : public object< withdraw_ESCOR_route_object_type, withdraw_ESCOR_route_object >
+   class withdrawESCOR_route_object : public object< withdrawESCOR_route_object_type, withdrawESCOR_route_object >
    {
       public:
          template< typename Constructor, typename Allocator >
-         withdraw_ESCOR_route_object( Constructor&& c, allocator< Allocator > a )
+         withdrawESCOR_route_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
 
-         withdraw_ESCOR_route_object(){}
+         withdrawESCOR_route_object(){}
 
          id_type  id;
 
@@ -357,25 +357,25 @@ namespace eznode { namespace chain {
    struct by_withdraw_route;
    struct by_destination;
    typedef multi_index_container<
-      withdraw_ESCOR_route_object,
+      withdrawESCOR_route_object,
       indexed_by<
-         ordered_unique< tag< by_id >, member< withdraw_ESCOR_route_object, withdraw_ESCOR_route_id_type, &withdraw_ESCOR_route_object::id > >,
+         ordered_unique< tag< by_id >, member< withdrawESCOR_route_object, withdrawESCOR_route_id_type, &withdrawESCOR_route_object::id > >,
          ordered_unique< tag< by_withdraw_route >,
-            composite_key< withdraw_ESCOR_route_object,
-               member< withdraw_ESCOR_route_object, account_id_type, &withdraw_ESCOR_route_object::from_account >,
-               member< withdraw_ESCOR_route_object, account_id_type, &withdraw_ESCOR_route_object::to_account >
+            composite_key< withdrawESCOR_route_object,
+               member< withdrawESCOR_route_object, account_id_type, &withdrawESCOR_route_object::from_account >,
+               member< withdrawESCOR_route_object, account_id_type, &withdrawESCOR_route_object::to_account >
             >,
             composite_key_compare< std::less< account_id_type >, std::less< account_id_type > >
          >,
          ordered_unique< tag< by_destination >,
-            composite_key< withdraw_ESCOR_route_object,
-               member< withdraw_ESCOR_route_object, account_id_type, &withdraw_ESCOR_route_object::to_account >,
-               member< withdraw_ESCOR_route_object, withdraw_ESCOR_route_id_type, &withdraw_ESCOR_route_object::id >
+            composite_key< withdrawESCOR_route_object,
+               member< withdrawESCOR_route_object, account_id_type, &withdrawESCOR_route_object::to_account >,
+               member< withdrawESCOR_route_object, withdrawESCOR_route_id_type, &withdrawESCOR_route_object::id >
             >
          >
       >,
-      allocator< withdraw_ESCOR_route_object >
-   > withdraw_ESCOR_route_index;
+      allocator< withdrawESCOR_route_object >
+   > withdrawESCOR_route_index;
 
    struct by_from_id;
    struct by_to;
@@ -508,9 +508,9 @@ FC_REFLECT( eznode::chain::liquidity_reward_balance_object,
              (id)(owner)(ECO_volume)(EUSD_volume)(weight)(last_update) )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::liquidity_reward_balance_object, eznode::chain::liquidity_reward_balance_index )
 
-FC_REFLECT( eznode::chain::withdraw_ESCOR_route_object,
+FC_REFLECT( eznode::chain::withdrawESCOR_route_object,
              (id)(from_account)(to_account)(percent)(autoESCOR) )
-CHAINBASE_SET_INDEX_TYPE( eznode::chain::withdraw_ESCOR_route_object, eznode::chain::withdraw_ESCOR_route_index )
+CHAINBASE_SET_INDEX_TYPE( eznode::chain::withdrawESCOR_route_object, eznode::chain::withdrawESCOR_route_index )
 
 FC_REFLECT( eznode::chain::savings_withdraw_object,
              (id)(from)(to)(memo)(request_id)(amount)(complete) )

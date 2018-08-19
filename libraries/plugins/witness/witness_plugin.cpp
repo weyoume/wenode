@@ -177,9 +177,9 @@ namespace detail
                "Detected private posting key in memo field. You should change your posting keys." );
       }
 
-      const auto& memo_key = account.memo_key;
+      const auto& memoKey = account.memoKey;
       for( auto& key : keys )
-         ASSERT( memo_key != key, chain::plugin_exception,
+         ASSERT( memoKey != key, chain::plugin_exception,
             "Detected private memo key in memo field. You should change your memo key." );
    }
 
@@ -430,21 +430,21 @@ namespace detail
             b.last_bandwidth_update = _db.head_block_time();
          });
 
-         fc::uint128 account_veScore( a.effective_ESCOR().amount.value );
-         fc::uint128 total_veScore( props.totalESCOR.amount.value );
+         fc::uint128 account_vESCOR( a.effective_ESCOR().amount.value );
+         fc::uint128 total_vESCOR( props.totalESCOR.amount.value );
          fc::uint128 account_average_bandwidth( band->average_bandwidth.value );
          fc::uint128 max_virtual_bandwidth( _db.get( reserve_ratio_id_type() ).max_virtual_bandwidth );
 
-         has_bandwidth = ( account_veScore * max_virtual_bandwidth ) > ( account_average_bandwidth * total_veScore );
+         has_bandwidth = ( account_vESCOR * max_virtual_bandwidth ) > ( account_average_bandwidth * total_vESCOR );
 
          if( _db.is_producing() )
             ASSERT( has_bandwidth, chain::plugin_exception,
                "Account: ${account} bandwidth limit exceeded. Please wait to transact or power up ECO.",
                ("account", a.name)
-               ("account_veScore", account_veScore)
+               ("account_vESCOR", account_vESCOR)
                ("account_average_bandwidth", account_average_bandwidth)
                ("max_virtual_bandwidth", max_virtual_bandwidth)
-               ("totalESCOR", total_veScore) );
+               ("totalESCOR", total_vESCOR) );
       }
    }
 }

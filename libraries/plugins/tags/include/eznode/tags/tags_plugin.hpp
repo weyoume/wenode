@@ -455,7 +455,7 @@ typedef chainbase::shared_multi_index_container<
 > author_tag_stats_index;
 
 /**
- * Used to parse the metadata from the comment json_meta field.
+ * Used to parse the metadata from the comment json field.
  */
 struct comment_metadata { set<string> tags; };
 

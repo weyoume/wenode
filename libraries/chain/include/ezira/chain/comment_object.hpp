@@ -44,7 +44,7 @@ namespace eznode { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          comment_object( Constructor&& c, allocator< Allocator > a )
-            :category( a ), parent_permlink( a ), permlink( a ), title( a ), body( a ), json_metadata( a ), beneficiaries( a )
+            :category( a ), parent_permlink( a ), permlink( a ), title( a ), body( a ), json( a ), beneficiaries( a )
          {
             c( *this );
          }
@@ -59,7 +59,7 @@ namespace eznode { namespace chain {
 
          shared_string     title;
          shared_string     body;
-         shared_string     json_metadata;
+         shared_string     json;
          time_point_sec    last_update;
          time_point_sec    created;
          time_point_sec    active; ///< the last time this post was "touched" by voting or reply
@@ -246,7 +246,7 @@ namespace eznode { namespace chain {
 FC_REFLECT( eznode::chain::comment_object,
              (id)(author)(permlink)
              (category)(parent_author)(parent_permlink)
-             (title)(body)(json_metadata)(last_update)(created)(active)(last_payout)
+             (title)(body)(json)(last_update)(created)(active)(last_payout)
              (depth)(children)
              (net_ESCORreward)(abs_ESCORreward)(vote_ESCORreward)
              (children_abs_ESCORreward)(cashout_time)(max_cashout_time)

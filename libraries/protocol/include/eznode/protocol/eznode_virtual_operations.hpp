@@ -148,10 +148,10 @@ namespace eznode { namespace protocol {
    struct return_ESCOR_delegation_operation : public virtual_operation
    {
       return_ESCOR_delegation_operation() {}
-      return_ESCOR_delegation_operation( const account_name_type& a, const asset& v ) : account( a ), eScore( v ) {}
+      return_ESCOR_delegation_operation( const account_name_type& a, const asset& v ) : account( a ), ESCOR( v ) {}
 
       account_name_type account;
-      asset             eScore;
+      asset             ESCOR;
    };
 
    struct comment_benefactor_reward_operation : public virtual_operation
@@ -169,10 +169,10 @@ namespace eznode { namespace protocol {
    struct producer_reward_operation : public virtual_operation
    {
       producer_reward_operation(){}
-      producer_reward_operation( const string& p, const asset& v ) : producer( p ), eScore( v ) {}
+      producer_reward_operation( const string& p, const asset& v ) : producer( p ), ESCOR( v ) {}
 
       account_name_type producer;
-      asset             eScore;
+      asset             ESCOR;
 
    };
 
@@ -190,6 +190,6 @@ FC_REFLECT( eznode::protocol::fill_order_operation, (current_owner)(current_orde
 FC_REFLECT( eznode::protocol::fill_transferFromSavings_operation, (from)(to)(amount)(request_id)(memo) )
 FC_REFLECT( eznode::protocol::hardfork_operation, (hardfork_id) )
 FC_REFLECT( eznode::protocol::comment_payout_update_operation, (author)(permlink) )
-FC_REFLECT( eznode::protocol::return_ESCOR_delegation_operation, (account)(eScore) )
+FC_REFLECT( eznode::protocol::return_ESCOR_delegation_operation, (account)(ESCOR) )
 FC_REFLECT( eznode::protocol::comment_benefactor_reward_operation, (benefactor)(author)(permlink)(reward) )
-FC_REFLECT( eznode::protocol::producer_reward_operation, (producer)(eScore) )
+FC_REFLECT( eznode::protocol::producer_reward_operation, (producer)(ESCOR) )

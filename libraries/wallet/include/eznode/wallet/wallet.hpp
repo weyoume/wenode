@@ -347,11 +347,11 @@ class wallet_api
        *  'info' wallet command.
        *
        *  @param creator The account creating the new account
-       *  @param new_account_name The name of the new account
-       *  @param json_meta JSON Metadata associated with the new account
+       *  @param newAccountName The name of the new account
+       *  @param json JSON Metadata associated with the new account
        *  @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction create_account( string creator, string new_account_name, string json_meta, bool broadcast );
+      annotated_signed_transaction create_account( string creator, string newAccountName, string json, bool broadcast );
 
       /**
        * This method is used by faucets to create new accounts for other users which must
@@ -361,7 +361,7 @@ class wallet_api
        *
        * @param creator The account creating the new account
        * @param newname The name of the new account
-       * @param json_meta JSON Metadata associated with the new account
+       * @param json JSON Metadata associated with the new account
        * @param owner public owner key of the new account
        * @param active public active key of the new account
        * @param posting public posting key of the new account
@@ -370,7 +370,7 @@ class wallet_api
        */
       annotated_signed_transaction create_account_with_keys( string creator,
                                             string newname,
-                                            string json_meta,
+                                            string json,
                                             public_key_type owner,
                                             public_key_type active,
                                             public_key_type posting,
@@ -386,13 +386,13 @@ class wallet_api
        *  These accounts are created with combination of eCoin and eScore
        *
        *  @param creator The account creating the new account
-       *  @param ECO_fee The amount of the fee to be paid with ECO
-       *  @param delegated_ESCOR The amount of the fee to be paid with delegation
-       *  @param new_account_name The name of the new account
-       *  @param json_meta JSON Metadata associated with the new account
+       *  @param ECOfee The amount of the fee to be paid with ECO
+       *  @param delegatedESCOR The amount of the fee to be paid with delegation
+       *  @param newAccountName The name of the new account
+       *  @param json JSON Metadata associated with the new account
        *  @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction create_account_delegated( string creator, asset ECO_fee, asset delegated_ESCOR, string new_account_name, string json_meta, bool broadcast );
+      annotated_signed_transaction create_account_delegated( string creator, asset ECOfee, asset delegatedESCOR, string newAccountName, string json, bool broadcast );
 
       /**
        * This method is used by faucets to create new accounts for other users which must
@@ -403,10 +403,10 @@ class wallet_api
        * These accounts are created with combination of eCoin and eScore
        *
        * @param creator The account creating the new account
-       * @param ECO_fee The amount of the fee to be paid with ECO
-       * @param delegated_ESCOR The amount of the fee to be paid with delegation
+       * @param ECOfee The amount of the fee to be paid with ECO
+       * @param delegatedESCOR The amount of the fee to be paid with delegation
        * @param newname The name of the new account
-       * @param json_meta JSON Metadata associated with the new account
+       * @param json JSON Metadata associated with the new account
        * @param owner public owner key of the new account
        * @param active public active key of the new account
        * @param posting public posting key of the new account
@@ -414,10 +414,10 @@ class wallet_api
        * @param broadcast true if you wish to broadcast the transaction
        */
       annotated_signed_transaction create_account_with_keys_delegated( string creator,
-                                            asset ECO_fee,
-                                            asset delegated_ESCOR,
+                                            asset ECOfee,
+                                            asset delegatedESCOR,
                                             string newname,
-                                            string json_meta,
+                                            string json,
                                             public_key_type owner,
                                             public_key_type active,
                                             public_key_type posting,
@@ -428,7 +428,7 @@ class wallet_api
        * This method updates the keys of an existing account.
        *
        * @param accountname The name of the account
-       * @param json_meta New JSON Metadata to be associated with the account
+       * @param json New JSON Metadata to be associated with the account
        * @param owner New public owner key for the account
        * @param active New public active key for the account
        * @param posting New public posting key for the account
@@ -436,7 +436,7 @@ class wallet_api
        * @param broadcast true if you wish to broadcast the transaction
        */
       annotated_signed_transaction update_account( string accountname,
-                                         string json_meta,
+                                         string json,
                                          public_key_type owner,
                                          public_key_type active,
                                          public_key_type posting,
@@ -489,10 +489,10 @@ class wallet_api
        * This method updates the account JSON metadata
        *
        * @param account_name The name of the account you wish to update
-       * @param json_meta The new JSON metadata for the account. This overrides existing metadata
+       * @param json The new JSON metadata for the account. This overrides existing metadata
        * @param broadcast ture if you wish to broadcast the transaction
        */
-      annotated_signed_transaction update_account_meta( string account_name, string json_meta, bool broadcast );
+      annotated_signed_transaction update_account_meta( string account_name, string json, bool broadcast );
 
       /**
        * This method updates the memo key of an account
@@ -501,7 +501,7 @@ class wallet_api
        * @param key The new memo public key
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction update_account_memo_key( string account_name, public_key_type key, bool broadcast );
+      annotated_signed_transaction update_account_memoKey( string account_name, public_key_type key, bool broadcast );
 
 
       /**
@@ -623,7 +623,7 @@ class wallet_api
        * @param fee The fee paid to the agent
        * @param ratification_deadline The deadline for 'to' and 'agent' to approve the escrow transfer
        * @param escrow_expiration The expiration of the escrow transfer, after which either party can claim the funds
-       * @param json_meta JSON encoded meta data
+       * @param json JSON encoded meta data
        * @param broadcast true if you wish to broadcast the transaction
        */
       annotated_signed_transaction escrow_transfer(
@@ -636,7 +636,7 @@ class wallet_api
          asset fee,
          time_point_sec ratification_deadline,
          time_point_sec escrow_expiration,
-         string json_meta,
+         string json,
          bool broadcast = false
       );
 
@@ -743,7 +743,7 @@ class wallet_api
        *    withdrawn and deposited back as ECO. i.e. "10.000000 ESCOR"
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction withdraw_ESCOR( string from, asset eScore, bool broadcast = false );
+      annotated_signed_transaction withdrawESCOR( string from, asset eScore, bool broadcast = false );
 
       /**
        * Set up an eScore withdraw route. When eScore are withdrawn, they will be routed to these accounts
@@ -767,7 +767,7 @@ class wallet_api
        *  @param amount The amount of EUSD to convert
        *  @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction convert_EUSD( string from, asset amount, bool broadcast = false );
+      annotated_signed_transaction convertEUSD( string from, asset amount, bool broadcast = false );
 
       /**
        * A witness can public a price feed for the ECO:EUSD market. The median price feed is used
@@ -777,7 +777,7 @@ class wallet_api
        * @param exchange_rate The desired exchange rate
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction publish_feed(string witness, price exchange_rate, bool broadcast );
+      annotated_signed_transaction publishFeed(string witness, price exchange_rate, bool broadcast );
 
       /** Signs a transaction.
        *
@@ -889,14 +889,14 @@ class wallet_api
        * Create an account recovery request as a recover account. The syntax for this command contains a serialized authority object
        * so there is an example below on how to pass in the authority.
        *
-       * request_account_recovery "your_account" "account_to_recover" {"weight_threshold": 1,"account_auths": [], "key_auths": [["new_public_key",1]]} true
+       * request_account_recovery "your_account" "accountToRecover" {"weight_threshold": 1,"account_auths": [], "key_auths": [["new_public_key",1]]} true
        *
-       * @param recovery_account The name of your account
-       * @param account_to_recover The name of the account you are trying to recover
-       * @param new_authority The new owner authority for the recovered account. This should be given to you by the holder of the compromised or lost account.
+       * @param recoveryAccount The name of your account
+       * @param accountToRecover The name of the account you are trying to recover
+       * @param newAuthority The new owner authority for the recovered account. This should be given to you by the holder of the compromised or lost account.
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction request_account_recovery( string recovery_account, string account_to_recover, authority new_authority, bool broadcast );
+      annotated_signed_transaction request_account_recovery( string recoveryAccount, string accountToRecover, authority newAuthority, bool broadcast );
 
       /**
        * Recover your account using a recovery request created by your recovery account. The syntax for this commain contains a serialized
@@ -904,21 +904,21 @@ class wallet_api
        *
        * recover_account "your_account" {"weight_threshold": 1,"account_auths": [], "key_auths": [["old_public_key",1]]} {"weight_threshold": 1,"account_auths": [], "key_auths": [["new_public_key",1]]} true
        *
-       * @param account_to_recover The name of your account
+       * @param accountToRecover The name of your account
        * @param recent_authority A recent owner authority on your account
-       * @param new_authority The new authority that your recovery account used in the account recover request.
+       * @param newAuthority The new authority that your recovery account used in the account recover request.
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction recover_account( string account_to_recover, authority recent_authority, authority new_authority, bool broadcast );
+      annotated_signed_transaction recover_account( string accountToRecover, authority recent_authority, authority newAuthority, bool broadcast );
 
       /**
        * Change your recovery account after a 30 day delay.
        *
        * @param owner The name of your account
-       * @param new_recovery_account The name of the recovery account you wish to have
+       * @param new_recoveryAccount The name of the recovery account you wish to have
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction change_recovery_account( string owner, string new_recovery_account, bool broadcast );
+      annotated_signed_transaction change_recoveryAccount( string owner, string new_recoveryAccount, bool broadcast );
 
       vector< owner_authority_history_api_obj > get_owner_history( string account )const;
 
@@ -1035,7 +1035,7 @@ FC_API( eznode::wallet::wallet_api,
         (update_account_auth_account)
         (update_account_auth_threshold)
         (update_account_meta)
-        (update_account_memo_key)
+        (update_account_memoKey)
         (delegateESCOR)
         (update_witness)
         (set_voting_proxy)
@@ -1047,10 +1047,10 @@ FC_API( eznode::wallet::wallet_api,
         (escrow_dispute)
         (escrow_release)
         (transferECOtoESCORfund)
-        (withdraw_ESCOR)
+        (withdrawESCOR)
         (setWithdrawESCORasECOroute)
-        (convert_EUSD)
-        (publish_feed)
+        (convertEUSD)
+        (publishFeed)
         (get_order_book)
         (get_open_orders)
         (create_order)
@@ -1062,7 +1062,7 @@ FC_API( eznode::wallet::wallet_api,
         (prove)
         (request_account_recovery)
         (recover_account)
-        (change_recovery_account)
+        (change_recoveryAccount)
         (get_owner_history)
         (transferToSavings)
         (transferFromSavings)

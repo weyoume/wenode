@@ -12,22 +12,22 @@ namespace eznode { namespace protocol {
 
    void accountCreate_operation::validate() const
    {
-      validate_account_name( new_account_name );
+      validate_account_name( newAccountName );
       FC_ASSERT( is_asset_type( fee, SYMBOL_ECO ), "Account creation fee must be ECO" );
       owner.validate();
       active.validate();
 
-      if ( json_metadata.size() > 0 )
+      if ( json.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(json_metadata), "JSON Metadata not formatted in UTF8" );
-         FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
+         FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
       }
       FC_ASSERT( fee >= asset( 0, SYMBOL_ECO ), "Account creation fee cannot be negative" );
    }
 
    void accountCreateWithDelegation_operation::validate() const
    {
-      validate_account_name( new_account_name );
+      validate_account_name( newAccountName );
       validate_account_name( creator );
       FC_ASSERT( is_asset_type( fee, SYMBOL_ECO ), "Account creation fee must be ECO" );
       FC_ASSERT( is_asset_type( delegation, SYMBOL_ESCOR ), "Delegation must be ESCOR" );
@@ -36,10 +36,10 @@ namespace eznode { namespace protocol {
       active.validate();
       posting.validate();
 
-      if( json_metadata.size() > 0 )
+      if( json.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(json_metadata), "JSON Metadata not formatted in UTF8" );
-         FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
+         FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
       }
 
       FC_ASSERT( fee >= asset( 0, SYMBOL_ECO ), "Account creation fee cannot be negative" );
@@ -56,10 +56,10 @@ namespace eznode { namespace protocol {
       if( posting )
          posting->validate();*/
 
-      if ( json_metadata.size() > 0 )
+      if ( json.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(json_metadata), "JSON Metadata not formatted in UTF8" );
-         FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
+         FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
       }
    }
 
@@ -77,9 +77,9 @@ namespace eznode { namespace protocol {
       validate_permlink( parent_permlink );
       validate_permlink( permlink );
 
-      if( json_metadata.size() > 0 )
+      if( json.size() > 0 )
       {
-         FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
+         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
       }
    }
 
@@ -172,10 +172,10 @@ namespace eznode { namespace protocol {
       FC_ASSERT( amount > asset( 0, SYMBOL_ECO ), "Must transfer a nonzero amount" );
    }
 
-   void withdraw_ESCOR_operation::validate() const
+   void withdrawESCOR_operation::validate() const
    {
       validate_account_name( account );
-      FC_ASSERT( is_asset_type( eScore, SYMBOL_ESCOR), "Amount must be ESCOR"  );
+      FC_ASSERT( is_asset_type( ESCOR, SYMBOL_ESCOR), "Amount must be ESCOR"  );
    }
 
    void setWithdrawESCORasECOroute_operation::validate() const
@@ -417,10 +417,10 @@ namespace eznode { namespace protocol {
       FC_ASSERT( EUSD_amount.symbol == SYMBOL_EUSD, "EUSD amount must contain EUSD" );
       FC_ASSERT( ECOamount.symbol == SYMBOL_ECO, "ECO amount must contain ECO" );
       FC_ASSERT( ratification_deadline < escrow_expiration, "ratification deadline must be before escrow expiration" );
-      if ( json_meta.size() > 0 )
+      if ( json.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(json_meta), "JSON Metadata not formatted in UTF8" );
-         FC_ASSERT( fc::json::is_valid(json_meta), "JSON Metadata not valid JSON" );
+         FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
       }
    }
 
@@ -460,14 +460,14 @@ namespace eznode { namespace protocol {
 
    void request_account_recovery_operation::validate()const
    {
-      validate_account_name( recovery_account );
-      validate_account_name( account_to_recover );
+      validate_account_name( recoveryAccount );
+      validate_account_name( accountToRecover );
       new_owner_authority.validate();
    }
 
    void recover_account_operation::validate()const
    {
-      validate_account_name( account_to_recover );
+      validate_account_name( accountToRecover );
       FC_ASSERT( !( new_owner_authority == recent_owner_authority ), "Cannot set new owner authority to the recent owner authority" );
       FC_ASSERT( !new_owner_authority.is_impossible(), "new owner authority cannot be impossible" );
       FC_ASSERT( !recent_owner_authority.is_impossible(), "recent owner authority cannot be impossible" );
@@ -476,10 +476,10 @@ namespace eznode { namespace protocol {
       recent_owner_authority.validate();
    }
 
-   void change_recovery_account_operation::validate()const
+   void change_recoveryAccount_operation::validate()const
    {
-      validate_account_name( account_to_recover );
-      validate_account_name( new_recovery_account );
+      validate_account_name( accountToRecover );
+      validate_account_name( new_recoveryAccount );
    }
 
    void transferToSavings_operation::validate()const {
@@ -542,8 +542,8 @@ namespace eznode { namespace protocol {
       validate_account_name( delegator );
       validate_account_name( delegatee );
       FC_ASSERT( delegator != delegatee, "You cannot delegate ESCOR to yourself" );
-      FC_ASSERT( is_asset_type( eScore, SYMBOL_ESCOR ), "Delegation must be ESCOR" );
-      FC_ASSERT( eScore >= asset( 0, SYMBOL_ESCOR ), "Delegation cannot be negative" );
+      FC_ASSERT( is_asset_type( ESCOR, SYMBOL_ESCOR ), "Delegation must be ESCOR" );
+      FC_ASSERT( ESCOR >= asset( 0, SYMBOL_ESCOR ), "Delegation cannot be negative" );
    }
 
 } } // eznode::protocol
