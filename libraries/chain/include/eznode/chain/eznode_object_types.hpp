@@ -55,10 +55,10 @@ enum object_type
    operation_object_type,
    account_history_object_type,
    hardfork_property_object_type,
-   withdraw_ESCOR_route_object_type,
+   withdrawESCOR_route_object_type,
    owner_authority_history_object_type,
    account_recovery_request_object_type,
-   change_recovery_account_request_object_type,
+   change_recoveryAccount_request_object_type,
    escrow_object_type,
    savings_withdraw_object_type,
    decline_voting_rights_request_object_type,
@@ -85,10 +85,10 @@ class liquidity_reward_balance_object;
 class operation_object;
 class account_history_object;
 class hardfork_property_object;
-class withdraw_ESCOR_route_object;
+class withdrawESCOR_route_object;
 class owner_authority_history_object;
 class account_recovery_request_object;
-class change_recovery_account_request_object;
+class change_recoveryAccount_request_object;
 class escrow_object;
 class savings_withdraw_object;
 class decline_voting_rights_request_object;
@@ -114,10 +114,10 @@ typedef oid< liquidity_reward_balance_object        > liquidity_reward_balance_i
 typedef oid< operation_object                       > operation_id_type;
 typedef oid< account_history_object                 > account_history_id_type;
 typedef oid< hardfork_property_object               > hardfork_property_id_type;
-typedef oid< withdraw_ESCOR_route_object          > withdraw_ESCOR_route_id_type;
+typedef oid< withdrawESCOR_route_object          > withdrawESCOR_route_id_type;
 typedef oid< owner_authority_history_object         > owner_authority_history_id_type;
 typedef oid< account_recovery_request_object        > account_recovery_request_id_type;
-typedef oid< change_recovery_account_request_object > change_recovery_account_request_id_type;
+typedef oid< change_recoveryAccount_request_object > change_recoveryAccount_request_id_type;
 typedef oid< escrow_object                          > escrow_id_type;
 typedef oid< savings_withdraw_object                > savings_withdraw_id_type;
 typedef oid< decline_voting_rights_request_object   > decline_voting_rights_request_id_type;
@@ -224,10 +224,10 @@ FC_REFLECT_ENUM( eznode::chain::object_type,
                  (operation_object_type)
                  (account_history_object_type)
                  (hardfork_property_object_type)
-                 (withdraw_ESCOR_route_object_type)
+                 (withdrawESCOR_route_object_type)
                  (owner_authority_history_object_type)
                  (account_recovery_request_object_type)
-                 (change_recovery_account_request_object_type)
+                 (change_recoveryAccount_request_object_type)
                  (escrow_object_type)
                  (savings_withdraw_object_type)
                  (decline_voting_rights_request_object_type)

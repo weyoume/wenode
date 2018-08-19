@@ -86,7 +86,7 @@ void private_message_evaluator::do_apply( const private_message_operation& pm )
    auto from_itr = tracked_accounts.lower_bound(pm.from);
 
    FC_ASSERT( pm.from != pm.to );
-   FC_ASSERT( pm.from_memo_key != pm.to_memo_key );
+   FC_ASSERT( pm.from_memoKey != pm.to_memoKey );
    FC_ASSERT( pm.sent_time != 0 );
    FC_ASSERT( pm.encrypted_message.size() >= 32 );
 
@@ -98,8 +98,8 @@ void private_message_evaluator::do_apply( const private_message_operation& pm )
       {
          pmo.from               = pm.from;
          pmo.to                 = pm.to;
-         pmo.from_memo_key      = pm.from_memo_key;
-         pmo.to_memo_key        = pm.to_memo_key;
+         pmo.from_memoKey      = pm.from_memoKey;
+         pmo.to_memoKey        = pm.to_memoKey;
          pmo.checksum           = pm.checksum;
          pmo.sent_time          = pm.sent_time;
          pmo.receive_time       = d.head_block_time();

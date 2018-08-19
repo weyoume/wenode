@@ -65,7 +65,7 @@ struct pre_operation_visitor
    void operator()( const recover_account_operation& op )const
    {
       _plugin.my->clear_cache();
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.account_to_recover );
+      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.accountToRecover );
       if( acct_itr ) _plugin.my->cache_auths( *acct_itr );
    }
 
@@ -104,13 +104,13 @@ struct post_operation_visitor
 
    void operator()( const accountCreate_operation& op )const
    {
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.new_account_name );
+      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.newAccountName );
       if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
    }
 
    void operator()( const accountCreateWithDelegation_operation& op )const
    {
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.new_account_name );
+      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.newAccountName );
       if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
    }
 
@@ -122,7 +122,7 @@ struct post_operation_visitor
 
    void operator()( const recover_account_operation& op )const
    {
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.account_to_recover );
+      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.accountToRecover );
       if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
    }
 

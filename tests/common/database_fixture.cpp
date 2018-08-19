@@ -220,7 +220,7 @@ const account_object& database_fixture::accountCreate(
    const share_type& fee,
    const public_key_type& key,
    const public_key_type& post_key,
-   const string& json_metadata
+   const string& json
    )
 {
    try
@@ -228,29 +228,29 @@ const account_object& database_fixture::accountCreate(
       if( db.has_hardfork( HARDFORK_0_17 ) )
       {
          accountCreateWithDelegation_operation op;
-         op.new_account_name = name;
+         op.newAccountName = name;
          op.creator = creator;
          op.fee = asset( fee, SYMBOL_ECO );
          op.delegation = asset( 0, SYMBOL_ESCOR );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
-         op.memo_key = key;
-         op.json_metadata = json_metadata;
+         op.memoKey = key;
+         op.json = json;
 
          trx.operations.push_back( op );
       }
       else
       {
          accountCreate_operation op;
-         op.new_account_name = name;
+         op.newAccountName = name;
          op.creator = creator;
          op.fee = asset( fee, SYMBOL_ECO );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
-         op.memo_key = key;
-         op.json_metadata = json_metadata;
+         op.memoKey = key;
+         op.json = json;
 
          trx.operations.push_back( op );
       }

@@ -51,13 +51,13 @@ struct get_impacted_account_visitor
    // ops
    void operator()( const accountCreate_operation& op )
    {
-      _impacted.insert( op.new_account_name );
+      _impacted.insert( op.newAccountName );
       _impacted.insert( op.creator );
    }
 
    void operator()( const accountCreateWithDelegation_operation& op )
    {
-      _impacted.insert( op.new_account_name );
+      _impacted.insert( op.newAccountName );
       _impacted.insert( op.creator );
    }
 
@@ -172,18 +172,18 @@ struct get_impacted_account_visitor
 
    void operator()( const request_account_recovery_operation& op )
    {
-      _impacted.insert( op.account_to_recover );
-      _impacted.insert( op.recovery_account );
+      _impacted.insert( op.accountToRecover );
+      _impacted.insert( op.recoveryAccount );
    }
 
    void operator()( const recover_account_operation& op )
    {
-      _impacted.insert( op.account_to_recover );
+      _impacted.insert( op.accountToRecover );
    }
 
-   void operator()( const change_recovery_account_operation& op )
+   void operator()( const change_recoveryAccount_operation& op )
    {
-      _impacted.insert( op.account_to_recover );
+      _impacted.insert( op.accountToRecover );
    }
 
    void operator()( const transferToSavings_operation& op )

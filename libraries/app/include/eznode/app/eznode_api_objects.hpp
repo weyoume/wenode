@@ -39,14 +39,14 @@ using namespace eznode::chain;
    price                      sell_price;
 };*/
 
-typedef chain::change_recovery_account_request_object  change_recovery_account_request_api_obj;
+typedef chain::change_recoveryAccount_request_object  change_recoveryAccount_request_api_obj;
 typedef chain::block_summary_object                    block_summary_api_obj;
 typedef chain::comment_vote_object                     comment_vote_api_obj;
 typedef chain::convert_request_object                  convert_request_api_obj;
 typedef chain::escrow_object                           escrow_api_obj;
 typedef chain::liquidity_reward_balance_object         liquidity_reward_balance_api_obj;
 typedef chain::limit_order_object                      limit_order_api_obj;
-typedef chain::withdraw_ESCOR_route_object           withdraw_ESCOR_route_api_obj;
+typedef chain::withdrawESCOR_route_object           withdrawESCOR_route_api_obj;
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
 typedef chain::witness_vote_object                     witness_vote_api_obj;
 typedef chain::witness_schedule_object                 witness_schedule_api_obj;
@@ -66,7 +66,7 @@ struct comment_api_obj
       permlink( to_string( o.permlink ) ),
       title( to_string( o.title ) ),
       body( to_string( o.body ) ),
-      json_metadata( to_string( o.json_metadata ) ),
+      json( to_string( o.json ) ),
       last_update( o.last_update ),
       created( o.created ),
       active( o.active ),
@@ -109,7 +109,7 @@ struct comment_api_obj
 
    string            title;
    string            body;
-   string            json_metadata;
+   string            json;
    time_point_sec    last_update;
    time_point_sec    created;
    time_point_sec    active;
@@ -171,8 +171,8 @@ struct account_api_obj
    account_api_obj( const chain::account_object& a, const chain::database& db ) :
       id( a.id ),
       name( a.name ),
-      memo_key( a.memo_key ),
-      json_metadata( to_string( a.json_metadata ) ),
+      memoKey( a.memoKey ),
+      json( to_string( a.json ) ),
       proxy( a.proxy ),
       last_accountUpdate( a.last_accountUpdate ),
       created( a.created ),
@@ -181,7 +181,7 @@ struct account_api_obj
       active_challenged( a.active_challenged ),
       last_owner_proved( a.last_owner_proved ),
       last_active_proved( a.last_active_proved ),
-      recovery_account( a.recovery_account ),
+      recoveryAccount( a.recoveryAccount ),
       reset_account( a.reset_account ),
       last_account_recovery( a.last_account_recovery ),
       comment_count( a.comment_count ),
@@ -207,7 +207,7 @@ struct account_api_obj
       ESCORrewardBalance( a.ESCORrewardBalance ),
       curationRewards( a.curationRewards ),
       posting_rewards( a.posting_rewards ),
-      eScore( a.eScore ),
+      ESCOR( a.ESCOR ),
       ESCORDelegated( a.ESCORDelegated ),
       ESCORReceived( a.ESCORReceived ),
       ESCORwithdrawRateInECO( a.ESCORwithdrawRateInECO ),
@@ -261,8 +261,8 @@ struct account_api_obj
    authority         owner;
    authority         active;
    authority         posting;
-   public_key_type   memo_key;
-   string            json_metadata;
+   public_key_type   memoKey;
+   string            json;
    account_name_type proxy;
 
    time_point_sec    last_owner_update;
@@ -274,7 +274,7 @@ struct account_api_obj
    bool              active_challenged = false;
    time_point_sec    last_owner_proved;
    time_point_sec    last_active_proved;
-   account_name_type recovery_account;
+   account_name_type recoveryAccount;
    account_name_type reset_account;
    time_point_sec    last_account_recovery;
    uint32_t          comment_count = 0;
@@ -308,7 +308,7 @@ struct account_api_obj
    share_type        curationRewards;
    share_type        posting_rewards;
 
-   asset             eScore;
+   asset             ESCOR;
    asset             ESCORDelegated;
    asset             ESCORReceived;
    asset             ESCORwithdrawRateInECO;
@@ -355,7 +355,7 @@ struct account_recovery_request_api_obj
 {
    account_recovery_request_api_obj( const chain::account_recovery_request_object& o ) :
       id( o.id ),
-      account_to_recover( o.account_to_recover ),
+      accountToRecover( o.accountToRecover ),
       new_owner_authority( authority( o.new_owner_authority ) ),
       expires( o.expires )
    {}
@@ -363,7 +363,7 @@ struct account_recovery_request_api_obj
    account_recovery_request_api_obj() {}
 
    account_recovery_request_id_type id;
-   account_name_type                account_to_recover;
+   account_name_type                accountToRecover;
    authority                        new_owner_authority;
    time_point_sec                   expires;
 };
@@ -510,7 +510,7 @@ struct dynamic_global_property_api_obj : public dynamic_global_property_object
 FC_REFLECT( eznode::app::comment_api_obj,
              (id)(author)(permlink)
              (category)(parent_author)(parent_permlink)
-             (title)(body)(json_metadata)(last_update)(created)(active)(last_payout)
+             (title)(body)(json)(last_update)(created)(active)(last_payout)
              (depth)(children)
              (net_ESCORreward)(abs_ESCORreward)(vote_ESCORreward)
              (children_abs_ESCORreward)(cashout_time)(max_cashout_time)
@@ -520,16 +520,16 @@ FC_REFLECT( eznode::app::comment_api_obj,
           )
 
 FC_REFLECT( eznode::app::account_api_obj,
-             (id)(name)(owner)(active)(posting)(memo_key)(json_metadata)(proxy)(last_owner_update)(last_accountUpdate)
+             (id)(name)(owner)(active)(posting)(memoKey)(json)(proxy)(last_owner_update)(last_accountUpdate)
              (created)(mined)
-             (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recovery_account)(last_account_recovery)(reset_account)
+             (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recoveryAccount)(last_account_recovery)(reset_account)
              (comment_count)(lifetime_vote_count)(post_count)(can_vote)(voting_power)(last_vote_time)
              (balance)
              (ECOsavingsBalance)
              (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
              (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
              (EUSDrewardbalance)(ECOrewardBalance)(ESCORrewardBalance)(ESCORrewardBalance)
-             (eScore)(ESCORDelegated)(ESCORReceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
+             (ESCOR)(ESCORDelegated)(ESCORReceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)
              (proxied_vsf_votes)(witnesses_voted_for)
@@ -547,7 +547,7 @@ FC_REFLECT( eznode::app::owner_authority_history_api_obj,
 
 FC_REFLECT( eznode::app::account_recovery_request_api_obj,
              (id)
-             (account_to_recover)
+             (accountToRecover)
              (new_owner_authority)
              (expires)
           )

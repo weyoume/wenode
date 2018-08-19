@@ -1052,7 +1052,7 @@ asset database::createECOfundForESCOR( const account_object& to_account, asset E
             to.ESCORrewardBalance += ECO;
          }
          else
-            to.eScore += new_ECO_fund_for_ESCOR;
+            to.ESCOR += new_ECO_fund_for_ESCOR;
       } );
 
       modify( cprops, [&]( dynamic_global_property_object& props )
@@ -1255,7 +1255,7 @@ void database::clear_null_account_balance()
 
       modify( null_account, [&]( account_object& a )
       {
-         a.eScore.amount = 0;
+         a.ESCOR.amount = 0;
       });
 
       totalECO += converted_ECO;
@@ -1337,7 +1337,7 @@ void database::update_owner_authority( const account_object& account, const auth
 void database::process_ECO_fund_for_ESCOR_withdrawals()
 {
    const auto& widx = get_index< account_index >().indices().get< by_nextESCORwithdrawalTime >();
-   const auto& didx = get_index< withdraw_ESCOR_route_index >().indices().get< by_withdraw_route >();
+   const auto& didx = get_index< withdrawESCOR_route_index >().indices().get< by_withdraw_route >();
    auto current = widx.begin();
 
    const auto& cprops = get_dynamic_global_properties();
@@ -1379,7 +1379,7 @@ void database::process_ECO_fund_for_ESCOR_withdrawals()
 
                modify( to_account, [&]( account_object& a )
                {
-                  a.eScore.amount += to_deposit;
+                  a.ESCOR.amount += to_deposit;
                });
 
                adjust_proxied_witness_votes( to_account, to_deposit );
@@ -1427,11 +1427,11 @@ void database::process_ECO_fund_for_ESCOR_withdrawals()
 
       modify( from_account, [&]( account_object& a )
       {
-         a.eScore.amount -= to_withdraw;
+         a.ESCOR.amount -= to_withdraw;
          a.balance += converted_ECO;
          a.withdrawn += to_withdraw;
 
-         if( a.withdrawn >= a.to_withdraw || a.eScore.amount == 0 )
+         if( a.withdrawn >= a.to_withdraw || a.ESCOR.amount == 0 )
          {
             a.ESCORwithdrawRateInECO.amount = 0;
             a.nextESCORwithdrawalTime = fc::time_point_sec::maximum();
@@ -2095,15 +2095,15 @@ void database::account_recovery_processing()
       hist = hist_idx.begin();
    }
 
-   // Apply effective recovery_account changes
-   const auto& change_req_idx = get_index< change_recovery_account_request_index >().indices().get< by_effective_date >();
+   // Apply effective recoveryAccount changes
+   const auto& change_req_idx = get_index< change_recoveryAccount_request_index >().indices().get< by_effective_date >();
    auto change_req = change_req_idx.begin();
 
    while( change_req != change_req_idx.end() && change_req->effective_on <= head_block_time() )
    {
-      modify( get_account( change_req->account_to_recover ), [&]( account_object& a )
+      modify( get_account( change_req->accountToRecover ), [&]( account_object& a )
       {
-         a.recovery_account = change_req->recovery_account;
+         a.recoveryAccount = change_req->recoveryAccount;
       });
 
       remove( *change_req );
@@ -2192,7 +2192,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< deleteComment_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< transfer_evaluator                       >();
    _my->_evaluator_registry.register_evaluator< transferECOtoESCORfund_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< withdraw_ESCOR_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< withdrawESCOR_evaluator               >();
    _my->_evaluator_registry.register_evaluator< setWithdrawESCORasECOroute_evaluator     >();
    _my->_evaluator_registry.register_evaluator< accountCreate_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< accountUpdate_evaluator                 >();
@@ -2214,7 +2214,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< prove_authority_evaluator                >();
    _my->_evaluator_registry.register_evaluator< request_account_recovery_evaluator       >();
    _my->_evaluator_registry.register_evaluator< recover_account_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< change_recovery_account_evaluator        >();
+   _my->_evaluator_registry.register_evaluator< change_recoveryAccount_evaluator        >();
    _my->_evaluator_registry.register_evaluator< escrow_transfer_evaluator                >();
    _my->_evaluator_registry.register_evaluator< escrow_approve_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< escrow_dispute_evaluator                 >();
@@ -2264,10 +2264,10 @@ void database::initialize_indexes()
    add_core_index< operation_index                         >(*this);
    add_core_index< account_history_index                   >(*this);
    add_core_index< hardfork_property_index                 >(*this);
-   add_core_index< withdraw_ESCOR_route_index            >(*this);
+   add_core_index< withdrawESCOR_route_index            >(*this);
    add_core_index< owner_authority_history_index           >(*this);
    add_core_index< account_recovery_request_index          >(*this);
-   add_core_index< change_recovery_account_request_index   >(*this);
+   add_core_index< change_recoveryAccount_request_index   >(*this);
    add_core_index< escrow_index                            >(*this);
    add_core_index< savings_withdraw_index                  >(*this);
    add_core_index< decline_voting_rights_request_index     >(*this);
@@ -2400,7 +2400,7 @@ void database::init_genesis( uint64_t init_supply )
          create< account_object >( [&]( account_object& a )
          {
             a.name = INIT_MINER_NAME + ( i ? fc::to_string( i ) : std::string() );
-            a.memo_key = init_public_key;
+            a.memoKey = init_public_key;
             a.balance  = asset( init_supply / (NUM_INIT_MINERS + NUM_INIT_EXTRAS), SYMBOL_ECO );
          } );
 
@@ -2787,11 +2787,11 @@ try {
       modify( get_feed_history(), [&]( feed_history_object& fho )
       {
          fho.price_history.push_back( median_feed );
-         size_t ECO_feed_history_window = FEED_HISTORY_WINDOW_PRE_HF_16;
+         size_t ECOfeed_history_window = FEED_HISTORY_WINDOW_PRE_HF_16;
          if( has_hardfork( HARDFORK_0_16__551) )
-            ECO_feed_history_window = FEED_HISTORY_WINDOW;
+            ECOfeed_history_window = FEED_HISTORY_WINDOW;
 
-         if( fho.price_history.size() > ECO_feed_history_window )
+         if( fho.price_history.size() > ECOfeed_history_window )
             fho.price_history.pop_front();
 
          if( fho.price_history.size() )
@@ -3321,10 +3321,10 @@ void database::clear_expired_delegations()
    {
       modify( get_account( itr->delegator ), [&]( account_object& a )
       {
-         a.ESCORDelegated -= itr->eScore;
+         a.ESCORDelegated -= itr->ESCOR;
       });
 
-      push_virtual_operation( return_ESCOR_delegation_operation( itr->delegator, itr->eScore ) );
+      push_virtual_operation( return_ESCOR_delegation_operation( itr->delegator, itr->ESCOR ) );
 
       remove( *itr );
       itr = delegations_by_exp.begin();
@@ -3870,7 +3870,7 @@ void database::apply_hardfork( uint32_t hardfork )
 
             while( delegation_itr != delegation_idx.end() )
             {
-               if( delegation_itr->eScore.amount == 0 )
+               if( delegation_itr->ESCOR.amount == 0 )
                   to_remove.push_back( &(*delegation_itr) );
 
                ++delegation_itr;
@@ -3937,14 +3937,14 @@ void database::validate_invariants()const
          EUSDtotal += itr->EUSDbalance;
          EUSDtotal += itr->EUSDsavingsBalance;
          EUSDtotal += itr->EUSDrewardbalance;
-         totalECO_fund_for_ESCOR += itr->eScore;
+         totalECO_fund_for_ESCOR += itr->ESCOR;
          totalECO_fund_for_ESCOR += itr->ESCORrewardBalance;
          pending_ESCORvalueInECO += itr->ESCORrewardBalance;
          total_vsf_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
                                  itr->witness_vote_weight() :
                                  ( MAX_PROXY_RECURSION_DEPTH > 0 ?
                                       itr->proxied_vsf_votes[MAX_PROXY_RECURSION_DEPTH - 1] :
-                                      itr->eScore.amount ) );
+                                      itr->ESCOR.amount ) );
       }
 
       const auto& convert_request_idx = get_index< convert_request_index >().indices();
@@ -4052,7 +4052,7 @@ void database::perform_ESCOR_split( uint32_t magnitude )
       {
          modify( account, [&]( account_object& a )
          {
-            a.eScore.amount *= magnitude;
+            a.ESCOR.amount *= magnitude;
             a.withdrawn             *= magnitude;
             a.to_withdraw           *= magnitude;
             a.ESCORwithdrawRateInECO  = asset( a.to_withdraw / ECO_fund_for_ESCOR_WITHDRAW_INTERVALS_PRE_HF_16, SYMBOL_ESCOR );

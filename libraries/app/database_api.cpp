@@ -546,7 +546,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
 
       if( type == outgoing || type == all )
       {
-         const auto& by_route = my->_db.get_index< withdraw_ESCOR_route_index >().indices().get< by_withdraw_route >();
+         const auto& by_route = my->_db.get_index< withdrawESCOR_route_index >().indices().get< by_withdraw_route >();
          auto route = by_route.lower_bound( acc.id );
 
          while( route != by_route.end() && route->from_account == acc.id )
@@ -565,7 +565,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
 
       if( type == incoming || type == all )
       {
-         const auto& by_dest = my->_db.get_index< withdraw_ESCOR_route_index >().indices().get< by_destination >();
+         const auto& by_dest = my->_db.get_index< withdrawESCOR_route_index >().indices().get< by_destination >();
          auto route = by_dest.lower_bound( acc.id );
 
          while( route != by_dest.end() && route->to_account == acc.id )
@@ -1095,16 +1095,16 @@ void database_api::set_pending_payout( discussion& d )const
 
    if( total_r2 > 0 )
    {
-      uint128_t veScore;
+      uint128_t vESCOR;
       if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       {
          const auto& rf = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) );
-         veScore = d.net_ESCORreward.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_ESCORreward.value, rf.authorReward_curve, rf.content_constant ) : 0;
+         vESCOR = d.net_ESCORreward.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_ESCORreward.value, rf.authorReward_curve, rf.content_constant ) : 0;
       }
       else
-         veScore = d.net_ESCORreward.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_ESCORreward.value ) : 0;
+         vESCOR = d.net_ESCORreward.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_ESCORreward.value ) : 0;
 
-      u256 r2 = to256(veScore); //to256(abs_net_ESCORreward);
+      u256 r2 = to256(vESCOR); //to256(abs_net_ESCORreward);
       r2 *= pot.amount.value;
       r2 /= total_r2;
 
@@ -1988,7 +1988,7 @@ state database_api::get_state( string path )const
             for( auto& item : history ) {
                switch( item.second.op.which() ) {
                   case operation::tag<transferECOtoESCORfund_operation>::value:
-                  case operation::tag<withdraw_ESCOR_operation>::value:
+                  case operation::tag<withdrawESCOR_operation>::value:
                   case operation::tag<interest_operation>::value:
                   case operation::tag<transfer_operation>::value:
                   case operation::tag<liquidity_reward_operation>::value:

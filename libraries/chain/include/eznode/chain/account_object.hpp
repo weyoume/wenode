@@ -23,7 +23,7 @@ namespace eznode { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          account_object( Constructor&& c, allocator< Allocator > a )
-            :json_metadata( a )
+            :json( a )
          {
             c(*this);
          };
@@ -31,8 +31,8 @@ namespace eznode { namespace chain {
          id_type           id;
 
          account_name_type name;
-         public_key_type   memo_key;
-         shared_string     json_metadata;
+         public_key_type   memoKey;
+         shared_string     json;
          account_name_type proxy;
 
          time_point_sec    last_accountUpdate;
@@ -43,7 +43,7 @@ namespace eznode { namespace chain {
          bool              active_challenged = false;
          time_point_sec    last_owner_proved = time_point_sec::min();
          time_point_sec    last_active_proved = time_point_sec::min();
-         account_name_type recovery_account;
+         account_name_type recoveryAccount;
          account_name_type reset_account = NULL_ACCOUNT;
          time_point_sec    last_account_recovery;
          uint32_t          comment_count = 0;
@@ -54,8 +54,8 @@ namespace eznode { namespace chain {
          uint16_t          voting_power = PERCENT_100;   ///< current voting power of this account, it falls after every vote
          time_point_sec    last_vote_time; ///< used to increase the voting power of this account the longer it goes without voting.
 
-         asset             balance = asset( 0, SYMBOL_ECO );  ///< total liquid eScore held by this account
-         asset             ECOsavingsBalance = asset( 0, SYMBOL_ECO );  ///< total liquid eScore held by this account
+         asset             balance = asset( 0, SYMBOL_ECO );  ///< total liquid ESCOR held by this account
+         asset             ECOsavingsBalance = asset( 0, SYMBOL_ECO );  ///< total liquid ESCOR held by this account
 
          /**
           *  EUSD Deposits pay interest based upon the interest rate set by witnesses. The purpose of these
@@ -93,17 +93,17 @@ namespace eznode { namespace chain {
          share_type        curationRewards = 0;
          share_type        posting_rewards = 0;
 
-         asset             eScore = asset( 0, SYMBOL_ESCOR ); ///< total eScore held by this account, controls its voting power
+         asset             ESCOR = asset( 0, SYMBOL_ESCOR ); ///< total ESCOR held by this account, controls its voting power
          asset             ESCORDelegated = asset( 0, SYMBOL_ESCOR );
          asset             ESCORReceived = asset( 0, SYMBOL_ESCOR );
 
-         asset             ESCORwithdrawRateInECO = asset( 0, SYMBOL_ESCOR ); ///< at the time this is updated it can be at most eScore/104
+         asset             ESCORwithdrawRateInECO = asset( 0, SYMBOL_ESCOR ); ///< at the time this is updated it can be at most ESCOR/104
          time_point_sec    nextESCORwithdrawalTime = fc::time_point_sec::maximum(); ///< after every withdrawal this is incremented by 1 week
-         share_type        withdrawn = 0; /// Track how many eScore have been withdrawn
+         share_type        withdrawn = 0; /// Track how many ESCOR have been withdrawn
          share_type        to_withdraw = 0; /// Might be able to look this up with operation history.
          uint16_t          withdraw_routes = 0;
 
-         fc::array<share_type, MAX_PROXY_RECURSION_DEPTH> proxied_vsf_votes;// = std::vector<share_type>( MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total eScore votes proxied to this account
+         fc::array<share_type, MAX_PROXY_RECURSION_DEPTH> proxied_vsf_votes;// = std::vector<share_type>( MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total ESCOR votes proxied to this account
 
          uint16_t          witnesses_voted_for = 0;
 
@@ -115,7 +115,7 @@ namespace eznode { namespace chain {
          share_type        witness_vote_weight()const {
             return std::accumulate( proxied_vsf_votes.begin(),
                                     proxied_vsf_votes.end(),
-                                    eScore.amount );
+                                    ESCOR.amount );
          }
          share_type        proxied_vsf_votes_total()const {
             return std::accumulate( proxied_vsf_votes.begin(),
@@ -123,7 +123,7 @@ namespace eznode { namespace chain {
                                     share_type() );
          }
 
-         asset effective_ESCOR()const { return eScore - ESCORDelegated + ESCORReceived; }
+         asset effective_ESCOR()const { return ESCOR - ESCORDelegated + ESCORReceived; }
    };
 
    class account_authority_object : public object< account_authority_object_type, account_authority_object >
@@ -163,7 +163,7 @@ namespace eznode { namespace chain {
          id_type           id;
          account_name_type delegator;
          account_name_type delegatee;
-         asset             eScore;
+         asset             ESCOR;
          time_point_sec    min_delegation_time;
    };
 
@@ -180,7 +180,7 @@ namespace eznode { namespace chain {
 
          id_type           id;
          account_name_type delegator;
-         asset             eScore;
+         asset             ESCOR;
          time_point_sec    expiration;
    };
 
@@ -217,24 +217,24 @@ namespace eznode { namespace chain {
 
          id_type           id;
 
-         account_name_type account_to_recover;
+         account_name_type accountToRecover;
          shared_authority  new_owner_authority;
          time_point_sec    expires;
    };
 
-   class change_recovery_account_request_object : public object< change_recovery_account_request_object_type, change_recovery_account_request_object >
+   class change_recoveryAccount_request_object : public object< change_recoveryAccount_request_object_type, change_recoveryAccount_request_object >
    {
       public:
          template< typename Constructor, typename Allocator >
-         change_recovery_account_request_object( Constructor&& c, allocator< Allocator > a )
+         change_recoveryAccount_request_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
 
          id_type           id;
 
-         account_name_type account_to_recover;
-         account_name_type recovery_account;
+         account_name_type accountToRecover;
+         account_name_type recoveryAccount;
          time_point_sec    effective_on;
    };
 
@@ -286,7 +286,7 @@ namespace eznode { namespace chain {
          >,
          ordered_unique< tag< by_ESCOR_balance >,
             composite_key< account_object,
-               member< account_object, asset, &account_object::eScore >,
+               member< account_object, asset, &account_object::ESCOR >,
                member< account_object, account_id_type, &account_object::id >
             >,
             composite_key_compare< std::greater< asset >, std::less< account_id_type > >
@@ -415,7 +415,7 @@ namespace eznode { namespace chain {
             member< account_recovery_request_object, account_recovery_request_id_type, &account_recovery_request_object::id > >,
          ordered_unique< tag< by_account >,
             composite_key< account_recovery_request_object,
-               member< account_recovery_request_object, account_name_type, &account_recovery_request_object::account_to_recover >,
+               member< account_recovery_request_object, account_name_type, &account_recovery_request_object::accountToRecover >,
                member< account_recovery_request_object, account_recovery_request_id_type, &account_recovery_request_object::id >
             >,
             composite_key_compare< std::less< account_name_type >, std::less< account_recovery_request_id_type > >
@@ -434,40 +434,40 @@ namespace eznode { namespace chain {
    struct by_effective_date;
 
    typedef multi_index_container <
-      change_recovery_account_request_object,
+      change_recoveryAccount_request_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< change_recovery_account_request_object, change_recovery_account_request_id_type, &change_recovery_account_request_object::id > >,
+            member< change_recoveryAccount_request_object, change_recoveryAccount_request_id_type, &change_recoveryAccount_request_object::id > >,
          ordered_unique< tag< by_account >,
-            composite_key< change_recovery_account_request_object,
-               member< change_recovery_account_request_object, account_name_type, &change_recovery_account_request_object::account_to_recover >,
-               member< change_recovery_account_request_object, change_recovery_account_request_id_type, &change_recovery_account_request_object::id >
+            composite_key< change_recoveryAccount_request_object,
+               member< change_recoveryAccount_request_object, account_name_type, &change_recoveryAccount_request_object::accountToRecover >,
+               member< change_recoveryAccount_request_object, change_recoveryAccount_request_id_type, &change_recoveryAccount_request_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< change_recovery_account_request_id_type > >
+            composite_key_compare< std::less< account_name_type >, std::less< change_recoveryAccount_request_id_type > >
          >,
          ordered_unique< tag< by_effective_date >,
-            composite_key< change_recovery_account_request_object,
-               member< change_recovery_account_request_object, time_point_sec, &change_recovery_account_request_object::effective_on >,
-               member< change_recovery_account_request_object, change_recovery_account_request_id_type, &change_recovery_account_request_object::id >
+            composite_key< change_recoveryAccount_request_object,
+               member< change_recoveryAccount_request_object, time_point_sec, &change_recoveryAccount_request_object::effective_on >,
+               member< change_recoveryAccount_request_object, change_recoveryAccount_request_id_type, &change_recoveryAccount_request_object::id >
             >,
-            composite_key_compare< std::less< time_point_sec >, std::less< change_recovery_account_request_id_type > >
+            composite_key_compare< std::less< time_point_sec >, std::less< change_recoveryAccount_request_id_type > >
          >
       >,
-      allocator< change_recovery_account_request_object >
-   > change_recovery_account_request_index;
+      allocator< change_recoveryAccount_request_object >
+   > change_recoveryAccount_request_index;
 } }
 
 FC_REFLECT( eznode::chain::account_object,
-             (id)(name)(memo_key)(json_metadata)(proxy)(last_accountUpdate)
+             (id)(name)(memoKey)(json)(proxy)(last_accountUpdate)
              (created)(mined)
-             (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recovery_account)(last_account_recovery)(reset_account)
+             (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recoveryAccount)(last_account_recovery)(reset_account)
              (comment_count)(lifetime_vote_count)(post_count)(can_vote)(voting_power)(last_vote_time)
              (balance)
              (ECOsavingsBalance)
              (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
              (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
              (ECOrewardBalance)(EUSDrewardbalance)(ESCORrewardBalance)(ESCORrewardBalance)
-             (eScore)(ESCORDelegated)(ESCORReceived)
+             (ESCOR)(ESCORDelegated)(ESCORReceived)
              (ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)
@@ -482,11 +482,11 @@ FC_REFLECT( eznode::chain::account_authority_object,
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::account_authority_object, eznode::chain::account_authority_index )
 
 FC_REFLECT( eznode::chain::ECO_fund_for_ESCOR_delegation_object,
-            (id)(delegator)(delegatee)(eScore)(min_delegation_time) )
+            (id)(delegator)(delegatee)(ESCOR)(min_delegation_time) )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::ECO_fund_for_ESCOR_delegation_object, eznode::chain::ECO_fund_for_ESCOR_delegation_index )
 
 FC_REFLECT( eznode::chain::ECO_fund_for_ESCOR_delegation_expiration_object,
-            (id)(delegator)(eScore)(expiration) )
+            (id)(delegator)(ESCOR)(expiration) )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::ECO_fund_for_ESCOR_delegation_expiration_object, eznode::chain::ECO_fund_for_ESCOR_delegation_expiration_index )
 
 FC_REFLECT( eznode::chain::owner_authority_history_object,
@@ -495,11 +495,11 @@ FC_REFLECT( eznode::chain::owner_authority_history_object,
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::owner_authority_history_object, eznode::chain::owner_authority_history_index )
 
 FC_REFLECT( eznode::chain::account_recovery_request_object,
-             (id)(account_to_recover)(new_owner_authority)(expires)
+             (id)(accountToRecover)(new_owner_authority)(expires)
           )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::account_recovery_request_object, eznode::chain::account_recovery_request_index )
 
-FC_REFLECT( eznode::chain::change_recovery_account_request_object,
-             (id)(account_to_recover)(recovery_account)(effective_on)
+FC_REFLECT( eznode::chain::change_recoveryAccount_request_object,
+             (id)(accountToRecover)(recoveryAccount)(effective_on)
           )
-CHAINBASE_SET_INDEX_TYPE( eznode::chain::change_recovery_account_request_object, eznode::chain::change_recovery_account_request_index )
+CHAINBASE_SET_INDEX_TYPE( eznode::chain::change_recoveryAccount_request_object, eznode::chain::change_recoveryAccount_request_index )

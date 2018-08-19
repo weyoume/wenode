@@ -183,7 +183,7 @@ struct database_fixture {
       const share_type& fee,
       const public_key_type& key,
       const public_key_type& post_key,
-      const string& json_metadata
+      const string& json
    );
 
    const account_object& accountCreate(

@@ -493,8 +493,8 @@ public:
          int active_key_index = find_first_unused_derived_key_index(owner_privkey);
          fc::ecc::private_key active_privkey = derive_private_key( key_to_wif(owner_privkey), active_key_index);
 
-         int memo_key_index = find_first_unused_derived_key_index(active_privkey);
-         fc::ecc::private_key memo_privkey = derive_private_key( key_to_wif(active_privkey), memo_key_index);
+         int memoKey_index = find_first_unused_derived_key_index(active_privkey);
+         fc::ecc::private_key memo_privkey = derive_private_key( key_to_wif(active_privkey), memoKey_index);
 
          eznode::chain::public_key_type owner_pubkey = owner_privkey.get_public_key();
          eznode::chain::public_key_type active_pubkey = active_privkey.get_public_key();
@@ -503,11 +503,11 @@ public:
          accountCreate_operation accountCreate_op;
 
          accountCreate_op.creator = creator_account_name;
-         accountCreate_op.new_account_name = account_name;
+         accountCreate_op.newAccountName = account_name;
          accountCreate_op.fee = _remote_db->get_chain_properties().account_creation_fee;
          accountCreate_op.owner = authority(1, owner_pubkey, 1);
          accountCreate_op.active = authority(1, active_pubkey, 1);
-         accountCreate_op.memo_key = memo_pubkey;
+         accountCreate_op.memoKey = memo_pubkey;
 
          signed_transaction tx;
 
@@ -732,11 +732,11 @@ public:
          asset totalEUSD(0, SYMBOL_EUSD );
          for( const auto& a : accounts ) {
             totalECO += a.balance.to_asset();
-            totalESCOR  += a.eScore.to_asset();
+            totalESCOR  += a.ESCOR.to_asset();
             totalEUSD  += a.EUSDbalance.to_asset();
             out << std::left << std::setw( 17 ) << std::string(a.name)
                 << std::right << std::setw(18) << fc::variant(a.balance).as_string() <<" "
-                << std::right << std::setw(26) << fc::variant(a.eScore).as_string() <<" "
+                << std::right << std::setw(26) << fc::variant(a.ESCOR).as_string() <<" "
                 << std::right << std::setw(16) << fc::variant(a.EUSDbalance).as_string() <<"\n";
          }
          out << "-------------------------------------------------------------------------\n";
@@ -1282,8 +1282,8 @@ feed_history_api_obj wallet_api::get_feed_history()const { return my->_remote_db
  * wallet.
  */
 annotated_signed_transaction wallet_api::create_account_with_keys( string creator,
-                                      string new_account_name,
-                                      string json_meta,
+                                      string newAccountName,
+                                      string json,
                                       public_key_type owner,
                                       public_key_type active,
                                       public_key_type posting,
@@ -1293,12 +1293,12 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
    FC_ASSERT( !is_locked() );
    accountCreate_operation op;
    op.creator = creator;
-   op.new_account_name = new_account_name;
+   op.newAccountName = newAccountName;
    op.owner = authority( 1, owner, 1 );
    op.active = authority( 1, active, 1 );
    op.posting = authority( 1, posting, 1 );
-   op.memo_key = memo;
-   op.json_metadata = json_meta;
+   op.memoKey = memo;
+   op.json = json;
    op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_ECO_MODIFIER, SYMBOL_ECO );
 
    signed_transaction tx;
@@ -1306,7 +1306,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
    tx.validate();
 
    return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW( (creator)(new_account_name)(json_meta)(owner)(active)(memo)(broadcast) ) }
+} FC_CAPTURE_AND_RETHROW( (creator)(newAccountName)(json)(owner)(active)(memo)(broadcast) ) }
 
 /**
  * This method is used by faucets to create new accounts for other users which must
@@ -1314,10 +1314,10 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
  * wallet.
  */
 annotated_signed_transaction wallet_api::create_account_with_keys_delegated( string creator,
-                                      asset ECO_fee,
-                                      asset delegated_ESCOR,
-                                      string new_account_name,
-                                      string json_meta,
+                                      asset ECOfee,
+                                      asset delegatedESCOR,
+                                      string newAccountName,
+                                      string json,
                                       public_key_type owner,
                                       public_key_type active,
                                       public_key_type posting,
@@ -1327,29 +1327,29 @@ annotated_signed_transaction wallet_api::create_account_with_keys_delegated( str
    FC_ASSERT( !is_locked() );
    accountCreateWithDelegation_operation op;
    op.creator = creator;
-   op.new_account_name = new_account_name;
+   op.newAccountName = newAccountName;
    op.owner = authority( 1, owner, 1 );
    op.active = authority( 1, active, 1 );
    op.posting = authority( 1, posting, 1 );
-   op.memo_key = memo;
-   op.json_metadata = json_meta;
-   op.fee = ECO_fee;
-   op.delegation = delegated_ESCOR;
+   op.memoKey = memo;
+   op.json = json;
+   op.fee = ECOfee;
+   op.delegation = delegatedESCOR;
 
    signed_transaction tx;
    tx.operations.push_back(op);
    tx.validate();
 
    return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW( (creator)(new_account_name)(json_meta)(owner)(active)(memo)(broadcast) ) }
+} FC_CAPTURE_AND_RETHROW( (creator)(newAccountName)(json)(owner)(active)(memo)(broadcast) ) }
 
-annotated_signed_transaction wallet_api::request_account_recovery( string recovery_account, string account_to_recover, authority new_authority, bool broadcast )
+annotated_signed_transaction wallet_api::request_account_recovery( string recoveryAccount, string accountToRecover, authority newAuthority, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
    request_account_recovery_operation op;
-   op.recovery_account = recovery_account;
-   op.account_to_recover = account_to_recover;
-   op.new_owner_authority = new_authority;
+   op.recoveryAccount = recoveryAccount;
+   op.accountToRecover = accountToRecover;
+   op.new_owner_authority = newAuthority;
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -1358,12 +1358,12 @@ annotated_signed_transaction wallet_api::request_account_recovery( string recove
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::recover_account( string account_to_recover, authority recent_authority, authority new_authority, bool broadcast ) {
+annotated_signed_transaction wallet_api::recover_account( string accountToRecover, authority recent_authority, authority newAuthority, bool broadcast ) {
    FC_ASSERT( !is_locked() );
 
    recover_account_operation op;
-   op.account_to_recover = account_to_recover;
-   op.new_owner_authority = new_authority;
+   op.accountToRecover = accountToRecover;
+   op.new_owner_authority = newAuthority;
    op.recent_owner_authority = recent_authority;
 
    signed_transaction tx;
@@ -1373,12 +1373,12 @@ annotated_signed_transaction wallet_api::recover_account( string account_to_reco
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::change_recovery_account( string owner, string new_recovery_account, bool broadcast ) {
+annotated_signed_transaction wallet_api::change_recoveryAccount( string owner, string new_recoveryAccount, bool broadcast ) {
    FC_ASSERT( !is_locked() );
 
-   change_recovery_account_operation op;
-   op.account_to_recover = owner;
-   op.new_recovery_account = new_recovery_account;
+   change_recoveryAccount_operation op;
+   op.accountToRecover = owner;
+   op.new_recoveryAccount = new_recoveryAccount;
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -1394,7 +1394,7 @@ vector< owner_authority_history_api_obj > wallet_api::get_owner_history( string 
 
 annotated_signed_transaction wallet_api::update_account(
                                       string account_name,
-                                      string json_meta,
+                                      string json,
                                       public_key_type owner,
                                       public_key_type active,
                                       public_key_type posting,
@@ -1410,8 +1410,8 @@ annotated_signed_transaction wallet_api::update_account(
       op.owner  = authority( 1, owner, 1 );
       op.active = authority( 1, active, 1);
       op.posting = authority( 1, posting, 1);
-      op.memo_key = memo;
-      op.json_metadata = json_meta;
+      op.memoKey = memo;
+      op.json = json;
 
       signed_transaction tx;
       tx.operations.push_back(op);
@@ -1419,7 +1419,7 @@ annotated_signed_transaction wallet_api::update_account(
 
       return my->sign_transaction( tx, broadcast );
    }
-   FC_CAPTURE_AND_RETHROW( (account_name)(json_meta)(owner)(active)(memo)(broadcast) )
+   FC_CAPTURE_AND_RETHROW( (account_name)(json)(owner)(active)(memo)(broadcast) )
 }
 
 annotated_signed_transaction wallet_api::update_account_auth_key( string account_name, authority_type type, public_key_type key, weight_type weight, bool broadcast )
@@ -1432,8 +1432,8 @@ annotated_signed_transaction wallet_api::update_account_auth_key( string account
 
    accountUpdate_operation op;
    op.account = account_name;
-   op.memo_key = accounts[0].memo_key;
-   op.json_metadata = accounts[0].json_metadata;
+   op.memoKey = accounts[0].memoKey;
+   op.json = accounts[0].json;
 
    authority new_auth;
 
@@ -1499,8 +1499,8 @@ annotated_signed_transaction wallet_api::update_account_auth_account( string acc
 
    accountUpdate_operation op;
    op.account = account_name;
-   op.memo_key = accounts[0].memo_key;
-   op.json_metadata = accounts[0].json_metadata;
+   op.memoKey = accounts[0].memoKey;
+   op.json = accounts[0].json;
 
    authority new_auth;
 
@@ -1567,8 +1567,8 @@ annotated_signed_transaction wallet_api::update_account_auth_threshold( string a
 
    accountUpdate_operation op;
    op.account = account_name;
-   op.memo_key = accounts[0].memo_key;
-   op.json_metadata = accounts[0].json_metadata;
+   op.memoKey = accounts[0].memoKey;
+   op.json = accounts[0].json;
 
    authority new_auth;
 
@@ -1617,7 +1617,7 @@ annotated_signed_transaction wallet_api::update_account_auth_threshold( string a
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::update_account_meta( string account_name, string json_meta, bool broadcast )
+annotated_signed_transaction wallet_api::update_account_meta( string account_name, string json, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
 
@@ -1627,8 +1627,8 @@ annotated_signed_transaction wallet_api::update_account_meta( string account_nam
 
    accountUpdate_operation op;
    op.account = account_name;
-   op.memo_key = accounts[0].memo_key;
-   op.json_metadata = json_meta;
+   op.memoKey = accounts[0].memoKey;
+   op.json = json;
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -1637,7 +1637,7 @@ annotated_signed_transaction wallet_api::update_account_meta( string account_nam
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::update_account_memo_key( string account_name, public_key_type key, bool broadcast )
+annotated_signed_transaction wallet_api::update_account_memoKey( string account_name, public_key_type key, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
 
@@ -1647,8 +1647,8 @@ annotated_signed_transaction wallet_api::update_account_memo_key( string account
 
    accountUpdate_operation op;
    op.account = account_name;
-   op.memo_key = key;
-   op.json_metadata = accounts[0].json_metadata;
+   op.memoKey = key;
+   op.json = accounts[0].json;
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -1657,7 +1657,7 @@ annotated_signed_transaction wallet_api::update_account_memo_key( string account
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::delegateESCOR delegator, string delegatee, asset eScore, eScore )
+annotated_signed_transaction wallet_api::delegateESCOR delegator, string delegatee, asset ESCOR, ESCOR )
 {
    FC_ASSERT( !is_locked() );
 
@@ -1669,7 +1669,7 @@ annotated_signed_transaction wallet_api::delegateESCOR delegator, string delegat
    delegateESCORon op;
    op.delegator = delegator;
    op.delegatee = delegatee;
-   op.eScores;eScore
+   op.ESCORs;ESCOR
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -1682,7 +1682,7 @@ annotated_signed_transaction wallet_api::delegateESCOR delegator, string delegat
  *  This method will genrate new owner, active, and memo keys for the new account which
  *  will be controlable by this wallet.
  */
-annotated_signed_transaction wallet_api::create_account( string creator, string new_account_name, string json_meta, bool broadcast )
+annotated_signed_transaction wallet_api::create_account( string creator, string newAccountName, string json, bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
    auto owner = suggest_brain_key();
@@ -1693,14 +1693,14 @@ annotated_signed_transaction wallet_api::create_account( string creator, string 
    import_key( active.wif_priv_key );
    import_key( posting.wif_priv_key );
    import_key( memo.wif_priv_key );
-   return create_account_with_keys( creator, new_account_name, json_meta, owner.pub_key, active.pub_key, posting.pub_key, memo.pub_key, broadcast );
-} FC_CAPTURE_AND_RETHROW( (creator)(new_account_name)(json_meta) ) }
+   return create_account_with_keys( creator, newAccountName, json, owner.pub_key, active.pub_key, posting.pub_key, memo.pub_key, broadcast );
+} FC_CAPTURE_AND_RETHROW( (creator)(newAccountName)(json) ) }
 
 /**
  *  This method will genrate new owner, active, and memo keys for the new account which
  *  will be controlable by this wallet.
  */
-annotated_signed_transaction wallet_api::create_account_delegated( string creator, asset ECO_fee, asset delegated_ESCOR, string new_account_name, string json_meta, bool broadcast )
+annotated_signed_transaction wallet_api::create_account_delegated( string creator, asset ECOfee, asset delegatedESCOR, string newAccountName, string json, bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
    auto owner = suggest_brain_key();
@@ -1711,8 +1711,8 @@ annotated_signed_transaction wallet_api::create_account_delegated( string creato
    import_key( active.wif_priv_key );
    import_key( posting.wif_priv_key );
    import_key( memo.wif_priv_key );
-   return create_account_with_keys_delegated( creator, ECO_fee, delegated_ESCOR, new_account_name, json_meta,  owner.pub_key, active.pub_key, posting.pub_key, memo.pub_key, broadcast );
-} FC_CAPTURE_AND_RETHROW( (creator)(new_account_name)(json_meta) ) }
+   return create_account_with_keys_delegated( creator, ECOfee, delegatedESCOR, newAccountName, json,  owner.pub_key, active.pub_key, posting.pub_key, memo.pub_key, broadcast );
+} FC_CAPTURE_AND_RETHROW( (creator)(newAccountName)(json) ) }
 
 
 annotated_signed_transaction wallet_api::update_witness( string witness_account_name,
@@ -1808,9 +1808,9 @@ void wallet_api::check_memo( const string& memo, const account_api_obj& account 
          FC_ASSERT( key_weight_pair.first != key, "Detected private posting key in memo field. Cancelling transaction." );
    }
 
-   const auto& memo_key = account.memo_key;
+   const auto& memoKey = account.memoKey;
    for( auto& key : keys )
-      FC_ASSERT( memo_key != key, "Detected private memo key in memo field. Cancelling transaction." );
+      FC_ASSERT( memoKey != key, "Detected private memo key in memo field. Cancelling transaction." );
 
    // Check against imported keys
    for( auto& key_pair : my->_keys )
@@ -1828,8 +1828,8 @@ string wallet_api::get_encrypted_memo( string from, string to, string memo ) {
        auto from_account = get_account( from );
        auto to_account   = get_account( to );
 
-       m.from            = from_account.memo_key;
-       m.to              = to_account.memo_key;
+       m.from            = from_account.memoKey;
+       m.to              = to_account.memoKey;
        m.nonce = fc::time_point::now().time_since_epoch().count();
 
        auto from_priv = my->get_private_key( m.from );
@@ -1876,7 +1876,7 @@ annotated_signed_transaction wallet_api::escrow_transfer(
       asset fee,
       time_point_sec ratification_deadline,
       time_point_sec escrow_expiration,
-      string json_meta,
+      string json,
       bool broadcast
    )
 {
@@ -1891,7 +1891,7 @@ annotated_signed_transaction wallet_api::escrow_transfer(
    op.fee = fee;
    op.ratification_deadline = ratification_deadline;
    op.escrow_expiration = escrow_expiration;
-   op.json_meta = json_meta;
+   op.json = json;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -2051,12 +2051,12 @@ annotated_signed_transaction wallet_api::transferECOtoESCORfund(string from, str
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::withdraw_ESCOR(string from, asset eScoreroadcast )
+annotated_signed_transaction wallet_api::withdrawESCOR(string from, asset ESCORroadcast )
 {
    FC_ASSERT( !is_locked() );
-    withdraw_ESCOR_operation op;
+    withdrawESCOR_operation op;
     op.account = from;
-    op.eScores;eScore
+    op.ESCORs;ESCOR
 
     signed_transaction tx;
     tx.operations.push_back( op );
@@ -2081,7 +2081,7 @@ annotated_signed_transaction wallet_api::setWithdrawESCORasECOroute( string from
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::convert_EUSDD(string from, asset amount, bool broadcast )
+annotated_signed_transaction wallet_api::convertEUSDD(string from, asset amount, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
     convert_operation op;
@@ -2096,7 +2096,7 @@ annotated_signed_transaction wallet_api::convert_EUSDD(string from, asset amount
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::publish_feed(string witness, price exchange_rate, bool broadcast )
+annotated_signed_transaction wallet_api::publishFeed(string witness, price exchange_rate, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
     feed_publish_operation op;
@@ -2258,7 +2258,7 @@ annotated_signed_transaction wallet_api::post_comment( string author, string per
    op.permlink = permlink;
    op.title = title;
    op.body = body;
-   op.json_metadata = json;
+   op.json = json;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -2369,16 +2369,16 @@ annotated_signed_transaction      wallet_api::send_private_message( string from,
    pmo.from          = from;
    pmo.to            = to;
    pmo.sent_time     = fc::time_point::now().time_since_epoch().count();
-   pmo.from_memo_key = from_account.memo_key;
-   pmo.to_memo_key   = to_account.memo_key;
+   pmo.from_memoKey = from_account.memoKey;
+   pmo.to_memoKey   = to_account.memoKey;
 
    message_body message;
    message.subject = subject;
    message.body    = body;
 
-   auto priv_key = wif_to_key( get_private_key( pmo.from_memo_key ) );
+   auto priv_key = wif_to_key( get_private_key( pmo.from_memoKey ) );
    FC_ASSERT( priv_key, "unable to find private key for memo" );
-   auto shared_secret = priv_key->get_shared_secret( pmo.to_memo_key );
+   auto shared_secret = priv_key->get_shared_secret( pmo.to_memoKey );
    fc::sha512::encoder enc;
    fc::raw::pack( enc, pmo.sent_time );
    fc::raw::pack( enc, shared_secret );
@@ -2390,8 +2390,8 @@ annotated_signed_transaction      wallet_api::send_private_message( string from,
    pmo.encrypted_message = fc::aes_encrypt( encrypt_key, plain_text );
 
    message_api_obj obj;
-   obj.to_memo_key   = pmo.to_memo_key;
-   obj.from_memo_key = pmo.from_memo_key;
+   obj.to_memoKey   = pmo.to_memoKey;
+   obj.from_memoKey = pmo.from_memoKey;
    obj.checksum = pmo.checksum;
    obj.sent_time = pmo.sent_time;
    obj.encrypted_message = pmo.encrypted_message;
@@ -2410,10 +2410,10 @@ message_body wallet_api::try_decrypt_message( const message_api_obj& mo ) {
 
    fc::sha512 shared_secret;
 
-   auto it = my->_keys.find(mo.from_memo_key);
+   auto it = my->_keys.find(mo.from_memoKey);
    if( it == my->_keys.end() )
    {
-      it = my->_keys.find(mo.to_memo_key);
+      it = my->_keys.find(mo.to_memoKey);
       if( it == my->_keys.end() )
       {
          wlog( "unable to find keys" );
@@ -2421,11 +2421,11 @@ message_body wallet_api::try_decrypt_message( const message_api_obj& mo ) {
       }
       auto priv_key = wif_to_key( it->second );
       if( !priv_key ) return result;
-      shared_secret = priv_key->get_shared_secret( mo.from_memo_key );
+      shared_secret = priv_key->get_shared_secret( mo.from_memoKey );
    } else {
       auto priv_key = wif_to_key( it->second );
       if( !priv_key ) return result;
-      shared_secret = priv_key->get_shared_secret( mo.to_memo_key );
+      shared_secret = priv_key->get_shared_secret( mo.to_memoKey );
    }
 
 

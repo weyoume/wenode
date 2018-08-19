@@ -240,7 +240,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       //*
       signed_transaction trx;
       accountCreate_operation cop;
-      cop.new_account_name = "alice";
+      cop.newAccountName = "alice";
       cop.creator = INIT_MINER_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
@@ -300,7 +300,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       signed_transaction trx;
       accountCreate_operation cop;
-      cop.new_account_name = "alice";
+      cop.newAccountName = "alice";
       cop.creator = INIT_MINER_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
@@ -354,7 +354,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.set_reference_block( db1.head_block_id() );
 
       accountCreate_operation cop;
-      cop.new_account_name = "alice";
+      cop.newAccountName = "alice";
       cop.creator = INIT_MINER_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;

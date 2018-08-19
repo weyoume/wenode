@@ -52,7 +52,7 @@ void test_a_evaluator::do_apply( const test_a_operation& o )
 
    db().modify( account, [&]( account_object& a )
    {
-      a.json_metadata = "a";
+      a.json = "a";
    });
 }
 
@@ -62,7 +62,7 @@ void test_b_evaluator::do_apply( const test_b_operation& o )
 
    db().modify( account, [&]( account_object& a )
    {
-      a.json_metadata = "b";
+      a.json = "b";
    });
 }
 

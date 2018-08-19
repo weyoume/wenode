@@ -154,26 +154,26 @@ void accountCreate_evaluator::do_apply( const accountCreate_operation& o )
 
    const auto& new_account = _db.create< account_object >( [&]( account_object& acc )
    {
-      acc.name = o.new_account_name;
-      acc.memo_key = o.memo_key;
+      acc.name = o.newAccountName;
+      acc.memoKey = o.memoKey;
       acc.created = props.time;
       acc.last_vote_time = props.time;
       acc.mined = false;
 
       if( !_db.has_hardfork( HARDFORK_0_11__169 ) )
-         acc.recovery_account = "ezira";
+         acc.recoveryAccount = "ezira";
       else
-         acc.recovery_account = o.creator;
+         acc.recoveryAccount = o.creator;
 
 
       #ifndef IS_LOW_MEM
-         from_string( acc.json_metadata, o.json_metadata );
+         from_string( acc.json, o.json );
       #endif
    });
 
    _db.create< account_authority_object >( [&]( account_authority_object& auth )
    {
-      auth.account = o.new_account_name;
+      auth.account = o.newAccountName;
       auth.owner = o.owner;
       auth.active = o.active;
       auth.posting = o.posting;
@@ -196,8 +196,8 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
                ( "creator.balance", creator.balance )
                ( "required", o.fee ) );
 
-   FC_ASSERT( creator.eScore - creator.ESCORDelegated - asset( creator.to_withdraw - creator.withdrawn, SYMBOL_ESCOR ) >= o.delegation, "Insufficient eScore to delegate to new account.",
-               ( "creator.eScore", creator.eScore )
+   FC_ASSERT( creator.ESCOR - creator.ESCORDelegated - asset( creator.to_withdraw - creator.withdrawn, SYMBOL_ESCOR ) >= o.delegation, "Insufficient eScore to delegate to new account.",
+               ( "creator.ESCOR", creator.ESCOR )
                ( "creator.ESCORDelegated", creator.ESCORDelegated )( "required", o.delegation ) );
 
    auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_ECO_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_ECO ) * props.get_ESCOR_price();
@@ -238,24 +238,24 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
 
    const auto& new_account = _db.create< account_object >( [&]( account_object& acc )
    {
-      acc.name = o.new_account_name;
-      acc.memo_key = o.memo_key;
+      acc.name = o.newAccountName;
+      acc.memoKey = o.memoKey;
       acc.created = props.time;
       acc.last_vote_time = props.time;
       acc.mined = false;
 
-      acc.recovery_account = o.creator;
+      acc.recoveryAccount = o.creator;
 
       acc.ESCORReceived = o.delegation;
 
       #ifndef IS_LOW_MEM
-         from_string( acc.json_metadata, o.json_metadata );
+         from_string( acc.json, o.json );
       #endif
    });
 
    _db.create< account_authority_object >( [&]( account_authority_object& auth )
    {
-      auth.account = o.new_account_name;
+      auth.account = o.newAccountName;
       auth.owner = o.owner;
       auth.active = o.active;
       auth.posting = o.posting;
@@ -267,8 +267,8 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
       _db.create< ECO_fund_for_ESCOR_delegation_object >( [&]( ECO_fund_for_ESCOR_delegation_object& vdo )
       {
          vdo.delegator = o.creator;
-         vdo.delegatee = o.new_account_name;
-         vdo.eScore = o.delegation;
+         vdo.delegatee = o.newAccountName;
+         vdo.ESCOR = o.delegation;
          vdo.min_delegation_time = _db.head_block_time() + CREATE_ACCOUNT_DELEGATION_TIME;
       });
    }
@@ -325,8 +325,8 @@ void accountUpdate_evaluator::do_apply( const accountUpdate_operation& o )
 
    _db.modify( account, [&]( account_object& acc )
    {
-      if( o.memo_key != public_key_type() )
-            acc.memo_key = o.memo_key;
+      if( o.memoKey != public_key_type() )
+            acc.memoKey = o.memoKey;
 
       if( ( o.active || o.owner ) && acc.active_challenged )
       {
@@ -337,8 +337,8 @@ void accountUpdate_evaluator::do_apply( const accountUpdate_operation& o )
       acc.last_accountUpdate = _db.head_block_time();
 
       #ifndef IS_LOW_MEM
-        if ( o.json_metadata.size() > 0 )
-            from_string( acc.json_metadata, o.json_metadata );
+        if ( o.json.size() > 0 )
+            from_string( acc.json, o.json );
       #endif
    });
 
@@ -467,7 +467,7 @@ void comment_options_evaluator::do_apply( const comment_options_operation& o )
 void comment_evaluator::do_apply( const comment_operation& o )
 { try {
    if( _db.has_hardfork( HARDFORK_0_5__55 ) )
-      FC_ASSERT( o.title.size() + o.body.size() + o.json_metadata.size(), "Cannot update comment because nothing appears to be changing." );
+      FC_ASSERT( o.title.size() + o.body.size() + o.json.size(), "Cannot update comment because nothing appears to be changing." );
 
    const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
    auto itr = by_permlink_idx.find( boost::make_tuple( o.author, o.permlink ) );
@@ -489,8 +489,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
          FC_ASSERT( parent->depth < MAX_COMMENT_DEPTH, "Comment is nested ${x} posts deep, maximum depth is ${y}.", ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
    }
 
-   if( ( _db.has_hardfork( HARDFORK_0_17__926 ) ) && o.json_metadata.size() )
-      FC_ASSERT( fc::is_utf8( o.json_metadata ), "JSON Metadata must be UTF-8" );
+   if( ( _db.has_hardfork( HARDFORK_0_17__926 ) ) && o.json.size() )
+      FC_ASSERT( fc::is_utf8( o.json ), "JSON Metadata must be UTF-8" );
 
    auto now = _db.head_block_time();
 
@@ -591,8 +591,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                from_string( com.body, o.body );
             }
-            if( fc::is_utf8( o.json_metadata ) )
-               from_string( com.json_metadata, o.json_metadata );
+            if( fc::is_utf8( o.json ) )
+               from_string( com.json, o.json );
             else
                wlog( "Comment ${a}/${p} contains invalid UTF-8 metadata", ("a", o.author)("p", o.permlink) );
          #endif
@@ -646,10 +646,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
          #ifndef IS_LOW_MEM
            if( o.title.size() )         from_string( com.title, o.title );
-           if( o.json_metadata.size() )
+           if( o.json.size() )
            {
-              if( fc::is_utf8( o.json_metadata ) )
-                 from_string( com.json_metadata, o.json_metadata );
+              if( fc::is_utf8( o.json ) )
+                 from_string( com.json, o.json );
               else
                  wlog( "Comment ${a}/${p} contains invalid UTF-8 metadata", ("a", o.author)("p", o.permlink) );
            }
@@ -888,11 +888,11 @@ void transferECOtoESCORfund_evaluator::do_apply( const transferECOtoESCORfund_op
    _db.createECOfundForESCOR( to_account, o.amount );
 }
 
-void withdraw_ESCOR_evaluator::do_apply( const withdraw_ESCOR_operation& o )
+void withdrawESCOR_evaluator::do_apply( const withdrawESCOR_operation& o )
 {
    const auto& account = _db.get_account( o.account );
 
-   if( o.eScore.amount < 0 )
+   if( o.ESCOR.amount < 0 )
    {
       // TODO: Update this to a HF 20 check
 #ifndef IS_TEST_NET
@@ -900,7 +900,7 @@ void withdraw_ESCOR_evaluator::do_apply( const withdraw_ESCOR_operation& o )
       {
 #endif
          FC_ASSERT( false, "Cannot withdraw negative ESCOR. account: ${account}, ESCOR:${ESCOR}",
-            ("account", o.account)("ESCOR", o.eScore) );
+            ("account", o.account)("ESCOR", o.ESCOR) );
 #ifndef IS_TEST_NET
       }
 #endif
@@ -910,7 +910,7 @@ void withdraw_ESCOR_evaluator::do_apply( const withdraw_ESCOR_operation& o )
    }
 
    FC_ASSERT( account.ESCOR >= asset( 0, SYMBOL_ESCOR ), "Account does not have sufficient Ezira Power for withdraw." );
-   FC_ASSERT( account.ESCOR - account.ESCORDelegated >= o.eScore, "Account does not have sufficient Ezira Power for withdraw." );
+   FC_ASSERT( account.ESCOR - account.ESCORDelegated >= o.ESCOR, "Account does not have sufficient Ezira Power for withdraw." );
 
    if( !account.mined && _db.has_hardfork( HARDFORK_0_1 ) )
    {
@@ -920,11 +920,11 @@ void withdraw_ESCOR_evaluator::do_apply( const withdraw_ESCOR_operation& o )
       asset min_ESCOR = wso.median_props.account_creation_fee * props.get_ESCOR_price();
       min_ESCOR.amount.value *= 10;
 
-      FC_ASSERT( account.ESCOR > min_ESCOR || ( _db.has_hardfork( HARDFORK_0_16__562 ) && o.eScore.amount == 0 ),
+      FC_ASSERT( account.ESCOR > min_ESCOR || ( _db.has_hardfork( HARDFORK_0_16__562 ) && o.ESCOR.amount == 0 ),
                  "Account registered by another account requires 10x account creation fee worth of Ezira Power before it can be powered down." );
    }
 
-   if( o.eScore.amount == 0 )
+   if( o.ESCOR.amount == 0 )
    {
       if( _db.has_hardfork( HARDFORK_0_5__57 ) )
          FC_ASSERT( account.ESCORwithdrawRateInECO.amount  != 0, "This operation would not change the eScore ECO fund withdraw rate." );
@@ -944,7 +944,7 @@ void withdraw_ESCOR_evaluator::do_apply( const withdraw_ESCOR_operation& o )
 
       _db.modify( account, [&]( account_object& a )
       {
-         auto new_ESCORwithdrawRateInECO = asset( o.eScore.amount / ECO_fund_for_ESCOR_withdraw_intervals, SYMBOL_ESCOR );
+         auto new_ESCORwithdrawRateInECO = asset( o.ESCOR.amount / ECO_fund_for_ESCOR_withdraw_intervals, SYMBOL_ESCOR );
 
          if( new_ESCORwithdrawRateInECO.amount == 0 )
             new_ESCORwithdrawRateInECO.amount = 1;
@@ -954,7 +954,7 @@ void withdraw_ESCOR_evaluator::do_apply( const withdraw_ESCOR_operation& o )
 
          a.ESCORwithdrawRateInECO = new_ESCORwithdrawRateInECO;
          a.nextESCORwithdrawalTime = _db.head_block_time() + fc::seconds(ESCOR_WITHDRAW_INTERVAL_SECONDS);
-         a.to_withdraw = o.eScore.amount;
+         a.to_withdraw = o.ESCOR.amount;
          a.withdrawn = 0;
       });
    }
@@ -966,7 +966,7 @@ void setWithdrawESCORasECOroute_evaluator::do_apply( const setWithdrawESCORasECO
    {
    const auto& from_account = _db.get_account( o.from_account );
    const auto& to_account = _db.get_account( o.to_account );
-   const auto& wd_idx = _db.get_index< withdraw_ESCOR_route_index >().indices().get< by_withdraw_route >();
+   const auto& wd_idx = _db.get_index< withdrawESCOR_route_index >().indices().get< by_withdraw_route >();
    auto itr = wd_idx.find( boost::make_tuple( from_account.id, to_account.id ) );
 
    if( itr == wd_idx.end() )
@@ -974,7 +974,7 @@ void setWithdrawESCORasECOroute_evaluator::do_apply( const setWithdrawESCORasECO
       FC_ASSERT( o.percent != 0, "Cannot create a 0% destination." );
       FC_ASSERT( from_account.withdraw_routes < MAX_WITHDRAW_ROUTES, "Account already has the maximum number of routes." );
 
-      _db.create< withdraw_ESCOR_route_object >( [&]( withdraw_ESCOR_route_object& wvdo )
+      _db.create< withdrawESCOR_route_object >( [&]( withdrawESCOR_route_object& wvdo )
       {
          wvdo.from_account = from_account.id;
          wvdo.to_account = to_account.id;
@@ -998,7 +998,7 @@ void setWithdrawESCORasECOroute_evaluator::do_apply( const setWithdrawESCORasECO
    }
    else
    {
-      _db.modify( *itr, [&]( withdraw_ESCOR_route_object& wvdo )
+      _db.modify( *itr, [&]( withdrawESCOR_route_object& wvdo )
       {
          wvdo.from_account = from_account.id;
          wvdo.to_account = to_account.id;
@@ -1606,14 +1606,14 @@ void pow_apply( database& db, Operation o )
       db.create< account_object >( [&]( account_object& acc )
       {
          acc.name = o.get_worker_account();
-         acc.memo_key = o.work.worker;
+         acc.memoKey = o.work.worker;
          acc.created = dgp.time;
          acc.last_vote_time = dgp.time;
 
          if( !db.has_hardfork( HARDFORK_0_11__169 ) )
-            acc.recovery_account = "ezira";
+            acc.recoveryAccount = "ezira";
          else
-            acc.recovery_account = ""; /// highest voted witness at time of recovery
+            acc.recoveryAccount = ""; /// highest voted witness at time of recovery
       });
 
       db.create< account_authority_object >( [&]( account_authority_object& auth )
@@ -1726,10 +1726,10 @@ void pow2_evaluator::do_apply( const pow2_operation& o )
       db.create< account_object >( [&]( account_object& acc )
       {
          acc.name = worker_account;
-         acc.memo_key = *o.new_owner_key;
+         acc.memoKey = *o.new_owner_key;
          acc.created = dgp.time;
          acc.last_vote_time = dgp.time;
-         acc.recovery_account = ""; /// highest voted witness at time of recovery
+         acc.recoveryAccount = ""; /// highest voted witness at time of recovery
       });
 
       db.create< account_authority_object >( [&]( account_authority_object& auth )
@@ -1921,15 +1921,15 @@ void prove_authority_evaluator::do_apply( const prove_authority_operation& o )
 
 void request_account_recovery_evaluator::do_apply( const request_account_recovery_operation& o )
 {
-   const auto& account_to_recover = _db.get_account( o.account_to_recover );
+   const auto& accountToRecover = _db.get_account( o.accountToRecover );
 
-   if ( account_to_recover.recovery_account.length() )   // Make sure recovery matches expected recovery account
-      FC_ASSERT( account_to_recover.recovery_account == o.recovery_account, "Cannot recover an account that does not have you as there recovery partner." );
+   if ( accountToRecover.recoveryAccount.length() )   // Make sure recovery matches expected recovery account
+      FC_ASSERT( accountToRecover.recoveryAccount == o.recoveryAccount, "Cannot recover an account that does not have you as there recovery partner." );
    else                                                  // Empty string recovery account defaults to top witness
-      FC_ASSERT( _db.get_index< witness_index >().indices().get< by_vote_name >().begin()->owner == o.recovery_account, "Top witness must recover an account with no recovery partner." );
+      FC_ASSERT( _db.get_index< witness_index >().indices().get< by_vote_name >().begin()->owner == o.recoveryAccount, "Top witness must recover an account with no recovery partner." );
 
    const auto& recovery_request_idx = _db.get_index< account_recovery_request_index >().indices().get< by_account >();
-   auto request = recovery_request_idx.find( o.account_to_recover );
+   auto request = recovery_request_idx.find( o.accountToRecover );
 
    if( request == recovery_request_idx.end() ) // New Request
    {
@@ -1947,7 +1947,7 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
 
       _db.create< account_recovery_request_object >( [&]( account_recovery_request_object& req )
       {
-         req.account_to_recover = o.account_to_recover;
+         req.accountToRecover = o.accountToRecover;
          req.new_owner_authority = o.new_owner_authority;
          req.expires = _db.head_block_time() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD;
       });
@@ -1979,22 +1979,22 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
 
 void recover_account_evaluator::do_apply( const recover_account_operation& o )
 {
-   const auto& account = _db.get_account( o.account_to_recover );
+   const auto& account = _db.get_account( o.accountToRecover );
 
    if( _db.has_hardfork( HARDFORK_0_12 ) )
       FC_ASSERT( _db.head_block_time() - account.last_account_recovery > OWNER_UPDATE_LIMIT, "Owner authority can only be updated once an hour." );
 
    const auto& recovery_request_idx = _db.get_index< account_recovery_request_index >().indices().get< by_account >();
-   auto request = recovery_request_idx.find( o.account_to_recover );
+   auto request = recovery_request_idx.find( o.accountToRecover );
 
    FC_ASSERT( request != recovery_request_idx.end(), "There are no active recovery requests for this account." );
    FC_ASSERT( request->new_owner_authority == o.new_owner_authority, "New owner authority does not match recovery request." );
 
    const auto& recent_auth_idx = _db.get_index< owner_authority_history_index >().indices().get< by_account >();
-   auto hist = recent_auth_idx.lower_bound( o.account_to_recover );
+   auto hist = recent_auth_idx.lower_bound( o.accountToRecover );
    bool found = false;
 
-   while( hist != recent_auth_idx.end() && hist->account == o.account_to_recover && !found )
+   while( hist != recent_auth_idx.end() && hist->account == o.accountToRecover && !found )
    {
       found = hist->previous_owner_authority == o.recent_owner_authority;
       if( found ) break;
@@ -2011,28 +2011,28 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
    });
 }
 
-void change_recovery_account_evaluator::do_apply( const change_recovery_account_operation& o )
+void change_recoveryAccount_evaluator::do_apply( const change_recoveryAccount_operation& o )
 {
-   _db.get_account( o.new_recovery_account ); // Simply validate account exists
-   const auto& account_to_recover = _db.get_account( o.account_to_recover );
+   _db.get_account( o.new_recoveryAccount ); // Simply validate account exists
+   const auto& accountToRecover = _db.get_account( o.accountToRecover );
 
-   const auto& change_recovery_idx = _db.get_index< change_recovery_account_request_index >().indices().get< by_account >();
-   auto request = change_recovery_idx.find( o.account_to_recover );
+   const auto& change_recovery_idx = _db.get_index< change_recoveryAccount_request_index >().indices().get< by_account >();
+   auto request = change_recovery_idx.find( o.accountToRecover );
 
    if( request == change_recovery_idx.end() ) // New request
    {
-      _db.create< change_recovery_account_request_object >( [&]( change_recovery_account_request_object& req )
+      _db.create< change_recoveryAccount_request_object >( [&]( change_recoveryAccount_request_object& req )
       {
-         req.account_to_recover = o.account_to_recover;
-         req.recovery_account = o.new_recovery_account;
+         req.accountToRecover = o.accountToRecover;
+         req.recoveryAccount = o.new_recoveryAccount;
          req.effective_on = _db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD;
       });
    }
-   else if( account_to_recover.recovery_account != o.new_recovery_account ) // Change existing request
+   else if( accountToRecover.recoveryAccount != o.new_recoveryAccount ) // Change existing request
    {
-      _db.modify( *request, [&]( change_recovery_account_request_object& req )
+      _db.modify( *request, [&]( change_recoveryAccount_request_object& req )
       {
-         req.recovery_account = o.new_recovery_account;
+         req.recoveryAccount = o.new_recoveryAccount;
          req.effective_on = _db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD;
       });
    }
@@ -2172,7 +2172,7 @@ void claimRewardBalance_evaluator::do_apply( const claimRewardBalance_operation&
 
    _db.modify( acnt, [&]( account_object& a )
    {
-      a.eScore += op.ESCORreward;
+      a.ESCOR += op.ESCORreward;
       a.ESCORrewardBalance -= op.ESCORreward;
       a.ESCORrewardBalance -= ESCORrewardBalance_to_move;
    });
@@ -2195,7 +2195,7 @@ void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )
    const auto& delegatee = _db.get_account( op.delegatee );
    auto delegation = _db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
 
-   auto available_ESCOR = delegator.eScore - delegator.ESCORDelegated - asset( delegator.to_withdraw - delegator.withdrawn, SYMBOL_ESCOR );
+   auto available_ESCOR = delegator.ESCOR - delegator.ESCORDelegated - asset( delegator.to_withdraw - delegator.withdrawn, SYMBOL_ESCOR );
 
    const auto& wso = _db.get_witness_schedule_object();
    const auto& gpo = _db.get_dynamic_global_properties();
@@ -2205,34 +2205,34 @@ void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )
    // If delegation doesn't exist, create it
    if( delegation == nullptr )
    {
-      FC_ASSERT( available_ESCOR >= op.eScore, "Account does not have enough eScore to delegate." );
-      FC_ASSERT( op.eScore >= min_delegation, "Account must delegate a minimum of ${v}", ("v", min_delegation) );
+      FC_ASSERT( available_ESCOR >= op.ESCOR, "Account does not have enough eScore to delegate." );
+      FC_ASSERT( op.ESCOR >= min_delegation, "Account must delegate a minimum of ${v}", ("v", min_delegation) );
 
       _db.create< ECO_fund_for_ESCOR_delegation_object >( [&]( ECO_fund_for_ESCOR_delegation_object& obj )
       {
          obj.delegator = op.delegator;
          obj.delegatee = op.delegatee;
-         obj.eScore = op.eScore;
+         obj.ESCOR = op.ESCOR;
          obj.min_delegation_time = _db.head_block_time();
       });
 
       _db.modify( delegator, [&]( account_object& a )
       {
-         a.ESCORDelegated += op.eScore;
+         a.ESCORDelegated += op.ESCOR;
       });
 
       _db.modify( delegatee, [&]( account_object& a )
       {
-         a.ESCORReceived += op.eScore;
+         a.ESCORReceived += op.ESCOR;
       });
    }
    // Else if the delegation is increasing
-   else if( op.eScore >= delegation->eScore )
+   else if( op.ESCOR >= delegation->ESCOR )
    {
-      auto delta = op.eScore - delegation->eScore;
+      auto delta = op.ESCOR - delegation->ESCOR;
 
       FC_ASSERT( delta >= min_update, "Ezira Power increase is not enough of a difference. min_update: ${min}", ("min", min_update) );
-      FC_ASSERT( available_ESCOR >= op.eScore - delegation->eScore, "Account does not have enough eScore to delegate." );
+      FC_ASSERT( available_ESCOR >= op.ESCOR - delegation->ESCOR, "Account does not have enough eScore to delegate." );
 
       _db.modify( delegator, [&]( account_object& a )
       {
@@ -2246,28 +2246,28 @@ void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )
 
       _db.modify( *delegation, [&]( ECO_fund_for_ESCOR_delegation_object& obj )
       {
-         obj.eScore = op.eScore;
+         obj.ESCOR = op.ESCOR;
       });
    }
    // Else the delegation is decreasing
-   else /* delegation->eScore > op.eScore */
+   else /* delegation->ESCOR > op.ESCOR */
    {
-      auto delta = delegation->eScore - op.eScore;
+      auto delta = delegation->ESCOR - op.ESCOR;
 
-      if( op.eScore.amount > 0 )
+      if( op.ESCOR.amount > 0 )
       {
          FC_ASSERT( delta >= min_update, "Ezira Power decrease is not enough of a difference. min_update: ${min}", ("min", min_update) );
-         FC_ASSERT( op.eScore >= min_delegation, "Delegation must be removed or leave minimum delegation amount of ${v}", ("v", min_delegation) );
+         FC_ASSERT( op.ESCOR >= min_delegation, "Delegation must be removed or leave minimum delegation amount of ${v}", ("v", min_delegation) );
       }
       else
       {
-         FC_ASSERT( delegation->eScore.amount > 0, "Delegation would set eScore to zero, but it is already zero");
+         FC_ASSERT( delegation->ESCOR.amount > 0, "Delegation would set eScore to zero, but it is already zero");
       }
 
       _db.create< ECO_fund_for_ESCOR_delegation_expiration_object >( [&]( ECO_fund_for_ESCOR_delegation_expiration_object& obj )
       {
          obj.delegator = op.delegator;
-         obj.eScore = delta;
+         obj.ESCOR = delta;
          obj.expiration = std::max( _db.head_block_time() + CASHOUT_WINDOW_SECONDS, delegation->min_delegation_time );
       });
 
@@ -2276,11 +2276,11 @@ void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )
          a.ESCORReceived -= delta;
       });
 
-      if( op.eScore.amount > 0 )
+      if( op.ESCOR.amount > 0 )
       {
          _db.modify( *delegation, [&]( ECO_fund_for_ESCOR_delegation_object& obj )
          {
-            obj.eScore = op.eScore;
+            obj.ESCOR = op.ESCOR;
          });
       }
       else

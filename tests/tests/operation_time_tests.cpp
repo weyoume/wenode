@@ -460,7 +460,7 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       auto ECOreward = db.get_dynamic_global_properties().total_reward_fund_ECO + ASSET( "1.667 TESTS" );
       auto total_ESCORreward2 = db.get_dynamic_global_properties().total_ESCORreward2;
       auto bob_comment_ESCORreward = db.get_comment( "bob", string( "test" ) ).net_ESCORreward;
-      auto bob_ESCOR = db.get_account( "bob" ).eScore;
+      auto bob_ESCOR = db.get_account( "bob" ).ESCOR;
       auto bob_EUSDbalance = db.get_account( "bob" ).EUSDbalance;
 
       auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_ESCORreward.value ) * bob_comment_ESCORreward.value * ECOreward.amount.value ) / total_ESCORreward2 ).to_uint64(), SYMBOL_ECO );
@@ -475,7 +475,7 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
 
       BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_ECO == ECOreward - bob_comment_payout );
       BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).total_payout_value == bob_comment_ECO_fund_for_ESCOR_reward * db.get_dynamic_global_properties().get_ESCOR_price() + bob_comment_EUSDreward * exchange_rate );
-      BOOST_REQUIRE( db.get_account( "bob" ).eScore == bob_ESCOR + bob_comment_ECO_fund_for_ESCOR_reward );
+      BOOST_REQUIRE( db.get_account( "bob" ).ESCOR == bob_ESCOR + bob_comment_ECO_fund_for_ESCOR_reward );
       BOOST_REQUIRE( db.get_account( "bob" ).EUSDbalance == bob_EUSDbalance + bob_comment_EUSDreward );
 
       BOOST_TEST_MESSAGE( "Testing no payout when less than $0.02" );
@@ -524,14 +524,14 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       tx.sign( dave_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      bob_ESCOR = db.get_account( "bob" ).eScore;
+      bob_ESCOR = db.get_account( "bob" ).ESCOR;
       bob_EUSDbalance = db.get_account( "bob" ).EUSDbalance;
 
       validate_database();
 
       generate_block();
 
-      BOOST_REQUIRE( bob_ESCOR.amount.value == db.get_account( "bob" ).eScore.amount.value );
+      BOOST_REQUIRE( bob_ESCOR.amount.value == db.get_account( "bob" ).ESCOR.amount.value );
       BOOST_REQUIRE( bob_EUSDbalance.amount.value == db.get_account( "bob" ).EUSDbalance.amount.value );
       validate_database();
    }
@@ -669,10 +669,10 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       auto bob_comment_vote_total = db.get_comment( "bob", string( "test" ) ).total_vote_weight;
       auto bob_comment_ESCORreward = db.get_comment( "bob", string( "test" ) ).net_ESCORreward;
       auto bob_EUSDbalance = db.get_account( "bob" ).EUSDbalance;
-      auto alice_ESCOR = db.get_account( "alice" ).eScore;
-      auto bob_ESCOR = db.get_account( "bob" ).eScore;
-      auto sam_ESCOR = db.get_account( "sam" ).eScore;
-      auto dave_ESCOR = db.get_account( "dave" ).eScore;
+      auto alice_ESCOR = db.get_account( "alice" ).ESCOR;
+      auto bob_ESCOR = db.get_account( "bob" ).ESCOR;
+      auto sam_ESCOR = db.get_account( "sam" ).ESCOR;
+      auto dave_ESCOR = db.get_account( "dave" ).ESCOR;
 
       auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_ESCORreward.value ) * bob_comment_ESCORreward.value * ECOreward.amount.value ) / total_ESCORreward2 ).to_uint64(), SYMBOL_ECO );
       auto bob_comment_vote_rewards = asset( bob_comment_payout.amount / 2, SYMBOL_ECO );
@@ -699,10 +699,10 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       BOOST_REQUIRE( db.get_account( "bob" ).EUSDbalance.amount.value == ( bob_EUSDbalance + bob_comment_EUSDreward ).amount.value );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value > 0 );
       BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).net_ESCORreward.value == 0 );
-      BOOST_REQUIRE( db.get_account( "alice" ).eScore.amount.value == ( alice_ESCOR + alice_vote_ECO_fund_for_ESCOR ).amount.value );
-      BOOST_REQUIRE( db.get_account( "bob" ).eScore.amount.value == ( bob_ESCOR + bob_vote_ECO_fund_for_ESCOR + bob_comment_ECO_fund_for_ESCOR_reward ).amount.value );
-      BOOST_REQUIRE( db.get_account( "sam" ).eScore.amount.value == ( sam_ESCOR + sam_vote_ECO_fund_for_ESCOR ).amount.value );
-      BOOST_REQUIRE( db.get_account( "dave" ).eScore.amount.value == dave_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCOR.amount.value == ( alice_ESCOR + alice_vote_ECO_fund_for_ESCOR ).amount.value );
+      BOOST_REQUIRE( db.get_account( "bob" ).ESCOR.amount.value == ( bob_ESCOR + bob_vote_ECO_fund_for_ESCOR + bob_comment_ECO_fund_for_ESCOR_reward ).amount.value );
+      BOOST_REQUIRE( db.get_account( "sam" ).ESCOR.amount.value == ( sam_ESCOR + sam_vote_ECO_fund_for_ESCOR ).amount.value );
+      BOOST_REQUIRE( db.get_account( "dave" ).ESCOR.amount.value == dave_ESCOR.amount.value );
       BOOST_REQUIRE( bob_comment_reward.author == "bob" );
       BOOST_REQUIRE( bob_comment_reward.permlink == "test" );
       BOOST_REQUIRE( bob_comment_reward.payout.amount.value == bob_comment_EUSDreward.amount.value );
@@ -738,10 +738,10 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       auto alice_comment_vote_total = db.get_comment( "alice", string( "test" ) ).total_vote_weight;
       auto alice_comment_ESCORreward = db.get_comment( "alice", string( "test" ) ).net_ESCORreward;
       auto alice_EUSDbalance = db.get_account( "alice" ).EUSDbalance;
-      alice_ESCOR = db.get_account( "alice" ).eScore;
-      bob_ESCOR = db.get_account( "bob" ).eScore;
-      sam_ESCOR = db.get_account( "sam" ).eScore;
-      dave_ESCOR = db.get_account( "dave" ).eScore;
+      alice_ESCOR = db.get_account( "alice" ).ESCOR;
+      bob_ESCOR = db.get_account( "bob" ).ESCOR;
+      sam_ESCOR = db.get_account( "sam" ).ESCOR;
+      dave_ESCOR = db.get_account( "dave" ).ESCOR;
 
       u256 rs( alice_comment_ESCORreward.value );
       u256 rf( ECOreward.amount.value );
@@ -773,10 +773,10 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance.amount.value == ( alice_EUSDbalance + alice_comment_EUSDreward ).amount.value );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value == 0 );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value == 0 );
-      BOOST_REQUIRE( db.get_account( "alice" ).eScore.amount.value == ( alice_ESCOR + alice_vote_ECO_fund_for_ESCOR + alice_comment_ECO_fund_for_ESCOR_reward ).amount.value );
-      BOOST_REQUIRE( db.get_account( "bob" ).eScore.amount.value == ( bob_ESCOR + bob_vote_ECO_fund_for_ESCOR ).amount.value );
-      BOOST_REQUIRE( db.get_account( "sam" ).eScore.amount.value == ( sam_ESCOR + sam_vote_ECO_fund_for_ESCOR ).amount.value );
-      BOOST_REQUIRE( db.get_account( "dave" ).eScore.amount.value == ( dave_ESCOR + dave_vote_ECO_fund_for_ESCOR ).amount.value );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCOR.amount.value == ( alice_ESCOR + alice_vote_ECO_fund_for_ESCOR + alice_comment_ECO_fund_for_ESCOR_reward ).amount.value );
+      BOOST_REQUIRE( db.get_account( "bob" ).ESCOR.amount.value == ( bob_ESCOR + bob_vote_ECO_fund_for_ESCOR ).amount.value );
+      BOOST_REQUIRE( db.get_account( "sam" ).ESCOR.amount.value == ( sam_ESCOR + sam_vote_ECO_fund_for_ESCOR ).amount.value );
+      BOOST_REQUIRE( db.get_account( "dave" ).ESCOR.amount.value == ( dave_ESCOR + dave_vote_ECO_fund_for_ESCOR ).amount.value );
       BOOST_REQUIRE( alice_comment_reward.author == "alice" );
       BOOST_REQUIRE( alice_comment_reward.permlink == "test" );
       BOOST_REQUIRE( alice_comment_reward.payout.amount.value == alice_comment_EUSDreward.amount.value );
@@ -836,7 +836,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       tx.sign( dave_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      bob_ESCOR = db.get_account( "bob" ).eScore;
+      bob_ESCOR = db.get_account( "bob" ).ESCOR;
       auto bob_EUSD = db.get_account( "bob" ).EUSDbalance;
 
       BOOST_REQUIRE( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "dave" ) ).id ) ) != vote_idx.end() );
@@ -845,7 +845,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       generate_block();
 
       BOOST_REQUIRE( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "dave" ) ).id ) ) == vote_idx.end() );
-      BOOST_REQUIRE( bob_ESCOR.amount.value == db.get_account( "bob" ).eScore.amount.value );
+      BOOST_REQUIRE( bob_ESCOR.amount.value == db.get_account( "bob" ).ESCOR.amount.value );
       BOOST_REQUIRE( bob_EUSD.amount.value == db.get_account( "bob" ).EUSDbalance.amount.value );
       validate_database();
    }
@@ -988,53 +988,53 @@ BOOST_AUTO_TEST_CASE( nested_comments )
 
       // Calculate rewards paid to parent posts
       auto alice_pays_alice_EUSD = alice_comment_reward / 2;
-      auto alice_pays_alice_escore = alice_comment_reward - alice_pays_alice_EUSD;
+      auto alice_pays_alice_ESCOR = alice_comment_reward - alice_pays_alice_EUSD;
       auto bob_pays_bob_EUSD = bob_comment_reward / 2;
-      auto bob_pays_bob_escore = bob_comment_reward - bob_pays_bob_EUSD;
+      auto bob_pays_bob_ESCOR = bob_comment_reward - bob_pays_bob_EUSD;
       auto dave_pays_dave_EUSD = dave_comment_reward / 2;
-      auto dave_pays_dave_escore = dave_comment_reward - dave_pays_dave_EUSD;
+      auto dave_pays_dave_ESCOR = dave_comment_reward - dave_pays_dave_EUSD;
 
       auto bob_pays_alice_EUSD = bob_pays_bob_EUSD / 2;
-      auto bob_pays_alice_escore = bob_pays_bob_escore / 2;
+      auto bob_pays_alice_ESCOR = bob_pays_bob_ESCOR / 2;
       bob_pays_bob_EUSD -= bob_pays_alice_EUSD;
-      bob_pays_bob_escore -= bob_pays_alice_escore;
+      bob_pays_bob_ESCOR -= bob_pays_alice_ESCOR;
 
       auto dave_pays_sam_EUSD = dave_pays_dave_EUSD / 2;
-      auto dave_pays_sam_escore = dave_pays_dave_escore / 2;
+      auto dave_pays_sam_ESCOR = dave_pays_dave_ESCOR / 2;
       dave_pays_dave_EUSD -= dave_pays_sam_EUSD;
-      dave_pays_dave_escore -= dave_pays_sam_escore;
+      dave_pays_dave_ESCOR -= dave_pays_sam_ESCOR;
       auto dave_pays_bob_EUSD = dave_pays_sam_EUSD / 2;
-      auto dave_pays_bob_escore = dave_pays_sam_escore / 2;
+      auto dave_pays_bob_ESCOR = dave_pays_sam_ESCOR / 2;
       dave_pays_sam_EUSD -= dave_pays_bob_EUSD;
-      dave_pays_sam_escore -= dave_pays_bob_escore;
+      dave_pays_sam_ESCOR -= dave_pays_bob_ESCOR;
       auto dave_pays_alice_EUSD = dave_pays_bob_EUSD / 2;
-      auto dave_pays_alice_escore = dave_pays_bob_escore / 2;
+      auto dave_pays_alice_ESCOR = dave_pays_bob_ESCOR / 2;
       dave_pays_bob_EUSD -= dave_pays_alice_EUSD;
-      dave_pays_bob_escore -= dave_pays_alice_escore;
+      dave_pays_bob_ESCOR -= dave_pays_alice_ESCOR;
 
       // Calculate total comment payouts
-      auto alice_comment_total_payout = db.to_EUSD( asset( alice_pays_alice_EUSD + alice_pays_alice_escore, SYMBOL_ECO ) );
-      alice_comment_total_payout += db.to_EUSD( asset( bob_pays_alice_EUSD + bob_pays_alice_escore, SYMBOL_ECO ) );
-      alice_comment_total_payout += db.to_EUSD( asset( dave_pays_alice_EUSD + dave_pays_alice_escore, SYMBOL_ECO ) );
-      auto bob_comment_total_payout = db.to_EUSD( asset( bob_pays_bob_EUSD + bob_pays_bob_escore, SYMBOL_ECO ) );
-      bob_comment_total_payout += db.to_EUSD( asset( dave_pays_bob_EUSD + dave_pays_bob_escore, SYMBOL_ECO ) );
-      auto sam_comment_total_payout = db.to_EUSD( asset( dave_pays_sam_EUSD + dave_pays_sam_escore, SYMBOL_ECO ) );
-      auto dave_comment_total_payout = db.to_EUSD( asset( dave_pays_dave_EUSD + dave_pays_dave_escore, SYMBOL_ECO ) );
+      auto alice_comment_total_payout = db.to_EUSD( asset( alice_pays_alice_EUSD + alice_pays_alice_ESCOR, SYMBOL_ECO ) );
+      alice_comment_total_payout += db.to_EUSD( asset( bob_pays_alice_EUSD + bob_pays_alice_ESCOR, SYMBOL_ECO ) );
+      alice_comment_total_payout += db.to_EUSD( asset( dave_pays_alice_EUSD + dave_pays_alice_ESCOR, SYMBOL_ECO ) );
+      auto bob_comment_total_payout = db.to_EUSD( asset( bob_pays_bob_EUSD + bob_pays_bob_ESCOR, SYMBOL_ECO ) );
+      bob_comment_total_payout += db.to_EUSD( asset( dave_pays_bob_EUSD + dave_pays_bob_ESCOR, SYMBOL_ECO ) );
+      auto sam_comment_total_payout = db.to_EUSD( asset( dave_pays_sam_EUSD + dave_pays_sam_ESCOR, SYMBOL_ECO ) );
+      auto dave_comment_total_payout = db.to_EUSD( asset( dave_pays_dave_EUSD + dave_pays_dave_ESCOR, SYMBOL_ECO ) );
 
-      auto alice_starting_ECO_fund_for_ESCOR = db.get_account( "alice" ).eScore;
+      auto alice_starting_ECO_fund_for_ESCOR = db.get_account( "alice" ).ESCOR;
       auto alice_starting_EUSD = db.get_account( "alice" ).EUSDbalance;
-      auto bob_starting_ECO_fund_for_ESCOR = db.get_account( "bob" ).eScore;
+      auto bob_starting_ECO_fund_for_ESCOR = db.get_account( "bob" ).ESCOR;
       auto bob_starting_EUSD = db.get_account( "bob" ).EUSDbalance;
-      auto sam_starting_ECO_fund_for_ESCOR = db.get_account( "sam" ).eScore;
+      auto sam_starting_ECO_fund_for_ESCOR = db.get_account( "sam" ).ESCOR;
       auto sam_starting_EUSD = db.get_account( "sam" ).EUSDbalance;
-      auto dave_starting_ECO_fund_for_ESCOR = db.get_account( "dave" ).eScore;
+      auto dave_starting_ECO_fund_for_ESCOR = db.get_account( "dave" ).ESCOR;
       auto dave_starting_EUSD = db.get_account( "dave" ).EUSDbalance;
 
       generate_block();
 
       gpo = db.get_dynamic_global_properties();
 
-      // Calculate eScore rewards from voting.
+      // Calculate ESCOR rewards from voting.
       auto alice_vote_alice_ECO_fund_for_ESCOR = alice_vote_alice_reward * gpo.get_ESCOR_price();
       auto bob_vote_alice_ECO_fund_for_ESCOR = bob_vote_alice_reward * gpo.get_ESCOR_price();
       auto alice_vote_bob_ECO_fund_for_ESCOR = alice_vote_bob_reward * gpo.get_ESCOR_price();
@@ -1060,7 +1060,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_REQUIRE( com_vop.originating_author == "dave" );
       BOOST_REQUIRE( com_vop.originating_permlink == "test" );
       BOOST_REQUIRE( com_vop.payout.amount.value == dave_pays_alice_EUSD );
-      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == dave_pays_alice_escore );
+      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == dave_pays_alice_ESCOR );
 
       com_vop = ops[1].get< comment_reward_operation >();
       BOOST_REQUIRE( com_vop.author == "bob" );
@@ -1068,7 +1068,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_REQUIRE( com_vop.originating_author == "dave" );
       BOOST_REQUIRE( com_vop.originating_permlink == "test" );
       BOOST_REQUIRE( com_vop.payout.amount.value == dave_pays_bob_EUSD );
-      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == dave_pays_bob_escore );
+      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == dave_pays_bob_ESCOR );
 
       com_vop = ops[2].get< comment_reward_operation >();
       BOOST_REQUIRE( com_vop.author == "sam" );
@@ -1076,7 +1076,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_REQUIRE( com_vop.originating_author == "dave" );
       BOOST_REQUIRE( com_vop.originating_permlink == "test" );
       BOOST_REQUIRE( com_vop.payout.amount.value == dave_pays_sam_EUSD );
-      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == dave_pays_sam_escore );
+      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == dave_pays_sam_ESCOR );
 
       com_vop = ops[3].get< comment_reward_operation >();
       BOOST_REQUIRE( com_vop.author == "dave" );
@@ -1084,7 +1084,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_REQUIRE( com_vop.originating_author == "dave" );
       BOOST_REQUIRE( com_vop.originating_permlink == "test" );
       BOOST_REQUIRE( com_vop.payout.amount.value == dave_pays_dave_EUSD );
-      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == dave_pays_dave_escore );
+      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == dave_pays_dave_ESCOR );
 
       cur_vop = ops[4].get< curate_reward_operation >();
       BOOST_REQUIRE( cur_vop.curator == "bob" );
@@ -1098,7 +1098,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_REQUIRE( com_vop.originating_author == "bob" );
       BOOST_REQUIRE( com_vop.originating_permlink == "test" );
       BOOST_REQUIRE( com_vop.payout.amount.value == bob_pays_alice_EUSD );
-      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == bob_pays_alice_escore );
+      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == bob_pays_alice_ESCOR );
 
       com_vop = ops[6].get< comment_reward_operation >();
       BOOST_REQUIRE( com_vop.author == "bob" );
@@ -1106,7 +1106,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_REQUIRE( com_vop.originating_author == "bob" );
       BOOST_REQUIRE( com_vop.originating_permlink == "test" );
       BOOST_REQUIRE( com_vop.payout.amount.value == bob_pays_bob_EUSD );
-      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == bob_pays_bob_escore );
+      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == bob_pays_bob_ESCOR );
 
       cur_vop = ops[7].get< curate_reward_operation >();
       BOOST_REQUIRE( cur_vop.curator == "sam" );
@@ -1132,7 +1132,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_REQUIRE( com_vop.originating_author == "alice" );
       BOOST_REQUIRE( com_vop.originating_permlink == "test" );
       BOOST_REQUIRE( com_vop.payout.amount.value == alice_pays_alice_EUSD );
-      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == alice_pays_alice_escore );
+      BOOST_REQUIRE( ( com_vop.ESCORpayout * gpo.get_ESCOR_price() ).amount.value == alice_pays_alice_ESCOR );
 
       cur_vop = ops[11].get< curate_reward_operation >();
       BOOST_REQUIRE( cur_vop.curator == "bob" );
@@ -1149,24 +1149,24 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_TEST_MESSAGE( "Checking account balances" );
 
       auto alice_EUSDtotal = alice_starting_EUSD + asset( alice_pays_alice_EUSD + bob_pays_alice_EUSD + dave_pays_alice_EUSD, SYMBOL_ECO ) * exchange_rate;
-      auto alice_totalECO_fund_for_ESCOR = alice_starting_ECO_fund_for_ESCOR + asset( alice_pays_alice_escore + bob_pays_alice_escore + dave_pays_alice_escore + alice_vote_alice_reward.amount + alice_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
+      auto alice_totalECO_fund_for_ESCOR = alice_starting_ECO_fund_for_ESCOR + asset( alice_pays_alice_ESCOR + bob_pays_alice_ESCOR + dave_pays_alice_ESCOR + alice_vote_alice_reward.amount + alice_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance.amount.value == alice_EUSDtotal.amount.value );
-      BOOST_REQUIRE( db.get_account( "alice" ).eScore.amount.value == alice_totalECO_fund_for_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCOR.amount.value == alice_totalECO_fund_for_ESCOR.amount.value );
 
       auto bob_EUSDtotal = bob_starting_EUSD + asset( bob_pays_bob_EUSD + dave_pays_bob_EUSD, SYMBOL_ECO ) * exchange_rate;
-      auto bob_totalECO_fund_for_ESCOR = bob_starting_ECO_fund_for_ESCOR + asset( bob_pays_bob_escore + dave_pays_bob_escore + bob_vote_alice_reward.amount + bob_vote_bob_reward.amount + bob_vote_dave_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
+      auto bob_totalECO_fund_for_ESCOR = bob_starting_ECO_fund_for_ESCOR + asset( bob_pays_bob_ESCOR + dave_pays_bob_ESCOR + bob_vote_alice_reward.amount + bob_vote_bob_reward.amount + bob_vote_dave_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
       BOOST_REQUIRE( db.get_account( "bob" ).EUSDbalance.amount.value == bob_EUSDtotal.amount.value );
-      BOOST_REQUIRE( db.get_account( "bob" ).eScore.amount.value == bob_totalECO_fund_for_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "bob" ).ESCOR.amount.value == bob_totalECO_fund_for_ESCOR.amount.value );
 
       auto sam_EUSDtotal = sam_starting_EUSD + asset( dave_pays_sam_EUSD, SYMBOL_ECO ) * exchange_rate;
-      auto sam_totalECO_fund_for_ESCOR = bob_starting_ECO_fund_for_ESCOR + asset( dave_pays_sam_escore + sam_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
+      auto sam_totalECO_fund_for_ESCOR = bob_starting_ECO_fund_for_ESCOR + asset( dave_pays_sam_ESCOR + sam_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
       BOOST_REQUIRE( db.get_account( "sam" ).EUSDbalance.amount.value == sam_EUSDtotal.amount.value );
-      BOOST_REQUIRE( db.get_account( "sam" ).eScore.amount.value == sam_totalECO_fund_for_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "sam" ).ESCOR.amount.value == sam_totalECO_fund_for_ESCOR.amount.value );
 
       auto dave_EUSDtotal = dave_starting_EUSD + asset( dave_pays_dave_EUSD, SYMBOL_ECO ) * exchange_rate;
-      auto dave_totalECO_fund_for_ESCOR = dave_starting_ECO_fund_for_ESCOR + asset( dave_pays_dave_escore, SYMBOL_ECO ) * gpo.get_ESCOR_price();
+      auto dave_totalECO_fund_for_ESCOR = dave_starting_ECO_fund_for_ESCOR + asset( dave_pays_dave_ESCOR, SYMBOL_ECO ) * gpo.get_ESCOR_price();
       BOOST_REQUIRE( db.get_account( "dave" ).EUSDbalance.amount.value == dave_EUSDtotal.amount.value );
-      BOOST_REQUIRE( db.get_account( "dave" ).eScore.amount.value == dave_totalECO_fund_for_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "dave" ).ESCOR.amount.value == dave_totalECO_fund_for_ESCOR.amount.value );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -1186,24 +1186,24 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdrawals )
       BOOST_TEST_MESSAGE( "Setting up withdrawal" );
 
       signed_transaction tx;
-      withdraw_ESCOR_operation op;
+      withdrawESCOR_operation op;
       op.account = "alice";
-      op.eScore = asset( new_alice.eScore.amount / 2, SYMBOL_TP );
+      op.ESCOR = asset( new_alice.ESCOR.amount / 2, SYMBOL_TP );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       auto next_withdrawal = db.head_block_time() + ESCOR_WITHDRAW_INTERVAL_SECONDS;
-      asset eScore = new_alice.eScore;
-      asset to_withdraw = op.eScore;
-      asset original_ECO_fund_for_ESCOR = eScore;
+      asset ESCOR = new_alice.ESCOR;
+      asset to_withdraw = op.ESCOR;
+      asset original_ECO_fund_for_ESCOR = ESCOR;
       asset withdraw_rate = new_alice.ESCORwithdrawRateInECO;
 
       BOOST_TEST_MESSAGE( "Generating block up to first withdrawal" );
       generate_blocks( next_withdrawal - ( BLOCK_INTERVAL / 2 ), true);
 
-      BOOST_REQUIRE( db.get_account( "alice" ).eScore.amount.value == eScore.amount.value );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCOR.amount.value == ESCOR.amount.value );
 
       BOOST_TEST_MESSAGE( "Generating block to cause withdrawal" );
       generate_block();
@@ -1211,7 +1211,7 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdrawals )
       auto fill_op = get_last_operations( 1 )[0].get< fillESCORWithdraw_operation >();
       auto gpo = db.get_dynamic_global_properties();
 
-      BOOST_REQUIRE( db.get_account( "alice" ).eScore.amount.value == ( eScore - withdraw_rate ).amount.value );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCOR.amount.value == ( ESCOR - withdraw_rate ).amount.value );
       BOOST_REQUIRE( ( withdraw_rate * gpo.get_ESCOR_price() ).amount.value - db.get_account( "alice" ).balance.amount.value <= 1 ); // Check a range due to differences in the share price
       BOOST_REQUIRE( fill_op.from_account == "alice" );
       BOOST_REQUIRE( fill_op.to_account == "alice" );
@@ -1221,7 +1221,7 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdrawals )
 
       BOOST_TEST_MESSAGE( "Generating the rest of the blocks in the withdrawal" );
 
-      eScore = db.get_account( "alice" ).eScore;
+      ESCOR = db.get_account( "alice" ).ESCOR;
       auto balance = db.get_account( "alice" ).balance;
       auto old_next_ECO_fund_for_ESCOR = db.get_account( "alice" ).nextESCORwithdrawalTime;
 
@@ -1234,7 +1234,7 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdrawals )
          gpo = db.get_dynamic_global_properties();
          fill_op = get_last_operations( 1 )[0].get< fillESCORWithdraw_operation >();
 
-         BOOST_REQUIRE( alice.eScore.amount.value == ( eScore - withdraw_rate ).amount.value );
+         BOOST_REQUIRE( alice.ESCOR.amount.value == ( ESCOR - withdraw_rate ).amount.value );
          BOOST_REQUIRE( balance.amount.value + ( withdraw_rate * gpo.get_ESCOR_price() ).amount.value - alice.balance.amount.value <= 1 );
          BOOST_REQUIRE( fill_op.from_account == "alice" );
          BOOST_REQUIRE( fill_op.to_account == "alice" );
@@ -1248,7 +1248,7 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdrawals )
 
          validate_database();
 
-         eScore = alice.eScore;
+         ESCOR = alice.ESCOR;
          balance = alice.balance;
          old_next_ECO_fund_for_ESCOR = alice.nextESCORwithdrawalTime;
       }
@@ -1291,7 +1291,7 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdrawals )
          BOOST_REQUIRE( std::abs( ( fill_op.deposited - fill_op.withdrawn * gpo.get_ESCOR_price() ).amount.value ) <= 1 );
       }
 
-      BOOST_REQUIRE( db.get_account( "alice" ).eScore.amount.value == ( original_ECO_fund_for_ESCOR - op.eScore ).amount.value );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCOR.amount.value == ( original_ECO_fund_for_ESCOR - op.ESCOR ).amount.value );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -1302,17 +1302,17 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdraw_route )
    {
       ACTORS( (alice)(bob)(sam) )
 
-      auto original_ECO_fund_for_ESCOR = alice.eScore;
+      auto original_ECO_fund_for_ESCOR = alice.ESCOR;
 
       fund( "alice", 1040000 );
       score( "alice", 1040000 );
 
-      auto withdraw_amount = alice.eScore - original_ECO_fund_for_ESCOR;
+      auto withdraw_amount = alice.ESCOR - original_ECO_fund_for_ESCOR;
 
-      BOOST_TEST_MESSAGE( "Setup eScore withdraw" );
-      withdraw_ESCOR_operation wv;
+      BOOST_TEST_MESSAGE( "Setup ESCOR withdraw" );
+      withdrawESCOR_operation wv;
       wv.account = "alice";
-      wv.eScore = withdraw_amount;
+      wv.ESCOR = withdraw_amount;
 
       signed_transaction tx;
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -1343,11 +1343,11 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdraw_route )
 
       auto ESCORwithdrawRateInECO = alice.ESCORwithdrawRateInECO;
       auto old_alice_balance = alice.balance;
-      auto old_alice_ECO_fund_for_ESCOR = alice.eScore;
+      auto old_alice_ECO_fund_for_ESCOR = alice.ESCOR;
       auto old_bob_balance = bob.balance;
-      auto old_bob_ECO_fund_for_ESCOR = bob.eScore;
+      auto old_bob_ECO_fund_for_ESCOR = bob.ESCOR;
       auto old_sam_balance = sam.balance;
-      auto old_sam_ECO_fund_for_ESCOR = sam.eScore;
+      auto old_sam_ECO_fund_for_ESCOR = sam.ESCOR;
       generate_blocks( alice.nextESCORwithdrawalTime, true );
 
       {
@@ -1355,19 +1355,19 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdraw_route )
          const auto& bob = db.get_account( "bob" );
          const auto& sam = db.get_account( "sam" );
 
-         BOOST_REQUIRE( alice.eScore == old_alice_ECO_fund_for_ESCOR - ESCORwithdrawRateInECO );
+         BOOST_REQUIRE( alice.ESCOR == old_alice_ECO_fund_for_ESCOR - ESCORwithdrawRateInECO );
          BOOST_REQUIRE( alice.balance == old_alice_balance + asset( ( ESCORwithdrawRateInECO.amount * PERCENT_1 * 20 ) / PERCENT_100, SYMBOL_TP ) * db.get_dynamic_global_properties().get_ESCOR_price() );
-         BOOST_REQUIRE( bob.eScore == old_bob_ECO_fund_for_ESCOR + asset( ( ESCORwithdrawRateInECO.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_TP ) );
+         BOOST_REQUIRE( bob.ESCOR == old_bob_ECO_fund_for_ESCOR + asset( ( ESCORwithdrawRateInECO.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_TP ) );
          BOOST_REQUIRE( bob.balance == old_bob_balance );
-         BOOST_REQUIRE( sam.eScore == old_sam_ECO_fund_for_ESCOR );
+         BOOST_REQUIRE( sam.ESCOR == old_sam_ECO_fund_for_ESCOR );
          BOOST_REQUIRE( sam.balance ==  old_sam_balance + asset( ( ESCORwithdrawRateInECO.amount * PERCENT_1 * 30 ) / PERCENT_100, SYMBOL_TP ) * db.get_dynamic_global_properties().get_ESCOR_price() );
 
          old_alice_balance = alice.balance;
-         old_alice_ECO_fund_for_ESCOR = alice.eScore;
+         old_alice_ECO_fund_for_ESCOR = alice.ESCOR;
          old_bob_balance = bob.balance;
-         old_bob_ECO_fund_for_ESCOR = bob.eScore;
+         old_bob_ECO_fund_for_ESCOR = bob.ESCOR;
          old_sam_balance = sam.balance;
-         old_sam_ECO_fund_for_ESCOR = sam.eScore;
+         old_sam_ECO_fund_for_ESCOR = sam.ESCOR;
       }
 
       BOOST_TEST_MESSAGE( "Test failure with greater than 100% destination assignment" );
@@ -1399,11 +1399,11 @@ BOOST_AUTO_TEST_CASE( ECO_fund_for_ESCOR_withdraw_route )
          const auto& bob = db.get_account( "bob" );
          const auto& sam = db.get_account( "sam" );
 
-         BOOST_REQUIRE( alice.eScore == old_alice_ECO_fund_for_ESCOR - ESCORwithdrawRateInECO );
+         BOOST_REQUIRE( alice.ESCOR == old_alice_ECO_fund_for_ESCOR - ESCORwithdrawRateInECO );
          BOOST_REQUIRE( alice.balance == old_alice_balance );
-         BOOST_REQUIRE( bob.eScore == old_bob_ECO_fund_for_ESCOR + asset( ( ESCORwithdrawRateInECO.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_TP ) );
+         BOOST_REQUIRE( bob.ESCOR == old_bob_ECO_fund_for_ESCOR + asset( ( ESCORwithdrawRateInECO.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_TP ) );
          BOOST_REQUIRE( bob.balance == old_bob_balance );
-         BOOST_REQUIRE( sam.eScore == old_sam_ECO_fund_for_ESCOR );
+         BOOST_REQUIRE( sam.ESCOR == old_sam_ECO_fund_for_ESCOR );
          BOOST_REQUIRE( sam.balance ==  old_sam_balance + asset( ( ESCORwithdrawRateInECO.amount * PERCENT_1 * 50 ) / PERCENT_100, SYMBOL_TP ) * db.get_dynamic_global_properties().get_ESCOR_price() );
       }
    }
@@ -1576,13 +1576,13 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
    try
    {
    /*
-      BOOST_TEST_MESSAGE( "Testing ECO Inflation until the eScore start block" );
+      BOOST_TEST_MESSAGE( "Testing ECO Inflation until the ESCOR start block" );
 
       auto gpo = db.get_dynamic_global_properties();
       auto virtual_supply = gpo.virtual_supply;
       auto witness_name = db.get_scheduled_witness(1);
       auto old_witness_balance = db.get_account( witness_name ).balance;
-      auto old_witness_ESCOR = db.get_account( witness_name ).eScore;
+      auto old_witness_ESCOR = db.get_account( witness_name ).ESCOR;
 
       auto new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) )
          + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) );
@@ -1591,7 +1591,7 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
       auto new_ESCORvalueInECO = asset( 0, SYMBOL_ECO );
       auto new_ESCOR = gpo.totalESCOR;
 
-      if ( db.get_account( witness_name ).eScore.amount.value == 0 )
+      if ( db.get_account( witness_name ).ESCOR.amount.value == 0 )
       {
          new_ESCORvalueInECO += witness_pay;
          new_ESCOR += witness_pay * ( gpo.totalESCOR / gpo.totalECOfundForESCOR );
@@ -1619,7 +1619,7 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
          virtual_supply = gpo.virtual_supply;
          witness_name = db.get_scheduled_witness(1);
          old_witness_balance = db.get_account( witness_name ).balance;
-         old_witness_ESCOR = db.get_account( witness_name ).eScore;
+         old_witness_ESCOR = db.get_account( witness_name ).ESCOR;
 
 
          new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_ECO ) )
@@ -1628,7 +1628,7 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
          new_ESCORvalueInECO = asset( 0, SYMBOL_ECO );
          new_ESCOR = gpo.totalESCOR;
 
-         if ( db.get_account( witness_name ).eScore.amount.value == 0 )
+         if ( db.get_account( witness_name ).ESCOR.amount.value == 0 )
          {
             new_ESCORvalueInECO += witness_pay;
             witness_pay_ESCOR = witness_pay * gpo.get_ESCOR_price();
@@ -1651,7 +1651,7 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
          BOOST_REQUIRE( gpo.totalECOfundForESCOR.amount.value == new_ESCORvalueInECO.amount.value );
          BOOST_REQUIRE( gpo.totalESCOR.amount.value == new_ESCOR.amount.value );
          BOOST_REQUIRE( db.get_account( witness_name ).balance.amount.value == ( old_witness_balance + witness_pay ).amount.value );
-         BOOST_REQUIRE( db.get_account( witness_name ).eScore.amount.value == ( old_witness_ESCOR + witness_pay_ESCOR ).amount.value );
+         BOOST_REQUIRE( db.get_account( witness_name ).ESCOR.amount.value == ( old_witness_ESCOR + witness_pay_ESCOR ).amount.value );
 
          validate_database();
       }
@@ -1671,7 +1671,7 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
          new_ESCORvalueInECO = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_ECO );
          new_ESCOR = gpo.totalESCOR;
 
-         if ( db.get_account( witness_name ).eScore.amount.value == 0 )
+         if ( db.get_account( witness_name ).ESCOR.amount.value == 0 )
          {
             new_ESCORvalueInECO += witness_pay;
             witness_pay_ESCOR = witness_pay * gpo.get_ESCOR_price();
@@ -1694,7 +1694,7 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
          BOOST_REQUIRE( gpo.totalECOfundForESCOR.amount.value == new_ESCORvalueInECO.amount.value );
          BOOST_REQUIRE( gpo.totalESCOR.amount.value == new_ESCOR.amount.value );
          BOOST_REQUIRE( db.get_account( witness_name ).balance.amount.value == ( old_witness_balance + witness_pay ).amount.value );
-         BOOST_REQUIRE( db.get_account( witness_name ).eScore.amount.value == ( old_witness_ESCOR + witness_pay_ESCOR ).amount.value );
+         BOOST_REQUIRE( db.get_account( witness_name ).ESCOR.amount.value == ( old_witness_ESCOR + witness_pay_ESCOR ).amount.value );
 
          validate_database();
       }
@@ -1724,18 +1724,18 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
          BOOST_REQUIRE( gpo.total_reward_fund_ECO.amount.value == new_rewards.amount.value );
          BOOST_REQUIRE( gpo.totalECOfundForESCOR.amount.value == new_ESCORvalueInECO.amount.value );
          BOOST_REQUIRE( gpo.totalESCOR.amount.value == new_ESCOR.amount.value );
-         BOOST_REQUIRE( db.get_account( witness_name ).eScore.amount.value == ( old_witness_ESCOR + witness_pay_ESCOR ).amount.value );
+         BOOST_REQUIRE( db.get_account( witness_name ).ESCOR.amount.value == ( old_witness_ESCOR + witness_pay_ESCOR ).amount.value );
 
          validate_database();
       }
 
       virtual_supply = gpo.virtual_supply;
-      eScore = gpo.totalESCOR;
+      ESCOR = gpo.totalESCOR;
       ESCORvalueInECO = gpo.totalECOfundForESCOR;
       ECOreward = gpo.total_reward_fund_ECO;
 
       witness_name = db.get_scheduled_witness(1);
-      old_witness_ESCOR = db.get_account( witness_name ).eScore;
+      old_witness_ESCOR = db.get_account( witness_name ).ESCOR;
 
       generate_block();
 
@@ -1747,8 +1747,8 @@ BOOST_AUTO_TEST_CASE( eznode_inflation )
             + ( uint128_t( virtual_supply.amount.value ) / 100 / BLOCKS_PER_YEAR ) ).to_uint64() );
       BOOST_REQUIRE_EQUAL( gpo.total_reward_fund_ECO.amount.value,
          ECOreward.amount.value + virtual_supply.amount.value / 10 / BLOCKS_PER_YEAR + virtual_supply.amount.value / 10 / BLOCKS_PER_DAY );
-      BOOST_REQUIRE_EQUAL( db.get_account( witness_name ).eScore.amount.value,
-         old_witness_ESCOR.amount.value + ( asset( ( ( virtual_supply.amount.value / BLOCKS_PER_YEAR ) * PERCENT_1 ) / PERCENT_100, SYMBOL_ECO ) * ( eScore / ESCORvalueInECO ) ).amount.value );
+      BOOST_REQUIRE_EQUAL( db.get_account( witness_name ).ESCOR.amount.value,
+         old_witness_ESCOR.amount.value + ( asset( ( ( virtual_supply.amount.value / BLOCKS_PER_YEAR ) * PERCENT_1 ) / PERCENT_100, SYMBOL_ECO ) * ( ESCOR / ESCORvalueInECO ) ).amount.value );
       validate_database();
       */
    }
@@ -2927,7 +2927,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
 
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).balance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDbalance == ASSET( "2.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).eScore > ASSET( "0.000000 TP" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCOR > ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOsavingsBalance == ASSET( "4.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDsavingsBalance == ASSET( "5.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardbalance == ASSET( "1.000 TBD" ) );
@@ -2943,7 +2943,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
 
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).balance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDbalance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).eScore == ASSET( "0.000000 TP" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCOR == ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOsavingsBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDsavingsBalance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardbalance == ASSET( "0.000 TBD" ) );
