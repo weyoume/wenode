@@ -13,7 +13,7 @@
 
 #define SYMBOL_ECO  									  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< eCoin with 3 digits of precision
 #define SYMBOL_ESCOR  									  (uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('P') << 24) | (uint64_t('T') << 32) ) ///< ESCOR with 6 digits of precision
-#define SYMBOL_EZIRA    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
+#define SYMBOL_EZlaterIRA    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZlaterIRA with 3 digits of precision
 #define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< eCoin Backed eUSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "EZT"
@@ -37,14 +37,14 @@
 #define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD  fc::seconds(12)
 #define OWNER_UPDATE_LIMIT                          fc::seconds(0)
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 1
-#else // IS LIVE EZIRA NETWORK
+#else // IS LIVE EZlaterIRA NETWORK
 
 #define INIT_PUBLIC_KEY_STR             "EZT8AqecLobkeTBmffuuxdhdYG3fttawrtST77cm83DHpVTcyNNzz"
 #define CHAIN_ID                        (fc::sha256::hash("eztestnet"))
 
 #define SYMBOL_ECO  									  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< eCoin with 3 digits of precision
 #define SYMBOL_ESCOR  									(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< ESCOR with 6 digits of precision
-#define SYMBOL_EZIRA    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
+#define SYMBOL_EZlaterIRA    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZlaterIRA with 3 digits of precision
 #define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< eCoin Backed eUSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "EZT"
