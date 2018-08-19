@@ -246,7 +246,7 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
 
       acc.recoveryAccount = o.creator;
 
-      acc.ESCORReceived = o.delegation;
+      acc.ESCORreceived = o.delegation;
 
       #ifndef IS_LOW_MEM
          from_string( acc.json, o.json );
@@ -2223,7 +2223,7 @@ void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )
 
       _db.modify( delegatee, [&]( account_object& a )
       {
-         a.ESCORReceived += op.ESCOR;
+         a.ESCORreceived += op.ESCOR;
       });
    }
    // Else if the delegation is increasing
@@ -2241,7 +2241,7 @@ void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )
 
       _db.modify( delegatee, [&]( account_object& a )
       {
-         a.ESCORReceived += delta;
+         a.ESCORreceived += delta;
       });
 
       _db.modify( *delegation, [&]( ECO_fund_for_ESCOR_delegation_object& obj )
@@ -2273,7 +2273,7 @@ void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )
 
       _db.modify( delegatee, [&]( account_object& a )
       {
-         a.ESCORReceived -= delta;
+         a.ESCORreceived -= delta;
       });
 
       if( op.ESCOR.amount > 0 )

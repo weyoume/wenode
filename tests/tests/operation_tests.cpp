@@ -5983,8 +5983,8 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
       const account_object& bob_acc = db.get_account( "bob" );
       const account_object& alice_acc = db.get_account( "alice" );
       BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "100000000.000000 ESCOR" ) );
-      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "100000000.000000 ESCOR" ) );
-      BOOST_REQUIRE( bob_acc.effective_ESCOR() == bob_acc.ESCOR - bob_acc.ESCORDelegated + bob_acc.ESCORReceived);
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "100000000.000000 ESCOR" ) );
+      BOOST_REQUIRE( bob_acc.effective_ESCOR() == bob_acc.ESCOR - bob_acc.ESCORDelegated + bob_acc.ESCORreceived);
 
       BOOST_TEST_MESSAGE( "--- Test delegator object integrety. " );
       auto delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.creator, op.newAccountName ) );
@@ -6247,7 +6247,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
       const account_object& bob_acc = db.get_account( "bob" );
 
       BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
-      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "10000000.000000 ESCOR"));
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "10000000.000000 ESCOR"));
 
       BOOST_TEST_MESSAGE( "--- Test that the delegation object is correct. " );
       auto delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
@@ -6269,7 +6269,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
       BOOST_REQUIRE( delegation->delegator == op.delegator);
       BOOST_REQUIRE( delegation->ESCOR == ASSET( "20000000.000000 ESCOR"));
       BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "20000000.000000 ESCOR"));
-      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "20000000.000000 ESCOR"));
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "20000000.000000 ESCOR"));
 
       BOOST_TEST_MESSAGE( "--- Test that effective ESCOR is accurate and being applied." );
       tx.operations.clear();
@@ -6388,7 +6388,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
       BOOST_REQUIRE( exp_obj->ESCOR == samESCOR );
       BOOST_REQUIRE( exp_obj->expiration == db.head_block_time() + CASHOUT_WINDOW_SECONDS );
       BOOST_REQUIRE( db.get_account( "sam" ).ESCORDelegated == samESCOR );
-      BOOST_REQUIRE( db.get_account( "dave" ).ESCORReceived == ASSET( "0.000000 ESCOR" ) );
+      BOOST_REQUIRE( db.get_account( "dave" ).ESCORreceived == ASSET( "0.000000 ESCOR" ) );
       delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
       BOOST_REQUIRE( delegation == nullptr );
 
@@ -6441,7 +6441,7 @@ BOOST_AUTO_TEST_CASE( issue_971_ECO_fund_for_ESCOR_removal )
       const account_object& bob_acc = db.get_account( "bob" );
 
       BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
-      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "10000000.000000 ESCOR"));
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "10000000.000000 ESCOR"));
 
       generate_block();
 
@@ -6464,7 +6464,7 @@ BOOST_AUTO_TEST_CASE( issue_971_ECO_fund_for_ESCOR_removal )
       generate_block();
 
       BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
-      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "0.000000 ESCOR"));
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "0.000000 ESCOR"));
    }
    FC_LOG_AND_RETHROW()
 }

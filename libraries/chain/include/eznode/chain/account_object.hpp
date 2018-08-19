@@ -95,7 +95,7 @@ namespace eznode { namespace chain {
 
          asset             ESCOR = asset( 0, SYMBOL_ESCOR ); ///< total ESCOR held by this account, controls its voting power
          asset             ESCORDelegated = asset( 0, SYMBOL_ESCOR );
-         asset             ESCORReceived = asset( 0, SYMBOL_ESCOR );
+         asset             ESCORreceived = asset( 0, SYMBOL_ESCOR );
 
          asset             ESCORwithdrawRateInECO = asset( 0, SYMBOL_ESCOR ); ///< at the time this is updated it can be at most ESCOR/104
          time_point_sec    nextESCORwithdrawalTime = fc::time_point_sec::maximum(); ///< after every withdrawal this is incremented by 1 week
@@ -123,7 +123,7 @@ namespace eznode { namespace chain {
                                     share_type() );
          }
 
-         asset effective_ESCOR()const { return ESCOR - ESCORDelegated + ESCORReceived; }
+         asset effective_ESCOR()const { return ESCOR - ESCORDelegated + ESCORreceived; }
    };
 
    class account_authority_object : public object< account_authority_object_type, account_authority_object >
@@ -467,7 +467,7 @@ FC_REFLECT( eznode::chain::account_object,
              (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
              (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
              (ECOrewardBalance)(EUSDrewardbalance)(ESCORrewardBalance)(ESCORrewardBalanceInECO)
-             (ESCOR)(ESCORDelegated)(ESCORReceived)
+             (ESCOR)(ESCORDelegated)(ESCORreceived)
              (ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)

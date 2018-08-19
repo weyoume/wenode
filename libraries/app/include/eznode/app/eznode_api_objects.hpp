@@ -209,7 +209,7 @@ struct account_api_obj
       posting_rewards( a.posting_rewards ),
       ESCOR( a.ESCOR ),
       ESCORDelegated( a.ESCORDelegated ),
-      ESCORReceived( a.ESCORReceived ),
+      ESCORreceived( a.ESCORreceived ),
       ESCORwithdrawRateInECO( a.ESCORwithdrawRateInECO ),
       nextESCORwithdrawalTime( a.nextESCORwithdrawalTime ),
       withdrawn( a.withdrawn ),
@@ -310,7 +310,7 @@ struct account_api_obj
 
    asset             ESCOR;
    asset             ESCORDelegated;
-   asset             ESCORReceived;
+   asset             ESCORreceived;
    asset             ESCORwithdrawRateInECO;
    time_point_sec    nextESCORwithdrawalTime;
    share_type        withdrawn;
@@ -529,7 +529,7 @@ FC_REFLECT( eznode::app::account_api_obj,
              (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
              (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
              (EUSDrewardbalance)(ECOrewardBalance)(ESCORrewardBalance)(ESCORrewardBalanceInECO)
-             (ESCOR)(ESCORDelegated)(ESCORReceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
+             (ESCOR)(ESCORDelegated)(ESCORreceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)
              (proxied_ESCORfundECObalance_votes)(witnesses_voted_for)

@@ -147,7 +147,7 @@ class wallet_api
       app::state                          get_state( string url );
 
       /**
-       * Returns eScore ECO fund withdraw routes for an account.
+       * Returns ESCOR ECO fund withdraw routes for an account.
        *
        * @param account Account to query routes
        * @param type Withdraw type type [incoming, outgoing, all]
@@ -383,7 +383,7 @@ class wallet_api
        *  that is paid by the creator. The current account creation fee can be found with the
        *  'info' wallet command.
        *
-       *  These accounts are created with combination of eCoin and eScore
+       *  These accounts are created with combination of eCoin and ESCOR
        *
        *  @param creator The account creating the new account
        *  @param ECOfee The amount of the fee to be paid with ECO
@@ -400,7 +400,7 @@ class wallet_api
        * wallet. There is a fee associated with account creation that is paid by the creator.
        * The current account creation fee can be found with the 'info' wallet command.
        *
-       * These accounts are created with combination of eCoin and eScore
+       * These accounts are created with combination of eCoin and ESCOR
        *
        * @param creator The account creating the new account
        * @param ECOfee The amount of the fee to be paid with ECO
@@ -509,10 +509,10 @@ class wallet_api
        *
        * @param delegator The name of the account delegating ESCOR
        * @param delegatee The name of the account receiving ESCOR
-       * @param eScore The amount of ESCOR to delegate
+       * @param ESCOR The amount of ESCOR to delegate
        * @param broadcast true if you wish to broadcast the transaction
        */
-       annotated_signed_transaction delegateESCOR( string delegator, string delegatee, asset eScore, bool broadcast );
+       annotated_signed_transaction delegateESCOR( string delegator, string delegatee, asset ESCOR, bool broadcast );
 
 
       /**
@@ -588,7 +588,7 @@ class wallet_api
        * Vote for a witness to become a block producer. By default an account has not voted
        * positively or negatively for a witness. The account can either vote for with positively
        * votes or against with negative votes. The vote will remain until updated with another
-       * vote. Vote strength is determined by the accounts eScore.
+       * vote. Vote strength is determined by the accounts ESCOR.
        *
        * @param account_to_vote_with The account voting for a witness
        * @param witness_to_vote_for The witness that is being voted for
@@ -707,13 +707,13 @@ class wallet_api
       );
 
       /**
-       * Transfer ECO into the eScore fund (ESCOR). ESCOR are required to be held
+       * Transfer ECO into the ESCOR fund (ESCOR). ESCOR are required to be held
        * for a minimum of one coin year and can be withdrawn once a week over a two year withdraw period.
-       * ESCOR are protected against dilution up until 90% of eCoin is in eScore.
+       * ESCOR are protected against dilution up until 90% of eCoin is in ESCOR.
        *
        * @param from The account the ECO is coming from
        * @param to The account getting the ESCOR
-       * @param amount The amount of ECO to eScore i.e. "100.00 ECO"
+       * @param amount The amount of ECO to ESCOR i.e. "100.00 ECO"
        * @param broadcast true if you wish to broadcast the transaction
        */
       annotated_signed_transaction transferECOtoESCORfund(string from, string to, asset amount, bool broadcast = false);
@@ -736,17 +736,17 @@ class wallet_api
 
 
       /**
-       * Set up an eScore withdraw request. The request is fulfilled once a week over the next two year (104 weeks).
+       * Set up an ESCOR withdraw request. The request is fulfilled once a week over the next two year (104 weeks).
        *
        * @param from The account the ESCOR are withdrawn from
-       * @param eScore The amount of ESCOR to withdraw over the next two years. Each week (amount/104) eScore are
+       * @param ESCOR The amount of ESCOR to withdraw over the next two years. Each week (amount/104) ESCOR are
        *    withdrawn and deposited back as ECO. i.e. "10.000000 ESCOR"
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction withdrawESCOR( string from, asset eScore, bool broadcast = false );
+      annotated_signed_transaction withdrawESCOR( string from, asset ESCOR, bool broadcast = false );
 
       /**
-       * Set up an eScore withdraw route. When eScore are withdrawn, they will be routed to these accounts
+       * Set up an ESCOR withdraw route. When ESCOR are withdrawn, they will be routed to these accounts
        * based on the specified weights.
        *
        * @param from The account the ESCOR are withdrawn from.
