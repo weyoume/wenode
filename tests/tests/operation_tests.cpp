@@ -3656,7 +3656,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.EUSD_amount = ASSET( "1.000 TBD" );
+      op.EUSDamount = ASSET( "1.000 TBD" );
       op.ECOamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
@@ -3666,11 +3666,11 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.escrow_expiration = db.head_block_time() + 200;
 
       BOOST_TEST_MESSAGE( "--- failure when EUSD symbol != EUSD" );
-      op.EUSD_amount.symbol = SYMBOL_ECO;
+      op.EUSDamount.symbol = SYMBOL_ECO;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when ECO symbol != ECO" );
-      op.EUSD_amount.symbol = SYMBOL_EUSD;
+      op.EUSDamount.symbol = SYMBOL_EUSD;
       op.ECOamount.symbol = SYMBOL_EUSD;
       REQUIRE_THROW( op.validate(), fc::exception );
 
@@ -3681,17 +3681,17 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
 
       BOOST_TEST_MESSAGE( "--- failure when EUSD == 0 and ECO == 0" );
       op.fee.symbol = SYMBOL_ECO;
-      op.EUSD_amount.amount = 0;
+      op.EUSDamount.amount = 0;
       op.ECOamount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when EUSD < 0" );
-      op.EUSD_amount.amount = -100;
+      op.EUSDamount.amount = -100;
       op.ECOamount.amount = 1000;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when ECO < 0" );
-      op.EUSD_amount.amount = 1000;
+      op.EUSDamount.amount = 1000;
       op.ECOamount.amount = -100;
       REQUIRE_THROW( op.validate(), fc::exception );
 
@@ -3725,7 +3725,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_authorities )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.EUSD_amount = ASSET( "1.000 TBD" );
+      op.EUSDamount = ASSET( "1.000 TBD" );
       op.ECOamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
@@ -3763,7 +3763,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.EUSD_amount = ASSET( "1.000 TBD" );
+      op.EUSDamount = ASSET( "1.000 TBD" );
       op.ECOamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
@@ -3780,7 +3780,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- falure when from cannot cover amount + fee" );
-      op.EUSD_amount.amount = 0;
+      op.EUSDamount.amount = 0;
       op.ECOamount.amount = 10000;
       tx.operations.clear();
       tx.signatures.clear();
@@ -3814,7 +3814,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
 
       auto alice_ECObalance = alice.balance - op.ECOamount - op.fee;
-      auto alice_EUSDbalance = alice.EUSDbalance - op.EUSD_amount;
+      auto alice_EUSDbalance = alice.EUSDbalance - op.EUSDamount;
       auto bob_ECObalance = bob.balance;
       auto bob_EUSDbalance = bob.EUSDbalance;
       auto sam_ECObalance = sam.balance;
@@ -3830,7 +3830,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       BOOST_REQUIRE( escrow.agent == op.agent );
       BOOST_REQUIRE( escrow.ratification_deadline == op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EUSDbalance == op.EUSD_amount );
+      BOOST_REQUIRE( escrow.EUSDbalance == op.EUSDamount );
       BOOST_REQUIRE( escrow.ECObalance == op.ECOamount );
       BOOST_REQUIRE( escrow.pending_fee == op.fee );
       BOOST_REQUIRE( !escrow.to_approved );
@@ -4287,7 +4287,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSDamount );
       BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
       BOOST_REQUIRE( escrow.pending_fee == et_op.fee );
       BOOST_REQUIRE( escrow.to_approved );
@@ -4321,7 +4321,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSDamount );
       BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
@@ -4343,7 +4343,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSDamount );
       BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
@@ -4368,7 +4368,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSDamount );
          BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
@@ -4407,7 +4407,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSDamount );
          BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
@@ -4430,7 +4430,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSDamount );
          BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
@@ -4461,22 +4461,22 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
 
       BOOST_TEST_MESSAGE( "--- failure when EUSD < 0" );
       op.ECOamount.amount = 0;
-      op.EUSD_amount.amount = -1;
+      op.EUSDamount.amount = -1;
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
       BOOST_TEST_MESSAGE( "--- failure when ECO == 0 and EUSD == 0" );
-      op.EUSD_amount.amount = 0;
+      op.EUSDamount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
       BOOST_TEST_MESSAGE( "--- failure when EUSD is not EUSD symbol" );
-      op.EUSD_amount = ASSET( "1.000 TESTS" );
+      op.EUSDamount = ASSET( "1.000 TESTS" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
       BOOST_TEST_MESSAGE( "--- failure when ECO is not ECO symbol" );
-      op.EUSD_amount.symbol = SYMBOL_EUSD;
+      op.EUSDamount.symbol = SYMBOL_EUSD;
       op.ECOamount = ASSET( "1.000 TBD" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
@@ -4731,7 +4731,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
       BOOST_TEST_MESSAGE( "--- failure when releasing less ECO than available" );
       op.ECOamount = ASSET( "0.000 TESTS" );
-      op.EUSD_amount = ASSET( "1.000 TBD" );
+      op.EUSDamount = ASSET( "1.000 TBD" );
 
       tx.clear();
       tx.operations.push_back( op );
@@ -4756,7 +4756,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       op.receiver = et_op.from;
       op.who = et_op.to;
       op.ECOamount = ASSET( "0.100 TESTS" );
-      op.EUSD_amount = ASSET( "0.000 TBD" );
+      op.EUSDamount = ASSET( "0.000 TBD" );
       tx.operations.push_back( op );
       tx.sign( bob_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );

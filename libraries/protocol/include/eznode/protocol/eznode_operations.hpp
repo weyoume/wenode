@@ -231,7 +231,7 @@ namespace eznode { namespace protocol {
       account_name_type agent;
       uint32_t          escrow_id = 30;
 
-      asset             EUSD_amount = asset( 0, SYMBOL_EUSD );
+      asset             EUSDamount = asset( 0, SYMBOL_EUSD );
       asset             ECOamount = asset( 0, SYMBOL_ECO );
       asset             fee;
 
@@ -303,7 +303,7 @@ namespace eznode { namespace protocol {
       account_name_type receiver; ///< the account that should receive funds (might be from, might be to)
 
       uint32_t          escrow_id = 30;
-      asset             EUSD_amount = asset( 0, SYMBOL_EUSD ); ///< the amount of EUSD to release
+      asset             EUSDamount = asset( 0, SYMBOL_EUSD ); ///< the amount of EUSD to release
       asset             ECOamount = asset( 0, SYMBOL_ECO ); ///< the amount of ECO to release
 
       void validate()const;
@@ -1016,10 +1016,10 @@ FC_REFLECT( eznode::protocol::comment_payout_beneficiaries, (beneficiaries) )
 FC_REFLECT_TYPENAME( eznode::protocol::comment_options_extension )
 FC_REFLECT( eznode::protocol::comment_options_operation, (author)(permlink)(max_accepted_payout)(percent_EUSD)(allow_votes)(allow_curationRewards)(extensions) )
 
-FC_REFLECT( eznode::protocol::escrow_transfer_operation, (from)(to)(EUSD_amount)(ECOamount)(escrow_id)(agent)(fee)(json)(ratification_deadline)(escrow_expiration) );
+FC_REFLECT( eznode::protocol::escrow_transfer_operation, (from)(to)(EUSDamount)(ECOamount)(escrow_id)(agent)(fee)(json)(ratification_deadline)(escrow_expiration) );
 FC_REFLECT( eznode::protocol::escrow_approve_operation, (from)(to)(agent)(who)(escrow_id)(approve) );
 FC_REFLECT( eznode::protocol::escrow_dispute_operation, (from)(to)(agent)(who)(escrow_id) );
-FC_REFLECT( eznode::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(EUSD_amount)(ECOamount) );
+FC_REFLECT( eznode::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(EUSDamount)(ECOamount) );
 FC_REFLECT( eznode::protocol::challenge_authority_operation, (challenger)(challenged)(require_owner) );
 FC_REFLECT( eznode::protocol::prove_authority_operation, (challenged)(require_owner) );
 FC_REFLECT( eznode::protocol::request_account_recovery_operation, (recoveryAccount)(accountToRecover)(new_owner_authority)(extensions) );
