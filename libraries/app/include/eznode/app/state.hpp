@@ -47,7 +47,7 @@ namespace eznode { namespace app {
    {
       string         voter;
       uint64_t       weight = 0;
-      int64_t        rshares = 0;
+      int64_t        rewardESCOR = 0;
       int16_t        percent = 0;
       share_type     reputation = 0;
       time_point_sec time;
@@ -57,7 +57,7 @@ namespace eznode { namespace app {
    {
       string         authorperm;
       uint64_t       weight = 0;
-      int64_t        rshares = 0;
+      int64_t        rewardESCOR = 0;
       int16_t        percent = 0;
       time_point_sec time;
    };
@@ -68,12 +68,12 @@ namespace eznode { namespace app {
 
       string                      url; /// /category/@rootauthor/root_permlink#author/permlink
       string                      root_title;
-      asset                       pending_payout_value; ///< EZD
-      asset                       total_pending_payout_value; ///< EZD including replies
+      asset                       pending_payout_value; ///< EUSD
+      asset                       total_pending_payout_value; ///< EUSD including replies
       vector<vote_state>          active_votes;
       vector<string>              replies; ///< author/slug mapping
       share_type                  author_reputation = 0;
-      asset                       promoted = asset(0, SYMBOL_EZD);
+      asset                       promoted = asset(0, SYMBOL_EUSD);
       uint32_t                    body_length = 0;
       vector<account_name_type>   reblogged_by;
       optional<account_name_type> first_reblogged_by;
@@ -81,16 +81,16 @@ namespace eznode { namespace app {
    };
 
    /**
-    *  Convert's vesting shares
+    *  Convert's eScore
     */
    struct extended_account : public account_api_obj
    {
       extended_account(){}
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
 
-      asset                                   vesting_balance; /// convert vesting_shares to vesting ECO
+      asset                                   ESCORbalanceInECO; /// convert eScore to ECO value
       share_type                              reputation = 0;
-      map<uint64_t,applied_operation>         transfer_history; /// transfer to/from vesting
+      map<uint64_t,applied_operation>         transfer_history; /// transfer to/from eScore ECO fund
       map<uint64_t,applied_operation>         market_history; /// limit order / cancel / fill
       map<uint64_t,applied_operation>         post_history;
       map<uint64_t,applied_operation>         vote_history;
@@ -117,13 +117,13 @@ namespace eznode { namespace app {
       double          open = 0;
       double          close = 0;
       double          ECO_volume = 0;
-      double          EZD_volume = 0;
+      double          EUSD_volume = 0;
    };
 
    struct order_history_item {
       time_point_sec time;
       string         type; // buy or sell
-      asset          EZD_quantity;
+      asset          EUSD_quantity;
       asset          ECO_quantity;
       double         real_price = 0;
    };
@@ -177,12 +177,12 @@ namespace eznode { namespace app {
 
 FC_REFLECT_DERIVED( eznode::app::extended_account,
                    (eznode::app::account_api_obj),
-                   (vesting_balance)(reputation)
+                   (ESCORbalanceInECO)(reputation)
                    (transfer_history)(market_history)(post_history)(vote_history)(other_history)(witness_votes)(tags_usage)(guest_bloggers)(open_orders)(comments)(feed)(blog)(recent_replies)(recommended) )
 
 
-FC_REFLECT( eznode::app::vote_state, (voter)(weight)(rshares)(percent)(reputation)(time) );
-FC_REFLECT( eznode::app::account_vote, (authorperm)(weight)(rshares)(percent)(time) );
+FC_REFLECT( eznode::app::vote_state, (voter)(weight)(rewardESCOR)(percent)(reputation)(time) );
+FC_REFLECT( eznode::app::account_vote, (authorperm)(weight)(rewardESCOR)(percent)(time) );
 
 FC_REFLECT( eznode::app::discussion_index, (category)(trending)(payout)(payout_comments)(trending30)(updated)(created)(responses)(active)(votes)(maturing)(best)(hot)(promoted)(cashout) )
 FC_REFLECT( eznode::app::tag_index, (trending) )
@@ -191,6 +191,6 @@ FC_REFLECT_DERIVED( eznode::app::discussion, (eznode::app::comment_api_obj), (ur
 FC_REFLECT( eznode::app::state, (current_route)(props)(tag_idx)(tags)(content)(accounts)(pow_queue)(witnesses)(discussion_idx)(witness_schedule)(feed_price)(error)(market_data) )
 
 FC_REFLECT_DERIVED( eznode::app::extended_limit_order, (eznode::app::limit_order_api_obj), (real_price)(rewarded) )
-FC_REFLECT( eznode::app::order_history_item, (time)(type)(EZD_quantity)(ECO_quantity)(real_price) );
+FC_REFLECT( eznode::app::order_history_item, (time)(type)(EUSD_quantity)(ECO_quantity)(real_price) );
 FC_REFLECT( eznode::app::market, (bids)(asks)(history)(price_history)(available_candlesticks)(available_zoom)(current_candlestick)(current_zoom) )
-FC_REFLECT( eznode::app::candle_stick, (open_time)(period)(high)(low)(open)(close)(ECO_volume)(EZD_volume) );
+FC_REFLECT( eznode::app::candle_stick, (open_time)(period)(high)(low)(open)(close)(ECO_volume)(EUSD_volume) );

@@ -970,12 +970,12 @@ uint32_t database::get_slot_at_time(fc::time_point_sec when)const
 }
 
 /**
- *  Converts ECO into EZD and adds it to to_account while reducing the ECO supply
- *  by ECO and increasing the EZD supply by the specified amount.
+ *  Converts ECO into EUSD and adds it to to_account while reducing the ECO supply
+ *  by ECO and increasing the EUSD supply by the specified amount.
  */
-std::pair< asset, asset > database::create_EZD( const account_object& to_account, asset ECO, bool to_reward_balance )
+std::pair< asset, asset > database::create_EUSD( const account_object& to_account, asset ECO, bool to_reward_balance )
 {
-   std::pair< asset, asset > assets( asset( 0, SYMBOL_EZD ), asset( 0, SYMBOL_ECO ) );
+   std::pair< asset, asset > assets( asset( 0, SYMBOL_EUSD ), asset( 0, SYMBOL_ECO ) );
 
    try
    {
@@ -987,25 +987,25 @@ std::pair< asset, asset > database::create_EZD( const account_object& to_account
 
       if( !median_price.is_null() )
       {
-         auto to_EZD = ( gpo.EZD_print_rate * ECO.amount ) / PERCENT_100;
-         auto to_ECO = ECO.amount - to_EZD;
+         auto to_EUSD = ( gpo.EUSD_print_rate * ECO.amount ) / PERCENT_100;
+         auto to_ECO = ECO.amount - to_EUSD;
 
-         auto EZD = asset( to_EZD, SYMBOL_ECO ) * median_price;
+         auto EUSD = asset( to_EUSD, SYMBOL_ECO ) * median_price;
 
          if( to_reward_balance )
          {
-            adjust_reward_balance( to_account, EZD );
+            adjust_reward_balance( to_account, EUSD );
             adjust_reward_balance( to_account, asset( to_ECO, SYMBOL_ECO ) );
          }
          else
          {
-            adjust_balance( to_account, EZD );
+            adjust_balance( to_account, EUSD );
             adjust_balance( to_account, asset( to_ECO, SYMBOL_ECO ) );
          }
 
-         adjust_supply( asset( -to_EZD, SYMBOL_ECO ) );
-         adjust_supply( EZD );
-         assets.first = EZD;
+         adjust_supply( asset( -to_EUSD, SYMBOL_ECO ) );
+         adjust_supply( eUSD );
+         assets.first = EUSD;
          assets.second = to_ECO;
       }
       else
@@ -1020,59 +1020,59 @@ std::pair< asset, asset > database::create_EZD( const account_object& to_account
 }
 
 /**
- * @param to_account - the account to receive the new vesting shares
- * @param ECO - ECO to be converted to vesting shares
+ * @param to_account - the account to receive the new eScore
+ * @param ECO - ECO to be converted to eScore
  */
-asset database::create_vesting( const account_object& to_account, asset ECO, bool to_reward_balance )
+asset database::createECOfundForESCOR( const account_object& to_account, asset ECO, bool to_reward_balance )
 {
    try
    {
       const auto& cprops = get_dynamic_global_properties();
 
       /**
-       *  The ratio of total_vesting_shares / total_vesting_fund_ECO should not
+       *  The ratio of totalESCOR / totalECOfundForESCOR should not
        *  change as the result of the user adding funds
        *
        *  V / C  = (V+Vn) / (C+Cn)
        *
        *  Simplifies to Vn = (V * Cn ) / C
        *
-       *  If Cn equals o.amount, then we must solve for Vn to know how many new vesting shares
+       *  If Cn equals o.amount, then we must solve for Vn to know how many new eScore
        *  the user should receive.
        *
        *  128 bit math is requred due to multiplying of 64 bit numbers. This is done in asset and price.
        */
-      asset new_vesting = ECO * ( to_reward_balance ? cprops.get_reward_vesting_share_price() : cprops.get_vesting_share_price() );
+      asset new_ECO_fund_for_ESCOR = ECO * ( to_reward_balance ? cprops.get_reward_ESCOR_price() : cprops.get_ESCOR_price() );
 
       modify( to_account, [&]( account_object& to )
       {
          if( to_reward_balance )
          {
-            to.reward_EZP_balance += new_vesting;
-            to.reward_vesting_ECO_balance += ECO;
+            to.rewardESCOR_balance += new_ECO_fund_for_ESCOR;
+            to.rewardESCOR_balance += ECO;
          }
          else
-            to.vesting_shares += new_vesting;
+            to.eScore += new_ECO_fund_for_ESCOR;
       } );
 
       modify( cprops, [&]( dynamic_global_property_object& props )
       {
          if( to_reward_balance )
          {
-            props.pending_rewarded_vesting_shares += new_vesting;
-            props.pending_rewarded_vesting_ECO += ECO;
+            props.pending_rewarded_ESCOR += new_ECO_fund_for_ESCOR;
+            props.pending_rewarded_ESCORvalueInECO += ECO;
          }
          else
          {
-            props.total_vesting_fund_ECO += ECO;
-            props.total_vesting_shares += new_vesting;
+            props.totalECOfundForESCOR += ECO;
+            props.totalESCOR += new_ECO_fund_for_ESCOR;
          }
       } );
 
       if( !to_reward_balance )
-         adjust_proxied_witness_votes( to_account, new_vesting.amount );
+         adjust_proxied_witness_votes( to_account, new_ECO_fund_for_ESCOR.amount );
 
-      return new_vesting;
+      return new_ECO_fund_for_ESCOR;
    }
    FC_CAPTURE_AND_RETHROW( (to_account.name)(ECO) )
 }
@@ -1176,7 +1176,7 @@ void database::adjust_witness_vote( const witness_object& witness, share_type de
 
       w.virtual_last_update = wso.current_virtual_time;
       w.votes += delta;
-      FC_ASSERT( w.votes <= get_dynamic_global_properties().total_vesting_shares.amount, "", ("w.votes", w.votes)("props",get_dynamic_global_properties().total_vesting_shares) );
+      FC_ASSERT( w.votes <= get_dynamic_global_properties().totalESCOR.amount, "", ("w.votes", w.votes)("props",get_dynamic_global_properties().totalESCOR) );
 
       if( has_hardfork( HARDFORK_0_2 ) )
          w.virtual_scheduled_time = w.virtual_last_update + (VIRTUAL_SCHEDULE_LAP_LENGTH2 - w.virtual_position)/(w.votes.value+1);
@@ -1215,103 +1215,103 @@ void database::clear_null_account_balance()
    if( !has_hardfork( HARDFORK_0_14__327 ) ) return;
 
    const auto& null_account = get_account( NULL_ACCOUNT );
-   asset total_ECO( 0, SYMBOL_ECO );
-   asset total_EZD( 0, SYMBOL_EZD );
+   asset totalECO( 0, SYMBOL_ECO );
+   asset EUSDtotal( 0, SYMBOL_EUSD );
 
    if( null_account.balance.amount > 0 )
    {
-      total_ECO += null_account.balance;
+      totalECO += null_account.balance;
       adjust_balance( null_account, -null_account.balance );
    }
 
-   if( null_account.savings_balance.amount > 0 )
+   if( null_account.ECOsavingsBalance.amount > 0 )
    {
-      total_ECO += null_account.savings_balance;
-      adjust_savings_balance( null_account, -null_account.savings_balance );
+      totalECO += null_account.ECOsavingsBalance;
+      adjust_ECOsavingsBalance( null_account, -null_account.ECOsavingsBalance );
    }
 
-   if( null_account.EZD_balance.amount > 0 )
+   if( null_account.EUSDbalance.amount > 0 )
    {
-      total_EZD += null_account.EZD_balance;
-      adjust_balance( null_account, -null_account.EZD_balance );
+      EUSDtotal += null_account.EUSDbalance;
+      adjust_balance( null_account, -null_account.EUSDbalance );
    }
 
-   if( null_account.savings_EZD_balance.amount > 0 )
+   if( null_account.EUSDsavingsBalance.amount > 0 )
    {
-      total_EZD += null_account.savings_EZD_balance;
-      adjust_savings_balance( null_account, -null_account.savings_EZD_balance );
+      EUSDtotal += null_account.EUSDsavingsBalance;
+      adjust_ECOsavingsBalance( null_account, -null_account.EUSDsavingsBalance );
    }
 
-   if( null_account.vesting_shares.amount > 0 )
+   if( null_account.ESCOR.amount > 0 )
    {
       const auto& gpo = get_dynamic_global_properties();
-      auto converted_ECO = null_account.vesting_shares * gpo.get_vesting_share_price();
+      auto converted_ECO = null_account.ESCOR * gpo.get_ESCOR_price();
 
       modify( gpo, [&]( dynamic_global_property_object& g )
       {
-         g.total_vesting_shares -= null_account.vesting_shares;
-         g.total_vesting_fund_ECO -= converted_ECO;
+         g.totalESCOR -= null_account.ESCOR;
+         g.totalECOfundForESCOR -= converted_ECO;
       });
 
       modify( null_account, [&]( account_object& a )
       {
-         a.vesting_shares.amount = 0;
+         a.eScore.amount = 0;
       });
 
-      total_ECO += converted_ECO;
+      totalECO += converted_ECO;
    }
 
-   if( null_account.reward_ECO_balance.amount > 0 )
+   if( null_account.ECOreward_balance.amount > 0 )
    {
-      total_ECO += null_account.reward_ECO_balance;
-      adjust_reward_balance( null_account, -null_account.reward_ECO_balance );
+      totalECO += null_account.ECOreward_balance;
+      adjust_reward_balance( null_account, -null_account.ECOreward_balance );
    }
 
-   if( null_account.reward_EZD_balance.amount > 0 )
+   if( null_account.EUSDrewardbalance.amount > 0 )
    {
-      total_EZD += null_account.reward_EZD_balance;
-      adjust_reward_balance( null_account, -null_account.reward_EZD_balance );
+      EUSDtotal += null_account.EUSDrewardbalance;
+      adjust_reward_balance( null_account, -null_account.EUSDrewardbalance );
    }
 
-   if( null_account.reward_EZP_balance.amount > 0 )
+   if( null_account.rewardESCOR_balance.amount > 0 )
    {
       const auto& gpo = get_dynamic_global_properties();
 
-      total_ECO += null_account.reward_vesting_ECO_balance;
+      totalECO += null_account.rewardESCOR_balance;
 
       modify( gpo, [&]( dynamic_global_property_object& g )
       {
-         g.pending_rewarded_vesting_shares -= null_account.reward_EZP_balance;
-         g.pending_rewarded_vesting_ECO -= null_account.reward_vesting_ECO_balance;
+         g.pending_rewarded_ESCOR -= null_account.rewardESCOR_balance;
+         g.pending_rewarded_ESCORvalueInECO -= null_account.rewardESCOR_balance;
       });
 
       modify( null_account, [&]( account_object& a )
       {
-         a.reward_vesting_ECO_balance.amount = 0;
-         a.reward_EZP_balance.amount = 0;
+         a.rewardESCOR_balance.amount = 0;
+         a.rewardESCOR_balance.amount = 0;
       });
    }
 
-   if( total_ECO.amount > 0 )
-      adjust_supply( -total_ECO );
+   if( totalECO.amount > 0 )
+      adjust_supply( -totalECO );
 
-   if( total_EZD.amount > 0 )
-      adjust_supply( -total_EZD );
+   if( EUSDtotal.amount > 0 )
+      adjust_supply( -EUSDtotal );
 }
 
 /**
- * This method updates total_reward_shares2 on DGPO, and children_rshares2 on comments, when a comment's rshares2 changes
- * from old_rshares2 to new_rshares2.  Maintaining invariants that children_rshares2 is the sum of all descendants' rshares2,
- * and dgpo.total_reward_shares2 is the total number of rshares2 outstanding.
+ * This method updates total_reward_ESCOR2 on DGPO, and children_rewardESCOR2 on comments, when a comment's rewardESCOR2 changes
+ * from old_rewardESCOR2 to new_rewardESCOR2.  Maintaining invariants that children_rewardESCOR2 is the sum of all descendants' rewardESCOR2,
+ * and dgpo.total_reward_ESCOR2 is the total number of rewardESCOR2 outstanding.
  */
-void database::adjust_rshares2( const comment_object& c, fc::uint128_t old_rshares2, fc::uint128_t new_rshares2 )
+void database::adjust_rewardESCOR2( const comment_object& c, fc::uint128_t old_rewardESCOR2, fc::uint128_t new_rewardESCOR2 )
 {
 
    const auto& dgpo = get_dynamic_global_properties();
    modify( dgpo, [&]( dynamic_global_property_object& p )
    {
-      p.total_reward_shares2 -= old_rshares2;
-      p.total_reward_shares2 += new_rshares2;
+      p.total_reward_ESCOR2 -= old_rewardESCOR2;
+      p.total_reward_ESCOR2 += new_rewardESCOR2;
    } );
 }
 
@@ -1334,44 +1334,44 @@ void database::update_owner_authority( const account_object& account, const auth
    });
 }
 
-void database::process_vesting_withdrawals()
+void database::process_ECO_fund_for_ESCOR_withdrawals()
 {
-   const auto& widx = get_index< account_index >().indices().get< by_next_vesting_withdrawal >();
-   const auto& didx = get_index< withdraw_vesting_route_index >().indices().get< by_withdraw_route >();
+   const auto& widx = get_index< account_index >().indices().get< by_nextESCORwithdrawalTime >();
+   const auto& didx = get_index< withdraw_ESCOR_route_index >().indices().get< by_withdraw_route >();
    auto current = widx.begin();
 
    const auto& cprops = get_dynamic_global_properties();
 
-   while( current != widx.end() && current->next_vesting_withdrawal <= head_block_time() )
+   while( current != widx.end() && current->nextESCORwithdrawalTime <= head_block_time() )
    {
       const auto& from_account = *current; ++current;
 
       /**
-      *  Let T = total tokens in vesting fund
-      *  Let V = total vesting shares
-      *  Let v = total vesting shares being cashed out
+      *  Let T = total tokens in eScore Fund
+      *  Let V = total eScore
+      *  Let v = total eScore being cashed out
       *
       *  The user may withdraw  vT / V tokens
       */
       share_type to_withdraw;
-      if ( from_account.to_withdraw - from_account.withdrawn < from_account.vesting_withdraw_rate.amount )
-         to_withdraw = std::min( from_account.vesting_shares.amount, from_account.to_withdraw % from_account.vesting_withdraw_rate.amount ).value;
+      if ( from_account.to_withdraw - from_account.withdrawn < from_account.ESCORwithdrawRateInECO.amount )
+         to_withdraw = std::min( from_account.ESCOR.amount, from_account.to_withdraw % from_account.ESCORwithdrawRateInECO.amount ).value;
       else
-         to_withdraw = std::min( from_account.vesting_shares.amount, from_account.vesting_withdraw_rate.amount ).value;
+         to_withdraw = std::min( from_account.ESCOR.amount, from_account.ESCORwithdrawRateInECO.amount ).value;
 
-      share_type vests_deposited_as_ECO = 0;
-      share_type vests_deposited_as_vests = 0;
-      asset total_ECO_converted = asset( 0, SYMBOL_ECO );
+      share_type ESCOR_deposited_as_ECO = 0;
+      share_type ESCOR_deposited_as_ESCOR = 0;
+      asset totalECO_converted = asset( 0, SYMBOL_ECO );
 
-      // Do two passes, the first for vests, the second for ECO. Try to maintain as much accuracy for vests as possible.
+      // Do two passes, the first for ESCOR, the second for ECO. Try to maintain as much accuracy for ESCOR as possible.
       for( auto itr = didx.upper_bound( boost::make_tuple( from_account.id, account_id_type() ) );
            itr != didx.end() && itr->from_account == from_account.id;
            ++itr )
       {
-         if( itr->auto_vest )
+         if( itr->autoESCOR )
          {
             share_type to_deposit = ( ( fc::uint128_t ( to_withdraw.value ) * itr->percent ) / PERCENT_100 ).to_uint64();
-            vests_deposited_as_vests += to_deposit;
+            ESCOR_deposited_as_ESCOR += to_deposit;
 
             if( to_deposit > 0 )
             {
@@ -1379,12 +1379,12 @@ void database::process_vesting_withdrawals()
 
                modify( to_account, [&]( account_object& a )
                {
-                  a.vesting_shares.amount += to_deposit;
+                  a.eScore.amount += to_deposit;
                });
 
                adjust_proxied_witness_votes( to_account, to_deposit );
 
-               push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, to_account.name, asset( to_deposit, SYMBOL_EZP ), asset( to_deposit, SYMBOL_EZP ) ) );
+               push_virtual_operation( fillESCORWithdraw_operation( from_account.name, to_account.name, asset( to_deposit, SYMBOL_ESCOR ), asset( to_deposit, SYMBOL_ESCOR ) ) );
             }
          }
       }
@@ -1393,14 +1393,14 @@ void database::process_vesting_withdrawals()
            itr != didx.end() && itr->from_account == from_account.id;
            ++itr )
       {
-         if( !itr->auto_vest )
+         if( !itr->autoESCOR )
          {
             const auto& to_account = get(itr->to_account);
 
             share_type to_deposit = ( ( fc::uint128_t ( to_withdraw.value ) * itr->percent ) / PERCENT_100 ).to_uint64();
-            vests_deposited_as_ECO += to_deposit;
-            auto converted_ECO = asset( to_deposit, SYMBOL_EZP ) * cprops.get_vesting_share_price();
-            total_ECO_converted += converted_ECO;
+            ESCOR_deposited_as_ECO += to_deposit;
+            auto converted_ECO = asset( to_deposit, SYMBOL_ESCOR ) * cprops.get_ESCOR_price();
+            totalECO_converted += converted_ECO;
 
             if( to_deposit > 0 )
             {
@@ -1411,57 +1411,57 @@ void database::process_vesting_withdrawals()
 
                modify( cprops, [&]( dynamic_global_property_object& o )
                {
-                  o.total_vesting_fund_ECO -= converted_ECO;
-                  o.total_vesting_shares.amount -= to_deposit;
+                  o.totalECOfundForESCOR -= converted_ECO;
+                  o.totalESCOR.amount -= to_deposit;
                });
 
-               push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, to_account.name, asset( to_deposit, SYMBOL_EZP), converted_ECO ) );
+               push_virtual_operation( fillESCORWithdraw_operation( from_account.name, to_account.name, asset( to_deposit, SYMBOL_ESCOR), converted_ECO ) );
             }
          }
       }
 
-      share_type to_convert = to_withdraw - vests_deposited_as_ECO - vests_deposited_as_vests;
-      FC_ASSERT( to_convert >= 0, "Deposited more vests than were supposed to be withdrawn" );
+      share_type to_convert = to_withdraw - ESCOR_deposited_as_ECO - ESCOR_deposited_as_ESCOR;
+      FC_ASSERT( to_convert >= 0, "Deposited more ESCOR than were supposed to be withdrawn" );
 
-      auto converted_ECO = asset( to_convert, SYMBOL_EZP ) * cprops.get_vesting_share_price();
+      auto converted_ECO = asset( to_convert, SYMBOL_ESCOR ) * cprops.get_ESCOR_price();
 
       modify( from_account, [&]( account_object& a )
       {
-         a.vesting_shares.amount -= to_withdraw;
+         a.eScore.amount -= to_withdraw;
          a.balance += converted_ECO;
          a.withdrawn += to_withdraw;
 
-         if( a.withdrawn >= a.to_withdraw || a.vesting_shares.amount == 0 )
+         if( a.withdrawn >= a.to_withdraw || a.eScore.amount == 0 )
          {
-            a.vesting_withdraw_rate.amount = 0;
-            a.next_vesting_withdrawal = fc::time_point_sec::maximum();
+            a.ESCORwithdrawRateInECO.amount = 0;
+            a.nextESCORwithdrawalTime = fc::time_point_sec::maximum();
          }
          else
          {
-            a.next_vesting_withdrawal += fc::seconds( VESTING_WITHDRAW_INTERVAL_SECONDS );
+            a.nextESCORwithdrawalTime += fc::seconds( ESCOR_WITHDRAW_INTERVAL_SECONDS );
          }
       });
 
       modify( cprops, [&]( dynamic_global_property_object& o )
       {
-         o.total_vesting_fund_ECO -= converted_ECO;
-         o.total_vesting_shares.amount -= to_convert;
+         o.totalECOfundForESCOR -= converted_ECO;
+         o.totalESCOR.amount -= to_convert;
       });
 
       if( to_withdraw > 0 )
          adjust_proxied_witness_votes( from_account, -to_withdraw );
 
-      push_virtual_operation( fill_vesting_withdraw_operation( from_account.name, from_account.name, asset( to_withdraw, SYMBOL_EZP ), converted_ECO ) );
+      push_virtual_operation( fillESCORWithdraw_operation( from_account.name, from_account.name, asset( to_withdraw, SYMBOL_ESCOR ), converted_ECO ) );
    }
 }
 
-void database::adjust_total_payout( const comment_object& cur, const asset& EZD_created, const asset& curator_EZD_value, const asset& beneficiary_value )
+void database::adjust_total_payout( const comment_object& cur, const asset& EUSD_created, const asset& curator_EUSD_value, const asset& beneficiary_value )
 {
    modify( cur, [&]( comment_object& c )
    {
-      if( c.total_payout_value.symbol == EZD_created.symbol )
-         c.total_payout_value += EZD_created;
-         c.curator_payout_value += curator_EZD_value;
+      if( c.total_payout_value.symbol == EUSD_created.symbol )
+         c.total_payout_value += EUSD_created;
+         c.curator_payout_value += curator_EUSD_value;
          c.beneficiary_payout_value += beneficiary_value;
    } );
    /// TODO: potentially modify author's total payout numbers as well
@@ -1481,7 +1481,7 @@ share_type database::pay_curators( const comment_object& c, share_type& max_rewa
       //edump( (total_weight)(max_rewards) );
       share_type unclaimed_rewards = max_rewards;
 
-      if( !c.allow_curation_rewards )
+      if( !c.allow_curationRewards )
       {
          unclaimed_rewards = 0;
          max_rewards = 0;
@@ -1498,14 +1498,14 @@ share_type database::pay_curators( const comment_object& c, share_type& max_rewa
             {
                unclaimed_rewards -= claim;
                const auto& voter = get(itr->voter);
-               auto reward = create_vesting( voter, asset( claim, SYMBOL_ECO ), has_hardfork( HARDFORK_0_17__659 ) );
+               auto reward = createECOfundForESCOR( voter, asset( claim, SYMBOL_ECO ), has_hardfork( HARDFORK_0_17__659 ) );
 
-               push_virtual_operation( curation_reward_operation( voter.name, reward, c.author, to_string( c.permlink ) ) );
+               push_virtual_operation( curationReward_operation( voter.name, reward, c.author, to_string( c.permlink ) ) );
 
                #ifndef IS_LOW_MEM
                   modify( voter, [&]( account_object& a )
                   {
-                     a.curation_rewards += claim;
+                     a.curationRewards += claim;
                   });
                #endif
             }
@@ -1520,9 +1520,9 @@ share_type database::pay_curators( const comment_object& c, share_type& max_rewa
 
 void fill_comment_reward_context_local_state( util::comment_reward_context& ctx, const comment_object& comment )
 {
-   ctx.rshares = comment.net_rshares;
+   ctx.rewardESCOR = comment.net_rewardESCOR;
    ctx.reward_weight = comment.reward_weight;
-   ctx.max_EZD = comment.max_accepted_payout;
+   ctx.max_EUSD = comment.max_accepted_payout;
 }
 
 share_type database::cashout_comment_helper( util::comment_reward_context& ctx, const comment_object& comment )
@@ -1531,23 +1531,23 @@ share_type database::cashout_comment_helper( util::comment_reward_context& ctx, 
    {
       share_type claimed_reward = 0;
 
-      if( comment.net_rshares > 0 )
+      if( comment.net_rewardESCOR > 0 )
       {
          fill_comment_reward_context_local_state( ctx, comment );
 
          if( has_hardfork( HARDFORK_0_17__774 ) )
          {
             const auto rf = get_reward_fund( comment );
-            ctx.reward_curve = rf.author_reward_curve;
+            ctx.reward_curve = rf.authorReward_curve;
             ctx.content_constant = rf.content_constant;
          }
 
-         const share_type reward = util::get_rshare_reward( ctx );
+         const share_type reward = util::get_ESCOR_reward( ctx );
          uint128_t reward_tokens = uint128_t( reward.value );
 
          if( reward_tokens > 0 )
          {
-            share_type curation_tokens = ( ( reward_tokens * get_curation_rewards_percent( comment ) ) / PERCENT_100 ).to_uint64();
+            share_type curation_tokens = ( ( reward_tokens * get_curationRewards_percent( comment ) ) / PERCENT_100 ).to_uint64();
             share_type author_tokens = reward_tokens.to_uint64() - curation_tokens;
 
             author_tokens += pay_curators( comment, curation_tokens );
@@ -1557,29 +1557,29 @@ share_type database::cashout_comment_helper( util::comment_reward_context& ctx, 
             for( auto& b : comment.beneficiaries )
             {
                auto benefactor_tokens = ( author_tokens * b.weight ) / PERCENT_100;
-               auto vest_created = create_vesting( get_account( b.account ), benefactor_tokens, has_hardfork( HARDFORK_0_17__659 ) );
-               push_virtual_operation( comment_benefactor_reward_operation( b.account, comment.author, to_string( comment.permlink ), vest_created ) );
+               auto ECOfundForESCORcreated = createECOfundForESCOR( get_account( b.account ), benefactor_tokens, has_hardfork( HARDFORK_0_17__659 ) );
+               push_virtual_operation( comment_benefactor_reward_operation( b.account, comment.author, to_string( comment.permlink ), ECOfundForESCORcreated ) );
                total_beneficiary += benefactor_tokens;
             }
 
             author_tokens -= total_beneficiary;
 
-            auto EZD_ECO     = ( author_tokens * comment.percent_EZD ) / ( 2 * PERCENT_100 ) ;
-            auto vesting_ECO = author_tokens - EZD_ECO;
+            auto EUSDvalueInECO     = ( author_tokens * comment.percent_EUSD ) / ( 2 * PERCENT_100 ) ;
+            auto ESCORvalueInECO = author_tokens - EUSDvalueInECO;
 
             const auto& author = get_account( comment.author );
-            auto vest_created = create_vesting( author, vesting_ECO, has_hardfork( HARDFORK_0_17__659 ) );
-            auto EZD_payout = create_EZD( author, EZD_ECO, has_hardfork( HARDFORK_0_17__659 ) );
+            auto ECOfundForESCORcreated = createECOfundForESCOR( author, ESCORvalueInECO, has_hardfork( HARDFORK_0_17__659 ) );
+            auto EUSDpayout = create_EUSD( author, EUSDvalueInECO, has_hardfork( HARDFORK_0_17__659 ) );
 
-            adjust_total_payout( comment, EZD_payout.first + to_EZD( EZD_payout.second + asset( vesting_ECO, SYMBOL_ECO ) ), to_EZD( asset( curation_tokens, SYMBOL_ECO ) ), to_EZD( asset( total_beneficiary, SYMBOL_ECO ) ) );
+            adjust_total_payout( comment, EUSDpayout.first + to_EUSD( EUSDpayout.second + asset( ESCORvalueInECO, SYMBOL_ECO ) ), to_EUSD( asset( curation_tokens, SYMBOL_ECO ) ), to_EUSD( asset( total_beneficiary, SYMBOL_ECO ) ) );
 
-            push_virtual_operation( author_reward_operation( comment.author, to_string( comment.permlink ), EZD_payout.first, EZD_payout.second, vest_created ) );
-            push_virtual_operation( comment_reward_operation( comment.author, to_string( comment.permlink ), to_EZD( asset( claimed_reward, SYMBOL_ECO ) ) ) );
+            push_virtual_operation( authorReward_operation( comment.author, to_string( comment.permlink ), EUSDpayout.first, EUSDpayout.second, ECOfundForESCORcreated ) );
+            push_virtual_operation( comment_reward_operation( comment.author, to_string( comment.permlink ), to_EUSD( asset( claimed_reward, SYMBOL_ECO ) ) ) );
 
             #ifndef IS_LOW_MEM
                modify( comment, [&]( comment_object& c )
                {
-                  c.author_rewards += author_tokens;
+                  c.authorRewards += author_tokens;
                });
 
                modify( get_account( comment.author ), [&]( account_object& a )
@@ -1591,20 +1591,20 @@ share_type database::cashout_comment_helper( util::comment_reward_context& ctx, 
          }
 
          if( !has_hardfork( HARDFORK_0_17__774 ) )
-            adjust_rshares2( comment, util::evaluate_reward_curve( comment.net_rshares.value ), 0 );
+            adjust_rewardESCOR2( comment, util::evaluate_reward_curve( comment.net_rewardESCOR.value ), 0 );
       }
 
       modify( comment, [&]( comment_object& c )
       {
          /**
-         * A payout is only made for positive rshares, negative rshares hang around
+         * A payout is only made for positive rewardESCOR, negative rewardESCOR hang around
          * for the next time this post might get an upvote.
          */
-         if( c.net_rshares > 0 )
-            c.net_rshares = 0;
-         c.children_abs_rshares = 0;
-         c.abs_rshares  = 0;
-         c.vote_rshares = 0;
+         if( c.net_rewardESCOR > 0 )
+            c.net_rewardESCOR = 0;
+         c.children_abs_rewardESCOR = 0;
+         c.abs_rewardESCOR  = 0;
+         c.vote_rewardESCOR = 0;
          c.total_vote_weight = 0;
          c.max_cashout_time = fc::time_point_sec::maximum();
 
@@ -1666,18 +1666,18 @@ void database::process_comment_cashout()
    vector< share_type > ECO_awarded;
    const auto& reward_idx = get_index< reward_fund_index, by_id >();
 
-   // Decay recent rshares of each fund
+   // Decay recent rewardESCOR of each fund
    for( auto itr = reward_idx.begin(); itr != reward_idx.end(); ++itr )
    {
-      // Add all reward funds to the local cache and decay their recent rshares
+      // Add all reward funds to the local cache and decay their recent rewardESCOR
       modify( *itr, [&]( reward_fund_object& rfo )
       {
          fc::microseconds decay_rate;
 
          if( has_hardfork( HARDFORK_0_19__1051 ) )
-            decay_rate = RECENT_RSHARES_DECAY_RATE_HF19;
+            decay_rate = RECENT_RESCOR_DECAY_RATE_HF19;
          else
-            decay_rate = RECENT_RSHARES_DECAY_RATE_HF17;
+            decay_rate = RECENT_RESCOR_DECAY_RATE_HF17;
 
          rfo.recent_claims -= ( rfo.recent_claims * ( head_block_time() - rfo.last_update ).to_seconds() ) / decay_rate.to_seconds();
          rfo.last_update = head_block_time();
@@ -1697,15 +1697,15 @@ void database::process_comment_cashout()
    const auto& com_by_root = get_index< comment_index >().indices().get< by_root >();
 
    auto current = cidx.begin();
-   //  add all rshares about to be cashed out to the reward funds. This ensures equal satoshi per rshare payment
+   //  add all rewardESCOR about to be cashed out to the reward funds. This ensures equal satoshi per rshare payment
    if( has_hardfork( HARDFORK_0_17__771 ) )
    {
       while( current != cidx.end() && current->cashout_time <= head_block_time() )
       {
-         if( current->net_rshares > 0 )
+         if( current->net_rewardESCOR > 0 )
          {
             const auto& rf = get_reward_fund( *current );
-            funds[ rf.id._id ].recent_claims += util::evaluate_reward_curve( current->net_rshares.value, rf.author_reward_curve, rf.content_constant );
+            funds[ rf.id._id ].recent_claims += util::evaluate_reward_curve( current->net_rewardESCOR.value, rf.authorReward_curve, rf.content_constant );
          }
 
          ++current;
@@ -1719,10 +1719,10 @@ void database::process_comment_cashout()
     *
     * Each payout follows a similar pattern, but for a different reason.
     * Cashout comment helper does not know about the reward fund it is paying from.
-    * The helper only does token allocation based on curation rewards and the EZD
+    * The helper only does token allocation based on curation rewards and the EUSD
     * global %, etc.
     *
-    * Each context is used by get_rshare_reward to determine what part of each budget
+    * Each context is used by get_ESCOR_reward to determine what part of each budget
     * the comment is entitled to. Prior to hardfork 17, all payouts are done against
     * the global state updated each payout. After the hardfork, each payout is done
     * against a reward fund state that is snapshotted before all payouts in the block.
@@ -1732,7 +1732,7 @@ void database::process_comment_cashout()
       if( has_hardfork( HARDFORK_0_17__771 ) )
       {
          auto fund_id = get_reward_fund( *current ).id._id;
-         ctx.total_reward_shares2 = funds[ fund_id ].recent_claims;
+         ctx.total_reward_ESCOR2 = funds[ fund_id ].recent_claims;
          ctx.total_reward_fund_ECO = funds[ fund_id ].reward_balance;
          funds[ fund_id ].ECO_awarded += cashout_comment_helper( ctx, *current );
       }
@@ -1742,7 +1742,7 @@ void database::process_comment_cashout()
          while( itr != com_by_root.end() && itr->root_comment == current->root_comment )
          {
             const auto& comment = *itr; ++itr;
-            ctx.total_reward_shares2 = gpo.total_reward_shares2;
+            ctx.total_reward_ESCOR2 = gpo.total_reward_ESCOR2;
             ctx.total_reward_fund_ECO = gpo.total_reward_fund_ECO;
 
             auto reward = cashout_comment_helper( ctx, comment );
@@ -1776,12 +1776,12 @@ void database::process_comment_cashout()
 
 /**
  *  Overall the network has an inflation rate of 102% of virtual ECO per year
- *  90% of inflation is directed to vesting shares
+ *  90% of inflation is directed to eScore
  *  10% of inflation is directed to subjective proof of work voting
  *  1% of inflation is directed to liquidity providers
  *  1% of inflation is directed to block producers
  *
- *  This method pays out vesting and reward shares every block, and liquidity shares once per day.
+ *  This method pays out reward eScore every block, and liquidity eScore once per day.
  *  This method does not pay out witnesses.
  */
 void database::process_funds()
@@ -1806,8 +1806,8 @@ void database::process_funds()
       auto content_reward = ( new_ECO * CONTENT_REWARD_PERCENT ) / PERCENT_100;
       if( has_hardfork( HARDFORK_0_17__774 ) )
          content_reward = pay_reward_funds( content_reward ); /// 75% to content creator
-      auto vesting_reward = ( new_ECO * VESTING_FUND_PERCENT ) / PERCENT_100; /// 15% to vesting fund
-      auto witness_reward = new_ECO - content_reward - vesting_reward; /// Remaining 10% to witness pay
+      auto ECO_fund_for_ESCOR_reward = ( new_ECO * ESCOR_fund_PERCENT ) / PERCENT_100; /// 15% to eScore Fund
+      auto witness_reward = new_ECO - content_reward - ECO_fund_for_ESCOR_reward; /// Remaining 10% to witness pay
 
       const auto& cwit = get_witness( props.current_witness );
       witness_reward *= MAX_WITNESSES;
@@ -1823,41 +1823,41 @@ void database::process_funds()
 
       witness_reward /= wso.witness_pay_normalization_factor;
 
-      new_ECO = content_reward + vesting_reward + witness_reward;
+      new_ECO = content_reward + ECO_fund_for_ESCOR_reward + witness_reward;
 
       modify( props, [&]( dynamic_global_property_object& p )
       {
-         p.total_vesting_fund_ECO += asset( vesting_reward, SYMBOL_ECO );
+         p.totalECOfundForESCOR += asset( ECO_fund_for_ESCOR_reward, SYMBOL_ECO );
          if( !has_hardfork( HARDFORK_0_17__774 ) )
             p.total_reward_fund_ECO  += asset( content_reward, SYMBOL_ECO );
          p.current_supply           += asset( new_ECO, SYMBOL_ECO );
          p.virtual_supply           += asset( new_ECO, SYMBOL_ECO );
       });
 
-      const auto& producer_reward = create_vesting( get_account( cwit.owner ), asset( witness_reward, SYMBOL_ECO ) );
+      const auto& producer_reward = createECOfundForESCOR( get_account( cwit.owner ), asset( witness_reward, SYMBOL_ECO ) );
       push_virtual_operation( producer_reward_operation( cwit.owner, producer_reward ) );
 
    }
    else
    {
       auto content_reward = get_content_reward();
-      auto curate_reward = get_curation_reward();
+      auto curate_reward = get_curationReward();
       auto witness_pay = get_producer_reward();
-      auto vesting_reward = content_reward + curate_reward + witness_pay;
+      auto ECO_fund_for_ESCOR_reward = content_reward + curate_reward + witness_pay;
 
       content_reward = content_reward + curate_reward;
 
-      if( props.head_block_number < START_VESTING_BLOCK )
-         vesting_reward.amount = 0;
+      if( props.head_block_number < START_ECO_fund_for_ESCOR_BLOCK )
+         ECO_fund_for_ESCOR_reward.amount = 0;
       else
-         vesting_reward.amount.value *= 9;
+         ECO_fund_for_ESCOR_reward.amount.value *= 9;
 
       modify( props, [&]( dynamic_global_property_object& p )
       {
-          p.total_vesting_fund_ECO += vesting_reward;
+          p.totalECOfundForESCOR += ECO_fund_for_ESCOR_reward;
           p.total_reward_fund_ECO  += content_reward;
-          p.current_supply += content_reward + witness_pay + vesting_reward;
-          p.virtual_supply += content_reward + witness_pay + vesting_reward;
+          p.current_supply += content_reward + witness_pay + ECO_fund_for_ESCOR_reward;
+          p.virtual_supply += content_reward + witness_pay + ECO_fund_for_ESCOR_reward;
       } );
    }
 }
@@ -1876,7 +1876,7 @@ void database::process_savings_withdraws()
         a.savings_withdraw_requests--;
      });
 
-     push_virtual_operation( fill_transfer_from_savings_operation( itr->from, itr->to, itr->amount, itr->request_id, to_string( itr->memo) ) );
+     push_virtual_operation( fill_transferFromSavings_operation( itr->from, itr->to, itr->amount, itr->request_id, to_string( itr->memo) ) );
 
      remove( *itr );
      itr = idx.begin();
@@ -1902,7 +1902,7 @@ asset database::get_content_reward()const
    return std::max( percent, MIN_CONTENT_REWARD );
 }
 
-asset database::get_curation_reward()const
+asset database::get_curationReward()const
 {
    const auto& props = get_dynamic_global_properties();
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
@@ -1918,10 +1918,10 @@ asset database::get_producer_reward()
    auto pay = std::max( percent, MIN_PRODUCER_REWARD );
    const auto& witness_account = get_account( props.current_witness );
 
-   /// pay witness in vesting shares
-   if( props.head_block_number >= START_MINER_VOTING_BLOCK || (witness_account.vesting_shares.amount.value == 0) ) {
+   /// pay witness in eScore
+   if( props.head_block_number >= START_MINER_VOTING_BLOCK || (witness_account.ESCOR.amount.value == 0) ) {
       // const auto& witness_obj = get_witness( props.current_witness );
-      const auto& producer_reward = create_vesting( witness_account, pay );
+      const auto& producer_reward = createECOfundForESCOR( witness_account, pay );
       push_virtual_operation( producer_reward_operation( witness_account.name, producer_reward ) );
    }
    else
@@ -1941,7 +1941,7 @@ asset database::get_pow_reward()const
 
 #ifndef IS_TEST_NET
    /// 0 block rewards until at least MAX_WITNESSES have produced a POW
-   if( props.num_pow_witnesses < MAX_WITNESSES && props.head_block_number < START_VESTING_BLOCK )
+   if( props.num_pow_witnesses < MAX_WITNESSES && props.head_block_number < START_ECO_fund_for_ESCOR_BLOCK )
       return asset( 0, SYMBOL_ECO );
 #endif
 
@@ -1975,7 +1975,7 @@ void database::pay_liquidity_reward()
          modify( *itr, [&]( liquidity_reward_balance_object& obj )
          {
             obj.ECO_volume = 0;
-            obj.EZD_volume   = 0;
+            obj.EUSD_volume   = 0;
             obj.last_update  = head_block_time();
             obj.weight = 0;
          } );
@@ -1985,10 +1985,10 @@ void database::pay_liquidity_reward()
    }
 }
 
-uint16_t database::get_curation_rewards_percent( const comment_object& c ) const
+uint16_t database::get_curationRewards_percent( const comment_object& c ) const
 {
    if( has_hardfork( HARDFORK_0_17__774 ) )
-      return get_reward_fund( c ).percent_curation_rewards;
+      return get_reward_fund( c ).percent_curationRewards;
    else if( has_hardfork( HARDFORK_0_8__116 ) )
       return PERCENT_1 * 25;
    else
@@ -2021,7 +2021,7 @@ share_type database::pay_reward_funds( share_type reward )
 
 /**
  *  Iterates over all conversion requests with a conversion date before
- *  the head block time and then converts them to/from eCoin/EZD at the
+ *  the head block time and then converts them to/from eCoin/EUSD at the
  *  current median price feed history price times the premium
  */
 void database::process_conversions()
@@ -2034,7 +2034,7 @@ void database::process_conversions()
    if( fhistory.current_median_history.is_null() )
       return;
 
-   asset net_EZD( 0, SYMBOL_EZD );
+   asset net_EUSD( 0, SYMBOL_EUSD );
    asset net_ECO( 0, SYMBOL_ECO );
 
    while( itr != request_by_date.end() && itr->conversion_date <= now )
@@ -2044,7 +2044,7 @@ void database::process_conversions()
 
       adjust_balance( user, amount_to_issue );
 
-      net_EZD   += itr->amount;
+      net_EUSD   += itr->amount;
       net_ECO += amount_to_issue;
 
       push_virtual_operation( fill_convert_request_operation ( user.name, itr->requestid, itr->amount, amount_to_issue ) );
@@ -2057,20 +2057,20 @@ void database::process_conversions()
    modify( props, [&]( dynamic_global_property_object& p )
    {
        p.current_supply += net_ECO;
-       p.current_EZD_supply -= net_EZD;
+       p.current_EUSD_supply -= net_EUSD;
        p.virtual_supply += net_ECO;
-       p.virtual_supply -= net_EZD * get_feed_history().current_median_history;
+       p.virtual_supply -= net_EUSD * get_feed_history().current_median_history;
    } );
 }
 
-asset database::to_EZD( const asset& ECO )const
+asset database::to_EUSD( const asset& ECO )const
 {
-   return util::to_EZD( get_feed_history().current_median_history, ECO );
+   return util::to_EUSD( get_feed_history().current_median_history, ECO );
 }
 
-asset database::to_ECO( const asset& EZD )const
+asset database::to_ECO( const asset& EUSD )const
 {
-   return util::to_ECO( get_feed_history().current_median_history, EZD );
+   return util::to_ECO( get_feed_history().current_median_history, EUSD );
 }
 
 void database::account_recovery_processing()
@@ -2122,8 +2122,8 @@ void database::expire_escrow_ratification()
       ++escrow_itr;
 
       const auto& from_account = get_account( old_escrow.from );
-      adjust_balance( from_account, old_escrow.ECO_balance );
-      adjust_balance( from_account, old_escrow.EZD_balance );
+      adjust_balance( from_account, old_escrow.ECObalance );
+      adjust_balance( from_account, old_escrow.EUSDbalance );
       adjust_balance( from_account, old_escrow.pending_fee );
 
       remove( old_escrow );
@@ -2141,7 +2141,7 @@ void database::process_decline_voting_rights()
 
       /// remove all current votes
       std::array<share_type, MAX_PROXY_RECURSION_DEPTH+1> delta;
-      delta[0] = -account.vesting_shares.amount;
+      delta[0] = -account.ESCOR.amount;
       for( int i = 0; i < MAX_PROXY_RECURSION_DEPTH; ++i )
          delta[i+1] = -account.proxied_vsf_votes[i];
       adjust_proxied_witness_votes( account, delta );
@@ -2189,19 +2189,19 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< vote_evaluator                           >();
    _my->_evaluator_registry.register_evaluator< comment_evaluator                        >();
    _my->_evaluator_registry.register_evaluator< comment_options_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< delete_comment_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< deleteComment_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< transfer_evaluator                       >();
-   _my->_evaluator_registry.register_evaluator< transfer_to_vesting_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< withdraw_vesting_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< set_withdraw_vesting_route_evaluator     >();
-   _my->_evaluator_registry.register_evaluator< account_create_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< account_update_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< transferECOtoESCORfund_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< withdraw_ESCOR_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< setWithdrawESCORasECOroute_evaluator     >();
+   _my->_evaluator_registry.register_evaluator< accountCreate_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< accountUpdate_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< witness_update_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< account_witness_vote_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< accountWitnessVote_evaluator           >();
    _my->_evaluator_registry.register_evaluator< account_witness_proxy_evaluator          >();
    _my->_evaluator_registry.register_evaluator< custom_evaluator                         >();
    _my->_evaluator_registry.register_evaluator< custom_binary_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< custom_json_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< customJson_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< pow_evaluator                            >();
    _my->_evaluator_registry.register_evaluator< pow2_evaluator                           >();
    _my->_evaluator_registry.register_evaluator< report_over_production_evaluator         >();
@@ -2219,15 +2219,15 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< escrow_approve_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< escrow_dispute_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< escrow_release_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< transfer_to_savings_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< transfer_from_savings_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< cancel_transfer_from_savings_evaluator   >();
+   _my->_evaluator_registry.register_evaluator< transferToSavings_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< transferFromSavings_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< cancelTransferFromSavings_evaluator   >();
    _my->_evaluator_registry.register_evaluator< decline_voting_rights_evaluator          >();
    _my->_evaluator_registry.register_evaluator< reset_account_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< set_reset_account_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< claim_reward_balance_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< account_create_with_delegation_evaluator >();
-   _my->_evaluator_registry.register_evaluator< delegate_vesting_shares_evaluator        >();
+   _my->_evaluator_registry.register_evaluator< claimRewardBalance_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< accountCreateWithDelegation_evaluator >();
+   _my->_evaluator_registry.register_evaluator< delegateESCOR_evaluator        >();
 }
 
 void database::set_custom_operation_interpreter( const std::string& id, std::shared_ptr< custom_operation_interpreter > registry )
@@ -2237,7 +2237,7 @@ void database::set_custom_operation_interpreter( const std::string& id, std::sha
    FC_ASSERT( inserted );
 }
 
-std::shared_ptr< custom_operation_interpreter > database::get_custom_json_evaluator( const std::string& id )
+std::shared_ptr< custom_operation_interpreter > database::get_customJson_evaluator( const std::string& id )
 {
    auto it = _custom_operation_interpreters.find( id );
    if( it != _custom_operation_interpreters.end() )
@@ -2264,7 +2264,7 @@ void database::initialize_indexes()
    add_core_index< operation_index                         >(*this);
    add_core_index< account_history_index                   >(*this);
    add_core_index< hardfork_property_index                 >(*this);
-   add_core_index< withdraw_vesting_route_index            >(*this);
+   add_core_index< withdraw_ESCOR_route_index            >(*this);
    add_core_index< owner_authority_history_index           >(*this);
    add_core_index< account_recovery_request_index          >(*this);
    add_core_index< change_recovery_account_request_index   >(*this);
@@ -2272,8 +2272,8 @@ void database::initialize_indexes()
    add_core_index< savings_withdraw_index                  >(*this);
    add_core_index< decline_voting_rights_request_index     >(*this);
    add_core_index< reward_fund_index                       >(*this);
-   add_core_index< vesting_delegation_index                >(*this);
-   add_core_index< vesting_delegation_expiration_index     >(*this);
+   add_core_index< ECO_fund_for_ESCOR_delegation_index                >(*this);
+   add_core_index< ECO_fund_for_ESCOR_delegation_expiration_index     >(*this);
 
    _plugin_index_signal();
 }
@@ -2684,7 +2684,7 @@ void database::_apply_block( const signed_block& next_block )
    process_funds();
    process_conversions();
    process_comment_cashout();
-   process_vesting_withdrawals();
+   process_ECO_fund_for_ESCOR_withdrawals();
    process_savings_withdraws();
    pay_liquidity_reward();
    update_virtual_supply();
@@ -2766,16 +2766,16 @@ try {
       const auto& wit = get_witness( wso.current_shuffled_witnesses[i] );
       if( has_hardfork( HARDFORK_0_19__822 ) )
       {
-         if( now < wit.last_EZD_exchange_update + MAX_FEED_AGE_SECONDS
-            && !wit.EZD_exchange_rate.is_null() )
+         if( now < wit.last_EUSD_exchange_update + MAX_FEED_AGE_SECONDS
+            && !wit.EUSD_exchange_rate.is_null() )
          {
-            feeds.push_back( wit.EZD_exchange_rate );
+            feeds.push_back( wit.EUSD_exchange_rate );
          }
       }
-      else if( wit.last_EZD_exchange_update < now + MAX_FEED_AGE_SECONDS &&
-          !wit.EZD_exchange_rate.is_null() )
+      else if( wit.last_EUSD_exchange_update < now + MAX_FEED_AGE_SECONDS &&
+          !wit.EUSD_exchange_rate.is_null() )
       {
-         feeds.push_back( wit.EZD_exchange_rate );
+         feeds.push_back( wit.EUSD_exchange_rate );
       }
    }
 
@@ -2812,7 +2812,7 @@ try {
             if( has_hardfork( HARDFORK_0_14__230 ) )
             {
                const auto& gpo = get_dynamic_global_properties();
-               price min_price( asset( 9 * gpo.current_EZD_supply.amount, SYMBOL_EZD ), gpo.current_supply ); // This price limits EZD to 10% market cap
+               price min_price( asset( 9 * gpo.current_EUSD_supply.amount, SYMBOL_EUSD ), gpo.current_supply ); // This price limits EUSD to 10% market cap
 
                if( min_price > fho.current_median_history )
                   fho.current_median_history = min_price;
@@ -3010,21 +3010,21 @@ void database::update_virtual_supply()
    modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& dgp )
    {
       dgp.virtual_supply = dgp.current_supply
-         + ( get_feed_history().current_median_history.is_null() ? asset( 0, SYMBOL_ECO ) : dgp.current_EZD_supply * get_feed_history().current_median_history );
+         + ( get_feed_history().current_median_history.is_null() ? asset( 0, SYMBOL_ECO ) : dgp.current_EUSD_supply * get_feed_history().current_median_history );
 
       auto median_price = get_feed_history().current_median_history;
 
       if( !median_price.is_null() && has_hardfork( HARDFORK_0_14__230 ) )
       {
-         auto percent_EZD = uint16_t( ( ( fc::uint128_t( ( dgp.current_EZD_supply * get_feed_history().current_median_history ).amount.value ) * PERCENT_100 )
+         auto percent_EUSD = uint16_t( ( ( fc::uint128_t( ( dgp.current_EUSD_supply * get_feed_history().current_median_history ).amount.value ) * PERCENT_100 )
             / dgp.virtual_supply.amount.value ).to_uint64() );
 
-         if( percent_EZD <= EZD_START_PERCENT )
-            dgp.EZD_print_rate = PERCENT_100;
-         else if( percent_EZD >= EZD_STOP_PERCENT )
-            dgp.EZD_print_rate = 0;
+         if( percent_EUSD <= EUSD_START_PERCENT )
+            dgp.EUSD_print_rate = PERCENT_100;
+         else if( percent_EUSD >= EUSD_STOP_PERCENT )
+            dgp.EUSD_print_rate = 0;
          else
-            dgp.EZD_print_rate = ( ( EZD_STOP_PERCENT - percent_EZD ) * PERCENT_100 ) / ( EZD_STOP_PERCENT - EZD_START_PERCENT );
+            dgp.EUSD_print_rate = ( ( EUSD_STOP_PERCENT - percent_EUSD ) * PERCENT_100 ) / ( EUSD_STOP_PERCENT - EUSD_START_PERCENT );
       }
    });
 } FC_CAPTURE_AND_RETHROW() }
@@ -3213,13 +3213,13 @@ void database::adjust_liquidity_reward( const account_object& owner, const asset
       {
          if( head_block_time() - r.last_update >= LIQUIDITY_TIMEOUT_SEC )
          {
-            r.EZD_volume = 0;
+            r.EUSD_volume = 0;
             r.ECO_volume = 0;
             r.weight = 0;
          }
 
          if( is_sdb )
-            r.EZD_volume += volume.amount.value;
+            r.EUSD_volume += volume.amount.value;
          else
             r.ECO_volume += volume.amount.value;
 
@@ -3233,7 +3233,7 @@ void database::adjust_liquidity_reward( const account_object& owner, const asset
       {
          r.owner = owner.id;
          if( is_sdb )
-            r.EZD_volume = volume.amount.value;
+            r.EUSD_volume = volume.amount.value;
          else
             r.ECO_volume = volume.amount.value;
 
@@ -3315,16 +3315,16 @@ void database::clear_expired_orders()
 void database::clear_expired_delegations()
 {
    auto now = head_block_time();
-   const auto& delegations_by_exp = get_index< vesting_delegation_expiration_index, by_expiration >();
+   const auto& delegations_by_exp = get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_expiration >();
    auto itr = delegations_by_exp.begin();
    while( itr != delegations_by_exp.end() && itr->expiration < now )
    {
       modify( get_account( itr->delegator ), [&]( account_object& a )
       {
-         a.delegated_vesting_shares -= itr->vesting_shares;
+         a.ESCORDelegated -= itr->eScore;
       });
 
-      push_virtual_operation( return_vesting_delegation_operation( itr->delegator, itr->vesting_shares ) );
+      push_virtual_operation( return_ESCOR_delegation_operation( itr->delegator, itr->eScore ) );
 
       remove( *itr );
       itr = delegations_by_exp.begin();
@@ -3340,34 +3340,34 @@ void database::adjust_balance( const account_object& a, const asset& delta )
          case SYMBOL_ECO:
             acnt.balance += delta;
             break;
-         case SYMBOL_EZD:
-            if( a.EZD_seconds_last_update != head_block_time() )
+         case SYMBOL_EUSD:
+            if( a.EUSD_seconds_last_update != head_block_time() )
             {
-               acnt.EZD_seconds += fc::uint128_t(a.EZD_balance.amount.value) * (head_block_time() - a.EZD_seconds_last_update).to_seconds();
-               acnt.EZD_seconds_last_update = head_block_time();
+               acnt.EUSD_seconds += fc::uint128_t(a.EUSDbalance.amount.value) * (head_block_time() - a.EUSD_seconds_last_update).to_seconds();
+               acnt.EUSD_seconds_last_update = head_block_time();
 
-               if( acnt.EZD_seconds > 0 &&
-                   (acnt.EZD_seconds_last_update - acnt.EZD_last_interest_payment).to_seconds() > EZD_INTEREST_COMPOUND_INTERVAL_SEC )
+               if( acnt.EUSD_seconds > 0 &&
+                   (acnt.EUSD_seconds_last_update - acnt.EUSD_last_interest_payment).to_seconds() > EUSD_INTEREST_COMPOUND_INTERVAL_SEC )
                {
-                  auto interest = acnt.EZD_seconds / SECONDS_PER_YEAR;
-                  interest *= get_dynamic_global_properties().EZD_interest_rate;
+                  auto interest = acnt.EUSD_seconds / SECONDS_PER_YEAR;
+                  interest *= get_dynamic_global_properties().EUSD_interest_rate;
                   interest /= PERCENT_100;
-                  asset interest_paid(interest.to_uint64(), SYMBOL_EZD);
-                  acnt.EZD_balance += interest_paid;
-                  acnt.EZD_seconds = 0;
-                  acnt.EZD_last_interest_payment = head_block_time();
+                  asset interest_paid(interest.to_uint64(), SYMBOL_EUSD);
+                  acnt.EUSDbalance += interest_paid;
+                  acnt.EUSD_seconds = 0;
+                  acnt.EUSD_last_interest_payment = head_block_time();
 
                   if(interest > 0)
                      push_virtual_operation( interest_operation( a.name, interest_paid ) );
 
                   modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& props)
                   {
-                     props.current_EZD_supply += interest_paid;
+                     props.current_EUSD_supply += interest_paid;
                      props.virtual_supply += interest_paid * get_feed_history().current_median_history;
                   } );
                }
             }
-            acnt.EZD_balance += delta;
+            acnt.EUSDbalance += delta;
             break;
          default:
             FC_ASSERT( false, "invalid symbol" );
@@ -3376,43 +3376,43 @@ void database::adjust_balance( const account_object& a, const asset& delta )
 }
 
 
-void database::adjust_savings_balance( const account_object& a, const asset& delta )
+void database::adjust_ECOsavingsBalance( const account_object& a, const asset& delta )
 {
    modify( a, [&]( account_object& acnt )
    {
       switch( delta.symbol )
       {
          case SYMBOL_ECO:
-            acnt.savings_balance += delta;
+            acnt.ECOsavingsBalance += delta;
             break;
-         case SYMBOL_EZD:
-            if( a.savings_EZD_seconds_last_update != head_block_time() )
+         case SYMBOL_EUSD:
+            if( a.savings_EUSD_seconds_last_update != head_block_time() )
             {
-               acnt.savings_EZD_seconds += fc::uint128_t(a.savings_EZD_balance.amount.value) * (head_block_time() - a.savings_EZD_seconds_last_update).to_seconds();
-               acnt.savings_EZD_seconds_last_update = head_block_time();
+               acnt.savings_EUSD_seconds += fc::uint128_t(a.EUSDsavingsBalance.amount.value) * (head_block_time() - a.savings_EUSD_seconds_last_update).to_seconds();
+               acnt.savings_EUSD_seconds_last_update = head_block_time();
 
-               if( acnt.savings_EZD_seconds > 0 &&
-                   (acnt.savings_EZD_seconds_last_update - acnt.savings_EZD_last_interest_payment).to_seconds() > EZD_INTEREST_COMPOUND_INTERVAL_SEC )
+               if( acnt.savings_EUSD_seconds > 0 &&
+                   (acnt.savings_EUSD_seconds_last_update - acnt.savings_EUSD_last_interest_payment).to_seconds() > EUSD_INTEREST_COMPOUND_INTERVAL_SEC )
                {
-                  auto interest = acnt.savings_EZD_seconds / SECONDS_PER_YEAR;
-                  interest *= get_dynamic_global_properties().EZD_interest_rate;
+                  auto interest = acnt.savings_EUSD_seconds / SECONDS_PER_YEAR;
+                  interest *= get_dynamic_global_properties().EUSD_interest_rate;
                   interest /= PERCENT_100;
-                  asset interest_paid(interest.to_uint64(), SYMBOL_EZD);
-                  acnt.savings_EZD_balance += interest_paid;
-                  acnt.savings_EZD_seconds = 0;
-                  acnt.savings_EZD_last_interest_payment = head_block_time();
+                  asset interest_paid(interest.to_uint64(), SYMBOL_EUSD);
+                  acnt.EUSDsavingsBalance += interest_paid;
+                  acnt.savings_EUSD_seconds = 0;
+                  acnt.savings_EUSD_last_interest_payment = head_block_time();
 
                   if(interest > 0)
                      push_virtual_operation( interest_operation( a.name, interest_paid ) );
 
                   modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& props)
                   {
-                     props.current_EZD_supply += interest_paid;
+                     props.current_EUSD_supply += interest_paid;
                      props.virtual_supply += interest_paid * get_feed_history().current_median_history;
                   } );
                }
             }
-            acnt.savings_EZD_balance += delta;
+            acnt.EUSDsavingsBalance += delta;
             break;
          default:
             FC_ASSERT( !"invalid symbol" );
@@ -3428,10 +3428,10 @@ void database::adjust_reward_balance( const account_object& a, const asset& delt
       switch( delta.symbol )
       {
          case SYMBOL_ECO:
-            acnt.reward_ECO_balance += delta;
+            acnt.ECOreward_balance += delta;
             break;
-         case SYMBOL_EZD:
-            acnt.reward_EZD_balance += delta;
+         case SYMBOL_EUSD:
+            acnt.EUSDrewardbalance += delta;
             break;
          default:
             FC_ASSERT( false, "invalid symbol" );
@@ -3440,12 +3440,12 @@ void database::adjust_reward_balance( const account_object& a, const asset& delt
 }
 
 
-void database::adjust_supply( const asset& delta, bool adjust_vesting )
+void database::adjust_supply( const asset& delta, bool adjust_ECO_fund_for_ESCOR )
 {
 
    const auto& props = get_dynamic_global_properties();
    if( props.head_block_number < BLOCKS_PER_DAY*7 )
-      adjust_vesting = false;
+      adjust_ECO_fund_for_ESCOR = false;
 
    modify( props, [&]( dynamic_global_property_object& props )
    {
@@ -3453,17 +3453,17 @@ void database::adjust_supply( const asset& delta, bool adjust_vesting )
       {
          case SYMBOL_ECO:
          {
-            asset new_vesting( (adjust_vesting && delta.amount > 0) ? delta.amount * 9 : 0, SYMBOL_ECO );
-            props.current_supply += delta + new_vesting;
-            props.virtual_supply += delta + new_vesting;
-            props.total_vesting_fund_ECO += new_vesting;
+            asset new_ECO_fund_for_ESCOR( (adjust_ECO_fund_for_ESCOR && delta.amount > 0) ? delta.amount * 9 : 0, SYMBOL_ECO );
+            props.current_supply += delta + new_ECO_fund_for_ESCOR;
+            props.virtual_supply += delta + new_ECO_fund_for_ESCOR;
+            props.totalECOfundForESCOR += new_ECO_fund_for_ESCOR;
             assert( props.current_supply.amount.value >= 0 );
             break;
          }
-         case SYMBOL_EZD:
-            props.current_EZD_supply += delta;
-            props.virtual_supply = props.current_EZD_supply * get_feed_history().current_median_history + props.current_supply;
-            assert( props.current_EZD_supply.amount.value >= 0 );
+         case SYMBOL_EUSD:
+            props.current_EUSD_supply += delta;
+            props.virtual_supply = props.current_EUSD_supply * get_feed_history().current_median_history + props.current_supply;
+            assert( props.current_EUSD_supply.amount.value >= 0 );
             break;
          default:
             FC_ASSERT( false, "invalid symbol" );
@@ -3478,21 +3478,21 @@ asset database::get_balance( const account_object& a, asset_symbol_type symbol )
    {
       case SYMBOL_ECO:
          return a.balance;
-      case SYMBOL_EZD:
-         return a.EZD_balance;
+      case SYMBOL_EUSD:
+         return a.EUSDbalance;
       default:
          FC_ASSERT( false, "invalid symbol" );
    }
 }
 
-asset database::get_savings_balance( const account_object& a, asset_symbol_type symbol )const
+asset database::get_ECOsavingsBalance( const account_object& a, asset_symbol_type symbol )const
 {
    switch( symbol )
    {
       case SYMBOL_ECO:
-         return a.savings_balance;
-      case SYMBOL_EZD:
-         return a.savings_EZD_balance;
+         return a.ECOsavingsBalance;
+      case SYMBOL_EUSD:
+         return a.EUSDsavingsBalance;
       default:
          FC_ASSERT( !"invalid symbol" );
    }
@@ -3634,7 +3634,7 @@ void database::apply_hardfork( uint32_t hardfork )
    switch( hardfork )
    {
       case HARDFORK_0_1:
-         perform_vesting_share_split( 1000000 );
+         perform_ESCOR_split( 1000000 );
 #ifdef IS_TEST_NET
          {
             custom_operation test_op;
@@ -3703,7 +3703,7 @@ void database::apply_hardfork( uint32_t hardfork )
                // initial payout so we don't have to handle the case of posts that should be frozen that aren't
                if( itr->parent_author == ROOT_POST_PARENT )
                {
-                  // Post has not been paid out and has no votes (cashout_time == 0 === net_rshares == 0, under current semmantics)
+                  // Post has not been paid out and has no votes (cashout_time == 0 === net_rewardESCOR == 0, under current semmantics)
                   if( itr->last_payout == fc::time_point_sec::min() && itr->cashout_time == fc::time_point_sec::maximum() )
                   {
                      modify( *itr, [&]( comment_object & c )
@@ -3779,14 +3779,14 @@ void database::apply_hardfork( uint32_t hardfork )
                rfo.name = POST_REWARD_FUND_NAME;
                rfo.last_update = head_block_time();
                rfo.content_constant = CONTENT_CONSTANT_HF0;
-               rfo.percent_curation_rewards = PERCENT_1 * 25;
+               rfo.percent_curationRewards = PERCENT_1 * 25;
                rfo.percent_content_rewards = PERCENT_100;
                rfo.reward_balance = gpo.total_reward_fund_ECO;
 #ifndef IS_TEST_NET
                rfo.recent_claims = HF_17_RECENT_CLAIMS;
 #endif
-               rfo.author_reward_curve = curve_id::quadratic;
-               rfo.curation_reward_curve = curve_id::quadratic_curation;
+               rfo.authorReward_curve = curve_id::quadratic;
+               rfo.curationReward_curve = curve_id::quadratic_curation;
             });
 
             // As a shortcut in payout processing, we use the id as an array index.
@@ -3796,7 +3796,7 @@ void database::apply_hardfork( uint32_t hardfork )
             modify( gpo, [&]( dynamic_global_property_object& g )
             {
                g.total_reward_fund_ECO = asset( 0, SYMBOL_ECO );
-               g.total_reward_shares2 = 0;
+               g.total_reward_ESCOR2 = 0;
             });
 
             /*
@@ -3859,24 +3859,24 @@ void database::apply_hardfork( uint32_t hardfork )
 #ifndef IS_TEST_NET
                rfo.recent_claims = HF_19_RECENT_CLAIMS;
 #endif
-               rfo.author_reward_curve = curve_id::linear;
-               rfo.curation_reward_curve = curve_id::square_root;
+               rfo.authorReward_curve = curve_id::linear;
+               rfo.curationReward_curve = curve_id::square_root;
             });
 
             /* Remove all 0 delegation objects */
-            vector< const vesting_delegation_object* > to_remove;
-            const auto& delegation_idx = get_index< vesting_delegation_index, by_id >();
+            vector< const ECO_fund_for_ESCOR_delegation_object* > to_remove;
+            const auto& delegation_idx = get_index< ECO_fund_for_ESCOR_delegation_index, by_id >();
             auto delegation_itr = delegation_idx.begin();
 
             while( delegation_itr != delegation_idx.end() )
             {
-               if( delegation_itr->vesting_shares.amount == 0 )
+               if( delegation_itr->eScore.amount == 0 )
                   to_remove.push_back( &(*delegation_itr) );
 
                ++delegation_itr;
             }
 
-            for( const vesting_delegation_object* delegation_ptr: to_remove )
+            for( const ECO_fund_for_ESCOR_delegation_object* delegation_ptr: to_remove )
             {
                remove( *delegation_ptr );
             }
@@ -3917,9 +3917,9 @@ void database::validate_invariants()const
    {
       const auto& account_idx = get_index<account_index>().indices().get<by_name>();
       asset total_supply = asset( 0, SYMBOL_ECO );
-      asset total_EZD = asset( 0, SYMBOL_EZD );
-      asset total_vesting = asset( 0, SYMBOL_EZP );
-      asset pending_vesting_ECO = asset( 0, SYMBOL_ECO );
+      asset EUSDtotal = asset( 0, SYMBOL_EUSD );
+      asset totalECO_fund_for_ESCOR = asset( 0, SYMBOL_ESCOR );
+      asset pending_ESCORvalueInECO = asset( 0, SYMBOL_ECO );
       share_type total_vsf_votes = share_type( 0 );
 
       auto gpo = get_dynamic_global_properties();
@@ -3927,24 +3927,24 @@ void database::validate_invariants()const
       /// verify no witness has too many votes
       const auto& witness_idx = get_index< witness_index >().indices();
       for( auto itr = witness_idx.begin(); itr != witness_idx.end(); ++itr )
-         FC_ASSERT( itr->votes <= gpo.total_vesting_shares.amount, "", ("itr",*itr) );
+         FC_ASSERT( itr->votes <= gpo.totalESCOR.amount, "", ("itr",*itr) );
 
       for( auto itr = account_idx.begin(); itr != account_idx.end(); ++itr )
       {
          total_supply += itr->balance;
-         total_supply += itr->savings_balance;
-         total_supply += itr->reward_ECO_balance;
-         total_EZD += itr->EZD_balance;
-         total_EZD += itr->savings_EZD_balance;
-         total_EZD += itr->reward_EZD_balance;
-         total_vesting += itr->vesting_shares;
-         total_vesting += itr->reward_EZP_balance;
-         pending_vesting_ECO += itr->reward_vesting_ECO_balance;
+         total_supply += itr->ECOsavingsBalance;
+         total_supply += itr->ECOreward_balance;
+         EUSDtotal += itr->EUSDbalance;
+         EUSDtotal += itr->EUSDsavingsBalance;
+         EUSDtotal += itr->EUSDrewardbalance;
+         totalECO_fund_for_ESCOR += itr->eScore;
+         totalECO_fund_for_ESCOR += itr->rewardESCOR_balance;
+         pending_ESCORvalueInECO += itr->rewardESCOR_balance;
          total_vsf_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
                                  itr->witness_vote_weight() :
                                  ( MAX_PROXY_RECURSION_DEPTH > 0 ?
                                       itr->proxied_vsf_votes[MAX_PROXY_RECURSION_DEPTH - 1] :
-                                      itr->vesting_shares.amount ) );
+                                      itr->eScore.amount ) );
       }
 
       const auto& convert_request_idx = get_index< convert_request_index >().indices();
@@ -3953,8 +3953,8 @@ void database::validate_invariants()const
       {
          if( itr->amount.symbol == SYMBOL_ECO )
             total_supply += itr->amount;
-         else if( itr->amount.symbol == SYMBOL_EZD )
-            total_EZD += itr->amount;
+         else if( itr->amount.symbol == SYMBOL_EUSD )
+            EUSDtotal += itr->amount;
          else
             FC_ASSERT( false, "Encountered illegal symbol in convert_request_object" );
       }
@@ -3967,9 +3967,9 @@ void database::validate_invariants()const
          {
             total_supply += asset( itr->for_sale, SYMBOL_ECO );
          }
-         else if ( itr->sell_price.base.symbol == SYMBOL_EZD )
+         else if ( itr->sell_price.base.symbol == SYMBOL_EUSD )
          {
-            total_EZD += asset( itr->for_sale, SYMBOL_EZD );
+            EUSDtotal += asset( itr->for_sale, SYMBOL_EUSD );
          }
       }
 
@@ -3977,15 +3977,15 @@ void database::validate_invariants()const
 
       for( auto itr = escrow_idx.begin(); itr != escrow_idx.end(); ++itr )
       {
-         total_supply += itr->ECO_balance;
-         total_EZD += itr->EZD_balance;
+         total_supply += itr->ECObalance;
+         EUSDtotal += itr->EUSDbalance;
 
          if( itr->pending_fee.symbol == SYMBOL_ECO )
             total_supply += itr->pending_fee;
-         else if( itr->pending_fee.symbol == SYMBOL_EZD )
-            total_EZD += itr->pending_fee;
+         else if( itr->pending_fee.symbol == SYMBOL_EUSD )
+            EUSDtotal += itr->pending_fee;
          else
-            FC_ASSERT( false, "found escrow pending fee that is not EZD or eCoin" );
+            FC_ASSERT( false, "found escrow pending fee that is not EUSD or eCoin" );
       }
 
       const auto& savings_withdraw_idx = get_index< savings_withdraw_index >().indices().get< by_id >();
@@ -3994,21 +3994,21 @@ void database::validate_invariants()const
       {
          if( itr->amount.symbol == SYMBOL_ECO )
             total_supply += itr->amount;
-         else if( itr->amount.symbol == SYMBOL_EZD )
-            total_EZD += itr->amount;
+         else if( itr->amount.symbol == SYMBOL_EUSD )
+            EUSDtotal += itr->amount;
          else
-            FC_ASSERT( false, "found savings withdraw that is not EZD or eCoin" );
+            FC_ASSERT( false, "found savings withdraw that is not EUSD or eCoin" );
       }
-      fc::uint128_t total_rshares2;
+      fc::uint128_t total_rewardESCOR2;
 
       const auto& comment_idx = get_index< comment_index >().indices();
 
       for( auto itr = comment_idx.begin(); itr != comment_idx.end(); ++itr )
       {
-         if( itr->net_rshares.value > 0 )
+         if( itr->net_rewardESCOR.value > 0 )
          {
-            auto delta = util::evaluate_reward_curve( itr->net_rshares.value );
-            total_rshares2 += delta;
+            auto delta = util::evaluate_reward_curve( itr->net_rewardESCOR.value );
+            total_rewardESCOR2 += delta;
          }
       }
 
@@ -4019,45 +4019,45 @@ void database::validate_invariants()const
          total_supply += itr->reward_balance;
       }
 
-      total_supply += gpo.total_vesting_fund_ECO + gpo.total_reward_fund_ECO + gpo.pending_rewarded_vesting_ECO;
+      total_supply += gpo.totalECOfundForESCOR + gpo.total_reward_fund_ECO + gpo.pending_rewarded_ESCORvalueInECO;
 
       FC_ASSERT( gpo.current_supply == total_supply, "", ("gpo.current_supply",gpo.current_supply)("total_supply",total_supply) );
-      FC_ASSERT( gpo.current_EZD_supply == total_EZD, "", ("gpo.current_EZD_supply",gpo.current_EZD_supply)("total_EZD",total_EZD) );
-      FC_ASSERT( gpo.total_vesting_shares + gpo.pending_rewarded_vesting_shares == total_vesting, "", ("gpo.total_vesting_shares",gpo.total_vesting_shares)("total_vesting",total_vesting) );
-      FC_ASSERT( gpo.total_vesting_shares.amount == total_vsf_votes, "", ("total_vesting_shares",gpo.total_vesting_shares)("total_vsf_votes",total_vsf_votes) );
-      FC_ASSERT( gpo.pending_rewarded_vesting_ECO == pending_vesting_ECO, "", ("pending_rewarded_vesting_ECO",gpo.pending_rewarded_vesting_ECO)("pending_vesting_ECO", pending_vesting_ECO));
+      FC_ASSERT( gpo.current_EUSD_supply == EUSDtotal, "", ("gpo.current_EUSD_supply",gpo.current_EUSD_supply)("EUSDtotal",EUSDtotal) );
+      FC_ASSERT( gpo.totalESCOR + gpo.pending_rewarded_ESCOR == totalECO_fund_for_ESCOR, "", ("gpo.totalESCOR",gpo.totalESCOR)("totalECO_fund_for_ESCOR",totalECO_fund_for_ESCOR) );
+      FC_ASSERT( gpo.totalESCOR.amount == total_vsf_votes, "", ("totalESCOR",gpo.totalESCOR)("total_vsf_votes",total_vsf_votes) );
+      FC_ASSERT( gpo.pending_rewarded_ESCORvalueInECO == pending_ESCORvalueInECO, "", ("pending_rewarded_ESCORvalueInECO",gpo.pending_rewarded_ESCORvalueInECO)("pending_ESCORvalueInECO", pending_ESCORvalueInECO));
 
       FC_ASSERT( gpo.virtual_supply >= gpo.current_supply );
       if ( !get_feed_history().current_median_history.is_null() )
       {
-         FC_ASSERT( gpo.current_EZD_supply * get_feed_history().current_median_history + gpo.current_supply
-            == gpo.virtual_supply, "", ("gpo.current_EZD_supply",gpo.current_EZD_supply)("get_feed_history().current_median_history",get_feed_history().current_median_history)("gpo.current_supply",gpo.current_supply)("gpo.virtual_supply",gpo.virtual_supply) );
+         FC_ASSERT( gpo.current_EUSD_supply * get_feed_history().current_median_history + gpo.current_supply
+            == gpo.virtual_supply, "", ("gpo.current_EUSD_supply",gpo.current_EUSD_supply)("get_feed_history().current_median_history",get_feed_history().current_median_history)("gpo.current_supply",gpo.current_supply)("gpo.virtual_supply",gpo.virtual_supply) );
       }
    }
    FC_CAPTURE_LOG_AND_RETHROW( (head_block_num()) );
 }
 
-void database::perform_vesting_share_split( uint32_t magnitude )
+void database::perform_ESCOR_split( uint32_t magnitude )
 {
    try
    {
       modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& d )
       {
-         d.total_vesting_shares.amount *= magnitude;
-         d.total_reward_shares2 = 0;
+         d.totalESCOR.amount *= magnitude;
+         d.total_reward_ESCOR2 = 0;
       } );
 
-      // Need to update all VESTS in accounts and the total VESTS in the dgpo
+      // Need to update all ESCOR in accounts and the total ESCOR in the dgpo
       for( const auto& account : get_index<account_index>().indices() )
       {
          modify( account, [&]( account_object& a )
          {
-            a.vesting_shares.amount *= magnitude;
+            a.eScore.amount *= magnitude;
             a.withdrawn             *= magnitude;
             a.to_withdraw           *= magnitude;
-            a.vesting_withdraw_rate  = asset( a.to_withdraw / VESTING_WITHDRAW_INTERVALS_PRE_HF_16, SYMBOL_EZP );
-            if( a.vesting_withdraw_rate.amount == 0 )
-               a.vesting_withdraw_rate.amount = 1;
+            a.ESCORwithdrawRateInECO  = asset( a.to_withdraw / ECO_fund_for_ESCOR_WITHDRAW_INTERVALS_PRE_HF_16, SYMBOL_ESCOR );
+            if( a.ESCORwithdrawRateInECO.amount == 0 )
+               a.ESCORwithdrawRateInECO.amount = 1;
 
             for( uint32_t i = 0; i < MAX_PROXY_RECURSION_DEPTH; ++i )
                a.proxied_vsf_votes[i] *= magnitude;
@@ -4069,16 +4069,16 @@ void database::perform_vesting_share_split( uint32_t magnitude )
       {
          modify( comment, [&]( comment_object& c )
          {
-            c.net_rshares       *= magnitude;
-            c.abs_rshares       *= magnitude;
-            c.vote_rshares      *= magnitude;
+            c.net_rewardESCOR       *= magnitude;
+            c.abs_rewardESCOR       *= magnitude;
+            c.vote_rewardESCOR      *= magnitude;
          } );
       }
 
       for( const auto& c : comments )
       {
-         if( c.net_rshares.value > 0 )
-            adjust_rshares2( c, 0, util::evaluate_reward_curve( c.net_rshares.value ) );
+         if( c.net_rewardESCOR.value > 0 )
+            adjust_rewardESCOR2( c, 0, util::evaluate_reward_curve( c.net_rewardESCOR.value ) );
       }
 
    }

@@ -61,12 +61,12 @@ clean_database_fixture::clean_database_fixture()
 
    //ahplugin->plugin_startup();
    db_plugin->plugin_startup();
-   vest( INIT_MINER_NAME, 10000 );
+   score( INIT_MINER_NAME, 10000 );
 
    // Fill up the rest of the required miners
    for( int i = NUM_INIT_MINERS; i < MAX_WITNESSES; i++ )
    {
-      account_create( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
+      accountCreate( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
       fund( INIT_MINER_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
       witness_create( INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
    }
@@ -119,12 +119,12 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
    db.set_hardfork( NUM_HARDFORKS );
    generate_block();
 
-   vest( INIT_MINER_NAME, 10000 );
+   score( INIT_MINER_NAME, 10000 );
 
    // Fill up the rest of the required miners
    for( int i = NUM_INIT_MINERS; i < MAX_WITNESSES; i++ )
    {
-      account_create( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
+      accountCreate( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
       fund( INIT_MINER_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
       witness_create( INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
    }
@@ -213,7 +213,7 @@ void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_i
    BOOST_REQUIRE( ( db.head_block_time() - timestamp ).to_seconds() < BLOCK_INTERVAL );
 }
 
-const account_object& database_fixture::account_create(
+const account_object& database_fixture::accountCreate(
    const string& name,
    const string& creator,
    const private_key_type& creator_key,
@@ -227,11 +227,11 @@ const account_object& database_fixture::account_create(
    {
       if( db.has_hardfork( HARDFORK_0_17 ) )
       {
-         account_create_with_delegation_operation op;
+         accountCreateWithDelegation_operation op;
          op.new_account_name = name;
          op.creator = creator;
          op.fee = asset( fee, SYMBOL_ECO );
-         op.delegation = asset( 0, SYMBOL_EZP );
+         op.delegation = asset( 0, SYMBOL_ESCOR );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
@@ -242,7 +242,7 @@ const account_object& database_fixture::account_create(
       }
       else
       {
-         account_create_operation op;
+         accountCreate_operation op;
          op.new_account_name = name;
          op.creator = creator;
          op.fee = asset( fee, SYMBOL_ECO );
@@ -269,7 +269,7 @@ const account_object& database_fixture::account_create(
    FC_CAPTURE_AND_RETHROW( (name)(creator) )
 }
 
-const account_object& database_fixture::account_create(
+const account_object& database_fixture::accountCreate(
    const string& name,
    const public_key_type& key,
    const public_key_type& post_key
@@ -277,11 +277,11 @@ const account_object& database_fixture::account_create(
 {
    try
    {
-      return account_create(
+      return accountCreate(
          name,
          INIT_MINER_NAME,
          init_account_priv_key,
-         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER, share_type( 100 ) ),
+         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_ECO_MODIFIER, share_type( 100 ) ),
          key,
          post_key,
          "" );
@@ -289,12 +289,12 @@ const account_object& database_fixture::account_create(
    FC_CAPTURE_AND_RETHROW( (name) );
 }
 
-const account_object& database_fixture::account_create(
+const account_object& database_fixture::accountCreate(
    const string& name,
    const public_key_type& key
 )
 {
-   return account_create( name, key, key );
+   return accountCreate( name, key, key );
 }
 
 const witness_object& database_fixture::witness_create(
@@ -350,10 +350,10 @@ void database_fixture::fund(
          {
             if( amount.symbol == SYMBOL_ECO )
                a.balance += amount;
-            else if( amount.symbol == SYMBOL_EZD )
+            else if( amount.symbol == SYMBOL_EUSD )
             {
-               a.EZD_balance += amount;
-               a.EZD_seconds_last_update = db.head_block_time();
+               a.EUSDbalance += amount;
+               a.EUSD_seconds_last_update = db.head_block_time();
             }
          });
 
@@ -361,17 +361,17 @@ void database_fixture::fund(
          {
             if( amount.symbol == SYMBOL_ECO )
                gpo.current_supply += amount;
-            else if( amount.symbol == SYMBOL_EZD )
-               gpo.current_EZD_supply += amount;
+            else if( amount.symbol == SYMBOL_EUSD )
+               gpo.current_EUSD_supply += amount;
          });
 
-         if( amount.symbol == SYMBOL_EZD )
+         if( amount.symbol == SYMBOL_EUSD )
          {
             const auto& median_feed = db.get_feed_history();
             if( median_feed.current_median_history.is_null() )
                db.modify( median_feed, [&]( feed_history_object& f )
                {
-                  f.current_median_history = price( asset( 1, SYMBOL_EZD ), asset( 1, SYMBOL_ECO ) );
+                  f.current_median_history = price( asset( 1, SYMBOL_EUSD ), asset( 1, SYMBOL_ECO ) );
                });
          }
 
@@ -393,11 +393,11 @@ void database_fixture::convert(
       if ( amount.symbol == SYMBOL_ECO )
       {
          db.adjust_balance( account, -amount );
-         db.adjust_balance( account, db.to_EZD( amount ) );
+         db.adjust_balance( account, db.to_EUSD( amount ) );
          db.adjust_supply( -amount );
-         db.adjust_supply( db.to_EZD( amount ) );
+         db.adjust_supply( db.to_EUSD( amount ) );
       }
-      else if ( amount.symbol == SYMBOL_EZD )
+      else if ( amount.symbol == SYMBOL_EUSD )
       {
          db.adjust_balance( account, -amount );
          db.adjust_balance( account, db.to_ECO( amount ) );
@@ -427,11 +427,11 @@ void database_fixture::transfer(
    } FC_CAPTURE_AND_RETHROW( (from)(to)(amount) )
 }
 
-void database_fixture::vest( const string& from, const share_type& amount )
+void database_fixture::score( const string& from, const share_type& amount )
 {
    try
    {
-      transfer_to_vesting_operation op;
+      transferECOtoESCORfund_operation op;
       op.from = from;
       op.to = "";
       op.amount = asset( amount, SYMBOL_ECO );
@@ -444,7 +444,7 @@ void database_fixture::vest( const string& from, const share_type& amount )
    } FC_CAPTURE_AND_RETHROW( (from)(amount) )
 }
 
-void database_fixture::vest( const string& account, const asset& amount )
+void database_fixture::score( const string& account, const asset& amount )
 {
    if( amount.symbol != SYMBOL_ECO )
       return;
@@ -456,7 +456,7 @@ void database_fixture::vest( const string& account, const asset& amount )
          gpo.current_supply += amount;
       });
 
-      db.create_vesting( db.get_account( account ), amount );
+      db.createECOfundForESCOR( db.get_account( account ), amount );
 
       db.update_virtual_supply();
    }, default_skip );

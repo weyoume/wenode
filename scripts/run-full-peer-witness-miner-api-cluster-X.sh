@@ -21,7 +21,7 @@ for ((i=0;i<$peerCount;i++)) ; do
 		docker run --ip $subnet$(($i+3)) \
 			--network eznodes \
 			--env USE_WAY_TOO_MUCH_RAM=1 \
-			--env USE_FULL_WEB_NODE=1 \
+			--env USE_FULL_CONTENT_NODE=1 \
 			--env USE_NGINX_FRONTEND=1 \
 			--env WITNESS_NAME=${witnesses[$i]} \
 			--env PRIVATE_KEY=${keys[$i]}  \

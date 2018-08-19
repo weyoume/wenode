@@ -52,24 +52,24 @@ void update_median_witness_props( database& db )
    } );
    uint32_t median_maximum_block_size = active[active.size()/2]->props.maximum_block_size;
 
-   /// sort them by EZD_interest_rate
+   /// sort them by EUSD_interest_rate
    std::sort( active.begin(), active.end(), [&]( const witness_object* a, const witness_object* b )
    {
-      return a->props.EZD_interest_rate < b->props.EZD_interest_rate;
+      return a->props.EUSD_interest_rate < b->props.EUSD_interest_rate;
    } );
-   uint16_t median_EZD_interest_rate = active[active.size()/2]->props.EZD_interest_rate;
+   uint16_t median_EUSD_interest_rate = active[active.size()/2]->props.EUSD_interest_rate;
 
    db.modify( wso, [&]( witness_schedule_object& _wso )
    {
       _wso.median_props.account_creation_fee = median_account_creation_fee;
       _wso.median_props.maximum_block_size   = median_maximum_block_size;
-      _wso.median_props.EZD_interest_rate    = median_EZD_interest_rate;
+      _wso.median_props.EUSD_interest_rate    = median_EUSD_interest_rate;
    } );
 
    db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& _dgpo )
    {
       _dgpo.maximum_block_size = median_maximum_block_size;
-      _dgpo.EZD_interest_rate  = median_EZD_interest_rate;
+      _dgpo.EUSD_interest_rate  = median_EUSD_interest_rate;
    } );
 }
 
@@ -325,7 +325,7 @@ void update_witness_schedule(database& db)
 
       fc::uint128 new_virtual_time;
 
-      /// only use vote based scheduling after the first 1M EZIRA is created or if there is no POW queued
+      /// only use vote based scheduling after the first 1M ECO is created or if there is no POW queued
       if( props.num_pow_witnesses == 0 || db.head_block_num() > START_MINER_VOTING_BLOCK )
       {
          const auto& widx = db.get_index<witness_index>().indices().get<by_vote_name>();

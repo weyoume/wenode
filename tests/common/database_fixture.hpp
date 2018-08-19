@@ -114,7 +114,7 @@ extern uint32_t ( TESTING_GENESIS_TIMESTAMP );
 
 #define ACTOR(name) \
    PREP_ACTOR(name) \
-   const auto& name = account_create(BOOST_PP_STRINGIZE(name), name ## _public_key, name ## _post_key.get_public_key()); \
+   const auto& name = accountCreate(BOOST_PP_STRINGIZE(name), name ## _public_key, name ## _post_key.get_public_key()); \
    account_id_type name ## _id = name.id; (void)name ## _id;
 
 #define GET_ACTOR(name) \
@@ -176,7 +176,7 @@ struct database_fixture {
     */
    void generate_blocks(fc::time_point_sec timestamp, bool miss_intermediate_blocks = true);
 
-   const account_object& account_create(
+   const account_object& accountCreate(
       const string& name,
       const string& creator,
       const private_key_type& creator_key,
@@ -186,13 +186,13 @@ struct database_fixture {
       const string& json_metadata
    );
 
-   const account_object& account_create(
+   const account_object& accountCreate(
       const string& name,
       const public_key_type& key,
       const public_key_type& post_key
    );
 
-   const account_object& account_create(
+   const account_object& accountCreate(
       const string& name,
       const public_key_type& key
    );
@@ -210,8 +210,8 @@ struct database_fixture {
    void fund( const string& account_name, const asset& amount );
    void transfer( const string& from, const string& to, const share_type& ECO );
    void convert( const string& account_name, const asset& amount );
-   void vest( const string& from, const share_type& amount );
-   void vest( const string& account, const asset& amount );
+   void score( const string& from, const share_type& amount );
+   void score( const string& account, const asset& amount );
    void proxy( const string& account, const string& proxy );
    void set_price_feed( const price& new_price );
    const asset& get_balance( const string& account_name )const;

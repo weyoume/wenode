@@ -18,7 +18,7 @@ namespace eznode { namespace chain {
    typedef protocol::fixed_string_16 reward_fund_name_type;
 
    /**
-    *  This object is used to track pending requests to convert EZD to ECO
+    *  This object is used to track pending requests to convert EUSD to ECO
     */
    class convert_request_object : public object< convert_request_object_type, convert_request_object >
    {
@@ -59,8 +59,8 @@ namespace eznode { namespace chain {
          account_name_type agent;
          time_point_sec    ratification_deadline;
          time_point_sec    escrow_expiration;
-         asset             EZD_balance;
-         asset             ECO_balance;
+         asset             EUSDbalance;
+         asset             ECObalance;
          asset             pending_fee;
          bool              to_approved = false;
          bool              agent_approved = false;
@@ -100,7 +100,7 @@ namespace eznode { namespace chain {
     *  When a user is a taker, their volume decreases
     *
     *  Every 1000 blocks, the account that has the highest volume_weight() is paid the maximum of
-    *  1000 EZIRA or 1000 * virtual_supply / (100*blocks_per_year) aka 10 * virtual_supply / blocks_per_year
+    *  1000 ECO or 1000 * virtual_supply / (100*blocks_per_year) aka 10 * virtual_supply / blocks_per_year
     *
     *  After being paid volume gets reset to 0
     */
@@ -119,7 +119,7 @@ namespace eznode { namespace chain {
 
          account_id_type   owner;
          int64_t           ECO_volume = 0;
-         int64_t           EZD_volume = 0;
+         int64_t           EUSD_volume = 0;
          uint128_t         weight = 0;
 
          time_point_sec    last_update = fc::time_point_sec::min(); /// used to decay negative liquidity balances. block num
@@ -127,12 +127,12 @@ namespace eznode { namespace chain {
          /// this is the sort index
          uint128_t volume_weight()const
          {
-            return ECO_volume * EZD_volume * is_positive();
+            return ECO_volume * EUSD_volume * is_positive();
          }
 
          uint128_t min_volume_weight()const
          {
-            return std::min(ECO_volume,EZD_volume) * is_positive();
+            return std::min(ECO_volume,EUSD_volume) * is_positive();
          }
 
          void update_weight( bool hf9 )
@@ -142,7 +142,7 @@ namespace eznode { namespace chain {
 
          inline int is_positive()const
          {
-            return ( ECO_volume > 0 && EZD_volume > 0 ) ? 1 : 0;
+            return ( ECO_volume > 0 && EUSD_volume > 0 ) ? 1 : 0;
          }
    };
 
@@ -210,25 +210,25 @@ namespace eznode { namespace chain {
 
 
    /**
-    * @breif a route to send withdrawn vesting shares.
+    * @breif a route to send withdrawn eScore.
     */
-   class withdraw_vesting_route_object : public object< withdraw_vesting_route_object_type, withdraw_vesting_route_object >
+   class withdraw_ESCOR_route_object : public object< withdraw_ESCOR_route_object_type, withdraw_ESCOR_route_object >
    {
       public:
          template< typename Constructor, typename Allocator >
-         withdraw_vesting_route_object( Constructor&& c, allocator< Allocator > a )
+         withdraw_ESCOR_route_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
 
-         withdraw_vesting_route_object(){}
+         withdraw_ESCOR_route_object(){}
 
          id_type  id;
 
          account_id_type   from_account;
          account_id_type   to_account;
          uint16_t          percent = 0;
-         bool              auto_vest = false;
+         bool              autoESCOR = false;
    };
 
 
@@ -274,10 +274,10 @@ namespace eznode { namespace chain {
          fc::uint128_t           recent_claims = 0;
          time_point_sec          last_update;
          uint128_t               content_constant = 0;
-         uint16_t                percent_curation_rewards = 0;
+         uint16_t                percent_curationRewards = 0;
          uint16_t                percent_content_rewards = 0;
-         curve_id                author_reward_curve = linear;
-         curve_id                curation_reward_curve = square_root;
+         curve_id                authorReward_curve = linear;
+         curve_id                curationReward_curve = square_root;
    };
 
    struct by_price;
@@ -357,31 +357,31 @@ namespace eznode { namespace chain {
    struct by_withdraw_route;
    struct by_destination;
    typedef multi_index_container<
-      withdraw_vesting_route_object,
+      withdraw_ESCOR_route_object,
       indexed_by<
-         ordered_unique< tag< by_id >, member< withdraw_vesting_route_object, withdraw_vesting_route_id_type, &withdraw_vesting_route_object::id > >,
+         ordered_unique< tag< by_id >, member< withdraw_ESCOR_route_object, withdraw_ESCOR_route_id_type, &withdraw_ESCOR_route_object::id > >,
          ordered_unique< tag< by_withdraw_route >,
-            composite_key< withdraw_vesting_route_object,
-               member< withdraw_vesting_route_object, account_id_type, &withdraw_vesting_route_object::from_account >,
-               member< withdraw_vesting_route_object, account_id_type, &withdraw_vesting_route_object::to_account >
+            composite_key< withdraw_ESCOR_route_object,
+               member< withdraw_ESCOR_route_object, account_id_type, &withdraw_ESCOR_route_object::from_account >,
+               member< withdraw_ESCOR_route_object, account_id_type, &withdraw_ESCOR_route_object::to_account >
             >,
             composite_key_compare< std::less< account_id_type >, std::less< account_id_type > >
          >,
          ordered_unique< tag< by_destination >,
-            composite_key< withdraw_vesting_route_object,
-               member< withdraw_vesting_route_object, account_id_type, &withdraw_vesting_route_object::to_account >,
-               member< withdraw_vesting_route_object, withdraw_vesting_route_id_type, &withdraw_vesting_route_object::id >
+            composite_key< withdraw_ESCOR_route_object,
+               member< withdraw_ESCOR_route_object, account_id_type, &withdraw_ESCOR_route_object::to_account >,
+               member< withdraw_ESCOR_route_object, withdraw_ESCOR_route_id_type, &withdraw_ESCOR_route_object::id >
             >
          >
       >,
-      allocator< withdraw_vesting_route_object >
-   > withdraw_vesting_route_index;
+      allocator< withdraw_ESCOR_route_object >
+   > withdraw_ESCOR_route_index;
 
    struct by_from_id;
    struct by_to;
    struct by_agent;
    struct by_ratification_deadline;
-   struct by_EZD_balance;
+   struct by_EUSDbalance;
    typedef multi_index_container<
       escrow_object,
       indexed_by<
@@ -412,9 +412,9 @@ namespace eznode { namespace chain {
             >,
             composite_key_compare< std::less< bool >, std::less< time_point_sec >, std::less< escrow_id_type > >
          >,
-         ordered_unique< tag< by_EZD_balance >,
+         ordered_unique< tag< by_EUSDbalance >,
             composite_key< escrow_object,
-               member< escrow_object, asset, &escrow_object::EZD_balance >,
+               member< escrow_object, asset, &escrow_object::EUSDbalance >,
                member< escrow_object, escrow_id_type, &escrow_object::id >
             >,
             composite_key_compare< std::greater< asset >, std::less< escrow_id_type > >
@@ -505,12 +505,12 @@ FC_REFLECT( eznode::chain::convert_request_object,
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::convert_request_object, eznode::chain::convert_request_index )
 
 FC_REFLECT( eznode::chain::liquidity_reward_balance_object,
-             (id)(owner)(ECO_volume)(EZD_volume)(weight)(last_update) )
+             (id)(owner)(ECO_volume)(EUSD_volume)(weight)(last_update) )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::liquidity_reward_balance_object, eznode::chain::liquidity_reward_balance_index )
 
-FC_REFLECT( eznode::chain::withdraw_vesting_route_object,
-             (id)(from_account)(to_account)(percent)(auto_vest) )
-CHAINBASE_SET_INDEX_TYPE( eznode::chain::withdraw_vesting_route_object, eznode::chain::withdraw_vesting_route_index )
+FC_REFLECT( eznode::chain::withdraw_ESCOR_route_object,
+             (id)(from_account)(to_account)(percent)(autoESCOR) )
+CHAINBASE_SET_INDEX_TYPE( eznode::chain::withdraw_ESCOR_route_object, eznode::chain::withdraw_ESCOR_route_index )
 
 FC_REFLECT( eznode::chain::savings_withdraw_object,
              (id)(from)(to)(memo)(request_id)(amount)(complete) )
@@ -519,7 +519,7 @@ CHAINBASE_SET_INDEX_TYPE( eznode::chain::savings_withdraw_object, eznode::chain:
 FC_REFLECT( eznode::chain::escrow_object,
              (id)(escrow_id)(from)(to)(agent)
              (ratification_deadline)(escrow_expiration)
-             (EZD_balance)(ECO_balance)(pending_fee)
+             (EUSDbalance)(ECObalance)(pending_fee)
              (to_approved)(agent_approved)(disputed) )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::escrow_object, eznode::chain::escrow_index )
 
@@ -534,9 +534,9 @@ FC_REFLECT( eznode::chain::reward_fund_object,
             (recent_claims)
             (last_update)
             (content_constant)
-            (percent_curation_rewards)
+            (percent_curationRewards)
             (percent_content_rewards)
-            (author_reward_curve)
-            (curation_reward_curve)
+            (authorReward_curve)
+            (curationReward_curve)
          )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::reward_fund_object, eznode::chain::reward_fund_index )

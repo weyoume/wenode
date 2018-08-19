@@ -36,7 +36,7 @@ struct order
    price                order_price;
    double               real_price; // dollars per ECO
    share_type           ECO;
-   share_type           EZD;
+   share_type           EUSD;
    fc::time_point_sec   created;
 };
 
@@ -65,7 +65,7 @@ struct withdraw_route
    string               from_account;
    string               to_account;
    uint16_t             percent;
-   bool                 auto_vest;
+   bool                 autoESCOR;
 };
 
 enum withdraw_route_type
@@ -232,8 +232,8 @@ class database_api
       vector< savings_withdraw_api_obj > get_savings_withdraw_from( string account )const;
       vector< savings_withdraw_api_obj > get_savings_withdraw_to( string account )const;
 
-      vector< vesting_delegation_api_obj > get_vesting_delegations( string account, string from, uint32_t limit = 100 )const;
-      vector< vesting_delegation_expiration_api_obj > get_expiring_vesting_delegations( string account, time_point_sec from, uint32_t limit = 100 )const;
+      vector< ECO_fund_for_ESCOR_delegation_api_obj > get_ESCOR_delegations( string account, string from, uint32_t limit = 100 )const;
+      vector< ECO_fund_for_ESCOR_delegation_expiration_api_obj > get_expiring_ECO_fund_for_ESCOR_delegations( string account, time_point_sec from, uint32_t limit = 100 )const;
 
       ///////////////
       // Witnesses //
@@ -282,7 +282,7 @@ class database_api
       ////////////
 
       /**
-       * @breif Gets the current order book for EZIRA:EZD market
+       * @breif Gets the current order book for ECO:EUSD market
        * @param limit Maximum number of orders for each side of the spread to return -- Must not exceed 1000
        */
       order_book get_order_book( uint32_t limit = 1000 )const;
@@ -437,11 +437,11 @@ class database_api
 
 } }
 
-FC_REFLECT( eznode::app::order, (order_price)(real_price)(ECO)(EZD)(created) );
+FC_REFLECT( eznode::app::order, (order_price)(real_price)(ECO)(eUSD)(created) );
 FC_REFLECT( eznode::app::order_book, (asks)(bids) );
 FC_REFLECT( eznode::app::scheduled_hardfork, (hf_version)(live_time) );
 FC_REFLECT( eznode::app::liquidity_balance, (account)(weight) );
-FC_REFLECT( eznode::app::withdraw_route, (from_account)(to_account)(percent)(auto_vest) );
+FC_REFLECT( eznode::app::withdraw_route, (from_account)(to_account)(percent)(autoESCOR) );
 
 FC_REFLECT( eznode::app::discussion_query, (tag)(filter_tags)(select_tags)(select_authors)(truncate_body)(start_author)(start_permlink)(parent_author)(parent_permlink)(limit) );
 
@@ -504,8 +504,8 @@ FC_API(eznode::app::database_api,
    (get_account_bandwidth)
    (get_savings_withdraw_from)
    (get_savings_withdraw_to)
-   (get_vesting_delegations)
-   (get_expiring_vesting_delegations)
+   (get_ESCOR_delegations)
+   (get_expiring_ECO_fund_for_ESCOR_delegations)
 
    // Market
    (get_order_book)

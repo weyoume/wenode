@@ -152,7 +152,7 @@ struct operation_visitor
       }
 
       /// the universal tag applies to everything safe for work or nsfw with a non-negative payout
-      if( c.net_rshares >= 0 )
+      if( c.net_rewardESCOR >= 0 )
       {
          lower_tags.insert( string() ); /// add it to the universal tag
       }
@@ -172,7 +172,7 @@ struct operation_visitor
              obj.active            = comment.active;
              obj.cashout           = _db.calculate_discussion_payout_time( comment );
              obj.children          = comment.children;
-             obj.net_rshares       = comment.net_rshares.value;
+             obj.net_rewardESCOR       = comment.net_rewardESCOR.value;
              obj.net_votes         = comment.net_votes;
              obj.hot               = hot;
              obj.trending          = trending;
@@ -203,7 +203,7 @@ struct operation_visitor
           obj.cashout           = comment.cashout_time;
           obj.net_votes         = comment.net_votes;
           obj.children          = comment.children;
-          obj.net_rshares       = comment.net_rshares.value;
+          obj.net_rewardESCOR       = comment.net_rewardESCOR.value;
           obj.author            = author;
           obj.hot               = hot;
           obj.trending          = trending;
@@ -236,28 +236,28 @@ struct operation_visitor
     * https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9#.lcbj6auuw
     */
    template< int64_t S, int32_t T >
-   double calculate_score( const share_type& score, const time_point_sec& created ) const
+   double calculate_escore( const share_type& score, const time_point_sec& created ) const
    {
       /// new algorithm
-      auto mod_score = score.value / S;
+      auto mod_escore = score.value / S;
 
       /// reddit algorithm
-      double order = log10( std::max<int64_t>( std::abs( mod_score ), 1) );
+      double order = log10( std::max<int64_t>( std::abs( mod_escore ), 1) );
       int sign = 0;
-      if( mod_score > 0 ) sign = 1;
-      else if( mod_score < 0 ) sign = -1;
+      if( mod_escore > 0 ) sign = 1;
+      else if( mod_escore < 0 ) sign = -1;
 
       return sign * order + double( created.sec_since_epoch() ) / double( T );
    }
 
    inline double calculate_hot( const share_type& score, const time_point_sec& created )const
    {
-      return calculate_score< 10000000, 10000 >( score, created );
+      return calculate_escore< 10000000, 10000 >( score, created );
    }
 
    inline double calculate_trending( const share_type& score, const time_point_sec& created )const
    {
-      return calculate_score< 10000000, 480000 >( score, created );
+      return calculate_escore< 10000000, 480000 >( score, created );
    }
 
    /** finds tags that have been added or removed or updated */
@@ -265,8 +265,8 @@ struct operation_visitor
    {
       try {
 
-      auto hot = calculate_hot( c.net_rshares, c.created );
-      auto trending = calculate_trending( c.net_rshares, c.created );
+      auto hot = calculate_hot( c.net_rewardESCOR, c.created );
+      auto trending = calculate_trending( c.net_rewardESCOR, c.created );
 
       const auto& comment_idx = _db.get_index< tag_index >().indices().get< by_comment >();
 
@@ -391,7 +391,7 @@ struct operation_visitor
 
    void operator()( const transfer_operation& op )const
    {
-      if( op.to == NULL_ACCOUNT && op.amount.symbol == SYMBOL_EZD )
+      if( op.to == NULL_ACCOUNT && op.amount.symbol == SYMBOL_EUSD )
       {
          vector<string> part; part.reserve(4);
          auto path = op.memo;
@@ -435,7 +435,7 @@ struct operation_visitor
                          */
    }
 
-   void operator()( const delete_comment_operation& op )const
+   void operator()( const deleteComment_operation& op )const
    {
       const auto& idx = _db.get_index<tag_index>().indices().get<by_author_comment>();
 

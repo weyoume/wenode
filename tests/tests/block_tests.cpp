@@ -239,7 +239,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       //*
       signed_transaction trx;
-      account_create_operation cop;
+      accountCreate_operation cop;
       cop.new_account_name = "alice";
       cop.creator = INIT_MINER_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
@@ -299,7 +299,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
 
       signed_transaction trx;
-      account_create_operation cop;
+      accountCreate_operation cop;
       cop.new_account_name = "alice";
       cop.creator = INIT_MINER_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       //This transaction must be in the next block after its reference, or it is invalid.
       trx.set_reference_block( db1.head_block_id() );
 
-      account_create_operation cop;
+      accountCreate_operation cop;
       cop.new_account_name = "alice";
       cop.creator = INIT_MINER_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
@@ -514,7 +514,7 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
       // Sam is the creator of accounts
       auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
       private_key_type sam_key = generate_private_key( "sam" );
-      account_object sam_account_object = account_create( "sam", sam_key.get_public_key() );
+      account_object sam_account_object = accountCreate( "sam", sam_key.get_public_key() );
 
       //Get a sane head block time
       generate_block( skip_flags );
@@ -528,9 +528,9 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
 
       generate_block(skip_flags);
 
-      account_create( "alice", generate_private_key( "alice" ).get_public_key() );
+      accountCreate( "alice", generate_private_key( "alice" ).get_public_key() );
       generate_block(skip_flags);
-      account_create( "bob", generate_private_key( "bob" ).get_public_key() );
+      accountCreate( "bob", generate_private_key( "bob" ).get_public_key() );
       generate_block(skip_flags);
 
       db.pop_block();
@@ -731,12 +731,12 @@ BOOST_FIXTURE_TEST_CASE( hardfork_test, database_fixture )
       ahplugin->plugin_startup();
       db_plugin->plugin_startup();
 
-      vest( INIT_MINER_NAME, 10000 );
+      score( INIT_MINER_NAME, 10000 );
 
       // Fill up the rest of the required miners
       for( int i = NUM_INIT_MINERS; i < MAX_WITNESSES; i++ )
       {
-         account_create( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
+         accountCreate( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
          fund( INIT_MINER_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
          witness_create( INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
       }

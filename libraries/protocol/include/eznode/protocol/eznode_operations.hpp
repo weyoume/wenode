@@ -19,7 +19,7 @@ namespace eznode { namespace protocol {
       FC_ASSERT( fc::is_utf8( permlink ), "permlink not formatted in UTF8" );
    }
 
-   struct account_create_operation : public base_operation
+   struct accountCreate_operation : public base_operation
    {
       asset             fee;
       account_name_type creator;
@@ -35,7 +35,7 @@ namespace eznode { namespace protocol {
    };
 
 
-   struct account_create_with_delegation_operation : public base_operation
+   struct accountCreateWithDelegation_operation : public base_operation
    {
       asset             fee;
       asset             delegation;
@@ -54,7 +54,7 @@ namespace eznode { namespace protocol {
    };
 
 
-   struct account_update_operation : public base_operation
+   struct accountUpdate_operation : public base_operation
    {
       account_name_type             account;
       optional< authority >         owner;
@@ -119,7 +119,7 @@ namespace eznode { namespace protocol {
     *  operation allows authors to update properties associated with their post.
     *
     *  The max_accepted_payout may be decreased, but never increased.
-    *  The percent_EZD may be decreased, but never increased
+    *  The percent_EUSD may be decreased, but never increased
     *
     */
    struct comment_options_operation : public base_operation
@@ -127,10 +127,10 @@ namespace eznode { namespace protocol {
       account_name_type author;
       string            permlink;
 
-      asset             max_accepted_payout    = asset( 1000000000, SYMBOL_EZD );       /// EZD value of the maximum payout this post will receive
-      uint16_t          percent_EZD  = PERCENT_100; /// the percent of Ezira Dollars to key, unkept amounts will be received as Ezira Power
+      asset             max_accepted_payout    = asset( 1000000000, SYMBOL_EUSD );       /// EUSD value of the maximum payout this post will receive
+      uint16_t          percent_EUSD  = PERCENT_100; /// the percent of eUSD to key, unkept amounts will be received as Ezira Power
       bool              allow_votes            = true;      /// allows a post to receive votes;
-      bool              allow_curation_rewards = true; /// allows voters to recieve curation rewards. Rewards return to reward fund.
+      bool              allow_curationRewards = true; /// allows voters to recieve curation rewards. Rewards return to reward fund.
       comment_options_extensions_type extensions;
 
       void validate()const;
@@ -161,7 +161,7 @@ namespace eznode { namespace protocol {
    };
 
 
-   struct delete_comment_operation : public base_operation
+   struct deleteComment_operation : public base_operation
    {
       account_name_type author;
       string            permlink;
@@ -186,7 +186,7 @@ namespace eznode { namespace protocol {
    /**
     * @ingroup operations
     *
-    * @brief Transfers EZIRA from one account to another.
+    * @brief Transfers ECO from one account to another.
     */
    struct transfer_operation : public base_operation
    {
@@ -201,8 +201,8 @@ namespace eznode { namespace protocol {
       string            memo;
 
       void              validate()const;
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ if(amount.symbol != SYMBOL_EZP) a.insert(from); }
-      void get_required_owner_authorities( flat_set<account_name_type>& a )const { if(amount.symbol == SYMBOL_EZP) a.insert(from); }
+      void get_required_active_authorities( flat_set<account_name_type>& a )const{ if(amount.symbol != SYMBOL_ESCOR) a.insert(from); }
+      void get_required_owner_authorities( flat_set<account_name_type>& a )const { if(amount.symbol == SYMBOL_ESCOR) a.insert(from); }
    };
 
 
@@ -231,8 +231,8 @@ namespace eznode { namespace protocol {
       account_name_type agent;
       uint32_t          escrow_id = 30;
 
-      asset             EZD_amount = asset( 0, SYMBOL_EZD );
-      asset             ECO_amount = asset( 0, SYMBOL_ECO );
+      asset             EUSD_amount = asset( 0, SYMBOL_EUSD );
+      asset             ECOamount = asset( 0, SYMBOL_ECO );
       asset             fee;
 
       time_point_sec    ratification_deadline;
@@ -303,8 +303,8 @@ namespace eznode { namespace protocol {
       account_name_type receiver; ///< the account that should receive funds (might be from, might be to)
 
       uint32_t          escrow_id = 30;
-      asset             EZD_amount = asset( 0, SYMBOL_EZD ); ///< the amount of EZD to release
-      asset             ECO_amount = asset( 0, SYMBOL_ECO ); ///< the amount of ECO to release
+      asset             EUSD_amount = asset( 0, SYMBOL_EUSD ); ///< the amount of EUSD to release
+      asset             ECOamount = asset( 0, SYMBOL_ECO ); ///< the amount of ECO to release
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(who); }
@@ -312,16 +312,16 @@ namespace eznode { namespace protocol {
 
 
    /**
-    *  This operation converts EZIRA into VFS (Vesting Fund Shares) at
+    *  This operation converts ECO into eScore (ESCOR) at
     *  the current exchange rate. With this operation it is possible to
-    *  give another account vesting shares so that faucets can
-    *  pre-fund new accounts with vesting shares.
+    *  give another account eScore so that faucets can
+    *  pre-fund new accounts with eScore.
     */
-   struct transfer_to_vesting_operation : public base_operation
+   struct transferECOtoESCORfund_operation : public base_operation
    {
       account_name_type from;
       account_name_type to; ///< if null, then same as from
-      asset             amount; ///< must be EZIRA
+      asset             amount; ///< must be ECO
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(from); }
@@ -330,19 +330,19 @@ namespace eznode { namespace protocol {
 
    /**
     * At any given point in time an account can be withdrawing from their
-    * vesting shares. A user may change the number of shares they wish to
-    * cash out at any time between 0 and their total vesting stake.
+    * eScore. A user may change the number of eScore they wish to
+    * cash out at any time between 0 and their total eScore.
     *
-    * After applying this operation, vesting_shares will be withdrawn
-    * at a rate of vesting_shares/104 per week for two years starting
+    * After applying this operation, eScore will be withdrawn
+    * at a rate of eScore/104 per week for two years starting
     * one week after this operation is included in the blockchain.
     *
-    * This operation is not valid if the user has no vesting shares.
+    * This operation is not valid if the user has no eScore.
     */
-   struct withdraw_vesting_operation : public base_operation
+   struct withdraw_ESCOR_operation : public base_operation
    {
       account_name_type account;
-      asset             vesting_shares;
+      asset             eScore;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(account); }
@@ -350,18 +350,18 @@ namespace eznode { namespace protocol {
 
 
    /**
-    * Allows an account to setup a vesting withdraw but with the additional
+    * Allows an account to setup an eScore withdraw but with the additional
     * request for the funds to be transferred directly to another account's
     * balance rather than the withdrawing account. In addition, those funds
-    * can be immediately vested again, circumventing the conversion from
-    * vests to ECO and back, guaranteeing they maintain their value.
+    * can be immediately scored again, circumventing the conversion from
+    * ESCOR to ECO and back, guaranteeing they maintain their value.
     */
-   struct set_withdraw_vesting_route_operation : public base_operation
+   struct setWithdrawESCORasECOroute_operation : public base_operation
    {
       account_name_type from_account;
       account_name_type to_account;
       uint16_t          percent = 0;
-      bool              auto_vest = false;
+      bool              autoESCOR = false;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( from_account ); }
@@ -376,8 +376,8 @@ namespace eznode { namespace protocol {
    struct chain_properties
    {
       /**
-       *  This fee, paid in EZIRA, is converted into VESTING SHARES for the new account. Accounts
-       *  without vesting shares cannot earn usage rations and therefore are powerless. This minimum
+       *  This fee, paid in ECO, is converted into eScore for the new account. Accounts
+       *  without eScore cannot earn usage rations and therefore are powerless. This minimum
        *  fee requires all accounts to have some kind of commitment to the network that includes the
        *  ability to vote and make transactions.
        */
@@ -389,14 +389,14 @@ namespace eznode { namespace protocol {
        *  to tune rate limiting and capacity
        */
       uint32_t          maximum_block_size = MIN_BLOCK_SIZE_LIMIT * 2;
-      uint16_t          EZD_interest_rate  = DEFAULT_EZD_INTEREST_RATE;
+      uint16_t          EUSD_interest_rate  = DEFAULT_EUSD_INTEREST_RATE;
 
       void validate()const
       {
          FC_ASSERT( account_creation_fee.amount >= MIN_ACCOUNT_CREATION_FEE);
          FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT);
-         FC_ASSERT( EZD_interest_rate >= 0 );
-         FC_ASSERT( EZD_interest_rate <= PERCENT_100 );
+         FC_ASSERT( EUSD_interest_rate >= 0 );
+         FC_ASSERT( EUSD_interest_rate <= PERCENT_100 );
       }
    };
 
@@ -429,11 +429,11 @@ namespace eznode { namespace protocol {
 
 
    /**
-    * All accounts with a VFS can vote for or against any witness.
+    * All accounts with a eScore can vote for or against any witness.
     *
     * If a proxy is specified then all existing votes are removed.
     */
-   struct account_witness_vote_operation : public base_operation
+   struct accountWitnessVote_operation : public base_operation
    {
       account_name_type account;
       account_name_type witness;
@@ -474,7 +474,7 @@ namespace eznode { namespace protocol {
    /** serves the same purpose as custom_operation but also supports required posting authorities. Unlike custom_operation,
     * this operation is designed to be human readable/developer friendly.
     **/
-   struct custom_json_operation : public base_operation
+   struct customJson_operation : public base_operation
    {
       flat_set< account_name_type > required_auths;
       flat_set< account_name_type > required_posting_auths;
@@ -520,7 +520,7 @@ namespace eznode { namespace protocol {
 
 
    /**
-    *  This operation instructs the blockchain to start a conversion between EZIRA and EZD,
+    *  This operation instructs the blockchain to start a conversion between ECO and EUSD,
     *  The funds are deposited after CONVERSION_DELAY
     */
    struct convert_operation : public base_operation
@@ -688,9 +688,9 @@ namespace eznode { namespace protocol {
     *
     * Users not in the ACTIVE witness set should not have to worry about their
     * key getting compromised and being used to produced multiple blocks so
-    * the attacker can report it and steel their vesting ECO.
+    * the attacker can report it and steel their eScore.
     *
-    * The result of the operation is to transfer the full VESTING ECO balance
+    * The result of the operation is to transfer the full eScore balance
     * of the block producer to the reporter.
     */
    struct report_over_production_operation : public base_operation
@@ -869,7 +869,7 @@ namespace eznode { namespace protocol {
    };
 
 
-   struct transfer_to_savings_operation : public base_operation {
+   struct transferToSavings_operation : public base_operation {
       account_name_type from;
       account_name_type to;
       asset             amount;
@@ -880,7 +880,7 @@ namespace eznode { namespace protocol {
    };
 
 
-   struct transfer_from_savings_operation : public base_operation {
+   struct transferFromSavings_operation : public base_operation {
       account_name_type from;
       uint32_t          request_id = 0;
       account_name_type to;
@@ -892,7 +892,7 @@ namespace eznode { namespace protocol {
    };
 
 
-   struct cancel_transfer_from_savings_operation : public base_operation {
+   struct cancelTransferFromSavings_operation : public base_operation {
       account_name_type from;
       uint32_t          request_id = 0;
 
@@ -910,31 +910,31 @@ namespace eznode { namespace protocol {
       void validate() const;
    };
 
-   struct claim_reward_balance_operation : public base_operation
+   struct claimRewardBalance_operation : public base_operation
    {
       account_name_type account;
-      asset             reward_ECO;
-      asset             reward_EZD;
-      asset             reward_EZP;
+      asset             ECOreward;
+      asset             EUSDreward;
+      asset             rewardESCOR;
 
       void get_required_posting_authorities( flat_set< account_name_type >& a )const{ a.insert( account ); }
       void validate() const;
    };
 
    /**
-    * Delegate vesting shares from one account to the other. The vesting shares are still owned
+    * Delegate eScore from one account to the other. The eScore are still owned
     * by the original account, but content voting rights and bandwidth allocation are transferred
-    * to the receiving account. This sets the delegation to `vesting_shares`, increasing it or
+    * to the receiving account. This sets the delegation to `eScore`, increasing it or
     * decreasing it as needed. (i.e. a delegation of 0 removes the delegation)
     *
-    * When a delegation is removed the shares are placed in limbo for a week to prevent a satoshi
-    * of VESTS from voting on the same content twice.
+    * When a delegation is removed the eScore are placed in limbo for a week to prevent a satoshi
+    * of ESCOR from voting on the same content twice.
     */
-   struct delegate_vesting_shares_operation : public base_operation
+   struct delegateESCOR_operation : public base_operation
    {
-      account_name_type delegator;        ///< The account delegating vesting shares
-      account_name_type delegatee;        ///< The account receiving vesting shares
-      asset             vesting_shares;   ///< The amount of vesting shares delegated
+      account_name_type delegator;        ///< The account delegating eScore
+      account_name_type delegatee;        ///< The account receiving eScore
+      asset             eScore;   ///< The amount of eScore delegated
 
       void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( delegator ); }
       void validate() const;
@@ -942,9 +942,9 @@ namespace eznode { namespace protocol {
 } } // eznode::protocol
 
 
-FC_REFLECT( eznode::protocol::transfer_to_savings_operation, (from)(to)(amount)(memo) )
-FC_REFLECT( eznode::protocol::transfer_from_savings_operation, (from)(request_id)(to)(amount)(memo) )
-FC_REFLECT( eznode::protocol::cancel_transfer_from_savings_operation, (from)(request_id) )
+FC_REFLECT( eznode::protocol::transferToSavings_operation, (from)(to)(amount)(memo) )
+FC_REFLECT( eznode::protocol::transferFromSavings_operation, (from)(request_id)(to)(amount)(memo) )
+FC_REFLECT( eznode::protocol::cancelTransferFromSavings_operation, (from)(request_id) )
 
 FC_REFLECT( eznode::protocol::reset_account_operation, (reset_account)(account_to_reset)(new_owner_authority) )
 FC_REFLECT( eznode::protocol::set_reset_account_operation, (account)(current_reset_account)(reset_account) )
@@ -957,13 +957,13 @@ FC_REFLECT( eznode::protocol::pow, (worker)(input)(signature)(work) )
 FC_REFLECT( eznode::protocol::pow2, (input)(pow_summary) )
 FC_REFLECT( eznode::protocol::pow2_input, (worker_account)(prev_block)(nonce) )
 FC_REFLECT( eznode::protocol::equihash_pow, (input)(proof)(prev_block)(pow_summary) )
-FC_REFLECT( eznode::protocol::chain_properties, (account_creation_fee)(maximum_block_size)(EZD_interest_rate) );
+FC_REFLECT( eznode::protocol::chain_properties, (account_creation_fee)(maximum_block_size)(EUSD_interest_rate) );
 
 FC_REFLECT_TYPENAME( eznode::protocol::pow2_work )
 FC_REFLECT( eznode::protocol::pow_operation, (worker_account)(block_id)(nonce)(work)(props) )
 FC_REFLECT( eznode::protocol::pow2_operation, (work)(new_owner_key)(props) )
 
-FC_REFLECT( eznode::protocol::account_create_operation,
+FC_REFLECT( eznode::protocol::accountCreate_operation,
             (fee)
             (creator)
             (new_account_name)
@@ -973,7 +973,7 @@ FC_REFLECT( eznode::protocol::account_create_operation,
             (memo_key)
             (json_metadata) )
 
-FC_REFLECT( eznode::protocol::account_create_with_delegation_operation,
+FC_REFLECT( eznode::protocol::accountCreateWithDelegation_operation,
             (fee)
             (delegation)
             (creator)
@@ -985,7 +985,7 @@ FC_REFLECT( eznode::protocol::account_create_with_delegation_operation,
             (json_metadata)
             (extensions) )
 
-FC_REFLECT( eznode::protocol::account_update_operation,
+FC_REFLECT( eznode::protocol::accountUpdate_operation,
             (account)
             (owner)
             (active)
@@ -994,37 +994,37 @@ FC_REFLECT( eznode::protocol::account_update_operation,
             (json_metadata) )
 
 FC_REFLECT( eznode::protocol::transfer_operation, (from)(to)(amount)(memo) )
-FC_REFLECT( eznode::protocol::transfer_to_vesting_operation, (from)(to)(amount) )
-FC_REFLECT( eznode::protocol::withdraw_vesting_operation, (account)(vesting_shares) )
-FC_REFLECT( eznode::protocol::set_withdraw_vesting_route_operation, (from_account)(to_account)(percent)(auto_vest) )
+FC_REFLECT( eznode::protocol::transferECOtoESCORfund_operation, (from)(to)(amount) )
+FC_REFLECT( eznode::protocol::withdraw_ESCOR_operation, (account)(eScore) )
+FC_REFLECT( eznode::protocol::setWithdrawESCORasECOroute_operation, (from_account)(to_account)(percent)(autoESCOR) )
 FC_REFLECT( eznode::protocol::witness_update_operation, (owner)(url)(block_signing_key)(props)(fee) )
-FC_REFLECT( eznode::protocol::account_witness_vote_operation, (account)(witness)(approve) )
+FC_REFLECT( eznode::protocol::accountWitnessVote_operation, (account)(witness)(approve) )
 FC_REFLECT( eznode::protocol::account_witness_proxy_operation, (account)(proxy) )
 FC_REFLECT( eznode::protocol::comment_operation, (parent_author)(parent_permlink)(author)(permlink)(title)(body)(json_metadata) )
 FC_REFLECT( eznode::protocol::vote_operation, (voter)(author)(permlink)(weight) )
 FC_REFLECT( eznode::protocol::custom_operation, (required_auths)(id)(data) )
-FC_REFLECT( eznode::protocol::custom_json_operation, (required_auths)(required_posting_auths)(id)(json) )
+FC_REFLECT( eznode::protocol::customJson_operation, (required_auths)(required_posting_auths)(id)(json) )
 FC_REFLECT( eznode::protocol::custom_binary_operation, (required_owner_auths)(required_active_auths)(required_posting_auths)(required_auths)(id)(data) )
 FC_REFLECT( eznode::protocol::limit_order_create_operation, (owner)(orderid)(amount_to_sell)(min_to_receive)(fill_or_kill)(expiration) )
 FC_REFLECT( eznode::protocol::limit_order_create2_operation, (owner)(orderid)(amount_to_sell)(exchange_rate)(fill_or_kill)(expiration) )
 FC_REFLECT( eznode::protocol::limit_order_cancel_operation, (owner)(orderid) )
 
-FC_REFLECT( eznode::protocol::delete_comment_operation, (author)(permlink) );
+FC_REFLECT( eznode::protocol::deleteComment_operation, (author)(permlink) );
 
 FC_REFLECT( eznode::protocol::beneficiary_route_type, (account)(weight) )
 FC_REFLECT( eznode::protocol::comment_payout_beneficiaries, (beneficiaries) )
 FC_REFLECT_TYPENAME( eznode::protocol::comment_options_extension )
-FC_REFLECT( eznode::protocol::comment_options_operation, (author)(permlink)(max_accepted_payout)(percent_EZD)(allow_votes)(allow_curation_rewards)(extensions) )
+FC_REFLECT( eznode::protocol::comment_options_operation, (author)(permlink)(max_accepted_payout)(percent_EUSD)(allow_votes)(allow_curationRewards)(extensions) )
 
-FC_REFLECT( eznode::protocol::escrow_transfer_operation, (from)(to)(EZD_amount)(ECO_amount)(escrow_id)(agent)(fee)(json_meta)(ratification_deadline)(escrow_expiration) );
+FC_REFLECT( eznode::protocol::escrow_transfer_operation, (from)(to)(EUSD_amount)(ECOamount)(escrow_id)(agent)(fee)(json_meta)(ratification_deadline)(escrow_expiration) );
 FC_REFLECT( eznode::protocol::escrow_approve_operation, (from)(to)(agent)(who)(escrow_id)(approve) );
 FC_REFLECT( eznode::protocol::escrow_dispute_operation, (from)(to)(agent)(who)(escrow_id) );
-FC_REFLECT( eznode::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(EZD_amount)(ECO_amount) );
+FC_REFLECT( eznode::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(EUSD_amount)(ECOamount) );
 FC_REFLECT( eznode::protocol::challenge_authority_operation, (challenger)(challenged)(require_owner) );
 FC_REFLECT( eznode::protocol::prove_authority_operation, (challenged)(require_owner) );
 FC_REFLECT( eznode::protocol::request_account_recovery_operation, (recovery_account)(account_to_recover)(new_owner_authority)(extensions) );
 FC_REFLECT( eznode::protocol::recover_account_operation, (account_to_recover)(new_owner_authority)(recent_owner_authority)(extensions) );
 FC_REFLECT( eznode::protocol::change_recovery_account_operation, (account_to_recover)(new_recovery_account)(extensions) );
 FC_REFLECT( eznode::protocol::decline_voting_rights_operation, (account)(decline) );
-FC_REFLECT( eznode::protocol::claim_reward_balance_operation, (account)(reward_ECO)(reward_EZD)(reward_EZP) )
-FC_REFLECT( eznode::protocol::delegate_vesting_shares_operation, (delegator)(delegatee)(vesting_shares) );
+FC_REFLECT( eznode::protocol::claimRewardBalance_operation, (account)(ECOreward)(EUSDreward)(rewardESCOR) )
+FC_REFLECT( eznode::protocol::delegateESCOR_operation, (delegator)(delegatee)(eScore) );

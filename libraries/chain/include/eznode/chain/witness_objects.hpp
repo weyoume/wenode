@@ -67,8 +67,8 @@ namespace eznode { namespace chain {
          public_key_type   signing_key;
 
          chain_properties  props;
-         price             EZD_exchange_rate;
-         time_point_sec    last_EZD_exchange_update;
+         price             EUSD_exchange_rate;
+         time_point_sec    last_EUSD_exchange_update;
 
 
          /**
@@ -243,7 +243,7 @@ FC_REFLECT( eznode::chain::witness_object,
              (url)(votes)(schedule)(virtual_last_update)(virtual_position)(virtual_scheduled_time)(total_missed)
              (last_aslot)(last_confirmed_block_num)(pow_worker)(signing_key)
              (props)
-             (EZD_exchange_rate)(last_EZD_exchange_update)
+             (EUSD_exchange_rate)(last_EUSD_exchange_update)
              (last_work)
              (running_version)
              (hardfork_version_vote)(hardfork_time_vote)

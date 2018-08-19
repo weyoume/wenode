@@ -489,7 +489,7 @@ namespace graphene { namespace net { namespace detail {
        * from connecting to the same client multiple times (sent in hello messages).
        * Since this was introduced after the hello_message was finalized, this is sent in the
        * user_data field.
-       * While this shares the same underlying type as a public key, it is really just a random
+       * While this eScore the same underlying type as a public key, it is really just a random
        * number.
        */
       node_id_t            _node_id;

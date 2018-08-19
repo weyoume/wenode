@@ -76,9 +76,9 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
    uint32_t             operations = 0;                              ///< Operations evaluated
    uint32_t             transactions = 0;                            ///< Transactions processed
    uint32_t             transfers = 0;                               ///< Account to account transfers
-   share_type           ECO_transferred = 0;                       ///< EZIRA transferred from account to account
-   share_type           EZD_transferred = 0;                         ///< EZD transferred from account to account
-   share_type           EZD_paid_as_interest = 0;                    ///< EZD paid as interest
+   share_type           ECO_transferred = 0;                       ///< ECO transferred from account to account
+   share_type           EUSD_transferred = 0;                         ///< EUSD transferred from account to account
+   share_type           EUSD_paid_as_interest = 0;                    ///< EUSD paid as interest
    uint32_t             paid_accounts_created = 0;                   ///< Accounts created with fee
    uint32_t             mined_accounts_created = 0;                  ///< Accounts mined for free
    uint32_t             root_comments = 0;                           ///< Top level root comments
@@ -92,23 +92,23 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
    uint32_t             new_reply_votes = 0;                         ///< New votes on replies
    uint32_t             changed_reply_votes = 0;                     ///< Changed votes on replies
    uint32_t             payouts = 0;                                 ///< Number of comment payouts
-   share_type           EZD_paid_to_authors = 0;                     ///< Ammount of EZD paid to authors
-   share_type           vests_paid_to_authors = 0;                   ///< Ammount of VESS paid to authors
-   share_type           vests_paid_to_curators = 0;                  ///< Ammount of VESTS paid to curators
-   share_type           liquidity_rewards_paid = 0;                  ///< Ammount of EZIRA paid to market makers
-   uint32_t             transfers_to_vesting = 0;                    ///< Transfers of EZIRA into VESTS
-   share_type           ECO_vested = 0;                            ///< Ammount of EZIRA vested
-   uint32_t             new_vesting_withdrawal_requests = 0;         ///< New vesting withdrawal requests
-   uint32_t             modified_vesting_withdrawal_requests = 0;    ///< Changes to vesting withdrawal requests
-   share_type           vesting_withdraw_rate_delta = 0;
-   uint32_t             vesting_withdrawals_processed = 0;           ///< Number of vesting withdrawals
-   uint32_t             finished_vesting_withdrawals = 0;            ///< Processed vesting withdrawals that are now finished
-   share_type           vests_withdrawn = 0;                         ///< Ammount of VESTS withdrawn to EZIRA
-   share_type           vests_transferred = 0;                       ///< Ammount of VESTS transferred to another account
-   uint32_t             EZD_conversion_requests_created = 0;         ///< EZD conversion requests created
-   share_type           EZD_to_be_converted = 0;                     ///< Amount of EZD to be converted
-   uint32_t             EZD_conversion_requests_filled = 0;          ///< EZD conversion requests filled
-   share_type           ECO_converted = 0;                         ///< Amount of EZIRA that was converted
+   share_type           EUSD_paid_to_authors = 0;                     ///< Ammount of EUSD paid to authors
+   share_type           ESCOR_paid_to_authors = 0;                   ///< Ammount of VESS paid to authors
+   share_type           ESCOR_paid_to_curators = 0;                  ///< Ammount of ESCOR paid to curators
+   share_type           liquidity_rewards_paid = 0;                  ///< Ammount of ECO paid to market makers
+   uint32_t             transfers_to_ECO_fund_for_ESCOR = 0;                    ///< Transfers of ECO into ESCOR
+   share_type           ECO_value_of_ESCOR = 0;                            ///< Ammount of eScore value in ECO
+   uint32_t             new_ESCOR_ECO_fund_withdrawal_requests = 0;         ///< New eScore ECO fund withdrawal requests
+   uint32_t             modified_ESCOR_ECO_fund_withdrawal_requests = 0;    ///< Changes to eScore ECO fund withdrawal requests
+   share_type           ESCORwithdrawRateInECO_delta = 0;
+   uint32_t             ECO_fund_for_ESCOR_withdrawals_processed = 0;           ///< Number of eScore ECO fund withdrawals
+   uint32_t             finished_ECO_fund_for_ESCOR_withdrawals = 0;            ///< Processed eScore ECO fund withdrawals that are now finished
+   share_type           ESCOR_withdrawn = 0;                         ///< Ammount of ESCOR withdrawn to ECO
+   share_type           ESCOR_transferred = 0;                       ///< Ammount of ESCOR transferred to another account
+   uint32_t             EUSD_conversion_requests_created = 0;         ///< EUSD conversion requests created
+   share_type           EUSD_to_be_converted = 0;                     ///< Amount of EUSD to be converted
+   uint32_t             EUSD_conversion_requests_filled = 0;          ///< EUSD conversion requests filled
+   share_type           ECO_converted = 0;                         ///< Amount of ECO that was converted
    uint32_t             limit_orders_created = 0;                    ///< Limit orders created
    uint32_t             limit_orders_filled = 0;                     ///< Limit orders filled
    uint32_t             limit_orders_cancelled = 0;                  ///< Limit orders cancelled
@@ -146,8 +146,8 @@ FC_REFLECT( eznode::blockchain_statistics::bucket_object,
    (transactions)
    (transfers)
    (ECO_transferred)
-   (EZD_transferred)
-   (EZD_paid_as_interest)
+   (EUSD_transferred)
+   (EUSD_paid_as_interest)
    (paid_accounts_created)
    (mined_accounts_created)
    (root_comments)
@@ -161,22 +161,22 @@ FC_REFLECT( eznode::blockchain_statistics::bucket_object,
    (new_reply_votes)
    (changed_reply_votes)
    (payouts)
-   (EZD_paid_to_authors)
-   (vests_paid_to_authors)
-   (vests_paid_to_curators)
+   (EUSD_paid_to_authors)
+   (ESCOR_paid_to_authors)
+   (ESCOR_paid_to_curators)
    (liquidity_rewards_paid)
-   (transfers_to_vesting)
-   (ECO_vested)
-   (new_vesting_withdrawal_requests)
-   (modified_vesting_withdrawal_requests)
-   (vesting_withdraw_rate_delta)
-   (vesting_withdrawals_processed)
-   (finished_vesting_withdrawals)
-   (vests_withdrawn)
-   (vests_transferred)
-   (EZD_conversion_requests_created)
-   (EZD_to_be_converted)
-   (EZD_conversion_requests_filled)
+   (transfers_to_ECO_fund_for_ESCOR)
+   (ECO_value_of_ESCOR)
+   (new_ESCOR_ECO_fund_withdrawal_requests)
+   (modified_ESCOR_ECO_fund_withdrawal_requests)
+   (ESCORwithdrawRateInECO_delta)
+   (ECO_fund_for_ESCOR_withdrawals_processed)
+   (finished_ECO_fund_for_ESCOR_withdrawals)
+   (ESCOR_withdrawn)
+   (ESCOR_transferred)
+   (EUSD_conversion_requests_created)
+   (EUSD_to_be_converted)
+   (EUSD_conversion_requests_filled)
    (ECO_converted)
    (limit_orders_created)
    (limit_orders_filled)

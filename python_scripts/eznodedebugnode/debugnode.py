@@ -14,7 +14,7 @@ from time import sleep
 from steemapi.steemnoderpc import SteemNodeRPC
 
 class DebugNode( object ):
-   """ Wraps the eznode debug node plugin for easier automated testing of the Steem Network"""
+   """ Wraps the eznode debug node plugin for easier automated testing of the Ezira Network"""
 
    def __init__( self, eznode, data_dir, args='', plugins=[], apis=[], eznode_out=None, eznode_err=None ):
       """ Creates a eznode debug node.
@@ -150,7 +150,7 @@ class DebugNode( object ):
 
       The debug node plugin requires a WIF key to sign blocks with. This class uses the key
       5JHNbFNDg834SFj8CMArV6YW7td4zrPzXveqTfaShmYVuYNeK69 which was generated from
-      `get_dev_key steem debug`. Do not use this key on the live chain for any reason.
+      `get_dev_key debug`. Do not use this key on the live chain for any reason.
 
       args:
          count -- The number of new blocks to generate.
@@ -170,7 +170,7 @@ class DebugNode( object ):
 
       The debug node plugin requires a WIF key to sign blocks with. This class uses the key
       5JHNbFNDg834SFj8CMArV6YW7td4zrPzXveqTfaShmYVuYNeK69 which was generated from
-      `get_dev_key steem debug`. Do not use this key on the live chain for any reason.
+      `get_dev_key debug`. Do not use this key on the live chain for any reason.
 
       args:
          time -- The desired new head block time. This is a POSIX Timestmap.

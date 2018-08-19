@@ -46,12 +46,12 @@ typedef chain::convert_request_object                  convert_request_api_obj;
 typedef chain::escrow_object                           escrow_api_obj;
 typedef chain::liquidity_reward_balance_object         liquidity_reward_balance_api_obj;
 typedef chain::limit_order_object                      limit_order_api_obj;
-typedef chain::withdraw_vesting_route_object           withdraw_vesting_route_api_obj;
+typedef chain::withdraw_ESCOR_route_object           withdraw_ESCOR_route_api_obj;
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
 typedef chain::witness_vote_object                     witness_vote_api_obj;
 typedef chain::witness_schedule_object                 witness_schedule_api_obj;
-typedef chain::vesting_delegation_object               vesting_delegation_api_obj;
-typedef chain::vesting_delegation_expiration_object    vesting_delegation_expiration_api_obj;
+typedef chain::ECO_fund_for_ESCOR_delegation_object               ECO_fund_for_ESCOR_delegation_api_obj;
+typedef chain::ECO_fund_for_ESCOR_delegation_expiration_object    ECO_fund_for_ESCOR_delegation_expiration_api_obj;
 typedef chain::reward_fund_object                      reward_fund_api_obj;
 typedef witness::account_bandwidth_object       account_bandwidth_api_obj;
 
@@ -73,24 +73,24 @@ struct comment_api_obj
       last_payout( o.last_payout ),
       depth( o.depth ),
       children( o.children ),
-      net_rshares( o.net_rshares ),
-      abs_rshares( o.abs_rshares ),
-      vote_rshares( o.vote_rshares ),
-      children_abs_rshares( o.children_abs_rshares ),
+      net_rewardESCOR( o.net_rewardESCOR ),
+      abs_rewardESCOR( o.abs_rewardESCOR ),
+      vote_rewardESCOR( o.vote_rewardESCOR ),
+      children_abs_rewardESCOR( o.children_abs_rewardESCOR ),
       cashout_time( o.cashout_time ),
       max_cashout_time( o.max_cashout_time ),
       total_vote_weight( o.total_vote_weight ),
       reward_weight( o.reward_weight ),
       total_payout_value( o.total_payout_value ),
       curator_payout_value( o.curator_payout_value ),
-      author_rewards( o.author_rewards ),
+      authorRewards( o.authorRewards ),
       net_votes( o.net_votes ),
       root_comment( o.root_comment ),
       max_accepted_payout( o.max_accepted_payout ),
-      percent_EZD( o.percent_EZD ),
+      percent_EUSD( o.percent_EUSD ),
       allow_replies( o.allow_replies ),
       allow_votes( o.allow_votes ),
-      allow_curation_rewards( o.allow_curation_rewards )
+      allow_curationRewards( o.allow_curationRewards )
    {
       for( auto& route : o.beneficiaries )
       {
@@ -118,11 +118,11 @@ struct comment_api_obj
    uint8_t           depth = 0;
    uint32_t          children = 0;
 
-   share_type        net_rshares;
-   share_type        abs_rshares;
-   share_type        vote_rshares;
+   share_type        net_rewardESCOR;
+   share_type        abs_rewardESCOR;
+   share_type        vote_rewardESCOR;
 
-   share_type        children_abs_rshares;
+   share_type        children_abs_rewardESCOR;
    time_point_sec    cashout_time;
    time_point_sec    max_cashout_time;
    uint64_t          total_vote_weight = 0;
@@ -132,17 +132,17 @@ struct comment_api_obj
    asset             total_payout_value;
    asset             curator_payout_value;
 
-   share_type        author_rewards;
+   share_type        authorRewards;
 
    int32_t           net_votes = 0;
 
    comment_id_type   root_comment;
 
    asset             max_accepted_payout;
-   uint16_t          percent_EZD = 0;
+   uint16_t          percent_EUSD = 0;
    bool              allow_replies = false;
    bool              allow_votes = false;
-   bool              allow_curation_rewards = false;
+   bool              allow_curationRewards = false;
    vector< beneficiary_route_type > beneficiaries;
 };
 
@@ -174,7 +174,7 @@ struct account_api_obj
       memo_key( a.memo_key ),
       json_metadata( to_string( a.json_metadata ) ),
       proxy( a.proxy ),
-      last_account_update( a.last_account_update ),
+      last_accountUpdate( a.last_accountUpdate ),
       created( a.created ),
       mined( a.mined ),
       owner_challenged( a.owner_challenged ),
@@ -191,27 +191,27 @@ struct account_api_obj
       voting_power( a.voting_power ),
       last_vote_time( a.last_vote_time ),
       balance( a.balance ),
-      savings_balance( a.savings_balance ),
-      EZD_balance( a.EZD_balance ),
-      EZD_seconds( a.EZD_seconds ),
-      EZD_seconds_last_update( a.EZD_seconds_last_update ),
-      EZD_last_interest_payment( a.EZD_last_interest_payment ),
-      savings_EZD_balance( a.savings_EZD_balance ),
-      savings_EZD_seconds( a.savings_EZD_seconds ),
-      savings_EZD_seconds_last_update( a.savings_EZD_seconds_last_update ),
-      savings_EZD_last_interest_payment( a.savings_EZD_last_interest_payment ),
+      ECOsavingsBalance( a.ECOsavingsBalance ),
+      EUSDbalance( a.EUSDbalance ),
+      EUSD_seconds( a.EUSD_seconds ),
+      EUSD_seconds_last_update( a.EUSD_seconds_last_update ),
+      EUSD_last_interest_payment( a.EUSD_last_interest_payment ),
+      EUSDsavingsBalance( a.EUSDsavingsBalance ),
+      savings_EUSD_seconds( a.savings_EUSD_seconds ),
+      savings_EUSD_seconds_last_update( a.savings_EUSD_seconds_last_update ),
+      savings_EUSD_last_interest_payment( a.savings_EUSD_last_interest_payment ),
       savings_withdraw_requests( a.savings_withdraw_requests ),
-      reward_EZD_balance( a.reward_EZD_balance ),
-      reward_ECO_balance( a.reward_ECO_balance ),
-      reward_EZP_balance( a.reward_EZP_balance ),
-      reward_vesting_ECO_balance( a.reward_vesting_ECO_balance ),
-      curation_rewards( a.curation_rewards ),
+      EUSDrewardbalance( a.EUSDrewardbalance ),
+      ECOreward_balance( a.ECOreward_balance ),
+      rewardESCOR_balance( a.rewardESCOR_balance ),
+      rewardESCOR_balance( a.rewardESCOR_balance ),
+      curationRewards( a.curationRewards ),
       posting_rewards( a.posting_rewards ),
-      vesting_shares( a.vesting_shares ),
-      delegated_vesting_shares( a.delegated_vesting_shares ),
-      received_vesting_shares( a.received_vesting_shares ),
-      vesting_withdraw_rate( a.vesting_withdraw_rate ),
-      next_vesting_withdrawal( a.next_vesting_withdrawal ),
+      eScore( a.eScore ),
+      ESCORDelegated( a.ESCORDelegated ),
+      ESCORReceived( a.ESCORReceived ),
+      ESCORwithdrawRateInECO( a.ESCORwithdrawRateInECO ),
+      nextESCORwithdrawalTime( a.nextESCORwithdrawalTime ),
       withdrawn( a.withdrawn ),
       to_withdraw( a.to_withdraw ),
       withdraw_routes( a.withdraw_routes ),
@@ -266,7 +266,7 @@ struct account_api_obj
    account_name_type proxy;
 
    time_point_sec    last_owner_update;
-   time_point_sec    last_account_update;
+   time_point_sec    last_accountUpdate;
 
    time_point_sec    created;
    bool              mined = false;
@@ -286,33 +286,33 @@ struct account_api_obj
    time_point_sec    last_vote_time;
 
    asset             balance;
-   asset             savings_balance;
+   asset             ECOsavingsBalance;
 
-   asset             EZD_balance;
-   uint128_t         EZD_seconds;
-   time_point_sec    EZD_seconds_last_update;
-   time_point_sec    EZD_last_interest_payment;
+   asset             EUSDbalance;
+   uint128_t         EUSD_seconds;
+   time_point_sec    EUSD_seconds_last_update;
+   time_point_sec    EUSD_last_interest_payment;
 
-   asset             savings_EZD_balance;
-   uint128_t         savings_EZD_seconds;
-   time_point_sec    savings_EZD_seconds_last_update;
-   time_point_sec    savings_EZD_last_interest_payment;
+   asset             EUSDsavingsBalance;
+   uint128_t         savings_EUSD_seconds;
+   time_point_sec    savings_EUSD_seconds_last_update;
+   time_point_sec    savings_EUSD_last_interest_payment;
 
    uint8_t           savings_withdraw_requests = 0;
 
-   asset             reward_EZD_balance;
-   asset             reward_ECO_balance;
-   asset             reward_EZP_balance;
-   asset             reward_vesting_ECO_balance;
+   asset             EUSDrewardbalance;
+   asset             ECOreward_balance;
+   asset             rewardESCOR_balance;
+   asset             rewardESCOR_balance;
 
-   share_type        curation_rewards;
+   share_type        curationRewards;
    share_type        posting_rewards;
 
-   asset             vesting_shares;
-   asset             delegated_vesting_shares;
-   asset             received_vesting_shares;
-   asset             vesting_withdraw_rate;
-   time_point_sec    next_vesting_withdrawal;
+   asset             eScore;
+   asset             ESCORDelegated;
+   asset             ESCORReceived;
+   asset             ESCORwithdrawRateInECO;
+   time_point_sec    nextESCORwithdrawalTime;
    share_type        withdrawn;
    share_type        to_withdraw;
    uint16_t          withdraw_routes = 0;
@@ -424,8 +424,8 @@ struct witness_api_obj
       pow_worker( w.pow_worker ),
       signing_key( w.signing_key ),
       props( w.props ),
-      EZD_exchange_rate( w.EZD_exchange_rate ),
-      last_EZD_exchange_update( w.last_EZD_exchange_update ),
+      EUSD_exchange_rate( w.EUSD_exchange_rate ),
+      last_EUSD_exchange_update( w.last_EUSD_exchange_update ),
       votes( w.votes ),
       virtual_last_update( w.virtual_last_update ),
       virtual_position( w.virtual_position ),
@@ -448,8 +448,8 @@ struct witness_api_obj
    uint64_t          pow_worker = 0;
    public_key_type   signing_key;
    chain_properties  props;
-   price             EZD_exchange_rate;
-   time_point_sec    last_EZD_exchange_update;
+   price             EUSD_exchange_rate;
+   time_point_sec    last_EUSD_exchange_update;
    share_type        votes;
    fc::uint128       virtual_last_update;
    fc::uint128       virtual_position;
@@ -512,25 +512,25 @@ FC_REFLECT( eznode::app::comment_api_obj,
              (category)(parent_author)(parent_permlink)
              (title)(body)(json_metadata)(last_update)(created)(active)(last_payout)
              (depth)(children)
-             (net_rshares)(abs_rshares)(vote_rshares)
-             (children_abs_rshares)(cashout_time)(max_cashout_time)
-             (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(author_rewards)(net_votes)(root_comment)
-             (max_accepted_payout)(percent_EZD)(allow_replies)(allow_votes)(allow_curation_rewards)
+             (net_rewardESCOR)(abs_rewardESCOR)(vote_rewardESCOR)
+             (children_abs_rewardESCOR)(cashout_time)(max_cashout_time)
+             (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(authorRewards)(net_votes)(root_comment)
+             (max_accepted_payout)(percent_EUSD)(allow_replies)(allow_votes)(allow_curationRewards)
              (beneficiaries)
           )
 
 FC_REFLECT( eznode::app::account_api_obj,
-             (id)(name)(owner)(active)(posting)(memo_key)(json_metadata)(proxy)(last_owner_update)(last_account_update)
+             (id)(name)(owner)(active)(posting)(memo_key)(json_metadata)(proxy)(last_owner_update)(last_accountUpdate)
              (created)(mined)
              (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recovery_account)(last_account_recovery)(reset_account)
              (comment_count)(lifetime_vote_count)(post_count)(can_vote)(voting_power)(last_vote_time)
              (balance)
-             (savings_balance)
-             (EZD_balance)(EZD_seconds)(EZD_seconds_last_update)(EZD_last_interest_payment)
-             (savings_EZD_balance)(savings_EZD_seconds)(savings_EZD_seconds_last_update)(savings_EZD_last_interest_payment)(savings_withdraw_requests)
-             (reward_EZD_balance)(reward_ECO_balance)(reward_EZP_balance)(reward_vesting_ECO_balance)
-             (vesting_shares)(delegated_vesting_shares)(received_vesting_shares)(vesting_withdraw_rate)(next_vesting_withdrawal)(withdrawn)(to_withdraw)(withdraw_routes)
-             (curation_rewards)
+             (ECOsavingsBalance)
+             (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
+             (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
+             (EUSDrewardbalance)(ECOreward_balance)(rewardESCOR_balance)(rewardESCOR_balance)
+             (eScore)(ESCORDelegated)(ESCORReceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
+             (curationRewards)
              (posting_rewards)
              (proxied_vsf_votes)(witnesses_voted_for)
              (average_bandwidth)(lifetime_bandwidth)(last_bandwidth_update)
@@ -584,7 +584,7 @@ FC_REFLECT( eznode::app::witness_api_obj,
              (url)(votes)(virtual_last_update)(virtual_position)(virtual_scheduled_time)(total_missed)
              (last_aslot)(last_confirmed_block_num)(pow_worker)(signing_key)
              (props)
-             (EZD_exchange_rate)(last_EZD_exchange_update)
+             (EUSD_exchange_rate)(last_EUSD_exchange_update)
              (last_work)
              (running_version)
              (hardfork_version_vote)(hardfork_time_vote)
