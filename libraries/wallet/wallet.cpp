@@ -731,9 +731,9 @@ public:
          asset totalESCOR(0, SYMBOL_ESCOR );
          asset totalEUSD(0, SYMBOL_EUSD );
          for( const auto& a : accounts ) {
-            totalECO += a.balance.to_asset();
-            totalESCOR  += a.ESCOR.to_asset();
-            totalEUSD  += a.EUSDbalance.to_asset();
+            totalECO += a.balance;
+            totalESCOR  += a.ESCOR;
+            totalEUSD  += a.EUSDbalance;
             out << std::left << std::setw( 17 ) << std::string(a.name)
                 << std::right << std::setw(18) << fc::variant(a.balance).as_string() <<" "
                 << std::right << std::setw(26) << fc::variant(a.ESCOR).as_string() <<" "
@@ -1666,10 +1666,10 @@ annotated_signed_transaction wallet_api::delegateESCOR( string delegator, string
    FC_ASSERT( delegator == accounts[0].name, "Delegator account is not right?" );
    FC_ASSERT( delegatee == accounts[1].name, "Delegator account is not right?" );
 
-   delegateESCORon op;
+   delegateESCOR_operation op;
    op.delegator = delegator;
    op.delegatee = delegatee;
-   op.ESCPR = ESCORR
+   op.ESCOR = ESCOR
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -2056,7 +2056,7 @@ annotated_signed_transaction wallet_api::withdrawESCOR(string from, asset ESCORr
    FC_ASSERT( !is_locked() );
     withdrawESCOR_operation op;
     op.account = from;
-    op.ESCPR = ESCORR
+    op.ESCOR = ESCOR
 
     signed_transaction tx;
     tx.operations.push_back( op );
@@ -2161,13 +2161,13 @@ annotated_signed_transaction wallet_api::decline_voting_rights( string account, 
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::claimRewardBalance( string account, asset ECOreward, asset EUSDrewardD, asset ESCORreward, bool broadcast )
+annotated_signed_transaction wallet_api::claimRewardBalance( string account, asset ECOreward, asset EUSDreward, asset ESCORreward, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
    claimRewardBalance_operation op;
    op.account = account;
    op.ECOreward = ECOreward;
-   op.EUSDrewardD = EUSDreward;
+   op.EUSDreward = EUSDreward;
    op.ESCORreward = ESCORreward;
 
    signed_transaction tx;
