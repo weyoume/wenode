@@ -1372,7 +1372,7 @@ BOOST_AUTO_TEST_CASE( transferECOtoESCORfund_apply )
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
       BOOST_REQUIRE( bob.ESCOR.amount.value == bob_ESCOR.amount.value );
       BOOST_REQUIRE( gpo.totalECOfundForESCOR.amount.value == ECOfundForESCORvalueBalance.amount.value );
-      BOOST_REQUIRE( gpo.totalESCOR.amount.value == totalESCORE.amount.value );
+      BOOST_REQUIRE( gpo.totalESCOR.amount.value == totalESCOR.amount.value );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -6316,7 +6316,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 
       generate_block();
 
-      auto sam_escore = db.get_account( "sam" ).ESCOR;
+      auto samESCOR = db.get_account( "sam" ).ESCOR;
 
       BOOST_TEST_MESSAGE( "--- Test failure when delegating 0 ESCOR" );
       tx.clear();
@@ -6329,7 +6329,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 
       BOOST_TEST_MESSAGE( "--- Testing failure delegating more ESCOR than account has." );
       tx.clear();
-      op.ESCOR = asset( sam_escore.amount + 1, SYMBOL_ESCOR );
+      op.ESCOR = asset( samESCOR.amount + 1, SYMBOL_ESCOR );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
@@ -6337,16 +6337,16 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 
       BOOST_TEST_MESSAGE( "--- Test failure delegating ESCOR that are part of a power down" );
       tx.clear();
-      sam_escore = asset( sam_escore.amount / 2, SYMBOL_ESCOR );
+      samESCOR = asset( samESCOR.amount / 2, SYMBOL_ESCOR );
       withdrawESCOR_operation withdraw;
       withdraw.account = "sam";
-      withdraw.ESCOR = sam_escore;
+      withdraw.ESCOR = samESCOR;
       tx.operations.push_back( withdraw );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.clear();
-      op.ESCOR = asset( sam_escore.amount + 2, SYMBOL_ESCOR );
+      op.ESCOR = asset( samESCOR.amount + 2, SYMBOL_ESCOR );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
@@ -6359,15 +6359,15 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 
 
       BOOST_TEST_MESSAGE( "--- Test failure powering down ESCOR that are delegated" );
-      sam_escore.amount += 1000;
-      op.ESCOR = sam_escore;
+      samESCOR.amount += 1000;
+      op.ESCOR = samESCOR;
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.clear();
-      withdraw.ESCOR = asset( sam_escore.amount, SYMBOL_ESCOR );
+      withdraw.ESCOR = asset( samESCOR.amount, SYMBOL_ESCOR );
       tx.operations.push_back( withdraw );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
@@ -6385,9 +6385,9 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 
       BOOST_REQUIRE( exp_obj != end );
       BOOST_REQUIRE( exp_obj->delegator == "sam" );
-      BOOST_REQUIRE( exp_obj->ESCOR == sam_escore );
+      BOOST_REQUIRE( exp_obj->ESCOR == samESCOR );
       BOOST_REQUIRE( exp_obj->expiration == db.head_block_time() + CASHOUT_WINDOW_SECONDS );
-      BOOST_REQUIRE( db.get_account( "sam" ).ESCORDelegated == sam_escore );
+      BOOST_REQUIRE( db.get_account( "sam" ).ESCORDelegated == samESCOR );
       BOOST_REQUIRE( db.get_account( "dave" ).ESCORReceived == ASSET( "0.000000 ESCOR" ) );
       delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
       BOOST_REQUIRE( delegation == nullptr );
