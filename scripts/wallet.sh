@@ -1,1 +1,1 @@
-docker exec -it ezira-test-node /usr/local/eznode/bin/cli_wallet
+docker exec -it ezira-test-node /usr/local/eznode/bin/ezwallet
