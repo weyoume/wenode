@@ -528,9 +528,9 @@ namespace eznode { namespace protocol {
    void claimRewardBalance_operation::validate()const
    {
       validate_account_name( account );
-      FC_ASSERT( is_asset_type( ECOreward, SYMBOL_ECO ), "Reward_ECO must be ECO" );
+      FC_ASSERT( is_asset_type( ECOreward, SYMBOL_ECO ), "ECOreward must be ECO" );
       FC_ASSERT( is_asset_type( EUSDreward, SYMBOL_EUSD ), "EUSDreward must be EUSD" );
-      FC_ASSERT( is_asset_type( ESCORreward, SYMBOL_ESCOR ), "Reward_ESCOR must be ESCOR" );
+      FC_ASSERT( is_asset_type( ESCORreward, SYMBOL_ESCOR ), "ESCORreward must be ESCOR" );
       FC_ASSERT( ECOreward.amount >= 0, "Cannot claim a negative amount" );
       FC_ASSERT( EUSDreward.amount >= 0, "Cannot claim a negative amount" );
       FC_ASSERT( ESCORreward.amount >= 0, "Cannot claim a negative amount" );

@@ -1042,7 +1042,7 @@ asset database::createECOfundForESCOR( const account_object& to_account, asset E
        *
        *  128 bit math is requred due to multiplying of 64 bit numbers. This is done in asset and price.
        */
-      asset new_ECO_fund_for_ESCOR = ECO * ( to_reward_balance ? cprops.get_reward_ESCOR_price() : cprops.get_ESCOR_price() );
+      asset new_ECO_fund_for_ESCOR = ECO * ( to_reward_balance ? cprops.get_ESCORreward_price() : cprops.get_ESCOR_price() );
 
       modify( to_account, [&]( account_object& to )
       {
@@ -1300,9 +1300,9 @@ void database::clear_null_account_balance()
 }
 
 /**
- * This method updates total_reward_ESCOR2 on DGPO, and children_ESCORreward2 on comments, when a comment's ESCORreward2 changes
+ * This method updates total_ESCORreward2 on DGPO, and children_ESCORreward2 on comments, when a comment's ESCORreward2 changes
  * from old_ESCORreward2 to new_ESCORreward2.  Maintaining invariants that children_ESCORreward2 is the sum of all descendants' ESCORreward2,
- * and dgpo.total_reward_ESCOR2 is the total number of ESCORreward2 outstanding.
+ * and dgpo.total_ESCORreward2 is the total number of ESCORreward2 outstanding.
  */
 void database::adjust_ESCORreward2( const comment_object& c, fc::uint128_t old_ESCORreward2, fc::uint128_t new_ESCORreward2 )
 {
@@ -1310,8 +1310,8 @@ void database::adjust_ESCORreward2( const comment_object& c, fc::uint128_t old_E
    const auto& dgpo = get_dynamic_global_properties();
    modify( dgpo, [&]( dynamic_global_property_object& p )
    {
-      p.total_reward_ESCOR2 -= old_ESCORreward2;
-      p.total_reward_ESCOR2 += new_ESCORreward2;
+      p.total_ESCORreward2 -= old_ESCORreward2;
+      p.total_ESCORreward2 += new_ESCORreward2;
    } );
 }
 
@@ -1732,7 +1732,7 @@ void database::process_comment_cashout()
       if( has_hardfork( HARDFORK_0_17__771 ) )
       {
          auto fund_id = get_reward_fund( *current ).id._id;
-         ctx.total_reward_ESCOR2 = funds[ fund_id ].recent_claims;
+         ctx.total_ESCORreward2 = funds[ fund_id ].recent_claims;
          ctx.total_reward_fund_ECO = funds[ fund_id ].reward_balance;
          funds[ fund_id ].ECO_awarded += cashout_comment_helper( ctx, *current );
       }
@@ -1742,7 +1742,7 @@ void database::process_comment_cashout()
          while( itr != com_by_root.end() && itr->root_comment == current->root_comment )
          {
             const auto& comment = *itr; ++itr;
-            ctx.total_reward_ESCOR2 = gpo.total_reward_ESCOR2;
+            ctx.total_ESCORreward2 = gpo.total_ESCORreward2;
             ctx.total_reward_fund_ECO = gpo.total_reward_fund_ECO;
 
             auto reward = cashout_comment_helper( ctx, comment );
@@ -3796,7 +3796,7 @@ void database::apply_hardfork( uint32_t hardfork )
             modify( gpo, [&]( dynamic_global_property_object& g )
             {
                g.total_reward_fund_ECO = asset( 0, SYMBOL_ECO );
-               g.total_reward_ESCOR2 = 0;
+               g.total_ESCORreward2 = 0;
             });
 
             /*
@@ -4044,7 +4044,7 @@ void database::perform_ESCOR_split( uint32_t magnitude )
       modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& d )
       {
          d.totalESCOR.amount *= magnitude;
-         d.total_reward_ESCOR2 = 0;
+         d.total_ESCORreward2 = 0;
       } );
 
       // Need to update all ESCOR in accounts and the total ESCOR in the dgpo
