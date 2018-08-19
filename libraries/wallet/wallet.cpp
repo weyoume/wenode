@@ -1669,7 +1669,7 @@ annotated_signed_transaction wallet_api::delegateESCOR( string delegator, string
    delegateESCOR_operation op;
    op.delegator = delegator;
    op.delegatee = delegatee;
-   op.ESCOR = ESCOR
+   op.ESCOR = ESCOR;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -2051,7 +2051,7 @@ annotated_signed_transaction wallet_api::transferECOtoESCORfund(string from, str
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::withdrawESCOR(string from, asset ESCORroadcast )
+annotated_signed_transaction wallet_api::withdrawESCOR(string from, asset ESCOR, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
     withdrawESCOR_operation op;
