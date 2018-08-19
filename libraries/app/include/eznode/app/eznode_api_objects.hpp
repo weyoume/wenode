@@ -204,7 +204,7 @@ struct account_api_obj
       EUSDrewardbalance( a.EUSDrewardbalance ),
       ECOrewardBalance( a.ECOrewardBalance ),
       ESCORrewardBalance( a.ESCORrewardBalance ),
-      ESCORrewardBalance( a.ESCORrewardBalance ),
+      ESCORrewardBalanceInECO( a.ESCORrewardBalanceInECO ),
       curationRewards( a.curationRewards ),
       posting_rewards( a.posting_rewards ),
       ESCOR( a.ESCOR ),
@@ -302,7 +302,7 @@ struct account_api_obj
 
    asset             EUSDrewardbalance;
    asset             ECOrewardBalance;
-   asset             ESCORrewardBalance;
+   asset             ESCORrewardBalanceInECO;
    asset             ESCORrewardBalance;
 
    share_type        curationRewards;
@@ -528,7 +528,7 @@ FC_REFLECT( eznode::app::account_api_obj,
              (ECOsavingsBalance)
              (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
              (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
-             (EUSDrewardbalance)(ECOrewardBalance)(ESCORrewardBalance)(ESCORrewardBalance)
+             (EUSDrewardbalance)(ECOrewardBalance)(ESCORrewardBalance)(ESCORrewardBalanceInECO)
              (ESCOR)(ESCORDelegated)(ESCORReceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)

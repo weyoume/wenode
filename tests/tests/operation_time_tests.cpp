@@ -2909,7 +2909,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
          {
             a.ECOrewardBalance = ASSET( "1.000 TESTS" );
             a.EUSDrewardbalance = ASSET( "1.000 TBD" );
-            a.ESCORrewardBalance = ASSET( "1.000000 TP" );
+            a.ESCORrewardBalanceInECO = ASSET( "1.000000 TP" );
             a.ESCORrewardBalance = ASSET( "1.000 TESTS" );
          });
 
@@ -2932,7 +2932,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDsavingsBalance == ASSET( "5.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardbalance == ASSET( "1.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOrewardBalance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "1.000000 TP" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalanceInECO == ASSET( "1.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "2.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "3.000 TBD" ) );
@@ -2948,7 +2948,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDsavingsBalance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardbalance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOrewardBalance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "0.000000 TP" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalanceInECO == ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "2.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "3.000 TBD" ) );
