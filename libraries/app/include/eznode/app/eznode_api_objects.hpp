@@ -219,10 +219,10 @@ struct account_api_obj
       last_post( a.last_post ),
       last_root_post( a.last_root_post )
    {
-      size_t n = a.proxied_vsf_votes.size();
-      proxied_vsf_votes.reserve( n );
+      size_t n = a.proxied_ESCORfundECObalance_votes.size();
+      proxied_ESCORfundECObalance_votes.reserve( n );
       for( size_t i=0; i<n; i++ )
-         proxied_vsf_votes.push_back( a.proxied_vsf_votes[i] );
+         proxied_ESCORfundECObalance_votes.push_back( a.proxied_ESCORfundECObalance_votes[i] );
 
       const auto& auth = db.get< account_authority_object, by_account >( name );
       owner = authority( auth.owner );
@@ -317,7 +317,7 @@ struct account_api_obj
    share_type        to_withdraw;
    uint16_t          withdraw_routes = 0;
 
-   vector< share_type > proxied_vsf_votes;
+   vector< share_type > proxied_ESCORfundECObalance_votes;
 
    uint16_t          witnesses_voted_for;
 
@@ -532,7 +532,7 @@ FC_REFLECT( eznode::app::account_api_obj,
              (ESCOR)(ESCORDelegated)(ESCORReceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)
-             (proxied_vsf_votes)(witnesses_voted_for)
+             (proxied_ESCORfundECObalance_votes)(witnesses_voted_for)
              (average_bandwidth)(lifetime_bandwidth)(last_bandwidth_update)
              (average_market_bandwidth)(lifetime_market_bandwidth)(last_market_bandwidth_update)
              (last_post)(last_root_post)

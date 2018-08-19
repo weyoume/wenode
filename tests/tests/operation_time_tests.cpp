@@ -1149,24 +1149,24 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       BOOST_TEST_MESSAGE( "Checking account balances" );
 
       auto alice_EUSDtotal = alice_starting_EUSD + asset( alice_pays_alice_EUSD + bob_pays_alice_EUSD + dave_pays_alice_EUSD, SYMBOL_ECO ) * exchange_rate;
-      auto alice_totalECO_fund_for_ESCOR = alice_starting_ECO_fund_for_ESCOR + asset( alice_pays_alice_ESCOR + bob_pays_alice_ESCOR + dave_pays_alice_ESCOR + alice_vote_alice_reward.amount + alice_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
+      auto alice_totalESCOR = alice_starting_ECO_fund_for_ESCOR + asset( alice_pays_alice_ESCOR + bob_pays_alice_ESCOR + dave_pays_alice_ESCOR + alice_vote_alice_reward.amount + alice_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance.amount.value == alice_EUSDtotal.amount.value );
-      BOOST_REQUIRE( db.get_account( "alice" ).ESCOR.amount.value == alice_totalECO_fund_for_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCOR.amount.value == alice_totalESCOR.amount.value );
 
       auto bob_EUSDtotal = bob_starting_EUSD + asset( bob_pays_bob_EUSD + dave_pays_bob_EUSD, SYMBOL_ECO ) * exchange_rate;
-      auto bob_totalECO_fund_for_ESCOR = bob_starting_ECO_fund_for_ESCOR + asset( bob_pays_bob_ESCOR + dave_pays_bob_ESCOR + bob_vote_alice_reward.amount + bob_vote_bob_reward.amount + bob_vote_dave_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
+      auto bob_totalESCOR = bob_starting_ECO_fund_for_ESCOR + asset( bob_pays_bob_ESCOR + dave_pays_bob_ESCOR + bob_vote_alice_reward.amount + bob_vote_bob_reward.amount + bob_vote_dave_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
       BOOST_REQUIRE( db.get_account( "bob" ).EUSDbalance.amount.value == bob_EUSDtotal.amount.value );
-      BOOST_REQUIRE( db.get_account( "bob" ).ESCOR.amount.value == bob_totalECO_fund_for_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "bob" ).ESCOR.amount.value == bob_totalESCOR.amount.value );
 
       auto sam_EUSDtotal = sam_starting_EUSD + asset( dave_pays_sam_EUSD, SYMBOL_ECO ) * exchange_rate;
-      auto sam_totalECO_fund_for_ESCOR = bob_starting_ECO_fund_for_ESCOR + asset( dave_pays_sam_ESCOR + sam_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
+      auto sam_totalESCOR = bob_starting_ECO_fund_for_ESCOR + asset( dave_pays_sam_ESCOR + sam_vote_bob_reward.amount, SYMBOL_ECO ) * gpo.get_ESCOR_price();
       BOOST_REQUIRE( db.get_account( "sam" ).EUSDbalance.amount.value == sam_EUSDtotal.amount.value );
-      BOOST_REQUIRE( db.get_account( "sam" ).ESCOR.amount.value == sam_totalECO_fund_for_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "sam" ).ESCOR.amount.value == sam_totalESCOR.amount.value );
 
       auto dave_EUSDtotal = dave_starting_EUSD + asset( dave_pays_dave_EUSD, SYMBOL_ECO ) * exchange_rate;
-      auto dave_totalECO_fund_for_ESCOR = dave_starting_ECO_fund_for_ESCOR + asset( dave_pays_dave_ESCOR, SYMBOL_ECO ) * gpo.get_ESCOR_price();
+      auto dave_totalESCOR = dave_starting_ECO_fund_for_ESCOR + asset( dave_pays_dave_ESCOR, SYMBOL_ECO ) * gpo.get_ESCOR_price();
       BOOST_REQUIRE( db.get_account( "dave" ).EUSDbalance.amount.value == dave_EUSDtotal.amount.value );
-      BOOST_REQUIRE( db.get_account( "dave" ).ESCOR.amount.value == dave_totalECO_fund_for_ESCOR.amount.value );
+      BOOST_REQUIRE( db.get_account( "dave" ).ESCOR.amount.value == dave_totalESCOR.amount.value );
    }
    FC_LOG_AND_RETHROW()
 }

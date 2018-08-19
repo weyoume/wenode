@@ -1032,7 +1032,7 @@ void account_witness_proxy_evaluator::do_apply( const account_witness_proxy_oper
    std::array<share_type, MAX_PROXY_RECURSION_DEPTH+1> delta;
    delta[0] = -account.ESCOR.amount;
    for( int i = 0; i < MAX_PROXY_RECURSION_DEPTH; ++i )
-      delta[i+1] = -account.proxied_vsf_votes[i];
+      delta[i+1] = -account.proxied_ESCORfundECObalance_votes[i];
    _db.adjust_proxied_witness_votes( account, delta );
 
    if( o.proxy.size() ) {
