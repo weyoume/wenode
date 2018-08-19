@@ -437,7 +437,7 @@ class database_api
 
 } }
 
-FC_REFLECT( eznode::app::order, (order_price)(real_price)(ECO)(eUSD)(created) );
+FC_REFLECT( eznode::app::order, (order_price)(real_price)(ECO)(EUSD)(created) );
 FC_REFLECT( eznode::app::order_book, (asks)(bids) );
 FC_REFLECT( eznode::app::scheduled_hardfork, (hf_version)(live_time) );
 FC_REFLECT( eznode::app::liquidity_balance, (account)(weight) );

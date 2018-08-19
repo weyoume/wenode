@@ -1004,7 +1004,7 @@ std::pair< asset, asset > database::create_EUSD( const account_object& to_accoun
          }
 
          adjust_supply( asset( -to_EUSD, SYMBOL_ECO ) );
-         adjust_supply( eUSD );
+         adjust_supply( EUSD );
          assets.first = EUSD;
          assets.second = to_ECO;
       }
@@ -1042,37 +1042,37 @@ asset database::createECOfundForESCOR( const account_object& to_account, asset E
        *
        *  128 bit math is requred due to multiplying of 64 bit numbers. This is done in asset and price.
        */
-      asset new_ECO_fund_for_ESCOR = ECO * ( to_reward_balance ? cprops.get_ESCORreward_price() : cprops.get_ESCOR_price() );
+      asset newESCOR = ECO * ( to_reward_balance ? cprops.get_ESCORreward_price() : cprops.get_ESCOR_price() );
 
       modify( to_account, [&]( account_object& to )
       {
          if( to_reward_balance )
          {
-            to.ESCORrewardBalance += new_ECO_fund_for_ESCOR;
+            to.ESCORrewardBalance += newESCOR;
             to.ESCORrewardBalanceInECO += ECO;
          }
          else
-            to.ESCORrewardBalance += new_ECO_fund_for_ESCOR;
+            to.ESCORrewardBalance += newESCOR;
       } );
 
       modify( cprops, [&]( dynamic_global_property_object& props )
       {
          if( to_reward_balance )
          {
-            props.pending_rewarded_ESCOR += new_ECO_fund_for_ESCOR;
+            props.pending_rewarded_ESCOR += newESCOR;
             props.pending_rewarded_ESCORvalueInECO += ECO;
          }
          else
          {
             props.totalECOfundForESCOR += ECO;
-            props.totalESCORInESCOR += new_ECO_fund_for_ESCOR;
+            props.totalESCOR += newESCOR;
          }
       } );
 
       if( !to_reward_balance )
-         adjust_proxied_witness_votes( to_account, new_ECO_fund_for_ESCOR.amount );
+         adjust_proxied_witness_votes( to_account, newESCOR.amount );
 
-      return new_ECO_fund_for_ESCOR;
+      return newESCOR;
    }
    FC_CAPTURE_AND_RETHROW( (to_account.name)(ECO) )
 }
@@ -1282,7 +1282,7 @@ void database::clear_null_account_balance()
       modify( gpo, [&]( dynamic_global_property_object& g )
       {
          g.pending_rewarded_ESCOR -= null_account.ESCORrewardBalance;
-         g.pending_rewarded_ESCORvalueInECO -= null_account.ESCORrewardBalanceECO;
+         g.pending_rewarded_ESCORvalueInECO -= null_account.ESCORrewardBalanceInECO;
       });
 
       modify( null_account, [&]( account_object& a )
@@ -3453,10 +3453,10 @@ void database::adjust_supply( const asset& delta, bool adjust_ECO_fund_for_ESCOR
       {
          case SYMBOL_ECO:
          {
-            asset new_ECO_fund_for_ESCOR( (adjust_ECO_fund_for_ESCOR && delta.amount > 0) ? delta.amount * 9 : 0, SYMBOL_ECO );
-            props.current_supply += delta + new_ECO_fund_for_ESCOR;
-            props.virtual_supply += delta + new_ECO_fund_for_ESCOR;
-            props.totalECOfundForESCOR += new_ECO_fund_for_ESCOR;
+            asset newESCOR( (adjust_ECO_fund_for_ESCOR && delta.amount > 0) ? delta.amount * 9 : 0, SYMBOL_ECO );
+            props.current_supply += delta + newESCOR;
+            props.virtual_supply += delta + newESCOR;
+            props.totalECOfundForESCOR += newESCOR;
             assert( props.current_supply.amount.value >= 0 );
             break;
          }
