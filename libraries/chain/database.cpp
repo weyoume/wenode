@@ -1049,10 +1049,10 @@ asset database::createECOfundForESCOR( const account_object& to_account, asset E
          if( to_reward_balance )
          {
             to.ESCORrewardBalance += new_ECO_fund_for_ESCOR;
-            to.ESCORrewardBalance += ECO;
+            to.ESCORrewardBalanceInECO += ECO;
          }
          else
-            to.ESCOR += new_ECO_fund_for_ESCOR;
+            to.ESCORrewardBalance += new_ECO_fund_for_ESCOR;
       } );
 
       modify( cprops, [&]( dynamic_global_property_object& props )
@@ -1065,7 +1065,7 @@ asset database::createECOfundForESCOR( const account_object& to_account, asset E
          else
          {
             props.totalECOfundForESCOR += ECO;
-            props.totalESCOR += new_ECO_fund_for_ESCOR;
+            props.totalESCORInESCOR += new_ECO_fund_for_ESCOR;
          }
       } );
 
@@ -1273,21 +1273,21 @@ void database::clear_null_account_balance()
       adjust_reward_balance( null_account, -null_account.EUSDrewardbalance );
    }
 
-   if( null_account.ESCORrewardBalance.amount > 0 )
+   if( null_account.ESCORrewardBalanceInECO.amount > 0 )
    {
       const auto& gpo = get_dynamic_global_properties();
 
-      totalECO += null_account.ESCORrewardBalance;
+      totalECO += null_account.ESCORrewardBalanceInECO;
 
       modify( gpo, [&]( dynamic_global_property_object& g )
       {
          g.pending_rewarded_ESCOR -= null_account.ESCORrewardBalance;
-         g.pending_rewarded_ESCORvalueInECO -= null_account.ESCORrewardBalance;
+         g.pending_rewarded_ESCORvalueInECO -= null_account.ESCORrewardBalanceECO;
       });
 
       modify( null_account, [&]( account_object& a )
       {
-         a.ESCORrewardBalance.amount = 0;
+         a.ESCORrewardBalanceInECO.amount = 0;
          a.ESCORrewardBalance.amount = 0;
       });
    }

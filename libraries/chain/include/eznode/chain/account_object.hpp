@@ -85,7 +85,7 @@ namespace eznode { namespace chain {
          uint8_t           savings_withdraw_requests = 0;
          ///@}
 
-         asset             ESCORrewardBalance = asset( 0, SYMBOL_ECO );
+         asset             ESCORrewardBalanceInECO = asset( 0, SYMBOL_ECO );
          asset             ECOrewardBalance = asset( 0, SYMBOL_ECO );
          asset             ESCORrewardBalance = asset( 0, SYMBOL_ESCOR );
          asset             EUSDrewardbalance = asset( 0, SYMBOL_EUSD );
@@ -466,7 +466,7 @@ FC_REFLECT( eznode::chain::account_object,
              (ECOsavingsBalance)
              (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
              (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
-             (ECOrewardBalance)(EUSDrewardbalance)(ESCORrewardBalance)(ESCORrewardBalance)
+             (ECOrewardBalance)(EUSDrewardbalance)(ESCORrewardBalance)(ESCORrewardBalanceInECO)
              (ESCOR)(ESCORDelegated)(ESCORReceived)
              (ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
