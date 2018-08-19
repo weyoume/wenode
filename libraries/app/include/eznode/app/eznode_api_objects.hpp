@@ -73,10 +73,10 @@ struct comment_api_obj
       last_payout( o.last_payout ),
       depth( o.depth ),
       children( o.children ),
-      net_rewardESCOR( o.net_rewardESCOR ),
-      abs_rewardESCOR( o.abs_rewardESCOR ),
-      vote_rewardESCOR( o.vote_rewardESCOR ),
-      children_abs_rewardESCOR( o.children_abs_rewardESCOR ),
+      net_ESCORreward( o.net_ESCORreward ),
+      abs_ESCORreward( o.abs_ESCORreward ),
+      vote_ESCORreward( o.vote_ESCORreward ),
+      children_abs_ESCORreward( o.children_abs_ESCORreward ),
       cashout_time( o.cashout_time ),
       max_cashout_time( o.max_cashout_time ),
       total_vote_weight( o.total_vote_weight ),
@@ -118,11 +118,11 @@ struct comment_api_obj
    uint8_t           depth = 0;
    uint32_t          children = 0;
 
-   share_type        net_rewardESCOR;
-   share_type        abs_rewardESCOR;
-   share_type        vote_rewardESCOR;
+   share_type        net_ESCORreward;
+   share_type        abs_ESCORreward;
+   share_type        vote_ESCORreward;
 
-   share_type        children_abs_rewardESCOR;
+   share_type        children_abs_ESCORreward;
    time_point_sec    cashout_time;
    time_point_sec    max_cashout_time;
    uint64_t          total_vote_weight = 0;
@@ -202,9 +202,9 @@ struct account_api_obj
       savings_EUSD_last_interest_payment( a.savings_EUSD_last_interest_payment ),
       savings_withdraw_requests( a.savings_withdraw_requests ),
       EUSDrewardbalance( a.EUSDrewardbalance ),
-      ECOreward_balance( a.ECOreward_balance ),
-      rewardESCOR_balance( a.rewardESCOR_balance ),
-      rewardESCOR_balance( a.rewardESCOR_balance ),
+      ECOrewardBalance( a.ECOrewardBalance ),
+      ESCORrewardBalance( a.ESCORrewardBalance ),
+      ESCORrewardBalance( a.ESCORrewardBalance ),
       curationRewards( a.curationRewards ),
       posting_rewards( a.posting_rewards ),
       eScore( a.eScore ),
@@ -301,9 +301,9 @@ struct account_api_obj
    uint8_t           savings_withdraw_requests = 0;
 
    asset             EUSDrewardbalance;
-   asset             ECOreward_balance;
-   asset             rewardESCOR_balance;
-   asset             rewardESCOR_balance;
+   asset             ECOrewardBalance;
+   asset             ESCORrewardBalance;
+   asset             ESCORrewardBalance;
 
    share_type        curationRewards;
    share_type        posting_rewards;
@@ -512,8 +512,8 @@ FC_REFLECT( eznode::app::comment_api_obj,
              (category)(parent_author)(parent_permlink)
              (title)(body)(json_metadata)(last_update)(created)(active)(last_payout)
              (depth)(children)
-             (net_rewardESCOR)(abs_rewardESCOR)(vote_rewardESCOR)
-             (children_abs_rewardESCOR)(cashout_time)(max_cashout_time)
+             (net_ESCORreward)(abs_ESCORreward)(vote_ESCORreward)
+             (children_abs_ESCORreward)(cashout_time)(max_cashout_time)
              (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(authorRewards)(net_votes)(root_comment)
              (max_accepted_payout)(percent_EUSD)(allow_replies)(allow_votes)(allow_curationRewards)
              (beneficiaries)
@@ -528,7 +528,7 @@ FC_REFLECT( eznode::app::account_api_obj,
              (ECOsavingsBalance)
              (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
              (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
-             (EUSDrewardbalance)(ECOreward_balance)(rewardESCOR_balance)(rewardESCOR_balance)
+             (EUSDrewardbalance)(ECOrewardBalance)(ESCORrewardBalance)(ESCORrewardBalance)
              (eScore)(ESCORDelegated)(ESCORReceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)

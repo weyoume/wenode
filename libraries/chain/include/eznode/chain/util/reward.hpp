@@ -21,7 +21,7 @@ using fc::uint128_t;
 
 struct comment_reward_context
 {
-   share_type rewardESCOR;
+   share_type ESCORreward;
    uint16_t   reward_weight = 0;
    asset      max_EUSD;
    uint128_t  total_reward_ESCOR2;
@@ -38,7 +38,7 @@ inline uint128_t get_content_constant_s()
    return CONTENT_CONSTANT_HF0; // looking good for posters
 }
 
-uint128_t evaluate_reward_curve( const uint128_t& rewardESCOR, const curve_id& curve = quadratic, const uint128_t& content_constant = CONTENT_CONSTANT_HF0 );
+uint128_t evaluate_reward_curve( const uint128_t& ESCORreward, const curve_id& curve = quadratic, const uint128_t& content_constant = CONTENT_CONSTANT_HF0 );
 
 inline bool is_comment_payout_dust( const price& p, uint64_t ECOpayout )
 {
@@ -48,7 +48,7 @@ inline bool is_comment_payout_dust( const price& p, uint64_t ECOpayout )
 } } } // eznode::chain::util
 
 FC_REFLECT( eznode::chain::util::comment_reward_context,
-   (rewardESCOR)
+   (ESCORreward)
    (reward_weight)
    (max_EUSD)
    (total_reward_ESCOR2)

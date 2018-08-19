@@ -1011,7 +1011,7 @@ vector<vote_state> database_api::get_active_votes( string author, string permlin
          vote_state vstate;
          vstate.voter = vo.name;
          vstate.weight = itr->weight;
-         vstate.rewardESCOR = itr->rewardESCOR;
+         vstate.ESCORreward = itr->ESCORreward;
          vstate.percent = itr->vote_percent;
          vstate.time = itr->last_update;
 
@@ -1047,7 +1047,7 @@ vector<account_vote> database_api::get_account_votes( string voter )const
          account_vote avote;
          avote.authorperm = vo.author+"/"+to_string( vo.permlink );
          avote.weight = itr->weight;
-         avote.rewardESCOR = itr->rewardESCOR;
+         avote.ESCORreward = itr->ESCORreward;
          avote.percent = itr->vote_percent;
          avote.time = itr->last_update;
          result.push_back(avote);
@@ -1099,12 +1099,12 @@ void database_api::set_pending_payout( discussion& d )const
       if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       {
          const auto& rf = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) );
-         veScore = d.net_rewardESCOR.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_rewardESCOR.value, rf.authorReward_curve, rf.content_constant ) : 0;
+         veScore = d.net_ESCORreward.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_ESCORreward.value, rf.authorReward_curve, rf.content_constant ) : 0;
       }
       else
-         veScore = d.net_rewardESCOR.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_rewardESCOR.value ) : 0;
+         veScore = d.net_ESCORreward.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_ESCORreward.value ) : 0;
 
-      u256 r2 = to256(veScore); //to256(abs_net_rewardESCOR);
+      u256 r2 = to256(veScore); //to256(abs_net_ESCORreward);
       r2 *= pot.amount.value;
       r2 /= total_r2;
 
@@ -1391,10 +1391,10 @@ vector<discussion> database_api::get_discussions_by_payout( const discussion_que
       auto tag = fc::to_lower( query.tag );
       auto parent = get_parent( query );
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_net_rewardESCOR>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_net_ESCORreward>();
       auto tidx_itr = tidx.lower_bound( tag );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rewardESCOR <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_ESCORreward <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1409,10 +1409,10 @@ vector<discussion> database_api::get_post_discussions_by_payout( const discussio
       auto tag = fc::to_lower( query.tag );
       auto parent = comment_id_type();
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_rewardESCOR>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_ESCORreward>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, true ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rewardESCOR <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_ESCORreward <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1427,10 +1427,10 @@ vector<discussion> database_api::get_comment_discussions_by_payout( const discus
       auto tag = fc::to_lower( query.tag );
       auto parent = comment_id_type(1);
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_rewardESCOR>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_ESCORreward>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, false ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rewardESCOR <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_ESCORreward <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1466,7 +1466,7 @@ vector<discussion> database_api::get_discussions_by_trending( const discussion_q
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_trending>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, std::numeric_limits<double>::max() )  );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_rewardESCOR <= 0; } );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_ESCORreward <= 0; } );
    });
 }
 
@@ -1522,7 +1522,7 @@ vector<discussion> database_api::get_discussions_by_cashout( const discussion_qu
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_cashout>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, fc::time_point::now() - fc::minutes(60) ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rewardESCOR < 0; });
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_ESCORreward < 0; });
    });
 }
 
@@ -1576,7 +1576,7 @@ vector<discussion> database_api::get_discussions_by_hot( const discussion_query&
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_hot>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, std::numeric_limits<double>::max() )  );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_rewardESCOR <= 0; } );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_ESCORreward <= 0; } );
    });
 }
 

@@ -915,7 +915,7 @@ namespace eznode { namespace protocol {
       account_name_type account;
       asset             ECOreward;
       asset             EUSDreward;
-      asset             rewardESCOR;
+      asset             ESCORreward;
 
       void get_required_posting_authorities( flat_set< account_name_type >& a )const{ a.insert( account ); }
       void validate() const;
@@ -1026,5 +1026,5 @@ FC_REFLECT( eznode::protocol::request_account_recovery_operation, (recovery_acco
 FC_REFLECT( eznode::protocol::recover_account_operation, (account_to_recover)(new_owner_authority)(recent_owner_authority)(extensions) );
 FC_REFLECT( eznode::protocol::change_recovery_account_operation, (account_to_recover)(new_recovery_account)(extensions) );
 FC_REFLECT( eznode::protocol::decline_voting_rights_operation, (account)(decline) );
-FC_REFLECT( eznode::protocol::claimRewardBalance_operation, (account)(ECOreward)(EUSDreward)(rewardESCOR) )
+FC_REFLECT( eznode::protocol::claimRewardBalance_operation, (account)(ECOreward)(EUSDreward)(ESCORreward) )
 FC_REFLECT( eznode::protocol::delegateESCOR_operation, (delegator)(delegatee)(eScore) );

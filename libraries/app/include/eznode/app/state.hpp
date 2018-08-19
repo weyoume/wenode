@@ -47,7 +47,7 @@ namespace eznode { namespace app {
    {
       string         voter;
       uint64_t       weight = 0;
-      int64_t        rewardESCOR = 0;
+      int64_t        ESCORreward = 0;
       int16_t        percent = 0;
       share_type     reputation = 0;
       time_point_sec time;
@@ -57,7 +57,7 @@ namespace eznode { namespace app {
    {
       string         authorperm;
       uint64_t       weight = 0;
-      int64_t        rewardESCOR = 0;
+      int64_t        ESCORreward = 0;
       int16_t        percent = 0;
       time_point_sec time;
    };
@@ -181,8 +181,8 @@ FC_REFLECT_DERIVED( eznode::app::extended_account,
                    (transfer_history)(market_history)(post_history)(vote_history)(other_history)(witness_votes)(tags_usage)(guest_bloggers)(open_orders)(comments)(feed)(blog)(recent_replies)(recommended) )
 
 
-FC_REFLECT( eznode::app::vote_state, (voter)(weight)(rewardESCOR)(percent)(reputation)(time) );
-FC_REFLECT( eznode::app::account_vote, (authorperm)(weight)(rewardESCOR)(percent)(time) );
+FC_REFLECT( eznode::app::vote_state, (voter)(weight)(ESCORreward)(percent)(reputation)(time) );
+FC_REFLECT( eznode::app::account_vote, (authorperm)(weight)(ESCORreward)(percent)(time) );
 
 FC_REFLECT( eznode::app::discussion_index, (category)(trending)(payout)(payout_comments)(trending30)(updated)(created)(responses)(active)(votes)(maturing)(best)(hot)(promoted)(cashout) )
 FC_REFLECT( eznode::app::tag_index, (trending) )
