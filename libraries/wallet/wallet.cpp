@@ -2161,14 +2161,14 @@ annotated_signed_transaction wallet_api::decline_voting_rights( string account, 
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::claimRewardBalance( string account, asset ECOreward, asset reward_EUSDD, asset rewardESCOR, bool broadcast )
+annotated_signed_transaction wallet_api::claimRewardBalance( string account, asset ECOreward, asset EUSDrewardD, asset ESCORreward, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
    claimRewardBalance_operation op;
    op.account = account;
    op.ECOreward = ECOreward;
-   op.reward_EUSDD = rewardEUSD;
-   op.rewardESCOR = rewardESCOR;
+   op.EUSDrewardD = rewardEUSD;
+   op.ESCORreward = ESCORreward;
 
    signed_transaction tx;
    tx.operations.push_back( op );

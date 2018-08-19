@@ -529,12 +529,12 @@ namespace eznode { namespace protocol {
    {
       validate_account_name( account );
       FC_ASSERT( is_asset_type( ECOreward, SYMBOL_ECO ), "Reward_ECO must be ECO" );
-      FC_ASSERT( is_asset_type( EUSDreward, SYMBOL_EUSD ), "Reward_EUSD must be EUSD" );
-      FC_ASSERT( is_asset_type( rewardESCOR, SYMBOL_ESCOR ), "Reward_ESCOR must be ESCOR" );
+      FC_ASSERT( is_asset_type( EUSDreward, SYMBOL_EUSD ), "EUSDreward must be EUSD" );
+      FC_ASSERT( is_asset_type( ESCORreward, SYMBOL_ESCOR ), "Reward_ESCOR must be ESCOR" );
       FC_ASSERT( ECOreward.amount >= 0, "Cannot claim a negative amount" );
       FC_ASSERT( EUSDreward.amount >= 0, "Cannot claim a negative amount" );
-      FC_ASSERT( rewardESCOR.amount >= 0, "Cannot claim a negative amount" );
-      FC_ASSERT( ECOreward.amount > 0 || EUSDreward.amount > 0 || rewardESCOR.amount > 0, "Must claim something." );
+      FC_ASSERT( ESCORreward.amount >= 0, "Cannot claim a negative amount" );
+      FC_ASSERT( ECOreward.amount > 0 || EUSDreward.amount > 0 || ESCORreward.amount > 0, "Must claim something." );
    }
 
    void delegateESCOR_operation::validate()const

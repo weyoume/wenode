@@ -47,15 +47,15 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       auto old_current_supply = db.get_dynamic_global_properties().current_supply;
       auto old_ESCOR_fund = db.get_dynamic_global_properties().totalECOfundForESCOR;
       auto old_ESCOR = db.get_dynamic_global_properties().totalESCOR;
-      auto old_rewardESCOR2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
+      auto old_ESCORreward2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
       auto old_reward_fund = db.get_dynamic_global_properties().total_reward_fund_ECO;
 
-      flat_map< std::tuple< account_name_type, string >, share_type > comment_net_rewardESCOR;
-      flat_map< std::tuple< account_name_type, string >, share_type > comment_abs_rewardESCOR;
+      flat_map< std::tuple< account_name_type, string >, share_type > comment_net_ESCORreward;
+      flat_map< std::tuple< account_name_type, string >, share_type > comment_abs_ESCORreward;
       flat_map< comment_id_type, uint64_t > total_vote_weights;
       flat_map< comment_id_type, uint64_t > orig_vote_weight;
       flat_map< comment_id_type, uint64_t > expected_reward;
-      fc::uint128_t total_rewardESCOR2 = 0;
+      fc::uint128_t total_ESCORreward2 = 0;
       const auto& com_idx = db.get_index< comment_index >().indices().get< by_permlink >();
       auto com_itr = com_idx.begin();
       auto gpo = db.get_dynamic_global_properties();
@@ -64,33 +64,33 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
 
       while( com_itr != com_idx.end() )
       {
-         comment_net_rewardESCOR[ std::make_tuple( com_itr->author, com_itr->permlink ) ] = com_itr->net_rewardESCOR;
-         comment_abs_rewardESCOR[ std::make_tuple( com_itr->author, com_itr->permlink ) ] = com_itr->abs_rewardESCOR;
+         comment_net_ESCORreward[ std::make_tuple( com_itr->author, com_itr->permlink ) ] = com_itr->net_ESCORreward;
+         comment_abs_ESCORreward[ std::make_tuple( com_itr->author, com_itr->permlink ) ] = com_itr->abs_ESCORreward;
          total_vote_weights[ com_itr->id ] = 0;
          orig_vote_weight[ com_itr->id ] = com_itr->total_vote_weight;
 
-         if( com_itr->net_rewardESCOR.value > 0 )
+         if( com_itr->net_ESCORreward.value > 0 )
          {
-            total_rewardESCOR2 += com_itr->net_rewardESCOR.value > 0 ? fc::uint128_t( com_itr->net_rewardESCOR.value ) * com_itr->net_rewardESCOR.value * magnitude * magnitude : 0;
-            u256 rs( com_itr->net_rewardESCOR.value );
+            total_ESCORreward2 += com_itr->net_ESCORreward.value > 0 ? fc::uint128_t( com_itr->net_ESCORreward.value ) * com_itr->net_ESCORreward.value * magnitude * magnitude : 0;
+            u256 rs( com_itr->net_ESCORreward.value );
             u256 rf( gpo.total_reward_fund_ECO.amount.value );
             auto rs2 = rs * rs;
-            u256 rewardESCOR2 = old_rewardESCOR2.hi;
-            rewardESCOR2 = rewardESCOR2 << 64;
-            rewardESCOR2 += old_rewardESCOR2.lo;
-            expected_reward[ com_itr->id ] = static_cast< uint64_t >( rf * rs2 / rewardESCOR2 );
+            u256 ESCORreward2 = old_ESCORreward2.hi;
+            ESCORreward2 = ESCORreward2 << 64;
+            ESCORreward2 += old_ESCORreward2.lo;
+            expected_reward[ com_itr->id ] = static_cast< uint64_t >( rf * rs2 / ESCORreward2 );
          }
          com_itr++;
       }
 
-      BOOST_TEST_MESSAGE( "Saving category rewardESCOR" );
+      BOOST_TEST_MESSAGE( "Saving category ESCORreward" );
 
       const auto& cat_idx = db.get_index< category_index >().indices();
-      flat_map< category_id_type, share_type > category_rewardESCOR;
+      flat_map< category_id_type, share_type > category_ESCORreward;
 
       for( auto cat_itr = cat_idx.begin(); cat_itr != cat_idx.end(); cat_itr++ )
       {
-         category_rewardESCOR[ cat_itr->id ] = cat_itr->abs_rewardESCOR;
+         category_ESCORreward[ cat_itr->id ] = cat_itr->abs_ESCORreward;
       }
 
       BOOST_TEST_MESSAGE( "Perform split" );
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       BOOST_REQUIRE( db.get_dynamic_global_properties().virtual_supply == old_virtual_supply );
       BOOST_REQUIRE( db.get_dynamic_global_properties().totalECOfundForESCOR == old_ESCOR_fund );
       BOOST_REQUIRE( db.get_dynamic_global_properties().totalESCOR.amount == old_ESCOR.amount * magnitude );
-      BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_ESCOR2 == total_rewardESCOR2 );
+      BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_ESCOR2 == total_ESCORreward2 );
       BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_ECO == old_reward_fund );
 
       BOOST_TEST_MESSAGE( "Check accounts were updated" );
@@ -122,26 +122,26 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       com_itr = com_idx.begin();
       while( com_itr != com_idx.end() )
       {
-         BOOST_REQUIRE( com_itr->net_rewardESCOR == comment_net_rewardESCOR[ std::make_tuple( com_itr->author, com_itr->permlink ) ] * magnitude );
-         BOOST_REQUIRE( com_itr->abs_rewardESCOR == comment_abs_rewardESCOR[ std::make_tuple( com_itr->author, com_itr->permlink ) ] * magnitude );
+         BOOST_REQUIRE( com_itr->net_ESCORreward == comment_net_ESCORreward[ std::make_tuple( com_itr->author, com_itr->permlink ) ] * magnitude );
+         BOOST_REQUIRE( com_itr->abs_ESCORreward == comment_abs_ESCORreward[ std::make_tuple( com_itr->author, com_itr->permlink ) ] * magnitude );
          BOOST_REQUIRE( com_itr->total_vote_weight == total_vote_weights[ com_itr->id ] );
 
-         if( com_itr->net_rewardESCOR.value > 0 )
+         if( com_itr->net_ESCORreward.value > 0 )
          {
-            u256 rs( com_itr->net_rewardESCOR.value );
+            u256 rs( com_itr->net_ESCORreward.value );
             u256 rf( gpo.total_reward_fund_ECO.amount.value );
-            u256 rewardESCOR2 = total_rewardESCOR2.hi;
-            rewardESCOR2 = ( rewardESCOR2 << 64 ) + total_rewardESCOR2.lo;
+            u256 ESCORreward2 = total_ESCORreward2.hi;
+            ESCORreward2 = ( ESCORreward2 << 64 ) + total_ESCORreward2.lo;
             auto rs2 = rs * rs;
 
-            BOOST_REQUIRE( static_cast< uint64_t >( ( rf * rs2 ) / rewardESCOR2 ) == expected_reward[ com_itr->id] );
+            BOOST_REQUIRE( static_cast< uint64_t >( ( rf * rs2 ) / ESCORreward2 ) == expected_reward[ com_itr->id] );
          }
          com_itr++;
       }
 
       for( auto cat_itr = cat_idx.begin(); cat_itr != cat_idx.end(); cat_itr++ )
       {
-         BOOST_REQUIRE( cat_itr->abs_rewardESCOR.value == category_rewardESCOR[ cat_itr->id ].value * magnitude );
+         BOOST_REQUIRE( cat_itr->abs_ESCORreward.value == category_ESCORreward[ cat_itr->id ].value * magnitude );
       }
 
       validate_database();

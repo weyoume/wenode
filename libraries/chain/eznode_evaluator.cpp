@@ -355,7 +355,7 @@ void accountUpdate_evaluator::do_apply( const accountUpdate_operation& o )
 
 
 /**
- *  Because net_rewardESCOR is 0 there is no need to update any pending payout calculations or parent posts.
+ *  Because net_ESCORreward is 0 there is no need to update any pending payout calculations or parent posts.
  */
 void deleteComment_evaluator::do_apply( const deleteComment_operation& o )
 {
@@ -372,9 +372,9 @@ void deleteComment_evaluator::do_apply( const deleteComment_operation& o )
       FC_ASSERT( comment.cashout_time != fc::time_point_sec::maximum() );
 
    if( _db.has_hardfork( HARDFORK_0_19__977 ) )
-      FC_ASSERT( comment.net_rewardESCOR <= 0, "Cannot delete a comment with net positive votes." );
+      FC_ASSERT( comment.net_ESCORreward <= 0, "Cannot delete a comment with net positive votes." );
 
-   if( comment.net_rewardESCOR > 0 ) return;
+   if( comment.net_ESCORreward > 0 ) return;
 
    const auto& vote_idx = _db.get_index<comment_vote_index>().indices().get<by_comment_voter>();
 
@@ -420,7 +420,7 @@ struct comment_options_extension_visitor
    void operator()( const comment_payout_beneficiaries& cpb ) const
    {
       FC_ASSERT( _c.beneficiaries.size() == 0, "Comment already has beneficiaries specified." );
-      FC_ASSERT( _c.abs_rewardESCOR == 0, "Comment must not have been voted on before specifying beneficiaries." );
+      FC_ASSERT( _c.abs_ESCORreward == 0, "Comment must not have been voted on before specifying beneficiaries." );
 
       _db.modify( _c, [&]( comment_object& c )
       {
@@ -444,7 +444,7 @@ void comment_options_evaluator::do_apply( const comment_options_operation& o )
 
    const auto& comment = _db.get_comment( o.author, o.permlink );
    if( !o.allow_curationRewards || !o.allow_votes || o.max_accepted_payout < comment.max_accepted_payout )
-      FC_ASSERT( comment.abs_rewardESCOR == 0, "One of the included comment options requires the comment to have no rewardESCOR allocated to it." );
+      FC_ASSERT( comment.abs_ESCORreward == 0, "One of the included comment options requires the comment to have no ESCORreward allocated to it." );
 
    FC_ASSERT( comment.allow_curationRewards >= o.allow_curationRewards, "Curation rewards cannot be re-enabled." );
    FC_ASSERT( comment.allow_votes >= o.allow_votes, "Voting cannot be re-enabled." );
@@ -1204,16 +1204,16 @@ void vote_evaluator::do_apply( const vote_operation& o )
    }
    FC_ASSERT( used_power <= current_power, "Account does not have enough power to vote." );
 
-   int64_t abs_rewardESCOR    = ((uint128_t(voter.effective_ESCOR().amount.value) * used_power) / (PERCENT_100)).to_uint64();
-   if( !_db.has_hardfork( HARDFORK_0_14__259 ) && abs_rewardESCOR == 0 ) abs_rewardESCOR = 1;
+   int64_t abs_ESCORreward    = ((uint128_t(voter.effective_ESCOR().amount.value) * used_power) / (PERCENT_100)).to_uint64();
+   if( !_db.has_hardfork( HARDFORK_0_14__259 ) && abs_ESCORreward == 0 ) abs_ESCORreward = 1;
 
    if( _db.has_hardfork( HARDFORK_0_14__259 ) )
    {
-      FC_ASSERT( abs_rewardESCOR > VOTE_DUST_THRESHOLD || o.weight == 0, "Voting weight is too small, please accumulate more voting power or ESCOR." );
+      FC_ASSERT( abs_ESCORreward > VOTE_DUST_THRESHOLD || o.weight == 0, "Voting weight is too small, please accumulate more voting power or ESCOR." );
    }
    else if( _db.has_hardfork( HARDFORK_0_13__248 ) )
    {
-      FC_ASSERT( abs_rewardESCOR > VOTE_DUST_THRESHOLD || abs_rewardESCOR == 1, "Voting weight is too small, please accumulate more voting power or ESCOR." );
+      FC_ASSERT( abs_ESCORreward > VOTE_DUST_THRESHOLD || abs_ESCORreward == 1, "Voting weight is too small, please accumulate more voting power or ESCOR." );
    }
 
 
@@ -1231,10 +1231,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
    if( itr == comment_vote_idx.end() )
    {
       FC_ASSERT( o.weight != 0, "Vote weight cannot be 0." );
-      /// this is the rewardESCOR voting for or against the post
-      int64_t rewardESCOR        = o.weight < 0 ? -abs_rewardESCOR : abs_rewardESCOR;
+      /// this is the ESCORreward voting for or against the post
+      int64_t ESCORreward        = o.weight < 0 ? -abs_ESCORreward : abs_ESCORreward;
 
-      if( rewardESCOR > 0 )
+      if( ESCORreward > 0 )
       {
          if( _db.has_hardfork( HARDFORK_0_17__900 ) )
             FC_ASSERT( _db.head_block_time() < comment.cashout_time - UPVOTE_LOCKOUT_HF17, "Cannot increase payout within last twelve hours before payout." );
@@ -1250,10 +1250,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.last_vote_time = _db.head_block_time();
       });
 
-      /// if the current net_rewardESCOR is less than 0, the post is getting 0 rewards so it is not factored into total rewardESCOR^2
-      fc::uint128_t old_rewardESCOR = std::max(comment.net_rewardESCOR.value, int64_t(0));
+      /// if the current net_ESCORreward is less than 0, the post is getting 0 rewards so it is not factored into total ESCORreward^2
+      fc::uint128_t old_ESCORreward = std::max(comment.net_ESCORreward.value, int64_t(0));
       const auto& root = _db.get( comment.root_comment );
-      auto old_root_abs_rewardESCOR = root.children_abs_rewardESCOR.value;
+      auto old_root_abs_ESCORreward = root.children_abs_ESCORreward.value;
 
       fc::uint128_t avg_cashout_sec;
 
@@ -1267,28 +1267,28 @@ void vote_evaluator::do_apply( const vote_operation& o )
          else
             new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF12;
 
-         avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_rewardESCOR + new_cashout_time_sec * abs_rewardESCOR ) / ( old_root_abs_rewardESCOR + abs_rewardESCOR );
+         avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_ESCORreward + new_cashout_time_sec * abs_ESCORreward ) / ( old_root_abs_ESCORreward + abs_ESCORreward );
       }
 
-      FC_ASSERT( abs_rewardESCOR > 0, "Cannot vote with 0 rewardESCOR." );
+      FC_ASSERT( abs_ESCORreward > 0, "Cannot vote with 0 ESCORreward." );
 
-      auto old_vote_rewardESCOR = comment.vote_rewardESCOR;
+      auto old_vote_ESCORreward = comment.vote_ESCORreward;
 
       _db.modify( comment, [&]( comment_object& c ){
-         c.net_rewardESCOR += rewardESCOR;
-         c.abs_rewardESCOR += abs_rewardESCOR;
-         if( rewardESCOR > 0 )
-            c.vote_rewardESCOR += rewardESCOR;
-         if( rewardESCOR > 0 )
+         c.net_ESCORreward += ESCORreward;
+         c.abs_ESCORreward += abs_ESCORreward;
+         if( ESCORreward > 0 )
+            c.vote_ESCORreward += ESCORreward;
+         if( ESCORreward > 0 )
             c.net_votes++;
          else
             c.net_votes--;
-         if( !_db.has_hardfork( HARDFORK_0_6__114 ) && c.net_rewardESCOR == -c.abs_rewardESCOR) FC_ASSERT( c.net_votes < 0, "Comment has negative net votes?" );
+         if( !_db.has_hardfork( HARDFORK_0_6__114 ) && c.net_ESCORreward == -c.abs_ESCORreward) FC_ASSERT( c.net_votes < 0, "Comment has negative net votes?" );
       });
 
       _db.modify( root, [&]( comment_object& c )
       {
-         c.children_abs_rewardESCOR += abs_rewardESCOR;
+         c.children_abs_ESCORreward += abs_ESCORreward;
 
          if( !_db.has_hardfork( HARDFORK_0_17__769 ) )
          {
@@ -1302,17 +1302,17 @@ void vote_evaluator::do_apply( const vote_operation& o )
          }
       });
 
-      fc::uint128_t new_rewardESCOR = std::max( comment.net_rewardESCOR.value, int64_t(0));
+      fc::uint128_t new_ESCORreward = std::max( comment.net_ESCORreward.value, int64_t(0));
 
-      /// calculate rewardESCOR2 value
-      new_rewardESCOR = util::evaluate_reward_curve( new_rewardESCOR );
-      old_rewardESCOR = util::evaluate_reward_curve( old_rewardESCOR );
+      /// calculate ESCORreward2 value
+      new_ESCORreward = util::evaluate_reward_curve( new_ESCORreward );
+      old_ESCORreward = util::evaluate_reward_curve( old_ESCORreward );
 
       uint64_t max_vote_weight = 0;
 
       /** this verifies uniqueness of voter
        *
-       *  cv.weight / c.total_vote_weight ==> % of rewardESCOR increase that is accounted for by the vote
+       *  cv.weight / c.total_vote_weight ==> % of ESCORreward increase that is accounted for by the vote
        *
        *  W(R) = B * R / ( R + 2S )
        *  W(R) is bounded above by B. B is fixed at 2^64 - 1, so all weights fit in a 64 bit integer.
@@ -1331,11 +1331,11 @@ void vote_evaluator::do_apply( const vote_operation& o )
       _db.create<comment_vote_object>( [&]( comment_vote_object& cv ){
          cv.voter   = voter.id;
          cv.comment = comment.id;
-         cv.rewardESCOR = rewardESCOR;
+         cv.ESCORreward = ESCORreward;
          cv.vote_percent = o.weight;
          cv.last_update = _db.head_block_time();
 
-         bool curationReward_eligible = rewardESCOR > 0 && (comment.last_payout == fc::time_point_sec()) && comment.allow_curationRewards;
+         bool curationReward_eligible = ESCORreward > 0 && (comment.last_payout == fc::time_point_sec()) && comment.allow_curationRewards;
 
          if( curationReward_eligible && _db.has_hardfork( HARDFORK_0_17__774 ) )
             curationReward_eligible = _db.get_curationRewards_percent( comment ) > 0;
@@ -1343,19 +1343,19 @@ void vote_evaluator::do_apply( const vote_operation& o )
          if( curationReward_eligible )
          {
             if( comment.created < fc::time_point_sec(HARDFORK_0_6_REVERSE_AUCTION_TIME) ) {
-               u512 rewardESCOR3(rewardESCOR);
-               u256 total2( comment.abs_rewardESCOR.value );
+               u512 ESCORreward3(ESCORreward);
+               u256 total2( comment.abs_ESCORreward.value );
 
                if( !_db.has_hardfork( HARDFORK_0_1 ) )
                {
-                  rewardESCOR3 *= 1000000;
+                  ESCORreward3 *= 1000000;
                   total2 *= 1000000;
                }
 
-               rewardESCOR3 = rewardESCOR3 * rewardESCOR3 * rewardESCOR3;
+               ESCORreward3 = ESCORreward3 * ESCORreward3 * ESCORreward3;
 
                total2 *= total2;
-               cv.weight = static_cast<uint64_t>( rewardESCOR3 / total2 );
+               cv.weight = static_cast<uint64_t>( ESCORreward3 / total2 );
             } else {// cv.weight = W(R_1) - W(R_0)
                const uint128_t two_s = 2 * util::get_content_constant_s();
                if( _db.has_hardfork( HARDFORK_0_17__774 ) )
@@ -1363,20 +1363,20 @@ void vote_evaluator::do_apply( const vote_operation& o )
                   const auto& reward_fund = _db.get_reward_fund( comment );
                   auto curve = !_db.has_hardfork( HARDFORK_0_19__1052 ) && comment.created > HF_19_SQRT_PRE_CALC
                                  ? curve_id::square_root : reward_fund.curationReward_curve;
-                  uint64_t old_weight = util::evaluate_reward_curve( old_vote_rewardESCOR.value, curve, reward_fund.content_constant ).to_uint64();
-                  uint64_t new_weight = util::evaluate_reward_curve( comment.vote_rewardESCOR.value, curve, reward_fund.content_constant ).to_uint64();
+                  uint64_t old_weight = util::evaluate_reward_curve( old_vote_ESCORreward.value, curve, reward_fund.content_constant ).to_uint64();
+                  uint64_t new_weight = util::evaluate_reward_curve( comment.vote_ESCORreward.value, curve, reward_fund.content_constant ).to_uint64();
                   cv.weight = new_weight - old_weight;
                }
                else if ( _db.has_hardfork( HARDFORK_0_1 ) )
                {
-                  uint64_t old_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( old_vote_rewardESCOR.value ) ) / ( two_s + old_vote_rewardESCOR.value ) ).to_uint64();
-                  uint64_t new_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( comment.vote_rewardESCOR.value ) ) / ( two_s + comment.vote_rewardESCOR.value ) ).to_uint64();
+                  uint64_t old_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( old_vote_ESCORreward.value ) ) / ( two_s + old_vote_ESCORreward.value ) ).to_uint64();
+                  uint64_t new_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( comment.vote_ESCORreward.value ) ) / ( two_s + comment.vote_ESCORreward.value ) ).to_uint64();
                   cv.weight = new_weight - old_weight;
                }
                else
                {
-                  uint64_t old_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( 1000000 * old_vote_rewardESCOR.value ) ) / ( two_s + ( 1000000 * old_vote_rewardESCOR.value ) ) ).to_uint64();
-                  uint64_t new_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( 1000000 * comment.vote_rewardESCOR.value ) ) / ( two_s + ( 1000000 * comment.vote_rewardESCOR.value ) ) ).to_uint64();
+                  uint64_t old_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( 1000000 * old_vote_ESCORreward.value ) ) / ( two_s + ( 1000000 * old_vote_ESCORreward.value ) ) ).to_uint64();
+                  uint64_t new_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( 1000000 * comment.vote_ESCORreward.value ) ) / ( two_s + ( 1000000 * comment.vote_ESCORreward.value ) ) ).to_uint64();
                   cv.weight = new_weight - old_weight;
                }
             }
@@ -1408,7 +1408,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          });
       }
       if( !_db.has_hardfork( HARDFORK_0_17__774) )
-         _db.adjust_rewardESCOR2( comment, old_rewardESCOR, new_rewardESCOR );
+         _db.adjust_ESCORreward2( comment, old_ESCORreward, new_ESCORreward );
    }
    else
    {
@@ -1417,10 +1417,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
       if( _db.has_hardfork( HARDFORK_0_6__112 ) )
          FC_ASSERT( itr->vote_percent != o.weight, "You have already voted in a similar way." );
 
-      /// this is the rewardESCOR voting for or against the post
-      int64_t rewardESCOR        = o.weight < 0 ? -abs_rewardESCOR : abs_rewardESCOR;
+      /// this is the ESCORreward voting for or against the post
+      int64_t ESCORreward        = o.weight < 0 ? -abs_ESCORreward : abs_ESCORreward;
 
-      if( itr->rewardESCOR < rewardESCOR )
+      if( itr->ESCORreward < ESCORreward )
       {
          if( _db.has_hardfork( HARDFORK_0_17__900 ) )
             FC_ASSERT( _db.head_block_time() < comment.cashout_time - UPVOTE_LOCKOUT_HF17, "Cannot increase payout within last twelve hours before payout." );
@@ -1433,10 +1433,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.last_vote_time = _db.head_block_time();
       });
 
-      /// if the current net_rewardESCOR is less than 0, the post is getting 0 rewards so it is not factored into total rewardESCOR^2
-      fc::uint128_t old_rewardESCOR = std::max(comment.net_rewardESCOR.value, int64_t(0));
+      /// if the current net_ESCORreward is less than 0, the post is getting 0 rewards so it is not factored into total ESCORreward^2
+      fc::uint128_t old_ESCORreward = std::max(comment.net_ESCORreward.value, int64_t(0));
       const auto& root = _db.get( comment.root_comment );
-      auto old_root_abs_rewardESCOR = root.children_abs_rewardESCOR.value;
+      auto old_root_abs_ESCORreward = root.children_abs_ESCORreward.value;
 
       fc::uint128_t avg_cashout_sec;
 
@@ -1450,36 +1450,36 @@ void vote_evaluator::do_apply( const vote_operation& o )
          else
             new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF12;
 
-         if( _db.has_hardfork( HARDFORK_0_14__259 ) && abs_rewardESCOR == 0 )
+         if( _db.has_hardfork( HARDFORK_0_14__259 ) && abs_ESCORreward == 0 )
             avg_cashout_sec = cur_cashout_time_sec;
          else
-            avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_rewardESCOR + new_cashout_time_sec * abs_rewardESCOR ) / ( old_root_abs_rewardESCOR + abs_rewardESCOR );
+            avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_ESCORreward + new_cashout_time_sec * abs_ESCORreward ) / ( old_root_abs_ESCORreward + abs_ESCORreward );
       }
 
       _db.modify( comment, [&]( comment_object& c )
       {
-         c.net_rewardESCOR -= itr->rewardESCOR;
-         c.net_rewardESCOR += rewardESCOR;
-         c.abs_rewardESCOR += abs_rewardESCOR;
+         c.net_ESCORreward -= itr->ESCORreward;
+         c.net_ESCORreward += ESCORreward;
+         c.abs_ESCORreward += abs_ESCORreward;
 
-         /// TODO: figure out how to handle remove a vote (rewardESCOR == 0 )
-         if( rewardESCOR > 0 && itr->rewardESCOR < 0 )
+         /// TODO: figure out how to handle remove a vote (ESCORreward == 0 )
+         if( ESCORreward > 0 && itr->ESCORreward < 0 )
             c.net_votes += 2;
-         else if( rewardESCOR > 0 && itr->rewardESCOR == 0 )
+         else if( ESCORreward > 0 && itr->ESCORreward == 0 )
             c.net_votes += 1;
-         else if( rewardESCOR == 0 && itr->rewardESCOR < 0 )
+         else if( ESCORreward == 0 && itr->ESCORreward < 0 )
             c.net_votes += 1;
-         else if( rewardESCOR == 0 && itr->rewardESCOR > 0 )
+         else if( ESCORreward == 0 && itr->ESCORreward > 0 )
             c.net_votes -= 1;
-         else if( rewardESCOR < 0 && itr->rewardESCOR == 0 )
+         else if( ESCORreward < 0 && itr->ESCORreward == 0 )
             c.net_votes -= 1;
-         else if( rewardESCOR < 0 && itr->rewardESCOR > 0 )
+         else if( ESCORreward < 0 && itr->ESCORreward > 0 )
             c.net_votes -= 2;
       });
 
       _db.modify( root, [&]( comment_object& c )
       {
-         c.children_abs_rewardESCOR += abs_rewardESCOR;
+         c.children_abs_ESCORreward += abs_ESCORreward;
 
          if( !_db.has_hardfork( HARDFORK_0_17__769 ) )
          {
@@ -1493,11 +1493,11 @@ void vote_evaluator::do_apply( const vote_operation& o )
          }
       });
 
-      fc::uint128_t new_rewardESCOR = std::max( comment.net_rewardESCOR.value, int64_t(0));
+      fc::uint128_t new_ESCORreward = std::max( comment.net_ESCORreward.value, int64_t(0));
 
-      /// calculate rewardESCOR2 value
-      new_rewardESCOR = util::evaluate_reward_curve( new_rewardESCOR );
-      old_rewardESCOR = util::evaluate_reward_curve( old_rewardESCOR );
+      /// calculate ESCORreward2 value
+      new_ESCORreward = util::evaluate_reward_curve( new_ESCORreward );
+      old_ESCORreward = util::evaluate_reward_curve( old_ESCORreward );
 
 
       _db.modify( comment, [&]( comment_object& c )
@@ -1507,7 +1507,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
 
       _db.modify( *itr, [&]( comment_vote_object& cv )
       {
-         cv.rewardESCOR = rewardESCOR;
+         cv.ESCORreward = ESCORreward;
          cv.vote_percent = o.weight;
          cv.last_update = _db.head_block_time();
          cv.weight = 0;
@@ -1515,7 +1515,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
       });
 
       if( !_db.has_hardfork( HARDFORK_0_17__774) )
-         _db.adjust_rewardESCOR2( comment, old_rewardESCOR, new_rewardESCOR );
+         _db.adjust_ESCORreward2( comment, old_ESCORreward, new_ESCORreward );
    }
 
 } FC_CAPTURE_AND_RETHROW( (o)) }
@@ -2151,42 +2151,42 @@ void claimRewardBalance_evaluator::do_apply( const claimRewardBalance_operation&
 {
    const auto& acnt = _db.get_account( op.account );
 
-   FC_ASSERT( op.ECOreward <= acnt.ECOreward_balance, "Cannot claim that much ECO. Claim: ${c} Actual: ${a}",
-      ("c", op.ECOreward)("a", acnt.ECOreward_balance) );
-   FC_ASSERT( op.reward_EUSD <= acnt.reward_EUSDbalance, "Cannot claim that much EUSD. Claim: ${c} Actual: ${a}",
-      ("c", op.reward_EUSD)("a", acnt.reward_EUSDbalance) );
-   FC_ASSERT( op.rewardESCOR <= acnt.rewardESCOR_balance, "Cannot claim that much ESCOR. Claim: ${c} Actual: ${a}",
-      ("c", op.rewardESCOR)("a", acnt.rewardESCOR_balance) );
+   FC_ASSERT( op.ECOreward <= acnt.ECOrewardBalance, "Cannot claim that much ECO. Claim: ${c} Actual: ${a}",
+      ("c", op.ECOreward)("a", acnt.ECOrewardBalance) );
+   FC_ASSERT( op.EUSDreward <= acnt.EUSDrewardbalance, "Cannot claim that much EUSD. Claim: ${c} Actual: ${a}",
+      ("c", op.EUSDreward)("a", acnt.EUSDrewardbalance) );
+   FC_ASSERT( op.ESCORreward <= acnt.ESCORrewardBalance, "Cannot claim that much ESCOR. Claim: ${c} Actual: ${a}",
+      ("c", op.ESCORreward)("a", acnt.ESCORrewardBalance) );
 
-   asset rewardESCOR_balance_to_move = asset( 0, SYMBOL_ECO );
-   if( op.rewardESCOR == acnt.rewardESCOR_balance )
-      rewardESCOR_balance_to_move = acnt.rewardESCOR_balance;
+   asset ESCORrewardBalance_to_move = asset( 0, SYMBOL_ECO );
+   if( op.ESCORreward == acnt.ESCORrewardBalance )
+      ESCORrewardBalance_to_move = acnt.ESCORrewardBalance;
    else
-      rewardESCOR_balance_to_move = asset( ( ( uint128_t( op.rewardESCOR.amount.value ) * uint128_t( acnt.rewardESCOR_balance.amount.value ) )
-         / uint128_t( acnt.rewardESCOR_balance.amount.value ) ).to_uint64(), SYMBOL_ECO );
+      ESCORrewardBalance_to_move = asset( ( ( uint128_t( op.ESCORreward.amount.value ) * uint128_t( acnt.ESCORrewardBalance.amount.value ) )
+         / uint128_t( acnt.ESCORrewardBalance.amount.value ) ).to_uint64(), SYMBOL_ECO );
 
    _db.adjust_reward_balance( acnt, -op.ECOreward );
-   _db.adjust_reward_balance( acnt, -op.reward_EUSD );
+   _db.adjust_reward_balance( acnt, -op.EUSDreward );
    _db.adjust_balance( acnt, op.ECOreward );
-   _db.adjust_balance( acnt, op.reward_EUSD );
+   _db.adjust_balance( acnt, op.EUSDreward );
 
    _db.modify( acnt, [&]( account_object& a )
    {
-      a.eScore += op.rewardESCOR;
-      a.rewardESCOR_balance -= op.rewardESCOR;
-      a.rewardESCOR_balance -= rewardESCOR_balance_to_move;
+      a.eScore += op.ESCORreward;
+      a.ESCORrewardBalance -= op.ESCORreward;
+      a.ESCORrewardBalance -= ESCORrewardBalance_to_move;
    });
 
    _db.modify( _db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
    {
-      gpo.totalESCOR += op.rewardESCOR;
-      gpo.totalECOfundForESCOR += rewardESCOR_balance_to_move;
+      gpo.totalESCOR += op.ESCORreward;
+      gpo.totalECOfundForESCOR += ESCORrewardBalance_to_move;
 
-      gpo.pending_rewarded_ESCOR -= op.rewardESCOR;
-      gpo.pending_rewarded_ESCORvalueInECO -= rewardESCOR_balance_to_move;
+      gpo.pending_rewarded_ESCOR -= op.ESCORreward;
+      gpo.pending_rewarded_ESCORvalueInECO -= ESCORrewardBalance_to_move;
    });
 
-   _db.adjust_proxied_witness_votes( acnt, op.rewardESCOR.amount );
+   _db.adjust_proxied_witness_votes( acnt, op.ESCORreward.amount );
 }
 
 void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )

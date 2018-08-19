@@ -1048,8 +1048,8 @@ asset database::createECOfundForESCOR( const account_object& to_account, asset E
       {
          if( to_reward_balance )
          {
-            to.rewardESCOR_balance += new_ECO_fund_for_ESCOR;
-            to.rewardESCOR_balance += ECO;
+            to.ESCORrewardBalance += new_ECO_fund_for_ESCOR;
+            to.ESCORrewardBalance += ECO;
          }
          else
             to.eScore += new_ECO_fund_for_ESCOR;
@@ -1261,10 +1261,10 @@ void database::clear_null_account_balance()
       totalECO += converted_ECO;
    }
 
-   if( null_account.ECOreward_balance.amount > 0 )
+   if( null_account.ECOrewardBalance.amount > 0 )
    {
-      totalECO += null_account.ECOreward_balance;
-      adjust_reward_balance( null_account, -null_account.ECOreward_balance );
+      totalECO += null_account.ECOrewardBalance;
+      adjust_reward_balance( null_account, -null_account.ECOrewardBalance );
    }
 
    if( null_account.EUSDrewardbalance.amount > 0 )
@@ -1273,22 +1273,22 @@ void database::clear_null_account_balance()
       adjust_reward_balance( null_account, -null_account.EUSDrewardbalance );
    }
 
-   if( null_account.rewardESCOR_balance.amount > 0 )
+   if( null_account.ESCORrewardBalance.amount > 0 )
    {
       const auto& gpo = get_dynamic_global_properties();
 
-      totalECO += null_account.rewardESCOR_balance;
+      totalECO += null_account.ESCORrewardBalance;
 
       modify( gpo, [&]( dynamic_global_property_object& g )
       {
-         g.pending_rewarded_ESCOR -= null_account.rewardESCOR_balance;
-         g.pending_rewarded_ESCORvalueInECO -= null_account.rewardESCOR_balance;
+         g.pending_rewarded_ESCOR -= null_account.ESCORrewardBalance;
+         g.pending_rewarded_ESCORvalueInECO -= null_account.ESCORrewardBalance;
       });
 
       modify( null_account, [&]( account_object& a )
       {
-         a.rewardESCOR_balance.amount = 0;
-         a.rewardESCOR_balance.amount = 0;
+         a.ESCORrewardBalance.amount = 0;
+         a.ESCORrewardBalance.amount = 0;
       });
    }
 
@@ -1300,18 +1300,18 @@ void database::clear_null_account_balance()
 }
 
 /**
- * This method updates total_reward_ESCOR2 on DGPO, and children_rewardESCOR2 on comments, when a comment's rewardESCOR2 changes
- * from old_rewardESCOR2 to new_rewardESCOR2.  Maintaining invariants that children_rewardESCOR2 is the sum of all descendants' rewardESCOR2,
- * and dgpo.total_reward_ESCOR2 is the total number of rewardESCOR2 outstanding.
+ * This method updates total_reward_ESCOR2 on DGPO, and children_ESCORreward2 on comments, when a comment's ESCORreward2 changes
+ * from old_ESCORreward2 to new_ESCORreward2.  Maintaining invariants that children_ESCORreward2 is the sum of all descendants' ESCORreward2,
+ * and dgpo.total_reward_ESCOR2 is the total number of ESCORreward2 outstanding.
  */
-void database::adjust_rewardESCOR2( const comment_object& c, fc::uint128_t old_rewardESCOR2, fc::uint128_t new_rewardESCOR2 )
+void database::adjust_ESCORreward2( const comment_object& c, fc::uint128_t old_ESCORreward2, fc::uint128_t new_ESCORreward2 )
 {
 
    const auto& dgpo = get_dynamic_global_properties();
    modify( dgpo, [&]( dynamic_global_property_object& p )
    {
-      p.total_reward_ESCOR2 -= old_rewardESCOR2;
-      p.total_reward_ESCOR2 += new_rewardESCOR2;
+      p.total_reward_ESCOR2 -= old_ESCORreward2;
+      p.total_reward_ESCOR2 += new_ESCORreward2;
    } );
 }
 
@@ -1520,7 +1520,7 @@ share_type database::pay_curators( const comment_object& c, share_type& max_rewa
 
 void fill_comment_reward_context_local_state( util::comment_reward_context& ctx, const comment_object& comment )
 {
-   ctx.rewardESCOR = comment.net_rewardESCOR;
+   ctx.ESCORreward = comment.net_ESCORreward;
    ctx.reward_weight = comment.reward_weight;
    ctx.max_EUSD = comment.max_accepted_payout;
 }
@@ -1531,7 +1531,7 @@ share_type database::cashout_comment_helper( util::comment_reward_context& ctx, 
    {
       share_type claimed_reward = 0;
 
-      if( comment.net_rewardESCOR > 0 )
+      if( comment.net_ESCORreward > 0 )
       {
          fill_comment_reward_context_local_state( ctx, comment );
 
@@ -1591,20 +1591,20 @@ share_type database::cashout_comment_helper( util::comment_reward_context& ctx, 
          }
 
          if( !has_hardfork( HARDFORK_0_17__774 ) )
-            adjust_rewardESCOR2( comment, util::evaluate_reward_curve( comment.net_rewardESCOR.value ), 0 );
+            adjust_ESCORreward2( comment, util::evaluate_reward_curve( comment.net_ESCORreward.value ), 0 );
       }
 
       modify( comment, [&]( comment_object& c )
       {
          /**
-         * A payout is only made for positive rewardESCOR, negative rewardESCOR hang around
+         * A payout is only made for positive ESCORreward, negative ESCORreward hang around
          * for the next time this post might get an upvote.
          */
-         if( c.net_rewardESCOR > 0 )
-            c.net_rewardESCOR = 0;
-         c.children_abs_rewardESCOR = 0;
-         c.abs_rewardESCOR  = 0;
-         c.vote_rewardESCOR = 0;
+         if( c.net_ESCORreward > 0 )
+            c.net_ESCORreward = 0;
+         c.children_abs_ESCORreward = 0;
+         c.abs_ESCORreward  = 0;
+         c.vote_ESCORreward = 0;
          c.total_vote_weight = 0;
          c.max_cashout_time = fc::time_point_sec::maximum();
 
@@ -1666,10 +1666,10 @@ void database::process_comment_cashout()
    vector< share_type > ECO_awarded;
    const auto& reward_idx = get_index< reward_fund_index, by_id >();
 
-   // Decay recent rewardESCOR of each fund
+   // Decay recent ESCORreward of each fund
    for( auto itr = reward_idx.begin(); itr != reward_idx.end(); ++itr )
    {
-      // Add all reward funds to the local cache and decay their recent rewardESCOR
+      // Add all reward funds to the local cache and decay their recent ESCORreward
       modify( *itr, [&]( reward_fund_object& rfo )
       {
          fc::microseconds decay_rate;
@@ -1697,15 +1697,15 @@ void database::process_comment_cashout()
    const auto& com_by_root = get_index< comment_index >().indices().get< by_root >();
 
    auto current = cidx.begin();
-   //  add all rewardESCOR about to be cashed out to the reward funds. This ensures equal satoshi per rshare payment
+   //  add all ESCORreward about to be cashed out to the reward funds. This ensures equal satoshi per rshare payment
    if( has_hardfork( HARDFORK_0_17__771 ) )
    {
       while( current != cidx.end() && current->cashout_time <= head_block_time() )
       {
-         if( current->net_rewardESCOR > 0 )
+         if( current->net_ESCORreward > 0 )
          {
             const auto& rf = get_reward_fund( *current );
-            funds[ rf.id._id ].recent_claims += util::evaluate_reward_curve( current->net_rewardESCOR.value, rf.authorReward_curve, rf.content_constant );
+            funds[ rf.id._id ].recent_claims += util::evaluate_reward_curve( current->net_ESCORreward.value, rf.authorReward_curve, rf.content_constant );
          }
 
          ++current;
@@ -3428,7 +3428,7 @@ void database::adjust_reward_balance( const account_object& a, const asset& delt
       switch( delta.symbol )
       {
          case SYMBOL_ECO:
-            acnt.ECOreward_balance += delta;
+            acnt.ECOrewardBalance += delta;
             break;
          case SYMBOL_EUSD:
             acnt.EUSDrewardbalance += delta;
@@ -3703,7 +3703,7 @@ void database::apply_hardfork( uint32_t hardfork )
                // initial payout so we don't have to handle the case of posts that should be frozen that aren't
                if( itr->parent_author == ROOT_POST_PARENT )
                {
-                  // Post has not been paid out and has no votes (cashout_time == 0 === net_rewardESCOR == 0, under current semmantics)
+                  // Post has not been paid out and has no votes (cashout_time == 0 === net_ESCORreward == 0, under current semmantics)
                   if( itr->last_payout == fc::time_point_sec::min() && itr->cashout_time == fc::time_point_sec::maximum() )
                   {
                      modify( *itr, [&]( comment_object & c )
@@ -3933,13 +3933,13 @@ void database::validate_invariants()const
       {
          total_supply += itr->balance;
          total_supply += itr->ECOsavingsBalance;
-         total_supply += itr->ECOreward_balance;
+         total_supply += itr->ECOrewardBalance;
          EUSDtotal += itr->EUSDbalance;
          EUSDtotal += itr->EUSDsavingsBalance;
          EUSDtotal += itr->EUSDrewardbalance;
          totalECO_fund_for_ESCOR += itr->eScore;
-         totalECO_fund_for_ESCOR += itr->rewardESCOR_balance;
-         pending_ESCORvalueInECO += itr->rewardESCOR_balance;
+         totalECO_fund_for_ESCOR += itr->ESCORrewardBalance;
+         pending_ESCORvalueInECO += itr->ESCORrewardBalance;
          total_vsf_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
                                  itr->witness_vote_weight() :
                                  ( MAX_PROXY_RECURSION_DEPTH > 0 ?
@@ -3999,16 +3999,16 @@ void database::validate_invariants()const
          else
             FC_ASSERT( false, "found savings withdraw that is not EUSD or eCoin" );
       }
-      fc::uint128_t total_rewardESCOR2;
+      fc::uint128_t total_ESCORreward2;
 
       const auto& comment_idx = get_index< comment_index >().indices();
 
       for( auto itr = comment_idx.begin(); itr != comment_idx.end(); ++itr )
       {
-         if( itr->net_rewardESCOR.value > 0 )
+         if( itr->net_ESCORreward.value > 0 )
          {
-            auto delta = util::evaluate_reward_curve( itr->net_rewardESCOR.value );
-            total_rewardESCOR2 += delta;
+            auto delta = util::evaluate_reward_curve( itr->net_ESCORreward.value );
+            total_ESCORreward2 += delta;
          }
       }
 
@@ -4069,16 +4069,16 @@ void database::perform_ESCOR_split( uint32_t magnitude )
       {
          modify( comment, [&]( comment_object& c )
          {
-            c.net_rewardESCOR       *= magnitude;
-            c.abs_rewardESCOR       *= magnitude;
-            c.vote_rewardESCOR      *= magnitude;
+            c.net_ESCORreward       *= magnitude;
+            c.abs_ESCORreward       *= magnitude;
+            c.vote_ESCORreward      *= magnitude;
          } );
       }
 
       for( const auto& c : comments )
       {
-         if( c.net_rewardESCOR.value > 0 )
-            adjust_rewardESCOR2( c, 0, util::evaluate_reward_curve( c.net_rewardESCOR.value ) );
+         if( c.net_ESCORreward.value > 0 )
+            adjust_ESCORreward2( c, 0, util::evaluate_reward_curve( c.net_ESCORreward.value ) );
       }
 
    }

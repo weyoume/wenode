@@ -294,7 +294,7 @@ namespace eznode { namespace chain {
          void        adjust_ECOsavingsBalance( const account_object& a, const asset& delta );
          void        adjust_reward_balance( const account_object& a, const asset& delta );
          void        adjust_supply( const asset& delta, bool adjust_ECO_fund_for_ESCOR = false );
-         void        adjust_rewardESCOR2( const comment_object& comment, fc::uint128_t old_rewardESCOR2, fc::uint128_t new_rewardESCOR2 );
+         void        adjust_ESCORreward2( const comment_object& comment, fc::uint128_t old_ESCORreward2, fc::uint128_t new_ESCORreward2 );
          void        update_owner_authority( const account_object& account, const authority& owner_authority );
 
          asset       get_balance( const account_object& a, asset_symbol_type symbol )const;

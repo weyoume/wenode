@@ -973,7 +973,7 @@ class wallet_api
 
       annotated_signed_transaction decline_voting_rights( string account, bool decline, bool broadcast );
 
-      annotated_signed_transaction claimRewardBalance( string account, asset ECOreward, asset EUSDreward, asset rewardESCOR, bool broadcast );
+      annotated_signed_transaction claimRewardBalance( string account, asset ECOreward, asset EUSDreward, asset ESCORreward, bool broadcast );
 };
 
 struct plain_keys {

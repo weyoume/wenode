@@ -152,7 +152,7 @@ struct operation_visitor
       }
 
       /// the universal tag applies to everything safe for work or nsfw with a non-negative payout
-      if( c.net_rewardESCOR >= 0 )
+      if( c.net_ESCORreward >= 0 )
       {
          lower_tags.insert( string() ); /// add it to the universal tag
       }
@@ -172,7 +172,7 @@ struct operation_visitor
              obj.active            = comment.active;
              obj.cashout           = _db.calculate_discussion_payout_time( comment );
              obj.children          = comment.children;
-             obj.net_rewardESCOR       = comment.net_rewardESCOR.value;
+             obj.net_ESCORreward       = comment.net_ESCORreward.value;
              obj.net_votes         = comment.net_votes;
              obj.hot               = hot;
              obj.trending          = trending;
@@ -203,7 +203,7 @@ struct operation_visitor
           obj.cashout           = comment.cashout_time;
           obj.net_votes         = comment.net_votes;
           obj.children          = comment.children;
-          obj.net_rewardESCOR       = comment.net_rewardESCOR.value;
+          obj.net_ESCORreward       = comment.net_ESCORreward.value;
           obj.author            = author;
           obj.hot               = hot;
           obj.trending          = trending;
@@ -265,8 +265,8 @@ struct operation_visitor
    {
       try {
 
-      auto hot = calculate_hot( c.net_rewardESCOR, c.created );
-      auto trending = calculate_trending( c.net_rewardESCOR, c.created );
+      auto hot = calculate_hot( c.net_ESCORreward, c.created );
+      auto trending = calculate_trending( c.net_ESCORreward, c.created );
 
       const auto& comment_idx = _db.get_index< tag_index >().indices().get< by_comment >();
 

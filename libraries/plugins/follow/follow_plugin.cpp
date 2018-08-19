@@ -93,7 +93,7 @@ struct pre_operation_visitor
             {
                db.modify( *rep, [&]( reputation_object& r )
                {
-                  r.reputation -= ( cv->rewardESCOR >> 6 ); // Shift away precision from ESCOR. It is noise
+                  r.reputation -= ( cv->ESCORreward >> 6 ); // Shift away precision from ESCOR. It is noise
                });
             }
          }
@@ -289,22 +289,22 @@ struct post_operation_visitor
          {
             // Rule #2: If you are down voting another user, you must have more reputation than them to impact their reputation
             // User rep is 0, so requires voter having positive rep
-            if( cv->rewardESCOR < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > 0 )) return;
+            if( cv->ESCORreward < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > 0 )) return;
 
             db.create< reputation_object >( [&]( reputation_object& r )
             {
                r.account = op.author;
-               r.reputation = ( cv->rewardESCOR >> 6 ); // Shift away precision from ESCOR. It is noise
+               r.reputation = ( cv->ESCORreward >> 6 ); // Shift away precision from ESCOR. It is noise
             });
          }
          else
          {
             // Rule #2: If you are down voting another user, you must have more reputation than them to impact their reputation
-            if( cv->rewardESCOR < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > author_rep->reputation ) ) return;
+            if( cv->ESCORreward < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > author_rep->reputation ) ) return;
 
             db.modify( *author_rep, [&]( reputation_object& r )
             {
-               r.reputation += ( cv->rewardESCOR >> 6 ); // Shift away precision from ESCOR. It is noise
+               r.reputation += ( cv->ESCORreward >> 6 ); // Shift away precision from ESCOR. It is noise
             });
          }
       }

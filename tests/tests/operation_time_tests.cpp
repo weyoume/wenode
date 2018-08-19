@@ -132,12 +132,12 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       for( const auto& author : authors )
       {
          const account_object& a = db.get_account(author.name);
-         ilog( "${n} : ${ECO} ${EUSD}", ("n", author.name)("ECO", a.ECOreward_balance)("EUSD", a.EUSDrewardbalance) );
+         ilog( "${n} : ${ECO} ${EUSD}", ("n", author.name)("ECO", a.ECOrewardBalance)("EUSD", a.EUSDrewardbalance) );
       }
       for( const auto& voter : voters )
       {
          const account_object& a = db.get_account(voter.name);
-         ilog( "${n} : ${ECO} ${EUSD}", ("n", voter.name)("ECO", a.ECOreward_balance)("EUSD", a.EUSDrewardbalance) );
+         ilog( "${n} : ${ECO} ${EUSD}", ("n", voter.name)("ECO", a.ECOrewardBalance)("EUSD", a.EUSDrewardbalance) );
       }
       */
 
@@ -292,7 +292,7 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: recent_rewardESCOR_2decay" );
+      BOOST_TEST_MESSAGE( "Testing: recent_ESCORreward_2decay" );
       ACTORS( (alice)(bob) )
       generate_block();
 
@@ -318,7 +318,7 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto alice_vESCOR = util::evaluate_reward_curve( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value,
+      auto alice_vESCOR = util::evaluate_reward_curve( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value,
          db.get< reward_fund_object, by_name >( POST_REWARD_FUND_NAME ).authorReward_curve,
          db.get< reward_fund_object, by_name >( POST_REWARD_FUND_NAME ).content_constant );
 
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       }
 
       auto bob_cashout_time = db.get_comment( "bob", string( "test" ) ).cashout_time;
-      auto bob_vESCOR = util::evaluate_reward_curve( db.get_comment( "bob", string( "test" ) ).net_rewardESCOR.value,
+      auto bob_vESCOR = util::evaluate_reward_curve( db.get_comment( "bob", string( "test" ) ).net_ESCORreward.value,
          db.get< reward_fund_object, by_name >( POST_REWARD_FUND_NAME ).authorReward_curve,
          db.get< reward_fund_object, by_name >( POST_REWARD_FUND_NAME ).content_constant );
 
@@ -458,12 +458,12 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       //generate_blocks( db.get_comment( "bob", string( "test" ) ).cashout_time - BLOCK_INTERVAL, true );
 
       auto ECOreward = db.get_dynamic_global_properties().total_reward_fund_ECO + ASSET( "1.667 TESTS" );
-      auto total_rewardESCOR2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
-      auto bob_comment_rewardESCOR = db.get_comment( "bob", string( "test" ) ).net_rewardESCOR;
+      auto total_ESCORreward2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
+      auto bob_comment_ESCORreward = db.get_comment( "bob", string( "test" ) ).net_ESCORreward;
       auto bob_ESCOR = db.get_account( "bob" ).eScore;
       auto bob_EUSDbalance = db.get_account( "bob" ).EUSDbalance;
 
-      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_rewardESCOR.value ) * bob_comment_rewardESCOR.value * ECOreward.amount.value ) / total_rewardESCOR2 ).to_uint64(), SYMBOL_ECO );
+      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_ESCORreward.value ) * bob_comment_ESCORreward.value * ECOreward.amount.value ) / total_ESCORreward2 ).to_uint64(), SYMBOL_ECO );
       auto bob_comment_discussion_rewards = asset( bob_comment_payout.amount / 4, SYMBOL_ECO );
       bob_comment_payout -= bob_comment_discussion_rewards;
       auto bob_comment_EUSD_reward = db.to_EUSD( asset( bob_comment_payout.amount / 2, SYMBOL_ECO ) );
@@ -660,21 +660,21 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       BOOST_REQUIRE( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id,   db.get_account( "alice" ) ).id ) ) != vote_idx.end() );
       BOOST_REQUIRE( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id,   db.get_account( "bob" ) ).id   ) ) != vote_idx.end() );
       BOOST_REQUIRE( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id,   db.get_account( "sam" ) ).id   ) ) != vote_idx.end() );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value > 0 );
-      BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).net_rewardESCOR.value > 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value > 0 );
+      BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).net_ESCORreward.value > 0 );
       validate_database();
 
       auto ECOreward = db.get_dynamic_global_properties().total_reward_fund_ECO + ASSET( "2.000 TESTS" );
-      auto total_rewardESCOR2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
+      auto total_ESCORreward2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
       auto bob_comment_vote_total = db.get_comment( "bob", string( "test" ) ).total_vote_weight;
-      auto bob_comment_rewardESCOR = db.get_comment( "bob", string( "test" ) ).net_rewardESCOR;
+      auto bob_comment_ESCORreward = db.get_comment( "bob", string( "test" ) ).net_ESCORreward;
       auto bob_EUSDbalance = db.get_account( "bob" ).EUSDbalance;
       auto alice_ESCOR = db.get_account( "alice" ).eScore;
       auto bob_ESCOR = db.get_account( "bob" ).eScore;
       auto sam_ESCOR = db.get_account( "sam" ).eScore;
       auto dave_ESCOR = db.get_account( "dave" ).eScore;
 
-      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_rewardESCOR.value ) * bob_comment_rewardESCOR.value * ECOreward.amount.value ) / total_rewardESCOR2 ).to_uint64(), SYMBOL_ECO );
+      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_ESCORreward.value ) * bob_comment_ESCORreward.value * ECOreward.amount.value ) / total_ESCORreward2 ).to_uint64(), SYMBOL_ECO );
       auto bob_comment_vote_rewards = asset( bob_comment_payout.amount / 2, SYMBOL_ECO );
       bob_comment_payout -= bob_comment_vote_rewards;
       auto bob_comment_EUSD_reward = asset( bob_comment_payout.amount / 2, SYMBOL_ECO ) * exchange_rate;
@@ -697,8 +697,8 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_ECO.amount.value == ECOreward.amount.value - ( bob_comment_payout + bob_comment_vote_rewards - unclaimed_payments ).amount.value );
       BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).total_payout_value.amount.value == ( ( bob_comment_ECO_fund_for_ESCOR_reward * db.get_dynamic_global_properties().get_ESCOR_price() ) + ( bob_comment_EUSD_reward * exchange_rate ) ).amount.value );
       BOOST_REQUIRE( db.get_account( "bob" ).EUSDbalance.amount.value == ( bob_EUSDbalance + bob_comment_EUSD_reward ).amount.value );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value > 0 );
-      BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).net_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value > 0 );
+      BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).net_ESCORreward.value == 0 );
       BOOST_REQUIRE( db.get_account( "alice" ).eScore.amount.value == ( alice_ESCOR + alice_vote_ECO_fund_for_ESCOR ).amount.value );
       BOOST_REQUIRE( db.get_account( "bob" ).eScore.amount.value == ( bob_ESCOR + bob_vote_ECO_fund_for_ESCOR + bob_comment_ECO_fund_for_ESCOR_reward ).amount.value );
       BOOST_REQUIRE( db.get_account( "sam" ).eScore.amount.value == ( sam_ESCOR + sam_vote_ECO_fund_for_ESCOR ).amount.value );
@@ -727,26 +727,26 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       BOOST_REQUIRE( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id,   db.get_account( "alice" ) ).id ) ) == vote_idx.end() );
       BOOST_REQUIRE( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id,   db.get_account( "bob" ) ).id   ) ) == vote_idx.end() );
       BOOST_REQUIRE( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id,   db.get_account( "sam" ) ).id   ) ) == vote_idx.end() );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value > 0 );
-      BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).net_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value > 0 );
+      BOOST_REQUIRE( db.get_comment( "bob", string( "test" ) ).net_ESCORreward.value == 0 );
       validate_database();
 
       BOOST_TEST_MESSAGE( "Generate block to cause payout" );
 
       ECOreward = db.get_dynamic_global_properties().total_reward_fund_ECO + ASSET( "2.000 TESTS" );
-      total_rewardESCOR2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
+      total_ESCORreward2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
       auto alice_comment_vote_total = db.get_comment( "alice", string( "test" ) ).total_vote_weight;
-      auto alice_comment_rewardESCOR = db.get_comment( "alice", string( "test" ) ).net_rewardESCOR;
+      auto alice_comment_ESCORreward = db.get_comment( "alice", string( "test" ) ).net_ESCORreward;
       auto alice_EUSDbalance = db.get_account( "alice" ).EUSDbalance;
       alice_ESCOR = db.get_account( "alice" ).eScore;
       bob_ESCOR = db.get_account( "bob" ).eScore;
       sam_ESCOR = db.get_account( "sam" ).eScore;
       dave_ESCOR = db.get_account( "dave" ).eScore;
 
-      u256 rs( alice_comment_rewardESCOR.value );
+      u256 rs( alice_comment_ESCORreward.value );
       u256 rf( ECOreward.amount.value );
-      u256 trs2 = total_rewardESCOR2.hi;
-      trs2 = ( trs2 << 64 ) + total_rewardESCOR2.lo;
+      u256 trs2 = total_ESCORreward2.hi;
+      trs2 = ( trs2 << 64 ) + total_ESCORreward2.lo;
       auto rs2 = rs*rs;
 
       auto alice_comment_payout = asset( static_cast< uint64_t >( ( rf * rs2 ) / trs2 ), SYMBOL_ECO );
@@ -771,8 +771,8 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       BOOST_REQUIRE( ( db.get_dynamic_global_properties().total_reward_fund_ECO + alice_comment_payout + alice_comment_vote_rewards - unclaimed_payments ).amount.value == ECOreward.amount.value );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).total_payout_value.amount.value == ( ( alice_comment_ECO_fund_for_ESCOR_reward * db.get_dynamic_global_properties().get_ESCOR_price() ) + ( alice_comment_EUSD_reward * exchange_rate ) ).amount.value );
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance.amount.value == ( alice_EUSDbalance + alice_comment_EUSD_reward ).amount.value );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value == 0 );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value == 0 );
       BOOST_REQUIRE( db.get_account( "alice" ).eScore.amount.value == ( alice_ESCOR + alice_vote_ECO_fund_for_ESCOR + alice_comment_ECO_fund_for_ESCOR_reward ).amount.value );
       BOOST_REQUIRE( db.get_account( "bob" ).eScore.amount.value == ( bob_ESCOR + bob_vote_ECO_fund_for_ESCOR ).amount.value );
       BOOST_REQUIRE( db.get_account( "sam" ).eScore.amount.value == ( sam_ESCOR + sam_vote_ECO_fund_for_ESCOR ).amount.value );
@@ -946,7 +946,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
 
       auto gpo = db.get_dynamic_global_properties();
       uint128_t ECOreward = gpo.total_reward_fund_ECO.amount.value + ASSET( "2.000 TESTS" ).amount.value;
-      uint128_t total_rewardESCOR2 = gpo.total_reward_ESCOR2;
+      uint128_t total_ESCORreward2 = gpo.total_reward_ESCOR2;
 
       auto alice_comment = db.get_comment( "alice", string( "test" ) );
       auto bob_comment = db.get_comment( "bob", string( "test" ) );
@@ -956,8 +956,8 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       const auto& vote_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
 
       // Calculate total comment rewards and voting rewards.
-      auto alice_comment_reward = ( ( ECOreward * alice_comment.net_rewardESCOR.value * alice_comment.net_rewardESCOR.value ) / total_rewardESCOR2 ).to_uint64();
-      total_rewardESCOR2 -= uint128_t( alice_comment.net_rewardESCOR.value ) * ( alice_comment.net_rewardESCOR.value );
+      auto alice_comment_reward = ( ( ECOreward * alice_comment.net_ESCORreward.value * alice_comment.net_ESCORreward.value ) / total_ESCORreward2 ).to_uint64();
+      total_ESCORreward2 -= uint128_t( alice_comment.net_ESCORreward.value ) * ( alice_comment.net_ESCORreward.value );
       ECOreward -= alice_comment_reward;
       auto alice_comment_vote_rewards = alice_comment_reward / 2;
       alice_comment_reward -= alice_comment_vote_rewards;
@@ -966,8 +966,8 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       auto bob_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_ECO );
       ECOreward += alice_comment_vote_rewards - ( alice_vote_alice_reward + bob_vote_alice_reward ).amount.value;
 
-      auto bob_comment_reward = ( ( ECOreward * bob_comment.net_rewardESCOR.value * bob_comment.net_rewardESCOR.value ) / total_rewardESCOR2 ).to_uint64();
-      total_rewardESCOR2 -= uint128_t( bob_comment.net_rewardESCOR.value ) * bob_comment.net_rewardESCOR.value;
+      auto bob_comment_reward = ( ( ECOreward * bob_comment.net_ESCORreward.value * bob_comment.net_ESCORreward.value ) / total_ESCORreward2 ).to_uint64();
+      total_ESCORreward2 -= uint128_t( bob_comment.net_ESCORreward.value ) * bob_comment.net_ESCORreward.value;
       ECOreward -= bob_comment_reward;
       auto bob_comment_vote_rewards = bob_comment_reward / 2;
       bob_comment_reward -= bob_comment_vote_rewards;
@@ -977,8 +977,8 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       auto sam_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_ECO );
       ECOreward += bob_comment_vote_rewards - ( alice_vote_bob_reward + bob_vote_bob_reward + sam_vote_bob_reward ).amount.value;
 
-      auto dave_comment_reward = ( ( ECOreward * dave_comment.net_rewardESCOR.value * dave_comment.net_rewardESCOR.value ) / total_rewardESCOR2 ).to_uint64();
-      total_rewardESCOR2 -= uint128_t( dave_comment.net_rewardESCOR.value ) * dave_comment.net_rewardESCOR.value;
+      auto dave_comment_reward = ( ( ECOreward * dave_comment.net_ESCORreward.value * dave_comment.net_ESCORreward.value ) / total_ESCORreward2 ).to_uint64();
+      total_ESCORreward2 -= uint128_t( dave_comment.net_ESCORreward.value ) * dave_comment.net_ESCORreward.value;
       ECOreward -= dave_comment_reward;
       auto dave_comment_vote_rewards = dave_comment_reward / 2;
       dave_comment_reward -= dave_comment_vote_rewards;
@@ -2614,8 +2614,8 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).cashout_time == fc::time_point_sec::maximum() );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value == 0 );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_ESCORreward.value == 0 );
 
       vote.voter = "bob";
       vote.weight = PERCENT_100 * -1;
@@ -2629,8 +2629,8 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).cashout_time == fc::time_point_sec::maximum() );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value == 0 );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_ESCORreward.value == 0 );
 
       vote.voter = "dave";
       vote.weight = 0;
@@ -2644,8 +2644,8 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
 
       db.push_transaction( tx, 0 );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).cashout_time == fc::time_point_sec::maximum() );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_rewardESCOR.value == 0 );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_ESCORreward.value == 0 );
+      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_ESCORreward.value == 0 );
 
       comment.body = "test4";
 
@@ -2748,7 +2748,7 @@ BOOST_AUTO_TEST_CASE( EUSD_stability )
       comment_reward /= 2;
       auto EUSD_reward = ( comment_reward * gpo.EUSD_print_rate ) / PERCENT_100;
       auto alice_EUSD = db.get_account( "alice" ).EUSDbalance + db.get_account( "alice" ).EUSDrewardbalance + asset( EUSD_reward, SYMBOL_ECO ) * exchange_rate;
-      auto alice_ECO = db.get_account( "alice" ).balance + db.get_account( "alice" ).ECOreward_balance ;
+      auto alice_ECO = db.get_account( "alice" ).balance + db.get_account( "alice" ).ECOrewardBalance ;
 
       BOOST_TEST_MESSAGE( "Checking printing EUSD has slowed" );
       BOOST_REQUIRE( db.get_dynamic_global_properties().EUSD_print_rate < PERCENT_100 );
@@ -2759,7 +2759,7 @@ BOOST_AUTO_TEST_CASE( EUSD_stability )
       validate_database();
 
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance + db.get_account( "alice" ).EUSDrewardbalance == alice_EUSD );
-      BOOST_REQUIRE( db.get_account( "alice" ).balance + db.get_account( "alice" ).ECOreward_balance > alice_ECO );
+      BOOST_REQUIRE( db.get_account( "alice" ).balance + db.get_account( "alice" ).ECOrewardBalance > alice_ECO );
 
       BOOST_TEST_MESSAGE( "Letting percent market cap fall to 2% to verify printing of EUSD turns back on" );
 
@@ -2907,10 +2907,10 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       {
          db.modify( db.get_account( NULL_ACCOUNT ), [&]( account_object& a )
          {
-            a.ECOreward_balance = ASSET( "1.000 TESTS" );
+            a.ECOrewardBalance = ASSET( "1.000 TESTS" );
             a.EUSDrewardbalance = ASSET( "1.000 TBD" );
-            a.rewardESCOR_balance = ASSET( "1.000000 TP" );
-            a.rewardESCOR_balance = ASSET( "1.000 TESTS" );
+            a.ESCORrewardBalance = ASSET( "1.000000 TP" );
+            a.ESCORrewardBalance = ASSET( "1.000 TESTS" );
          });
 
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
@@ -2931,9 +2931,9 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOsavingsBalance == ASSET( "4.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDsavingsBalance == ASSET( "5.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardbalance == ASSET( "1.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOreward_balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).rewardESCOR_balance == ASSET( "1.000000 TP" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).rewardESCOR_balance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOrewardBalance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "1.000000 TP" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "2.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "3.000 TBD" ) );
 
@@ -2947,9 +2947,9 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOsavingsBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDsavingsBalance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardbalance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOreward_balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).rewardESCOR_balance == ASSET( "0.000000 TP" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).rewardESCOR_balance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOrewardBalance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "0.000000 TP" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "2.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "3.000 TBD" ) );
    }

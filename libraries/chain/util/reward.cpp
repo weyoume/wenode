@@ -39,7 +39,7 @@ uint64_t get_ESCOR_reward( const comment_reward_context& ctx )
 {
    try
    {
-   FC_ASSERT( ctx.rewardESCOR > 0 );
+   FC_ASSERT( ctx.ESCORreward > 0 );
    FC_ASSERT( ctx.total_reward_ESCOR2 > 0 );
 
    u256 rf(ctx.total_reward_fund_ECO.amount.value);
@@ -47,7 +47,7 @@ uint64_t get_ESCOR_reward( const comment_reward_context& ctx )
 
    //idump( (ctx) );
 
-   u256 claim = to256( evaluate_reward_curve( ctx.rewardESCOR.value, ctx.reward_curve, ctx.content_constant ) );
+   u256 claim = to256( evaluate_reward_curve( ctx.ESCORreward.value, ctx.reward_curve, ctx.content_constant ) );
    claim = ( claim * ctx.reward_weight ) / PERCENT_100;
 
    u256 payout_u256 = ( rf * claim ) / total_claims;
@@ -65,7 +65,7 @@ uint64_t get_ESCOR_reward( const comment_reward_context& ctx )
    } FC_CAPTURE_AND_RETHROW( (ctx) )
 }
 
-uint128_t evaluate_reward_curve( const uint128_t& rewardESCOR, const curve_id& curve, const uint128_t& content_constant )
+uint128_t evaluate_reward_curve( const uint128_t& ESCORreward, const curve_id& curve, const uint128_t& content_constant )
 {
    uint128_t result = 0;
 
@@ -73,21 +73,21 @@ uint128_t evaluate_reward_curve( const uint128_t& rewardESCOR, const curve_id& c
    {
       case quadratic:
          {
-            uint128_t rewardESCOR_plus_s = rewardESCOR + content_constant;
-            result = rewardESCOR_plus_s * rewardESCOR_plus_s - content_constant * content_constant;
+            uint128_t ESCORreward_plus_s = ESCORreward + content_constant;
+            result = ESCORreward_plus_s * ESCORreward_plus_s - content_constant * content_constant;
          }
          break;
       case quadratic_curation:
          {
             uint128_t two_alpha = content_constant * 2;
-            result = uint128_t( rewardESCOR.lo, 0 ) / ( two_alpha + rewardESCOR );
+            result = uint128_t( ESCORreward.lo, 0 ) / ( two_alpha + ESCORreward );
          }
          break;
       case linear:
-         result = rewardESCOR;
+         result = ESCORreward;
          break;
       case square_root:
-         result = approx_sqrt( rewardESCOR );
+         result = approx_sqrt( ESCORreward );
          break;
    }
 

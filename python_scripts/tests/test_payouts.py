@@ -106,7 +106,7 @@ def run_eznode_tests( debug_node ):
 
       ret = rpc.get_discussions_by_cashout_time( '', '', str( 0xFFFFFFFF ) );
 
-      print( 'author, url, total_payout_value, abs_rewardESCOR, num_active_votes' )
+      print( 'author, url, total_payout_value, abs_ESCORreward, num_active_votes' )
 
       for comment in ret:
          print( comment[ 'author' ] + ', ' + comment[ 'url' ] + ', ' + comment[ 'total_payout_value' ] + ', ' + comment[ 'cashout_time' ] )
