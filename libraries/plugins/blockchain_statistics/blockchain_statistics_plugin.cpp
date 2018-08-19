@@ -357,12 +357,12 @@ void blockchain_statistics_plugin_impl::pre_operation( const operation_notificat
          auto& account = db.get_account( op.account );
          const auto& bucket = db.get(bucket_id);
 
-         auto new_ECO_fund_for_ESCOR_withdrawal_rate = op.ESCOR.amount / ECO_fund_for_ESCOR_WITHDRAW_INTERVALS;
-         if( op.ESCOR.amount > 0 && new_ECO_fund_for_ESCOR_withdrawal_rate == 0 )
-            new_ECO_fund_for_ESCOR_withdrawal_rate = 1;
+         auto newESCOR_withdrawal_rate = op.ESCOR.amount / ECO_fund_for_ESCOR_WITHDRAW_INTERVALS;
+         if( op.ESCOR.amount > 0 && newESCOR_withdrawal_rate == 0 )
+            newESCOR_withdrawal_rate = 1;
 
          if( !db.has_hardfork( HARDFORK_0_1 ) )
-            new_ECO_fund_for_ESCOR_withdrawal_rate *= 1000000;
+            newESCOR_withdrawal_rate *= 1000000;
 
          db.modify( bucket, [&]( bucket_object& b )
          {
@@ -372,7 +372,7 @@ void blockchain_statistics_plugin_impl::pre_operation( const operation_notificat
                b.new_ESCOR_ECO_fund_withdrawal_requests++;
 
             // TODO: Figure out how to change delta when a ESCOR ECO fund withdraw finishes. Have until March 24th 2018 to figure that out...
-            b.ESCORwithdrawRateInECO_delta += new_ECO_fund_for_ESCOR_withdrawal_rate - account.ESCORwithdrawRateInECO.amount;
+            b.ESCORwithdrawRateInECO_delta += newESCOR_withdrawal_rate - account.ESCORwithdrawRateInECO.amount;
          });
       }
    }

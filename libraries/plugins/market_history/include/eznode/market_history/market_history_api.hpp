@@ -120,7 +120,7 @@ FC_REFLECT( eznode::market_history::market_ticker,
 FC_REFLECT( eznode::market_history::market_volume,
    (ECO_volume)(EUSD_volume) );
 FC_REFLECT( eznode::market_history::order,
-   (price)(ECO)(eUSD) );
+   (price)(ECO)(EUSD) );
 FC_REFLECT( eznode::market_history::order_book,
    (bids)(asks) );
 FC_REFLECT( eznode::market_history::market_trade,
