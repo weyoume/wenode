@@ -1117,7 +1117,7 @@ void database::adjust_proxied_witness_votes( const account_object& a,
       {
          for( int i = MAX_PROXY_RECURSION_DEPTH - depth - 1; i >= 0; --i )
          {
-            a.proxied_vsf_votes[i+depth] += delta[i];
+            a.proxied_ESCORfundECObalance_votes[i+depth] += delta[i];
          }
       } );
 
@@ -1144,7 +1144,7 @@ void database::adjust_proxied_witness_votes( const account_object& a, share_type
 
       modify( proxy, [&]( account_object& a )
       {
-         a.proxied_vsf_votes[depth] += delta;
+         a.proxied_ESCORfundECObalance_votes[depth] += delta;
       } );
 
       adjust_proxied_witness_votes( proxy, delta, depth + 1 );
@@ -2143,7 +2143,7 @@ void database::process_decline_voting_rights()
       std::array<share_type, MAX_PROXY_RECURSION_DEPTH+1> delta;
       delta[0] = -account.ESCOR.amount;
       for( int i = 0; i < MAX_PROXY_RECURSION_DEPTH; ++i )
-         delta[i+1] = -account.proxied_vsf_votes[i];
+         delta[i+1] = -account.proxied_ESCORfundECObalance_votes[i];
       adjust_proxied_witness_votes( account, delta );
 
       clear_witness_votes( account );
@@ -3918,9 +3918,9 @@ void database::validate_invariants()const
       const auto& account_idx = get_index<account_index>().indices().get<by_name>();
       asset total_supply = asset( 0, SYMBOL_ECO );
       asset EUSDtotal = asset( 0, SYMBOL_EUSD );
-      asset totalECO_fund_for_ESCOR = asset( 0, SYMBOL_ESCOR );
+      asset totalESCOR = asset( 0, SYMBOL_ESCOR );
       asset pending_ESCORvalueInECO = asset( 0, SYMBOL_ECO );
-      share_type total_vsf_votes = share_type( 0 );
+      share_type total_ESCORfundECObalance_votes = share_type( 0 );
 
       auto gpo = get_dynamic_global_properties();
 
@@ -3937,13 +3937,13 @@ void database::validate_invariants()const
          EUSDtotal += itr->EUSDbalance;
          EUSDtotal += itr->EUSDsavingsBalance;
          EUSDtotal += itr->EUSDrewardbalance;
-         totalECO_fund_for_ESCOR += itr->ESCOR;
-         totalECO_fund_for_ESCOR += itr->ESCORrewardBalance;
-         pending_ESCORvalueInECO += itr->ESCORrewardBalance;
-         total_vsf_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
+         totalESCOR += itr->ESCOR;
+         totalESCOR += itr->ESCORrewardBalanceInECO;
+         pending_ESCORvalueInECO += itr->ESCORrewardBalanceInECO;
+         total_ESCORfundECObalance_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
                                  itr->witness_vote_weight() :
                                  ( MAX_PROXY_RECURSION_DEPTH > 0 ?
-                                      itr->proxied_vsf_votes[MAX_PROXY_RECURSION_DEPTH - 1] :
+                                      itr->proxied_ESCORfundECObalance_votes[MAX_PROXY_RECURSION_DEPTH - 1] :
                                       itr->ESCOR.amount ) );
       }
 
@@ -4023,8 +4023,8 @@ void database::validate_invariants()const
 
       FC_ASSERT( gpo.current_supply == total_supply, "", ("gpo.current_supply",gpo.current_supply)("total_supply",total_supply) );
       FC_ASSERT( gpo.current_EUSD_supply == EUSDtotal, "", ("gpo.current_EUSD_supply",gpo.current_EUSD_supply)("EUSDtotal",EUSDtotal) );
-      FC_ASSERT( gpo.totalESCOR + gpo.pending_rewarded_ESCOR == totalECO_fund_for_ESCOR, "", ("gpo.totalESCOR",gpo.totalESCOR)("totalECO_fund_for_ESCOR",totalECO_fund_for_ESCOR) );
-      FC_ASSERT( gpo.totalESCOR.amount == total_vsf_votes, "", ("totalESCOR",gpo.totalESCOR)("total_vsf_votes",total_vsf_votes) );
+      FC_ASSERT( gpo.totalESCOR + gpo.pending_rewarded_ESCOR == totalESCOR, "", ("gpo.totalESCOR",gpo.totalESCOR)("totalESCOR",totalESCOR) );
+      FC_ASSERT( gpo.totalESCOR.amount == total_ESCORfundECObalance_votes, "", ("totalESCOR",gpo.totalESCOR)("total_ESCORfundECObalance_votes",total_ESCORfundECObalance_votes) );
       FC_ASSERT( gpo.pending_rewarded_ESCORvalueInECO == pending_ESCORvalueInECO, "", ("pending_rewarded_ESCORvalueInECO",gpo.pending_rewarded_ESCORvalueInECO)("pending_ESCORvalueInECO", pending_ESCORvalueInECO));
 
       FC_ASSERT( gpo.virtual_supply >= gpo.current_supply );
@@ -4060,7 +4060,7 @@ void database::perform_ESCOR_split( uint32_t magnitude )
                a.ESCORwithdrawRateInECO.amount = 1;
 
             for( uint32_t i = 0; i < MAX_PROXY_RECURSION_DEPTH; ++i )
-               a.proxied_vsf_votes[i] *= magnitude;
+               a.proxied_ESCORfundECObalance_votes[i] *= magnitude;
          } );
       }
 

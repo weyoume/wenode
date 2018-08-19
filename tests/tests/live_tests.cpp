@@ -30,7 +30,7 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       uint32_t magnitude = 1000000;
 
       flat_map< string, share_type > accountESCOR;
-      flat_map< string, share_type > account_vsf_votes;
+      flat_map< string, share_type > account_ESCORfundECObalance_votes;
       const auto& acnt_idx = db.get_index< account_index >().indices().get< by_name >();
       auto acnt_itr = acnt_idx.begin();
 
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       while( acnt_itr != acnt_idx.end() )
       {
          accountESCOR[acnt_itr->name] = acnt_itr->ESCOR.amount;
-         account_vsf_votes[acnt_itr->name] = acnt_itr->proxied_vsf_votes_total().value;
+         account_ESCORfundECObalance_votes[acnt_itr->name] = acnt_itr->proxied_ESCORfundECObalance_votes_total().value;
          acnt_itr++;
       }
 
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       while( acnt_itr != acnt_idx.end() )
       {
          BOOST_REQUIRE( acnt_itr->ESCOR.amount == accountESCOR[ acnt_itr->name ] * magnitude );
-         BOOST_REQUIRE( acnt_itr->proxied_vsf_votes_total().value == account_vsf_votes[ acnt_itr->name ] * magnitude );
+         BOOST_REQUIRE( acnt_itr->proxied_ESCORfundECObalance_votes_total().value == account_ESCORfundECObalance_votes[ acnt_itr->name ] * magnitude );
          acnt_itr++;
       }
 

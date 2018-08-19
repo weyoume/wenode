@@ -103,7 +103,7 @@ namespace eznode { namespace chain {
          share_type        to_withdraw = 0; /// Might be able to look this up with operation history.
          uint16_t          withdraw_routes = 0;
 
-         fc::array<share_type, MAX_PROXY_RECURSION_DEPTH> proxied_vsf_votes;// = std::vector<share_type>( MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total ESCOR votes proxied to this account
+         fc::array<share_type, MAX_PROXY_RECURSION_DEPTH> proxied_ESCORfundECObalance_votes;// = std::vector<share_type>( MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total ESCOR votes proxied to this account
 
          uint16_t          witnesses_voted_for = 0;
 
@@ -113,13 +113,13 @@ namespace eznode { namespace chain {
 
          /// This function should be used only when the account votes for a witness directly
          share_type        witness_vote_weight()const {
-            return std::accumulate( proxied_vsf_votes.begin(),
-                                    proxied_vsf_votes.end(),
+            return std::accumulate( proxied_ESCORfundECObalance_votes.begin(),
+                                    proxied_ESCORfundECObalance_votes.end(),
                                     ESCOR.amount );
          }
-         share_type        proxied_vsf_votes_total()const {
-            return std::accumulate( proxied_vsf_votes.begin(),
-                                    proxied_vsf_votes.end(),
+         share_type        proxied_ESCORfundECObalance_votes_total()const {
+            return std::accumulate( proxied_ESCORfundECObalance_votes.begin(),
+                                    proxied_ESCORfundECObalance_votes.end(),
                                     share_type() );
          }
 
@@ -471,7 +471,7 @@ FC_REFLECT( eznode::chain::account_object,
              (ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)
-             (proxied_vsf_votes)(witnesses_voted_for)
+             (proxied_ESCORfundECObalance_votes)(witnesses_voted_for)
              (last_post)(last_root_post)(post_bandwidth)
           )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::account_object, eznode::chain::account_index )

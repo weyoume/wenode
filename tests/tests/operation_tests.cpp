@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
       /// because init_witness has created ESCOR and blocks have been produced, 100 ECO is worth less than 100 ESCOR due to rounding
       BOOST_REQUIRE( acct.ESCOR.amount.value == ( op.fee * ( score_ESCOR / ESCOR ) ).amount.value );
       BOOST_REQUIRE( acct.ESCORwithdrawRateInECO.amount.value == ASSET( "0.000000 ESCOR" ).amount.value );
-      BOOST_REQUIRE( acct.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( acct.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( ( init_starting_balance - ASSET( "0.100 TESTS" ) ).amount.value == init.balance.amount.value );
       validate_database();
 
@@ -136,7 +136,7 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
       BOOST_REQUIRE( acct.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       BOOST_REQUIRE( acct.ESCOR.amount.value == ( op.fee * ( score_ESCOR / ESCOR ) ).amount.value );
       BOOST_REQUIRE( acct.ESCORwithdrawRateInECO.amount.value == ASSET( "0.000000 ESCOR" ).amount.value );
-      BOOST_REQUIRE( acct.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( acct.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( ( init_starting_balance - ASSET( "0.100 TESTS" ) ).amount.value == init.balance.amount.value );
       validate_database();
 
@@ -1846,7 +1846,7 @@ BOOST_AUTO_TEST_CASE( accountWitnessVote_apply )
 
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( sam_witness.votes == ( bob.proxied_vsf_votes_total() + bob.ESCOR.amount ) );
+      BOOST_REQUIRE( sam_witness.votes == ( bob.proxied_ESCORfundECObalance_votes_total() + bob.ESCOR.amount ) );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, bob.id ) ) != witness_vote_idx.end() );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, alice.id ) ) == witness_vote_idx.end() );
 
@@ -1858,7 +1858,7 @@ BOOST_AUTO_TEST_CASE( accountWitnessVote_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
 
-      BOOST_REQUIRE( sam_witness.votes == ( bob.proxied_vsf_votes_total() + bob.ESCOR.amount ) );
+      BOOST_REQUIRE( sam_witness.votes == ( bob.proxied_ESCORfundECObalance_votes_total() + bob.ESCOR.amount ) );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, bob.id ) ) != witness_vote_idx.end() );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, alice.id ) ) == witness_vote_idx.end() );
 
@@ -1992,9 +1992,9 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( bob.proxy == "alice" );
-      BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( bob.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( alice.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( alice.proxied_vsf_votes_total() == bob.ESCOR.amount );
+      BOOST_REQUIRE( alice.proxied_ESCORfundECObalance_votes_total() == bob.ESCOR.amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test changing proxy" );
@@ -2009,10 +2009,10 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( bob.proxy == "sam" );
-      BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
-      BOOST_REQUIRE( alice.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( bob.proxied_ESCORfundECObalance_votes_total().value == 0 );
+      BOOST_REQUIRE( alice.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total().value == bob.ESCOR.amount );
+      BOOST_REQUIRE( sam.proxied_ESCORfundECObalance_votes_total().value == bob.ESCOR.amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when changing proxy to existing proxy" );
@@ -2020,9 +2020,9 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
 
       BOOST_REQUIRE( bob.proxy == "sam" );
-      BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( bob.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == bob.ESCOR.amount );
+      BOOST_REQUIRE( sam.proxied_ESCORfundECObalance_votes_total() == bob.ESCOR.amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test adding a grandparent proxy" );
@@ -2038,11 +2038,11 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( bob.proxy == "sam" );
-      BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( bob.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == bob.ESCOR.amount );
+      BOOST_REQUIRE( sam.proxied_ESCORfundECObalance_votes_total() == bob.ESCOR.amount );
       BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.ESCOR + bob.ESCOR ).amount );
+      BOOST_REQUIRE( dave.proxied_ESCORfundECObalance_votes_total() == ( sam.ESCOR + bob.ESCOR ).amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test adding a grandchild proxy" );
@@ -2059,13 +2059,13 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( alice.proxy == "sam" );
-      BOOST_REQUIRE( alice.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( alice.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( bob.proxy == "sam" );
-      BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( bob.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == ( bob.ESCOR + alice.ESCOR ).amount );
+      BOOST_REQUIRE( sam.proxied_ESCORfundECObalance_votes_total() == ( bob.ESCOR + alice.ESCOR ).amount );
       BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.ESCOR + bob.ESCOR + alice.ESCOR ).amount );
+      BOOST_REQUIRE( dave.proxied_ESCORfundECObalance_votes_total() == ( sam.ESCOR + bob.ESCOR + alice.ESCOR ).amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test removing a grandchild proxy" );
@@ -2081,13 +2081,13 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( alice.proxy == "sam" );
-      BOOST_REQUIRE( alice.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( alice.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( bob.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
+      BOOST_REQUIRE( bob.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == alice.ESCOR.amount );
+      BOOST_REQUIRE( sam.proxied_ESCORfundECObalance_votes_total() == alice.ESCOR.amount );
       BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.ESCOR + alice.ESCOR ).amount );
+      BOOST_REQUIRE( dave.proxied_ESCORfundECObalance_votes_total() == ( sam.ESCOR + alice.ESCOR ).amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test votes are transferred when a proxy is added" );
