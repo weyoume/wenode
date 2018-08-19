@@ -618,7 +618,7 @@ class wallet_api
        * @param to The account the funds are going to
        * @param agent The account acting as the agent in case of dispute
        * @param escrow_id A unique id for the escrow transfer. (from, escrow_id) must be a unique pair
-       * @param EUSD_amount The amount of EUSD to transfer
+       * @param EUSDamount The amount of EUSD to transfer
        * @param ECOamount The amount of ECO to transfer
        * @param fee The fee paid to the agent
        * @param ratification_deadline The deadline for 'to' and 'agent' to approve the escrow transfer
@@ -631,7 +631,7 @@ class wallet_api
          string to,
          string agent,
          uint32_t escrow_id,
-         asset EUSD_amount,
+         asset EUSDamount,
          asset ECOamount,
          asset fee,
          time_point_sec ratification_deadline,
@@ -690,7 +690,7 @@ class wallet_api
        * @param who The account authorizing the release
        * @param receiver The account that will receive funds being released
        * @param escrow_id A unique id for the escrow transfer
-       * @param EUSD_amount The amount of EUSD that will be released
+       * @param EUSDamount The amount of EUSD that will be released
        * @param ECOamount The amount of ECO that will be released
        * @param broadcast true if you wish to broadcast the transaction
        */
@@ -701,7 +701,7 @@ class wallet_api
          string who,
          string receiver,
          uint32_t escrow_id,
-         asset EUSD_amount,
+         asset EUSDamount,
          asset ECOamount,
          bool broadcast = false
       );

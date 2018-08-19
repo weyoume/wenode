@@ -302,8 +302,8 @@ struct account_api_obj
 
    asset             EUSDrewardbalance;
    asset             ECOrewardBalance;
-   asset             ESCORrewardBalanceInECO;
    asset             ESCORrewardBalance;
+   asset             ESCORrewardBalanceInECO;
 
    share_type        curationRewards;
    share_type        posting_rewards;

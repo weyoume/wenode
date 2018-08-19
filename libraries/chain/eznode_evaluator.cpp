@@ -693,7 +693,7 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
       FC_ASSERT( o.escrow_expiration > _db.head_block_time(), "The escrow expiration must be after head block time." );
 
       asset ECO_spent = o.ECOamount;
-      asset EUSD_spent = o.EUSD_amount;
+      asset EUSD_spent = o.EUSDamount;
       if( o.fee.symbol == SYMBOL_ECO )
          ECO_spent += o.fee;
       else
@@ -713,7 +713,7 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
          esc.agent                  = o.agent;
          esc.ratification_deadline  = o.ratification_deadline;
          esc.escrow_expiration      = o.escrow_expiration;
-         esc.EUSDbalance            = o.EUSD_amount;
+         esc.EUSDbalance            = o.EUSDamount;
          esc.ECObalance            = o.ECOamount;
          esc.pending_fee            = o.fee;
       });
@@ -812,7 +812,7 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
 
       const auto& e = _db.get_escrow( o.from, o.escrow_id );
       FC_ASSERT( e.ECObalance >= o.ECOamount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.ECOamount)("b", e.ECObalance) );
-      FC_ASSERT( e.EUSDbalance >= o.EUSD_amount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.EUSD_amount)("b", e.EUSDbalance) );
+      FC_ASSERT( e.EUSDbalance >= o.EUSDamount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.EUSDamount)("b", e.EUSDbalance) );
       FC_ASSERT( e.to == o.to, "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to)("e", e.to) );
       FC_ASSERT( e.agent == o.agent, "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", e.agent) );
       FC_ASSERT( o.receiver == e.from || o.receiver == e.to, "Funds must be released to 'from' (${f}) or 'to' (${t})", ("f", e.from)("t", e.to) );
@@ -843,12 +843,12 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
       // If escrow expires and there is no dispute, either party can release funds to either party.
 
       _db.adjust_balance( receiver_account, o.ECOamount );
-      _db.adjust_balance( receiver_account, o.EUSD_amount );
+      _db.adjust_balance( receiver_account, o.EUSDamount );
 
       _db.modify( e, [&]( escrow_object& esc )
       {
          esc.ECObalance -= o.ECOamount;
-         esc.EUSDbalance -= o.EUSD_amount;
+         esc.EUSDbalance -= o.EUSDamount;
       });
 
       if( e.ECObalance.amount == 0 && e.EUSDbalance.amount == 0 )
