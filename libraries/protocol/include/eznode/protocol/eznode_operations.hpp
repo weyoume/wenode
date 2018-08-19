@@ -312,10 +312,10 @@ namespace eznode { namespace protocol {
 
 
    /**
-    *  This operation converts ECO into eScore (ESCOR) at
+    *  This operation converts ECO into ESCOR (ESCOR) at
     *  the current exchange rate. With this operation it is possible to
-    *  give another account eScore so that faucets can
-    *  pre-fund new accounts with eScore.
+    *  give another account ESCOR so that faucets can
+    *  pre-fund new accounts with ESCOR.
     */
    struct transferECOtoESCORfund_operation : public base_operation
    {
@@ -330,19 +330,19 @@ namespace eznode { namespace protocol {
 
    /**
     * At any given point in time an account can be withdrawing from their
-    * eScore. A user may change the number of eScore they wish to
-    * cash out at any time between 0 and their total eScore.
+    * ESCOR. A user may change the number of ESCOR they wish to
+    * cash out at any time between 0 and their total ESCOR.
     *
-    * After applying this operation, eScore will be withdrawn
-    * at a rate of eScore/104 per week for two years starting
+    * After applying this operation, ESCOR will be withdrawn
+    * at a rate of ESCOR/104 per week for two years starting
     * one week after this operation is included in the blockchain.
     *
-    * This operation is not valid if the user has no eScore.
+    * This operation is not valid if the user has no ESCOR.
     */
    struct withdrawESCOR_operation : public base_operation
    {
       account_name_type account;
-      asset             eScore;
+      asset             ESCOR;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(account); }
@@ -350,7 +350,7 @@ namespace eznode { namespace protocol {
 
 
    /**
-    * Allows an account to setup an eScore withdraw but with the additional
+    * Allows an account to setup an ESCOR withdraw but with the additional
     * request for the funds to be transferred directly to another account's
     * balance rather than the withdrawing account. In addition, those funds
     * can be immediately scored again, circumventing the conversion from
@@ -376,8 +376,8 @@ namespace eznode { namespace protocol {
    struct chain_properties
    {
       /**
-       *  This fee, paid in ECO, is converted into eScore for the new account. Accounts
-       *  without eScore cannot earn usage rations and therefore are powerless. This minimum
+       *  This fee, paid in ECO, is converted into ESCOR for the new account. Accounts
+       *  without ESCOR cannot earn usage rations and therefore are powerless. This minimum
        *  fee requires all accounts to have some kind of commitment to the network that includes the
        *  ability to vote and make transactions.
        */
@@ -429,7 +429,7 @@ namespace eznode { namespace protocol {
 
 
    /**
-    * All accounts with a eScore can vote for or against any witness.
+    * All accounts with a ESCOR can vote for or against any witness.
     *
     * If a proxy is specified then all existing votes are removed.
     */
@@ -688,9 +688,9 @@ namespace eznode { namespace protocol {
     *
     * Users not in the ACTIVE witness set should not have to worry about their
     * key getting compromised and being used to produced multiple blocks so
-    * the attacker can report it and steel their eScore.
+    * the attacker can report it and steel their ESCOR.
     *
-    * The result of the operation is to transfer the full eScore balance
+    * The result of the operation is to transfer the full ESCOR balance
     * of the block producer to the reporter.
     */
    struct report_over_production_operation : public base_operation
@@ -922,19 +922,19 @@ namespace eznode { namespace protocol {
    };
 
    /**
-    * Delegate eScore from one account to the other. The eScore are still owned
+    * Delegate ESCOR from one account to the other. The ESCOR are still owned
     * by the original account, but content voting rights and bandwidth allocation are transferred
-    * to the receiving account. This sets the delegation to `eScore`, increasing it or
+    * to the receiving account. This sets the delegation to `ESCOR`, increasing it or
     * decreasing it as needed. (i.e. a delegation of 0 removes the delegation)
     *
-    * When a delegation is removed the eScore are placed in limbo for a week to prevent a satoshi
+    * When a delegation is removed the ESCOR are placed in limbo for a week to prevent a satoshi
     * of ESCOR from voting on the same content twice.
     */
    struct delegateESCOR_operation : public base_operation
    {
-      account_name_type delegator;        ///< The account delegating eScore
-      account_name_type delegatee;        ///< The account receiving eScore
-      asset             eScore;   ///< The amount of eScore delegated
+      account_name_type delegator;        ///< The account delegating ESCOR
+      account_name_type delegatee;        ///< The account receiving ESCOR
+      asset             ESCOR;   ///< The amount of ESCOR delegated
 
       void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( delegator ); }
       void validate() const;
@@ -995,7 +995,7 @@ FC_REFLECT( eznode::protocol::accountUpdate_operation,
 
 FC_REFLECT( eznode::protocol::transfer_operation, (from)(to)(amount)(memo) )
 FC_REFLECT( eznode::protocol::transferECOtoESCORfund_operation, (from)(to)(amount) )
-FC_REFLECT( eznode::protocol::withdrawESCOR_operation, (account)(eScore) )
+FC_REFLECT( eznode::protocol::withdrawESCOR_operation, (account)(ESCOR) )
 FC_REFLECT( eznode::protocol::setWithdrawESCORasECOroute_operation, (from_account)(to_account)(percent)(autoESCOR) )
 FC_REFLECT( eznode::protocol::witness_update_operation, (owner)(url)(block_signing_key)(props)(fee) )
 FC_REFLECT( eznode::protocol::accountWitnessVote_operation, (account)(witness)(approve) )
@@ -1027,4 +1027,4 @@ FC_REFLECT( eznode::protocol::recover_account_operation, (accountToRecover)(new_
 FC_REFLECT( eznode::protocol::change_recoveryAccount_operation, (accountToRecover)(new_recoveryAccount)(extensions) );
 FC_REFLECT( eznode::protocol::decline_voting_rights_operation, (account)(decline) );
 FC_REFLECT( eznode::protocol::claimRewardBalance_operation, (account)(ECOreward)(EUSDreward)(ESCORreward) )
-FC_REFLECT( eznode::protocol::delegateESCOR_operation, (delegator)(delegatee)(eScore) );
+FC_REFLECT( eznode::protocol::delegateESCOR_operation, (delegator)(delegatee)(ESCOR) );

@@ -2167,7 +2167,7 @@ annotated_signed_transaction wallet_api::claimRewardBalance( string account, ass
    claimRewardBalance_operation op;
    op.account = account;
    op.ECOreward = ECOreward;
-   op.EUSDrewardD = rewardEUSD;
+   op.EUSDrewardD = EUSDreward;
    op.ESCORreward = ESCORreward;
 
    signed_transaction tx;
