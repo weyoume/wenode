@@ -731,9 +731,9 @@ public:
          asset totalESCOR(0, SYMBOL_ESCOR );
          asset totalEUSD(0, SYMBOL_EUSD );
          for( const auto& a : accounts ) {
-            totalECO += a.balance.to_asset();
-            totalESCOR  += a.ESCOR.to_asset();
-            totalEUSD  += a.EUSDbalance.to_asset();
+            totalECO += a.balance;
+            totalESCOR  += a.ESCOR;
+            totalEUSD  += a.EUSDbalance;
             out << std::left << std::setw( 17 ) << std::string(a.name)
                 << std::right << std::setw(18) << fc::variant(a.balance).as_string() <<" "
                 << std::right << std::setw(26) << fc::variant(a.ESCOR).as_string() <<" "
