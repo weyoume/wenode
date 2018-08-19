@@ -21,37 +21,37 @@ using fc::uint128_t;
 
 struct comment_reward_context
 {
-   share_type rshares;
+   share_type rewardESCOR;
    uint16_t   reward_weight = 0;
-   asset      max_EZD;
-   uint128_t  total_reward_shares2;
+   asset      max_EUSD;
+   uint128_t  total_reward_ESCOR2;
    asset      total_reward_fund_ECO;
    price      current_ECO_price;
    curve_id   reward_curve = quadratic;
    uint128_t  content_constant = CONTENT_CONSTANT_HF0;
 };
 
-uint64_t get_rshare_reward( const comment_reward_context& ctx );
+uint64_t get_ESCOR_reward( const comment_reward_context& ctx );
 
 inline uint128_t get_content_constant_s()
 {
    return CONTENT_CONSTANT_HF0; // looking good for posters
 }
 
-uint128_t evaluate_reward_curve( const uint128_t& rshares, const curve_id& curve = quadratic, const uint128_t& content_constant = CONTENT_CONSTANT_HF0 );
+uint128_t evaluate_reward_curve( const uint128_t& rewardESCOR, const curve_id& curve = quadratic, const uint128_t& content_constant = CONTENT_CONSTANT_HF0 );
 
-inline bool is_comment_payout_dust( const price& p, uint64_t ECO_payout )
+inline bool is_comment_payout_dust( const price& p, uint64_t ECOpayout )
 {
-   return to_EZD( p, asset( ECO_payout, SYMBOL_ECO ) ) < MIN_PAYOUT_EZD;
+   return to_EUSD( p, asset( ECOpayout, SYMBOL_ECO ) ) < MIN_PAYOUT_EUSD;
 }
 
 } } } // eznode::chain::util
 
 FC_REFLECT( eznode::chain::util::comment_reward_context,
-   (rshares)
+   (rewardESCOR)
    (reward_weight)
-   (max_EZD)
-   (total_reward_shares2)
+   (max_EUSD)
+   (total_reward_ESCOR2)
    (total_reward_fund_ECO)
    (current_ECO_price)
    (reward_curve)

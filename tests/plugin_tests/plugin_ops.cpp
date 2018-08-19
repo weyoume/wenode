@@ -90,7 +90,7 @@ DEFINE_OPERATION_TYPE( eznode::plugin_tests::test_op );
 
 BOOST_FIXTURE_TEST_SUITE( plugin_ops, clean_database_fixture );
 /*
-BOOST_AUTO_TEST_CASE( custom_json )
+BOOST_AUTO_TEST_CASE( customJson )
 {
    try
    {

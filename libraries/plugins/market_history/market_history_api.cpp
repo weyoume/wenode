@@ -34,8 +34,8 @@ market_ticker market_history_api_impl::get_ticker() const
 
    if( itr != bucket_idx.end() )
    {
-      auto open = ( asset( itr->open_EZD, SYMBOL_EZD ) / asset( itr->open_ECO, SYMBOL_ECO ) ).to_real();
-      result.latest = ( asset( itr->close_EZD, SYMBOL_EZD ) / asset( itr->close_ECO, SYMBOL_ECO ) ).to_real();
+      auto open = ( asset( itr->open_EUSD, SYMBOL_EUSD ) / asset( itr->open_ECO, SYMBOL_ECO ) ).to_real();
+      result.latest = ( asset( itr->close_EUSD, SYMBOL_EUSD ) / asset( itr->close_ECO, SYMBOL_ECO ) ).to_real();
       result.percent_change = ( ( result.latest - open ) / open ) * 100;
    }
    else
@@ -52,7 +52,7 @@ market_ticker market_history_api_impl::get_ticker() const
 
    auto volume = get_volume();
    result.ECO_volume = volume.ECO_volume;
-   result.EZD_volume = volume.EZD_volume;
+   result.EUSD_volume = volume.EUSD_volume;
 
    return result;
 }
@@ -71,7 +71,7 @@ market_volume market_history_api_impl::get_volume() const
    do
    {
       result.ECO_volume.amount += itr->ECO_volume;
-      result.EZD_volume.amount += itr->EZD_volume;
+      result.EUSD_volume.amount += itr->EUSD_volume;
 
       ++itr;
    } while( itr != bucket_idx.end() && itr->seconds == bucket_size );
@@ -84,28 +84,28 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
    FC_ASSERT( limit <= 500 );
 
    const auto& order_idx = app.chain_database()->get_index< eznode::chain::limit_order_index >().indices().get< eznode::chain::by_price >();
-   auto itr = order_idx.lower_bound( price::max( SYMBOL_EZD, SYMBOL_ECO ) );
+   auto itr = order_idx.lower_bound( price::max( SYMBOL_EUSD, SYMBOL_ECO ) );
 
    order_book result;
 
-   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_EZD && result.bids.size() < limit )
+   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_EUSD && result.bids.size() < limit )
    {
       order cur;
       cur.price = itr->sell_price.base.to_real() / itr->sell_price.quote.to_real();
-      cur.ECO = ( asset( itr->for_sale, SYMBOL_EZD ) * itr->sell_price ).amount;
-      cur.EZD = itr->for_sale;
+      cur.ECO = ( asset( itr->for_sale, SYMBOL_EUSD ) * itr->sell_price ).amount;
+      cur.EUSD = itr->for_sale;
       result.bids.push_back( cur );
       ++itr;
    }
 
-   itr = order_idx.lower_bound( price::max( SYMBOL_ECO, SYMBOL_EZD ) );
+   itr = order_idx.lower_bound( price::max( SYMBOL_ECO, SYMBOL_EUSD ) );
 
    while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_ECO && result.asks.size() < limit )
    {
       order cur;
       cur.price = itr->sell_price.quote.to_real() / itr->sell_price.base.to_real();
       cur.ECO = itr->for_sale;
-      cur.EZD = ( asset( itr->for_sale, SYMBOL_ECO ) * itr->sell_price ).amount;
+      cur.EUSD = ( asset( itr->for_sale, SYMBOL_ECO ) * itr->sell_price ).amount;
       result.asks.push_back( cur );
       ++itr;
    }

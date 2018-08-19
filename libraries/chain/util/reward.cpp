@@ -35,19 +35,19 @@ uint64_t approx_sqrt( const uint128_t& x )
    return result;
 }
 
-uint64_t get_rshare_reward( const comment_reward_context& ctx )
+uint64_t get_ESCOR_reward( const comment_reward_context& ctx )
 {
    try
    {
-   FC_ASSERT( ctx.rshares > 0 );
-   FC_ASSERT( ctx.total_reward_shares2 > 0 );
+   FC_ASSERT( ctx.rewardESCOR > 0 );
+   FC_ASSERT( ctx.total_reward_ESCOR2 > 0 );
 
    u256 rf(ctx.total_reward_fund_ECO.amount.value);
-   u256 total_claims = to256( ctx.total_reward_shares2 );
+   u256 total_claims = to256( ctx.total_reward_ESCOR2 );
 
    //idump( (ctx) );
 
-   u256 claim = to256( evaluate_reward_curve( ctx.rshares.value, ctx.reward_curve, ctx.content_constant ) );
+   u256 claim = to256( evaluate_reward_curve( ctx.rewardESCOR.value, ctx.reward_curve, ctx.content_constant ) );
    claim = ( claim * ctx.reward_weight ) / PERCENT_100;
 
    u256 payout_u256 = ( rf * claim ) / total_claims;
@@ -57,7 +57,7 @@ uint64_t get_rshare_reward( const comment_reward_context& ctx )
    if( is_comment_payout_dust( ctx.current_ECO_price, payout ) )
       payout = 0;
 
-   asset max_ECO = to_ECO( ctx.current_ECO_price, ctx.max_EZD );
+   asset max_ECO = to_ECO( ctx.current_ECO_price, ctx.max_EUSD );
 
    payout = std::min( payout, uint64_t( max_ECO.amount.value ) );
 
@@ -65,7 +65,7 @@ uint64_t get_rshare_reward( const comment_reward_context& ctx )
    } FC_CAPTURE_AND_RETHROW( (ctx) )
 }
 
-uint128_t evaluate_reward_curve( const uint128_t& rshares, const curve_id& curve, const uint128_t& content_constant )
+uint128_t evaluate_reward_curve( const uint128_t& rewardESCOR, const curve_id& curve, const uint128_t& content_constant )
 {
    uint128_t result = 0;
 
@@ -73,21 +73,21 @@ uint128_t evaluate_reward_curve( const uint128_t& rshares, const curve_id& curve
    {
       case quadratic:
          {
-            uint128_t rshares_plus_s = rshares + content_constant;
-            result = rshares_plus_s * rshares_plus_s - content_constant * content_constant;
+            uint128_t rewardESCOR_plus_s = rewardESCOR + content_constant;
+            result = rewardESCOR_plus_s * rewardESCOR_plus_s - content_constant * content_constant;
          }
          break;
       case quadratic_curation:
          {
             uint128_t two_alpha = content_constant * 2;
-            result = uint128_t( rshares.lo, 0 ) / ( two_alpha + rshares );
+            result = uint128_t( rewardESCOR.lo, 0 ) / ( two_alpha + rewardESCOR );
          }
          break;
       case linear:
-         result = rshares;
+         result = rewardESCOR;
          break;
       case square_root:
-         result = approx_sqrt( rshares );
+         result = approx_sqrt( rewardESCOR );
          break;
    }
 

@@ -52,35 +52,35 @@ namespace eznode { namespace chain {
          asset       virtual_supply             = asset( 0, SYMBOL_ECO );
          asset       current_supply             = asset( 0, SYMBOL_ECO );
          asset       confidential_supply        = asset( 0, SYMBOL_ECO ); ///< total asset held in confidential balances
-         asset       current_EZD_supply         = asset( 0, SYMBOL_EZD );
-         asset       confidential_EZD_supply    = asset( 0, SYMBOL_EZD ); ///< total asset held in confidential balances
-         asset       total_vesting_fund_ECO   = asset( 0, SYMBOL_ECO );
-         asset       total_vesting_shares       = asset( 0, SYMBOL_EZP );
+         asset       current_EUSD_supply         = asset( 0, SYMBOL_EUSD );
+         asset       confidential_EUSD_supply    = asset( 0, SYMBOL_EUSD ); ///< total asset held in confidential balances
+         asset       totalECOfundForESCOR   = asset( 0, SYMBOL_ECO );
+         asset       totalESCOR       = asset( 0, SYMBOL_ESCOR );
          asset       total_reward_fund_ECO    = asset( 0, SYMBOL_ECO );
-         fc::uint128 total_reward_shares2; ///< the running total of REWARD^2
-         asset       pending_rewarded_vesting_shares = asset( 0, SYMBOL_EZP );
-         asset       pending_rewarded_vesting_ECO = asset( 0, SYMBOL_ECO );
+         fc::uint128 total_reward_ESCOR2; ///< the running total of REWARD^2
+         asset       pending_rewarded_ESCOR = asset( 0, SYMBOL_ESCOR );
+         asset       pending_rewarded_ESCORvalueInECO = asset( 0, SYMBOL_ECO );
 
-         price       get_vesting_share_price() const
+         price       get_ESCOR_price() const
          {
-            if ( total_vesting_fund_ECO.amount == 0 || total_vesting_shares.amount == 0 )
-               return price ( asset( 1000, SYMBOL_ECO ), asset( 1000000, SYMBOL_EZP ) );
+            if ( totalECOfundForESCOR.amount == 0 || totalESCOR.amount == 0 )
+               return price ( asset( 1000, SYMBOL_ECO ), asset( 1000000, SYMBOL_ESCOR ) );
 
-            return price( total_vesting_shares, total_vesting_fund_ECO );
+            return price( totalESCOR, totalECOfundForESCOR );
          }
 
-         price get_reward_vesting_share_price() const
+         price get_reward_ESCOR_price() const
          {
-            return price( total_vesting_shares + pending_rewarded_vesting_shares,
-               total_vesting_fund_ECO + pending_rewarded_vesting_ECO );
+            return price( totalESCOR + pending_rewarded_ESCOR,
+               totalECOfundForESCOR + pending_rewarded_ESCORvalueInECO );
          }
 
          /**
-          *  This property defines the interest rate that EZD deposits receive.
+          *  This property defines the interest rate that EUSD deposits receive.
           */
-         uint16_t EZD_interest_rate = 0;
+         uint16_t EUSD_interest_rate = 0;
 
-         uint16_t EZD_print_rate = PERCENT_100;
+         uint16_t EUSD_print_rate = PERCENT_100;
 
          /**
           *  Maximum block size is decided by the set of active witnesses which change every round.
@@ -137,16 +137,16 @@ FC_REFLECT( eznode::chain::dynamic_global_property_object,
              (virtual_supply)
              (current_supply)
              (confidential_supply)
-             (current_EZD_supply)
-             (confidential_EZD_supply)
-             (total_vesting_fund_ECO)
-             (total_vesting_shares)
+             (current_EUSD_supply)
+             (confidential_EUSD_supply)
+             (totalECOfundForESCOR)
+             (totalESCOR)
              (total_reward_fund_ECO)
-             (total_reward_shares2)
-             (pending_rewarded_vesting_shares)
-             (pending_rewarded_vesting_ECO)
-             (EZD_interest_rate)
-             (EZD_print_rate)
+             (total_reward_ESCOR2)
+             (pending_rewarded_ESCOR)
+             (pending_rewarded_ESCORvalueInECO)
+             (EUSD_interest_rate)
+             (EUSD_print_rate)
              (maximum_block_size)
              (current_aslot)
              (recent_slots_filled)

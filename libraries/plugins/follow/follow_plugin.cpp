@@ -93,7 +93,7 @@ struct pre_operation_visitor
             {
                db.modify( *rep, [&]( reputation_object& r )
                {
-                  r.reputation -= ( cv->rshares >> 6 ); // Shift away precision from vests. It is noise
+                  r.reputation -= ( cv->rewardESCOR >> 6 ); // Shift away precision from ESCOR. It is noise
                });
             }
          }
@@ -101,7 +101,7 @@ struct pre_operation_visitor
       catch( const fc::exception& e ) {}
    }
 
-   void operator()( const delete_comment_operation& op )const
+   void operator()( const deleteComment_operation& op )const
    {
       try
       {
@@ -147,13 +147,13 @@ struct post_operation_visitor
    template< typename T >
    void operator()( const T& )const {}
 
-   void operator()( const custom_json_operation& op )const
+   void operator()( const customJson_operation& op )const
    {
       try
       {
          if( op.id == FOLLOW_PLUGIN_NAME )
          {
-            custom_json_operation new_cop;
+            customJson_operation new_cop;
 
             new_cop.required_auths = op.required_auths;
             new_cop.required_posting_auths = op.required_posting_auths;
@@ -171,7 +171,7 @@ struct post_operation_visitor
 
             auto new_fop = follow_plugin_operation( fop );
             new_cop.json = fc::json::to_string( new_fop );
-            std::shared_ptr< custom_operation_interpreter > eval = _plugin.database().get_custom_json_evaluator( op.id );
+            std::shared_ptr< custom_operation_interpreter > eval = _plugin.database().get_customJson_evaluator( op.id );
             eval->apply( new_cop );
          }
       }
@@ -289,22 +289,22 @@ struct post_operation_visitor
          {
             // Rule #2: If you are down voting another user, you must have more reputation than them to impact their reputation
             // User rep is 0, so requires voter having positive rep
-            if( cv->rshares < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > 0 )) return;
+            if( cv->rewardESCOR < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > 0 )) return;
 
             db.create< reputation_object >( [&]( reputation_object& r )
             {
                r.account = op.author;
-               r.reputation = ( cv->rshares >> 6 ); // Shift away precision from vests. It is noise
+               r.reputation = ( cv->rewardESCOR >> 6 ); // Shift away precision from ESCOR. It is noise
             });
          }
          else
          {
             // Rule #2: If you are down voting another user, you must have more reputation than them to impact their reputation
-            if( cv->rshares < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > author_rep->reputation ) ) return;
+            if( cv->rewardESCOR < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > author_rep->reputation ) ) return;
 
             db.modify( *author_rep, [&]( reputation_object& r )
             {
-               r.reputation += ( cv->rshares >> 6 ); // Shift away precision from vests. It is noise
+               r.reputation += ( cv->rewardESCOR >> 6 ); // Shift away precision from ESCOR. It is noise
             });
          }
       }

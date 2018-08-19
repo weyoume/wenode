@@ -32,18 +32,18 @@ Explanation of output
 
 {"rvec":["929159090641","8360617424769","929159090641","8360617424769","197985103985","1780051544865","195077031513","1755693283617","179687790278","1615357001502"],"b":68585000,"s":"24303404786580"}
 
-rvec shows total number of EZIRA satoshis created since genesis for:
+rvec shows total number of ECO satoshis created since genesis for:
 
 - Curation rewards
-- Vesting rewards balancing curation rewards
+- eScore rewards balancing curation rewards
 - Content rewards
-- Vesting rewards balancing content rewards
+- eScore rewards balancing content rewards
 - Producer rewards
-- Vesting rewards balancing producer rewards
+- eScore rewards balancing producer rewards
 - Liquidity rewards
-- Vesting rewards balancing liquidity rewards
+- eScore rewards balancing liquidity rewards
 - PoW rewards
-- Vesting rewards balancing PoW rewards
+- eScore rewards balancing PoW rewards
 
 b is block number
 s is total supply
@@ -51,11 +51,11 @@ s is total supply
 
 Some possible sources of inaccuracy, the direction and estimated relative sizes of these effects:
 
-- Missed blocks not modeled (lowers EZIRA supply, small)
-- Miner queue length very approximately modeled (assumed to go to 100 during the first blocks and then stay there) (may lower or raise EZIRA supply, very small)
-- Creation / destruction of EZIRA used to back EZD not modeled (moves EZIRA supply in direction opposite to changes in dollar value of 1 EZIRA, large)
-- Interest paid to EZD not modeled (raises EZIRA supply, medium)
-- Lost / forgotten private keys / wallets and deliberate burning of EZIRA not modeled (lowers EZIRA supply, unknown but likely small)
+- Missed blocks not modeled (lowers ECO supply, small)
+- Miner queue length very approximately modeled (assumed to go to 100 during the first blocks and then stay there) (may lower or raise ECO supply, very small)
+- Creation / destruction of ECO used to back EUSD not modeled (moves ECO supply in direction opposite to changes in dollar value of 1 ECO, large)
+- Interest paid to EUSD not modeled (raises ECO supply, medium)
+- Lost / forgotten private keys / wallets and deliberate burning of ECO not modeled (lowers ECO supply, unknown but likely small)
 - Possible bugs or mismatches with implementation (unknown)
 
 */
@@ -82,19 +82,19 @@ int main( int argc, char** argv, char** envp )
 
    auto block_inflation_model = [&]( uint32_t block_num, share_type& current_supply )
    {
-      uint32_t vesting_factor = (block_num < START_VESTING_BLOCK) ? 0 : 9;
+      uint32_t ECO_fund_for_ESCOR_factor = (block_num < START_ECO_fund_for_ESCOR_BLOCK) ? 0 : 9;
 
       share_type curate_reward   = calc_percent_reward_per_block< CURATE_APR_PERCENT >( current_supply );
       reward_delta[ CURATE_OFF ] = std::max( curate_reward, MIN_CURATE_REWARD.amount );
-      reward_delta[ VCURATE_OFF ] = reward_delta[ CURATE_OFF ] * vesting_factor;
+      reward_delta[ VCURATE_OFF ] = reward_delta[ CURATE_OFF ] * ECO_fund_for_ESCOR_factor;
 
       share_type content_reward  = calc_percent_reward_per_block< CONTENT_APR_PERCENT >( current_supply );
       reward_delta[ CONTENT_OFF ] = std::max( content_reward, MIN_CONTENT_REWARD.amount );
-      reward_delta[ VCONTENT_OFF ] = reward_delta[ CONTENT_OFF ] * vesting_factor;
+      reward_delta[ VCONTENT_OFF ] = reward_delta[ CONTENT_OFF ] * ECO_fund_for_ESCOR_factor;
 
       share_type producer_reward = calc_percent_reward_per_block< PRODUCER_APR_PERCENT >( current_supply );
       reward_delta[ PRODUCER_OFF ] = std::max( producer_reward, MIN_PRODUCER_REWARD.amount );
-      reward_delta[ VPRODUCER_OFF ] = reward_delta[ PRODUCER_OFF ] * vesting_factor;
+      reward_delta[ VPRODUCER_OFF ] = reward_delta[ PRODUCER_OFF ] * ECO_fund_for_ESCOR_factor;
 
       current_supply += reward_delta[CURATE_OFF] + reward_delta[VCURATE_OFF] + reward_delta[CONTENT_OFF] + reward_delta[VCONTENT_OFF] + reward_delta[PRODUCER_OFF] + reward_delta[VPRODUCER_OFF];
       // supply for above is computed by using pre-updated supply for computing all 3 amounts.
@@ -115,7 +115,7 @@ int main( int argc, char** argv, char** envp )
          --pow_deficit;
       }
       reward_delta[ POW_OFF ] = pow_reward;
-      reward_delta[ VPOW_OFF ] = reward_delta[ POW_OFF ] * vesting_factor;
+      reward_delta[ VPOW_OFF ] = reward_delta[ POW_OFF ] * ECO_fund_for_ESCOR_factor;
 
       current_supply += reward_delta[ POW_OFF ] + reward_delta[ VPOW_OFF ];
 
@@ -125,7 +125,7 @@ int main( int argc, char** argv, char** envp )
          liquidity_reward = std::max( liquidity_reward, MIN_LIQUIDITY_REWARD.amount );
       }
       reward_delta[ LIQUIDITY_OFF ] = liquidity_reward;
-      reward_delta[ VLIQUIDITY_OFF ] = reward_delta[ LIQUIDITY_OFF ] * vesting_factor;
+      reward_delta[ VLIQUIDITY_OFF ] = reward_delta[ LIQUIDITY_OFF ] * ECO_fund_for_ESCOR_factor;
       current_supply += reward_delta[ LIQUIDITY_OFF ] + reward_delta[ VLIQUIDITY_OFF ];
 
       for( int i=0; i<REWARD_TYPES; i++ )

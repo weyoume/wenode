@@ -2,7 +2,8 @@
 
 Ezira is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" social consnensus algorithm for token allocation.
 
-  - Currency symbol EZIRA.
+  - Currency symbol ECO.
+  - Equity symbol ECO.
   - 10% APR inflation narrowing to 1% APR over 20 years.
   - 75% of inflation to "Proof of Brain" social consensus algorithm.
   - 15% of inflation to stake holders.
@@ -54,7 +55,7 @@ To run a node with *all* the data (e.g. for supporting a content website)
 that uses ca. 14GB of memory and growing:
 
     docker run \
-        --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_WEB_NODE=1 \
+        --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_CONTENT_NODE=1 \
         -d -p 2001:2001 -p 8090:8090 --name eznode \
         eziranetwork/ezira
 
@@ -65,7 +66,7 @@ that uses ca. 14GB of memory and growing:
 There are quite a few environment variables that can be set to run eznode in different ways:
 
 * `USE_WAY_TOO_MUCH_RAM` - if set to true, eznode starts a 'full node'
-* `USE_FULL_WEB_NODE` - if set to true, a default config file will be used that enables a full set of API's and associated plugins.
+* `USE_FULL_CONTENT_NODE` - if set to true, a default config file will be used that enables a full set of API's and associated plugins.
 * `USE_NGINX_FRONTEND` - if set to true, this will enable an NGINX reverse proxy in front of eznode that proxies websocket requests to eznode. This will also enable a custom healtcheck at the path '/health' that lists how many seconds away from current blockchain time your node is. It will return a '200' if it's less than 60 seconds away from synced.
 * `USE_MULTICORE_READONLY` - if set to true, this will enable eznode in multiple reader mode to take advantage of multiple cores (if available). Read requests are handled by the read-only nodes, and write requests are forwarded back to the single 'writer' node automatically. NGINX load balances all requests to the reader nodes, 4 per available core. This setting is still considered experimental and may have trouble with some API calls until further development is completed.
 * `HOME` - set this to the path where you want eznode to store it's data files (block log, shared memory, config file, etc). By default `/var/lib/eznode` is used and exists inside the docker container. If you want to use a different mountpoint (like a ramdisk, or a different drive) then you may want to set this variable to map the volume to your docker container.
@@ -74,7 +75,7 @@ There are quite a few environment variables that can be set to run eznode in dif
 
 Eznode now supports a PaaS mode (platform as a service) that currently works with Amazon's Elastic Beanstalk service. It can be launched using the following environment variables:
 
-* `USE_PAAS` - if set to true, eznode will launch in a format that works with AWS EB. Containers will exit upon failure so that they can be relaunched automatically by ECS. This mode assumes `USE_WAY_TOO_MUCH_RAM` and `USE_FULL_WEB_NODE`, they do not need to be also set.
+* `USE_PAAS` - if set to true, eznode will launch in a format that works with AWS EB. Containers will exit upon failure so that they can be relaunched automatically by ECS. This mode assumes `USE_WAY_TOO_MUCH_RAM` and `USE_FULL_CONTENT_NODE`, they do not need to be also set.
 * `S3_BUCKET` - set this to the name of the S3 bucket where you will store shared memory files for eznode in Amazon S3. They will be stored compressed in bz2 format with the file name `blockchain-$VERSION-latest.tar.bz2`, where $VERSION is the release number followed by the git short commit hash stored in each docker image at `/etc/eznodeversion`.
 * `SYNC_TO_S3` - if set to true, the node will function to only generate shared memory files and upload them to the specified S3 bucket. This makes fast deployments and autoscaling for eznode possible.
 

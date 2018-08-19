@@ -238,7 +238,7 @@ namespace detail
                         _db.get< account_authority_object, chain::by_account >( o.from ) );
       }
 
-      void operator()( const transfer_to_savings_operation& o )const
+      void operator()( const transferToSavings_operation& o )const
       {
          if( o.memo.length() > 0 )
             check_memo( o.memo,
@@ -246,7 +246,7 @@ namespace detail
                         _db.get< account_authority_object, chain::by_account >( o.from ) );
       }
 
-      void operator()( const transfer_from_savings_operation& o )const
+      void operator()( const transferFromSavings_operation& o )const
       {
          if( o.memo.length() > 0 )
             check_memo( o.memo,
@@ -296,7 +296,7 @@ namespace detail
       switch( note.op.which() )
       {
          case operation::tag< custom_operation >::value:
-         case operation::tag< custom_json_operation >::value:
+         case operation::tag< customJson_operation >::value:
          case operation::tag< custom_binary_operation >::value:
          {
             flat_set< account_name_type > impacted;
@@ -398,7 +398,7 @@ namespace detail
       const auto& props = _db.get_dynamic_global_properties();
       bool has_bandwidth = true;
 
-      if( props.total_vesting_shares.amount > 0 )
+      if( props.totalESCOR.amount > 0 )
       {
          auto band = _db.find< account_bandwidth_object, by_account_bandwidth_type >( boost::make_tuple( a.name, type ) );
 
@@ -430,21 +430,21 @@ namespace detail
             b.last_bandwidth_update = _db.head_block_time();
          });
 
-         fc::uint128 account_vshares( a.effective_vesting_shares().amount.value );
-         fc::uint128 total_vshares( props.total_vesting_shares.amount.value );
+         fc::uint128 account_veScore( a.effective_ESCOR().amount.value );
+         fc::uint128 total_veScore( props.totalESCOR.amount.value );
          fc::uint128 account_average_bandwidth( band->average_bandwidth.value );
          fc::uint128 max_virtual_bandwidth( _db.get( reserve_ratio_id_type() ).max_virtual_bandwidth );
 
-         has_bandwidth = ( account_vshares * max_virtual_bandwidth ) > ( account_average_bandwidth * total_vshares );
+         has_bandwidth = ( account_veScore * max_virtual_bandwidth ) > ( account_average_bandwidth * total_veScore );
 
          if( _db.is_producing() )
             ASSERT( has_bandwidth, chain::plugin_exception,
-               "Account: ${account} bandwidth limit exceeded. Please wait to transact or power up EZIRA.",
+               "Account: ${account} bandwidth limit exceeded. Please wait to transact or power up ECO.",
                ("account", a.name)
-               ("account_vshares", account_vshares)
+               ("account_veScore", account_veScore)
                ("account_average_bandwidth", account_average_bandwidth)
                ("max_virtual_bandwidth", max_virtual_bandwidth)
-               ("total_vesting_shares", total_vshares) );
+               ("totalESCOR", total_veScore) );
       }
    }
 }

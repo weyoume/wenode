@@ -83,13 +83,13 @@ namespace eznode { namespace chain {
    DECLARE_OP_BASE_EXCEPTIONS( transfer );
 //   DECLARE_OP_EVALUATE_EXCEPTION( from_account_not_whitelisted, transfer, 1, "owner mismatch" )
 
-   DECLARE_OP_BASE_EXCEPTIONS( account_create );
-   DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, account_create, 1, "Exceeds max authority fan-out" )
-   DECLARE_OP_EVALUATE_EXCEPTION( auth_account_not_found, account_create, 2, "Auth account not found" )
+   DECLARE_OP_BASE_EXCEPTIONS( accountCreate );
+   DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, accountCreate, 1, "Exceeds max authority fan-out" )
+   DECLARE_OP_EVALUATE_EXCEPTION( auth_account_not_found, accountCreate, 2, "Auth account not found" )
 
-   DECLARE_OP_BASE_EXCEPTIONS( account_update );
-   DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, account_update, 1, "Exceeds max authority fan-out" )
-   DECLARE_OP_EVALUATE_EXCEPTION( auth_account_not_found, account_update, 2, "Auth account not found" )
+   DECLARE_OP_BASE_EXCEPTIONS( accountUpdate );
+   DECLARE_OP_EVALUATE_EXCEPTION( max_auth_exceeded, accountUpdate, 1, "Exceeds max authority fan-out" )
+   DECLARE_OP_EVALUATE_EXCEPTION( auth_account_not_found, accountUpdate, 2, "Auth account not found" )
 
    FC_DECLARE_DERIVED_EXCEPTION( internal_exception, eznode::chain::chain_exception, 4990000, "internal exception" )
 

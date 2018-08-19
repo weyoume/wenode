@@ -62,47 +62,47 @@ struct account_stats_bucket_object : public object< account_stats_bucket_object_
    uint32_t             changed_root_votes = 0;                   ///< Changed votes for root comments
    uint32_t             new_reply_votes = 0;                      ///< New votes on replies
    uint32_t             changed_reply_votes = 0;                  ///< Changed votes for replies
-   uint32_t             author_reward_payouts = 0;                ///< Number of author reward payouts
-   share_type           author_rewards_EZD = 0;                   ///< EZD paid for author rewards
-   share_type           author_rewards_vests = 0;                 ///< VESTS paid for author rewards
-   share_type           author_rewards_total_ECO_value = 0;     ///< EZIRA Value of author rewards
-   share_type           author_rewards_payout_EZD_value = 0;      ///< EZD Value of author rewards at time of payout
-   uint32_t             curation_reward_payouts = 0;              ///< Number of curation reward payouts.
-   share_type           curation_rewards_vests = 0;               ///< VESTS paid for curation rewards
-   share_type           curation_rewards_ECO_value = 0;         ///< EZIRA Value of curation rewards
-   share_type           curation_rewards_payout_EZD_value = 0;    ///< EZD Value of curation rewards at time of payout
+   uint32_t             authorReward_payouts = 0;                ///< Number of author reward payouts
+   share_type           authorRewards_EUSD = 0;                   ///< EUSD paid for author rewards
+   share_type           authorRewards_ESCOR = 0;                 ///< ESCOR paid for author rewards
+   share_type           authorRewards_totalECO_value = 0;     ///< ECO Value of author rewards
+   share_type           authorRewards_payout_EUSD_value = 0;      ///< EUSD Value of author rewards at time of payout
+   uint32_t             curationReward_payouts = 0;              ///< Number of curation reward payouts.
+   share_type           curationRewards_ESCOR = 0;               ///< ESCOR paid for curation rewards
+   share_type           curationRewards_ECO_value = 0;         ///< ECO Value of curation rewards
+   share_type           curationRewards_payout_EUSD_value = 0;    ///< EUSD Value of curation rewards at time of payout
    uint32_t             liquidity_reward_payouts = 0;             ///< Number of liquidity reward payouts
-   share_type           liquidity_rewards = 0;                    ///< Amount of EZIRA paid as liquidity rewards
+   share_type           liquidity_rewards = 0;                    ///< Amount of ECO paid as liquidity rewards
    uint32_t             transfers_to = 0;                         ///< Account to account transfers to this account
    uint32_t             transfers_from = 0;                       ///< Account to account transfers from this account
-   share_type           ECO_sent = 0;                           ///< EZIRA sent from this account
-   share_type           ECO_received = 0;                       ///< EZIRA received by this account
-   share_type           EZD_sent = 0;                             ///< EZD sent from this account
-   share_type           EZD_received = 0;                         ///< EZD received by this account
-   uint32_t             EZD_interest_payments = 0;                ///< Number of times interest was paid to EZD
-   share_type           EZD_paid_as_interest = 0;                 ///< Amount of EZD paid as interest
-   uint32_t             transfers_to_vesting = 0;                 ///< Transfers to vesting by this account. Note: Transfer to vesting from A to B counts as a transfer from A to B followed by a vesting deposit by B.
-   share_type           ECO_vested = 0;                         ///< EZIRA vested by the account
-   share_type           new_vests = 0;                            ///< New VESTS by vesting transfers
-   uint32_t             new_vesting_withdrawal_requests = 0;      ///< New vesting withdrawal requests
-   uint32_t             modified_vesting_withdrawal_requests = 0; ///< Changes to vesting withdraw requests
-   uint32_t             vesting_withdrawals_processed = 0;        ///< Vesting withdrawals processed for this account
-   uint32_t             finished_vesting_withdrawals = 0;         ///< Processed vesting withdrawals that are now finished
-   share_type           vests_withdrawn = 0;                      ///< VESTS withdrawn from the account
-   share_type           ECO_received_from_withdrawls = 0;       ///< EZIRA received from this account's vesting withdrawals
-   share_type           ECO_received_from_routes = 0;           ///< EZIRA received from another account's vesting withdrawals
-   share_type           vests_received_from_routes = 0;           ///< VESTS received from another account's vesting withdrawals
-   uint32_t             EZD_conversion_requests_created = 0;      ///< EZD conversion requests created
-   share_type           EZD_to_be_converted = 0;                  ///< Amount of EZD to be converted
-   uint32_t             EZD_conversion_requests_filled = 0;       ///< EZD conversion requests filled
-   share_type           ECO_converted = 0;                      ///< Amount of EZIRA that was converted
+   share_type           ECO_sent = 0;                           ///< ECO sent from this account
+   share_type           ECO_received = 0;                       ///< ECO received by this account
+   share_type           EUSD_sent = 0;                             ///< EUSD sent from this account
+   share_type           EUSD_received = 0;                         ///< EUSD received by this account
+   uint32_t             EUSD_interest_payments = 0;                ///< Number of times interest was paid to EUSD
+   share_type           EUSD_paid_as_interest = 0;                 ///< Amount of EUSD paid as interest
+   uint32_t             transfers_to_ECO_fund_for_ESCOR = 0;                 ///< Transfers to eScore ECO fund by this account. Note: Transfer to eScore ECO fund from A to B counts as a transfer from A to B followed by a eScore ECO fund deposit by B.
+   share_type           ECO_value_of_ESCOR = 0;                         ///< eScore value in ECO of the account
+   share_type           new_ESCOR = 0;                            ///< New ESCOR by eScore ECO fund transfers
+   uint32_t             new_ESCOR_ECO_fund_withdrawal_requests = 0;      ///< New eScore ECO fund withdrawal requests
+   uint32_t             modified_ESCOR_ECO_fund_withdrawal_requests = 0; ///< Changes to eScore ECO fund withdraw requests
+   uint32_t             ECO_fund_for_ESCOR_withdrawals_processed = 0;        ///< eScore ECO fund withdrawals processed for this account
+   uint32_t             finished_ECO_fund_for_ESCOR_withdrawals = 0;         ///< Processed eScore ECO fund withdrawals that are now finished
+   share_type           ESCOR_withdrawn = 0;                      ///< ESCOR withdrawn from the account
+   share_type           ECO_received_from_withdrawls = 0;       ///< ECO received from this account's eScore ECO fund withdrawals
+   share_type           ECO_received_from_routes = 0;           ///< ECO received from another account's eScore ECO fund withdrawals
+   share_type           ESCOR_received_from_routes = 0;           ///< ESCOR received from another account's eScore ECO fund withdrawals
+   uint32_t             EUSD_conversion_requests_created = 0;      ///< EUSD conversion requests created
+   share_type           EUSD_to_be_converted = 0;                  ///< Amount of EUSD to be converted
+   uint32_t             EUSD_conversion_requests_filled = 0;       ///< EUSD conversion requests filled
+   share_type           ECO_converted = 0;                      ///< Amount of ECO that was converted
    uint32_t             limit_orders_created = 0;                 ///< Limit orders created by this account
    uint32_t             limit_orders_filled = 0;                  ///< Limit orders filled by this account
    uint32_t             limit_orders_cancelled = 0;               ///< Limit orders cancelled by this account
-   share_type           limit_order_ECO_paid = 0;               ///< EZIRA paid by limit orders
-   share_type           limit_order_ECO_received = 0;           ///< EZIRA received from limit orders
-   share_type           limit_order_EZD_paid = 0;                 ///< EZD paid by limit orders
-   share_type           limit_order_EZD_received = 0;             ///< EZD received by limit orders
+   share_type           limit_order_ECO_paid = 0;               ///< ECO paid by limit orders
+   share_type           limit_order_ECO_received = 0;           ///< ECO received from limit orders
+   share_type           limit_order_EUSD_paid = 0;                 ///< EUSD paid by limit orders
+   share_type           limit_order_EUSD_received = 0;             ///< EUSD received by limit orders
    uint32_t             total_pow = 0;                            ///< POW completed
    uint128_t            estimated_hashpower = 0;                  ///< Estimated hashpower
 };
@@ -180,47 +180,47 @@ FC_REFLECT( eznode::account_statistics::account_stats_bucket_object,
    (changed_root_votes)
    (new_reply_votes)
    (changed_reply_votes)
-   (author_reward_payouts)
-   (author_rewards_EZD)
-   (author_rewards_vests)
-   (author_rewards_total_ECO_value)
-   (author_rewards_payout_EZD_value)
-   (curation_reward_payouts)
-   (curation_rewards_vests)
-   (curation_rewards_ECO_value)
-   (curation_rewards_payout_EZD_value)
+   (authorReward_payouts)
+   (authorRewards_EUSD)
+   (authorRewards_ESCOR)
+   (authorRewards_totalECO_value)
+   (authorRewards_payout_EUSD_value)
+   (curationReward_payouts)
+   (curationRewards_ESCOR)
+   (curationRewards_ECO_value)
+   (curationRewards_payout_EUSD_value)
    (liquidity_reward_payouts)
    (liquidity_rewards)
    (transfers_to)
    (transfers_from)
    (ECO_sent)
    (ECO_received)
-   (EZD_sent)
-   (EZD_received)
-   (EZD_interest_payments)
-   (EZD_paid_as_interest)
-   (transfers_to_vesting)
-   (ECO_vested)
-   (new_vests)
-   (new_vesting_withdrawal_requests)
-   (modified_vesting_withdrawal_requests)
-   (vesting_withdrawals_processed)
-   (finished_vesting_withdrawals)
-   (vests_withdrawn)
+   (EUSD_sent)
+   (EUSD_received)
+   (EUSD_interest_payments)
+   (EUSD_paid_as_interest)
+   (transfers_to_ECO_fund_for_ESCOR)
+   (ECO_value_of_ESCOR)
+   (new_ESCOR)
+   (new_ESCOR_ECO_fund_withdrawal_requests)
+   (modified_ESCOR_ECO_fund_withdrawal_requests)
+   (ECO_fund_for_ESCOR_withdrawals_processed)
+   (finished_ECO_fund_for_ESCOR_withdrawals)
+   (ESCOR_withdrawn)
    (ECO_received_from_withdrawls)
    (ECO_received_from_routes)
-   (vests_received_from_routes)
-   (EZD_conversion_requests_created)
-   (EZD_to_be_converted)
-   (EZD_conversion_requests_filled)
+   (ESCOR_received_from_routes)
+   (EUSD_conversion_requests_created)
+   (EUSD_to_be_converted)
+   (EUSD_conversion_requests_filled)
    (ECO_converted)
    (limit_orders_created)
    (limit_orders_filled)
    (limit_orders_cancelled)
    (limit_order_ECO_paid)
    (limit_order_ECO_received)
-   (limit_order_EZD_paid)
-   (limit_order_EZD_received)
+   (limit_order_EUSD_paid)
+   (limit_order_EUSD_received)
    (total_pow)
    (estimated_hashpower)
 )

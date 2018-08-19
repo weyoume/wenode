@@ -546,7 +546,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
 
       if( type == outgoing || type == all )
       {
-         const auto& by_route = my->_db.get_index< withdraw_vesting_route_index >().indices().get< by_withdraw_route >();
+         const auto& by_route = my->_db.get_index< withdraw_ESCOR_route_index >().indices().get< by_withdraw_route >();
          auto route = by_route.lower_bound( acc.id );
 
          while( route != by_route.end() && route->from_account == acc.id )
@@ -555,7 +555,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
             r.from_account = account;
             r.to_account = my->_db.get( route->to_account ).name;
             r.percent = route->percent;
-            r.auto_vest = route->auto_vest;
+            r.autoESCOR = route->autoESCOR;
 
             result.push_back( r );
 
@@ -565,7 +565,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
 
       if( type == incoming || type == all )
       {
-         const auto& by_dest = my->_db.get_index< withdraw_vesting_route_index >().indices().get< by_destination >();
+         const auto& by_dest = my->_db.get_index< withdraw_ESCOR_route_index >().indices().get< by_destination >();
          auto route = by_dest.lower_bound( acc.id );
 
          while( route != by_dest.end() && route->to_account == acc.id )
@@ -574,7 +574,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
             r.from_account = my->_db.get( route->from_account ).name;
             r.to_account = account;
             r.percent = route->percent;
-            r.auto_vest = route->auto_vest;
+            r.autoESCOR = route->autoESCOR;
 
             result.push_back( r );
 
@@ -754,8 +754,8 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
    FC_ASSERT( limit <= 1000 );
    order_book result;
 
-   auto max_sell = price::max( SYMBOL_EZD, SYMBOL_ECO );
-   auto max_buy = price::max( SYMBOL_ECO, SYMBOL_EZD );
+   auto max_sell = price::max( SYMBOL_EUSD, SYMBOL_ECO );
+   auto max_buy = price::max( SYMBOL_ECO, SYMBOL_EUSD );
 
    const auto& limit_price_idx = _db.get_index<limit_order_index>().indices().get<by_price>();
    auto sell_itr = limit_price_idx.lower_bound(max_sell);
@@ -765,14 +765,14 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
 //   if( sell_itr != end ) idump((*sell_itr));
 //   if( buy_itr != end ) idump((*buy_itr));
 
-   while(  sell_itr != end && sell_itr->sell_price.base.symbol == SYMBOL_EZD && result.bids.size() < limit )
+   while(  sell_itr != end && sell_itr->sell_price.base.symbol == SYMBOL_EUSD && result.bids.size() < limit )
    {
       auto itr = sell_itr;
       order cur;
       cur.order_price = itr->sell_price;
       cur.real_price  = (cur.order_price).to_real();
-      cur.EZD = itr->for_sale;
-      cur.ECO = ( asset( itr->for_sale, SYMBOL_EZD ) * cur.order_price ).amount;
+      cur.EUSD = itr->for_sale;
+      cur.ECO = ( asset( itr->for_sale, SYMBOL_EUSD ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.bids.push_back( cur );
       ++sell_itr;
@@ -784,7 +784,7 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
       cur.order_price = itr->sell_price;
       cur.real_price  = (~cur.order_price).to_real();
       cur.ECO   = itr->for_sale;
-      cur.EZD     = ( asset( itr->for_sale, SYMBOL_ECO ) * cur.order_price ).amount;
+      cur.EUSD     = ( asset( itr->for_sale, SYMBOL_ECO ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.asks.push_back( cur );
       ++buy_itr;
@@ -1011,7 +1011,7 @@ vector<vote_state> database_api::get_active_votes( string author, string permlin
          vote_state vstate;
          vstate.voter = vo.name;
          vstate.weight = itr->weight;
-         vstate.rshares = itr->rshares;
+         vstate.rewardESCOR = itr->rewardESCOR;
          vstate.percent = itr->vote_percent;
          vstate.time = itr->last_update;
 
@@ -1047,7 +1047,7 @@ vector<account_vote> database_api::get_account_votes( string voter )const
          account_vote avote;
          avote.authorperm = vo.author+"/"+to_string( vo.permlink );
          avote.weight = itr->weight;
-         avote.rshares = itr->rshares;
+         avote.rewardESCOR = itr->rewardESCOR;
          avote.percent = itr->vote_percent;
          avote.time = itr->last_update;
          result.push_back(avote);
@@ -1072,7 +1072,7 @@ void database_api::set_pending_payout( discussion& d )const
       const auto& cidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_comment>();
       auto itr = cidx.lower_bound( d.id );
       if( itr != cidx.end() && itr->comment == d.id )  {
-         d.promoted = asset( itr->promoted_balance, SYMBOL_EZD );
+         d.promoted = asset( itr->promoted_balance, SYMBOL_EUSD );
       }
    }
 
@@ -1091,20 +1091,20 @@ void database_api::set_pending_payout( discussion& d )const
    if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       total_r2 = to256( my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) ).recent_claims );
    else
-      total_r2 = to256( props.total_reward_shares2 );
+      total_r2 = to256( props.total_reward_ESCOR2 );
 
    if( total_r2 > 0 )
    {
-      uint128_t vshares;
+      uint128_t veScore;
       if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       {
          const auto& rf = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) );
-         vshares = d.net_rshares.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_rshares.value, rf.author_reward_curve, rf.content_constant ) : 0;
+         veScore = d.net_rewardESCOR.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_rewardESCOR.value, rf.authorReward_curve, rf.content_constant ) : 0;
       }
       else
-         vshares = d.net_rshares.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_rshares.value ) : 0;
+         veScore = d.net_rewardESCOR.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_rewardESCOR.value ) : 0;
 
-      u256 r2 = to256(vshares); //to256(abs_net_rshares);
+      u256 r2 = to256(veScore); //to256(abs_net_rewardESCOR);
       r2 *= pot.amount.value;
       r2 /= total_r2;
 
@@ -1343,7 +1343,7 @@ vector<discussion> database_api::get_discussions( const discussion_query& query,
       try
       {
          result.push_back( get_discussion( tidx_itr->comment, truncate_body ) );
-         result.back().promoted = asset(tidx_itr->promoted_balance, SYMBOL_EZD );
+         result.back().promoted = asset(tidx_itr->promoted_balance, SYMBOL_EUSD );
 
          if( filter( result.back() ) )
          {
@@ -1391,10 +1391,10 @@ vector<discussion> database_api::get_discussions_by_payout( const discussion_que
       auto tag = fc::to_lower( query.tag );
       auto parent = get_parent( query );
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_net_rshares>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_net_rewardESCOR>();
       auto tidx_itr = tidx.lower_bound( tag );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rshares <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rewardESCOR <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1409,10 +1409,10 @@ vector<discussion> database_api::get_post_discussions_by_payout( const discussio
       auto tag = fc::to_lower( query.tag );
       auto parent = comment_id_type();
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_rshares>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_rewardESCOR>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, true ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rshares <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rewardESCOR <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1427,10 +1427,10 @@ vector<discussion> database_api::get_comment_discussions_by_payout( const discus
       auto tag = fc::to_lower( query.tag );
       auto parent = comment_id_type(1);
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_rshares>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_rewardESCOR>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, false ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rshares <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rewardESCOR <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1446,7 +1446,7 @@ vector<discussion> database_api::get_discussions_by_promoted( const discussion_q
       auto parent = get_parent( query );
 
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_promoted>();
-      auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, share_type(MAX_SHARE_SUPPLY) )  );
+      auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, share_type(MAX_ESCOR_SUPPLY) )  );
 
       return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, []( const tags::tag_object& t ){ return t.promoted_balance == 0; }  );
    });
@@ -1466,7 +1466,7 @@ vector<discussion> database_api::get_discussions_by_trending( const discussion_q
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_trending>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, std::numeric_limits<double>::max() )  );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_rshares <= 0; } );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_rewardESCOR <= 0; } );
    });
 }
 
@@ -1522,7 +1522,7 @@ vector<discussion> database_api::get_discussions_by_cashout( const discussion_qu
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_cashout>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, fc::time_point::now() - fc::minutes(60) ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rshares < 0; });
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_rewardESCOR < 0; });
    });
 }
 
@@ -1576,7 +1576,7 @@ vector<discussion> database_api::get_discussions_by_hot( const discussion_query&
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_hot>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, std::numeric_limits<double>::max() )  );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_rshares <= 0; } );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_rewardESCOR <= 0; } );
    });
 }
 
@@ -1899,16 +1899,16 @@ vector< savings_withdraw_api_obj > database_api::get_savings_withdraw_to( string
    });
 }
 
-vector< vesting_delegation_api_obj > database_api::get_vesting_delegations( string account, string from, uint32_t limit )const
+vector< ECO_fund_for_ESCOR_delegation_api_obj > database_api::get_ESCOR_delegations( string account, string from, uint32_t limit )const
 {
    FC_ASSERT( limit <= 1000 );
 
    return my->_db.with_read_lock( [&]()
    {
-      vector< vesting_delegation_api_obj > result;
+      vector< ECO_fund_for_ESCOR_delegation_api_obj > result;
       result.reserve( limit );
 
-      const auto& delegation_idx = my->_db.get_index< vesting_delegation_index, by_delegation >();
+      const auto& delegation_idx = my->_db.get_index< ECO_fund_for_ESCOR_delegation_index, by_delegation >();
       auto itr = delegation_idx.lower_bound( boost::make_tuple( account, from ) );
       while( result.size() < limit && itr != delegation_idx.end() && itr->delegator == account )
       {
@@ -1920,16 +1920,16 @@ vector< vesting_delegation_api_obj > database_api::get_vesting_delegations( stri
    });
 }
 
-vector< vesting_delegation_expiration_api_obj > database_api::get_expiring_vesting_delegations( string account, time_point_sec from, uint32_t limit )const
+vector< ECO_fund_for_ESCOR_delegation_expiration_api_obj > database_api::get_expiring_ECO_fund_for_ESCOR_delegations( string account, time_point_sec from, uint32_t limit )const
 {
    FC_ASSERT( limit <= 1000 );
 
    return my->_db.with_read_lock( [&]()
    {
-      vector< vesting_delegation_expiration_api_obj > result;
+      vector< ECO_fund_for_ESCOR_delegation_expiration_api_obj > result;
       result.reserve( limit );
 
-      const auto& exp_idx = my->_db.get_index< vesting_delegation_expiration_index, by_account_expiration >();
+      const auto& exp_idx = my->_db.get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_account_expiration >();
       auto itr = exp_idx.lower_bound( boost::make_tuple( account, from ) );
       while( result.size() < limit && itr != exp_idx.end() && itr->delegator == account )
       {
@@ -1987,24 +1987,24 @@ state database_api::get_state( string path )const
             auto history = get_account_history( acnt, uint64_t(-1), 10000 );
             for( auto& item : history ) {
                switch( item.second.op.which() ) {
-                  case operation::tag<transfer_to_vesting_operation>::value:
-                  case operation::tag<withdraw_vesting_operation>::value:
+                  case operation::tag<transferECOtoESCORfund_operation>::value:
+                  case operation::tag<withdraw_ESCOR_operation>::value:
                   case operation::tag<interest_operation>::value:
                   case operation::tag<transfer_operation>::value:
                   case operation::tag<liquidity_reward_operation>::value:
-                  case operation::tag<author_reward_operation>::value:
-                  case operation::tag<curation_reward_operation>::value:
+                  case operation::tag<authorReward_operation>::value:
+                  case operation::tag<curationReward_operation>::value:
                   case operation::tag<comment_benefactor_reward_operation>::value:
-                  case operation::tag<transfer_to_savings_operation>::value:
-                  case operation::tag<transfer_from_savings_operation>::value:
-                  case operation::tag<cancel_transfer_from_savings_operation>::value:
+                  case operation::tag<transferToSavings_operation>::value:
+                  case operation::tag<transferFromSavings_operation>::value:
+                  case operation::tag<cancelTransferFromSavings_operation>::value:
                   case operation::tag<escrow_transfer_operation>::value:
                   case operation::tag<escrow_approve_operation>::value:
                   case operation::tag<escrow_dispute_operation>::value:
                   case operation::tag<escrow_release_operation>::value:
                   case operation::tag<fill_convert_request_operation>::value:
                   case operation::tag<fill_order_operation>::value:
-                  case operation::tag<claim_reward_balance_operation>::value:
+                  case operation::tag<claimRewardBalance_operation>::value:
                      eacnt.transfer_history[item.first] =  item.second;
                      break;
                   case operation::tag<comment_operation>::value:
@@ -2015,12 +2015,12 @@ state database_api::get_state( string path )const
                   //   eacnt.market_history[item.first] =  item.second;
                      break;
                   case operation::tag<vote_operation>::value:
-                  case operation::tag<account_witness_vote_operation>::value:
+                  case operation::tag<accountWitnessVote_operation>::value:
                   case operation::tag<account_witness_proxy_operation>::value:
                   //   eacnt.vote_history[item.first] =  item.second;
                      break;
-                  case operation::tag<account_create_operation>::value:
-                  case operation::tag<account_update_operation>::value:
+                  case operation::tag<accountCreate_operation>::value:
+                  case operation::tag<accountUpdate_operation>::value:
                   case operation::tag<witness_update_operation>::value:
                   case operation::tag<pow_operation>::value:
                   case operation::tag<custom_operation>::value:

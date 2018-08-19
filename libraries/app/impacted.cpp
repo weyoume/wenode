@@ -49,13 +49,13 @@ struct get_impacted_account_visitor
    }
 
    // ops
-   void operator()( const account_create_operation& op )
+   void operator()( const accountCreate_operation& op )
    {
       _impacted.insert( op.new_account_name );
       _impacted.insert( op.creator );
    }
 
-   void operator()( const account_create_with_delegation_operation& op )
+   void operator()( const accountCreateWithDelegation_operation& op )
    {
       _impacted.insert( op.new_account_name );
       _impacted.insert( op.creator );
@@ -114,7 +114,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.agent );
    }
 
-   void operator()( const transfer_to_vesting_operation& op )
+   void operator()( const transferECOtoESCORfund_operation& op )
    {
       _impacted.insert( op.from );
 
@@ -124,13 +124,13 @@ struct get_impacted_account_visitor
       }
    }
 
-   void operator()( const set_withdraw_vesting_route_operation& op )
+   void operator()( const setWithdrawESCORasECOroute_operation& op )
    {
       _impacted.insert( op.from_account );
       _impacted.insert( op.to_account );
    }
 
-   void operator()( const account_witness_vote_operation& op )
+   void operator()( const accountWitnessVote_operation& op )
    {
       _impacted.insert( op.account );
       _impacted.insert( op.witness );
@@ -186,19 +186,19 @@ struct get_impacted_account_visitor
       _impacted.insert( op.account_to_recover );
    }
 
-   void operator()( const transfer_to_savings_operation& op )
+   void operator()( const transferToSavings_operation& op )
    {
       _impacted.insert( op.from );
       _impacted.insert( op.to );
    }
 
-   void operator()( const transfer_from_savings_operation& op )
+   void operator()( const transferFromSavings_operation& op )
    {
       _impacted.insert( op.from );
       _impacted.insert( op.to );
    }
 
-   void operator()( const delegate_vesting_shares_operation& op )
+   void operator()( const delegateESCOR_operation& op )
    {
       _impacted.insert( op.delegator );
       _impacted.insert( op.delegatee );
@@ -207,12 +207,12 @@ struct get_impacted_account_visitor
 
    // vops
 
-   void operator()( const author_reward_operation& op )
+   void operator()( const authorReward_operation& op )
    {
       _impacted.insert( op.author );
    }
 
-   void operator()( const curation_reward_operation& op )
+   void operator()( const curationReward_operation& op )
    {
       _impacted.insert( op.curator );
    }
@@ -232,7 +232,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.owner );
    }
 
-   void operator()( const fill_vesting_withdraw_operation& op )
+   void operator()( const fillESCORWithdraw_operation& op )
    {
       _impacted.insert( op.from_account );
       _impacted.insert( op.to_account );
@@ -249,13 +249,13 @@ struct get_impacted_account_visitor
       _impacted.insert( op.open_owner );
    }
 
-   void operator()( const fill_transfer_from_savings_operation& op )
+   void operator()( const fill_transferFromSavings_operation& op )
    {
       _impacted.insert( op.from );
       _impacted.insert( op.to );
    }
 
-   void operator()( const return_vesting_delegation_operation& op )
+   void operator()( const return_ESCOR_delegation_operation& op )
    {
       _impacted.insert( op.account );
    }

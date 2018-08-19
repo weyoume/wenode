@@ -74,18 +74,18 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
    fc::time_point_sec   open;
    uint32_t             seconds = 0;
    share_type           high_ECO;
-   share_type           high_EZD;
+   share_type           high_EUSD;
    share_type           low_ECO;
-   share_type           low_EZD;
+   share_type           low_EUSD;
    share_type           open_ECO;
-   share_type           open_EZD;
+   share_type           open_EUSD;
    share_type           close_ECO;
-   share_type           close_EZD;
+   share_type           close_EUSD;
    share_type           ECO_volume;
-   share_type           EZD_volume;
+   share_type           EUSD_volume;
 
-   price high()const { return asset( high_EZD, SYMBOL_EZD ) / asset( high_ECO, SYMBOL_ECO ); }
-   price low()const { return asset( low_EZD, SYMBOL_EZD ) / asset( low_ECO, SYMBOL_ECO ); }
+   price high()const { return asset( high_EUSD, SYMBOL_EUSD ) / asset( high_ECO, SYMBOL_ECO ); }
+   price low()const { return asset( low_EUSD, SYMBOL_EUSD ) / asset( low_ECO, SYMBOL_ECO ); }
 };
 
 typedef oid< bucket_object > bucket_id_type;
@@ -139,11 +139,11 @@ typedef multi_index_container<
 FC_REFLECT( eznode::market_history::bucket_object,
                      (id)
                      (open)(seconds)
-                     (high_ECO)(high_EZD)
-                     (low_ECO)(low_EZD)
-                     (open_ECO)(open_EZD)
-                     (close_ECO)(close_EZD)
-                     (ECO_volume)(EZD_volume) )
+                     (high_ECO)(high_EUSD)
+                     (low_ECO)(low_EUSD)
+                     (open_ECO)(open_EUSD)
+                     (close_ECO)(close_EUSD)
+                     (ECO_volume)(EUSD_volume) )
 CHAINBASE_SET_INDEX_TYPE( eznode::market_history::bucket_object, eznode::market_history::bucket_index )
 
 FC_REFLECT( eznode::market_history::order_history_object,

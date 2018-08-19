@@ -699,7 +699,7 @@
   <bindingTables xmi:id="_x4IEY5VMEei-uPwSBOqY7Q" elementId="org.eclipse.cdt.ui.cEditorScope" bindingContext="_x4IrpJVMEei-uPwSBOqY7Q">
     <bindings xmi:id="_x4IEZJVMEei-uPwSBOqY7Q" keySequence="F3" command="_x4OMg5VMEei-uPwSBOqY7Q"/>
     <bindings xmi:id="_x4IEZZVMEei-uPwSBOqY7Q" keySequence="F4" command="_x4OMMZVMEei-uPwSBOqY7Q"/>
-    <bindings xmi:id="_x4IEZpVMEei-uPwSBOqY7Q" keySequence="COMMAND+I" command="_x4Nj75VMEei-uPwSBOqY7Q"/>
+    <bindings xmi:id="_x4IESCORvMEei-uPwSBOqY7Q" keySequence="COMMAND+I" command="_x4Nj75VMEei-uPwSBOqY7Q"/>
     <bindings xmi:id="_x4IEZ5VMEei-uPwSBOqY7Q" keySequence="CTRL+TAB" command="_x4OMeJVMEei-uPwSBOqY7Q">
       <tags>platform:cocoa</tags>
     </bindings>
@@ -861,7 +861,7 @@
     <bindings xmi:id="_x4IEy5VMEei-uPwSBOqY7Q" keySequence="ALT+A" command="_x4OK7JVMEei-uPwSBOqY7Q"/>
     <bindings xmi:id="_x4IEzJVMEei-uPwSBOqY7Q" keySequence="ALT+B" command="_x4OK7JVMEei-uPwSBOqY7Q"/>
     <bindings xmi:id="_x4IEzZVMEei-uPwSBOqY7Q" keySequence="ALT+C" command="_x4OK7JVMEei-uPwSBOqY7Q"/>
-    <bindings xmi:id="_x4IEzpVMEei-uPwSBOqY7Q" keySequence="ALT+D" command="_x4OK7JVMEei-uPwSBOqY7Q"/>
+    <bindings xmi:id="_x4IESCORvMEei-uPwSBOqY7Q" keySequence="ALT+D" command="_x4OK7JVMEei-uPwSBOqY7Q"/>
     <bindings xmi:id="_x4IEz5VMEei-uPwSBOqY7Q" keySequence="ALT+E" command="_x4OK7JVMEei-uPwSBOqY7Q"/>
     <bindings xmi:id="_x4IE0JVMEei-uPwSBOqY7Q" keySequence="ALT+F" command="_x4OK7JVMEei-uPwSBOqY7Q"/>
     <bindings xmi:id="_x4IE0ZVMEei-uPwSBOqY7Q" keySequence="ALT+G" command="_x4OK7JVMEei-uPwSBOqY7Q"/>

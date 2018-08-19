@@ -12,9 +12,9 @@
 #define CHAIN_ID                        (fc::sha256::hash("eztestnet"))
 
 #define SYMBOL_ECO  									  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< eCoin with 3 digits of precision
-#define SYMBOL_EZP  									  (uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('P') << 24) | (uint64_t('T') << 32) ) ///< EZP Ezira Power with 6 digits of precision
+#define SYMBOL_ESCOR  									  (uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('P') << 24) | (uint64_t('T') << 32) ) ///< ESCOR with 6 digits of precision
 #define SYMBOL_EZIRA    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
-#define SYMBOL_EZD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< EZIRA Backed US Dollars with 3 digits of precision
+#define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< eCoin Backed eUSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "EZT"
 
@@ -43,9 +43,9 @@
 #define CHAIN_ID                        (fc::sha256::hash("eztestnet"))
 
 #define SYMBOL_ECO  									  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< eCoin with 3 digits of precision
-#define SYMBOL_EZP  									  (uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('P') << 24) | (uint64_t('T') << 32) ) ///< EZP Ezira Power with 6 digits of precision
+#define SYMBOL_ESCOR  									(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< ESCOR with 6 digits of precision
 #define SYMBOL_EZIRA    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
-#define SYMBOL_EZD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< EZIRA Backed US Dollars with 3 digits of precision
+#define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< eCoin Backed eUSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "EZT"
 
@@ -73,7 +73,7 @@
 #define BLOCK_INTERVAL                  3
 #define BLOCKS_PER_YEAR                 (365*24*60*60/BLOCK_INTERVAL)
 #define BLOCKS_PER_DAY                  (24*60*60/BLOCK_INTERVAL)
-#define START_VESTING_BLOCK             (BLOCKS_PER_DAY * 7)
+#define START_ECO_fund_for_ESCOR_BLOCK             (BLOCKS_PER_DAY * 7)
 #define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 30)
 
 #define INIT_MINER_NAME                 "ezbuilder"
@@ -95,9 +95,9 @@
 #define MAX_TIME_UNTIL_EXPIRATION       (60*60) // seconds,  aka: 1 hour
 #define MAX_MEMO_SIZE                   2048
 #define MAX_PROXY_RECURSION_DEPTH       4
-#define VESTING_WITHDRAW_INTERVALS_PRE_HF_16 104
-#define VESTING_WITHDRAW_INTERVALS      13
-#define VESTING_WITHDRAW_INTERVAL_SECONDS (60*60*24*7) /// 1 week per interval
+#define ECO_fund_for_ESCOR_WITHDRAW_INTERVALS_PRE_HF_16 104
+#define ECO_fund_for_ESCOR_WITHDRAW_INTERVALS      13
+#define ESCOR_WITHDRAW_INTERVAL_SECONDS (60*60*24*7) /// 1 week per interval
 #define MAX_WITHDRAW_ROUTES             10
 #define SAVINGS_WITHDRAW_TIME        	(fc::days(3))
 #define SAVINGS_WITHDRAW_REQUEST_LIMIT  100
@@ -113,18 +113,18 @@
 #define POST_MAX_BANDWIDTH              (4*PERCENT_100) // 2 posts per 1 days, average 1 every 12 hours
 #define POST_WEIGHT_CONSTANT            (uint64_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
 
-#define MAX_ACCOUNT_WITNESS_VOTES       30
+#define MAX_accountWitnessVoteS       30
 
 #define PERCENT_100                     10000
 #define PERCENT_1                       (PERCENT_100/100)
-#define PERCENT_10_OF_PERCENT_1                      (PERCENT_100/1000)
-#define DEFAULT_EZD_INTEREST_RATE       (10*PERCENT_1) ///< 10% APR
+#define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)
+#define DEFAULT_EUSD_INTEREST_RATE       (10*PERCENT_1) ///< 10% APR
 
 #define INFLATION_RATE_START_PERCENT    (978) // Fixes block 7,000,000 to 9.5%
 #define INFLATION_RATE_STOP_PERCENT     (95) // 0.95%
 #define INFLATION_NARROWING_PERIOD      (250000) // Narrow 0.01% every 250k blocks
 #define CONTENT_REWARD_PERCENT          (75*PERCENT_1) //75% of inflation, 7.125% inflation
-#define VESTING_FUND_PERCENT            (15*PERCENT_1) //15% of inflation, 1.425% inflation
+#define ESCOR_fund_PERCENT            (15*PERCENT_1) //15% of inflation, 1.425% inflation
 
 #define MINER_PAY_PERCENT               (PERCENT_1) // 1%
 #define MIN_RATION                      100000
@@ -139,7 +139,7 @@
 
 #define MAX_RESERVE_RATIO               (20000)
 
-#define CREATE_ACCOUNT_WITH_MODIFIER 30
+#define CREATE_ACCOUNT_WITH_ECO_MODIFIER 			 30
 #define CREATE_ACCOUNT_DELEGATION_RATIO    5
 #define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(30)
 
@@ -164,14 +164,14 @@
 
 #define POST_REWARD_FUND_NAME           ("post")
 #define COMMENT_REWARD_FUND_NAME        ("comment")
-#define RECENT_RSHARES_DECAY_RATE_HF17  (fc::days(30))
-#define RECENT_RSHARES_DECAY_RATE_HF19  (fc::days(15))
+#define RECENT_RESCOR_DECAY_RATE_HF17  (fc::days(30))
+#define RECENT_RESCOR_DECAY_RATE_HF19  (fc::days(15))
 #define CONTENT_CONSTANT_HF0            (uint128_t(uint64_t(2000000000000ll)))
 // note, if redefining these constants make sure calculate_claims doesn't overflow
 
 // 5ccc e802 de5f
 // int(expm1( log1p( 1 ) / BLOCKS_PER_YEAR ) * 2**APR_PERCENT_SHIFT_PER_BLOCK / 100000 + 0.5)
-// we use 100000 here instead of 10000 because we end up creating an additional 9x for vesting
+// we use 100000 here instead of 10000 because we end up creating an additional 9x for eScore held
 #define APR_PERCENT_MULTIPLY_PER_BLOCK          ( (uint64_t( 0x5ccc ) << 0x20) \
                                                         | (uint64_t( 0xe802 ) << 0x10) \
                                                         | (uint64_t( 0xde5f )        ) \
@@ -197,17 +197,17 @@
 #define APR_PERCENT_SHIFT_PER_HOUR              77
 
 // These constants add up to GRAPHENE_PERCENT_100.  Each GRAPHENE_PERCENT_1 is equivalent to 1% per year APY
-// *including the corresponding 9x vesting rewards*
+// *including the corresponding 9x eScore held rewards*
 #define CURATE_APR_PERCENT              3875
 #define CONTENT_APR_PERCENT             3875
 #define LIQUIDITY_APR_PERCENT            750
 #define PRODUCER_APR_PERCENT             750
 #define POW_APR_PERCENT                  750
 
-#define MIN_PAYOUT_EZD                  (asset(20,SYMBOL_EZD))
+#define MIN_PAYOUT_EUSD                  (asset(20,SYMBOL_EUSD))
 
-#define EZD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing EZD at 5% Market Cap
-#define EZD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of EZD at 2% Market Cap
+#define EUSD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing EUSD at 5% Market Cap
+#define EUSD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of EUSD at 2% Market Cap
 
 #define MIN_ACCOUNT_NAME_LENGTH          3
 #define MAX_ACCOUNT_NAME_LENGTH         16
@@ -217,13 +217,13 @@
 #define MAX_WITNESS_URL_LENGTH          2048
 
 #define INIT_SUPPLY                     int64_t(10000000000)
-#define MAX_SHARE_SUPPLY                int64_t(1000000000000000ll)
+#define MAX_ESCOR_SUPPLY                int64_t(1000000000000000ll)
 #define MAX_SIG_CHECK_DEPTH             2
 
 #define MIN_TRANSACTION_SIZE_LIMIT      1024
 #define SECONDS_PER_YEAR                (uint64_t(60*60*24*365ll))
 
-#define EZD_INTEREST_COMPOUND_INTERVAL_SEC  (60*60*24*30)
+#define EUSD_INTEREST_COMPOUND_INTERVAL_SEC  (60*60*24*30)
 #define MAX_TRANSACTION_SIZE            (1024*64)
 #define MIN_BLOCK_SIZE_LIMIT            (MAX_TRANSACTION_SIZE)
 #define MAX_BLOCK_SIZE                  (MAX_TRANSACTION_SIZE*BLOCK_INTERVAL*2000)

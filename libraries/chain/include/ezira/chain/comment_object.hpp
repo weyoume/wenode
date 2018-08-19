@@ -70,33 +70,33 @@ namespace eznode { namespace chain {
 
          /// index on pending_payout for "things happning now... needs moderation"
          /// TRENDING = UNCLAIMED + PENDING
-         share_type        net_rshares; // reward is proportional to rshares^2, this is the sum of all votes (positive and negative)
-         share_type        abs_rshares; /// this is used to track the total abs(weight) of votes for the purpose of calculating cashout_time
-         share_type        vote_rshares; /// Total positive rshares from all votes. Used to calculate delta weights. Needed to handle vote changing and removal.
+         share_type        net_rewardESCOR; // reward is proportional to rewardESCOR^2, this is the sum of all votes (positive and negative)
+         share_type        abs_rewardESCOR; /// this is used to track the total abs(weight) of votes for the purpose of calculating cashout_time
+         share_type        vote_rewardESCOR; /// Total positive rewardESCOR from all votes. Used to calculate delta weights. Needed to handle vote changing and removal.
 
-         share_type        children_abs_rshares; /// this is used to calculate cashout time of a discussion.
+         share_type        children_abs_rewardESCOR; /// this is used to calculate cashout time of a discussion.
          time_point_sec    cashout_time; /// 24 hours from the weighted average of vote time
          time_point_sec    max_cashout_time;
          uint64_t          total_vote_weight = 0; /// the total weight of voting rewards, used to calculate pro-rata share of curation payouts
 
          uint16_t          reward_weight = 0;
 
-         /** tracks the total payout this comment has received over time, measured in EZD */
-         asset             total_payout_value = asset(0, SYMBOL_EZD);
-         asset             curator_payout_value = asset(0, SYMBOL_EZD);
-         asset             beneficiary_payout_value = asset( 0, SYMBOL_EZD );
+         /** tracks the total payout this comment has received over time, measured in EUSD */
+         asset             total_payout_value = asset(0, SYMBOL_EUSD);
+         asset             curator_payout_value = asset(0, SYMBOL_EUSD);
+         asset             beneficiary_payout_value = asset( 0, SYMBOL_EUSD );
 
-         share_type        author_rewards = 0;
+         share_type        authorRewards = 0;
 
          int32_t           net_votes = 0;
 
          id_type           root_comment;
 
-         asset             max_accepted_payout = asset( 1000000000, SYMBOL_EZD );       /// EZD value of the maximum payout this post will receive
-         uint16_t          percent_EZD = PERCENT_100; /// the percent of Ezira Dollars to key, unkept amounts will be received as Ezira Power
+         asset             max_accepted_payout = asset( 1000000000, SYMBOL_EUSD );       /// EUSD value of the maximum payout this post will receive
+         uint16_t          percent_EUSD = PERCENT_100; /// the percent of eUSD to key, unkept amounts will be received as Ezira Power
          bool              allow_replies = true;      /// allows a post to disable replies.
          bool              allow_votes   = true;      /// allows a post to receive votes;
-         bool              allow_curation_rewards = true;
+         bool              allow_curationRewards = true;
 
          bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;
    };
@@ -120,7 +120,7 @@ namespace eznode { namespace chain {
          account_id_type   voter;
          comment_id_type   comment;
          uint64_t          weight = 0; ///< defines the score this vote receives, used by vote payout calc. 0 if a negative vote or changed votes.
-         int64_t           rshares = 0; ///< The number of rshares this vote is responsible for
+         int64_t           rewardESCOR = 0; ///< The number of rewardESCOR this vote is responsible for
          int16_t           vote_percent = 0; ///< The percent weight of the vote
          time_point_sec    last_update; ///< The time of the last update of the vote
          int8_t            num_changes = 0;
@@ -248,15 +248,15 @@ FC_REFLECT( eznode::chain::comment_object,
              (category)(parent_author)(parent_permlink)
              (title)(body)(json_metadata)(last_update)(created)(active)(last_payout)
              (depth)(children)
-             (net_rshares)(abs_rshares)(vote_rshares)
-             (children_abs_rshares)(cashout_time)(max_cashout_time)
-             (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(beneficiary_payout_value)(author_rewards)(net_votes)(root_comment)
-             (max_accepted_payout)(percent_EZD)(allow_replies)(allow_votes)(allow_curation_rewards)
+             (net_rewardESCOR)(abs_rewardESCOR)(vote_rewardESCOR)
+             (children_abs_rewardESCOR)(cashout_time)(max_cashout_time)
+             (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(beneficiary_payout_value)(authorRewards)(net_votes)(root_comment)
+             (max_accepted_payout)(percent_EUSD)(allow_replies)(allow_votes)(allow_curationRewards)
              (beneficiaries)
           )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::comment_object, eznode::chain::comment_index )
 
 FC_REFLECT( eznode::chain::comment_vote_object,
-             (id)(voter)(comment)(weight)(rshares)(vote_percent)(last_update)(num_changes)
+             (id)(voter)(comment)(weight)(rewardESCOR)(vote_percent)(last_update)(num_changes)
           )
 CHAINBASE_SET_INDEX_TYPE( eznode::chain::comment_vote_object, eznode::chain::comment_vote_index )

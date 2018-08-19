@@ -27,7 +27,7 @@ using fc::string;
 
 BOOST_FIXTURE_TEST_SUITE( operation_tests, clean_database_fixture )
 
-BOOST_AUTO_TEST_CASE( account_create_validate )
+BOOST_AUTO_TEST_CASE( accountCreate_validate )
 {
    try
    {
@@ -36,13 +36,13 @@ BOOST_AUTO_TEST_CASE( account_create_validate )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_create_authorities )
+BOOST_AUTO_TEST_CASE( accountCreate_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_create_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: accountCreate_authorities" );
 
-      account_create_operation op;
+      accountCreate_operation op;
       op.creator = "alice";
       op.new_account_name = "bob";
 
@@ -67,11 +67,11 @@ BOOST_AUTO_TEST_CASE( account_create_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_create_apply )
+BOOST_AUTO_TEST_CASE( accountCreate_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_create_apply" );
+      BOOST_TEST_MESSAGE( "Testing: accountCreate_apply" );
 
       set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
 
@@ -83,7 +83,7 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
 
       const auto& gpo = db.get_dynamic_global_properties();
 
-      account_create_operation op;
+      accountCreate_operation op;
 
       op.fee = asset( 100, SYMBOL_ECO );
       op.new_account_name = "alice";
@@ -103,8 +103,8 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       const account_object& acct = db.get_account( "alice" );
       const account_authority_object& acct_auth = db.get< account_authority_object, by_account >( "alice" );
 
-      auto vest_shares = gpo.total_vesting_shares;
-      auto vests = gpo.total_vesting_fund_ECO;
+      auto score_ESCOR = gpo.totalESCOR;
+      auto ESCOR = gpo.totalECOfundForESCOR;
 
       BOOST_REQUIRE( acct.name == "alice" );
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
@@ -113,12 +113,12 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       BOOST_REQUIRE( acct.proxy == "" );
       BOOST_REQUIRE( acct.created == db.head_block_time() );
       BOOST_REQUIRE( acct.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( acct.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( acct.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
 
-      /// because init_witness has created vesting shares and blocks have been produced, 100 ECO is worth less than 100 vesting shares due to rounding
-      BOOST_REQUIRE( acct.vesting_shares.amount.value == ( op.fee * ( vest_shares / vests ) ).amount.value );
-      BOOST_REQUIRE( acct.vesting_withdraw_rate.amount.value == ASSET( "0.000000 VESTS" ).amount.value );
+      /// because init_witness has created eScore and blocks have been produced, 100 ECO is worth less than 100 eScore due to rounding
+      BOOST_REQUIRE( acct.eScore.amount.value == ( op.fee * ( score_ESCOR / ESCOR ) ).amount.value );
+      BOOST_REQUIRE( acct.ESCORwithdrawRateInECO.amount.value == ASSET( "0.000000 ESCOR" ).amount.value );
       BOOST_REQUIRE( acct.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( ( init_starting_balance - ASSET( "0.100 TESTS" ) ).amount.value == init.balance.amount.value );
       validate_database();
@@ -133,9 +133,9 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       BOOST_REQUIRE( acct.proxy == "" );
       BOOST_REQUIRE( acct.created == db.head_block_time() );
       BOOST_REQUIRE( acct.balance.amount.value == ASSET( "0.000 ECO " ).amount.value );
-      BOOST_REQUIRE( acct.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
-      BOOST_REQUIRE( acct.vesting_shares.amount.value == ( op.fee * ( vest_shares / vests ) ).amount.value );
-      BOOST_REQUIRE( acct.vesting_withdraw_rate.amount.value == ASSET( "0.000000 VESTS" ).amount.value );
+      BOOST_REQUIRE( acct.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( acct.eScore.amount.value == ( op.fee * ( score_ESCOR / ESCOR ) ).amount.value );
+      BOOST_REQUIRE( acct.ESCORwithdrawRateInECO.amount.value == ASSET( "0.000000 ESCOR" ).amount.value );
       BOOST_REQUIRE( acct.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( ( init_starting_balance - ASSET( "0.100 TESTS" ) ).amount.value == init.balance.amount.value );
       validate_database();
@@ -171,15 +171,15 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_update_validate )
+BOOST_AUTO_TEST_CASE( accountUpdate_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_update_validate" );
+      BOOST_TEST_MESSAGE( "Testing: accountUpdate_validate" );
 
       ACTORS( (alice) )
 
-      account_update_operation op;
+      accountUpdate_operation op;
       op.account = "alice";
       op.posting = authority();
       op.posting->weight_threshold = 1;
@@ -204,11 +204,11 @@ BOOST_AUTO_TEST_CASE( account_update_validate )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_update_authorities )
+BOOST_AUTO_TEST_CASE( accountUpdate_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_update_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: accountUpdate_authorities" );
 
       ACTORS( (alice)(bob) )
       private_key_type active_key = generate_private_key( "new_key" );
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE( account_update_authorities )
          a.active = authority( 1, active_key.get_public_key(), 1 );
       });
 
-      account_update_operation op;
+      accountUpdate_operation op;
       op.account = "alice";
       op.json_metadata = "{\"success\":true}";
 
@@ -288,18 +288,18 @@ BOOST_AUTO_TEST_CASE( account_update_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_update_apply )
+BOOST_AUTO_TEST_CASE( accountUpdate_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_update_apply" );
+      BOOST_TEST_MESSAGE( "Testing: accountUpdate_apply" );
 
       ACTORS( (alice) )
       private_key_type new_private_key = generate_private_key( "new_key" );
 
       BOOST_TEST_MESSAGE( "--- Test normal update" );
 
-      account_update_operation op;
+      accountUpdate_operation op;
       op.account = "alice";
       op.owner = authority( 1, new_private_key.get_public_key(), 1 );
       op.active = authority( 2, new_private_key.get_public_key(), 2 );
@@ -342,7 +342,7 @@ BOOST_AUTO_TEST_CASE( account_update_apply )
 
       BOOST_TEST_MESSAGE( "--- Test failure when account authority does not exist" );
       tx.clear();
-      op = account_update_operation();
+      op = accountUpdate_operation();
       op.account = "alice";
       op.posting = authority();
       op.posting->weight_threshold = 1;
@@ -449,8 +449,8 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       BOOST_REQUIRE( to_string( alice_comment.parent_permlink ) == op.parent_permlink );
       BOOST_REQUIRE( alice_comment.last_update == db.head_block_time() );
       BOOST_REQUIRE( alice_comment.created == db.head_block_time() );
-      BOOST_REQUIRE( alice_comment.net_rshares.value == 0 );
-      BOOST_REQUIRE( alice_comment.abs_rshares.value == 0 );
+      BOOST_REQUIRE( alice_comment.net_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( alice_comment.abs_rewardESCOR.value == 0 );
       BOOST_REQUIRE( alice_comment.cashout_time == fc::time_point_sec( db.head_block_time() + fc::seconds( CASHOUT_WINDOW_SECONDS ) ) );
 
       #ifndef IS_LOW_MEM
@@ -494,8 +494,8 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       BOOST_REQUIRE( to_string( bob_comment.parent_permlink ) == op.parent_permlink );
       BOOST_REQUIRE( bob_comment.last_update == db.head_block_time() );
       BOOST_REQUIRE( bob_comment.created == db.head_block_time() );
-      BOOST_REQUIRE( bob_comment.net_rshares.value == 0 );
-      BOOST_REQUIRE( bob_comment.abs_rshares.value == 0 );
+      BOOST_REQUIRE( bob_comment.net_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( bob_comment.abs_rewardESCOR.value == 0 );
       BOOST_REQUIRE( bob_comment.cashout_time == bob_comment.created + CASHOUT_WINDOW_SECONDS );
       BOOST_REQUIRE( bob_comment.root_comment == alice_comment.id );
       validate_database();
@@ -521,8 +521,8 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       BOOST_REQUIRE( to_string( sam_comment.parent_permlink ) == op.parent_permlink );
       BOOST_REQUIRE( sam_comment.last_update == db.head_block_time() );
       BOOST_REQUIRE( sam_comment.created == db.head_block_time() );
-      BOOST_REQUIRE( sam_comment.net_rshares.value == 0 );
-      BOOST_REQUIRE( sam_comment.abs_rshares.value == 0 );
+      BOOST_REQUIRE( sam_comment.net_rewardESCOR.value == 0 );
+      BOOST_REQUIRE( sam_comment.abs_rewardESCOR.value == 0 );
       BOOST_REQUIRE( sam_comment.cashout_time == sam_comment.created + CASHOUT_WINDOW_SECONDS );
       BOOST_REQUIRE( sam_comment.root_comment == alice_comment.id );
       validate_database();
@@ -537,13 +537,13 @@ BOOST_AUTO_TEST_CASE( comment_apply )
 
       db.modify( mod_sam_comment, [&]( comment_object& com )
       {
-         com.net_rshares = 10;
-         com.abs_rshares = 10;
+         com.net_rewardESCOR = 10;
+         com.abs_rewardESCOR = 10;
       });
 
       db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& o)
       {
-         o.total_reward_shares2 = eznode::chain::util::evaluate_reward_curve( 10 );
+         o.total_reward_ESCOR2 = eznode::chain::util::evaluate_reward_curve( 10 );
       });
 
       tx.signatures.clear();
@@ -604,7 +604,7 @@ BOOST_AUTO_TEST_CASE( comment_delete_apply )
       ACTORS( (alice) )
       generate_block();
 
-      vest( "alice", ASSET( "1000.000 TESTS" ) );
+      score( "alice", ASSET( "1000.000 TESTS" ) );
 
       generate_block();
 
@@ -629,9 +629,9 @@ BOOST_AUTO_TEST_CASE( comment_delete_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_TEST_MESSAGE( "--- Test failue deleting a comment with positive rshares" );
+      BOOST_TEST_MESSAGE( "--- Test failue deleting a comment with positive rewardESCOR" );
 
-      delete_comment_operation op;
+      deleteComment_operation op;
       op.author = "alice";
       op.permlink = "test1";
       tx.clear();
@@ -640,7 +640,7 @@ BOOST_AUTO_TEST_CASE( comment_delete_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::assert_exception );
 
 
-      BOOST_TEST_MESSAGE( "--- Test success deleting a comment with negative rshares" );
+      BOOST_TEST_MESSAGE( "--- Test success deleting a comment with negative rewardESCOR" );
 
       generate_block();
       vote.weight = -1 * PERCENT_100;
@@ -733,11 +733,11 @@ BOOST_AUTO_TEST_CASE( vote_apply )
       ACTORS( (alice)(bob)(sam)(dave) )
       generate_block();
 
-      vest( "alice", ASSET( "10.000 TESTS" ) );
+      score( "alice", ASSET( "10.000 TESTS" ) );
       validate_database();
-      vest( "bob" , ASSET( "10.000 TESTS" ) );
-      vest( "sam" , ASSET( "10.000 TESTS" ) );
-      vest( "dave" , ASSET( "10.000 TESTS" ) );
+      score( "bob" , ASSET( "10.000 TESTS" ) );
+      score( "sam" , ASSET( "10.000 TESTS" ) );
+      score( "dave" , ASSET( "10.000 TESTS" ) );
       generate_block();
 
       const auto& vote_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
@@ -805,9 +805,9 @@ BOOST_AUTO_TEST_CASE( vote_apply )
 
          BOOST_REQUIRE( alice.voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) / max_vote_denom ) );
          BOOST_REQUIRE( alice.last_vote_time == db.head_block_time() );
-         BOOST_REQUIRE( alice_comment.net_rshares.value == alice.vesting_shares.amount.value * ( old_voting_power - alice.voting_power ) / PERCENT_100 );
+         BOOST_REQUIRE( alice_comment.net_rewardESCOR.value == alice.eScore.amount.value * ( old_voting_power - alice.voting_power ) / PERCENT_100 );
          BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CASHOUT_WINDOW_SECONDS );
-         BOOST_REQUIRE( itr->rshares == alice.vesting_shares.amount.value * ( old_voting_power - alice.voting_power ) / PERCENT_100 );
+         BOOST_REQUIRE( itr->rewardESCOR == alice.eScore.amount.value * ( old_voting_power - alice.voting_power ) / PERCENT_100 );
          BOOST_REQUIRE( itr != vote_idx.end() );
          validate_database();
 
@@ -841,7 +841,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          itr = vote_idx.find( std::make_tuple( bob_comment.id, alice.id ) );
 
          BOOST_REQUIRE( db.get_account( "alice" ).voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) * PERCENT_100 / ( 2 * max_vote_denom * PERCENT_100 ) ) );
-         BOOST_REQUIRE( bob_comment.net_rshares.value == alice.vesting_shares.amount.value * ( old_voting_power - db.get_account( "alice" ).voting_power ) / PERCENT_100 );
+         BOOST_REQUIRE( bob_comment.net_rewardESCOR.value == alice.eScore.amount.value * ( old_voting_power - db.get_account( "alice" ).voting_power ) / PERCENT_100 );
          BOOST_REQUIRE( bob_comment.cashout_time == bob_comment.created + CASHOUT_WINDOW_SECONDS );
          BOOST_REQUIRE( itr != vote_idx.end() );
          validate_database();
@@ -849,7 +849,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          BOOST_TEST_MESSAGE( "--- Test payout time extension on vote" );
 
          old_voting_power = db.get_account( "bob" ).voting_power;
-         auto old_abs_rshares = db.get_comment( "alice", string( "foo" ) ).abs_rshares.value;
+         auto old_abs_rewardESCOR = db.get_comment( "alice", string( "foo" ) ).abs_rewardESCOR.value;
 
          generate_blocks( db.head_block_time() + fc::seconds( ( CASHOUT_WINDOW_SECONDS / 2 ) ), true );
 
@@ -871,7 +871,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          uint128_t new_cashout_time = db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS;
 
          BOOST_REQUIRE( new_bob.voting_power == PERCENT_100 - ( ( PERCENT_100 + max_vote_denom - 1 ) / max_vote_denom ) );
-         BOOST_REQUIRE( new_alice_comment.net_rshares.value == old_abs_rshares + new_bob.vesting_shares.amount.value * ( old_voting_power - new_bob.voting_power ) / PERCENT_100 );
+         BOOST_REQUIRE( new_alice_comment.net_rewardESCOR.value == old_abs_rewardESCOR + new_bob.eScore.amount.value * ( old_voting_power - new_bob.voting_power ) / PERCENT_100 );
          BOOST_REQUIRE( new_alice_comment.cashout_time == new_alice_comment.created + CASHOUT_WINDOW_SECONDS );
          BOOST_REQUIRE( itr != vote_idx.end() );
          validate_database();
@@ -881,7 +881,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          const auto& new_sam = db.get_account( "sam" );
          const auto& new_bob_comment = db.get_comment( "bob", string( "foo" ) );
 
-         old_abs_rshares = new_bob_comment.abs_rshares.value;
+         old_abs_rewardESCOR = new_bob_comment.abs_rewardESCOR.value;
 
          op.weight = -1 * PERCENT_100 / 2;
          op.voter = "sam";
@@ -895,19 +895,19 @@ BOOST_AUTO_TEST_CASE( vote_apply )
 
          itr = vote_idx.find( std::make_tuple( new_bob_comment.id, new_sam.id ) );
          new_cashout_time = db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS;
-         auto sam_weight /*= ( ( uint128_t( new_sam.vesting_shares.amount.value ) ) / 400 + 1 ).to_uint64();*/
-                         = ( ( uint128_t( new_sam.vesting_shares.amount.value ) * ( ( PERCENT_100 + max_vote_denom - 1 ) / ( 2 * max_vote_denom ) ) ) / PERCENT_100 ).to_uint64();
+         auto sam_weight /*= ( ( uint128_t( new_sam.eScore.amount.value ) ) / 400 + 1 ).to_uint64();*/
+                         = ( ( uint128_t( new_sam.eScore.amount.value ) * ( ( PERCENT_100 + max_vote_denom - 1 ) / ( 2 * max_vote_denom ) ) ) / PERCENT_100 ).to_uint64();
 
          BOOST_REQUIRE( new_sam.voting_power == PERCENT_100 - ( ( PERCENT_100 + max_vote_denom - 1 ) / ( 2 * max_vote_denom ) ) );
-         BOOST_REQUIRE( new_bob_comment.net_rshares.value == old_abs_rshares - sam_weight );
-         BOOST_REQUIRE( new_bob_comment.abs_rshares.value == old_abs_rshares + sam_weight );
+         BOOST_REQUIRE( new_bob_comment.net_rewardESCOR.value == old_abs_rewardESCOR - sam_weight );
+         BOOST_REQUIRE( new_bob_comment.abs_rewardESCOR.value == old_abs_rewardESCOR + sam_weight );
          BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CASHOUT_WINDOW_SECONDS );
          BOOST_REQUIRE( itr != vote_idx.end() );
          validate_database();
 
          BOOST_TEST_MESSAGE( "--- Test nested voting on nested comments" );
 
-         old_abs_rshares = new_alice_comment.children_abs_rshares.value;
+         old_abs_rewardESCOR = new_alice_comment.children_abs_rewardESCOR.value;
          int64_t regenerated_power = (PERCENT_100 * ( db.head_block_time() - db.get_account( "alice").last_vote_time ).to_seconds() ) / VOTE_REGENERATION_SECONDS;
          int64_t used_power = ( db.get_account( "alice" ).voting_power + regenerated_power + max_vote_denom - 1 ) / max_vote_denom;
 
@@ -933,21 +933,21 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          tx.sign( alice_private_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
 
-         auto new_rshares = ( ( fc::uint128_t( db.get_account( "alice" ).vesting_shares.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
+         auto new_rewardESCOR = ( ( fc::uint128_t( db.get_account( "alice" ).eScore.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
 
          BOOST_REQUIRE( db.get_comment( "alice", string( "foo" ) ).cashout_time == db.get_comment( "alice", string( "foo" ) ).created + CASHOUT_WINDOW_SECONDS );
 
          validate_database();
 
-         BOOST_TEST_MESSAGE( "--- Test increasing vote rshares" );
+         BOOST_TEST_MESSAGE( "--- Test increasing vote rewardESCOR" );
 
          generate_blocks( db.head_block_time() + MIN_VOTE_INTERVAL_SEC );
 
          auto new_alice = db.get_account( "alice" );
          auto alice_bob_vote = vote_idx.find( std::make_tuple( new_bob_comment.id, new_alice.id ) );
-         auto old_vote_rshares = alice_bob_vote->rshares;
-         auto old_net_rshares = new_bob_comment.net_rshares.value;
-         old_abs_rshares = new_bob_comment.abs_rshares.value;
+         auto old_vote_rewardESCOR = alice_bob_vote->rewardESCOR;
+         auto old_net_rewardESCOR = new_bob_comment.net_rewardESCOR.value;
+         old_abs_rewardESCOR = new_bob_comment.abs_rewardESCOR.value;
          used_power = ( ( PERCENT_1 * 25 * ( new_alice.voting_power ) / PERCENT_100 ) + max_vote_denom - 1 ) / max_vote_denom;
          auto alice_voting_power = new_alice.voting_power - used_power;
 
@@ -962,24 +962,24 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          db.push_transaction( tx, 0 );
          alice_bob_vote = vote_idx.find( std::make_tuple( new_bob_comment.id, new_alice.id ) );
 
-         new_rshares = ( ( fc::uint128_t( new_alice.vesting_shares.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
+         new_rewardESCOR = ( ( fc::uint128_t( new_alice.eScore.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
 
-         BOOST_REQUIRE( new_bob_comment.net_rshares == old_net_rshares - old_vote_rshares + new_rshares );
-         BOOST_REQUIRE( new_bob_comment.abs_rshares == old_abs_rshares + new_rshares );
+         BOOST_REQUIRE( new_bob_comment.net_rewardESCOR == old_net_rewardESCOR - old_vote_rewardESCOR + new_rewardESCOR );
+         BOOST_REQUIRE( new_bob_comment.abs_rewardESCOR == old_abs_rewardESCOR + new_rewardESCOR );
          BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CASHOUT_WINDOW_SECONDS );
-         BOOST_REQUIRE( alice_bob_vote->rshares == new_rshares );
+         BOOST_REQUIRE( alice_bob_vote->rewardESCOR == new_rewardESCOR );
          BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
          BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
          BOOST_REQUIRE( db.get_account( "alice" ).voting_power == alice_voting_power );
          validate_database();
 
-         BOOST_TEST_MESSAGE( "--- Test decreasing vote rshares" );
+         BOOST_TEST_MESSAGE( "--- Test decreasing vote rewardESCOR" );
 
          generate_blocks( db.head_block_time() + MIN_VOTE_INTERVAL_SEC );
 
-         old_vote_rshares = new_rshares;
-         old_net_rshares = new_bob_comment.net_rshares.value;
-         old_abs_rshares = new_bob_comment.abs_rshares.value;
+         old_vote_rewardESCOR = new_rewardESCOR;
+         old_net_rewardESCOR = new_bob_comment.net_rewardESCOR.value;
+         old_abs_rewardESCOR = new_bob_comment.abs_rewardESCOR.value;
          used_power = ( uint64_t( PERCENT_1 ) * 75 * uint64_t( alice_voting_power ) ) / PERCENT_100;
          used_power = ( used_power + max_vote_denom - 1 ) / max_vote_denom;
          alice_voting_power -= used_power;
@@ -992,12 +992,12 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          db.push_transaction( tx, 0 );
          alice_bob_vote = vote_idx.find( std::make_tuple( new_bob_comment.id, new_alice.id ) );
 
-         new_rshares = ( ( fc::uint128_t( new_alice.vesting_shares.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
+         new_rewardESCOR = ( ( fc::uint128_t( new_alice.eScore.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
 
-         BOOST_REQUIRE( new_bob_comment.net_rshares == old_net_rshares - old_vote_rshares - new_rshares );
-         BOOST_REQUIRE( new_bob_comment.abs_rshares == old_abs_rshares + new_rshares );
+         BOOST_REQUIRE( new_bob_comment.net_rewardESCOR == old_net_rewardESCOR - old_vote_rewardESCOR - new_rewardESCOR );
+         BOOST_REQUIRE( new_bob_comment.abs_rewardESCOR == old_abs_rewardESCOR + new_rewardESCOR );
          BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CASHOUT_WINDOW_SECONDS );
-         BOOST_REQUIRE( alice_bob_vote->rshares == -1 * new_rshares );
+         BOOST_REQUIRE( alice_bob_vote->rewardESCOR == -1 * new_rewardESCOR );
          BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
          BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
          BOOST_REQUIRE( db.get_account( "alice" ).voting_power == alice_voting_power );
@@ -1007,9 +1007,9 @@ BOOST_AUTO_TEST_CASE( vote_apply )
 
          generate_blocks( db.head_block_time() + MIN_VOTE_INTERVAL_SEC );
 
-         old_vote_rshares = alice_bob_vote->rshares;
-         old_net_rshares = new_bob_comment.net_rshares.value;
-         old_abs_rshares = new_bob_comment.abs_rshares.value;
+         old_vote_rewardESCOR = alice_bob_vote->rewardESCOR;
+         old_net_rewardESCOR = new_bob_comment.net_rewardESCOR.value;
+         old_abs_rewardESCOR = new_bob_comment.abs_rewardESCOR.value;
 
          op.weight = 0;
          tx.operations.clear();
@@ -1019,16 +1019,16 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          db.push_transaction( tx, 0 );
          alice_bob_vote = vote_idx.find( std::make_tuple( new_bob_comment.id, new_alice.id ) );
 
-         BOOST_REQUIRE( new_bob_comment.net_rshares == old_net_rshares - old_vote_rshares );
-         BOOST_REQUIRE( new_bob_comment.abs_rshares == old_abs_rshares );
+         BOOST_REQUIRE( new_bob_comment.net_rewardESCOR == old_net_rewardESCOR - old_vote_rewardESCOR );
+         BOOST_REQUIRE( new_bob_comment.abs_rewardESCOR == old_abs_rewardESCOR );
          BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CASHOUT_WINDOW_SECONDS );
-         BOOST_REQUIRE( alice_bob_vote->rshares == 0 );
+         BOOST_REQUIRE( alice_bob_vote->rewardESCOR == 0 );
          BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
          BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
          BOOST_REQUIRE( db.get_account( "alice" ).voting_power == alice_voting_power );
          validate_database();
 
-         BOOST_TEST_MESSAGE( "--- Test failure when increasing rshares within lockout period" );
+         BOOST_TEST_MESSAGE( "--- Test failure when increasing rewardESCOR within lockout period" );
 
          generate_blocks( fc::time_point_sec( ( new_bob_comment.cashout_time - UPVOTE_LOCKOUT_HF17 ).sec_since_epoch() + BLOCK_INTERVAL ), true );
 
@@ -1041,7 +1041,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
          validate_database();
 
-         BOOST_TEST_MESSAGE( "--- Test success when reducing rshares within lockout period" );
+         BOOST_TEST_MESSAGE( "--- Test success when reducing rewardESCOR within lockout period" );
 
          op.weight = -1 * PERCENT_100;
          tx.operations.clear();
@@ -1135,7 +1135,7 @@ BOOST_AUTO_TEST_CASE( signature_stripping )
       ACTORS( (alice)(bob)(sam)(corp) )
       fund( "corp", 10000 );
 
-      account_update_operation update_op;
+      accountUpdate_operation update_op;
       update_op.account = "corp";
       update_op.active = authority( 2, "alice", 1, "bob", 1, "sam", 1 );
 
@@ -1245,27 +1245,27 @@ BOOST_AUTO_TEST_CASE( transfer_apply )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_to_vesting_validate )
+BOOST_AUTO_TEST_CASE( transferECOtoESCORfund_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_vesting_validate" );
+      BOOST_TEST_MESSAGE( "Testing: transferECOtoESCORfund_validate" );
 
       validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_to_vesting_authorities )
+BOOST_AUTO_TEST_CASE( transferECOtoESCORfund_authorities )
 {
    try
    {
       ACTORS( (alice)(bob) )
       fund( "alice", 10000 );
 
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_vesting_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: transferECOtoESCORfund_authorities" );
 
-      transfer_to_vesting_operation op;
+      transferECOtoESCORfund_operation op;
       op.from = "alice";
       op.to = "bob";
       op.amount = ASSET( "2.500 TESTS" );
@@ -1303,11 +1303,11 @@ BOOST_AUTO_TEST_CASE( transfer_to_vesting_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_to_vesting_apply )
+BOOST_AUTO_TEST_CASE( transferECOtoESCORfund_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_vesting_apply" );
+      BOOST_TEST_MESSAGE( "Testing: transferECOtoESCORfund_apply" );
 
       ACTORS( (alice)(bob) )
       fund( "alice", 10000 );
@@ -1316,12 +1316,12 @@ BOOST_AUTO_TEST_CASE( transfer_to_vesting_apply )
 
       BOOST_REQUIRE( alice.balance == ASSET( "10.000 TESTS" ) );
 
-      auto shares = asset( gpo.total_vesting_shares.amount, SYMBOL_EZP );
-      auto vests = asset( gpo.total_vesting_fund_ECO.amount, SYMBOL_ECO );
-      auto alice_shares = alice.vesting_shares;
-      auto bob_shares = bob.vesting_shares;
+      auto totalESCOR = asset( gpo.totalESCOR.amount, SYMBOL_ESCOR );
+      auto ECOfundForESCORvalueBalance = asset( gpo.totalECOfundForESCOR.amount, SYMBOL_ECO );
+      auto alice_ESCOR = alice.eScore;
+      auto bob_ESCOR = bob.eScore;
 
-      transfer_to_vesting_operation op;
+      transferECOtoESCORfund_operation op;
       op.from = "alice";
       op.to = "";
       op.amount = ASSET( "7.500 TESTS" );
@@ -1332,15 +1332,15 @@ BOOST_AUTO_TEST_CASE( transfer_to_vesting_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto new_vest = op.amount * ( shares / vests );
-      shares += new_vest;
-      vests += op.amount;
-      alice_shares += new_vest;
+      new_escore = asset( ( op.amount * ( totalESCOR / ECOfundForESCORvalueBalance ) ).amount, SYMBOL_ESCOR );
+      totalESCOR += new_escore;
+      ECOfundForESCORvalueBalance += op.amount;
+      alice_ESCOR += new_escore;
 
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "2.500 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.vesting_shares.amount.value == alice_shares.amount.value );
-      BOOST_REQUIRE( gpo.total_vesting_fund_ECO.amount.value == vests.amount.value );
-      BOOST_REQUIRE( gpo.total_vesting_shares.amount.value == shares.amount.value );
+      BOOST_REQUIRE( alice.eScore.amount.value == alice_ESCOR.amount.value );
+      BOOST_REQUIRE( gpo.totalECOfundForESCOR.amount.value == ECOfundForESCORvalueBalance.amount.value );
+      BOOST_REQUIRE( gpo.totalESCOR.amount.value == totalESCOR.amount.value );
       validate_database();
 
       op.to = "bob";
@@ -1352,56 +1352,56 @@ BOOST_AUTO_TEST_CASE( transfer_to_vesting_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      new_vest = asset( ( op.amount * ( shares / vests ) ).amount, SYMBOL_EZP );
-      shares += new_vest;
-      vests += op.amount;
-      bob_shares += new_vest;
+      new_escore = asset( ( op.amount * ( totalESCOR / ECOfundForESCORvalueBalance ) ).amount, SYMBOL_ESCOR );
+      totalESCOR += new_escore;
+      ECOfundForESCORvalueBalance += op.amount;
+      bob_ESCOR += new_escore;
 
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "0.500 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.vesting_shares.amount.value == alice_shares.amount.value );
+      BOOST_REQUIRE( alice.eScore.amount.value == alice_ESCOR.amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.vesting_shares.amount.value == bob_shares.amount.value );
-      BOOST_REQUIRE( gpo.total_vesting_fund_ECO.amount.value == vests.amount.value );
-      BOOST_REQUIRE( gpo.total_vesting_shares.amount.value == shares.amount.value );
+      BOOST_REQUIRE( bob.eScore.amount.value == bob_ESCOR.amount.value );
+      BOOST_REQUIRE( gpo.totalECOfundForESCOR.amount.value == ECOfundForESCORvalueBalance.amount.value );
+      BOOST_REQUIRE( gpo.totalESCOR.amount.value == totalESCOR.amount.value );
       validate_database();
 
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
 
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "0.500 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.vesting_shares.amount.value == alice_shares.amount.value );
+      BOOST_REQUIRE( alice.eScore.amount.value == alice_ESCOR.amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.vesting_shares.amount.value == bob_shares.amount.value );
-      BOOST_REQUIRE( gpo.total_vesting_fund_ECO.amount.value == vests.amount.value );
-      BOOST_REQUIRE( gpo.total_vesting_shares.amount.value == shares.amount.value );
+      BOOST_REQUIRE( bob.eScore.amount.value == bob_ESCOR.amount.value );
+      BOOST_REQUIRE( gpo.totalECOfundForESCOR.amount.value == ECOfundForESCORvalueBalance.amount.value );
+      BOOST_REQUIRE( gpo.totalESCOR.amount.value == totalESCORE.amount.value );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( withdraw_vesting_validate )
+BOOST_AUTO_TEST_CASE( withdraw_ESCOR_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: withdraw_vesting_validate" );
+      BOOST_TEST_MESSAGE( "Testing: withdraw_ESCOR_validate" );
 
       validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( withdraw_vesting_authorities )
+BOOST_AUTO_TEST_CASE( withdraw_ESCOR_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: withdraw_vesting_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: withdraw_ESCOR_authorities" );
 
       ACTORS( (alice)(bob) )
       fund( "alice", 10000 );
-      vest( "alice", 10000 );
+      score( "alice", 10000 );
 
-      withdraw_vesting_operation op;
+      withdraw_ESCOR_operation op;
       op.account = "alice";
-      op.vesting_shares = ASSET( "0.001000 VESTS" );
+      op.eScore = ASSET( "0.001000 ESCOR" );
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -1434,24 +1434,24 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
+BOOST_AUTO_TEST_CASE( withdraw_ESCOR_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: withdraw_vesting_apply" );
+      BOOST_TEST_MESSAGE( "Testing: withdraw_ESCOR_apply" );
 
       ACTORS( (alice) )
       generate_block();
-      vest( "alice", ASSET( "10.000 TESTS" ) );
+      score( "alice", ASSET( "10.000 TESTS" ) );
 
-      BOOST_TEST_MESSAGE( "--- Test failure withdrawing negative VESTS" );
+      BOOST_TEST_MESSAGE( "--- Test failure withdrawing negative ESCOR" );
 
       {
       const auto& alice = db.get_account( "alice" );
 
-      withdraw_vesting_operation op;
+      withdraw_ESCOR_operation op;
       op.account = "alice";
-      op.vesting_shares = asset( -1, SYMBOL_EZP );
+      op.eScore = asset( -1, SYMBOL_ESCOR );
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -1460,10 +1460,10 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::assert_exception );
 
 
-      BOOST_TEST_MESSAGE( "--- Test withdraw of existing VESTS" );
-      op.vesting_shares = asset( alice.vesting_shares.amount / 2, SYMBOL_EZP );
+      BOOST_TEST_MESSAGE( "--- Test withdraw of existing ESCOR" );
+      op.eScore = asset( alice.eScore.amount / 2, SYMBOL_ESCOR );
 
-      auto old_vesting_shares = alice.vesting_shares;
+      auto old_ESCOR = alice.eScore;
 
       tx.clear();
       tx.operations.push_back( op );
@@ -1471,62 +1471,62 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( alice.vesting_shares.amount.value == old_vesting_shares.amount.value );
-      BOOST_REQUIRE( alice.vesting_withdraw_rate.amount.value == ( old_vesting_shares.amount / ( VESTING_WITHDRAW_INTERVALS * 2 ) ).value );
-      BOOST_REQUIRE( alice.to_withdraw.value == op.vesting_shares.amount.value );
-      BOOST_REQUIRE( alice.next_vesting_withdrawal == db.head_block_time() + VESTING_WITHDRAW_INTERVAL_SECONDS );
+      BOOST_REQUIRE( alice.eScore.amount.value == old_ESCOR.amount.value );
+      BOOST_REQUIRE( alice.ESCORwithdrawRateInECO.amount.value == ( old_ESCOR.amount / ( ECO_fund_for_ESCOR_WITHDRAW_INTERVALS * 2 ) ).value );
+      BOOST_REQUIRE( alice.to_withdraw.value == op.eScore.amount.value );
+      BOOST_REQUIRE( alice.nextESCORwithdrawalTime == db.head_block_time() + ESCOR_WITHDRAW_INTERVAL_SECONDS );
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test changing vesting withdrawal" );
+      BOOST_TEST_MESSAGE( "--- Test changing eScore ECO fund withdrawal" );
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.vesting_shares = asset( alice.vesting_shares.amount / 3, SYMBOL_EZP );
+      op.eScore = asset( alice.eScore.amount / 3, SYMBOL_ESCOR );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( alice.vesting_shares.amount.value == old_vesting_shares.amount.value );
-      BOOST_REQUIRE( alice.vesting_withdraw_rate.amount.value == ( old_vesting_shares.amount / ( VESTING_WITHDRAW_INTERVALS * 3 ) ).value );
-      BOOST_REQUIRE( alice.to_withdraw.value == op.vesting_shares.amount.value );
-      BOOST_REQUIRE( alice.next_vesting_withdrawal == db.head_block_time() + VESTING_WITHDRAW_INTERVAL_SECONDS );
+      BOOST_REQUIRE( alice.eScore.amount.value == old_ESCOR.amount.value );
+      BOOST_REQUIRE( alice.ESCORwithdrawRateInECO.amount.value == ( old_ESCOR.amount / ( ECO_fund_for_ESCOR_WITHDRAW_INTERVALS * 3 ) ).value );
+      BOOST_REQUIRE( alice.to_withdraw.value == op.eScore.amount.value );
+      BOOST_REQUIRE( alice.nextESCORwithdrawalTime == db.head_block_time() + ESCOR_WITHDRAW_INTERVAL_SECONDS );
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test withdrawing more vests than available" );
+      BOOST_TEST_MESSAGE( "--- Test withdrawing more ESCOR than available" );
       auto old_withdraw_amount = alice.to_withdraw;
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.vesting_shares = asset( alice.vesting_shares.amount * 2, SYMBOL_EZP );
+      op.eScore = asset( alice.eScore.amount * 2, SYMBOL_ESCOR );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_REQUIRE( alice.vesting_shares.amount.value == old_vesting_shares.amount.value );
-      BOOST_REQUIRE( alice.vesting_withdraw_rate.amount.value == ( old_vesting_shares.amount / ( VESTING_WITHDRAW_INTERVALS * 3 ) ).value );
-      BOOST_REQUIRE( alice.next_vesting_withdrawal == db.head_block_time() + VESTING_WITHDRAW_INTERVAL_SECONDS );
+      BOOST_REQUIRE( alice.eScore.amount.value == old_ESCOR.amount.value );
+      BOOST_REQUIRE( alice.ESCORwithdrawRateInECO.amount.value == ( old_ESCOR.amount / ( ECO_fund_for_ESCOR_WITHDRAW_INTERVALS * 3 ) ).value );
+      BOOST_REQUIRE( alice.nextESCORwithdrawalTime == db.head_block_time() + ESCOR_WITHDRAW_INTERVAL_SECONDS );
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test withdrawing 0 to reset vesting withdraw" );
+      BOOST_TEST_MESSAGE( "--- Test withdrawing 0 to reset eScore ECO fund withdraw" );
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.vesting_shares = asset( 0, SYMBOL_EZP );
+      op.eScore = asset( 0, SYMBOL_ESCOR );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( alice.vesting_shares.amount.value == old_vesting_shares.amount.value );
-      BOOST_REQUIRE( alice.vesting_withdraw_rate.amount.value == 0 );
+      BOOST_REQUIRE( alice.eScore.amount.value == old_ESCOR.amount.value );
+      BOOST_REQUIRE( alice.ESCORwithdrawRateInECO.amount.value == 0 );
       BOOST_REQUIRE( alice.to_withdraw.value == 0 );
-      BOOST_REQUIRE( alice.next_vesting_withdrawal == fc::time_point_sec::maximum() );
+      BOOST_REQUIRE( alice.nextESCORwithdrawalTime == fc::time_point_sec::maximum() );
 
 
       BOOST_TEST_MESSAGE( "--- Test cancelling a withdraw when below the account creation fee" );
-      op.vesting_shares = alice.vesting_shares;
+      op.eScore = alice.eScore;
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -1545,23 +1545,23 @@ BOOST_AUTO_TEST_CASE( withdraw_vesting_apply )
 
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
          {
-            gpo.current_supply += wso.median_props.account_creation_fee - ASSET( "0.001 TESTS" ) - gpo.total_vesting_fund_ECO;
-            gpo.total_vesting_fund_ECO = wso.median_props.account_creation_fee - ASSET( "0.001 TESTS" );
+            gpo.current_supply += wso.median_props.account_creation_fee - ASSET( "0.001 TESTS" ) - gpo.totalECOfundForESCOR;
+            gpo.totalECOfundForESCOR = wso.median_props.account_creation_fee - ASSET( "0.001 TESTS" );
          });
 
          db.update_virtual_supply();
       }, database::skip_witness_signature );
 
-      withdraw_vesting_operation op;
+      withdraw_ESCOR_operation op;
       signed_transaction tx;
       op.account = "alice";
-      op.vesting_shares = ASSET( "0.000000 VESTS" );
+      op.eScore = ASSET( "0.000000 ESCOR" );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).vesting_withdraw_rate == ASSET( "0.000000 VESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCORwithdrawRateInECO == ASSET( "0.000000 ESCOR" ) );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -1718,22 +1718,22 @@ BOOST_AUTO_TEST_CASE( witness_update_apply )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_witness_vote_validate )
+BOOST_AUTO_TEST_CASE( accountWitnessVote_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_witness_vote_validate" );
+      BOOST_TEST_MESSAGE( "Testing: accountWitnessVote_validate" );
 
       validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_witness_vote_authorities )
+BOOST_AUTO_TEST_CASE( accountWitnessVote_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_witness_vote_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: accountWitnessVote_authorities" );
 
       ACTORS( (alice)(bob)(sam) )
 
@@ -1741,7 +1741,7 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_authorities )
       private_key_type alice_witness_key = generate_private_key( "alice_witness" );
       witness_create( "alice", alice_private_key, "foo.bar", alice_witness_key.get_public_key(), 1000 );
 
-      account_witness_vote_operation op;
+      accountWitnessVote_operation op;
       op.account = "bob";
       op.witness = "alice";
 
@@ -1784,15 +1784,15 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_witness_vote_apply )
+BOOST_AUTO_TEST_CASE( accountWitnessVote_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_witness_vote_apply" );
+      BOOST_TEST_MESSAGE( "Testing: accountWitnessVote_apply" );
 
       ACTORS( (alice)(bob)(sam) )
       fund( "alice" , 5000 );
-      vest( "alice", 5000 );
+      score( "alice", 5000 );
       fund( "sam", 1000 );
 
       private_key_type sam_witness_key = generate_private_key( "sam_key" );
@@ -1802,7 +1802,7 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_apply )
       const auto& witness_vote_idx = db.get_index< witness_vote_index >().indices().get< by_witness_account >();
 
       BOOST_TEST_MESSAGE( "--- Test normal vote" );
-      account_witness_vote_operation op;
+      accountWitnessVote_operation op;
       op.account = "alice";
       op.witness = "sam";
       op.approve = true;
@@ -1814,7 +1814,7 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_apply )
 
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( sam_witness.votes == alice.vesting_shares.amount );
+      BOOST_REQUIRE( sam_witness.votes == alice.eScore.amount );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, alice.id ) ) != witness_vote_idx.end() );
       validate_database();
 
@@ -1846,7 +1846,7 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_apply )
 
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( sam_witness.votes == ( bob.proxied_vsf_votes_total() + bob.vesting_shares.amount ) );
+      BOOST_REQUIRE( sam_witness.votes == ( bob.proxied_vsf_votes_total() + bob.eScore.amount ) );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, bob.id ) ) != witness_vote_idx.end() );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, alice.id ) ) == witness_vote_idx.end() );
 
@@ -1858,7 +1858,7 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
 
-      BOOST_REQUIRE( sam_witness.votes == ( bob.proxied_vsf_votes_total() + bob.vesting_shares.amount ) );
+      BOOST_REQUIRE( sam_witness.votes == ( bob.proxied_vsf_votes_total() + bob.eScore.amount ) );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, bob.id ) ) != witness_vote_idx.end() );
       BOOST_REQUIRE( witness_vote_idx.find( std::make_tuple( sam_witness.id, alice.id ) ) == witness_vote_idx.end() );
 
@@ -1969,13 +1969,13 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
 
       ACTORS( (alice)(bob)(sam)(dave) )
       fund( "alice", 1000 );
-      vest( "alice", 1000 );
+      score( "alice", 1000 );
       fund( "bob", 3000 );
-      vest( "bob", 3000 );
+      score( "bob", 3000 );
       fund( "sam", 5000 );
-      vest( "sam", 5000 );
+      score( "sam", 5000 );
       fund( "dave", 7000 );
-      vest( "dave", 7000 );
+      score( "dave", 7000 );
 
       BOOST_TEST_MESSAGE( "--- Test setting proxy to another account from self." );
       // bob -> alice
@@ -1994,7 +1994,7 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       BOOST_REQUIRE( bob.proxy == "alice" );
       BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( alice.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( alice.proxied_vsf_votes_total() == bob.vesting_shares.amount );
+      BOOST_REQUIRE( alice.proxied_vsf_votes_total() == bob.eScore.amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test changing proxy" );
@@ -2012,7 +2012,7 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( alice.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total().value == bob.vesting_shares.amount );
+      BOOST_REQUIRE( sam.proxied_vsf_votes_total().value == bob.eScore.amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when changing proxy to existing proxy" );
@@ -2022,7 +2022,7 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       BOOST_REQUIRE( bob.proxy == "sam" );
       BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == bob.vesting_shares.amount );
+      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == bob.eScore.amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test adding a grandparent proxy" );
@@ -2040,9 +2040,9 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       BOOST_REQUIRE( bob.proxy == "sam" );
       BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == bob.vesting_shares.amount );
+      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == bob.eScore.amount );
       BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.vesting_shares + bob.vesting_shares ).amount );
+      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.eScore + bob.eScore ).amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test adding a grandchild proxy" );
@@ -2063,9 +2063,9 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       BOOST_REQUIRE( bob.proxy == "sam" );
       BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == ( bob.vesting_shares + alice.vesting_shares ).amount );
+      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == ( bob.eScore + alice.eScore ).amount );
       BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.vesting_shares + bob.vesting_shares + alice.vesting_shares ).amount );
+      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.eScore + bob.eScore + alice.eScore ).amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test removing a grandchild proxy" );
@@ -2085,13 +2085,13 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       BOOST_REQUIRE( bob.proxy == PROXY_TO_SELF_ACCOUNT );
       BOOST_REQUIRE( bob.proxied_vsf_votes_total().value == 0 );
       BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == alice.vesting_shares.amount );
+      BOOST_REQUIRE( sam.proxied_vsf_votes_total() == alice.eScore.amount );
       BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.vesting_shares + alice.vesting_shares ).amount );
+      BOOST_REQUIRE( dave.proxied_vsf_votes_total() == ( sam.eScore + alice.eScore ).amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test votes are transferred when a proxy is added" );
-      account_witness_vote_operation vote;
+      accountWitnessVote_operation vote;
       vote.account= "bob";
       vote.witness = INIT_MINER_NAME;
       tx.operations.clear();
@@ -2110,7 +2110,7 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
 
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_witness( INIT_MINER_NAME ).votes == ( alice.vesting_shares + bob.vesting_shares ).amount );
+      BOOST_REQUIRE( db.get_witness( INIT_MINER_NAME ).votes == ( alice.eScore + bob.eScore ).amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test votes are removed when a proxy is removed" );
@@ -2122,7 +2122,7 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
 
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_witness( INIT_MINER_NAME ).votes == bob.vesting_shares.amount );
+      BOOST_REQUIRE( db.get_witness( INIT_MINER_NAME ).votes == bob.eScore.amount );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -2149,9 +2149,9 @@ BOOST_AUTO_TEST_CASE( custom_authorities )
    BOOST_REQUIRE( auths == expected );
 }
 
-BOOST_AUTO_TEST_CASE( custom_json_authorities )
+BOOST_AUTO_TEST_CASE( customJson_authorities )
 {
-   custom_json_operation op;
+   customJson_operation op;
    op.required_auths.insert( "alice" );
    op.required_posting_auths.insert( "bob" );
 
@@ -2277,7 +2277,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_apply )
       BOOST_TEST_MESSAGE( "--- Test publishing price feed" );
       feed_publish_operation op;
       op.publisher = "alice";
-      op.exchange_rate = price( ASSET( "1000.000 TESTS" ), ASSET( "1.000 TBD" ) ); // 1000 ECO : 1 EZD
+      op.exchange_rate = price( ASSET( "1000.000 TESTS" ), ASSET( "1.000 TBD" ) ); // 1000 ECO : 1 EUSD
 
       signed_transaction tx;
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -2288,8 +2288,8 @@ BOOST_AUTO_TEST_CASE( feed_publish_apply )
 
       witness_object& alice_witness = const_cast< witness_object& >( db.get_witness( "alice" ) );
 
-      BOOST_REQUIRE( alice_witness.EZD_exchange_rate == op.exchange_rate );
-      BOOST_REQUIRE( alice_witness.last_EZD_exchange_update == db.head_block_time() );
+      BOOST_REQUIRE( alice_witness.EUSD_exchange_rate == op.exchange_rate );
+      BOOST_REQUIRE( alice_witness.last_EUSD_exchange_update == db.head_block_time() );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure publishing to non-existent witness" );
@@ -2314,8 +2314,8 @@ BOOST_AUTO_TEST_CASE( feed_publish_apply )
       db.push_transaction( tx, 0 );
 
       alice_witness = const_cast< witness_object& >( db.get_witness( "alice" ) );
-      BOOST_REQUIRE( std::abs( alice_witness.EZD_exchange_rate.to_real() - op.exchange_rate.to_real() ) < 0.0000005 );
-      BOOST_REQUIRE( alice_witness.last_EZD_exchange_update == db.head_block_time() );
+      BOOST_REQUIRE( std::abs( alice_witness.EUSD_exchange_rate.to_real() - op.exchange_rate.to_real() ) < 0.0000005 );
+      BOOST_REQUIRE( alice_witness.last_EUSD_exchange_update == db.head_block_time() );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -2413,7 +2413,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "3.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.EZD_balance.amount.value == ASSET( "7.000 TBD" ).amount.value );
+      BOOST_REQUIRE( new_bob.EUSDbalance.amount.value == ASSET( "7.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when account does not have the required TBD" );
@@ -2426,7 +2426,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_REQUIRE( new_alice.balance.amount.value == ASSET( "7.500 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_alice.EZD_balance.amount.value == ASSET( "2.500 TBD" ).amount.value );
+      BOOST_REQUIRE( new_alice.EUSDbalance.amount.value == ASSET( "2.500 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when account does not exist" );
@@ -2437,7 +2437,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- Test success converting EZD to TESTS" );
+      BOOST_TEST_MESSAGE( "--- Test success converting EUSD to TESTS" );
       op.owner = "bob";
       op.amount = ASSET( "3.000 TBD" );
       tx.operations.clear();
@@ -2448,7 +2448,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "3.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.EZD_balance.amount.value == ASSET( "4.000 TBD" ).amount.value );
+      BOOST_REQUIRE( new_bob.EUSDbalance.amount.value == ASSET( "4.000 TBD" ).amount.value );
 
       auto convert_request = convert_request_idx.find( std::make_tuple( op.owner, op.requestid ) );
       BOOST_REQUIRE( convert_request != convert_request_idx.end() );
@@ -2467,7 +2467,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "3.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.EZD_balance.amount.value == ASSET( "4.000 TBD" ).amount.value );
+      BOOST_REQUIRE( new_bob.EUSDbalance.amount.value == ASSET( "4.000 TBD" ).amount.value );
 
       convert_request = convert_request_idx.find( std::make_tuple( op.owner, op.requestid ) );
       BOOST_REQUIRE( convert_request != convert_request_idx.end() );
@@ -2566,7 +2566,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "100.0000 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "100.0000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when amount to receive is 0" );
@@ -2581,7 +2581,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when amount to sell is 0" );
@@ -2596,7 +2596,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test success creating limit order that will not be filled" );
@@ -2615,9 +2615,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == op.amount_to_sell.amount );
       BOOST_REQUIRE( limit_order->sell_price == price( op.amount_to_sell / op.min_to_receive ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure creating limit order with duplicate id" );
@@ -2635,9 +2635,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 10000 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), op.min_to_receive ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test sucess killing an order that will not be filled" );
@@ -2652,12 +2652,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test having a partial match to limit order" );
-      // Alice has order for 15 EZD at a price of 2:3
-      // Fill 5 ECO for 7.5 EZD
+      // Alice has order for 15 EUSD at a price of 2:3
+      // Fill 5 ECO for 7.5 EUSD
 
       op.owner = "bob";
       op.orderid = 1;
@@ -2679,12 +2679,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 5000 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), ASSET( "15.000 TBD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "7.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "7.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "992.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "992.500 TBD" ).amount.value );
       BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 1 );
       BOOST_REQUIRE( fill_order_op.open_pays.amount.value == ASSET( "5.000 TESTS").amount.value );
@@ -2709,12 +2709,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == 1 );
       BOOST_REQUIRE( limit_order->for_sale.value == 7500 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "15.000 TBD" ), ASSET( "10.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "15.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "15.000 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "977.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "977.500 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling an existing order and new order fully" );
@@ -2732,9 +2732,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 3 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "985.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "22.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "22.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "15.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "977.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "977.500 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is better." );
@@ -2766,11 +2766,11 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == 4 );
       BOOST_REQUIRE( limit_order->for_sale.value == 1000 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "12.000 TBD" ), ASSET( "10.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "975.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "33.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "33.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "25.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "965.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "965.500 TBD" ).amount.value );
       validate_database();
 
       limit_order_cancel_operation can;
@@ -2785,7 +2785,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is worse." );
 
       auto gpo = db.get_dynamic_global_properties();
-      auto start_EZD = gpo.current_EZD_supply;
+      auto start_EUSD = gpo.current_EUSD_supply;
 
       op.owner = "alice";
       op.orderid = 5;
@@ -2814,11 +2814,11 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->orderid == 5 );
       BOOST_REQUIRE( limit_order->for_sale.value == 9091 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "20.000 TESTS" ), ASSET( "22.000 TBD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "955.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "45.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "45.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "954.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "954.500 TBD" ).amount.value );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -2900,7 +2900,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "100.0000 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "100.0000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when price is 0" );
@@ -2915,7 +2915,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when amount to sell is 0" );
@@ -2930,7 +2930,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test success creating limit order that will not be filled" );
@@ -2949,9 +2949,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == op.amount_to_sell.amount );
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure creating limit order with duplicate id" );
@@ -2969,9 +2969,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 10000 );
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test sucess killing an order that will not be filled" );
@@ -2986,12 +2986,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test having a partial match to limit order" );
-      // Alice has order for 15 EZD at a price of 2:3
-      // Fill 5 ECO for 7.5 EZD
+      // Alice has order for 15 EUSD at a price of 2:3
+      // Fill 5 ECO for 7.5 EUSD
 
       op.owner = "bob";
       op.orderid = 1;
@@ -3013,12 +3013,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 5000 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "2.000 TESTS" ), ASSET( "3.000 TBD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "7.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "7.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "992.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "992.500 TBD" ).amount.value );
       BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 1 );
       BOOST_REQUIRE( fill_order_op.open_pays.amount.value == ASSET( "5.000 TESTS").amount.value );
@@ -3043,12 +3043,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == 1 );
       BOOST_REQUIRE( limit_order->for_sale.value == 7500 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "3.000 TBD" ), ASSET( "2.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "15.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "15.000 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "977.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "977.500 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling an existing order and new order fully" );
@@ -3066,9 +3066,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 3 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "985.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "22.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "22.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "15.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "977.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "977.500 TBD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is better." );
@@ -3100,11 +3100,11 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == 4 );
       BOOST_REQUIRE( limit_order->for_sale.value == 1000 );
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "975.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "33.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "33.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "25.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "965.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "965.500 TBD" ).amount.value );
       validate_database();
 
       limit_order_cancel_operation can;
@@ -3119,7 +3119,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is worse." );
 
       auto gpo = db.get_dynamic_global_properties();
-      auto start_EZD = gpo.current_EZD_supply;
+      auto start_EUSD = gpo.current_EUSD_supply;
 
       op.owner = "alice";
       op.orderid = 5;
@@ -3148,11 +3148,11 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->orderid == 5 );
       BOOST_REQUIRE( limit_order->for_sale.value == 9091 );
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "1.000 TESTS" ), ASSET( "1.100 TBD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EZD, SYMBOL_ECO ) );
+      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_EUSD, SYMBOL_ECO ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "955.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "45.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "45.500 TBD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.EZD_balance.amount.value == ASSET( "954.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.EUSDbalance.amount.value == ASSET( "954.500 TBD" ).amount.value );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -3269,7 +3269,7 @@ BOOST_AUTO_TEST_CASE( limit_order_cancel_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 5 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.EZD_balance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -3312,9 +3312,9 @@ BOOST_AUTO_TEST_CASE( account_recovery )
 
       BOOST_TEST_MESSAGE( "Creating account bob with alice" );
 
-      account_create_with_delegation_operation acc_create;
+      accountCreateWithDelegation_operation acc_create;
       acc_create.fee = ASSET( "10.000 TESTS" );
-      acc_create.delegation = ASSET( "0.000000 VESTS" );
+      acc_create.delegation = ASSET( "0.000000 ESCOR" );
       acc_create.creator = "alice";
       acc_create.new_account_name = "bob";
       acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
@@ -3336,7 +3336,7 @@ BOOST_AUTO_TEST_CASE( account_recovery )
 
       BOOST_TEST_MESSAGE( "Changing bob's owner authority" );
 
-      account_update_operation acc_update;
+      accountUpdate_operation acc_update;
       acc_update.account = "bob";
       acc_update.owner = authority( 1, generate_private_key( "bad_key" ).get_public_key(), 1 );
       acc_update.memo_key = acc_create.memo_key;
@@ -3609,7 +3609,7 @@ BOOST_AUTO_TEST_CASE( change_recovery_account )
 
       auto change_owner = [&]( const std::string& account, const fc::ecc::private_key& old_private_key, const public_key_type& new_public_key )
       {
-         account_update_operation op;
+         accountUpdate_operation op;
          op.account = account;
          op.owner = authority( 1, new_public_key, 1 );
 
@@ -3656,8 +3656,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.EZD_amount = ASSET( "1.000 TBD" );
-      op.ECO_amount = ASSET( "1.000 TESTS" );
+      op.EUSD_amount = ASSET( "1.000 TBD" );
+      op.ECOamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
       op.fee = ASSET( "0.100 TESTS" );
@@ -3665,38 +3665,38 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.ratification_deadline = db.head_block_time() + 100;
       op.escrow_expiration = db.head_block_time() + 200;
 
-      BOOST_TEST_MESSAGE( "--- failure when EZD symbol != EZD" );
-      op.EZD_amount.symbol = SYMBOL_ECO;
+      BOOST_TEST_MESSAGE( "--- failure when EUSD symbol != EUSD" );
+      op.EUSD_amount.symbol = SYMBOL_ECO;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when ECO symbol != ECO" );
-      op.EZD_amount.symbol = SYMBOL_EZD;
-      op.ECO_amount.symbol = SYMBOL_EZD;
+      op.EUSD_amount.symbol = SYMBOL_EUSD;
+      op.ECOamount.symbol = SYMBOL_EUSD;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when fee symbol != EZD and fee symbol != ECO" );
-      op.ECO_amount.symbol = SYMBOL_ECO;
-      op.fee.symbol = SYMBOL_EZP;
+      BOOST_TEST_MESSAGE( "--- failure when fee symbol != EUSD and fee symbol != ECO" );
+      op.ECOamount.symbol = SYMBOL_ECO;
+      op.fee.symbol = SYMBOL_ESCOR;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when EZD == 0 and ECO == 0" );
+      BOOST_TEST_MESSAGE( "--- failure when EUSD == 0 and ECO == 0" );
       op.fee.symbol = SYMBOL_ECO;
-      op.EZD_amount.amount = 0;
-      op.ECO_amount.amount = 0;
+      op.EUSD_amount.amount = 0;
+      op.ECOamount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when EZD < 0" );
-      op.EZD_amount.amount = -100;
-      op.ECO_amount.amount = 1000;
+      BOOST_TEST_MESSAGE( "--- failure when EUSD < 0" );
+      op.EUSD_amount.amount = -100;
+      op.ECOamount.amount = 1000;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when ECO < 0" );
-      op.EZD_amount.amount = 1000;
-      op.ECO_amount.amount = -100;
+      op.EUSD_amount.amount = 1000;
+      op.ECOamount.amount = -100;
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when fee < 0" );
-      op.ECO_amount.amount = 1000;
+      op.ECOamount.amount = 1000;
       op.fee.amount = -100;
       REQUIRE_THROW( op.validate(), fc::exception );
 
@@ -3725,8 +3725,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_authorities )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.EZD_amount = ASSET( "1.000 TBD" );
-      op.ECO_amount = ASSET( "1.000 TESTS" );
+      op.EUSD_amount = ASSET( "1.000 TBD" );
+      op.ECOamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
       op.fee = ASSET( "0.100 TESTS" );
@@ -3763,8 +3763,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.EZD_amount = ASSET( "1.000 TBD" );
-      op.ECO_amount = ASSET( "1.000 TESTS" );
+      op.EUSD_amount = ASSET( "1.000 TBD" );
+      op.ECOamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
       op.fee = ASSET( "0.100 TESTS" );
@@ -3772,7 +3772,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       op.ratification_deadline = db.head_block_time() + 100;
       op.escrow_expiration = db.head_block_time() + 200;
 
-      BOOST_TEST_MESSAGE( "--- failure when from cannot cover EZD amount" );
+      BOOST_TEST_MESSAGE( "--- failure when from cannot cover EUSD amount" );
       signed_transaction tx;
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -3780,8 +3780,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- falure when from cannot cover amount + fee" );
-      op.EZD_amount.amount = 0;
-      op.ECO_amount.amount = 10000;
+      op.EUSD_amount.amount = 0;
+      op.ECOamount.amount = 10000;
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -3789,7 +3789,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when ratification deadline is in the past" );
-      op.ECO_amount.amount = 1000;
+      op.ECOamount.amount = 1000;
       op.ratification_deadline = db.head_block_time() - 200;
       tx.operations.clear();
       tx.signatures.clear();
@@ -3813,12 +3813,12 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
 
-      auto alice_ECO_balance = alice.balance - op.ECO_amount - op.fee;
-      auto alice_EZD_balance = alice.EZD_balance - op.EZD_amount;
-      auto bob_ECO_balance = bob.balance;
-      auto bob_EZD_balance = bob.EZD_balance;
-      auto sam_ECO_balance = sam.balance;
-      auto sam_EZD_balance = sam.EZD_balance;
+      auto alice_ECObalance = alice.balance - op.ECOamount - op.fee;
+      auto alice_EUSDbalance = alice.EUSDbalance - op.EUSD_amount;
+      auto bob_ECObalance = bob.balance;
+      auto bob_EUSDbalance = bob.EUSDbalance;
+      auto sam_ECObalance = sam.balance;
+      auto sam_EUSDbalance = sam.EUSDbalance;
 
       db.push_transaction( tx, 0 );
 
@@ -3830,18 +3830,18 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       BOOST_REQUIRE( escrow.agent == op.agent );
       BOOST_REQUIRE( escrow.ratification_deadline == op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EZD_balance == op.EZD_amount );
-      BOOST_REQUIRE( escrow.ECO_balance == op.ECO_amount );
+      BOOST_REQUIRE( escrow.EUSDbalance == op.EUSD_amount );
+      BOOST_REQUIRE( escrow.ECObalance == op.ECOamount );
       BOOST_REQUIRE( escrow.pending_fee == op.fee );
       BOOST_REQUIRE( !escrow.to_approved );
       BOOST_REQUIRE( !escrow.agent_approved );
       BOOST_REQUIRE( !escrow.disputed );
-      BOOST_REQUIRE( alice.balance == alice_ECO_balance );
-      BOOST_REQUIRE( alice.EZD_balance == alice_EZD_balance );
-      BOOST_REQUIRE( bob.balance == bob_ECO_balance );
-      BOOST_REQUIRE( bob.EZD_balance == bob_EZD_balance );
-      BOOST_REQUIRE( sam.balance == sam_ECO_balance );
-      BOOST_REQUIRE( sam.EZD_balance == sam_EZD_balance );
+      BOOST_REQUIRE( alice.balance == alice_ECObalance );
+      BOOST_REQUIRE( alice.EUSDbalance == alice_EUSDbalance );
+      BOOST_REQUIRE( bob.balance == bob_ECObalance );
+      BOOST_REQUIRE( bob.EUSDbalance == bob_EUSDbalance );
+      BOOST_REQUIRE( sam.balance == sam_ECObalance );
+      BOOST_REQUIRE( sam.EUSDbalance == sam_EUSDbalance );
 
       validate_database();
    }
@@ -3929,7 +3929,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       et_op.from = "alice";
       et_op.to = "bob";
       et_op.agent = "sam";
-      et_op.ECO_amount = ASSET( "1.000 TESTS" );
+      et_op.ECOamount = ASSET( "1.000 TESTS" );
       et_op.fee = ASSET( "0.100 TESTS" );
       et_op.json_meta = "";
       et_op.ratification_deadline = db.head_block_time() + 100;
@@ -3985,8 +3985,8 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EZD_balance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( escrow.ECO_balance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.EUSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( escrow.ECObalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
       BOOST_REQUIRE( !escrow.agent_approved );
@@ -4004,8 +4004,8 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EZD_balance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( escrow.ECO_balance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.EUSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( escrow.ECObalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
       BOOST_REQUIRE( !escrow.agent_approved );
@@ -4026,8 +4026,8 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EZD_balance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( escrow.ECO_balance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.EUSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( escrow.ECObalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
       BOOST_REQUIRE( !escrow.agent_approved );
@@ -4142,8 +4142,8 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.EZD_balance == ASSET( "0.000 TBD" ) );
-         BOOST_REQUIRE( escrow.ECO_balance == ASSET( "1.000 TESTS" ) );
+         BOOST_REQUIRE( escrow.EUSDbalance == ASSET( "0.000 TBD" ) );
+         BOOST_REQUIRE( escrow.ECObalance == ASSET( "1.000 TESTS" ) );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
          BOOST_REQUIRE( escrow.agent_approved );
@@ -4163,8 +4163,8 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.EZD_balance == ASSET( "0.000 TBD" ) );
-         BOOST_REQUIRE( escrow.ECO_balance == ASSET( "1.000 TESTS" ) );
+         BOOST_REQUIRE( escrow.EUSDbalance == ASSET( "0.000 TBD" ) );
+         BOOST_REQUIRE( escrow.ECObalance == ASSET( "1.000 TESTS" ) );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
          BOOST_REQUIRE( escrow.agent_approved );
@@ -4248,7 +4248,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       et_op.from = "alice";
       et_op.to = "bob";
       et_op.agent = "sam";
-      et_op.ECO_amount = ASSET( "1.000 TESTS" );
+      et_op.ECOamount = ASSET( "1.000 TESTS" );
       et_op.fee = ASSET( "0.100 TESTS" );
       et_op.ratification_deadline = db.head_block_time() + BLOCK_INTERVAL;
       et_op.escrow_expiration = db.head_block_time() + 2 * BLOCK_INTERVAL;
@@ -4287,8 +4287,8 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EZD_balance == et_op.EZD_amount );
-      BOOST_REQUIRE( escrow.ECO_balance == et_op.ECO_amount );
+      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+      BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
       BOOST_REQUIRE( escrow.pending_fee == et_op.fee );
       BOOST_REQUIRE( escrow.to_approved );
       BOOST_REQUIRE( !escrow.agent_approved );
@@ -4321,8 +4321,8 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EZD_balance == et_op.EZD_amount );
-      BOOST_REQUIRE( escrow.ECO_balance == et_op.ECO_amount );
+      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+      BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
       BOOST_REQUIRE( escrow.agent_approved );
@@ -4343,8 +4343,8 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.EZD_balance == et_op.EZD_amount );
-      BOOST_REQUIRE( escrow.ECO_balance == et_op.ECO_amount );
+      BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+      BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
       BOOST_REQUIRE( escrow.agent_approved );
@@ -4368,8 +4368,8 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.EZD_balance == et_op.EZD_amount );
-         BOOST_REQUIRE( escrow.ECO_balance == et_op.ECO_amount );
+         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+         BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
          BOOST_REQUIRE( escrow.agent_approved );
@@ -4407,8 +4407,8 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.EZD_balance == et_op.EZD_amount );
-         BOOST_REQUIRE( escrow.ECO_balance == et_op.ECO_amount );
+         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+         BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
          BOOST_REQUIRE( escrow.agent_approved );
@@ -4430,8 +4430,8 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.EZD_balance == et_op.EZD_amount );
-         BOOST_REQUIRE( escrow.ECO_balance == et_op.ECO_amount );
+         BOOST_REQUIRE( escrow.EUSDbalance == et_op.EUSD_amount );
+         BOOST_REQUIRE( escrow.ECObalance == et_op.ECOamount );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
          BOOST_REQUIRE( escrow.agent_approved );
@@ -4455,34 +4455,34 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
 
 
       BOOST_TEST_MESSAGE( "--- failure when ECO < 0" );
-      op.ECO_amount.amount = -1;
+      op.ECOamount.amount = -1;
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "--- failure when EZD < 0" );
-      op.ECO_amount.amount = 0;
-      op.EZD_amount.amount = -1;
+      BOOST_TEST_MESSAGE( "--- failure when EUSD < 0" );
+      op.ECOamount.amount = 0;
+      op.EUSD_amount.amount = -1;
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "--- failure when ECO == 0 and EZD == 0" );
-      op.EZD_amount.amount = 0;
+      BOOST_TEST_MESSAGE( "--- failure when ECO == 0 and EUSD == 0" );
+      op.EUSD_amount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "--- failure when EZD is not EZD symbol" );
-      op.EZD_amount = ASSET( "1.000 TESTS" );
+      BOOST_TEST_MESSAGE( "--- failure when EUSD is not EUSD symbol" );
+      op.EUSD_amount = ASSET( "1.000 TESTS" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
       BOOST_TEST_MESSAGE( "--- failure when ECO is not ECO symbol" );
-      op.EZD_amount.symbol = SYMBOL_EZD;
-      op.ECO_amount = ASSET( "1.000 TBD" );
+      op.EUSD_amount.symbol = SYMBOL_EUSD;
+      op.ECOamount = ASSET( "1.000 TBD" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
       BOOST_TEST_MESSAGE( "--- success" );
-      op.ECO_amount.symbol = SYMBOL_ECO;
+      op.ECOamount.symbol = SYMBOL_ECO;
       op.validate();
    }
    FC_LOG_AND_RETHROW()
@@ -4541,7 +4541,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       et_op.from = "alice";
       et_op.to = "bob";
       et_op.agent = "sam";
-      et_op.ECO_amount = ASSET( "1.000 TESTS" );
+      et_op.ECOamount = ASSET( "1.000 TESTS" );
       et_op.fee = ASSET( "0.100 TESTS" );
       et_op.ratification_deadline = db.head_block_time() + BLOCK_INTERVAL;
       et_op.escrow_expiration = db.head_block_time() + 2 * BLOCK_INTERVAL;
@@ -4561,7 +4561,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       op.agent = et_op.agent;
       op.who = et_op.from;
       op.receiver = et_op.to;
-      op.ECO_amount = ASSET( "0.100 TESTS" );
+      op.ECOamount = ASSET( "0.100 TESTS" );
 
       tx.clear();
       tx.operations.push_back( op );
@@ -4677,7 +4677,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       tx.sign( bob_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_escrow( op.from, op.escrow_id ).ECO_balance == ASSET( "0.900 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( op.from, op.escrow_id ).ECObalance == ASSET( "0.900 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.000 TESTS" ) );
 
 
@@ -4717,12 +4717,12 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_escrow( op.from, op.escrow_id ).ECO_balance == ASSET( "0.800 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( op.from, op.escrow_id ).ECObalance == ASSET( "0.800 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.100 TESTS" ) );
 
 
-      BOOST_TEST_MESSAGE( "--- failure when releasing more EZD than available" );
-      op.ECO_amount = ASSET( "1.000 TESTS" );
+      BOOST_TEST_MESSAGE( "--- failure when releasing more EUSD than available" );
+      op.ECOamount = ASSET( "1.000 TESTS" );
 
       tx.clear();
       tx.operations.push_back( op );
@@ -4730,8 +4730,8 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- failure when releasing less ECO than available" );
-      op.ECO_amount = ASSET( "0.000 TESTS" );
-      op.EZD_amount = ASSET( "1.000 TBD" );
+      op.ECOamount = ASSET( "0.000 TESTS" );
+      op.EUSD_amount = ASSET( "1.000 TBD" );
 
       tx.clear();
       tx.operations.push_back( op );
@@ -4755,8 +4755,8 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       op.from = et_op.from;
       op.receiver = et_op.from;
       op.who = et_op.to;
-      op.ECO_amount = ASSET( "0.100 TESTS" );
-      op.EZD_amount = ASSET( "0.000 TBD" );
+      op.ECOamount = ASSET( "0.100 TESTS" );
+      op.EUSD_amount = ASSET( "0.000 TBD" );
       tx.operations.push_back( op );
       tx.sign( bob_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -4798,7 +4798,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.200 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECO_balance == ASSET( "0.700 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECObalance == ASSET( "0.700 TESTS" ) );
 
 
       BOOST_TEST_MESSAGE( "--- success releasing disputed escrow with agent to 'from'" );
@@ -4810,7 +4810,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.100 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECO_balance == ASSET( "0.600 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECObalance == ASSET( "0.600 TESTS" ) );
 
 
       BOOST_TEST_MESSAGE( "--- failure when 'to' attempts to release disputed expired escrow" );
@@ -4843,12 +4843,12 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.200 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECO_balance == ASSET( "0.500 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECObalance == ASSET( "0.500 TESTS" ) );
 
 
       BOOST_TEST_MESSAGE( "--- success deleting escrow when balances are both zero" );
       tx.clear();
-      op.ECO_amount = ASSET( "0.500 TESTS" );
+      op.ECOamount = ASSET( "0.500 TESTS" );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -4875,7 +4875,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       tx.clear();
       op.receiver = et_op.to;
       op.who = et_op.agent;
-      op.ECO_amount = ASSET( "0.100 TESTS" );
+      op.ECOamount = ASSET( "0.100 TESTS" );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -4922,7 +4922,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.300 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECO_balance == ASSET( "0.900 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECObalance == ASSET( "0.900 TESTS" ) );
 
 
       BOOST_TEST_MESSAGE( "--- success release non-disputed expired escrow to 'from' from 'to'" );
@@ -4933,7 +4933,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "8.700 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECO_balance == ASSET( "0.800 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECObalance == ASSET( "0.800 TESTS" ) );
 
 
       BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release non-disputed expired escrow to 'agent'" );
@@ -4961,7 +4961,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.400 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECO_balance == ASSET( "0.700 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECObalance == ASSET( "0.700 TESTS" ) );
 
 
       BOOST_TEST_MESSAGE( "--- success release non-disputed expired escrow to 'from' from 'from'" );
@@ -4972,12 +4972,12 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "8.800 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECO_balance == ASSET( "0.600 TESTS" ) );
+      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).ECObalance == ASSET( "0.600 TESTS" ) );
 
 
       BOOST_TEST_MESSAGE( "--- success deleting escrow when balances are zero on non-disputed escrow" );
       tx.clear();
-      op.ECO_amount = ASSET( "0.600 TESTS" );
+      op.ECOamount = ASSET( "0.600 TESTS" );
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -4988,13 +4988,13 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_to_savings_validate )
+BOOST_AUTO_TEST_CASE( transferToSavings_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_savings_validate" );
+      BOOST_TEST_MESSAGE( "Testing: transferToSavings_validate" );
 
-      transfer_to_savings_operation op;
+      transferToSavings_operation op;
       op.from = "alice";
       op.to = "alice";
       op.amount = ASSET( "1.000 TESTS" );
@@ -5016,13 +5016,13 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_validate )
       op.validate();
 
 
-      BOOST_TEST_MESSAGE( "failure when amount is VESTS" );
+      BOOST_TEST_MESSAGE( "failure when amount is ESCOR" );
       op.to = "alice";
-      op.amount = ASSET( "1.000 VESTS" );
+      op.amount = ASSET( "1.000 ESCOR" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "success when amount is EZD" );
+      BOOST_TEST_MESSAGE( "success when amount is EUSD" );
       op.amount = ASSET( "1.000 TBD" );
       op.validate();
 
@@ -5034,13 +5034,13 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_validate )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_to_savings_authorities )
+BOOST_AUTO_TEST_CASE( transferToSavings_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_savings_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: transferToSavings_authorities" );
 
-      transfer_to_savings_operation op;
+      transferToSavings_operation op;
       op.from = "alice";
       op.to = "alice";
       op.amount = ASSET( "1.000 TESTS" );
@@ -5068,11 +5068,11 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
+BOOST_AUTO_TEST_CASE( transferToSavings_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_savings_apply" );
+      BOOST_TEST_MESSAGE( "Testing: transferToSavings_apply" );
 
       ACTORS( (alice)(bob) );
       generate_block();
@@ -5081,9 +5081,9 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
       fund( "alice", ASSET( "10.000 TBD" ) );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "10.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "10.000 TBD" ) );
 
-      transfer_to_savings_operation op;
+      transferToSavings_operation op;
       signed_transaction tx;
 
       BOOST_TEST_MESSAGE( "--- failure with insufficient funds" );
@@ -5118,11 +5118,11 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_balance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ECOsavingsBalance == ASSET( "1.000 TESTS" ) );
       validate_database();
 
 
-      BOOST_TEST_MESSAGE( "--- success transferring EZD to self" );
+      BOOST_TEST_MESSAGE( "--- success transferring EUSD to self" );
       op.amount = ASSET( "1.000 TBD" );
 
       tx.clear();
@@ -5130,8 +5130,8 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "9.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_EZD_balance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "9.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDsavingsBalance == ASSET( "1.000 TBD" ) );
       validate_database();
 
 
@@ -5145,11 +5145,11 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "8.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_balance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).ECOsavingsBalance == ASSET( "1.000 TESTS" ) );
       validate_database();
 
 
-      BOOST_TEST_MESSAGE( "--- success transferring EZD to other" );
+      BOOST_TEST_MESSAGE( "--- success transferring EUSD to other" );
       op.amount = ASSET( "1.000 TBD" );
 
       tx.clear();
@@ -5157,20 +5157,20 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "8.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_EZD_balance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "8.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).EUSDsavingsBalance == ASSET( "1.000 TBD" ) );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_from_savings_validate )
+BOOST_AUTO_TEST_CASE( transferFromSavings_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_from_savings_validate" );
+      BOOST_TEST_MESSAGE( "Testing: transferFromSavings_validate" );
 
-      transfer_from_savings_operation op;
+      transferFromSavings_operation op;
       op.from = "alice";
       op.request_id = 0;
       op.to = "alice";
@@ -5193,13 +5193,13 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_validate )
       op.validate();
 
 
-      BOOST_TEST_MESSAGE( "failure when amount is VESTS" );
+      BOOST_TEST_MESSAGE( "failure when amount is ESCOR" );
       op.to = "alice";
-      op.amount = ASSET( "1.000 VESTS" );
+      op.amount = ASSET( "1.000 ESCOR" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "success when amount is EZD" );
+      BOOST_TEST_MESSAGE( "success when amount is EUSD" );
       op.amount = ASSET( "1.000 TBD" );
       op.validate();
 
@@ -5211,13 +5211,13 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_validate )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_from_savings_authorities )
+BOOST_AUTO_TEST_CASE( transferFromSavings_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_from_savings_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: transferFromSavings_authorities" );
 
-      transfer_from_savings_operation op;
+      transferFromSavings_operation op;
       op.from = "alice";
       op.to = "alice";
       op.amount = ASSET( "1.000 TESTS" );
@@ -5245,11 +5245,11 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
+BOOST_AUTO_TEST_CASE( transferFromSavings_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_from_savings_apply" );
+      BOOST_TEST_MESSAGE( "Testing: transferFromSavings_apply" );
 
       ACTORS( (alice)(bob) );
       generate_block();
@@ -5257,7 +5257,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       fund( "alice", ASSET( "10.000 TESTS" ) );
       fund( "alice", ASSET( "10.000 TBD" ) );
 
-      transfer_to_savings_operation save;
+      transferToSavings_operation save;
       save.from = "alice";
       save.to = "alice";
       save.amount = ASSET( "10.000 TESTS" );
@@ -5276,7 +5276,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
 
 
       BOOST_TEST_MESSAGE( "--- failure when account has insufficient funds" );
-      transfer_from_savings_operation op;
+      transferFromSavings_operation op;
       op.from = "alice";
       op.to = "bob";
       op.amount = ASSET( "20.000 TESTS" );
@@ -5307,7 +5307,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_balance == ASSET( "9.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ECOsavingsBalance == ASSET( "9.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 1 );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
@@ -5318,7 +5318,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       validate_database();
 
 
-      BOOST_TEST_MESSAGE( "--- success withdrawing EZD to self" );
+      BOOST_TEST_MESSAGE( "--- success withdrawing EUSD to self" );
       op.amount = ASSET( "1.000 TBD" );
       op.request_id = 1;
 
@@ -5327,8 +5327,8 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_EZD_balance == ASSET( "9.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDsavingsBalance == ASSET( "9.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 2 );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
@@ -5359,7 +5359,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_balance == ASSET( "8.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ECOsavingsBalance == ASSET( "8.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 3 );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
@@ -5370,7 +5370,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       validate_database();
 
 
-      BOOST_TEST_MESSAGE( "--- success withdrawing EZD to other" );
+      BOOST_TEST_MESSAGE( "--- success withdrawing EUSD to other" );
       op.amount = ASSET( "1.000 TBD" );
       op.request_id = 4;
 
@@ -5379,8 +5379,8 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_EZD_balance == ASSET( "8.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDsavingsBalance == ASSET( "8.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 4 );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
@@ -5395,18 +5395,18 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
       generate_blocks( db.head_block_time() + SAVINGS_WITHDRAW_TIME - fc::seconds( BLOCK_INTERVAL ), true );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).EZD_balance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).EUSDbalance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 4 );
       validate_database();
 
       generate_block();
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == ASSET( "1.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).EZD_balance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).EUSDbalance == ASSET( "1.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 0 );
       validate_database();
 
@@ -5437,13 +5437,13 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_validate )
+BOOST_AUTO_TEST_CASE( cancelTransferFromSavings_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: cancel_transfer_from_savings_validate" );
+      BOOST_TEST_MESSAGE( "Testing: cancelTransferFromSavings_validate" );
 
-      cancel_transfer_from_savings_operation op;
+      cancelTransferFromSavings_operation op;
       op.from = "alice";
       op.request_id = 0;
 
@@ -5460,13 +5460,13 @@ BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_validate )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_authorities )
+BOOST_AUTO_TEST_CASE( cancelTransferFromSavings_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: cancel_transfer_from_savings_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: cancelTransferFromSavings_authorities" );
 
-      cancel_transfer_from_savings_operation op;
+      cancelTransferFromSavings_operation op;
       op.from = "alice";
 
       flat_set< account_name_type > auths;
@@ -5492,23 +5492,23 @@ BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_apply )
+BOOST_AUTO_TEST_CASE( cancelTransferFromSavings_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: cancel_transfer_from_savings_apply" );
+      BOOST_TEST_MESSAGE( "Testing: cancelTransferFromSavings_apply" );
 
       ACTORS( (alice)(bob) )
       generate_block();
 
       fund( "alice", ASSET( "10.000 TESTS" ) );
 
-      transfer_to_savings_operation save;
+      transferToSavings_operation save;
       save.from = "alice";
       save.to = "alice";
       save.amount = ASSET( "10.000 TESTS" );
 
-      transfer_from_savings_operation withdraw;
+      transferFromSavings_operation withdraw;
       withdraw.from = "alice";
       withdraw.to = "bob";
       withdraw.request_id = 1;
@@ -5527,7 +5527,7 @@ BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_apply )
 
 
       BOOST_TEST_MESSAGE( "--- Failure when there is no pending request" );
-      cancel_transfer_from_savings_operation op;
+      cancelTransferFromSavings_operation op;
       op.from = "alice";
       op.request_id = 0;
 
@@ -5550,10 +5550,10 @@ BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_balance == ASSET( "10.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ECOsavingsBalance == ASSET( "10.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 0 );
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_balance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).ECOsavingsBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
       validate_database();
    }
@@ -5593,8 +5593,8 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_apply )
 
       ACTORS( (alice)(bob) );
       generate_block();
-      vest( "alice", ASSET( "10.000 TESTS" ) );
-      vest( "bob", ASSET( "10.000 TESTS" ) );
+      score( "alice", ASSET( "10.000 TESTS" ) );
+      score( "bob", ASSET( "10.000 TESTS" ) );
       generate_block();
 
       account_witness_proxy_operation proxy;
@@ -5664,7 +5664,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_apply )
       BOOST_REQUIRE( db.get_account( "alice" ).can_vote );
       witness_create( "alice", alice_private_key, "foo.bar", alice_private_key.get_public_key(), 0 );
 
-      account_witness_vote_operation witness_vote;
+      accountWitnessVote_operation witness_vote;
       witness_vote.account = "alice";
       witness_vote.witness = "alice";
       tx.clear();
@@ -5741,9 +5741,9 @@ BOOST_AUTO_TEST_CASE( account_bandwidth )
       BOOST_TEST_MESSAGE( "Testing: account_bandwidth" );
       ACTORS( (alice)(bob) )
       generate_block();
-      vest( "alice", ASSET( "10.000 TESTS" ) );
+      score( "alice", ASSET( "10.000 TESTS" ) );
       fund( "alice", ASSET( "10.000 TESTS" ) );
-      vest( "bob", ASSET( "10.000 TESTS" ) );
+      score( "bob", ASSET( "10.000 TESTS" ) );
 
       generate_block();
       db.skip_transaction_delta_check = false;
@@ -5787,15 +5787,15 @@ BOOST_AUTO_TEST_CASE( account_bandwidth )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( claim_reward_balance_validate )
+BOOST_AUTO_TEST_CASE( claimRewardBalance_validate )
 {
    try
    {
-      claim_reward_balance_operation op;
+      claimRewardBalance_operation op;
       op.account = "alice";
-      op.reward_ECO = ASSET( "0.000 TESTS" );
-      op.reward_EZD = ASSET( "0.000 TBD" );
-      op.reward_EZP = ASSET( "0.000000 VESTS" );
+      op.ECOreward = ASSET( "0.000 TESTS" );
+      op.EUSDreward = ASSET( "0.000 TBD" );
+      op.rewardESCOR = ASSET( "0.000000 ESCOR" );
 
 
       BOOST_TEST_MESSAGE( "Testing all 0 amounts" );
@@ -5803,52 +5803,52 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_validate )
 
 
       BOOST_TEST_MESSAGE( "Testing single reward claims" );
-      op.reward_ECO.amount = 1000;
+      op.ECOreward.amount = 1000;
       op.validate();
 
-      op.reward_ECO.amount = 0;
-      op.reward_EZD.amount = 1000;
+      op.ECOreward.amount = 0;
+      op.EUSDreward.amount = 1000;
       op.validate();
 
-      op.reward_EZD.amount = 0;
-      op.reward_EZP.amount = 1000;
+      op.EUSDreward.amount = 0;
+      op.rewardESCOR.amount = 1000;
       op.validate();
 
-      op.reward_EZP.amount = 0;
+      op.rewardESCOR.amount = 0;
 
 
       BOOST_TEST_MESSAGE( "Testing wrong ECO symbol" );
-      op.reward_ECO = ASSET( "1.000 WRONG" );
+      op.ECOreward = ASSET( "1.000 WRONG" );
       REQUIRE_THROW( op.validate(), fc::assert_exception );
 
 
-      BOOST_TEST_MESSAGE( "Testing wrong EZD symbol" );
-      op.reward_ECO = ASSET( "1.000 TESTS" );
-      op.reward_EZD = ASSET( "1.000 WRONG" );
+      BOOST_TEST_MESSAGE( "Testing wrong EUSD symbol" );
+      op.ECOreward = ASSET( "1.000 TESTS" );
+      op.EUSDreward = ASSET( "1.000 WRONG" );
       REQUIRE_THROW( op.validate(), fc::assert_exception );
 
 
-      BOOST_TEST_MESSAGE( "Testing wrong VESTS symbol" );
-      op.reward_EZD = ASSET( "1.000 TBD" );
-      op.reward_EZP = ASSET( "1.000000 WRONG" );
+      BOOST_TEST_MESSAGE( "Testing wrong ESCOR symbol" );
+      op.EUSDreward = ASSET( "1.000 TBD" );
+      op.rewardESCOR = ASSET( "1.000000 WRONG" );
       REQUIRE_THROW( op.validate(), fc::assert_exception );
 
 
       BOOST_TEST_MESSAGE( "Testing a single negative amount" );
-      op.reward_ECO.amount = 1000;
-      op.reward_EZD.amount = -1000;
+      op.ECOreward.amount = 1000;
+      op.EUSDreward.amount = -1000;
       REQUIRE_THROW( op.validate(), fc::assert_exception );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( claim_reward_balance_authorities )
+BOOST_AUTO_TEST_CASE( claimRewardBalance_authorities )
 {
    try
    {
       BOOST_TEST_MESSAGE( "Testing: decline_voting_rights_authorities" );
 
-      claim_reward_balance_operation op;
+      claimRewardBalance_operation op;
       op.account = "alice";
 
       flat_set< account_name_type > auths;
@@ -5867,23 +5867,23 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_create_with_delegation_authorities )
+BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_authorities )
 {
    try
    {
-     BOOST_TEST_MESSAGE( "Testing: account_create_with_delegation_authorities" );
+     BOOST_TEST_MESSAGE( "Testing: accountCreateWithDelegation_authorities" );
 
      signed_transaction tx;
      ACTORS( (alice) );
      generate_blocks(1);
      fund( "alice", ASSET("1000.000 TESTS") );
-     vest( "alice", ASSET("10000.000000 VESTS") );
+     score( "alice", ASSET("10000.000000 ESCOR") );
 
      private_key_type priv_key = generate_private_key( "temp_key" );
 
-     account_create_with_delegation_operation op;
+     accountCreateWithDelegation_operation op;
      op.fee = ASSET("0.000 TESTS");
-     op.delegation = asset(100, SYMBOL_EZP);
+     op.delegation = asset(100, SYMBOL_ESCOR);
      op.creator = "alice";
      op.new_account_name = "bob";
      op.owner = authority( 1, priv_key.get_public_key(), 1 );
@@ -5927,18 +5927,18 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_authorities )
 
 }
 
-BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
+BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_create_with_delegation_apply" );
+      BOOST_TEST_MESSAGE( "Testing: accountCreateWithDelegation_apply" );
       signed_transaction tx;
       ACTORS( (alice) );
-      // 150 * fee = ( 5 * ECO ) + SP
+      // 150 * fee = ( 5 * ECO ) + ePOWER
       auto gpo = db.get_dynamic_global_properties();
       generate_blocks(1);
       fund( "alice", ASSET("1510.000 TESTS") );
-      vest( "alice", ASSET("1000.000 TESTS") );
+      score( "alice", ASSET("1000.000 TESTS") );
 
       private_key_type priv_key = generate_private_key( "temp_key" );
 
@@ -5954,13 +5954,13 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
 
       generate_block();
 
-      BOOST_TEST_MESSAGE( "--- Test failure when VESTS are powering down." );
-      withdraw_vesting_operation withdraw;
+      BOOST_TEST_MESSAGE( "--- Test failure when ESCOR are powering down." );
+      withdraw_ESCOR_operation withdraw;
       withdraw.account = "alice";
-      withdraw.vesting_shares = db.get_account( "alice" ).vesting_shares;
-      account_create_with_delegation_operation op;
+      withdraw.eScore = db.get_account( "alice" ).eScore;
+      accountCreateWithDelegation_operation op;
       op.fee = ASSET( "10.000 TESTS" );
-      op.delegation = ASSET( "100000000.000000 VESTS" );
+      op.delegation = ASSET( "100000000.000000 ESCOR" );
       op.creator = "alice";
       op.new_account_name = "bob";
       op.owner = authority( 1, priv_key.get_public_key(), 1 );
@@ -5982,19 +5982,19 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
 
       const account_object& bob_acc = db.get_account( "bob" );
       const account_object& alice_acc = db.get_account( "alice" );
-      BOOST_REQUIRE( alice_acc.delegated_vesting_shares == ASSET( "100000000.000000 VESTS" ) );
-      BOOST_REQUIRE( bob_acc.received_vesting_shares == ASSET( "100000000.000000 VESTS" ) );
-      BOOST_REQUIRE( bob_acc.effective_vesting_shares() == bob_acc.vesting_shares - bob_acc.delegated_vesting_shares + bob_acc.received_vesting_shares);
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "100000000.000000 ESCOR" ) );
+      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "100000000.000000 ESCOR" ) );
+      BOOST_REQUIRE( bob_acc.effective_ESCOR() == bob_acc.eScore - bob_acc.ESCORDelegated + bob_acc.ESCORReceived);
 
       BOOST_TEST_MESSAGE( "--- Test delegator object integrety. " );
-      auto delegation = db.find< vesting_delegation_object, by_delegation >( boost::make_tuple( op.creator, op.new_account_name ) );
+      auto delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.creator, op.new_account_name ) );
 
       BOOST_REQUIRE( delegation != nullptr);
       BOOST_REQUIRE( delegation->delegator == op.creator);
       BOOST_REQUIRE( delegation->delegatee == op.new_account_name );
-      BOOST_REQUIRE( delegation->vesting_shares == ASSET( "100000000.000000 VESTS" ) );
+      BOOST_REQUIRE( delegation->eScore == ASSET( "100000000.000000 ESCOR" ) );
       BOOST_REQUIRE( delegation->min_delegation_time == db.head_block_time() + CREATE_ACCOUNT_DELEGATION_TIME );
-      auto del_amt = delegation->vesting_shares;
+      auto del_amt = delegation->eScore;
       auto exp_time = delegation->min_delegation_time;
 
       generate_block();
@@ -6002,8 +6002,8 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
       BOOST_TEST_MESSAGE( "--- Test success using only ECO to reach target delegation." );
 
       tx.clear();
-      op.fee=asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_ECO );
-      op.delegation = asset(0, SYMBOL_EZP);
+      op.fee=asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_ECO_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_ECO );
+      op.delegation = asset(0, SYMBOL_ESCOR);
       op.new_account_name = "sam";
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.operations.push_back( op );
@@ -6013,7 +6013,7 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
       BOOST_TEST_MESSAGE( "--- Test failure when insufficient funds to process transaction." );
       tx.clear();
       op.fee = ASSET( "10.000 TESTS" );
-      op.delegation = ASSET( "0.000000 VESTS" );
+      op.delegation = ASSET( "0.000000 ESCOR" );
       op.new_account_name = "pam";
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.operations.push_back( op );
@@ -6022,7 +6022,7 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- Test failure when insufficient fee fo reach target delegation." );
-      fund( "alice" , asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO , SYMBOL_ECO ));
+      fund( "alice" , asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_ECO_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO , SYMBOL_ECO ));
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       validate_database();
@@ -6030,31 +6030,31 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_apply )
 
       BOOST_TEST_MESSAGE( "--- Test removing delegation from new account" );
       tx.clear();
-      delegate_vesting_shares_operation delegate;
+      delegateESCOR_operation delegate;
       delegate.delegator = "alice";
       delegate.delegatee = "bob";
-      delegate.vesting_shares = ASSET( "0.000000 VESTS" );
+      delegate.eScore = ASSET( "0.000000 ESCOR" );
       tx.operations.push_back( delegate );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto itr = db.get_index< vesting_delegation_expiration_index, by_id >().begin();
-      auto end = db.get_index< vesting_delegation_expiration_index, by_id >().end();
+      auto itr = db.get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_id >().begin();
+      auto end = db.get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_id >().end();
 
       BOOST_REQUIRE( itr != end );
       BOOST_REQUIRE( itr->delegator == "alice" );
-      BOOST_REQUIRE( itr->vesting_shares == del_amt );
+      BOOST_REQUIRE( itr->eScore == del_amt );
       BOOST_REQUIRE( itr->expiration == exp_time );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( claim_reward_balance_apply )
+BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: claim_reward_balance_apply" );
+      BOOST_TEST_MESSAGE( "Testing: claimRewardBalance_apply" );
       BOOST_TEST_MESSAGE( "--- Setting up test state" );
 
       ACTORS( (alice) )
@@ -6066,19 +6066,19 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_apply )
       {
          db.modify( db.get_account( "alice" ), []( account_object& a )
          {
-            a.reward_ECO_balance = ASSET( "10.000 TESTS" );
-            a.reward_EZD_balance = ASSET( "10.000 TBD" );
-            a.reward_EZP_balance = ASSET( "10.000000 VESTS" );
-            a.reward_vesting_ECO_balance = ASSET( "10.000 TESTS" );
+            a.ECOreward_balance = ASSET( "10.000 TESTS" );
+            a.EUSDrewardbalance = ASSET( "10.000 TBD" );
+            a.rewardESCOR_balance = ASSET( "10.000000 ESCOR" );
+            a.rewardESCOR_balance = ASSET( "10.000 TESTS" );
          });
 
          db.modify( db.get_dynamic_global_properties(), []( dynamic_global_property_object& gpo )
          {
             gpo.current_supply += ASSET( "20.000 TESTS" );
-            gpo.current_EZD_supply += ASSET( "10.000 TBD" );
+            gpo.current_EUSD_supply += ASSET( "10.000 TBD" );
             gpo.virtual_supply += ASSET( "20.000 TESTS" );
-            gpo.pending_rewarded_vesting_shares += ASSET( "10.000000 VESTS" );
-            gpo.pending_rewarded_vesting_ECO += ASSET( "10.000 TESTS" );
+            gpo.pending_rewarded_ESCOR += ASSET( "10.000000 ESCOR" );
+            gpo.pending_rewarded_ESCORvalueInECO += ASSET( "10.000 TESTS" );
          });
       });
 
@@ -6086,19 +6086,19 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_apply )
       validate_database();
 
       auto alice_ECO = db.get_account( "alice" ).balance;
-      auto alice_EZD = db.get_account( "alice" ).EZD_balance;
-      auto alice_vests = db.get_account( "alice" ).vesting_shares;
+      auto alice_EUSD = db.get_account( "alice" ).EUSDbalance;
+      auto alice_ESCOR = db.get_account( "alice" ).eScore;
 
 
       BOOST_TEST_MESSAGE( "--- Attempting to claim more ECO than exists in the reward balance." );
 
-      claim_reward_balance_operation op;
+      claimRewardBalance_operation op;
       signed_transaction tx;
 
       op.account = "alice";
-      op.reward_ECO = ASSET( "20.000 TESTS" );
-      op.reward_EZD = ASSET( "0.000 TBD" );
-      op.reward_EZP = ASSET( "0.000000 VESTS" );
+      op.ECOreward = ASSET( "20.000 TESTS" );
+      op.EUSDreward = ASSET( "0.000 TBD" );
+      op.rewardESCOR = ASSET( "0.000000 ESCOR" );
 
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -6108,71 +6108,71 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_apply )
 
       BOOST_TEST_MESSAGE( "--- Claiming a partial reward balance" );
 
-      op.reward_ECO = ASSET( "0.000 TESTS" );
-      op.reward_EZP = ASSET( "5.000000 VESTS" );
+      op.ECOreward = ASSET( "0.000 TESTS" );
+      op.rewardESCOR = ASSET( "5.000000 ESCOR" );
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_ECO + op.reward_ECO );
-      BOOST_REQUIRE( db.get_account( "alice" ).reward_ECO_balance == ASSET( "10.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == alice_EZD + op.reward_EZD );
-      BOOST_REQUIRE( db.get_account( "alice" ).reward_EZD_balance == ASSET( "10.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).vesting_shares == alice_vests + op.reward_EZP );
-      BOOST_REQUIRE( db.get_account( "alice" ).reward_EZP_balance == ASSET( "5.000000 VESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).reward_vesting_ECO_balance == ASSET( "5.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_ECO + op.ECOreward );
+      BOOST_REQUIRE( db.get_account( "alice" ).ECOreward_balance == ASSET( "10.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == alice_EUSD + op.EUSDreward );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardbalance == ASSET( "10.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).eScore == alice_ESCOR + op.rewardESCOR );
+      BOOST_REQUIRE( db.get_account( "alice" ).rewardESCOR_balance == ASSET( "5.000000 ESCOR" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).rewardESCOR_balance == ASSET( "5.000 TESTS" ) );
       validate_database();
 
-      alice_vests += op.reward_EZP;
+      alice_ESCOR += op.rewardESCOR;
 
 
       BOOST_TEST_MESSAGE( "--- Claiming the full reward balance" );
 
-      op.reward_ECO = ASSET( "10.000 TESTS" );
-      op.reward_EZD = ASSET( "10.000 TBD" );
+      op.ECOreward = ASSET( "10.000 TESTS" );
+      op.EUSDreward = ASSET( "10.000 TBD" );
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_ECO + op.reward_ECO );
-      BOOST_REQUIRE( db.get_account( "alice" ).reward_ECO_balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).EZD_balance == alice_EZD + op.reward_EZD );
-      BOOST_REQUIRE( db.get_account( "alice" ).reward_EZD_balance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).vesting_shares == alice_vests + op.reward_EZP );
-      BOOST_REQUIRE( db.get_account( "alice" ).reward_EZP_balance == ASSET( "0.000000 VESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).reward_vesting_ECO_balance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_ECO + op.ECOreward );
+      BOOST_REQUIRE( db.get_account( "alice" ).ECOreward_balance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == alice_EUSD + op.EUSDreward );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).eScore == alice_ESCOR + op.rewardESCOR );
+      BOOST_REQUIRE( db.get_account( "alice" ).rewardESCOR_balance == ASSET( "0.000000 ESCOR" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).rewardESCOR_balance == ASSET( "0.000 TESTS" ) );
             validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( delegate_vesting_shares_validate )
+BOOST_AUTO_TEST_CASE( delegateESCOR_validate )
 {
    try
    {
-      delegate_vesting_shares_operation op;
+      delegateESCOR_operation op;
 
       op.delegator = "alice";
       op.delegatee = "bob";
-      op.vesting_shares = asset( -1, SYMBOL_EZP );
+      op.eScore = asset( -1, SYMBOL_ESCOR );
       REQUIRE_THROW( op.validate(), fc::assert_exception );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( delegate_vesting_shares_authorities )
+BOOST_AUTO_TEST_CASE( delegateESCOR_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: delegate_vesting_shares_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: delegateESCOR_authorities" );
       signed_transaction tx;
       ACTORS( (alice)(bob) )
-      vest( "alice", ASSET( "10000.000000 VESTS" ) );
+      score( "alice", ASSET( "10000.000000 ESCOR" ) );
 
-      delegate_vesting_shares_operation op;
-      op.vesting_shares = ASSET( "300.000000 VESTS");
+      delegateESCOR_operation op;
+      op.eScore = ASSET( "300.000000 ESCOR");
       op.delegator = "alice";
       op.delegatee = "bob";
 
@@ -6210,16 +6210,16 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_authorities )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
+BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: delegate_vesting_shares_apply" );
+      BOOST_TEST_MESSAGE( "Testing: delegateESCOR_apply" );
       signed_transaction tx;
       ACTORS( (alice)(bob) )
       generate_block();
 
-      vest( "alice", ASSET( "1000.000 TESTS" ) );
+      score( "alice", ASSET( "1000.000 TESTS" ) );
 
       generate_block();
 
@@ -6233,8 +6233,8 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
 
       generate_block();
 
-      delegate_vesting_shares_operation op;
-      op.vesting_shares = ASSET( "10000000.000000 VESTS");
+      delegateESCOR_operation op;
+      op.eScore = ASSET( "10000000.000000 ESCOR");
       op.delegator = "alice";
       op.delegatee = "bob";
 
@@ -6246,19 +6246,19 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
       const account_object& alice_acc = db.get_account( "alice" );
       const account_object& bob_acc = db.get_account( "bob" );
 
-      BOOST_REQUIRE( alice_acc.delegated_vesting_shares == ASSET( "10000000.000000 VESTS"));
-      BOOST_REQUIRE( bob_acc.received_vesting_shares == ASSET( "10000000.000000 VESTS"));
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
+      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "10000000.000000 ESCOR"));
 
       BOOST_TEST_MESSAGE( "--- Test that the delegation object is correct. " );
-      auto delegation = db.find< vesting_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
+      auto delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
 
       BOOST_REQUIRE( delegation != nullptr );
       BOOST_REQUIRE( delegation->delegator == op.delegator);
-      BOOST_REQUIRE( delegation->vesting_shares  == ASSET( "10000000.000000 VESTS"));
+      BOOST_REQUIRE( delegation->eScore  == ASSET( "10000000.000000 ESCOR"));
 
       validate_database();
       tx.clear();
-      op.vesting_shares = ASSET( "20000000.000000 VESTS");
+      op.eScore = ASSET( "20000000.000000 ESCOR");
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -6267,11 +6267,11 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
 
       BOOST_REQUIRE( delegation != nullptr );
       BOOST_REQUIRE( delegation->delegator == op.delegator);
-      BOOST_REQUIRE( delegation->vesting_shares == ASSET( "20000000.000000 VESTS"));
-      BOOST_REQUIRE( alice_acc.delegated_vesting_shares == ASSET( "20000000.000000 VESTS"));
-      BOOST_REQUIRE( bob_acc.received_vesting_shares == ASSET( "20000000.000000 VESTS"));
+      BOOST_REQUIRE( delegation->eScore == ASSET( "20000000.000000 ESCOR"));
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "20000000.000000 ESCOR"));
+      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "20000000.000000 ESCOR"));
 
-      BOOST_TEST_MESSAGE( "--- Test that effective vesting shares is accurate and being applied." );
+      BOOST_TEST_MESSAGE( "--- Test that effective eScore is accurate and being applied." );
       tx.operations.clear();
       tx.signatures.clear();
 
@@ -6304,21 +6304,21 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
 
       auto& alice_comment = db.get_comment( "alice", string( "foo" ) );
       auto itr = vote_idx.find( std::make_tuple( alice_comment.id, bob_acc.id ) );
-      BOOST_REQUIRE( alice_comment.net_rshares.value == bob_acc.effective_vesting_shares().amount.value * ( old_voting_power - bob_acc.voting_power ) / PERCENT_100 );
-      BOOST_REQUIRE( itr->rshares == bob_acc.effective_vesting_shares().amount.value * ( old_voting_power - bob_acc.voting_power ) / PERCENT_100 );
+      BOOST_REQUIRE( alice_comment.net_rewardESCOR.value == bob_acc.effective_ESCOR().amount.value * ( old_voting_power - bob_acc.voting_power ) / PERCENT_100 );
+      BOOST_REQUIRE( itr->rewardESCOR == bob_acc.effective_ESCOR().amount.value * ( old_voting_power - bob_acc.voting_power ) / PERCENT_100 );
 
 
       generate_block();
       ACTORS( (sam)(dave) )
       generate_block();
 
-      vest( "sam", ASSET( "1000.000 TESTS" ) );
+      score( "sam", ASSET( "1000.000 TESTS" ) );
 
       generate_block();
 
-      auto sam_vest = db.get_account( "sam" ).vesting_shares;
+      auto sam_escore = db.get_account( "sam" ).eScore;
 
-      BOOST_TEST_MESSAGE( "--- Test failure when delegating 0 VESTS" );
+      BOOST_TEST_MESSAGE( "--- Test failure when delegating 0 ESCOR" );
       tx.clear();
       op.delegator = "sam";
       op.delegatee = "dave";
@@ -6327,47 +6327,47 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
 
 
-      BOOST_TEST_MESSAGE( "--- Testing failure delegating more vesting shares than account has." );
+      BOOST_TEST_MESSAGE( "--- Testing failure delegating more eScore than account has." );
       tx.clear();
-      op.vesting_shares = asset( sam_vest.amount + 1, SYMBOL_EZP );
+      op.eScore = asset( sam_escore.amount + 1, SYMBOL_ESCOR );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
 
 
-      BOOST_TEST_MESSAGE( "--- Test failure delegating vesting shares that are part of a power down" );
+      BOOST_TEST_MESSAGE( "--- Test failure delegating eScore that are part of a power down" );
       tx.clear();
-      sam_vest = asset( sam_vest.amount / 2, SYMBOL_EZP );
-      withdraw_vesting_operation withdraw;
+      sam_escore = asset( sam_escore.amount / 2, SYMBOL_ESCOR );
+      withdraw_ESCOR_operation withdraw;
       withdraw.account = "sam";
-      withdraw.vesting_shares = sam_vest;
+      withdraw.eScore = sam_escore;
       tx.operations.push_back( withdraw );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.clear();
-      op.vesting_shares = asset( sam_vest.amount + 2, SYMBOL_EZP );
+      op.eScore = asset( sam_escore.amount + 2, SYMBOL_ESCOR );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
 
       tx.clear();
-      withdraw.vesting_shares = ASSET( "0.000000 VESTS" );
+      withdraw.eScore = ASSET( "0.000000 ESCOR" );
       tx.operations.push_back( withdraw );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
 
-      BOOST_TEST_MESSAGE( "--- Test failure powering down vesting shares that are delegated" );
-      sam_vest.amount += 1000;
-      op.vesting_shares = sam_vest;
+      BOOST_TEST_MESSAGE( "--- Test failure powering down eScore that are delegated" );
+      sam_escore.amount += 1000;
+      op.eScore = sam_escore;
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.clear();
-      withdraw.vesting_shares = asset( sam_vest.amount, SYMBOL_EZP );
+      withdraw.eScore = asset( sam_escore.amount, SYMBOL_ESCOR );
       tx.operations.push_back( withdraw );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
@@ -6375,44 +6375,44 @@ BOOST_AUTO_TEST_CASE( delegate_vesting_shares_apply )
 
       BOOST_TEST_MESSAGE( "--- Remove a delegation and ensure it is returned after 1 week" );
       tx.clear();
-      op.vesting_shares = ASSET( "0.000000 VESTS" );
+      op.eScore = ASSET( "0.000000 ESCOR" );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto exp_obj = db.get_index< vesting_delegation_expiration_index, by_id >().begin();
-      auto end = db.get_index< vesting_delegation_expiration_index, by_id >().end();
+      auto exp_obj = db.get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_id >().begin();
+      auto end = db.get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_id >().end();
 
       BOOST_REQUIRE( exp_obj != end );
       BOOST_REQUIRE( exp_obj->delegator == "sam" );
-      BOOST_REQUIRE( exp_obj->vesting_shares == sam_vest );
+      BOOST_REQUIRE( exp_obj->eScore == sam_escore );
       BOOST_REQUIRE( exp_obj->expiration == db.head_block_time() + CASHOUT_WINDOW_SECONDS );
-      BOOST_REQUIRE( db.get_account( "sam" ).delegated_vesting_shares == sam_vest );
-      BOOST_REQUIRE( db.get_account( "dave" ).received_vesting_shares == ASSET( "0.000000 VESTS" ) );
-      delegation = db.find< vesting_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
+      BOOST_REQUIRE( db.get_account( "sam" ).ESCORDelegated == sam_escore );
+      BOOST_REQUIRE( db.get_account( "dave" ).ESCORReceived == ASSET( "0.000000 ESCOR" ) );
+      delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
       BOOST_REQUIRE( delegation == nullptr );
 
       generate_blocks( exp_obj->expiration + BLOCK_INTERVAL );
 
-      exp_obj = db.get_index< vesting_delegation_expiration_index, by_id >().begin();
-      end = db.get_index< vesting_delegation_expiration_index, by_id >().end();
+      exp_obj = db.get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_id >().begin();
+      end = db.get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_id >().end();
 
       BOOST_REQUIRE( exp_obj == end );
-      BOOST_REQUIRE( db.get_account( "sam" ).delegated_vesting_shares == ASSET( "0.000000 VESTS" ) );
+      BOOST_REQUIRE( db.get_account( "sam" ).ESCORDelegated == ASSET( "0.000000 ESCOR" ) );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( issue_971_vesting_removal )
+BOOST_AUTO_TEST_CASE( issue_971_ECO_fund_for_ESCOR_removal )
 {
    // This is a regression test specifically for issue #971
    try
    {
-      BOOST_TEST_MESSAGE( "Test Issue 971 Vesting Removal" );
+      BOOST_TEST_MESSAGE( "Test Issue 971 eScore Removal" );
       ACTORS( (alice)(bob) )
       generate_block();
 
-      vest( "alice", ASSET( "1000.000 TESTS" ) );
+      score( "alice", ASSET( "1000.000 TESTS" ) );
 
       generate_block();
 
@@ -6427,8 +6427,8 @@ BOOST_AUTO_TEST_CASE( issue_971_vesting_removal )
       generate_block();
 
       signed_transaction tx;
-      delegate_vesting_shares_operation op;
-      op.vesting_shares = ASSET( "10000000.000000 VESTS");
+      delegateESCOR_operation op;
+      op.eScore = ASSET( "10000000.000000 ESCOR");
       op.delegator = "alice";
       op.delegatee = "bob";
 
@@ -6440,8 +6440,8 @@ BOOST_AUTO_TEST_CASE( issue_971_vesting_removal )
       const account_object& alice_acc = db.get_account( "alice" );
       const account_object& bob_acc = db.get_account( "bob" );
 
-      BOOST_REQUIRE( alice_acc.delegated_vesting_shares == ASSET( "10000000.000000 VESTS"));
-      BOOST_REQUIRE( bob_acc.received_vesting_shares == ASSET( "10000000.000000 VESTS"));
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
+      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "10000000.000000 ESCOR"));
 
       generate_block();
 
@@ -6455,7 +6455,7 @@ BOOST_AUTO_TEST_CASE( issue_971_vesting_removal )
 
       generate_block();
 
-      op.vesting_shares = ASSET( "0.000000 VESTS" );
+      op.eScore = ASSET( "0.000000 ESCOR" );
 
       tx.clear();
       tx.operations.push_back( op );
@@ -6463,8 +6463,8 @@ BOOST_AUTO_TEST_CASE( issue_971_vesting_removal )
       db.push_transaction( tx, 0 );
       generate_block();
 
-      BOOST_REQUIRE( alice_acc.delegated_vesting_shares == ASSET( "10000000.000000 VESTS"));
-      BOOST_REQUIRE( bob_acc.received_vesting_shares == ASSET( "0.000000 VESTS"));
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
+      BOOST_REQUIRE( bob_acc.ESCORReceived == ASSET( "0.000000 ESCOR"));
    }
    FC_LOG_AND_RETHROW()
 }
@@ -6577,7 +6577,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
 
       op.author = "alice";
       op.permlink = "test";
-      op.allow_curation_rewards = false;
+      op.allow_curationRewards = false;
       op.extensions.insert( b );
       tx.clear();
       tx.operations.push_back( op );
@@ -6652,11 +6652,11 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
 
       generate_block();
 
-      BOOST_REQUIRE( db.get_account( "bob" ).reward_ECO_balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).reward_EZD_balance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).reward_vesting_ECO_balance.amount + db.get_account( "sam" ).reward_vesting_ECO_balance.amount == db.get_comment( "alice", string( "test" ) ).beneficiary_payout_value.amount );
-      BOOST_REQUIRE( ( db.get_account( "alice" ).reward_EZD_balance.amount + db.get_account( "alice" ).reward_vesting_ECO_balance.amount ) == db.get_account( "bob" ).reward_vesting_ECO_balance.amount + 2 );
-      BOOST_REQUIRE( ( db.get_account( "alice" ).reward_EZD_balance.amount + db.get_account( "alice" ).reward_vesting_ECO_balance.amount ) * 2 == db.get_account( "sam" ).reward_vesting_ECO_balance.amount + 3 );
+      BOOST_REQUIRE( db.get_account( "bob" ).ECOreward_balance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).EUSDrewardbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).rewardESCOR_balance.amount + db.get_account( "sam" ).rewardESCOR_balance.amount == db.get_comment( "alice", string( "test" ) ).beneficiary_payout_value.amount );
+      BOOST_REQUIRE( ( db.get_account( "alice" ).EUSDrewardbalance.amount + db.get_account( "alice" ).rewardESCOR_balance.amount ) == db.get_account( "bob" ).rewardESCOR_balance.amount + 2 );
+      BOOST_REQUIRE( ( db.get_account( "alice" ).EUSDrewardbalance.amount + db.get_account( "alice" ).rewardESCOR_balance.amount ) * 2 == db.get_account( "sam" ).rewardESCOR_balance.amount + 3 );
    }
    FC_LOG_AND_RETHROW()
 }

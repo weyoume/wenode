@@ -56,7 +56,7 @@ struct operation_process
          if( op.amount.symbol == SYMBOL_ECO )
             b.ECO_transferred += op.amount.amount;
          else
-            b.EZD_transferred += op.amount.amount;
+            b.EUSD_transferred += op.amount.amount;
       });
    }
 
@@ -64,11 +64,11 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.EZD_paid_as_interest += op.interest.amount;
+         b.EUSD_paid_as_interest += op.interest.amount;
       });
    }
 
-   void operator()( const account_create_operation& op )const
+   void operator()( const accountCreate_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
@@ -149,21 +149,21 @@ struct operation_process
       });
    }
 
-   void operator()( const author_reward_operation& op )const
+   void operator()( const authorReward_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.payouts++;
-         b.EZD_paid_to_authors += op.EZD_payout.amount;
-         b.vests_paid_to_authors += op.vesting_payout.amount;
+         b.EUSD_paid_to_authors += op.EUSDpayout.amount;
+         b.ESCOR_paid_to_authors += op.ESCORpayout.amount;
       });
    }
 
-   void operator()( const curation_reward_operation& op )const
+   void operator()( const curationReward_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.vests_paid_to_curators += op.reward.amount;
+         b.ESCOR_paid_to_curators += op.reward.amount;
       });
    }
 
@@ -175,29 +175,29 @@ struct operation_process
       });
    }
 
-   void operator()( const transfer_to_vesting_operation& op )const
+   void operator()( const transferECOtoESCORfund_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.transfers_to_vesting++;
-         b.ECO_vested += op.amount.amount;
+         b.transfers_to_ECO_fund_for_ESCOR++;
+         b.ECO_value_of_ESCOR += op.amount.amount;
       });
    }
 
-   void operator()( const fill_vesting_withdraw_operation& op )const
+   void operator()( const fillESCORWithdraw_operation& op )const
    {
       auto& account = _db.get_account( op.from_account );
 
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.vesting_withdrawals_processed++;
+         b.ECO_fund_for_ESCOR_withdrawals_processed++;
          if( op.deposited.symbol == SYMBOL_ECO )
-            b.vests_withdrawn += op.withdrawn.amount;
+            b.ESCOR_withdrawn += op.withdrawn.amount;
          else
-            b.vests_transferred += op.withdrawn.amount;
+            b.ESCOR_transferred += op.withdrawn.amount;
 
-         if( account.vesting_withdraw_rate.amount == 0 )
-            b.finished_vesting_withdrawals++;
+         if( account.ESCORwithdrawRateInECO.amount == 0 )
+            b.finished_ECO_fund_for_ESCOR_withdrawals++;
       });
    }
 
@@ -229,8 +229,8 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.EZD_conversion_requests_created++;
-         b.EZD_to_be_converted += op.amount.amount;
+         b.EUSD_conversion_requests_created++;
+         b.EUSD_to_be_converted += op.amount.amount;
       });
    }
 
@@ -238,7 +238,7 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.EZD_conversion_requests_filled++;
+         b.EUSD_conversion_requests_filled++;
          b.ECO_converted += op.amount_out.amount;
       });
    }
@@ -337,9 +337,9 @@ void blockchain_statistics_plugin_impl::pre_operation( const operation_notificat
 
    for( auto bucket_id : _current_buckets )
    {
-      if( o.op.which() == operation::tag< delete_comment_operation >::value )
+      if( o.op.which() == operation::tag< deleteComment_operation >::value )
       {
-         delete_comment_operation op = o.op.get< delete_comment_operation >();
+         deleteComment_operation op = o.op.get< deleteComment_operation >();
          auto comment = db.get_comment( op.author, op.permlink );
          const auto& bucket = db.get(bucket_id);
 
@@ -351,28 +351,28 @@ void blockchain_statistics_plugin_impl::pre_operation( const operation_notificat
                b.root_comments_deleted++;
          });
       }
-      else if( o.op.which() == operation::tag< withdraw_vesting_operation >::value )
+      else if( o.op.which() == operation::tag< withdraw_ESCOR_operation >::value )
       {
-         withdraw_vesting_operation op = o.op.get< withdraw_vesting_operation >();
+         withdraw_ESCOR_operation op = o.op.get< withdraw_ESCOR_operation >();
          auto& account = db.get_account( op.account );
          const auto& bucket = db.get(bucket_id);
 
-         auto new_vesting_withdrawal_rate = op.vesting_shares.amount / VESTING_WITHDRAW_INTERVALS;
-         if( op.vesting_shares.amount > 0 && new_vesting_withdrawal_rate == 0 )
-            new_vesting_withdrawal_rate = 1;
+         auto new_ECO_fund_for_ESCOR_withdrawal_rate = op.eScore.amount / ECO_fund_for_ESCOR_WITHDRAW_INTERVALS;
+         if( op.eScore.amount > 0 && new_ECO_fund_for_ESCOR_withdrawal_rate == 0 )
+            new_ECO_fund_for_ESCOR_withdrawal_rate = 1;
 
          if( !db.has_hardfork( HARDFORK_0_1 ) )
-            new_vesting_withdrawal_rate *= 1000000;
+            new_ECO_fund_for_ESCOR_withdrawal_rate *= 1000000;
 
          db.modify( bucket, [&]( bucket_object& b )
          {
-            if( account.vesting_withdraw_rate.amount > 0 )
-               b.modified_vesting_withdrawal_requests++;
+            if( account.ESCORwithdrawRateInECO.amount > 0 )
+               b.modified_ESCOR_ECO_fund_withdrawal_requests++;
             else
-               b.new_vesting_withdrawal_requests++;
+               b.new_ESCOR_ECO_fund_withdrawal_requests++;
 
-            // TODO: Figure out how to change delta when a vesting withdraw finishes. Have until March 24th 2018 to figure that out...
-            b.vesting_withdraw_rate_delta += new_vesting_withdrawal_rate - account.vesting_withdraw_rate.amount;
+            // TODO: Figure out how to change delta when a eScore ECO fund withdraw finishes. Have until March 24th 2018 to figure that out...
+            b.ESCORwithdrawRateInECO_delta += new_ECO_fund_for_ESCOR_withdrawal_rate - account.ESCORwithdrawRateInECO.amount;
          });
       }
    }

@@ -10,10 +10,10 @@ namespace eznode { namespace protocol {
       return asset.symbol == symbol;
    }
 
-   void account_create_operation::validate() const
+   void accountCreate_operation::validate() const
    {
       validate_account_name( new_account_name );
-      FC_ASSERT( is_asset_type( fee, SYMBOL_ECO ), "Account creation fee must be EZIRA" );
+      FC_ASSERT( is_asset_type( fee, SYMBOL_ECO ), "Account creation fee must be ECO" );
       owner.validate();
       active.validate();
 
@@ -25,12 +25,12 @@ namespace eznode { namespace protocol {
       FC_ASSERT( fee >= asset( 0, SYMBOL_ECO ), "Account creation fee cannot be negative" );
    }
 
-   void account_create_with_delegation_operation::validate() const
+   void accountCreateWithDelegation_operation::validate() const
    {
       validate_account_name( new_account_name );
       validate_account_name( creator );
-      FC_ASSERT( is_asset_type( fee, SYMBOL_ECO ), "Account creation fee must be EZIRA" );
-      FC_ASSERT( is_asset_type( delegation, SYMBOL_EZP ), "Delegation must be VESTS" );
+      FC_ASSERT( is_asset_type( fee, SYMBOL_ECO ), "Account creation fee must be ECO" );
+      FC_ASSERT( is_asset_type( delegation, SYMBOL_ESCOR ), "Delegation must be ESCOR" );
 
       owner.validate();
       active.validate();
@@ -43,10 +43,10 @@ namespace eznode { namespace protocol {
       }
 
       FC_ASSERT( fee >= asset( 0, SYMBOL_ECO ), "Account creation fee cannot be negative" );
-      FC_ASSERT( delegation >= asset( 0, SYMBOL_EZP ), "Delegation cannot be negative" );
+      FC_ASSERT( delegation >= asset( 0, SYMBOL_ESCOR ), "Delegation cannot be negative" );
    }
 
-   void account_update_operation::validate() const
+   void accountUpdate_operation::validate() const
    {
       validate_account_name( account );
       /*if( owner )
@@ -120,15 +120,15 @@ namespace eznode { namespace protocol {
    void comment_options_operation::validate()const
    {
       validate_account_name( author );
-      FC_ASSERT( percent_EZD <= PERCENT_100, "Percent cannot exceed 100%" );
-      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_EZD, "Max accepted payout must be in EZD" );
+      FC_ASSERT( percent_EUSD <= PERCENT_100, "Percent cannot exceed 100%" );
+      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_EUSD, "Max accepted payout must be in EUSD" );
       FC_ASSERT( max_accepted_payout.amount.value >= 0, "Cannot accept less than 0 payout" );
       validate_permlink( permlink );
       for( auto& e : extensions )
          e.visit( comment_options_extension_validate_visitor() );
    }
 
-   void delete_comment_operation::validate()const
+   void deleteComment_operation::validate()const
    {
       validate_permlink( permlink );
       validate_account_name( author );
@@ -150,7 +150,7 @@ namespace eznode { namespace protocol {
    {
       validate_account_name( voter );
       validate_account_name( author );\
-      FC_ASSERT( abs(weight) <= PERCENT_100, "Weight is not a EZIRA percentage" );
+      FC_ASSERT( abs(weight) <= PERCENT_100, "Weight is not a ECO percentage" );
       validate_permlink( permlink );
    }
 
@@ -158,31 +158,31 @@ namespace eznode { namespace protocol {
    { try {
       validate_account_name( from );
       validate_account_name( to );
-      FC_ASSERT( amount.symbol != SYMBOL_EZP, "transferring of Ezira Power (STMP) is not allowed." );
+      FC_ASSERT( amount.symbol != SYMBOL_ESCOR, "transferring of Ezira Power (STMP) is not allowed." );
       FC_ASSERT( amount.amount > 0, "Cannot transfer a negative amount (aka: stealing)" );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void transfer_to_vesting_operation::validate() const
+   void transferECOtoESCORfund_operation::validate() const
    {
       validate_account_name( from );
-      FC_ASSERT( is_asset_type( amount, SYMBOL_ECO ), "Amount must be EZIRA" );
+      FC_ASSERT( is_asset_type( amount, SYMBOL_ECO ), "Amount must be ECO" );
       if ( to != account_name_type() ) validate_account_name( to );
       FC_ASSERT( amount > asset( 0, SYMBOL_ECO ), "Must transfer a nonzero amount" );
    }
 
-   void withdraw_vesting_operation::validate() const
+   void withdraw_ESCOR_operation::validate() const
    {
       validate_account_name( account );
-      FC_ASSERT( is_asset_type( vesting_shares, SYMBOL_EZP), "Amount must be VESTS"  );
+      FC_ASSERT( is_asset_type( eScore, SYMBOL_ESCOR), "Amount must be ESCOR"  );
    }
 
-   void set_withdraw_vesting_route_operation::validate() const
+   void setWithdrawESCORasECOroute_operation::validate() const
    {
       validate_account_name( from_account );
       validate_account_name( to_account );
-      FC_ASSERT( 0 <= percent && percent <= PERCENT_100, "Percent must be valid EZIRA percent" );
+      FC_ASSERT( 0 <= percent && percent <= PERCENT_100, "Percent must be valid ECO percent" );
    }
 
    void witness_update_operation::validate() const
@@ -194,7 +194,7 @@ namespace eznode { namespace protocol {
       props.validate();
    }
 
-   void account_witness_vote_operation::validate() const
+   void accountWitnessVote_operation::validate() const
    {
       validate_account_name( account );
       validate_account_name( witness );
@@ -212,7 +212,7 @@ namespace eznode { namespace protocol {
       /// required auth accounts are the ones whose bandwidth is consumed
       FC_ASSERT( required_auths.size() > 0, "at least on account must be specified" );
    }
-   void custom_json_operation::validate() const {
+   void customJson_operation::validate() const {
       /// required auth accounts are the ones whose bandwidth is consumed
       FC_ASSERT( (required_auths.size() + required_posting_auths.size()) > 0, "at least on account must be specified" );
       FC_ASSERT( id.size() <= 32, "id is too long" );
@@ -352,18 +352,18 @@ namespace eznode { namespace protocol {
    void feed_publish_operation::validate()const
    {
       validate_account_name( publisher );
-      FC_ASSERT( ( is_asset_type( exchange_rate.base, SYMBOL_ECO ) && is_asset_type( exchange_rate.quote, SYMBOL_EZD ) )
-         || ( is_asset_type( exchange_rate.base, SYMBOL_EZD ) && is_asset_type( exchange_rate.quote, SYMBOL_ECO ) ),
-         "Price feed must be a EZIRA/EZD price" );
+      FC_ASSERT( ( is_asset_type( exchange_rate.base, SYMBOL_ECO ) && is_asset_type( exchange_rate.quote, SYMBOL_EUSD ) )
+         || ( is_asset_type( exchange_rate.base, SYMBOL_EUSD ) && is_asset_type( exchange_rate.quote, SYMBOL_ECO ) ),
+         "Price feed must be a ECO/EUSD price" );
       exchange_rate.validate();
    }
 
    void limit_order_create_operation::validate()const
    {
       validate_account_name( owner );
-      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_ECO ) && is_asset_type( min_to_receive, SYMBOL_EZD ) )
-         || ( is_asset_type( amount_to_sell, SYMBOL_EZD ) && is_asset_type( min_to_receive, SYMBOL_ECO ) ),
-         "Limit order must be for the EZIRA:EZD market" );
+      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_ECO ) && is_asset_type( min_to_receive, SYMBOL_EUSD ) )
+         || ( is_asset_type( amount_to_sell, SYMBOL_EUSD ) && is_asset_type( min_to_receive, SYMBOL_ECO ) ),
+         "Limit order must be for the ECO:EUSD market" );
       (amount_to_sell / min_to_receive).validate();
    }
    void limit_order_create2_operation::validate()const
@@ -372,9 +372,9 @@ namespace eznode { namespace protocol {
       FC_ASSERT( amount_to_sell.symbol == exchange_rate.base.symbol, "Sell asset must be the base of the price" );
       exchange_rate.validate();
 
-      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_ECO ) && is_asset_type( exchange_rate.quote, SYMBOL_EZD ) ) ||
-                 ( is_asset_type( amount_to_sell, SYMBOL_EZD ) && is_asset_type( exchange_rate.quote, SYMBOL_ECO ) ),
-                 "Limit order must be for the EZIRA:EZD market" );
+      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_ECO ) && is_asset_type( exchange_rate.quote, SYMBOL_EUSD ) ) ||
+                 ( is_asset_type( amount_to_sell, SYMBOL_EUSD ) && is_asset_type( exchange_rate.quote, SYMBOL_ECO ) ),
+                 "Limit order must be for the ECO:EUSD market" );
 
       FC_ASSERT( (amount_to_sell * exchange_rate).amount > 0, "Amount to sell cannot round to 0 when traded" );
    }
@@ -387,10 +387,10 @@ namespace eznode { namespace protocol {
    void convert_operation::validate()const
    {
       validate_account_name( owner );
-      /// only allow conversion from EZD to EZIRA, allowing the opposite can enable traders to abuse
+      /// only allow conversion from EUSD to ECO, allowing the opposite can enable traders to abuse
       /// market fluxuations through converting large quantities without moving the price.
-      FC_ASSERT( is_asset_type( amount, SYMBOL_EZD ), "Can only convert EZD to EZIRA" );
-      FC_ASSERT( amount.amount > 0, "Must convert some EZD" );
+      FC_ASSERT( is_asset_type( amount, SYMBOL_EUSD ), "Can only convert EUSD to ECO" );
+      FC_ASSERT( amount.amount > 0, "Must convert some EUSD" );
    }
 
    void report_over_production_operation::validate()const
@@ -409,13 +409,13 @@ namespace eznode { namespace protocol {
       validate_account_name( to );
       validate_account_name( agent );
       FC_ASSERT( fee.amount >= 0, "fee cannot be negative" );
-      FC_ASSERT( EZD_amount.amount >= 0, "EZD amount cannot be negative" );
-      FC_ASSERT( ECO_amount.amount >= 0, "ECO amount cannot be negative" );
-      FC_ASSERT( EZD_amount.amount > 0 || ECO_amount.amount > 0, "escrow must transfer a non-zero amount" );
+      FC_ASSERT( EUSD_amount.amount >= 0, "EUSD amount cannot be negative" );
+      FC_ASSERT( ECOamount.amount >= 0, "ECO amount cannot be negative" );
+      FC_ASSERT( EUSD_amount.amount > 0 || ECOamount.amount > 0, "escrow must transfer a non-zero amount" );
       FC_ASSERT( from != agent && to != agent, "agent must be a third party" );
-      FC_ASSERT( (fee.symbol == SYMBOL_ECO) || (fee.symbol == SYMBOL_EZD), "fee must be EZIRA or EZD" );
-      FC_ASSERT( EZD_amount.symbol == SYMBOL_EZD, "EZD amount must contain EZD" );
-      FC_ASSERT( ECO_amount.symbol == SYMBOL_ECO, "ECO amount must contain EZIRA" );
+      FC_ASSERT( (fee.symbol == SYMBOL_ECO) || (fee.symbol == SYMBOL_EUSD), "fee must be ECO or EUSD" );
+      FC_ASSERT( EUSD_amount.symbol == SYMBOL_EUSD, "EUSD amount must contain EUSD" );
+      FC_ASSERT( ECOamount.symbol == SYMBOL_ECO, "ECO amount must contain ECO" );
       FC_ASSERT( ratification_deadline < escrow_expiration, "ratification deadline must be before escrow expiration" );
       if ( json_meta.size() > 0 )
       {
@@ -451,11 +451,11 @@ namespace eznode { namespace protocol {
       validate_account_name( receiver );
       FC_ASSERT( who == from || who == to || who == agent, "who must be from or to or agent" );
       FC_ASSERT( receiver == from || receiver == to, "receiver must be from or to" );
-      FC_ASSERT( EZD_amount.amount >= 0, "EZD amount cannot be negative" );
-      FC_ASSERT( ECO_amount.amount >= 0, "ECO amount cannot be negative" );
-      FC_ASSERT( EZD_amount.amount > 0 || ECO_amount.amount > 0, "escrow must release a non-zero amount" );
-      FC_ASSERT( EZD_amount.symbol == SYMBOL_EZD, "EZD amount must contain EZD" );
-      FC_ASSERT( ECO_amount.symbol == SYMBOL_ECO, "ECO amount must contain EZIRA" );
+      FC_ASSERT( EUSD_amount.amount >= 0, "EUSD amount cannot be negative" );
+      FC_ASSERT( ECOamount.amount >= 0, "ECO amount cannot be negative" );
+      FC_ASSERT( EUSD_amount.amount > 0 || ECOamount.amount > 0, "escrow must release a non-zero amount" );
+      FC_ASSERT( EUSD_amount.symbol == SYMBOL_EUSD, "EUSD amount must contain EUSD" );
+      FC_ASSERT( ECOamount.symbol == SYMBOL_ECO, "ECO amount must contain ECO" );
    }
 
    void request_account_recovery_operation::validate()const
@@ -482,23 +482,23 @@ namespace eznode { namespace protocol {
       validate_account_name( new_recovery_account );
    }
 
-   void transfer_to_savings_operation::validate()const {
+   void transferToSavings_operation::validate()const {
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( amount.symbol == SYMBOL_ECO || amount.symbol == SYMBOL_EZD );
+      FC_ASSERT( amount.symbol == SYMBOL_ECO || amount.symbol == SYMBOL_EUSD );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    }
-   void transfer_from_savings_operation::validate()const {
+   void transferFromSavings_operation::validate()const {
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( amount.symbol == SYMBOL_ECO || amount.symbol == SYMBOL_EZD );
+      FC_ASSERT( amount.symbol == SYMBOL_ECO || amount.symbol == SYMBOL_EUSD );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    }
-   void cancel_transfer_from_savings_operation::validate()const {
+   void cancelTransferFromSavings_operation::validate()const {
       validate_account_name( from );
    }
 
@@ -525,25 +525,25 @@ namespace eznode { namespace protocol {
       FC_ASSERT( current_reset_account != reset_account, "new reset account cannot be current reset account" );
    }
 
-   void claim_reward_balance_operation::validate()const
+   void claimRewardBalance_operation::validate()const
    {
       validate_account_name( account );
-      FC_ASSERT( is_asset_type( reward_ECO, SYMBOL_ECO ), "Reward_ECO must be EZIRA" );
-      FC_ASSERT( is_asset_type( reward_EZD, SYMBOL_EZD ), "Reward_EZD must be EZD" );
-      FC_ASSERT( is_asset_type( reward_EZP, SYMBOL_EZP ), "Reward_EZP must be EZP" );
-      FC_ASSERT( reward_ECO.amount >= 0, "Cannot claim a negative amount" );
-      FC_ASSERT( reward_EZD.amount >= 0, "Cannot claim a negative amount" );
-      FC_ASSERT( reward_EZP.amount >= 0, "Cannot claim a negative amount" );
-      FC_ASSERT( reward_ECO.amount > 0 || reward_EZD.amount > 0 || reward_EZP.amount > 0, "Must claim something." );
+      FC_ASSERT( is_asset_type( ECOreward, SYMBOL_ECO ), "Reward_ECO must be ECO" );
+      FC_ASSERT( is_asset_type( EUSDreward, SYMBOL_EUSD ), "Reward_EUSD must be EUSD" );
+      FC_ASSERT( is_asset_type( rewardESCOR, SYMBOL_ESCOR ), "Reward_ESCOR must be ESCOR" );
+      FC_ASSERT( ECOreward.amount >= 0, "Cannot claim a negative amount" );
+      FC_ASSERT( EUSDreward.amount >= 0, "Cannot claim a negative amount" );
+      FC_ASSERT( rewardESCOR.amount >= 0, "Cannot claim a negative amount" );
+      FC_ASSERT( ECOreward.amount > 0 || EUSDreward.amount > 0 || rewardESCOR.amount > 0, "Must claim something." );
    }
 
-   void delegate_vesting_shares_operation::validate()const
+   void delegateESCOR_operation::validate()const
    {
       validate_account_name( delegator );
       validate_account_name( delegatee );
-      FC_ASSERT( delegator != delegatee, "You cannot delegate EZP to yourself" );
-      FC_ASSERT( is_asset_type( vesting_shares, SYMBOL_EZP ), "Delegation must be EZP" );
-      FC_ASSERT( vesting_shares >= asset( 0, SYMBOL_EZP ), "Delegation cannot be negative" );
+      FC_ASSERT( delegator != delegatee, "You cannot delegate ESCOR to yourself" );
+      FC_ASSERT( is_asset_type( eScore, SYMBOL_ESCOR ), "Delegation must be ESCOR" );
+      FC_ASSERT( eScore >= asset( 0, SYMBOL_ESCOR ), "Delegation cannot be negative" );
    }
 
 } } // eznode::protocol

@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE( asset_test )
 
       BOOST_TEST_MESSAGE( "Asset Test" );
       asset ECO = asset::from_string( "123.456 TESTS" );
-      asset EZD = asset::from_string( "654.321 TBD" );
+      asset EUSD = asset::from_string( "654.321 TBD" );
       asset tmp = asset::from_string( "0.456 TESTS" );
       BOOST_CHECK_EQUAL( tmp.amount.value, 456 );
       tmp = asset::from_string( "0.056 TESTS" );
@@ -135,14 +135,14 @@ BOOST_AUTO_TEST_CASE( asset_test )
       BOOST_CHECK_EQUAL( asset(50, SYMBOL_ECO).to_string(), "0.050 TESTS" );
       BOOST_CHECK_EQUAL( asset(50000, SYMBOL_ECO).to_string(), "50.000 TESTS" );
 
-      BOOST_CHECK( std::abs( EZD.to_real() - 654.321 ) < 0.0005 );
-      BOOST_CHECK_EQUAL( EZD.amount.value, 654321 );
-      BOOST_CHECK_EQUAL( EZD.decimals(), 3 );
-      BOOST_CHECK_EQUAL( EZD.symbol_name(), "TBD" );
-      BOOST_CHECK_EQUAL( EZD.to_string(), "654.321 TBD" );
-      BOOST_CHECK_EQUAL( EZD.symbol, SYMBOL_EZD);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL_EZD).to_string(), "0.050 TBD" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_EZD).to_string(), "50.000 TBD" );
+      BOOST_CHECK( std::abs( EUSD.to_real() - 654.321 ) < 0.0005 );
+      BOOST_CHECK_EQUAL( EUSD.amount.value, 654321 );
+      BOOST_CHECK_EQUAL( EUSD.decimals(), 3 );
+      BOOST_CHECK_EQUAL( EUSD.symbol_name(), "TBD" );
+      BOOST_CHECK_EQUAL( EUSD.to_string(), "654.321 TBD" );
+      BOOST_CHECK_EQUAL( EUSD.symbol, SYMBOL_EUSD);
+      BOOST_CHECK_EQUAL( asset(50, SYMBOL_EUSD).to_string(), "0.050 TBD" );
+      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_EUSD).to_string(), "50.000 TBD" );
 
       BOOST_CHECK_THROW( ECO.set_decimals(100), fc::exception );
       char* ECO_sy = (char*) &ECO.symbol;
