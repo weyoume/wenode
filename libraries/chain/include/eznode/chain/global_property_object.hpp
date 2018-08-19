@@ -57,7 +57,7 @@ namespace eznode { namespace chain {
          asset       totalECOfundForESCOR   = asset( 0, SYMBOL_ECO );
          asset       totalESCOR       = asset( 0, SYMBOL_ESCOR );
          asset       total_reward_fund_ECO    = asset( 0, SYMBOL_ECO );
-         fc::uint128 total_reward_ESCOR2; ///< the running total of REWARD^2
+         fc::uint128 total_ESCORreward2; ///< the running total of REWARD^2
          asset       pending_rewarded_ESCOR = asset( 0, SYMBOL_ESCOR );
          asset       pending_rewarded_ESCORvalueInECO = asset( 0, SYMBOL_ECO );
 
@@ -69,7 +69,7 @@ namespace eznode { namespace chain {
             return price( totalESCOR, totalECOfundForESCOR );
          }
 
-         price get_reward_ESCOR_price() const
+         price get_ESCORreward_price() const
          {
             return price( totalESCOR + pending_rewarded_ESCOR,
                totalECOfundForESCOR + pending_rewarded_ESCORvalueInECO );
@@ -142,7 +142,7 @@ FC_REFLECT( eznode::chain::dynamic_global_property_object,
              (totalECOfundForESCOR)
              (totalESCOR)
              (total_reward_fund_ECO)
-             (total_reward_ESCOR2)
+             (total_ESCORreward2)
              (pending_rewarded_ESCOR)
              (pending_rewarded_ESCORvalueInECO)
              (EUSD_interest_rate)

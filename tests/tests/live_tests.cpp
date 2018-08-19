@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       auto old_current_supply = db.get_dynamic_global_properties().current_supply;
       auto old_ESCOR_fund = db.get_dynamic_global_properties().totalECOfundForESCOR;
       auto old_ESCOR = db.get_dynamic_global_properties().totalESCOR;
-      auto old_ESCORreward2 = db.get_dynamic_global_properties().total_reward_ESCOR2;
+      auto old_ESCORreward2 = db.get_dynamic_global_properties().total_ESCORreward2;
       auto old_reward_fund = db.get_dynamic_global_properties().total_reward_fund_ECO;
 
       flat_map< std::tuple< account_name_type, string >, share_type > comment_net_ESCORreward;
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       BOOST_REQUIRE( db.get_dynamic_global_properties().virtual_supply == old_virtual_supply );
       BOOST_REQUIRE( db.get_dynamic_global_properties().totalECOfundForESCOR == old_ESCOR_fund );
       BOOST_REQUIRE( db.get_dynamic_global_properties().totalESCOR.amount == old_ESCOR.amount * magnitude );
-      BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_ESCOR2 == total_ESCORreward2 );
+      BOOST_REQUIRE( db.get_dynamic_global_properties().total_ESCORreward2 == total_ESCORreward2 );
       BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_ECO == old_reward_fund );
 
       BOOST_TEST_MESSAGE( "Check accounts were updated" );

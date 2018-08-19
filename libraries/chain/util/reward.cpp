@@ -40,10 +40,10 @@ uint64_t get_ESCOR_reward( const comment_reward_context& ctx )
    try
    {
    FC_ASSERT( ctx.ESCORreward > 0 );
-   FC_ASSERT( ctx.total_reward_ESCOR2 > 0 );
+   FC_ASSERT( ctx.total_ESCORreward2 > 0 );
 
    u256 rf(ctx.total_reward_fund_ECO.amount.value);
-   u256 total_claims = to256( ctx.total_reward_ESCOR2 );
+   u256 total_claims = to256( ctx.total_ESCORreward2 );
 
    //idump( (ctx) );
 

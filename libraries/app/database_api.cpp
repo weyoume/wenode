@@ -1091,7 +1091,7 @@ void database_api::set_pending_payout( discussion& d )const
    if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       total_r2 = to256( my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) ).recent_claims );
    else
-      total_r2 = to256( props.total_reward_ESCOR2 );
+      total_r2 = to256( props.total_ESCORreward2 );
 
    if( total_r2 > 0 )
    {

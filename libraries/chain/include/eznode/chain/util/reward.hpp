@@ -24,7 +24,7 @@ struct comment_reward_context
    share_type ESCORreward;
    uint16_t   reward_weight = 0;
    asset      max_EUSD;
-   uint128_t  total_reward_ESCOR2;
+   uint128_t  total_ESCORreward2;
    asset      total_reward_fund_ECO;
    price      current_ECO_price;
    curve_id   reward_curve = quadratic;
@@ -51,7 +51,7 @@ FC_REFLECT( eznode::chain::util::comment_reward_context,
    (ESCORreward)
    (reward_weight)
    (max_EUSD)
-   (total_reward_ESCOR2)
+   (total_ESCORreward2)
    (total_reward_fund_ECO)
    (current_ECO_price)
    (reward_curve)

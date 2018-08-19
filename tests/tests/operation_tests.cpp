@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE( comment_apply )
 
       db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& o)
       {
-         o.total_reward_ESCOR2 = eznode::chain::util::evaluate_reward_curve( 10 );
+         o.total_ESCORreward2 = eznode::chain::util::evaluate_reward_curve( 10 );
       });
 
       tx.signatures.clear();
