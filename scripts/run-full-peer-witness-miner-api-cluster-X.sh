@@ -7,7 +7,7 @@ export peerCount=${1:-${#witnesses[@]}}
 keys="$(cat ./contrib/credentials/witnesses.txt | awk -F' ' '{print $2}')"
 keys=($keys)
 nodescount=0
-docker network create eznodes
+docker network create nodes
 for ((i=0;i<$peerCount;i++)) ; do
 	if [[ ! -z ${witnesses[$i]} ]] ; then
 		echo "#### LOOP "$i" ####"
@@ -19,7 +19,7 @@ for ((i=0;i<$peerCount;i++)) ; do
 		echo "peer, witness, api"
 
 		docker run --ip $subnet$(($i+3)) \
-			--network eznodes \
+			--network nodes \
 			--env USE_WAY_TOO_MUCH_RAM=1 \
 			--env USE_FULL_CONTENT_NODE=1 \
 			--env USE_NGINX_FRONTEND=1 \

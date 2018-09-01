@@ -1,14 +1,14 @@
-#include <eznode/market_history/market_history_api.hpp>
+#include <node/market_history/market_history_api.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/index.hpp>
-#include <eznode/chain/operation_notification.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/index.hpp>
+#include <node/chain/operation_notification.hpp>
 
-namespace eznode { namespace market_history {
+namespace node { namespace market_history {
 
 namespace detail {
 
-using eznode::protocol::fill_order_operation;
+using node::protocol::fill_order_operation;
 
 class market_history_plugin_impl
 {
@@ -215,6 +215,6 @@ uint32_t market_history_plugin::get_max_history_per_bucket() const
    return _my->_maximum_history_per_bucket_size;
 }
 
-} } // eznode::market_history
+} } // node::market_history
 
-DEFINE_PLUGIN( market_history, eznode::market_history::market_history_plugin )
+DEFINE_PLUGIN( market_history, node::market_history::market_history_plugin )

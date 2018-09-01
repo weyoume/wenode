@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <eznode/app/api.hpp>
-#include <eznode/app/api_access.hpp>
-#include <eznode/app/application.hpp>
-#include <eznode/app/plugin.hpp>
+#include <node/app/api.hpp>
+#include <node/app/api_access.hpp>
+#include <node/app/application.hpp>
+#include <node/app/plugin.hpp>
 
-#include <eznode/chain/eznode_objects.hpp>
-#include <eznode/chain/eznode_object_types.hpp>
-#include <eznode/chain/database_exceptions.hpp>
+#include <node/chain/node_objects.hpp>
+#include <node/chain/node_object_types.hpp>
+#include <node/chain/database_exceptions.hpp>
 
 #include <fc/time.hpp>
 
@@ -59,7 +59,7 @@
 
 #include <boost/range/adaptor/reversed.hpp>
 
-namespace eznode { namespace app {
+namespace node { namespace app {
 using graphene::net::item_hash_t;
 using graphene::net::item_id;
 using graphene::net::message;
@@ -517,7 +517,7 @@ namespace detail {
                }
 
                return result;
-            } catch ( const eznode::chain::unlinkable_block_exception& e ) {
+            } catch ( const node::chain::unlinkable_block_exception& e ) {
                // translate to a graphene::net exception
                fc_elog(fc::logger::get("sync"),
                      "Error when pushing block, current head block is ${head}:\n${e}",
@@ -921,7 +921,7 @@ namespace detail {
       api_access _apiaccess;
 
       //std::shared_ptr<graphene::db::object_database>   _pending_trx_db;
-      std::shared_ptr<eznode::chain::database>        _chain_db;
+      std::shared_ptr<node::chain::database>        _chain_db;
       std::shared_ptr<graphene::net::node>             _p2p_network;
       std::shared_ptr<fc::http::websocket_server>      _websocket_server;
       std::shared_ptr<fc::http::websocket_tls_server>  _websocket_tls_server;

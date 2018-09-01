@@ -1,11 +1,11 @@
 
 
-#include <eznode/plugins/auth_util/auth_util_api.hpp>
-#include <eznode/plugins/auth_util/auth_util_plugin.hpp>
+#include <node/plugins/auth_util/auth_util_api.hpp>
+#include <node/plugins/auth_util/auth_util_plugin.hpp>
 
 #include <string>
 
-namespace eznode { namespace plugin { namespace auth_util {
+namespace node { namespace plugin { namespace auth_util {
 
 auth_util_plugin::auth_util_plugin( application* app ) : plugin( app ) {}
 auth_util_plugin::~auth_util_plugin() {}
@@ -28,6 +28,6 @@ void auth_util_plugin::plugin_shutdown()
 {
 }
 
-} } } // eznode::plugin::auth_util
+} } } // node::plugin::auth_util
 
-DEFINE_PLUGIN( auth_util, eznode::plugin::auth_util::auth_util_plugin )
+DEFINE_PLUGIN( auth_util, node::plugin::auth_util::auth_util_plugin )

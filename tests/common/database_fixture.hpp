@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eznode/app/application.hpp>
-#include <eznode/chain/database.hpp>
+#include <node/app/application.hpp>
+#include <node/chain/database.hpp>
 #include <fc/io/json.hpp>
 #include <fc/smart_ref_impl.hpp>
 
-#include <eznode/plugins/debug_node/debug_node_plugin.hpp>
+#include <node/plugins/debug_node/debug_node_plugin.hpp>
 
 #include <graphene/utilities/key_conversion.hpp>
 
@@ -17,10 +17,10 @@ using namespace graphene::db;
 extern uint32_t ( TESTING_GENESIS_TIMESTAMP );
 
 #define PUSH_TX \
-   eznode::chain::test::_push_transaction
+   node::chain::test::_push_transaction
 
 #define PUSH_BLOCK \
-   eznode::chain::test::_push_block
+   node::chain::test::_push_block
 
 // See below
 #define REQUIRE_OP_VALIDATION_SUCCESS( op, field, value ) \
@@ -130,14 +130,14 @@ extern uint32_t ( TESTING_GENESIS_TIMESTAMP );
 #define ASSET( s ) \
    asset::from_string( s )
 
-namespace eznode { namespace chain {
+namespace node { namespace chain {
 
-using namespace eznode::protocol;
+using namespace node::protocol;
 
 struct database_fixture {
    // the reason we use an app is to exercise the indexes of built-in
    //   plugins
-   eznode::app::application app;
+   node::app::application app;
    chain::database &db;
    signed_transaction trx;
    public_key_type committee_key;
@@ -148,7 +148,7 @@ struct database_fixture {
    public_key_type init_account_pub_key = init_account_priv_key.get_public_key();
    uint32_t default_skip = 0 | database::skip_undo_history_check | database::skip_authority_check;
 
-   std::shared_ptr< eznode::plugin::debug_node::debug_node_plugin > db_plugin;
+   std::shared_ptr< node::plugin::debug_node::debug_node_plugin > db_plugin;
 
    optional<fc::temp_directory> data_dir;
    bool skip_key_index_test = false;

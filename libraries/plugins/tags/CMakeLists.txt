@@ -1,14 +1,14 @@
-file(GLOB HEADERS "include/eznode/tags/*.hpp")
+file(GLOB HEADERS "include/node/tags/*.hpp")
 
-add_library( eznode_tags
+add_library( node_tags
              tags_plugin.cpp )
 
-target_link_libraries( eznode_tags eznode_chain eznode_protocol eznode_app )
-target_include_directories( eznode_tags
+target_link_libraries( node_tags node_chain node_protocol node_app )
+target_include_directories( node_tags
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 install( TARGETS
-   eznode_tags
+   node_tags
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib

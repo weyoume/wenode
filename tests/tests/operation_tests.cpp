@@ -1,16 +1,16 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <eznode/protocol/exceptions.hpp>
+#include <node/protocol/exceptions.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/database_exceptions.hpp>
-#include <eznode/chain/hardfork.hpp>
-#include <eznode/chain/eznode_objects.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/database_exceptions.hpp>
+#include <node/chain/hardfork.hpp>
+#include <node/chain/node_objects.hpp>
 
-#include <eznode/chain/util/reward.hpp>
+#include <node/chain/util/reward.hpp>
 
-#include <eznode/witness/witness_objects.hpp>
+#include <node/witness/witness_objects.hpp>
 
 #include <fc/crypto/digest.hpp>
 
@@ -20,9 +20,9 @@
 #include <iostream>
 #include <stdexcept>
 
-using namespace eznode;
-using namespace eznode::chain;
-using namespace eznode::protocol;
+using namespace node;
+using namespace node::chain;
+using namespace node::protocol;
 using fc::string;
 
 BOOST_FIXTURE_TEST_SUITE( operation_tests, clean_database_fixture )
@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE( comment_apply )
 
       db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& o)
       {
-         o.total_ESCORreward2 = eznode::chain::util::evaluate_reward_curve( 10 );
+         o.total_ESCORreward2 = node::chain::util::evaluate_reward_curve( 10 );
       });
 
       tx.signatures.clear();

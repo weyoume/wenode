@@ -1,11 +1,11 @@
 
 
-#include <eznode/plugins/raw_block/raw_block_api.hpp>
-#include <eznode/plugins/raw_block/raw_block_plugin.hpp>
+#include <node/plugins/raw_block/raw_block_api.hpp>
+#include <node/plugins/raw_block/raw_block_plugin.hpp>
 
 #include <string>
 
-namespace eznode { namespace plugin { namespace raw_block {
+namespace node { namespace plugin { namespace raw_block {
 
 raw_block_plugin::raw_block_plugin( application* app ) : plugin( app ) {}
 raw_block_plugin::~raw_block_plugin() {}
@@ -28,6 +28,6 @@ void raw_block_plugin::plugin_shutdown()
 {
 }
 
-} } } // eznode::plugin::raw_block
+} } } // node::plugin::raw_block
 
-DEFINE_PLUGIN( raw_block, eznode::plugin::raw_block::raw_block_plugin )
+DEFINE_PLUGIN( raw_block, node::plugin::raw_block::raw_block_plugin )

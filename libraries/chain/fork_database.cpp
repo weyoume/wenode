@@ -1,8 +1,8 @@
-#include <eznode/chain/fork_database.hpp>
+#include <node/chain/fork_database.hpp>
 
-#include <eznode/chain/database_exceptions.hpp>
+#include <node/chain/database_exceptions.hpp>
 
-namespace eznode { namespace chain {
+namespace node { namespace chain {
 
 fork_database::fork_database()
 {
@@ -240,4 +240,4 @@ void fork_database::remove(block_id_type id)
    _index.get<block_id>().erase(id);
 }
 
-} } // eznode::chain
+} } // node::chain

@@ -1,9 +1,9 @@
-#include <eznode/witness/witness_operations.hpp>
-#include <eznode/witness/witness_objects.hpp>
+#include <node/witness/witness_operations.hpp>
+#include <node/witness/witness_objects.hpp>
 
-#include <eznode/chain/comment_object.hpp>
+#include <node/chain/comment_object.hpp>
 
-namespace eznode { namespace witness {
+namespace node { namespace witness {
 
 void enable_content_editing_evaluator::do_apply( const enable_content_editing_operation& o )
 {
@@ -30,4 +30,4 @@ void enable_content_editing_evaluator::do_apply( const enable_content_editing_op
    FC_CAPTURE_AND_RETHROW( (o) )
 }
 
-} } // eznode::witness
+} } // node::witness

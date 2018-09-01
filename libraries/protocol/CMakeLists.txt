@@ -1,14 +1,14 @@
-file(GLOB HEADERS "include/eznode/protocol/*.hpp")
+file(GLOB HEADERS "include/node/protocol/*.hpp")
 
 ## SORT .cpp by most likely to change / break compile
-add_library( eznode_protocol
+add_library( node_protocol
 
              types.cpp
              authority.cpp
              operations.cpp
              sign_state.cpp
              operation_util_impl.cpp
-             eznode_operations.cpp
+             node_operations.cpp
              transaction.cpp
              block.cpp
              asset.cpp
@@ -18,16 +18,16 @@ add_library( eznode_protocol
              ${HEADERS}
            )
 
-target_link_libraries( eznode_protocol fc )
-target_include_directories( eznode_protocol
+target_link_libraries( node_protocol fc )
+target_include_directories( node_protocol
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
 INSTALL( TARGETS
-   eznode_protocol
+   node_protocol
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 )
 
-INSTALL( FILES ${HEADERS} DESTINATION "include/eznode/protocol" )
+INSTALL( FILES ${HEADERS} DESTINATION "include/node/protocol" )

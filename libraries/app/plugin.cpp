@@ -22,11 +22,11 @@
  * THE SOFTWARE.
  */
 
-#include <eznode/app/plugin.hpp>
+#include <node/app/plugin.hpp>
 
 #include <fc/vector.hpp>
 
-namespace eznode { namespace app {
+namespace node { namespace app {
 
 plugin::plugin( application* app ) : _app( app )
 {
@@ -66,4 +66,4 @@ void plugin::plugin_set_program_options(
    return;
 }
 
-} } // eznode::app
+} } // node::app

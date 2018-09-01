@@ -1,1 +1,1 @@
-docker build -t lopudesigns/eznode-test .
+docker build -t lopudesigns/node-test .

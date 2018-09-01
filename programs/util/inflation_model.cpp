@@ -1,7 +1,7 @@
 
-#include <eznode/chain/compound.hpp>
-#include <eznode/protocol/asset.hpp>
-#include <eznode/protocol/types.hpp>
+#include <node/chain/compound.hpp>
+#include <node/protocol/asset.hpp>
+#include <node/protocol/types.hpp>
 
 #include <fc/io/json.hpp>
 #include <fc/variant_object.hpp>
@@ -21,11 +21,11 @@
 #define VPOW_OFF        9
 #define REWARD_TYPES   10
 
-using eznode::protocol::asset;
-using eznode::protocol::share_type;
-using eznode::protocol::calc_percent_reward_per_block;
-using eznode::protocol::calc_percent_reward_per_round;
-using eznode::protocol::calc_percent_reward_per_hour;
+using node::protocol::asset;
+using node::protocol::share_type;
+using node::protocol::calc_percent_reward_per_block;
+using node::protocol::calc_percent_reward_per_round;
+using node::protocol::calc_percent_reward_per_hour;
 
 /*
 Explanation of output

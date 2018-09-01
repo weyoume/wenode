@@ -1,15 +1,15 @@
-#include <eznode/account_by_key/account_by_key_plugin.hpp>
-#include <eznode/account_by_key/account_by_key_objects.hpp>
+#include <node/account_by_key/account_by_key_plugin.hpp>
+#include <node/account_by_key/account_by_key_objects.hpp>
 
-#include <eznode/chain/account_object.hpp>
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/index.hpp>
-#include <eznode/chain/operation_notification.hpp>
+#include <node/chain/account_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/index.hpp>
+#include <node/chain/operation_notification.hpp>
 
 #include <graphene/schema/schema.hpp>
 #include <graphene/schema/schema_impl.hpp>
 
-namespace eznode { namespace account_by_key {
+namespace node { namespace account_by_key {
 
 namespace detail
 {
@@ -19,7 +19,7 @@ class account_by_key_plugin_impl
    public:
       account_by_key_plugin_impl( account_by_key_plugin& _plugin ) : _self( _plugin ) {}
 
-      eznode::chain::database& database()
+      node::chain::database& database()
       {
          return _self.database();
       }
@@ -241,7 +241,7 @@ void account_by_key_plugin_impl::post_operation( const operation_notification& n
 
 } // detail
 
-account_by_key_plugin::account_by_key_plugin( eznode::app::application* app )
+account_by_key_plugin::account_by_key_plugin( node::app::application* app )
    : plugin( app ), my( new detail::account_by_key_plugin_impl( *this ) ) {}
 
 void account_by_key_plugin::plugin_set_program_options(
@@ -269,6 +269,6 @@ void account_by_key_plugin::plugin_startup()
    app().register_api_factory< account_by_key_api >( "account_by_key_api" );
 }
 
-} } // eznode::account_by_key
+} } // node::account_by_key
 
-DEFINE_PLUGIN( account_by_key, eznode::account_by_key::account_by_key_plugin )
+DEFINE_PLUGIN( account_by_key, node::account_by_key::account_by_key_plugin )

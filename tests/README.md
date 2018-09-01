@@ -27,8 +27,8 @@ Then, inside the container:
 (These steps are taken from `/Dockerfile.test` in the
 repository root.)
 
-    git clone https://github.com/eziranetwork/ezira.git /usr/local/src/eznode
-    cd /usr/local/src/eznode
+    git clone https://github.com/eziranetwork/ezira.git /usr/local/src/node
+    cd /usr/local/src/node
     git checkout <branch> # e.g. 123-feature
     git submodule update --init --recursive
     mkdir build
@@ -41,6 +41,6 @@ repository root.)
         ..
     make -j$(nproc) chain_test
     ./tests/chain_test
-    cd /usr/local/src/eznode
+    cd /usr/local/src/node
     doxygen
     programs/build_helpers/check_reflect.py

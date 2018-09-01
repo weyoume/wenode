@@ -1,8 +1,8 @@
 
-#include <eznode/app/application.hpp>
-#include <eznode/app/plugin.hpp>
-#include <eznode/plugins/debug_node/debug_node_api.hpp>
-#include <eznode/plugins/debug_node/debug_node_plugin.hpp>
+#include <node/app/application.hpp>
+#include <node/app/plugin.hpp>
+#include <node/plugins/debug_node/debug_node_api.hpp>
+#include <node/plugins/debug_node/debug_node_plugin.hpp>
 
 #include <fc/io/buffered_iostream.hpp>
 #include <fc/io/fstream.hpp>
@@ -17,7 +17,7 @@
 #include <sstream>
 #include <string>
 
-namespace eznode { namespace plugin { namespace debug_node {
+namespace node { namespace plugin { namespace debug_node {
 
 namespace detail {
 class debug_node_plugin_impl
@@ -281,7 +281,7 @@ uint32_t debug_node_plugin::debug_generate_blocks(
       return 0;
 
    fc::optional<fc::ecc::private_key> debug_private_key;
-   eznode::chain::public_key_type debug_public_key;
+   node::chain::public_key_type debug_public_key;
    if( debug_key != "" )
    {
       debug_private_key = graphene::utilities::wif_to_key( debug_key );
@@ -289,7 +289,7 @@ uint32_t debug_node_plugin::debug_generate_blocks(
       debug_public_key = debug_private_key->get_public_key();
    }
 
-   eznode::chain::database& db = database();
+   node::chain::database& db = database();
    uint32_t slot = miss_blocks+1, produced = 0;
    while( produced < count )
    {
@@ -297,7 +297,7 @@ uint32_t debug_node_plugin::debug_generate_blocks(
       std::string scheduled_witness_name = db.get_scheduled_witness( slot );
       fc::time_point_sec scheduled_time = db.get_slot_time( slot );
       const chain::witness_object& scheduled_witness = db.get_witness( scheduled_witness_name );
-      eznode::chain::public_key_type scheduled_key = scheduled_witness.signing_key;
+      node::chain::public_key_type scheduled_key = scheduled_witness.signing_key;
       if( debug_key != "" )
       {
          if( logging ) wlog( "scheduled key is: ${sk}   dbg key is: ${dk}", ("sk", scheduled_key)("dk", debug_public_key) );
@@ -341,7 +341,7 @@ uint32_t debug_node_plugin::debug_generate_blocks_until(
    private_key_storage* key_storage
 )
 {
-   eznode::chain::database& db = database();
+   node::chain::database& db = database();
 
    if( db.head_block_time() >= head_block_time )
       return 0;
@@ -439,4 +439,4 @@ void debug_node_plugin::plugin_shutdown()
 
 } } }
 
-DEFINE_PLUGIN( debug_node, eznode::plugin::debug_node::debug_node_plugin )
+DEFINE_PLUGIN( debug_node, node::plugin::debug_node::debug_node_plugin )

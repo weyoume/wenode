@@ -1,11 +1,11 @@
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/witness_objects.hpp>
-#include <eznode/chain/witness_schedule.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/witness_objects.hpp>
+#include <node/chain/witness_schedule.hpp>
 
-#include <eznode/protocol/config.hpp>
+#include <node/protocol/config.hpp>
 
-namespace eznode { namespace chain {
+namespace node { namespace chain {
 
 void reset_virtual_schedule_time( database& db )
 {

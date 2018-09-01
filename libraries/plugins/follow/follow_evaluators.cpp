@@ -1,10 +1,10 @@
-#include <eznode/follow/follow_operations.hpp>
-#include <eznode/follow/follow_objects.hpp>
+#include <node/follow/follow_operations.hpp>
+#include <node/follow/follow_objects.hpp>
 
-#include <eznode/chain/account_object.hpp>
-#include <eznode/chain/comment_object.hpp>
+#include <node/chain/account_object.hpp>
+#include <node/chain/comment_object.hpp>
 
-namespace eznode { namespace follow {
+namespace node { namespace follow {
 
 void follow_evaluator::do_apply( const follow_operation& o )
 {
@@ -221,4 +221,4 @@ void reblog_evaluator::do_apply( const reblog_operation& o )
    FC_CAPTURE_AND_RETHROW( (o) )
 }
 
-} } // eznode::follow
+} } // node::follow

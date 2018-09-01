@@ -1,8 +1,8 @@
-#include <eznode/protocol/operations.hpp>
+#include <node/protocol/operations.hpp>
 
-#include <eznode/protocol/operation_util_impl.hpp>
+#include <node/protocol/operation_util_impl.hpp>
 
-namespace eznode { namespace protocol {
+namespace node { namespace protocol {
 
 struct is_market_op_visitor {
    typedef bool result_type;
@@ -32,6 +32,6 @@ bool is_virtual_operation( const operation& op )
    return op.visit( is_vop_visitor() );
 }
 
-} } // eznode::protocol
+} } // node::protocol
 
-DEFINE_OPERATION_TYPE( eznode::protocol::operation )
+DEFINE_OPERATION_TYPE( node::protocol::operation )

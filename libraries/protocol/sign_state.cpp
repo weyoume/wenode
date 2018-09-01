@@ -1,7 +1,7 @@
 
-#include <eznode/protocol/sign_state.hpp>
+#include <node/protocol/sign_state.hpp>
 
-namespace eznode { namespace protocol {
+namespace node { namespace protocol {
 
 bool sign_state::signed_by( const public_key_type& k )
 {
@@ -82,4 +82,4 @@ sign_state::sign_state(
    approved_by.insert( "temp"  );
 }
 
-} } // eznode::protocol
+} } // node::protocol

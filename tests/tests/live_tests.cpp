@@ -1,10 +1,10 @@
 #include <boost/test/unit_test.hpp>
 
-#include <eznode/protocol/exceptions.hpp>
+#include <node/protocol/exceptions.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/hardfork.hpp>
-#include <eznode/chain/eznode_objects.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/hardfork.hpp>
+#include <node/chain/node_objects.hpp>
 
 #include <fc/crypto/digest.hpp>
 
@@ -12,9 +12,9 @@
 
 #include <iostream>
 
-using namespace eznode;
-using namespace eznode::chain;
-using namespace eznode::protocol;
+using namespace node;
+using namespace node::chain;
+using namespace node::protocol;
 
 #ifndef IS_TEST_NET
 

@@ -1,8 +1,8 @@
-#include <eznode/follow/follow_operations.hpp>
+#include <node/follow/follow_operations.hpp>
 
-#include <eznode/protocol/operation_util_impl.hpp>
+#include <node/protocol/operation_util_impl.hpp>
 
-namespace eznode { namespace follow {
+namespace node { namespace follow {
 
 void follow_operation::validate()const
 {
@@ -14,6 +14,6 @@ void reblog_operation::validate()const
    FC_ASSERT( account != author, "You cannot reblog your own content" );
 }
 
-} } //eznode::follow
+} } //node::follow
 
-DEFINE_OPERATION_TYPE( eznode::follow::follow_plugin_operation )
+DEFINE_OPERATION_TYPE( node::follow::follow_plugin_operation )

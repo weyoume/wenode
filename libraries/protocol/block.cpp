@@ -1,9 +1,9 @@
-#include <eznode/protocol/block.hpp>
+#include <node/protocol/block.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/bitutil.hpp>
 #include <algorithm>
 
-namespace eznode { namespace protocol {
+namespace node { namespace protocol {
    digest_type block_header::digest()const
    {
       return digest_type::hash(*this);
@@ -66,4 +66,4 @@ namespace eznode { namespace protocol {
       return checksum_type::hash( ids[0] );
    }
 
-} } // eznode::protocol
+} } // node::protocol

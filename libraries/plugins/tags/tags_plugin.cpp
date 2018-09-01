@@ -1,15 +1,15 @@
-#include <eznode/tags/tags_plugin.hpp>
+#include <node/tags/tags_plugin.hpp>
 
-#include <eznode/app/impacted.hpp>
+#include <node/app/impacted.hpp>
 
-#include <eznode/protocol/config.hpp>
+#include <node/protocol/config.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/hardfork.hpp>
-#include <eznode/chain/index.hpp>
-#include <eznode/chain/operation_notification.hpp>
-#include <eznode/chain/account_object.hpp>
-#include <eznode/chain/comment_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/hardfork.hpp>
+#include <node/chain/index.hpp>
+#include <node/chain/operation_notification.hpp>
+#include <node/chain/account_object.hpp>
+#include <node/chain/comment_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
@@ -19,11 +19,11 @@
 #include <boost/range/iterator_range.hpp>
 #include <boost/algorithm/string.hpp>
 
-namespace eznode { namespace tags {
+namespace node { namespace tags {
 
 namespace detail {
 
-using namespace eznode::protocol;
+using namespace node::protocol;
 
 class tags_plugin_impl
 {
@@ -33,7 +33,7 @@ class tags_plugin_impl
       { }
       virtual ~tags_plugin_impl();
 
-      eznode::chain::database& database()
+      node::chain::database& database()
       {
          return _self.database();
       }
@@ -533,6 +533,6 @@ void tags_plugin::plugin_startup()
 {
 }
 
-} } /// eznode::tags
+} } /// node::tags
 
-DEFINE_PLUGIN( tags, eznode::tags::tags_plugin )
+DEFINE_PLUGIN( tags, node::tags::tags_plugin )

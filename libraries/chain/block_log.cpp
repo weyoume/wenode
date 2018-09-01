@@ -1,11 +1,11 @@
-#include <eznode/chain/block_log.hpp>
+#include <node/chain/block_log.hpp>
 #include <fstream>
 #include <fc/io/raw.hpp>
 
 #define LOG_READ  (std::ios::in | std::ios::binary)
 #define LOG_WRITE (std::ios::out | std::ios::binary | std::ios::app)
 
-namespace eznode { namespace chain {
+namespace node { namespace chain {
 
    namespace detail {
       class block_log_impl {
@@ -305,4 +305,4 @@ namespace eznode { namespace chain {
       }
       FC_LOG_AND_RETHROW()
    }
-} } // eznode::chain
+} } // node::chain

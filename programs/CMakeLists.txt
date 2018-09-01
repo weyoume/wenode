@@ -1,6 +1,6 @@
 add_subdirectory( build_helpers )
-add_subdirectory( ezwallet )
-add_subdirectory( eznode )
+add_subdirectory( wallet )
+add_subdirectory( node )
 #add_subdirectory( delayed_node )
 add_subdirectory( js_operation_serializer )
 add_subdirectory( size_checker )

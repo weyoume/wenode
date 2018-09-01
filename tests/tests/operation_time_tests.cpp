@@ -1,17 +1,17 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <eznode/protocol/exceptions.hpp>
+#include <node/protocol/exceptions.hpp>
 
-#include <eznode/chain/block_summary_object.hpp>
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/hardfork.hpp>
-#include <eznode/chain/history_object.hpp>
-#include <eznode/chain/eznode_objects.hpp>
+#include <node/chain/block_summary_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/hardfork.hpp>
+#include <node/chain/history_object.hpp>
+#include <node/chain/node_objects.hpp>
 
-#include <eznode/chain/util/reward.hpp>
+#include <node/chain/util/reward.hpp>
 
-#include <eznode/plugins/debug_node/debug_node_plugin.hpp>
+#include <node/plugins/debug_node/debug_node_plugin.hpp>
 
 #include <fc/crypto/digest.hpp>
 
@@ -19,9 +19,9 @@
 
 #include <cmath>
 
-using namespace eznode;
-using namespace eznode::chain;
-using namespace eznode::protocol;
+using namespace node;
+using namespace node::chain;
+using namespace node::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( operation_time_tests, clean_database_fixture )
 
@@ -1571,7 +1571,7 @@ BOOST_AUTO_TEST_CASE( convert_delay )
    FC_LOG_AND_RETHROW();
 }
 
-BOOST_AUTO_TEST_CASE( eznode_inflation )
+BOOST_AUTO_TEST_CASE( node_inflation )
 {
    try
    {
@@ -2668,7 +2668,7 @@ BOOST_AUTO_TEST_CASE( EUSD_stability )
       resize_shared_mem( 1024 * 1024 * 512 ); // Due to number of blocks in the test, it requires a large file. (64 MB)
 
       // Using the debug node plugin to manually set account balances to create required market conditions for this test
-      auto db_plugin = app.register_plugin< eznode::plugin::debug_node::debug_node_plugin >();
+      auto db_plugin = app.register_plugin< node::plugin::debug_node::debug_node_plugin >();
       boost::program_options::variables_map options;
       db_plugin->logging = false;
       db_plugin->plugin_initialize( options );

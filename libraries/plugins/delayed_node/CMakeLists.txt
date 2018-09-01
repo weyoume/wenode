@@ -1,11 +1,11 @@
-file(GLOB HEADERS "include/eznode/delayed_node/*.hpp")
+file(GLOB HEADERS "include/node/delayed_node/*.hpp")
 
-add_library( eznode_delayed_node
+add_library( node_delayed_node
              delayed_node_plugin.cpp
            )
 
-target_link_libraries( eznode_delayed_node eznode_chain eznode_protocol eznode_app )
-target_include_directories( eznode_delayed_node
+target_link_libraries( node_delayed_node node_chain node_protocol node_app )
+target_include_directories( node_delayed_node
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 if(MSVC)
@@ -13,7 +13,7 @@ if(MSVC)
 endif(MSVC)
 
 install( TARGETS
-   eznode_delayed_node
+   node_delayed_node
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib

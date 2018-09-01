@@ -1,8 +1,8 @@
-#include <eznode/chain/account_object.hpp>
+#include <node/chain/account_object.hpp>
 
-#include <eznode/follow/follow_api.hpp>
+#include <node/follow/follow_api.hpp>
 
-namespace eznode { namespace follow {
+namespace node { namespace follow {
 
 namespace detail
 {
@@ -18,7 +18,7 @@ inline void set_what( vector< follow_type >& what, uint16_t bitmask )
 class follow_api_impl
 {
    public:
-      follow_api_impl( eznode::app::application& _app )
+      follow_api_impl( node::app::application& _app )
          :app(_app) {}
 
       vector< follow_api_obj > get_followers( string following, string start_follower, follow_type type, uint16_t limit )const;
@@ -34,7 +34,7 @@ class follow_api_impl
 
       vector< account_reputation > get_account_reputations( string lower_bound_name, uint32_t limit )const;
 
-      eznode::app::application& app;
+      node::app::application& app;
 };
 
 vector< follow_api_obj > follow_api_impl::get_followers( string following, string start_follower, follow_type type, uint16_t limit )const
@@ -268,7 +268,7 @@ vector< account_reputation > follow_api_impl::get_account_reputations( string lo
 
 } // detail
 
-follow_api::follow_api( const eznode::app::api_context& ctx )
+follow_api::follow_api( const node::app::api_context& ctx )
 {
    my = std::make_shared< detail::follow_api_impl >( ctx.app );
 }
@@ -367,4 +367,4 @@ vector< pair< account_name_type, uint32_t > > follow_api::get_blog_authors( cons
   }); 
 }
 
-} } // eznode::follow
+} } // node::follow

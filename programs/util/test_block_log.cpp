@@ -1,13 +1,13 @@
-#include <eznode/chain/database.hpp>
-#include <eznode/protocol/block.hpp>
+#include <node/chain/database.hpp>
+#include <node/protocol/block.hpp>
 #include <fc/io/raw.hpp>
 
 int main( int argc, char** argv, char** envp )
 {
    try
    {
-      //eznode::chain::database db;
-      eznode::chain::block_log log;
+      //node::chain::database db;
+      node::chain::block_log log;
 
       fc::temp_directory temp_dir( "." );
 
@@ -16,9 +16,9 @@ int main( int argc, char** argv, char** envp )
 
       idump( (log.head() ) );
 
-      eznode::protocol::signed_block b1;
+      node::protocol::signed_block b1;
       b1.witness = "alice";
-      b1.previous = eznode::protocol::block_id_type();
+      b1.previous = node::protocol::block_id_type();
 
       log.append( b1 );
       log.flush();
@@ -26,7 +26,7 @@ int main( int argc, char** argv, char** envp )
       idump( ( log.head() ) );
       idump( (fc::raw::pack_size(b1)) );
 
-      eznode::protocol::signed_block b2;
+      node::protocol::signed_block b2;
       b2.witness = "bob";
       b2.previous = b1.id();
 

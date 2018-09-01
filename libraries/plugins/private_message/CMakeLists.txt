@@ -1,15 +1,15 @@
-file(GLOB HEADERS "include/eznode/private_message/*.hpp")
+file(GLOB HEADERS "include/node/private_message/*.hpp")
 
-add_library( eznode_private_message
+add_library( node_private_message
              private_message_plugin.cpp
            )
 
-target_link_libraries( eznode_private_message eznode_chain eznode_protocol eznode_app )
-target_include_directories( eznode_private_message
+target_link_libraries( node_private_message node_chain node_protocol node_app )
+target_include_directories( node_private_message
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 install( TARGETS
-   eznode_private_message
+   node_private_message
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib
