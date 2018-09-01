@@ -1,8 +1,8 @@
 
-#include <eznode/chain/util/reward.hpp>
-#include <eznode/chain/util/uint256.hpp>
+#include <node/chain/util/reward.hpp>
+#include <node/chain/util/uint256.hpp>
 
-namespace eznode { namespace chain { namespace util {
+namespace node { namespace chain { namespace util {
 
 uint8_t find_msb( const uint128_t& u )
 {
@@ -94,4 +94,4 @@ uint128_t evaluate_reward_curve( const uint128_t& ESCORreward, const curve_id& c
    return result;
 }
 
-} } } // eznode::chain::util
+} } } // node::chain::util

@@ -1,30 +1,30 @@
-file(GLOB HEADERS "include/eznode/chain/*.hpp" "include/eznode/chain/util/*.hpp")
+file(GLOB HEADERS "include/node/chain/*.hpp" "include/node/chain/util/*.hpp")
 
 if( MSVC )
-   set( hardfork_hpp_file "${CMAKE_CURRENT_SOURCE_DIR}/include/eznode/chain/hardfork.hpp" )
+   set( hardfork_hpp_file "${CMAKE_CURRENT_SOURCE_DIR}/include/node/chain/hardfork.hpp" )
    add_custom_target( build_hardfork_hpp
       COMMAND cat-parts "${CMAKE_CURRENT_SOURCE_DIR}/hardfork.d" ${hardfork_hpp_file} )
    add_dependencies( build_hardfork_hpp cat-parts )
 else( MSVC )
-   set( hardfork_hpp_file "${CMAKE_CURRENT_BINARY_DIR}/include/eznode/chain/hardfork.hpp" )
+   set( hardfork_hpp_file "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/hardfork.hpp" )
    add_custom_target( build_hardfork_hpp
       COMMAND "${CMAKE_SOURCE_DIR}/programs/build_helpers/cat_parts.py" "${CMAKE_CURRENT_SOURCE_DIR}/hardfork.d" ${hardfork_hpp_file} )
 endif( MSVC )
 
 
-set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/eznode/chain/hardfork.hpp" PROPERTIES GENERATED TRUE )
+set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/hardfork.hpp" PROPERTIES GENERATED TRUE )
 
 ## SORT .cpp by most likely to change / break compile
-add_library( eznode_chain
+add_library( node_chain
 
              # As database takes the longest to compile, start it first
              database.cpp
              fork_database.cpp
              witness_schedule.cpp
 
-             eznode_evaluator.cpp
+             node_evaluator.cpp
 
-             eznode_objects.cpp
+             node_objects.cpp
              shared_authority.cpp
              block_log.cpp
 
@@ -32,12 +32,12 @@ add_library( eznode_chain
 
              ${HEADERS}
              ${hardfork_hpp_file}
-             "${CMAKE_CURRENT_BINARY_DIR}/include/eznode/chain/hardfork.hpp"
+             "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/hardfork.hpp"
            )
 
-add_dependencies( eznode_chain eznode_protocol build_hardfork_hpp )
-target_link_libraries( eznode_chain eznode_protocol fc chainbase graphene_schema ${PATCH_MERGE_LIB} )
-target_include_directories( eznode_chain
+add_dependencies( node_chain node_protocol build_hardfork_hpp )
+target_link_libraries( node_chain node_protocol fc chainbase graphene_schema ${PATCH_MERGE_LIB} )
+target_include_directories( node_chain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
 if(MSVC)
@@ -45,10 +45,10 @@ if(MSVC)
 endif(MSVC)
 
 INSTALL( TARGETS
-   eznode_chain
+   node_chain
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 )
-INSTALL( FILES ${HEADERS} DESTINATION "include/eznode/chain" )
+INSTALL( FILES ${HEADERS} DESTINATION "include/node/chain" )

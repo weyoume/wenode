@@ -24,7 +24,7 @@
 #pragma once
 
 #include <graphene/net/config.hpp>
-#include <eznode/protocol/block.hpp>
+#include <node/protocol/block.hpp>
 
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/crypto/elliptic.hpp>
@@ -40,10 +40,10 @@
 #include <vector>
 
 namespace graphene { namespace net {
-  using eznode::protocol::signed_transaction;
-  using eznode::protocol::block_id_type;
-  using eznode::protocol::transaction_id_type;
-  using eznode::protocol::signed_block;
+  using node::protocol::signed_transaction;
+  using node::protocol::block_id_type;
+  using node::protocol::transaction_id_type;
+  using node::protocol::signed_block;
 
   typedef fc::ecc::public_key_data node_id_t;
   typedef fc::ripemd160 item_hash_t;

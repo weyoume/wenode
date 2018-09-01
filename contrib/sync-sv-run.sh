@@ -1,24 +1,24 @@
 #!/bin/bash
 
-VERSION=`cat /etc/eznodeversion`
+VERSION=`cat /etc/nodeversion`
 
 # if the writer node dies by itself, kill runsv causing the container to exit
 PID=`pgrep -f p2p-endpoint`
 if [[ ! $? -eq 0 ]]; then
-  echo NOTIFYALERT! eznodesync has quit unexpectedly, checking for coredump and then starting a new instance..
+  echo NOTIFYALERT! nodesync has quit unexpectedly, checking for coredump and then starting a new instance..
   sleep 30
-  SAVED_PID=`cat /tmp/eznodepid`
+  SAVED_PID=`cat /tmp/nodepid`
   if [[ -e /tmp/core.$SAVED_PID ]]; then
-    gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" /usr/local/eznode/bin/eznode /tmp/core.$SAVED_PID >> /tmp/stacktrace
+    gdb --batch --quiet -ex "thread apply all bt full" -ex "quit" /usr/local/node/bin/node /tmp/core.$SAVED_PID >> /tmp/stacktrace
     STACKTRACE=`cat /tmp/stacktrace`
-    echo NOTIFYALERT! eznodesync stacktrace from coredump:
+    echo NOTIFYALERT! nodesync stacktrace from coredump:
     for ((i=0;i<${#STACKTRACE};i+=120)); do
       echo "${STACKTRACE:i:120}"
     done
     CORE_FILE_NAME=coredump-`date '+%Y%m%d-%H%M%S'`.$SAVED_PID
     aws s3 cp /tmp/core.$SAVED_PID s3://$S3_BUCKET/$CORE_FILE_NAME
   fi
-  RUN_SV_PID=`pgrep -f /etc/service/eznode`
+  RUN_SV_PID=`pgrep -f /etc/service/node`
   kill -9 $RUN_SV_PID
 fi
 
@@ -40,18 +40,18 @@ if [[ ! -z "$BLOCKCHAIN_TIME" ]]; then
   if [[ ${BLOCK_AGE} -le 10 ]]; then
     PID=`pgrep -f p2p-endpoint`
     kill -SIGINT $PID
-    echo eznodesync: waiting for eznode to exit cleanly
+    echo nodesync: waiting for node to exit cleanly
     while [ -e /proc/$PID ]; do sleep 0.1; done
-    echo eznodesync: starting a new blockchainstate upload operation
+    echo nodesync: starting a new blockchainstate upload operation
     cd ${COMPRESSPATH:-$HOME}
-    echo eznodesync: compressing blockchainstate...
+    echo nodesync: compressing blockchainstate...
     if [[ "$USE_RAMDISK" ]]; then
       tar vcf blockchain.tar.lz4 --use-compress-prog=lz4 -C $HOME blockchain -C /mnt/ramdisk blockchain
     else
       tar cf blockchain.tar.lz4 --use-compress-prog=lz4 -C $HOME blockchain
     fi
     if [[ ! $? -eq 0 ]]; then
-      echo NOTIFYALERT! eznodesync was unable to compress shared memory file, check the logs.
+      echo NOTIFYALERT! nodesync was unable to compress shared memory file, check the logs.
       exit 1
     fi
     if [[ "$IS_BROADCAST_NODE" ]]; then
@@ -61,13 +61,13 @@ if [[ ! -z "$BLOCKCHAIN_TIME" ]]; then
     else
       FILE_NAME=blockchain-$VERSION-`date '+%Y%m%d-%H%M%S'`.tar.lz4
     fi
-    echo eznodesync: uploading $FILE_NAME to $S3_BUCKET
+    echo nodesync: uploading $FILE_NAME to $S3_BUCKET
     aws s3 cp blockchain.tar.lz4 s3://$S3_BUCKET/$FILE_NAME
     if [[ ! $? -eq 0 ]]; then
-    	echo NOTIFYALERT! eznodesync was unable to upload $FILE_NAME to s3://$S3_BUCKET
+    	echo NOTIFYALERT! nodesync was unable to upload $FILE_NAME to s3://$S3_BUCKET
     	exit 1
     fi
-    echo eznodesync: replacing current version of blockchain state with $FILE_NAME
+    echo nodesync: replacing current version of blockchain state with $FILE_NAME
     if [[ "$IS_BROADCAST_NODE" ]]; then
       aws s3 cp s3://$S3_BUCKET/$FILE_NAME s3://$S3_BUCKET/broadcast-$VERSION-latest.tar.lz4
       aws s3api put-object-acl --bucket $S3_BUCKET --key broadcast-$VERSION-latest.tar.lz4 --acl public-read
@@ -79,7 +79,7 @@ if [[ ! -z "$BLOCKCHAIN_TIME" ]]; then
       aws s3api put-object-acl --bucket $S3_BUCKET --key blockchain-$VERSION-latest.tar.lz4 --acl public-read
     fi
     if [[ ! $? -eq 0 ]]; then
-    	echo NOTIFYALERT! eznodesync was unable to overwrite the current blockchainstate with $FILE_NAME
+    	echo NOTIFYALERT! nodesync was unable to overwrite the current blockchainstate with $FILE_NAME
     	exit 1
     fi
     # upload a current block_log
@@ -90,11 +90,11 @@ if [[ ! -z "$BLOCKCHAIN_TIME" ]]; then
       aws s3api put-object-acl --bucket $S3_BUCKET --key block_log-latest --acl public-read
     fi
     # kill the container starting the process over again
-    echo eznodesync: stopping the container after a sync operation
+    echo nodesync: stopping the container after a sync operation
     if [[ -e /tmp/isnewsync ]]; then
-      echo notifyeznodesync: eznodesync: successfully generated and uploaded new blockchain-$VERSION-latest.tar.lz4 to s3://$S3_BUCKET
+      echo notifynodesync: nodesync: successfully generated and uploaded new blockchain-$VERSION-latest.tar.lz4 to s3://$S3_BUCKET
     fi
-    RUN_SV_PID=`pgrep -f /etc/service/eznode`
+    RUN_SV_PID=`pgrep -f /etc/service/node`
     kill -9 $RUN_SV_PID
   fi
 fi

@@ -1,18 +1,18 @@
-file(GLOB HEADERS "include/eznode/follow/*.hpp")
+file(GLOB HEADERS "include/node/follow/*.hpp")
 
-add_library( eznode_follow
+add_library( node_follow
              follow_plugin.cpp
              follow_api.cpp
              follow_operations.cpp
              follow_evaluators.cpp
            )
 
-target_link_libraries( eznode_follow eznode_chain eznode_protocol eznode_app )
-target_include_directories( eznode_follow
+target_link_libraries( node_follow node_chain node_protocol node_app )
+target_include_directories( node_follow
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 install( TARGETS
-   eznode_follow
+   node_follow
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib

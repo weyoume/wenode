@@ -22,9 +22,9 @@ This is not the place to make suggestions for product improvement (please see th
 
 Please do a keyword search to see if there is already an existing issue before opening a new one.
 
-## Ezira.io vs. Ezira Blockchain
+## Ezira.io vs. WeYouMe blockchain
 
-This issue tracker is only intended to track issues for the Ezira blockchain. If the issue is with the Ezira.io website, please open an issue in the [Ezira.io Repository](https://github.com/eziranetwork/ezapp/).
+This issue tracker is only intended to track issues for the WeYouMe blockchain. If the issue is with the Ezira.io website, please open an issue in the [Ezira.io Repository](https://github.com/eziranetwork/weapp/).
 
 ## Pull Requests
 

@@ -38,7 +38,7 @@ generates a historgram of block producers to verify the witness scheduling algor
 properly. The purpose of the script is it verify any given hardfork does not have a bug that
 could crash the chain entirely.
 
-[debugnode.py](https://github.com/eziranetwork/ezira/python_scripts/eznodedebugnode/eznodedebugnode.py#L212)
+[debugnode.py](https://github.com/eziranetwork/ezira/python_scripts/nodedebugnode/nodedebugnode.py#L212)
 This script is much simpler. It has the same parsing logic, but has much less test logic.
 All it does is replay the blockchain, periodically printing a status update so the user
 knows it is still working. The script then hangs so the user can interact with the chain
@@ -47,7 +47,7 @@ through RPC calls or the CLI Wallet.
 What is the important part of these scripts?
 
 ``` Python
-debug_node = DebugNode( str( eznode ), str( data_dir ) )
+debug_node = DebugNode( str( node ), str( data_dir ) )
 with debug_node:
    # Do stuff with blockchain
 ```
@@ -58,8 +58,8 @@ and establishes the internal rpc connection. The script can then do whatever it 
 When the `with` block ends, the node automatically shutsdown and cleans up. The node uses
 a system standard temp directory through the standard Python TemporaryDirectory as the
 working data directory for the running node. The only work your script needs to do is
-specify the eznode binary location and a populated data directory. For most configurations
-this will be `programs/eznode/eznode` and `witness_node_data_dir` respectively, from the
+specify the node binary location and a populated data directory. For most configurations
+this will be `programs/node/node` and `witness_node_data_dir` respectively, from the
 git root directory for Ezira.
 
 TODO/ Long Term Goals

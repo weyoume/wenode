@@ -1,26 +1,26 @@
-#include <eznode/protocol/eznode_operations.hpp>
+#include <node/protocol/node_operations.hpp>
 
-#include <eznode/chain/block_summary_object.hpp>
-#include <eznode/chain/compound.hpp>
-#include <eznode/chain/custom_operation_interpreter.hpp>
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/database_exceptions.hpp>
-#include <eznode/chain/db_with.hpp>
-#include <eznode/chain/evaluator_registry.hpp>
-#include <eznode/chain/global_property_object.hpp>
-#include <eznode/chain/history_object.hpp>
-#include <eznode/chain/index.hpp>
-#include <eznode/chain/eznode_evaluator.hpp>
-#include <eznode/chain/eznode_objects.hpp>
-#include <eznode/chain/transaction_object.hpp>
-#include <eznode/chain/shared_db_merkle.hpp>
-#include <eznode/chain/operation_notification.hpp>
-#include <eznode/chain/witness_schedule.hpp>
+#include <node/chain/block_summary_object.hpp>
+#include <node/chain/compound.hpp>
+#include <node/chain/custom_operation_interpreter.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/database_exceptions.hpp>
+#include <node/chain/db_with.hpp>
+#include <node/chain/evaluator_registry.hpp>
+#include <node/chain/global_property_object.hpp>
+#include <node/chain/history_object.hpp>
+#include <node/chain/index.hpp>
+#include <node/chain/node_evaluator.hpp>
+#include <node/chain/node_objects.hpp>
+#include <node/chain/transaction_object.hpp>
+#include <node/chain/shared_db_merkle.hpp>
+#include <node/chain/operation_notification.hpp>
+#include <node/chain/witness_schedule.hpp>
 
-#include <eznode/chain/util/asset.hpp>
-#include <eznode/chain/util/reward.hpp>
-#include <eznode/chain/util/uint256.hpp>
-#include <eznode/chain/util/reward.hpp>
+#include <node/chain/util/asset.hpp>
+#include <node/chain/util/reward.hpp>
+#include <node/chain/util/uint256.hpp>
+#include <node/chain/util/reward.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/uint128.hpp>
@@ -34,7 +34,7 @@
 #include <fstream>
 #include <functional>
 
-namespace eznode { namespace chain {
+namespace node { namespace chain {
 
 //namespace db2 = graphene::db2;
 
@@ -60,11 +60,11 @@ struct db_schema
 
 } }
 
-FC_REFLECT( eznode::chain::object_schema_repr, (space_type)(type) )
-FC_REFLECT( eznode::chain::operation_schema_repr, (id)(type) )
-FC_REFLECT( eznode::chain::db_schema, (types)(object_types)(operation_type)(custom_operation_types) )
+FC_REFLECT( node::chain::object_schema_repr, (space_type)(type) )
+FC_REFLECT( node::chain::operation_schema_repr, (id)(type) )
+FC_REFLECT( node::chain::db_schema, (types)(object_types)(operation_type)(custom_operation_types) )
 
-namespace eznode { namespace chain {
+namespace node { namespace chain {
 
 using boost::container::flat_set;
 

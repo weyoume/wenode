@@ -1,20 +1,20 @@
-#include <eznode/blockchain_statistics/blockchain_statistics_api.hpp>
+#include <node/blockchain_statistics/blockchain_statistics_api.hpp>
 
-#include <eznode/app/impacted.hpp>
-#include <eznode/chain/account_object.hpp>
-#include <eznode/chain/comment_object.hpp>
-#include <eznode/chain/history_object.hpp>
+#include <node/app/impacted.hpp>
+#include <node/chain/account_object.hpp>
+#include <node/chain/comment_object.hpp>
+#include <node/chain/history_object.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/index.hpp>
-#include <eznode/chain/operation_notification.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/index.hpp>
+#include <node/chain/operation_notification.hpp>
 
-namespace eznode { namespace blockchain_statistics {
+namespace node { namespace blockchain_statistics {
 
 namespace detail
 {
 
-using namespace eznode::protocol;
+using namespace node::protocol;
 
 class blockchain_statistics_plugin_impl
 {
@@ -468,6 +468,6 @@ uint32_t blockchain_statistics_plugin::get_max_history_per_bucket() const
    return _my->_maximum_history_per_bucket_size;
 }
 
-} } // eznode::blockchain_statistics
+} } // node::blockchain_statistics
 
-DEFINE_PLUGIN( blockchain_statistics, eznode::blockchain_statistics::blockchain_statistics_plugin );
+DEFINE_PLUGIN( blockchain_statistics, node::blockchain_statistics::blockchain_statistics_plugin );

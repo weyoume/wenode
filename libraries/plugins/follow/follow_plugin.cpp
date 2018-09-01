@@ -1,17 +1,17 @@
-#include <eznode/follow/follow_api.hpp>
-#include <eznode/follow/follow_objects.hpp>
-#include <eznode/follow/follow_operations.hpp>
+#include <node/follow/follow_api.hpp>
+#include <node/follow/follow_objects.hpp>
+#include <node/follow/follow_operations.hpp>
 
-#include <eznode/app/impacted.hpp>
+#include <node/app/impacted.hpp>
 
-#include <eznode/protocol/config.hpp>
+#include <node/protocol/config.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/index.hpp>
-#include <eznode/chain/generic_custom_operation_interpreter.hpp>
-#include <eznode/chain/operation_notification.hpp>
-#include <eznode/chain/account_object.hpp>
-#include <eznode/chain/comment_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/index.hpp>
+#include <node/chain/generic_custom_operation_interpreter.hpp>
+#include <node/chain/operation_notification.hpp>
+#include <node/chain/account_object.hpp>
+#include <node/chain/comment_object.hpp>
 
 #include <graphene/schema/schema.hpp>
 #include <graphene/schema/schema_impl.hpp>
@@ -21,12 +21,12 @@
 
 #include <memory>
 
-namespace eznode { namespace follow {
+namespace node { namespace follow {
 
 namespace detail
 {
 
-using namespace eznode::protocol;
+using namespace node::protocol;
 
 class follow_plugin_impl
 {
@@ -35,7 +35,7 @@ class follow_plugin_impl
 
       void plugin_initialize();
 
-      eznode::chain::database& database()
+      node::chain::database& database()
       {
          return _self.database();
       }
@@ -44,13 +44,13 @@ class follow_plugin_impl
       void post_operation( const operation_notification& op_obj );
 
       follow_plugin&                                                                         _self;
-      std::shared_ptr< generic_custom_operation_interpreter< eznode::follow::follow_plugin_operation > > _custom_operation_interpreter;
+      std::shared_ptr< generic_custom_operation_interpreter< node::follow::follow_plugin_operation > > _custom_operation_interpreter;
 };
 
 void follow_plugin_impl::plugin_initialize()
 {
    // Each plugin needs its own evaluator registry.
-   _custom_operation_interpreter = std::make_shared< generic_custom_operation_interpreter< eznode::follow::follow_plugin_operation > >( database() );
+   _custom_operation_interpreter = std::make_shared< generic_custom_operation_interpreter< node::follow::follow_plugin_operation > >( database() );
 
    // Add each operation evaluator to the registry
    _custom_operation_interpreter->register_evaluator<follow_evaluator>( &_self );
@@ -389,8 +389,8 @@ void follow_plugin::plugin_startup()
    app().register_api_factory<follow_api>("follow_api");
 }
 
-} } // eznode::follow
+} } // node::follow
 
-DEFINE_PLUGIN( follow, eznode::follow::follow_plugin )
+DEFINE_PLUGIN( follow, node::follow::follow_plugin )
 
-//DEFINE_OPERATION_TYPE( eznode::follow::follow_plugin_operation )
+//DEFINE_OPERATION_TYPE( node::follow::follow_plugin_operation )

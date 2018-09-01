@@ -23,10 +23,10 @@
  */
 #include <iomanip>
 #include <boost/algorithm/string/join.hpp>
-#include <eznode/wallet/wallet.hpp>
-#include <eznode/wallet/api_documentation.hpp>
+#include <node/wallet/wallet.hpp>
+#include <node/wallet/api_documentation.hpp>
 
-namespace eznode { namespace wallet {
+namespace node { namespace wallet {
    namespace detail {
       namespace
       {
@@ -88,4 +88,4 @@ namespace eznode { namespace wallet {
                 std::inserter(method_descriptions, method_descriptions.end()));
    }
 
-} } // end namespace eznode::wallet
+} } // end namespace node::wallet

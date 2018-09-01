@@ -20,9 +20,9 @@ def main( ):
       print( "This script only works on POSIX systems" )
       return
 
-   parser = ArgumentParser( description='Run a eznode debug node on an existing chain, trigger a hardfork' \
+   parser = ArgumentParser( description='Run a node debug node on an existing chain, trigger a hardfork' \
                               ' and verify hardfork does not break invariants or block production' )
-   parser.add_argument( '--eznode', '-s', type=str, required=True, help='The location of a eznode binary to run the debug node' )
+   parser.add_argument( '--node', '-s', type=str, required=True, help='The location of a node binary to run the debug node' )
    parser.add_argument( '--data-dir', '-d', type=str, required=True, help='The location of an existing data directory. ' + \
                         'The debug node will pull blocks from this directory when replaying the chain. The directory ' + \
                         'will not be changed.' )
@@ -31,19 +31,19 @@ def main( ):
 
    args = parser.parse_args()
 
-   eznode = Path( args.eznode )
-   if( not eznode.exists() ):
-      print( 'Error: eznode does not exist.' )
+   node = Path( args.node )
+   if( not node.exists() ):
+      print( 'Error: node does not exist.' )
       return
 
-   eznode = eznode.resolve()
-   if( not eznode.is_file() ):
-      print( 'Error: eznode is not a file.' )
+   node = node.resolve()
+   if( not node.is_file() ):
+      print( 'Error: node is not a file.' )
       return
 
    data_dir = Path( args.data_dir )
    if( not data_dir.exists() ):
-      print( 'Error: data_dir does not exist or is not a properly constructed eznode data directory' )
+      print( 'Error: data_dir does not exist or is not a properly constructed node data directory' )
 
    data_dir = data_dir.resolve()
    if( not data_dir.is_dir() ):
@@ -51,11 +51,11 @@ def main( ):
 
    signal.signal( signal.SIGINT, sigint_handler )
 
-   debug_node = DebugNode( str( eznode ), str( data_dir ) )
+   debug_node = DebugNode( str( node ), str( data_dir ) )
 
    with debug_node :
 
-      run_eznode_tests( debug_node )
+      run_node_tests( debug_node )
 
       if( args.pause_node ):
          print( "Letting the node hang for manual inspection..." )
@@ -66,7 +66,7 @@ def main( ):
          sleep( 1 )
 
 
-def run_eznode_tests( debug_node ):
+def run_node_tests( debug_node ):
    from steemapi.steemnoderpc import SteemNodeRPC
 
    try:

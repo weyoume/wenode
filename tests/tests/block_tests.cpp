@@ -24,13 +24,13 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <eznode/protocol/exceptions.hpp>
+#include <node/protocol/exceptions.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/eznode_objects.hpp>
-#include <eznode/chain/history_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/node_objects.hpp>
+#include <node/chain/history_object.hpp>
 
-#include <eznode/account_history/account_history_plugin.hpp>
+#include <node/account_history/account_history_plugin.hpp>
 
 #include <graphene/utilities/tempdir.hpp>
 
@@ -38,9 +38,9 @@
 
 #include "../common/database_fixture.hpp"
 
-using namespace eznode;
-using namespace eznode::chain;
-using namespace eznode::protocol;
+using namespace node;
+using namespace node::chain;
+using namespace node::protocol;
 
 #define TEST_SHARED_MEM_SIZE (1024 * 1024 * 8)
 
@@ -715,8 +715,8 @@ BOOST_FIXTURE_TEST_CASE( hardfork_test, database_fixture )
          if( arg == "--show-test-names" )
             std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
       }
-      auto ahplugin = app.register_plugin< eznode::account_history::account_history_plugin >();
-      db_plugin = app.register_plugin< eznode::plugin::debug_node::debug_node_plugin >();
+      auto ahplugin = app.register_plugin< node::account_history::account_history_plugin >();
+      db_plugin = app.register_plugin< node::plugin::debug_node::debug_node_plugin >();
       init_account_pub_key = init_account_priv_key.get_public_key();
 
       boost::program_options::variables_map options;

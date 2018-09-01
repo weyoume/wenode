@@ -24,10 +24,10 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/protocol/protocol.hpp>
+#include <node/chain/database.hpp>
+#include <node/protocol/protocol.hpp>
 
-#include <eznode/protocol/eznode_operations.hpp>
+#include <node/protocol/node_operations.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/hex.hpp>
@@ -36,9 +36,9 @@
 #include <algorithm>
 #include <random>
 
-using namespace eznode;
-using namespace eznode::chain;
-using namespace eznode::protocol;
+using namespace node;
+using namespace node::chain;
+using namespace node::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( basic_tests, clean_database_fixture )
 

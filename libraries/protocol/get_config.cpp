@@ -1,10 +1,10 @@
-#include <eznode/protocol/get_config.hpp>
-#include <eznode/protocol/config.hpp>
-#include <eznode/protocol/asset.hpp>
-#include <eznode/protocol/types.hpp>
-#include <eznode/protocol/version.hpp>
+#include <node/protocol/get_config.hpp>
+#include <node/protocol/config.hpp>
+#include <node/protocol/asset.hpp>
+#include <node/protocol/types.hpp>
+#include <node/protocol/version.hpp>
 
-namespace eznode { namespace protocol {
+namespace node { namespace protocol {
 
 fc::variant_object get_config()
 {
@@ -183,4 +183,4 @@ fc::variant_object get_config()
    return result;
 }
 
-} } // eznode::protocol
+} } // node::protocol

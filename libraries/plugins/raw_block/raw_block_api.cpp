@@ -1,35 +1,35 @@
 
-#include <eznode/app/api_context.hpp>
-#include <eznode/app/application.hpp>
+#include <node/app/api_context.hpp>
+#include <node/app/application.hpp>
 
-#include <eznode/plugins/raw_block/raw_block_api.hpp>
-#include <eznode/plugins/raw_block/raw_block_plugin.hpp>
+#include <node/plugins/raw_block/raw_block_api.hpp>
+#include <node/plugins/raw_block/raw_block_plugin.hpp>
 
-namespace eznode { namespace plugin { namespace raw_block {
+namespace node { namespace plugin { namespace raw_block {
 
 namespace detail {
 
 class raw_block_api_impl
 {
    public:
-      raw_block_api_impl( eznode::app::application& _app );
+      raw_block_api_impl( node::app::application& _app );
 
-      std::shared_ptr< eznode::plugin::raw_block::raw_block_plugin > get_plugin();
+      std::shared_ptr< node::plugin::raw_block::raw_block_plugin > get_plugin();
 
-      eznode::app::application& app;
+      node::app::application& app;
 };
 
-raw_block_api_impl::raw_block_api_impl( eznode::app::application& _app ) : app( _app )
+raw_block_api_impl::raw_block_api_impl( node::app::application& _app ) : app( _app )
 {}
 
-std::shared_ptr< eznode::plugin::raw_block::raw_block_plugin > raw_block_api_impl::get_plugin()
+std::shared_ptr< node::plugin::raw_block::raw_block_plugin > raw_block_api_impl::get_plugin()
 {
    return app.get_plugin< raw_block_plugin >( "raw_block" );
 }
 
 } // detail
 
-raw_block_api::raw_block_api( const eznode::app::api_context& ctx )
+raw_block_api::raw_block_api( const node::app::api_context& ctx )
 {
    my = std::make_shared< detail::raw_block_api_impl >(ctx.app);
 }
@@ -37,7 +37,7 @@ raw_block_api::raw_block_api( const eznode::app::api_context& ctx )
 get_raw_block_result raw_block_api::get_raw_block( get_raw_block_args args )
 {
    get_raw_block_result result;
-   std::shared_ptr< eznode::chain::database > db = my->app.chain_database();
+   std::shared_ptr< node::chain::database > db = my->app.chain_database();
 
    fc::optional<chain::signed_block> block = db->fetch_block_by_number( args.block_num );
    if( !block.valid() )
@@ -55,7 +55,7 @@ get_raw_block_result raw_block_api::get_raw_block( get_raw_block_args args )
 
 void raw_block_api::push_raw_block( std::string block_b64 )
 {
-   std::shared_ptr< eznode::chain::database > db = my->app.chain_database();
+   std::shared_ptr< node::chain::database > db = my->app.chain_database();
 
    std::string block_bin = fc::base64_decode( block_b64 );
    fc::datastream<const char*> ds( block_bin.c_str(), block_bin.size() );
@@ -69,4 +69,4 @@ void raw_block_api::push_raw_block( std::string block_b64 )
 
 void raw_block_api::on_api_startup() { }
 
-} } } // eznode::plugin::raw_block
+} } } // node::plugin::raw_block

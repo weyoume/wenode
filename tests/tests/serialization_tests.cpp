@@ -24,8 +24,8 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <eznode/chain/eznode_objects.hpp>
-#include <eznode/chain/database.hpp>
+#include <node/chain/node_objects.hpp>
+#include <node/chain/database.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/elliptic.hpp>
@@ -35,9 +35,9 @@
 
 #include <cmath>
 
-using namespace eznode;
-using namespace eznode::chain;
-using namespace eznode::protocol;
+using namespace node;
+using namespace node::chain;
+using namespace node::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( serialization_tests, clean_database_fixture )
 

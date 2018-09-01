@@ -21,18 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <eznode/witness/witness_plugin.hpp>
-#include <eznode/witness/witness_objects.hpp>
-#include <eznode/witness/witness_operations.hpp>
+#include <node/witness/witness_plugin.hpp>
+#include <node/witness/witness_objects.hpp>
+#include <node/witness/witness_operations.hpp>
 
-#include <eznode/chain/account_object.hpp>
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/database_exceptions.hpp>
-#include <eznode/chain/generic_custom_operation_interpreter.hpp>
-#include <eznode/chain/index.hpp>
-#include <eznode/chain/eznode_objects.hpp>
+#include <node/chain/account_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/database_exceptions.hpp>
+#include <node/chain/generic_custom_operation_interpreter.hpp>
+#include <node/chain/index.hpp>
+#include <node/chain/node_objects.hpp>
 
-#include <eznode/app/impacted.hpp>
+#include <node/app/impacted.hpp>
 
 #include <fc/time.hpp>
 
@@ -48,7 +48,7 @@
 #define DISTANCE_CALC_PRECISION (10000)
 
 
-namespace eznode { namespace witness {
+namespace node { namespace witness {
 
 namespace bpo = boost::program_options;
 
@@ -58,7 +58,7 @@ using std::vector;
 using protocol::signed_transaction;
 using chain::account_object;
 
-void new_chain_banner( const eznode::chain::database& db )
+void new_chain_banner( const node::chain::database& db )
 {
    std::cerr << "\n"
       "********************************\n"
@@ -74,7 +74,7 @@ void new_chain_banner( const eznode::chain::database& db )
 
 namespace detail
 {
-   using namespace eznode::chain;
+   using namespace node::chain;
 
 
    class witness_plugin_impl
@@ -85,7 +85,7 @@ namespace detail
 
          void plugin_initialize();
 
-         void pre_apply_block( const eznode::protocol::signed_block& blk );
+         void pre_apply_block( const node::protocol::signed_block& blk );
          void pre_transaction( const signed_transaction& trx );
          void pre_operation( const operation_notification& note );
          void post_operation( const chain::operation_notification& note );
@@ -96,7 +96,7 @@ namespace detail
          witness_plugin& _self;
          std::shared_ptr< generic_custom_operation_interpreter< witness_plugin_operation > > _custom_operation_interpreter;
 
-         std::set< eznode::protocol::account_name_type >                     _dupe_customs;
+         std::set< node::protocol::account_name_type >                     _dupe_customs;
    };
 
    void witness_plugin_impl::plugin_initialize()
@@ -125,7 +125,7 @@ namespace detail
       }
    };
 
-   void witness_plugin_impl::pre_apply_block( const eznode::protocol::signed_block& b )
+   void witness_plugin_impl::pre_apply_block( const node::protocol::signed_block& b )
    {
       _dupe_customs.clear();
    }
@@ -536,7 +536,7 @@ void witness_plugin::plugin_startup()
       {
          if( d.head_block_num() == 0 )
             new_chain_banner(d);
-         _production_skip_flags |= eznode::chain::database::skip_undo_history_check;
+         _production_skip_flags |= node::chain::database::skip_undo_history_check;
       }
       schedule_production_loop();
    }
@@ -588,7 +588,7 @@ block_production_condition::block_production_condition_enum witness_plugin::bloc
       //We're trying to exit. Go ahead and let this one out.
       throw;
    }
-   catch( const eznode::chain::unknown_hardfork_exception& e )
+   catch( const node::chain::unknown_hardfork_exception& e )
    {
       // Hit a hardfork that the current node know nothing about, stop production and inform user
       elog( "${e}\nNode may be out of date...", ("e", e.to_detail_string()) );
@@ -684,7 +684,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
    auto itr = witness_by_name.find( scheduled_witness );
 
    fc::time_point_sec scheduled_time = db.get_slot_time( slot );
-   eznode::protocol::public_key_type scheduled_key = itr->signing_key;
+   node::protocol::public_key_type scheduled_key = itr->signing_key;
    auto private_key_itr = _private_keys.find( scheduled_key );
 
    if( private_key_itr == _private_keys.end() )
@@ -735,6 +735,6 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
    return block_production_condition::exception_producing_block;
 }
 
-} } // eznode::witness
+} } // node::witness
 
-DEFINE_PLUGIN( witness, eznode::witness::witness_plugin )
+DEFINE_PLUGIN( witness, node::witness::witness_plugin )

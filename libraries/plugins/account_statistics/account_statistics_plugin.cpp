@@ -1,11 +1,11 @@
-#include <eznode/account_statistics/account_statistics_api.hpp>
+#include <node/account_statistics/account_statistics_api.hpp>
 
-#include <eznode/chain/account_object.hpp>
-#include <eznode/chain/comment_object.hpp>
+#include <node/chain/account_object.hpp>
+#include <node/chain/comment_object.hpp>
 
-#include <eznode/chain/database.hpp>
+#include <node/chain/database.hpp>
 
-namespace eznode { namespace account_statistics {
+namespace node { namespace account_statistics {
 
 namespace detail
 {
@@ -105,6 +105,6 @@ const flat_set< std::string >& account_statistics_plugin::get_tracked_accounts()
    return _my->_tracked_accounts;
 }
 
-} } // eznode::account_statistics
+} } // node::account_statistics
 
-DEFINE_PLUGIN( account_statistics, eznode::account_statistics::account_statistics_plugin );
+DEFINE_PLUGIN( account_statistics, node::account_statistics::account_statistics_plugin );

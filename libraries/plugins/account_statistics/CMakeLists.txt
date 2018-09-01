@@ -1,16 +1,16 @@
-file(GLOB HEADERS "include/eznode/account_statistics/*.hpp")
+file(GLOB HEADERS "include/node/account_statistics/*.hpp")
 
-add_library( eznode_account_statistics
+add_library( node_account_statistics
              account_statistics_plugin.cpp
              account_statistics_api.cpp
            )
 
-target_link_libraries( eznode_account_statistics eznode_chain eznode_protocol eznode_app )
-target_include_directories( eznode_account_statistics
+target_link_libraries( node_account_statistics node_chain node_protocol node_app )
+target_include_directories( node_account_statistics
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 install( TARGETS
-   eznode_account_statistics
+   node_account_statistics
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib

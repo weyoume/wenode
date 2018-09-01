@@ -1,10 +1,10 @@
-# Defines Eznode library target.
-project( Eznode )
+# Defines Node library target.
+project( Node )
 cmake_minimum_required( VERSION 3.2 )
 
 set( BLOCKCHAIN_NAME "Ezira" )
 
-set( GUI_CLIENT_EXECUTABLE_NAME Eznode )
+set( GUI_CLIENT_EXECUTABLE_NAME Node )
 set( CUSTOM_URL_SCHEME "gcs" )
 set( INSTALLER_APP_ID "68ad7005-8eee-49c9-95ce-9eed97e5b347" )
 
@@ -91,7 +91,7 @@ if( SKIP_BY_TX_ID )
    SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSKIP_BY_TX_ID" )
 endif()
 
-OPTION( STATIC_BUILD "Build eznode as a static library (ON or OFF)" OFF )
+OPTION( STATIC_BUILD "Build node as a static library (ON or OFF)" OFF )
 if( STATIC_BUILD AND ( ( MSVC AND NOT MINGW ) OR APPLE ) )
    MESSAGE( STATUS "Static build is not available on Windows or OS X" )
    SET( STATIC_BUILD OFF )
@@ -108,7 +108,7 @@ FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
 
 if( WIN32 )
 
-   message( STATUS "Configuring Eznode on WIN32")
+   message( STATUS "Configuring Node on WIN32")
    set( DB_VERSION 60 )
    set( BDB_STATIC_LIBS 1 )
 
@@ -162,11 +162,11 @@ else( WIN32 ) # Apple AND Linux
 
     if( APPLE )
         # Apple Specific Options Here
-        message( STATUS "Configuring Eznode on OS X" )
+        message( STATUS "Configuring Node on OS X" )
         set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -stdlib=libc++ -Wall -Wno-conversion -Wno-deprecated-declarations" )
     else( APPLE )
         # Linux Specific Options Here
-        message( STATUS "Configuring Eznode on Linux" )
+        message( STATUS "Configuring Node on Linux" )
         set( CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -std=c++11 -Wall" )
         set( rt_library rt )
         set( pthread_library pthread)
@@ -198,7 +198,7 @@ else( WIN32 ) # Apple AND Linux
 
 endif( WIN32 )
 
-set(ENABLE_COVERAGE_TESTING FALSE CACHE BOOL "Build Eznode for code coverage analysis")
+set(ENABLE_COVERAGE_TESTING FALSE CACHE BOOL "Build Node for code coverage analysis")
 
 if(ENABLE_COVERAGE_TESTING)
     SET(CMAKE_CXX_FLAGS "--coverage ${CMAKE_CXX_FLAGS}")
@@ -224,7 +224,7 @@ set(CPACK_OUTPUT_FILE_PREFIX ${CMAKE_BINARY_DIR}/packages)
 set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
 
 SET(CPACK_PACKAGE_DIRECTORY "${CMAKE_INSTALL_PREFIX}")
-set(CPACK_PACKAGE_NAME "Eznode")
+set(CPACK_PACKAGE_NAME "Node")
 set(CPACK_PACKAGE_VENDOR "Ezira Network.")
 set(CPACK_PACKAGE_VERSION_MAJOR "${VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${VERSION_MINOR}")
@@ -233,15 +233,15 @@ set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSIO
 set(CPACK_PACKAGE_DESCRIPTION "Node software for the Ezira Network")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Node software for the Ezira Network")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "Eznode ${CPACK_PACKAGE_VERSION}")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "Node ${CPACK_PACKAGE_VERSION}")
 
 if(WIN32)
  SET(CPACK_GENERATOR "ZIP;NSIS")
- set(CPACK_PACKAGE_NAME "Eznode") # override above
+ set(CPACK_PACKAGE_NAME "Node") # override above
  set(CPACK_NSIS_EXECUTABLES_DIRECTORY .)
- set(CPACK_NSIS_PACKAGE_NAME "Eznode v${CPACK_PACKAGE_VERSION}")
+ set(CPACK_NSIS_PACKAGE_NAME "Node v${CPACK_PACKAGE_VERSION}")
  set(CPACK_NSIS_DISPLAY_NAME "${CPACK_NSIS_PACKAGE_NAME}")
- set(CPACK_NSIS_DEFINES "  !define MUI_STARTMENUPAGE_DEFAULTFOLDER \\\"Eznode\\\"")
+ set(CPACK_NSIS_DEFINES "  !define MUI_STARTMENUPAGE_DEFAULTFOLDER \\\"Node\\\"")
  # it seems like windows zip files usually don't have a single directory inside them, unix tgz frequently do
  SET(CPACK_INCLUDE_TOPLEVEL_DIRECTORY 0)
 
@@ -263,7 +263,7 @@ endif(ENABLE_INSTALLER)
 if( BUILD_TESTNET )
   MESSAGE( STATUS "\n\n             CONFIGURING FOR TEST NETWORK             \n\n" )
 else()
-  MESSAGE( STATUS "\n\n             EZNODE READY             \n\n" )
+  MESSAGE( STATUS "\n\n             NODE READY             \n\n" )
 endif()
 
 if( LOW_MEMORY_NODE )

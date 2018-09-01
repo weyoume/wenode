@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/eznode/wallet/*.hpp")
+file(GLOB HEADERS "include/node/wallet/*.hpp")
 
 find_package( Perl )
 find_package( Doxygen )
@@ -8,7 +8,7 @@ if( PERL_FOUND AND DOXYGEN_FOUND AND NOT "${CMAKE_GENERATOR}" STREQUAL "Ninja" )
   add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen/perlmod/DoxyDocs.pm
                       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                       COMMAND ${DOXYGEN_EXECUTABLE}
-                      DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/include/eznode/wallet/wallet.hpp )
+                      DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile ${CMAKE_CURRENT_SOURCE_DIR}/include/node/wallet/wallet.hpp )
 
   add_custom_command( OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/api_documentation.cpp
                       COMMAND ${PERL_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/generate_api_documentation.pl ${CMAKE_CURRENT_BINARY_DIR}/api_documentation.cpp.new
@@ -23,20 +23,20 @@ else()
                       DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/api_documentation_standin.cpp )
 endif()
 
-add_library( eznode_wallet wallet.cpp ${CMAKE_CURRENT_BINARY_DIR}/api_documentation.cpp ${HEADERS} )
-# I don't know why eznode_app is required twice in the following line, I just know the linker breaks if it isn't.
-target_link_libraries( eznode_wallet PRIVATE eznode_app graphene_net eznode_chain eznode_protocol graphene_utilities fc eznode_private_message eznode_app eznode_follow eznode_account_by_key ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
-target_include_directories( eznode_wallet PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+add_library( node_wallet wallet.cpp ${CMAKE_CURRENT_BINARY_DIR}/api_documentation.cpp ${HEADERS} )
+# I don't know why node_app is required twice in the following line, I just know the linker breaks if it isn't.
+target_link_libraries( node_wallet PRIVATE node_app graphene_net node_chain node_protocol graphene_utilities fc node_private_message node_app node_follow node_account_by_key ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
+target_include_directories( node_wallet PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 if(MSVC)
   set_source_files_properties( wallet.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
 endif(MSVC)
 
 install( TARGETS
-   eznode_wallet
+   node_wallet
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 )
-install( FILES ${HEADERS} DESTINATION "include/eznode/wallet" )
+install( FILES ${HEADERS} DESTINATION "include/node/wallet" )

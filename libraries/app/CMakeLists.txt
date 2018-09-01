@@ -1,6 +1,6 @@
-file(GLOB HEADERS "include/eznode/app/*.hpp")
+file(GLOB HEADERS "include/node/app/*.hpp")
 
-add_library( eznode_app
+add_library( node_app
              database_api.cpp
              api.cpp
              application.cpp
@@ -9,8 +9,8 @@ add_library( eznode_app
              ${HEADERS}
            )
 
-target_link_libraries( eznode_app eznode_chain eznode_protocol eznode_tags eznode_follow eznode_witness eznode_mf_plugins fc graphene_net graphene_utilities )
-target_include_directories( eznode_app
+target_link_libraries( node_app node_chain node_protocol node_tags node_follow node_witness node_mf_plugins fc graphene_net graphene_utilities )
+target_include_directories( node_app
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 if(MSVC)
@@ -18,10 +18,10 @@ if(MSVC)
 endif(MSVC)
 
 INSTALL( TARGETS
-   eznode_app
+   node_app
 
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib
 )
-INSTALL( FILES ${HEADERS} DESTINATION "include/eznode/app" )
+INSTALL( FILES ${HEADERS} DESTINATION "include/node/app" )

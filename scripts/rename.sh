@@ -1,1 +1,1 @@
-find . -name "*ezira*" -exec bash -c 'mv "$1" "${1/ezira/eznode}"' - '{}' \;
+find . -name "*eznode*" -exec bash -c 'mv "$1" "${1/eznode/node}"' - '{}' \;

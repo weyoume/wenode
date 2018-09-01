@@ -1,26 +1,26 @@
-#include <eznode/account_history/account_history_plugin.hpp>
+#include <node/account_history/account_history_plugin.hpp>
 
-#include <eznode/app/impacted.hpp>
+#include <node/app/impacted.hpp>
 
-#include <eznode/protocol/config.hpp>
+#include <node/protocol/config.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/operation_notification.hpp>
-#include <eznode/chain/history_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/operation_notification.hpp>
+#include <node/chain/history_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
 
 #include <boost/algorithm/string.hpp>
 
-#define NAMESPACE_PREFIX "eznode::protocol::"
+#define NAMESPACE_PREFIX "node::protocol::"
 
-namespace eznode { namespace account_history {
+namespace node { namespace account_history {
 
 namespace detail
 {
 
-using namespace eznode::protocol;
+using namespace node::protocol;
 
 class account_history_plugin_impl
 {
@@ -30,7 +30,7 @@ class account_history_plugin_impl
       { }
       virtual ~account_history_plugin_impl();
 
-      eznode::chain::database& database()
+      node::chain::database& database()
       {
          return _self.database();
       }
@@ -124,7 +124,7 @@ struct operation_visitor_filter : operation_visitor
 void account_history_plugin_impl::on_operation( const operation_notification& note )
 {
    flat_set<account_name_type> impacted;
-   eznode::chain::database& db = database();
+   node::chain::database& db = database();
 
    const operation_object* new_obj = nullptr;
    app::operation_get_impacted_accounts( note.op, impacted );
@@ -262,4 +262,4 @@ flat_map< account_name_type, account_name_type > account_history_plugin::tracked
 
 } }
 
-DEFINE_PLUGIN( account_history, eznode::account_history::account_history_plugin )
+DEFINE_PLUGIN( account_history, node::account_history::account_history_plugin )

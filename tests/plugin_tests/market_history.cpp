@@ -1,22 +1,22 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <eznode/chain/account_object.hpp>
-#include <eznode/chain/comment_object.hpp>
-#include <eznode/protocol/eznode_operations.hpp>
+#include <node/chain/account_object.hpp>
+#include <node/chain/comment_object.hpp>
+#include <node/protocol/node_operations.hpp>
 
-#include <eznode/market_history/market_history_plugin.hpp>
+#include <node/market_history/market_history_plugin.hpp>
 
 #include "../common/database_fixture.hpp"
 
-using namespace eznode::chain;
-using namespace eznode::protocol;
+using namespace node::chain;
+using namespace node::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( market_history, clean_database_fixture )
 
 BOOST_AUTO_TEST_CASE( mh_test )
 {
-   using namespace eznode::market_history;
+   using namespace node::market_history;
 
    try
    {

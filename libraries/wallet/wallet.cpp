@@ -2,15 +2,15 @@
 #include <graphene/utilities/key_conversion.hpp>
 #include <graphene/utilities/words.hpp>
 
-#include <eznode/app/api.hpp>
-#include <eznode/protocol/base.hpp>
-#include <eznode/follow/follow_operations.hpp>
-#include <eznode/private_message/private_message_operations.hpp>
-#include <eznode/wallet/wallet.hpp>
-#include <eznode/wallet/api_documentation.hpp>
-#include <eznode/wallet/reflect_util.hpp>
+#include <node/app/api.hpp>
+#include <node/protocol/base.hpp>
+#include <node/follow/follow_operations.hpp>
+#include <node/private_message/private_message_operations.hpp>
+#include <node/wallet/wallet.hpp>
+#include <node/wallet/api_documentation.hpp>
+#include <node/wallet/reflect_util.hpp>
 
-#include <eznode/account_by_key/account_by_key_api.hpp>
+#include <node/account_by_key/account_by_key_api.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -60,7 +60,7 @@
 
 #define BRAIN_KEY_WORD_COUNT 16
 
-namespace eznode { namespace wallet {
+namespace node { namespace wallet {
 
 namespace detail {
 
@@ -312,8 +312,8 @@ public:
       fc::mutable_variant_object result;
       result["blockchain_version"]       = BLOCKCHAIN_VERSION;
       result["client_version"]           = client_version;
-      result["eznode_revision"]           = graphene::utilities::git_revision_sha;
-      result["eznode_revision_age"]       = fc::get_approximate_relative_time_string( fc::time_point_sec( graphene::utilities::git_revision_unix_timestamp ) );
+      result["node_revision"]           = graphene::utilities::git_revision_sha;
+      result["node_revision_age"]       = fc::get_approximate_relative_time_string( fc::time_point_sec( graphene::utilities::git_revision_unix_timestamp ) );
       result["fc_revision"]              = fc::git_revision_sha;
       result["fc_revision_age"]          = fc::get_approximate_relative_time_string( fc::time_point_sec( fc::git_revision_unix_timestamp ) );
       result["compile_date"]             = "compiled on " __DATE__ " at " __TIME__;
@@ -336,7 +336,7 @@ public:
       {
          auto v = _remote_api->get_version();
          result["server_blockchain_version"] = v.blockchain_version;
-         result["server_eznode_revision"] = v.eznode_revision;
+         result["server_node_revision"] = v.node_revision;
          result["server_fc_revision"] = v.fc_revision;
       }
       catch( fc::exception& )
@@ -389,7 +389,7 @@ public:
       fc::optional<fc::ecc::private_key> optional_private_key = wif_to_key(wif_key);
       if (!optional_private_key)
          FC_THROW("Invalid private key");
-      eznode::chain::public_key_type wif_pub_key = optional_private_key->get_public_key();
+      node::chain::public_key_type wif_pub_key = optional_private_key->get_public_key();
 
       _keys[wif_pub_key] = wif_key;
       return true;
@@ -460,7 +460,7 @@ public:
       for (int key_index = 0; ; ++key_index)
       {
          fc::ecc::private_key derived_private_key = derive_private_key(key_to_wif(parent_key), key_index);
-         eznode::chain::public_key_type derived_public_key = derived_private_key.get_public_key();
+         node::chain::public_key_type derived_public_key = derived_private_key.get_public_key();
          if( _keys.find(derived_public_key) == _keys.end() )
          {
             if (number_of_consecutive_unused_keys)
@@ -496,9 +496,9 @@ public:
          int memoKey_index = find_first_unused_derived_key_index(active_privkey);
          fc::ecc::private_key memo_privkey = derive_private_key( key_to_wif(active_privkey), memoKey_index);
 
-         eznode::chain::public_key_type owner_pubkey = owner_privkey.get_public_key();
-         eznode::chain::public_key_type active_pubkey = active_privkey.get_public_key();
-         eznode::chain::public_key_type memo_pubkey = memo_privkey.get_public_key();
+         node::chain::public_key_type owner_pubkey = owner_privkey.get_public_key();
+         node::chain::public_key_type active_pubkey = active_privkey.get_public_key();
+         node::chain::public_key_type memo_pubkey = memo_privkey.get_public_key();
 
          accountCreate_operation accountCreate_op;
 
@@ -967,11 +967,11 @@ public:
    const string _wallet_filename_extension = ".wallet";
 };
 
-} } } // eznode::wallet::detail
+} } } // node::wallet::detail
 
 
 
-namespace eznode { namespace wallet {
+namespace node { namespace wallet {
 
 wallet_api::wallet_api(const wallet_data& initial_data, fc::api<login_api> rapi)
    : my(new detail::wallet_api_impl(*this, initial_data, rapi))
@@ -2469,5 +2469,5 @@ vector<extended_message_object>   wallet_api::get_outbox( string account, fc::ti
    return result;
 }
 
-} } // eznode::wallet
+} } // node::wallet
 

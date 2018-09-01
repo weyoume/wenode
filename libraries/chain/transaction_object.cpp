@@ -1,6 +1,6 @@
-#include <eznode/chain/transaction_object.hpp>
+#include <node/chain/transaction_object.hpp>
 
-namespace eznode { namespace chain {
+namespace node { namespace chain {
 
 const object* transaction_index::create(const std::function<void (object*)>& constructor, object_id_type)
 {
@@ -69,4 +69,4 @@ const object*transaction_index::get(object_id_type id) const
    return &*itr;
 }
 
-} } // eznode::chain
+} } // node::chain

@@ -13,10 +13,10 @@ my $outFile = new IO::File($outputFileName, "w")
 my $fileHeader = <<'END';
 /** GENERATED FILE **/
 #include <set>
-#include <eznode/wallet/api_documentation.hpp>
-#include <eznode/wallet/wallet.hpp>
+#include <node/wallet/api_documentation.hpp>
+#include <node/wallet/wallet.hpp>
 
-namespace eznode { namespace wallet {
+namespace node { namespace wallet {
    namespace detail
    {
       struct api_method_name_collector_visitor
@@ -38,7 +38,7 @@ $outFile->print($fileHeader);
 
 for my $class (@{$doxydocs->{classes}})
 {
-  if ($class->{name} eq 'eznode::wallet::wallet_api')
+  if ($class->{name} eq 'node::wallet::wallet_api')
   {
     for my $member (@{$class->{public_methods}->{members}})
     {
@@ -84,7 +84,7 @@ my $fileFooter = <<'END';
           ++iter;
    }
 
-} } // end namespace eznode::wallet
+} } // end namespace node::wallet
 END
 $outFile->print($fileFooter);
 $outFile->close();

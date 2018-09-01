@@ -1,14 +1,14 @@
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/global_property_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/global_property_object.hpp>
 
-#include <eznode/plugins/block_info/block_info.hpp>
-#include <eznode/plugins/block_info/block_info_api.hpp>
-#include <eznode/plugins/block_info/block_info_plugin.hpp>
+#include <node/plugins/block_info/block_info.hpp>
+#include <node/plugins/block_info/block_info_api.hpp>
+#include <node/plugins/block_info/block_info_plugin.hpp>
 
 #include <string>
 
-namespace eznode { namespace plugin { namespace block_info {
+namespace node { namespace plugin { namespace block_info {
 
 block_info_plugin::block_info_plugin( application* app ) : plugin( app ) {}
 block_info_plugin::~block_info_plugin() {}
@@ -53,6 +53,6 @@ void block_info_plugin::on_applied_block( const chain::signed_block& b )
    return;
 }
 
-} } } // eznode::plugin::block_info
+} } } // node::plugin::block_info
 
-DEFINE_PLUGIN( block_info, eznode::plugin::block_info::block_info_plugin )
+DEFINE_PLUGIN( block_info, node::plugin::block_info::block_info_plugin )

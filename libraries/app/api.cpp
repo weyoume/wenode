@@ -23,16 +23,16 @@
  */
 #include <cctype>
 
-#include <eznode/app/api.hpp>
-#include <eznode/app/api_access.hpp>
-#include <eznode/app/application.hpp>
-#include <eznode/app/impacted.hpp>
+#include <node/app/api.hpp>
+#include <node/app/api_access.hpp>
+#include <node/app/application.hpp>
+#include <node/app/impacted.hpp>
 
-#include <eznode/protocol/get_config.hpp>
+#include <node/protocol/get_config.hpp>
 
-#include <eznode/chain/database.hpp>
-#include <eznode/chain/eznode_objects.hpp>
-#include <eznode/chain/transaction_object.hpp>
+#include <node/chain/database.hpp>
+#include <node/chain/node_objects.hpp>
+#include <node/chain/transaction_object.hpp>
 #include <fc/time.hpp>
 
 #include <graphene/utilities/key_conversion.hpp>
@@ -43,7 +43,7 @@
 #include <graphene/utilities/git_revision.hpp>
 #include <fc/git_revision.hpp>
 
-namespace eznode { namespace app {
+namespace node { namespace app {
 
     login_api::login_api(const api_context& ctx)
     :_ctx(ctx)
@@ -115,9 +115,9 @@ namespace eznode { namespace app {
        return it->second;
     }
 
-    eznode_version_info login_api::get_version()
+    node_version_info login_api::get_version()
     {
-       return eznode_version_info(
+       return node_version_info(
          fc::string( BLOCKCHAIN_VERSION ),
          fc::string( graphene::utilities::git_revision_sha ),
          fc::string( fc::git_revision_sha ) );
@@ -333,4 +333,4 @@ namespace eznode { namespace app {
        return _app.p2p_node()->set_advanced_node_parameters(params);
     }
 
-} } // eznode::app
+} } // node::app

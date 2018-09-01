@@ -1,10 +1,10 @@
-#include <eznode/app/api_context.hpp>
-#include <eznode/app/application.hpp>
-#include <eznode/app/database_api.hpp>
+#include <node/app/api_context.hpp>
+#include <node/app/application.hpp>
+#include <node/app/database_api.hpp>
 
-#include <eznode/protocol/get_config.hpp>
+#include <node/protocol/get_config.hpp>
 
-#include <eznode/chain/util/reward.hpp>
+#include <node/chain/util/reward.hpp>
 
 #include <fc/bloom_filter.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -21,7 +21,7 @@
 
 #define GET_REQUIRED_FEES_MAX_RECURSION 4
 
-namespace eznode { namespace app {
+namespace node { namespace app {
 
 class database_api_impl;
 
@@ -29,7 +29,7 @@ class database_api_impl;
 class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 {
    public:
-      database_api_impl( const eznode::app::api_context& ctx  );
+      database_api_impl( const node::app::api_context& ctx  );
       ~database_api_impl();
 
       // Subscriptions
@@ -76,8 +76,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       std::function<void(const fc::variant&)> _block_applied_callback;
 
-      eznode::chain::database&                _db;
-      std::shared_ptr< eznode::follow::follow_api > _follow_api;
+      node::chain::database&                _db;
+      std::shared_ptr< node::follow::follow_api > _follow_api;
 
       boost::signals2::scoped_connection       _block_applied_connection;
 
@@ -140,12 +140,12 @@ void database_api_impl::set_block_applied_callback( std::function<void(const var
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-database_api::database_api( const eznode::app::api_context& ctx )
+database_api::database_api( const node::app::api_context& ctx )
    : my( new database_api_impl( ctx ) ) {}
 
 database_api::~database_api() {}
 
-database_api_impl::database_api_impl( const eznode::app::api_context& ctx )
+database_api_impl::database_api_impl( const node::app::api_context& ctx )
    : _db( *ctx.app.chain_database() )
 {
    wlog("creating database api ${x}", ("x",int64_t(this)) );
@@ -155,7 +155,7 @@ database_api_impl::database_api_impl( const eznode::app::api_context& ctx )
    try
    {
       ctx.app.get_plugin< follow::follow_plugin >( FOLLOW_PLUGIN_NAME );
-      _follow_api = std::make_shared< eznode::follow::follow_api >( ctx );
+      _follow_api = std::make_shared< node::follow::follow_api >( ctx );
    }
    catch( fc::assert_exception ) { ilog("Follow Plugin not loaded"); }
 }
@@ -247,7 +247,7 @@ fc::variant_object database_api::get_config()const
 
 fc::variant_object database_api_impl::get_config()const
 {
-   return eznode::protocol::get_config();
+   return node::protocol::get_config();
 }
 
 dynamic_global_property_api_obj database_api::get_dynamic_global_properties()const
@@ -405,7 +405,7 @@ vector<account_id_type> database_api_impl::get_account_references( account_id_ty
 {
    /*const auto& idx = _db.get_index<account_index>();
    const auto& aidx = dynamic_cast<const primary_index<account_index>&>(idx);
-   const auto& refs = aidx.get_secondary_index<eznode::chain::account_member_index>();
+   const auto& refs = aidx.get_secondary_index<node::chain::account_member_index>();
    auto itr = refs.account_to_account_memberships.find(account_id);
    vector<account_id_type> result;
 
@@ -415,7 +415,7 @@ vector<account_id_type> database_api_impl::get_account_references( account_id_ty
       for( auto item : itr->second ) result.push_back(item);
    }
    return result;*/
-   FC_ASSERT( false, "database_api::get_account_references --- Needs to be refactored for eznode." );
+   FC_ASSERT( false, "database_api::get_account_references --- Needs to be refactored for node." );
 }
 
 vector<optional<account_api_obj>> database_api::lookup_account_names(const vector<string>& account_names)const
@@ -1099,10 +1099,10 @@ void database_api::set_pending_payout( discussion& d )const
       if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       {
          const auto& rf = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) );
-         vESCOR = d.net_ESCORreward.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_ESCORreward.value, rf.authorReward_curve, rf.content_constant ) : 0;
+         vESCOR = d.net_ESCORreward.value > 0 ? node::chain::util::evaluate_reward_curve( d.net_ESCORreward.value, rf.authorReward_curve, rf.content_constant ) : 0;
       }
       else
-         vESCOR = d.net_ESCORreward.value > 0 ? eznode::chain::util::evaluate_reward_curve( d.net_ESCORreward.value ) : 0;
+         vESCOR = d.net_ESCORreward.value > 0 ? node::chain::util::evaluate_reward_curve( d.net_ESCORreward.value ) : 0;
 
       u256 r2 = to256(vESCOR); //to256(abs_net_ESCORreward);
       r2 *= pot.amount.value;
@@ -2373,4 +2373,4 @@ annotated_signed_transaction database_api::get_transaction( transaction_id_type 
 }
 
 
-} } // eznode::app
+} } // node::app

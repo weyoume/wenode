@@ -1,11 +1,11 @@
 Quickstart
 ----------
 
-### Get current eznode
+### Get current node
 Use docker:
 ```
 docker run \
-    -d -p 2001:2001 -p 8090:8090 --name eznode-default \
+    -d -p 2001:2001 -p 8090:8090 --name node-default \
     --restart unless-stopped eziranetwork/ezira
 ```
 #### Low memory node?
@@ -18,14 +18,14 @@ For full api node use:
 ```
 docker run \
     --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_CONTENT_NODE=1 \
-    -d -p 2001:2001 -p 8090:8090 --name eznode \
+    -d -p 2001:2001 -p 8090:8090 --name node \
     --restart unless-stopped \
     eziranetwork/ezira
 ```
 ### Configure for your use case
 #### Full API node
 You need to use `USE_WAY_TOO_MUCH_RAM=1` and `USE_FULL_CONTENT_NODE=1` as stated above.
-You can Use `contrib/fullnode.config.ini` as a base for your `config.ini` file.
+You can Use `contrib/config-for-fullnode.ini` as a base for your `config.ini` file.
 
 #### Exchanges
 Use low memory node.
@@ -42,7 +42,7 @@ This configuration exists in Docker with the following command
 
 ```
 docker run -d --env TRACK_ACCOUNT="yourexchangeid" \
-    --name eznode \
+    --name node \
     --restart unless-stopped \
     eziranetwork/ezira
 ```

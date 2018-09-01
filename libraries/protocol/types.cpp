@@ -1,12 +1,12 @@
-#include <eznode/protocol/config.hpp>
-#include <eznode/protocol/types.hpp>
+#include <node/protocol/config.hpp>
+#include <node/protocol/types.hpp>
 
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/ripemd160.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/io/raw.hpp>
 
-namespace eznode { namespace protocol {
+namespace node { namespace protocol {
 
     public_key_type::public_key_type():key_data(){};
 
@@ -174,38 +174,38 @@ namespace eznode { namespace protocol {
        return p1.key_data != p2.key_data;
     }
 
-} } // eznode::protocol
+} } // node::protocol
 
 namespace fc
 {
     using namespace std;
-    void to_variant( const eznode::protocol::public_key_type& var,  fc::variant& vo )
+    void to_variant( const node::protocol::public_key_type& var,  fc::variant& vo )
     {
         vo = std::string( var );
     }
 
-    void from_variant( const fc::variant& var,  eznode::protocol::public_key_type& vo )
+    void from_variant( const fc::variant& var,  node::protocol::public_key_type& vo )
     {
-        vo = eznode::protocol::public_key_type( var.as_string() );
+        vo = node::protocol::public_key_type( var.as_string() );
     }
 
-    void to_variant( const eznode::protocol::extended_public_key_type& var, fc::variant& vo )
+    void to_variant( const node::protocol::extended_public_key_type& var, fc::variant& vo )
     {
        vo = std::string( var );
     }
 
-    void from_variant( const fc::variant& var, eznode::protocol::extended_public_key_type& vo )
+    void from_variant( const fc::variant& var, node::protocol::extended_public_key_type& vo )
     {
-       vo = eznode::protocol::extended_public_key_type( var.as_string() );
+       vo = node::protocol::extended_public_key_type( var.as_string() );
     }
 
-    void to_variant( const eznode::protocol::extended_private_key_type& var, fc::variant& vo )
+    void to_variant( const node::protocol::extended_private_key_type& var, fc::variant& vo )
     {
        vo = std::string( var );
     }
 
-    void from_variant( const fc::variant& var, eznode::protocol::extended_private_key_type& vo )
+    void from_variant( const fc::variant& var, node::protocol::extended_private_key_type& vo )
     {
-       vo = eznode::protocol::extended_private_key_type( var.as_string() );
+       vo = node::protocol::extended_private_key_type( var.as_string() );
     }
 } // fc
