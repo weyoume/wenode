@@ -43,51 +43,51 @@ RUN \
 
 ADD . /usr/local/src/node
 
-# RUN \
-#     cd /usr/local/src/node && \
-#     git submodule update --init --recursive && \
-#     mkdir build && \
-#     cd build && \
-#     cmake \
-#         -DCMAKE_BUILD_TYPE=Release \
-#         -DBUILD_TESTNET=ON \
-#         -DLOW_MEMORY_NODE=OFF \
-#         -DCLEAR_VOTES=ON \
-#         -DSKIP_BY_TX_ID=ON \
-#         .. && \
-#     make -j$(nproc) chain_test test_fixed_string && \
-#     ./tests/chain_test && \
-#     ./programs/util/test_fixed_string && \
-#     cd /usr/local/src/node && \
-#     doxygen && \
-#     programs/build_helpers/check_reflect.py && \
-#     programs/build_helpers/get_config_check.sh && \
-#     rm -rf /usr/local/src/node/build
-
-# RUN \
-#     cd /usr/local/src/node && \
-#     git submodule update --init --recursive && \
-#     mkdir build && \
-#     cd build && \
-#     cmake \
-#         -DCMAKE_BUILD_TYPE=Debug \
-#         -DENABLE_COVERAGE_TESTING=ON \
-#         -DBUILD_TESTNET=ON \
-#         -DLOW_MEMORY_NODE=OFF \
-#         -DCLEAR_VOTES=ON \
-#         -DSKIP_BY_TX_ID=ON \
-#         -DCHAINBASE_CHECK_LOCKING=OFF \
-#         .. && \
-#     make -j$(nproc) chain_test && \
-#     ./tests/chain_test && \
-#     mkdir -p /var/cobertura && \
-#     gcovr --object-directory="../" --root=../ --xml-pretty --gcov-exclude=".*tests.*" --gcov-exclude=".*fc.*" --gcov-exclude=".*app*" --gcov-exclude=".*net*" --gcov-exclude=".*plugins*" --gcov-exclude=".*schema*" --gcov-exclude=".*time*" --gcov-exclude=".*utilities*" --gcov-exclude=".*wallet*" --gcov-exclude=".*programs*" --output="/var/cobertura/coverage.xml" && \
-#     cd /usr/local/src/node && \
-#     rm -rf /usr/local/src/node/build
+RUN \
+    cd /usr/local/src/node && \
+    git submodule update --init --recursive && \
+    mkdir build && \
+    cd build && \
+    cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_TESTNET=ON \
+        -DLOW_MEMORY_NODE=OFF \
+        -DCLEAR_VOTES=ON \
+        -DSKIP_BY_TX_ID=ON \
+        .. && \
+    make -j$(nproc) chain_test test_fixed_string && \
+    # ./tests/chain_test && \
+    # ./programs/util/test_fixed_string && \
+    # cd /usr/local/src/node && \
+    # doxygen && \
+    # programs/build_helpers/check_reflect.py && \
+    # programs/build_helpers/get_config_check.sh && \
+    rm -rf /usr/local/src/node/build
 
 RUN \
     cd /usr/local/src/node && \
     git submodule update --init --recursive && \
+    mkdir build && \
+    cd build && \
+    cmake \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DENABLE_COVERAGE_TESTING=ON \
+        -DBUILD_TESTNET=ON \
+        -DLOW_MEMORY_NODE=OFF \
+        -DCLEAR_VOTES=ON \
+        -DSKIP_BY_TX_ID=ON \
+        -DCHAINBASE_CHECK_LOCKING=OFF \
+        .. && \
+    # make -j$(nproc) chain_test && \
+#     ./tests/chain_test && \
+#     mkdir -p /var/cobertura && \
+#     gcovr --object-directory="../" --root=../ --xml-pretty --gcov-exclude=".*tests.*" --gcov-exclude=".*fc.*" --gcov-exclude=".*app*" --gcov-exclude=".*net*" --gcov-exclude=".*plugins*" --gcov-exclude=".*schema*" --gcov-exclude=".*time*" --gcov-exclude=".*utilities*" --gcov-exclude=".*wallet*" --gcov-exclude=".*programs*" --output="/var/cobertura/coverage.xml" && \
+    cd /usr/local/src/node && \
+    rm -rf /usr/local/src/node/build
+
+# RUN \
+#     cd /usr/local/src/node && \
+#     git submodule update --init --recursive && \
     # mkdir build && \
     # cd build && \
     # cmake \
@@ -111,21 +111,21 @@ RUN \
     #   > /etc/nodeversion && \
     # cat /etc/nodeversion && \
     # rm -rfv build && \
-    mkdir build && \
-    cd build && \
-    cmake \
-        -DCMAKE_INSTALL_PREFIX=/usr/local/node \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DLOW_MEMORY_NODE=OFF \
-        -DCLEAR_VOTES=OFF \
-        -DSKIP_BY_TX_ID=ON \
-        -DBUILD_TESTNET=OFF \
-        -DSTATIC_BUILD=${STATIC_BUILD} \
-        .. \
-    && \
-    make -j$(nproc) && \
-    make install && \
-    rm -rf /usr/local/src/node
+    # mkdir build && \
+    # cd build && \
+    # cmake \
+    #     -DCMAKE_INSTALL_PREFIX=/usr/local/node \
+    #     -DCMAKE_BUILD_TYPE=Release \
+    #     -DLOW_MEMORY_NODE=OFF \
+    #     -DCLEAR_VOTES=OFF \
+    #     -DSKIP_BY_TX_ID=ON \
+    #     -DBUILD_TESTNET=OFF \
+    #     -DSTATIC_BUILD=${STATIC_BUILD} \
+    #     .. \
+    # && \
+    # make -j$(nproc) && \
+    # make install && \
+    # rm -rf /usr/local/src/node
 
 RUN \
     apt-get remove -y \
