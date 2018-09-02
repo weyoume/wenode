@@ -10,7 +10,8 @@
   "scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"push" : "./scripts/push.sh",
-		"pull" : "./scripts/pull.sh"
+		"pull" : "./scripts/pull.sh",
+		"docker" : "docker build -t lopudesigns/wenode-test ."
   },
   "repository": {
     "type": "git",
