@@ -1,0 +1,36 @@
+{
+  "name": "wenode",
+  "version": "0.0.1",
+  "description": "WeYouMe network node",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc",
+    "test": "tests"
+  },
+  "scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"push" : "./scripts/push.sh",
+		"pull" : "./scripts/pull.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lopudesigns/wenode.git"
+  },
+  "keywords": [
+    "WeYouMe",
+    "WeNode",
+    "Node",
+    "Steemit",
+    "Busy",
+    "Blockchain",
+    "Cryptocurrency",
+    "Social",
+    "Media"
+  ],
+  "author": "lopu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lopudesigns/wenode/issues"
+  },
+  "homepage": "https://github.com/lopudesigns/wenode#readme"
+}
