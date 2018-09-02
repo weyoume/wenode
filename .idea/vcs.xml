@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libraries/fc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libraries/fc/vendor/diff-match-patch-cpp-stl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libraries/fc/vendor/secp256k1-zkp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/libraries/fc/vendor/websocketpp" vcs="Git" />
+  </component>
+</project>
