@@ -2153,16 +2153,16 @@ void claimRewardBalance_evaluator::do_apply( const claimRewardBalance_operation&
 
    FC_ASSERT( op.ECOreward <= acnt.ECOrewardBalance, "Cannot claim that much ECO. Claim: ${c} Actual: ${a}",
       ("c", op.ECOreward)("a", acnt.ECOrewardBalance) );
-   FC_ASSERT( op.EUSDreward <= acnt.EUSDrewardbalance, "Cannot claim that much EUSD. Claim: ${c} Actual: ${a}",
-      ("c", op.EUSDreward)("a", acnt.EUSDrewardbalance) );
+   FC_ASSERT( op.EUSDreward <= acnt.EUSDrewardBalance, "Cannot claim that much EUSD. Claim: ${c} Actual: ${a}",
+      ("c", op.EUSDreward)("a", acnt.EUSDrewardBalance) );
    FC_ASSERT( op.ESCORreward <= acnt.ESCORrewardBalance, "Cannot claim that much ESCOR. Claim: ${c} Actual: ${a}",
       ("c", op.ESCORreward)("a", acnt.ESCORrewardBalance) );
 
-   asset ESCORrewardBalance_to_move = asset( 0, SYMBOL_ECO );
+   asset ESCORrewardBalanceInECO_to_move = asset( 0, SYMBOL_ECO );
    if( op.ESCORreward == acnt.ESCORrewardBalance )
-      ESCORrewardBalance_to_move = acnt.ESCORrewardBalance;
+      ESCORrewardBalanceInECO_to_move = acnt.ESCORrewardBalanceInECO;
    else
-      ESCORrewardBalance_to_move = asset( ( ( uint128_t( op.ESCORreward.amount.value ) * uint128_t( acnt.ESCORrewardBalance.amount.value ) )
+      ESCORrewardBalanceInECO_to_move = asset( ( ( uint128_t( op.ESCORreward.amount.value ) * uint128_t( acnt.ESCORrewardBalanceInECO.amount.value ) )
          / uint128_t( acnt.ESCORrewardBalance.amount.value ) ).to_uint64(), SYMBOL_ECO );
 
    _db.adjust_reward_balance( acnt, -op.ECOreward );
@@ -2174,16 +2174,16 @@ void claimRewardBalance_evaluator::do_apply( const claimRewardBalance_operation&
    {
       a.ESCOR += op.ESCORreward;
       a.ESCORrewardBalance -= op.ESCORreward;
-      a.ESCORrewardBalance -= ESCORrewardBalance_to_move;
+      a.ESCORrewardBalanceInECO -= ESCORrewardBalanceInECO_to_move;
    });
 
    _db.modify( _db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
    {
       gpo.totalESCOR += op.ESCORreward;
-      gpo.totalECOfundForESCOR += ESCORrewardBalance_to_move;
+      gpo.totalECOfundForESCOR += ESCORrewardBalanceInECO_to_move;
 
       gpo.pending_rewarded_ESCOR -= op.ESCORreward;
-      gpo.pending_rewarded_ESCORvalueInECO -= ESCORrewardBalance_to_move;
+      gpo.pending_rewarded_ESCORvalueInECO -= ESCORrewardBalanceInECO_to_move;
    });
 
    _db.adjust_proxied_witness_votes( acnt, op.ESCORreward.amount );

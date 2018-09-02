@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
 
       /// because init_witness has created ESCOR and blocks have been produced, 100 ECO is worth less than 100 ESCOR due to rounding
       BOOST_REQUIRE( acct.ESCOR.amount.value == ( op.fee * ( score_ESCOR / ESCOR ) ).amount.value );
-      BOOST_REQUIRE( acct.ESCORwithdrawRateInECO.amount.value == ASSET( "0.000000 ESCOR" ).amount.value );
+      BOOST_REQUIRE( acct.ESCORwithdrawRateInECO.amount.value == ASSET( "0.000000 VESTS" ).amount.value );
       BOOST_REQUIRE( acct.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( ( init_starting_balance - ASSET( "0.100 TESTS" ) ).amount.value == init.balance.amount.value );
       validate_database();
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
       BOOST_REQUIRE( acct.balance.amount.value == ASSET( "0.000 ECO " ).amount.value );
       BOOST_REQUIRE( acct.EUSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
       BOOST_REQUIRE( acct.ESCOR.amount.value == ( op.fee * ( score_ESCOR / ESCOR ) ).amount.value );
-      BOOST_REQUIRE( acct.ESCORwithdrawRateInECO.amount.value == ASSET( "0.000000 ESCOR" ).amount.value );
+      BOOST_REQUIRE( acct.ESCORwithdrawRateInECO.amount.value == ASSET( "0.000000 VESTS" ).amount.value );
       BOOST_REQUIRE( acct.proxied_ESCORfundECObalance_votes_total().value == 0 );
       BOOST_REQUIRE( ( init_starting_balance - ASSET( "0.100 TESTS" ) ).amount.value == init.balance.amount.value );
       validate_database();
@@ -1401,7 +1401,7 @@ BOOST_AUTO_TEST_CASE( withdrawESCOR_authorities )
 
       withdrawESCOR_operation op;
       op.account = "alice";
-      op.ESCOR = ASSET( "0.001000 ESCOR" );
+      op.ESCOR = ASSET( "0.001000 VESTS" );
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -1444,7 +1444,7 @@ BOOST_AUTO_TEST_CASE( withdrawESCOR_apply )
       generate_block();
       score( "alice", ASSET( "10.000 TESTS" ) );
 
-      BOOST_TEST_MESSAGE( "--- Test failure withdrawing negative ESCOR" );
+      BOOST_TEST_MESSAGE( "--- Test failure withdrawing negative VESTS" );
 
       {
       const auto& alice = db.get_account( "alice" );
@@ -1460,7 +1460,7 @@ BOOST_AUTO_TEST_CASE( withdrawESCOR_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::assert_exception );
 
 
-      BOOST_TEST_MESSAGE( "--- Test withdraw of existing ESCOR" );
+      BOOST_TEST_MESSAGE( "--- Test withdraw of existing VESTS" );
       op.ESCOR = asset( alice.ESCOR.amount / 2, SYMBOL_ESCOR );
 
       auto old_ESCOR = alice.ESCOR;
@@ -1555,13 +1555,13 @@ BOOST_AUTO_TEST_CASE( withdrawESCOR_apply )
       withdrawESCOR_operation op;
       signed_transaction tx;
       op.account = "alice";
-      op.ESCOR = ASSET( "0.000000 ESCOR" );
+      op.ESCOR = ASSET( "0.000000 VESTS" );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).ESCORwithdrawRateInECO == ASSET( "0.000000 ESCOR" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCORwithdrawRateInECO == ASSET( "0.000000 VESTS" ) );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -3314,7 +3314,7 @@ BOOST_AUTO_TEST_CASE( account_recovery )
 
       accountCreateWithDelegation_operation acc_create;
       acc_create.fee = ASSET( "10.000 TESTS" );
-      acc_create.delegation = ASSET( "0.000000 ESCOR" );
+      acc_create.delegation = ASSET( "0.000000 VESTS" );
       acc_create.creator = "alice";
       acc_create.newAccountName = "bob";
       acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
@@ -3665,32 +3665,32 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.ratification_deadline = db.head_block_time() + 100;
       op.escrow_expiration = db.head_block_time() + 200;
 
-      BOOST_TEST_MESSAGE( "--- failure when EUSD symbol != EUSD" );
+      BOOST_TEST_MESSAGE( "--- failure when EUSD symbol != TBD" );
       op.EUSDamount.symbol = SYMBOL_ECO;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when ECO symbol != ECO" );
+      BOOST_TEST_MESSAGE( "--- failure when ECO symbol != TESTS" );
       op.EUSDamount.symbol = SYMBOL_EUSD;
       op.ECOamount.symbol = SYMBOL_EUSD;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when fee symbol != EUSD and fee symbol != ECO" );
+      BOOST_TEST_MESSAGE( "--- failure when fee symbol != TBD and fee symbol != TESTS" );
       op.ECOamount.symbol = SYMBOL_ECO;
       op.fee.symbol = SYMBOL_ESCOR;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when EUSD == 0 and ECO == 0" );
+      BOOST_TEST_MESSAGE( "--- failure when TBD == 0 and TESTS == 0" );
       op.fee.symbol = SYMBOL_ECO;
       op.EUSDamount.amount = 0;
       op.ECOamount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when EUSD < 0" );
+      BOOST_TEST_MESSAGE( "--- failure when TBD < 0" );
       op.EUSDamount.amount = -100;
       op.ECOamount.amount = 1000;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when ECO < 0" );
+      BOOST_TEST_MESSAGE( "--- failure when TESTS < 0" );
       op.EUSDamount.amount = 1000;
       op.ECOamount.amount = -100;
       REQUIRE_THROW( op.validate(), fc::exception );
@@ -5016,18 +5016,18 @@ BOOST_AUTO_TEST_CASE( transferToSavings_validate )
       op.validate();
 
 
-      BOOST_TEST_MESSAGE( "failure when amount is ESCOR" );
+      BOOST_TEST_MESSAGE( "failure when amount is VESTS" );
       op.to = "alice";
-      op.amount = ASSET( "1.000 ESCOR" );
+      op.amount = ASSET( "1.000 VESTS" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "success when amount is EUSD" );
+      BOOST_TEST_MESSAGE( "success when amount is TBD" );
       op.amount = ASSET( "1.000 TBD" );
       op.validate();
 
 
-      BOOST_TEST_MESSAGE( "success when amount is ECO" );
+      BOOST_TEST_MESSAGE( "success when amount is TESTS" );
       op.amount = ASSET( "1.000 TESTS" );
       op.validate();
    }
@@ -5193,9 +5193,9 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_validate )
       op.validate();
 
 
-      BOOST_TEST_MESSAGE( "failure when amount is ESCOR" );
+      BOOST_TEST_MESSAGE( "failure when amount is VESTS" );
       op.to = "alice";
-      op.amount = ASSET( "1.000 ESCOR" );
+      op.amount = ASSET( "1.000 VESTS" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
@@ -5795,7 +5795,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_validate )
       op.account = "alice";
       op.ECOreward = ASSET( "0.000 TESTS" );
       op.EUSDreward = ASSET( "0.000 TBD" );
-      op.ESCORreward = ASSET( "0.000000 ESCOR" );
+      op.ESCORreward = ASSET( "0.000000 VESTS" );
 
 
       BOOST_TEST_MESSAGE( "Testing all 0 amounts" );
@@ -5877,7 +5877,7 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_authorities )
      ACTORS( (alice) );
      generate_blocks(1);
      fund( "alice", ASSET("1000.000 TESTS") );
-     score( "alice", ASSET("10000.000000 ESCOR") );
+     score( "alice", ASSET("10000.000000 VESTS") );
 
      private_key_type priv_key = generate_private_key( "temp_key" );
 
@@ -5960,7 +5960,7 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
       withdraw.ESCOR = db.get_account( "alice" ).ESCOR;
       accountCreateWithDelegation_operation op;
       op.fee = ASSET( "10.000 TESTS" );
-      op.delegation = ASSET( "100000000.000000 ESCOR" );
+      op.delegation = ASSET( "100000000.000000 VESTS" );
       op.creator = "alice";
       op.newAccountName = "bob";
       op.owner = authority( 1, priv_key.get_public_key(), 1 );
@@ -5982,8 +5982,8 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
 
       const account_object& bob_acc = db.get_account( "bob" );
       const account_object& alice_acc = db.get_account( "alice" );
-      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "100000000.000000 ESCOR" ) );
-      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "100000000.000000 ESCOR" ) );
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "100000000.000000 VESTS" ) );
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "100000000.000000 VESTS" ) );
       BOOST_REQUIRE( bob_acc.effective_ESCOR() == bob_acc.ESCOR - bob_acc.ESCORDelegated + bob_acc.ESCORreceived);
 
       BOOST_TEST_MESSAGE( "--- Test delegator object integrety. " );
@@ -5992,7 +5992,7 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
       BOOST_REQUIRE( delegation != nullptr);
       BOOST_REQUIRE( delegation->delegator == op.creator);
       BOOST_REQUIRE( delegation->delegatee == op.newAccountName );
-      BOOST_REQUIRE( delegation->ESCOR == ASSET( "100000000.000000 ESCOR" ) );
+      BOOST_REQUIRE( delegation->ESCOR == ASSET( "100000000.000000 VESTS" ) );
       BOOST_REQUIRE( delegation->min_delegation_time == db.head_block_time() + CREATE_ACCOUNT_DELEGATION_TIME );
       auto del_amt = delegation->ESCOR;
       auto exp_time = delegation->min_delegation_time;
@@ -6013,7 +6013,7 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
       BOOST_TEST_MESSAGE( "--- Test failure when insufficient funds to process transaction." );
       tx.clear();
       op.fee = ASSET( "10.000 TESTS" );
-      op.delegation = ASSET( "0.000000 ESCOR" );
+      op.delegation = ASSET( "0.000000 VESTS" );
       op.newAccountName = "pam";
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.operations.push_back( op );
@@ -6033,7 +6033,7 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
       delegateESCOR_operation delegate;
       delegate.delegator = "alice";
       delegate.delegatee = "bob";
-      delegate.ESCOR = ASSET( "0.000000 ESCOR" );
+      delegate.ESCOR = ASSET( "0.000000 VESTS" );
       tx.operations.push_back( delegate );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -6067,9 +6067,9 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
          db.modify( db.get_account( "alice" ), []( account_object& a )
          {
             a.ECOrewardBalance = ASSET( "10.000 TESTS" );
-            a.EUSDrewardbalance = ASSET( "10.000 TBD" );
-            a.ESCORrewardBalance = ASSET( "10.000000 ESCOR" );
-            a.ESCORrewardBalance = ASSET( "10.000 TESTS" );
+            a.EUSDrewardBalance = ASSET( "10.000 TBD" );
+            a.ESCORrewardBalance = ASSET( "10.000000 VESTS" );
+            a.ESCORrewardBalanceInECO = ASSET( "10.000 TESTS" );
          });
 
          db.modify( db.get_dynamic_global_properties(), []( dynamic_global_property_object& gpo )
@@ -6077,7 +6077,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
             gpo.current_supply += ASSET( "20.000 TESTS" );
             gpo.current_EUSD_supply += ASSET( "10.000 TBD" );
             gpo.virtual_supply += ASSET( "20.000 TESTS" );
-            gpo.pending_rewarded_ESCOR += ASSET( "10.000000 ESCOR" );
+            gpo.pending_rewarded_ESCOR += ASSET( "10.000000 VESTS" );
             gpo.pending_rewarded_ESCORvalueInECO += ASSET( "10.000 TESTS" );
          });
       });
@@ -6098,7 +6098,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
       op.account = "alice";
       op.ECOreward = ASSET( "20.000 TESTS" );
       op.EUSDreward = ASSET( "0.000 TBD" );
-      op.ESCORreward = ASSET( "0.000000 ESCOR" );
+      op.ESCORreward = ASSET( "0.000000 VESTS" );
 
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -6109,7 +6109,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
       BOOST_TEST_MESSAGE( "--- Claiming a partial reward balance" );
 
       op.ECOreward = ASSET( "0.000 TESTS" );
-      op.ESCORreward = ASSET( "5.000000 ESCOR" );
+      op.ESCORreward = ASSET( "5.000000 VESTS" );
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -6118,10 +6118,10 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
       BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_ECO + op.ECOreward );
       BOOST_REQUIRE( db.get_account( "alice" ).ECOrewardBalance == ASSET( "10.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == alice_EUSD + op.EUSDreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardbalance == ASSET( "10.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardBalance == ASSET( "10.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).ESCOR == alice_ESCOR + op.ESCORreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).ESCORrewardBalance == ASSET( "5.000000 ESCOR" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).ESCORrewardBalance == ASSET( "5.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCORrewardBalance == ASSET( "5.000000 VESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCORrewardBalanceInECO == ASSET( "5.000 TESTS" ) );
       validate_database();
 
       alice_ESCOR += op.ESCORreward;
@@ -6139,10 +6139,10 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
       BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_ECO + op.ECOreward );
       BOOST_REQUIRE( db.get_account( "alice" ).ECOrewardBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance == alice_EUSD + op.EUSDreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardBalance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).ESCOR == alice_ESCOR + op.ESCORreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).ESCORrewardBalance == ASSET( "0.000000 ESCOR" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).ESCORrewardBalance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCORrewardBalance == ASSET( "0.000000 VESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).ESCORrewardBalanceInECO == ASSET( "0.000 TESTS" ) );
             validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -6169,10 +6169,10 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_authorities )
       BOOST_TEST_MESSAGE( "Testing: delegateESCOR_authorities" );
       signed_transaction tx;
       ACTORS( (alice)(bob) )
-      score( "alice", ASSET( "10000.000000 ESCOR" ) );
+      score( "alice", ASSET( "10000.000000 VESTS" ) );
 
       delegateESCOR_operation op;
-      op.ESCOR = ASSET( "300.000000 ESCOR");
+      op.ESCOR = ASSET( "300.000000 VESTS");
       op.delegator = "alice";
       op.delegatee = "bob";
 
@@ -6234,7 +6234,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
       generate_block();
 
       delegateESCOR_operation op;
-      op.ESCOR = ASSET( "10000000.000000 ESCOR");
+      op.ESCOR = ASSET( "10000000.000000 VESTS");
       op.delegator = "alice";
       op.delegatee = "bob";
 
@@ -6246,19 +6246,19 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
       const account_object& alice_acc = db.get_account( "alice" );
       const account_object& bob_acc = db.get_account( "bob" );
 
-      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
-      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "10000000.000000 ESCOR"));
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 VESTS"));
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "10000000.000000 VESTS"));
 
       BOOST_TEST_MESSAGE( "--- Test that the delegation object is correct. " );
       auto delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
 
       BOOST_REQUIRE( delegation != nullptr );
       BOOST_REQUIRE( delegation->delegator == op.delegator);
-      BOOST_REQUIRE( delegation->ESCOR  == ASSET( "10000000.000000 ESCOR"));
+      BOOST_REQUIRE( delegation->ESCOR  == ASSET( "10000000.000000 VESTS"));
 
       validate_database();
       tx.clear();
-      op.ESCOR = ASSET( "20000000.000000 ESCOR");
+      op.ESCOR = ASSET( "20000000.000000 VESTS");
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -6267,9 +6267,9 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 
       BOOST_REQUIRE( delegation != nullptr );
       BOOST_REQUIRE( delegation->delegator == op.delegator);
-      BOOST_REQUIRE( delegation->ESCOR == ASSET( "20000000.000000 ESCOR"));
-      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "20000000.000000 ESCOR"));
-      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "20000000.000000 ESCOR"));
+      BOOST_REQUIRE( delegation->ESCOR == ASSET( "20000000.000000 VESTS"));
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "20000000.000000 VESTS"));
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "20000000.000000 VESTS"));
 
       BOOST_TEST_MESSAGE( "--- Test that effective ESCOR is accurate and being applied." );
       tx.operations.clear();
@@ -6318,7 +6318,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 
       auto samESCOR = db.get_account( "sam" ).ESCOR;
 
-      BOOST_TEST_MESSAGE( "--- Test failure when delegating 0 ESCOR" );
+      BOOST_TEST_MESSAGE( "--- Test failure when delegating 0 VESTS" );
       tx.clear();
       op.delegator = "sam";
       op.delegatee = "dave";
@@ -6352,7 +6352,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
 
       tx.clear();
-      withdraw.ESCOR = ASSET( "0.000000 ESCOR" );
+      withdraw.ESCOR = ASSET( "0.000000 VESTS" );
       tx.operations.push_back( withdraw );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -6375,7 +6375,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
 
       BOOST_TEST_MESSAGE( "--- Remove a delegation and ensure it is returned after 1 week" );
       tx.clear();
-      op.ESCOR = ASSET( "0.000000 ESCOR" );
+      op.ESCOR = ASSET( "0.000000 VESTS" );
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -6388,7 +6388,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
       BOOST_REQUIRE( exp_obj->ESCOR == samESCOR );
       BOOST_REQUIRE( exp_obj->expiration == db.head_block_time() + CASHOUT_WINDOW_SECONDS );
       BOOST_REQUIRE( db.get_account( "sam" ).ESCORDelegated == samESCOR );
-      BOOST_REQUIRE( db.get_account( "dave" ).ESCORreceived == ASSET( "0.000000 ESCOR" ) );
+      BOOST_REQUIRE( db.get_account( "dave" ).ESCORreceived == ASSET( "0.000000 VESTS" ) );
       delegation = db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
       BOOST_REQUIRE( delegation == nullptr );
 
@@ -6398,7 +6398,7 @@ BOOST_AUTO_TEST_CASE( delegateESCOR_apply )
       end = db.get_index< ECO_fund_for_ESCOR_delegation_expiration_index, by_id >().end();
 
       BOOST_REQUIRE( exp_obj == end );
-      BOOST_REQUIRE( db.get_account( "sam" ).ESCORDelegated == ASSET( "0.000000 ESCOR" ) );
+      BOOST_REQUIRE( db.get_account( "sam" ).ESCORDelegated == ASSET( "0.000000 VESTS" ) );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -6428,7 +6428,7 @@ BOOST_AUTO_TEST_CASE( issue_971_ECO_fund_for_ESCOR_removal )
 
       signed_transaction tx;
       delegateESCOR_operation op;
-      op.ESCOR = ASSET( "10000000.000000 ESCOR");
+      op.ESCOR = ASSET( "10000000.000000 VESTS");
       op.delegator = "alice";
       op.delegatee = "bob";
 
@@ -6440,8 +6440,8 @@ BOOST_AUTO_TEST_CASE( issue_971_ECO_fund_for_ESCOR_removal )
       const account_object& alice_acc = db.get_account( "alice" );
       const account_object& bob_acc = db.get_account( "bob" );
 
-      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
-      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "10000000.000000 ESCOR"));
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 VESTS"));
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "10000000.000000 VESTS"));
 
       generate_block();
 
@@ -6455,7 +6455,7 @@ BOOST_AUTO_TEST_CASE( issue_971_ECO_fund_for_ESCOR_removal )
 
       generate_block();
 
-      op.ESCOR = ASSET( "0.000000 ESCOR" );
+      op.ESCOR = ASSET( "0.000000 VESTS" );
 
       tx.clear();
       tx.operations.push_back( op );
@@ -6463,8 +6463,8 @@ BOOST_AUTO_TEST_CASE( issue_971_ECO_fund_for_ESCOR_removal )
       db.push_transaction( tx, 0 );
       generate_block();
 
-      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 ESCOR"));
-      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "0.000000 ESCOR"));
+      BOOST_REQUIRE( alice_acc.ESCORDelegated == ASSET( "10000000.000000 VESTS"));
+      BOOST_REQUIRE( bob_acc.ESCORreceived == ASSET( "0.000000 VESTS"));
    }
    FC_LOG_AND_RETHROW()
 }
@@ -6653,10 +6653,10 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
       generate_block();
 
       BOOST_REQUIRE( db.get_account( "bob" ).ECOrewardBalance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).EUSDrewardbalance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).ESCORrewardBalance.amount + db.get_account( "sam" ).ESCORrewardBalance.amount == db.get_comment( "alice", string( "test" ) ).beneficiary_payout_value.amount );
-      BOOST_REQUIRE( ( db.get_account( "alice" ).EUSDrewardbalance.amount + db.get_account( "alice" ).ESCORrewardBalance.amount ) == db.get_account( "bob" ).ESCORrewardBalance.amount + 2 );
-      BOOST_REQUIRE( ( db.get_account( "alice" ).EUSDrewardbalance.amount + db.get_account( "alice" ).ESCORrewardBalance.amount ) * 2 == db.get_account( "sam" ).ESCORrewardBalance.amount + 3 );
+      BOOST_REQUIRE( db.get_account( "bob" ).EUSDrewardBalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).ESCORrewardBalanceInECO.amount + db.get_account( "sam" ).ESCORrewardBalanceInECO.amount == db.get_comment( "alice", string( "test" ) ).beneficiary_payout_value.amount );
+      BOOST_REQUIRE( ( db.get_account( "alice" ).EUSDrewardBalance.amount + db.get_account( "alice" ).ESCORrewardBalanceInECO.amount ) == db.get_account( "bob" ).ESCORrewardBalanceInECO.amount + 2 );
+      BOOST_REQUIRE( ( db.get_account( "alice" ).EUSDrewardBalance.amount + db.get_account( "alice" ).ESCORrewardBalanceInECO.amount ) * 2 == db.get_account( "sam" ).ESCORrewardBalanceInECO.amount + 3 );
    }
    FC_LOG_AND_RETHROW()
 }
