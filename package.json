@@ -12,7 +12,8 @@
 		"push" : "./scripts/push.sh",
 		"pull" : "./scripts/pull.sh",
 		"docker" : "docker build -t lopudesigns/wenode-test .",
-		"dockerTest" : "docker build -t lopudesigns/wenode-testing . --file testbuild.Dockerfile"
+		"dockerTest" : "docker build -t lopudesigns/wenode-testing . --file test.Dockerfile",
+		"dockerDebug" : "docker build -t lopudesigns/wenode-testing . --file debug.Dockerfile"
   },
   "repository": {
     "type": "git",
