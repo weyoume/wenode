@@ -53,3 +53,4 @@ contrib/private*
 contrib/credentials/private*
 scripts/private*
 /build/
+/nbproject/private/

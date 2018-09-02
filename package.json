@@ -11,7 +11,8 @@
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"push" : "./scripts/push.sh",
 		"pull" : "./scripts/pull.sh",
-		"docker" : "docker build -t lopudesigns/wenode-test ."
+		"docker" : "docker build -t lopudesigns/wenode-test .",
+		"dockerTest" : "docker build -t lopudesigns/wenode-testing . --file testbuild.Dockerfile"
   },
   "repository": {
     "type": "git",
