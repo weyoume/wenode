@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       const auto& acnt_idx = db.get_index< account_index >().indices().get< by_name >();
       auto acnt_itr = acnt_idx.begin();
 
-      BOOST_TEST_MESSAGE( "Saving account ESCOR" );
+      BOOST_TEST_MESSAGE( "Saving account VESTS" );
 
       while( acnt_itr != acnt_idx.end() )
       {
@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE( ESCOR_stock_split )
       fc::time_point start = fc::time_point::now();
       db.perform_ESCOR_split( magnitude );
       fc::time_point end = fc::time_point::now();
-      ilog( "ESCOR split execution time: ${t} us", ("t",end - start) );
+      ilog( "VESTS split execution time: ${t} us", ("t",end - start) );
 
       BOOST_TEST_MESSAGE( "Verify split took place correctly" );
 

@@ -132,12 +132,12 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       for( const auto& author : authors )
       {
          const account_object& a = db.get_account(author.name);
-         ilog( "${n} : ${ECO} ${EUSD}", ("n", author.name)("ECO", a.ECOrewardBalance)("EUSD", a.EUSDrewardbalance) );
+         ilog( "${n} : ${ECO} ${EUSD}", ("n", author.name)("ECO", a.ECOrewardBalance)("EUSD", a.EUSDrewardBalance) );
       }
       for( const auto& voter : voters )
       {
          const account_object& a = db.get_account(voter.name);
-         ilog( "${n} : ${ECO} ${EUSD}", ("n", voter.name)("ECO", a.ECOrewardBalance)("EUSD", a.EUSDrewardbalance) );
+         ilog( "${n} : ${ECO} ${EUSD}", ("n", voter.name)("ECO", a.ECOrewardBalance)("EUSD", a.EUSDrewardBalance) );
       }
       */
 
@@ -145,9 +145,9 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       const account_object& bob_account   = db.get_account("bob");
       const account_object& dave_account  = db.get_account("dave");
 
-      BOOST_CHECK( alice_account.EUSDrewardbalance == ASSET( "14288.000 TBD" ) );
-      BOOST_CHECK( bob_account.EUSDrewardbalance == ASSET( "0.000 TBD" ) );
-      BOOST_CHECK( dave_account.EUSDrewardbalance == alice_account.EUSDrewardbalance );
+      BOOST_CHECK( alice_account.EUSDrewardBalance == ASSET( "14288.000 TBD" ) );
+      BOOST_CHECK( bob_account.EUSDrewardBalance == ASSET( "0.000 TBD" ) );
+      BOOST_CHECK( dave_account.EUSDrewardBalance == alice_account.EUSDrewardBalance );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -266,8 +266,8 @@ BOOST_AUTO_TEST_CASE( reward_funds )
 
          BOOST_REQUIRE( post_rf.reward_balance.amount == 0 );
          BOOST_REQUIRE( comment_rf.reward_balance.amount > 0 );
-         BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardbalance.amount > 0 );
-         BOOST_REQUIRE( db.get_account( "bob" ).EUSDrewardbalance.amount == 0 );
+         BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardBalance.amount > 0 );
+         BOOST_REQUIRE( db.get_account( "bob" ).EUSDrewardBalance.amount == 0 );
          validate_database();
       }
 
@@ -279,8 +279,8 @@ BOOST_AUTO_TEST_CASE( reward_funds )
 
          BOOST_REQUIRE( post_rf.reward_balance.amount > 0 );
          BOOST_REQUIRE( comment_rf.reward_balance.amount == 0 );
-         BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardbalance.amount > 0 );
-         BOOST_REQUIRE( db.get_account( "bob" ).EUSDrewardbalance.amount > 0 );
+         BOOST_REQUIRE( db.get_account( "alice" ).EUSDrewardBalance.amount > 0 );
+         BOOST_REQUIRE( db.get_account( "bob" ).EUSDrewardBalance.amount > 0 );
          validate_database();
       }
    }
@@ -2747,7 +2747,7 @@ BOOST_AUTO_TEST_CASE( EUSD_stability )
       auto comment_reward = ( gpo.total_reward_fund_ECO.amount + 2000 ) - ( ( gpo.total_reward_fund_ECO.amount + 2000 ) * 25 * PERCENT_1 ) / PERCENT_100 ;
       comment_reward /= 2;
       auto EUSDreward = ( comment_reward * gpo.EUSD_print_rate ) / PERCENT_100;
-      auto alice_EUSD = db.get_account( "alice" ).EUSDbalance + db.get_account( "alice" ).EUSDrewardbalance + asset( EUSDreward, SYMBOL_ECO ) * exchange_rate;
+      auto alice_EUSD = db.get_account( "alice" ).EUSDbalance + db.get_account( "alice" ).EUSDrewardBalance + asset( EUSDreward, SYMBOL_ECO ) * exchange_rate;
       auto alice_ECO = db.get_account( "alice" ).balance + db.get_account( "alice" ).ECOrewardBalance ;
 
       BOOST_TEST_MESSAGE( "Checking printing EUSD has slowed" );
@@ -2758,7 +2758,7 @@ BOOST_AUTO_TEST_CASE( EUSD_stability )
 
       validate_database();
 
-      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance + db.get_account( "alice" ).EUSDrewardbalance == alice_EUSD );
+      BOOST_REQUIRE( db.get_account( "alice" ).EUSDbalance + db.get_account( "alice" ).EUSDrewardBalance == alice_EUSD );
       BOOST_REQUIRE( db.get_account( "alice" ).balance + db.get_account( "alice" ).ECOrewardBalance > alice_ECO );
 
       BOOST_TEST_MESSAGE( "Letting percent market cap fall to 2% to verify printing of EUSD turns back on" );
@@ -2908,7 +2908,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
          db.modify( db.get_account( NULL_ACCOUNT ), [&]( account_object& a )
          {
             a.ECOrewardBalance = ASSET( "1.000 TESTS" );
-            a.EUSDrewardbalance = ASSET( "1.000 TBD" );
+            a.EUSDrewardBalance = ASSET( "1.000 TBD" );
             a.ESCORrewardBalanceInECO = ASSET( "1.000000 TP" );
             a.ESCORrewardBalance = ASSET( "1.000 TESTS" );
          });
@@ -2930,7 +2930,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCOR > ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOsavingsBalance == ASSET( "4.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDsavingsBalance == ASSET( "5.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardbalance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardBalance == ASSET( "1.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOrewardBalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalanceInECO == ASSET( "1.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "1.000 TESTS" ) );
@@ -2946,7 +2946,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCOR == ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOsavingsBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDsavingsBalance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).EUSDrewardBalance == ASSET( "0.000 TBD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ECOrewardBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalanceInECO == ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).ESCORrewardBalance == ASSET( "0.000 TESTS" ) );

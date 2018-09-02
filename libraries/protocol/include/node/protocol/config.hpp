@@ -11,12 +11,12 @@
 #define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 #define CHAIN_ID                        (fc::sha256::hash("eztestnet"))
 
-#define SYMBOL_ECO  									  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< eCoin with 3 digits of precision
-#define SYMBOL_ESCOR  									  (uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('P') << 24) | (uint64_t('T') << 32) ) ///< ESCOR with 6 digits of precision
-#define SYMBOL_WYM    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
-#define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< eCoin Backed eUSD with 3 digits of precision
+#define SYMBOL_ECO  									  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< eCoin/ECO/TESTS with 3 digits of precision
+#define SYMBOL_ESCOR  									(uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< eScore/ESCOR/VESTS with 6 digits of precision
+#define SYMBOL_WYM    							  	(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('Y') << 24) | (uint64_t('M') << 32) | (uint64_t('T') << 40) ) ///< WYM/WEYOUME equity asset with 3 digits of precision
+#define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test / eCoin Backed eUSD with 3 digits of precision
 
-#define ADDRESS_PREFIX                  "EZT"
+#define ADDRESS_PREFIX                  "WET"
 
 #define GENESIS_TIME                    (fc::time_point_sec(1451606400))
 #define MINING_TIME                     (fc::time_point_sec(1451606400))
@@ -47,7 +47,7 @@
 #define SYMBOL_WYM    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
 #define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< eCoin Backed eUSD with 3 digits of precision
 
-#define ADDRESS_PREFIX                  "EZT"
+#define ADDRESS_PREFIX                  "WYM"
 
 #define GENESIS_TIME                    (fc::time_point_sec(0))
 #define MINING_TIME                     (fc::time_point_sec(1000))

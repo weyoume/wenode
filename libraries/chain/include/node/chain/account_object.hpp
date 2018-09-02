@@ -88,7 +88,7 @@ namespace node { namespace chain {
          asset             ESCORrewardBalanceInECO = asset( 0, SYMBOL_ECO );
          asset             ECOrewardBalance = asset( 0, SYMBOL_ECO );
          asset             ESCORrewardBalance = asset( 0, SYMBOL_ESCOR );
-         asset             EUSDrewardbalance = asset( 0, SYMBOL_EUSD );
+         asset             EUSDrewardBalance = asset( 0, SYMBOL_EUSD );
 
          share_type        curationRewards = 0;
          share_type        posting_rewards = 0;
@@ -466,7 +466,7 @@ FC_REFLECT( node::chain::account_object,
              (ECOsavingsBalance)
              (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
              (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
-             (ECOrewardBalance)(EUSDrewardbalance)(ESCORrewardBalance)(ESCORrewardBalanceInECO)
+             (ECOrewardBalance)(EUSDrewardBalance)(ESCORrewardBalance)(ESCORrewardBalanceInECO)
              (ESCOR)(ESCORDelegated)(ESCORreceived)
              (ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)

@@ -1267,13 +1267,13 @@ void database::clear_null_account_balance()
       adjust_reward_balance( null_account, -null_account.ECOrewardBalance );
    }
 
-   if( null_account.EUSDrewardbalance.amount > 0 )
+   if( null_account.EUSDrewardBalance.amount > 0 )
    {
-      EUSDtotal += null_account.EUSDrewardbalance;
-      adjust_reward_balance( null_account, -null_account.EUSDrewardbalance );
+      EUSDtotal += null_account.EUSDrewardBalance;
+      adjust_reward_balance( null_account, -null_account.EUSDrewardBalance );
    }
 
-   if( null_account.ESCORrewardBalanceInECO.amount > 0 )
+   if( null_account.ESCORrewardBalance.amount > 0 )
    {
       const auto& gpo = get_dynamic_global_properties();
 
@@ -3431,7 +3431,7 @@ void database::adjust_reward_balance( const account_object& a, const asset& delt
             acnt.ECOrewardBalance += delta;
             break;
          case SYMBOL_EUSD:
-            acnt.EUSDrewardbalance += delta;
+            acnt.EUSDrewardBalance += delta;
             break;
          default:
             FC_ASSERT( false, "invalid symbol" );
@@ -3936,9 +3936,9 @@ void database::validate_invariants()const
          total_supply += itr->ECOrewardBalance;
          EUSDtotal += itr->EUSDbalance;
          EUSDtotal += itr->EUSDsavingsBalance;
-         EUSDtotal += itr->EUSDrewardbalance;
+         EUSDtotal += itr->EUSDrewardBalance;
          totalESCOR += itr->ESCOR;
-         totalESCOR += itr->ESCORrewardBalanceInECO;
+         totalESCOR += itr->ESCORrewardBalance;
          pending_ESCORvalueInECO += itr->ESCORrewardBalanceInECO;
          total_ESCORfundECObalance_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
                                  itr->witness_vote_weight() :
