@@ -14,10 +14,10 @@
 		"docker" : "docker build -t lopudesigns/wenode-test .",
 		"dockerTest" : "docker build -t lopudesigns/wenode-testing . --file test.Dockerfile",
 		"dockerDebug" : "docker build -t lopudesigns/wenode-debugging . --file debug.Dockerfile",
-		"cmake" : "mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..",
-		"cmakeDebug" : "mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..",
-    "make" : "mkdir build && cd build && make -j$(sysctl -n hw.logicalcpu)",
-    "makeGrapheneNet" : "mkdir build && cd build && make -j$(sysctl -n hw.logicalcpu) graphene_net"
+		"cmake" : "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..",
+		"cmakeDebug" : "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Debug ..",
+    "make" : "mkdir -p build && cd build && make -j$(sysctl -n hw.logicalcpu)",
+    "makeGrapheneNet" : "mkdir -p build && cd build && make -j$(sysctl -n hw.logicalcpu) graphene_net"
   },
   "repository": {
     "type": "git",
