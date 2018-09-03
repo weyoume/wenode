@@ -2056,7 +2056,7 @@ annotated_signed_transaction wallet_api::withdrawESCOR(string from, asset ESCOR,
    FC_ASSERT( !is_locked() );
     withdrawESCOR_operation op;
     op.account = from;
-    op.ESCOR = ESCOR
+    op.ESCOR = ESCOR;
 
     signed_transaction tx;
     tx.operations.push_back( op );
