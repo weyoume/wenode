@@ -47,7 +47,7 @@ ADD . /usr/local/src/node
 # RUN \
 #     cd /usr/local/src/node && \
 #     git submodule update --init --recursive && \
-#     mkdir build && \
+#     mkdir -p build && \
 #     cd build && \
 #     cmake \
 #         -DCMAKE_BUILD_TYPE=Release \
@@ -68,7 +68,7 @@ ADD . /usr/local/src/node
 # RUN \
 #     cd /usr/local/src/node && \
 #     git submodule update --init --recursive && \
-#     mkdir build && \
+#     mkdir -p build && \
 #     cd build && \
 #     cmake \
 #         -DCMAKE_BUILD_TYPE=Debug \
@@ -89,7 +89,7 @@ ADD . /usr/local/src/node
 RUN \
     cd /usr/local/src/node && \
     git submodule update --init --recursive && \
-    # mkdir build && \
+    # mkdir -p build && \
     # cd build && \
     # cmake \
     #     -DCMAKE_INSTALL_PREFIX=/usr/local/node-default \
@@ -112,7 +112,7 @@ RUN \
     #   > /etc/nodeversion && \
     # cat /etc/nodeversion && \
     # rm -rfv build && \
-    mkdir build && \
+    mkdir -p build && \
     cd build && \
     cmake \
         -DCMAKE_INSTALL_PREFIX=/usr/local/node \

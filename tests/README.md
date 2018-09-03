@@ -31,7 +31,7 @@ repository root.)
     cd /usr/local/src/node
     git checkout <branch> # e.g. 123-feature
     git submodule update --init --recursive
-    mkdir build
+    mkdir -p build
     cd build
     cmake \
         -DCMAKE_BUILD_TYPE=Debug \
