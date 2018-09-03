@@ -4,7 +4,7 @@
 
 # cd $repos/node/dev ;
 rm -r build/ ;
-mkdir build && cd build ;
+mkdir -p build && cd build ;
 cmake \
 	-DCMAKE_BUILD_TYPE=Release \
 	-DLOW_MEMORY_NODE=OFF \
