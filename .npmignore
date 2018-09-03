@@ -54,3 +54,5 @@ contrib/credentials/private*
 scripts/private*
 /build/
 /nbproject/private/
+
+cmake-build-debug/
