@@ -2,7 +2,7 @@
 project( Node )
 cmake_minimum_required( VERSION 3.2 )
 
-set( BLOCKCHAIN_NAME "Ezira" )
+set( BLOCKCHAIN_NAME "tWYM" )
 
 set( GUI_CLIENT_EXECUTABLE_NAME Node )
 set( CUSTOM_URL_SCHEME "gcs" )
