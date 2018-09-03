@@ -2,62 +2,62 @@
 <project version="4">
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true" buildAllGenerated="true">
     <generated>
-      <config projectName="Node" targetName="project_secp256k1" />
-      <config projectName="Node" targetName="chainbase_test" />
-      <config projectName="Node" targetName="graphene_net" />
-      <config projectName="Node" targetName="build_hardfork_hpp" />
-      <config projectName="Node" targetName="ntp_test" />
-      <config projectName="Node" targetName="node_account_statistics" />
-      <config projectName="Node" targetName="js_operation_serializer" />
-      <config projectName="Node" targetName="node_block_info" />
-      <config projectName="Node" targetName="chainbase" />
-      <config projectName="Node" targetName="wallet" />
-      <config projectName="Node" targetName="node_witness" />
-      <config projectName="Node" targetName="node_market_history" />
-      <config projectName="Node" targetName="node_account_by_key" />
-      <config projectName="Node" targetName="test_sqrt" />
-      <config projectName="Node" targetName="test_shared_mem" />
-      <config projectName="Node" targetName="sign_transaction" />
       <config projectName="Node" targetName="node_delayed_node" />
-      <config projectName="Node" targetName="node_wallet" />
-      <config projectName="Node" targetName="cat-parts" />
-      <config projectName="Node" targetName="test_block_log" />
-      <config projectName="Node" targetName="ecc_test" />
-      <config projectName="Node" targetName="size_checker" />
-      <config projectName="Node" targetName="sign_digest" />
-      <config projectName="Node" targetName="test_fixed_string" />
-      <config projectName="Node" targetName="node_raw_block" />
-      <config projectName="Node" targetName="graphene_utilities" />
-      <config projectName="Node" targetName="all_tests" />
-      <config projectName="Node" targetName="node_chain" />
-      <config projectName="Node" targetName="get_dev_key" />
-      <config projectName="Node" targetName="inflation_model" />
-      <config projectName="Node" targetName="node_tags" />
-      <config projectName="Node" targetName="blind" />
-      <config projectName="Node" targetName="fc" />
-      <config projectName="Node" targetName="node_auth_util" />
-      <config projectName="Node" targetName="task_cancel_test" />
-      <config projectName="Node" targetName="node_mf_plugins" />
-      <config projectName="Node" targetName="bloom_test" />
-      <config projectName="Node" targetName="chain_test" />
-      <config projectName="Node" targetName="api" />
-      <config projectName="Node" targetName="node_protocol" />
-      <config projectName="Node" targetName="node_blockchain_statistics" />
-      <config projectName="Node" targetName="node_debug_node" />
-      <config projectName="Node" targetName="blinding_test" />
-      <config projectName="Node" targetName="real128_test" />
-      <config projectName="Node" targetName="log_test" />
-      <config projectName="Node" targetName="node_follow" />
-      <config projectName="Node" targetName="plugin_test" />
       <config projectName="Node" targetName="graphene_schema" />
-      <config projectName="Node" targetName="node_private_message" />
-      <config projectName="Node" targetName="node_plugins" />
-      <config projectName="Node" targetName="equihash" />
+      <config projectName="Node" targetName="node_debug_node" />
+      <config projectName="Node" targetName="wallet" />
+      <config projectName="Node" targetName="bloom_test" />
       <config projectName="Node" targetName="node" />
       <config projectName="Node" targetName="bip_lock" />
-      <config projectName="Node" targetName="node_account_history" />
+      <config projectName="Node" targetName="ecc_test" />
+      <config projectName="Node" targetName="sign_digest" />
+      <config projectName="Node" targetName="node_tags" />
+      <config projectName="Node" targetName="test_fixed_string" />
+      <config projectName="Node" targetName="node_account_by_key" />
+      <config projectName="Node" targetName="all_tests" />
+      <config projectName="Node" targetName="graphene_net" />
+      <config projectName="Node" targetName="node_witness" />
+      <config projectName="Node" targetName="inflation_model" />
+      <config projectName="Node" targetName="fc" />
+      <config projectName="Node" targetName="node_block_info" />
+      <config projectName="Node" targetName="chainbase" />
+      <config projectName="Node" targetName="node_mf_plugins" />
+      <config projectName="Node" targetName="test_block_log" />
+      <config projectName="Node" targetName="node_chain" />
+      <config projectName="Node" targetName="test_shared_mem" />
+      <config projectName="Node" targetName="build_hardfork_hpp" />
+      <config projectName="Node" targetName="node_blockchain_statistics" />
+      <config projectName="Node" targetName="api" />
+      <config projectName="Node" targetName="plugin_test" />
       <config projectName="Node" targetName="hmac_test" />
+      <config projectName="Node" targetName="node_protocol" />
+      <config projectName="Node" targetName="task_cancel_test" />
+      <config projectName="Node" targetName="ntp_test" />
+      <config projectName="Node" targetName="project_secp256k1" />
+      <config projectName="Node" targetName="graphene_utilities" />
+      <config projectName="Node" targetName="node_wallet" />
+      <config projectName="Node" targetName="log_test" />
+      <config projectName="Node" targetName="real128_test" />
+      <config projectName="Node" targetName="node_market_history" />
+      <config projectName="Node" targetName="node_auth_util" />
+      <config projectName="Node" targetName="node_raw_block" />
+      <config projectName="Node" targetName="node_follow" />
+      <config projectName="Node" targetName="chainbase_test" />
+      <config projectName="Node" targetName="sign_transaction" />
+      <config projectName="Node" targetName="node_plugins" />
+      <config projectName="Node" targetName="blind" />
+      <config projectName="Node" targetName="get_dev_key" />
+      <config projectName="Node" targetName="test_sqrt" />
+      <config projectName="Node" targetName="blinding_test" />
+      <config projectName="Node" targetName="node_account_history" />
+      <config projectName="Node" targetName="js_operation_serializer" />
+      <config projectName="Node" targetName="size_checker" />
+      <config projectName="Node" targetName="node_account_statistics" />
       <config projectName="Node" targetName="node_app" />
+      <config projectName="Node" targetName="chain_test" />
+      <config projectName="Node" targetName="equihash" />
+      <config projectName="Node" targetName="cat-parts" />
+      <config projectName="Node" targetName="node_private_message" />
     </generated>
   </component>
   <component name="CMakeSettings">
@@ -67,16 +67,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f0846ac8-97ea-40aa-9ddf-08e42411cad8" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/markdown-navigator.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/markdown-navigator/profiles_settings.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/CMakeLists.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/libraries/manifest/template_context/plugins.json" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/libraries/manifest/template_context/plugins.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/libraries/utilities/git_revision.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/libraries/utilities/git_revision.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/net/include/graphene/net/node.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/net/include/graphene/net/node.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/net/include/graphene/net/peer_connection.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/net/include/graphene/net/peer_connection.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/net/node.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/net/node.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -132,11 +124,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/libraries/net/include/graphene/net/node.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="368">
-              <caret line="287" column="52" selection-start-line="287" selection-start-column="52" selection-end-line="287" selection-end-column="52" />
+            <state relative-caret-position="173">
+              <caret line="274" column="102" selection-start-line="274" selection-start-column="102" selection-end-line="274" selection-end-column="102" />
               <folding>
                 <element signature="e#1177#1218#0" expanded="true" />
               </folding>
@@ -153,11 +145,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/net/node.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="123">
-              <caret line="1903" column="64" selection-start-line="1903" selection-start-column="64" selection-end-line="1903" selection-end-column="64" />
+            <state relative-caret-position="153">
+              <caret line="1905" selection-start-line="1905" selection-end-line="1905" />
             </state>
           </provider>
         </entry>
@@ -166,7 +158,7 @@
         <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/block.hpp">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="45">
-              <caret line="4" column="30" lean-forward="true" selection-start-line="4" selection-start-column="30" selection-end-line="4" selection-end-column="30" />
+              <caret line="4" column="30" selection-start-line="4" selection-start-column="30" selection-end-line="4" selection-end-column="30" />
             </state>
           </provider>
         </entry>
@@ -634,16 +626,15 @@
       <option name="presentableId" value="Default" />
       <updated>1535894325686</updated>
       <workItem from="1535894329195" duration="2491000" />
-      <workItem from="1535939125504" duration="1906000" />
+      <workItem from="1535939125504" duration="2209000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="4397000" />
+    <option name="totallyTimeSpent" value="4700000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1680" height="1050" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" side_tool="true" visible="true" weight="0.07875458" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -718,20 +709,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/net/include/graphene/net/node.hpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="368">
-          <caret line="287" column="52" selection-start-line="287" selection-start-column="52" selection-end-line="287" selection-end-column="52" />
-          <folding>
-            <element signature="e#1177#1218#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/block.hpp">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="45">
-          <caret line="4" column="30" lean-forward="true" selection-start-line="4" selection-start-column="30" selection-end-line="4" selection-end-column="30" />
+          <caret line="4" column="30" selection-start-line="4" selection-start-column="30" selection-end-line="4" selection-end-column="30" />
         </state>
       </provider>
     </entry>
@@ -744,8 +725,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/libraries/net/node.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="123">
-          <caret line="1903" column="64" selection-start-line="1903" selection-start-column="64" selection-end-line="1903" selection-end-column="64" />
+        <state relative-caret-position="153">
+          <caret line="1905" selection-start-line="1905" selection-end-line="1905" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/net/include/graphene/net/node.hpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="173">
+          <caret line="274" column="102" selection-start-line="274" selection-start-column="102" selection-end-line="274" selection-end-column="102" />
+          <folding>
+            <element signature="e#1177#1218#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
