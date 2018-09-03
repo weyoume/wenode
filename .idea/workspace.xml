@@ -67,8 +67,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f0846ac8-97ea-40aa-9ddf-08e42411cad8" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/cmake-build-debug/libraries/manifest/template_context/plugins.json" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/libraries/manifest/template_context/plugins.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmake-build-debug/libraries/utilities/git_revision.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/libraries/utilities/git_revision.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/wallet/wallet.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/wallet/wallet.cpp" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -127,8 +127,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/libraries/net/include/graphene/net/node.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="173">
-              <caret line="274" column="102" selection-start-line="274" selection-start-column="102" selection-end-line="274" selection-end-column="102" />
+            <state relative-caret-position="181">
+              <caret line="274" column="65" selection-start-line="274" selection-start-column="65" selection-end-line="274" selection-end-column="65" />
               <folding>
                 <element signature="e#1177#1218#0" expanded="true" />
               </folding>
@@ -626,12 +626,12 @@
       <option name="presentableId" value="Default" />
       <updated>1535894325686</updated>
       <workItem from="1535894329195" duration="2491000" />
-      <workItem from="1535939125504" duration="2209000" />
+      <workItem from="1535939125504" duration="2960000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="4700000" />
+    <option name="totallyTimeSpent" value="5451000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1680" height="1050" extended-state="6" />
@@ -732,8 +732,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/libraries/net/include/graphene/net/node.hpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="173">
-          <caret line="274" column="102" selection-start-line="274" selection-start-column="102" selection-end-line="274" selection-end-column="102" />
+        <state relative-caret-position="181">
+          <caret line="274" column="65" selection-start-line="274" selection-start-column="65" selection-end-line="274" selection-end-column="65" />
           <folding>
             <element signature="e#1177#1218#0" expanded="true" />
           </folding>
