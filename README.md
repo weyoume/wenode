@@ -1,6 +1,7 @@
-# Introducing Ezira (beta)
+# Introducing WeYouMe
+#### (alpha)
 
-Ezira is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" social consnensus algorithm for token allocation.
+WeYouMe is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" social consnensus algorithm for token allocation.
 
   - Currency symbol ECO.
   - Equity symbol ECO.
@@ -11,8 +12,8 @@ Ezira is a Delegated Proof of Stake blockchain that uses a "Proof of Brain" soci
 
 # Public Announcement & Discussion
 
-Ezira was announced on
-[Ezira.io](https://ezira.io) prior to
+WeYouMe was announced on
+[WeYouMe.io](https://WeYouMe.io) prior to
 the start of any mining.
 
 # No Support & No Warranty
@@ -27,7 +28,7 @@ IN THE SOFTWARE.
 
 # Whitepaper
 
-You can read the Ezira Whitepaper at [Ezira.io/ezira.pdf](https://ezira.io/whitepaper.pdf).
+You can read the WeYouMe Whitepaper at [WeYouMe.io/whitepaper.pdf](https://WeYouMe.io/whitepaper.pdf).
 
 # Quickstart
 
@@ -35,7 +36,7 @@ Just want to get up and running quickly? We have pre-build docker images for you
 
 # Building
 
-We strongly recommend using one of our pre-built Docker images or using Docker to build Ezira. Both of these processes are described in the [quickstart guide](https://github.com/eziranetwork/ezira/blob/master/doc/exchangequickstart.md).
+We strongly recommend using one of our pre-built Docker images or using Docker to build WeYouMe. Both of these processes are described in the [quickstart guide](https://github.com/eziranetwork/ezira/blob/master/doc/exchangequickstart.md).
 
 If you would still like to build from source, we do have [build instructions](https://github.com/eziranetwork/ezira/blob/master/doc/building.md) for Linux (Ubuntu LTS) and macOS X.
 
@@ -95,7 +96,7 @@ on how to use lcov to check code test coverage.
 
 # System Requirements
 
-For a full web node, you need at least 270GB of disk space available. Node uses a memory mapped file which currently holds 189GB of data and by default is set to use up to 215GB. The block log of the blockchain itself is a little over 48GB. It's highly recommended to run node on a fast disk such as an SSD or by placing the shared memory files in a ramdisk and using the `--shared-file-dir=/path` command line option to specify where. At least 16GB of memory is required for a full web node. Seed nodes (p2p mode) can run with as little as 4GB of memory with a 24 GB state file. Any CPU with decent single core performance should be sufficient. Node is constantly growing. As of December 2017, these numbers were accurate, but you may find you need more disk space to run a full node. We are also constantly working on optimizing Ezira's use of disk space.
+For a full web node, you need at least 270GB of disk space available. Node uses a memory mapped file which currently holds 189GB of data and by default is set to use up to 215GB. The block log of the blockchain itself is a little over 48GB. It's highly recommended to run node on a fast disk such as an SSD or by placing the shared memory files in a ramdisk and using the `--shared-file-dir=/path` command line option to specify where. At least 16GB of memory is required for a full web node. Seed nodes (p2p mode) can run with as little as 4GB of memory with a 24 GB state file. Any CPU with decent single core performance should be sufficient. Node is constantly growing. As of December 2017, these numbers were accurate, but you may find you need more disk space to run a full node. We are also constantly working on optimizing WeYouMe's use of disk space.
 
 On Linux use the following Virtual Memory configuration for the initial sync and subsequent replays. It is not needed for normal operation.
 
@@ -106,7 +107,7 @@ echo    80 | sudo tee /proc/sys/vm/dirty_ratio
 echo 30000 | sudo tee /proc/sys/vm/dirty_writeback_centisec
 ```
 
-# Building Ezira
+# Building WeYouMe
 
 ## Compile-Time Options (cmake)
 
@@ -146,7 +147,7 @@ We ship a Dockerfile.  This builds both common node type binaries.
 
 ## Building on Ubuntu 16.04
 
-For Ubuntu 16.04 users, after installing the right packages with `apt` Ezira
+For Ubuntu 16.04 users, after installing the right packages with `apt` WeYouMe
 will build out of the box without further effort:
 
     # Required packages
@@ -223,14 +224,14 @@ Here are the required packages:
         python3-jinja2
 
 The Boost provided in the Ubuntu 14.04 package manager (Boost 1.55) is too old.
-Ezira requires Boost 1.58 (as in Ubuntu 16.04) and works with versions up to 1.60 (including).
-So building Ezira on Ubuntu 14.04 requires downloading and installing a more recent
+WeYouMe requires Boost 1.58 (as in Ubuntu 16.04) and works with versions up to 1.60 (including).
+So building WeYouMe on Ubuntu 14.04 requires downloading and installing a more recent
 version of Boost.
 
 According to [this mailing list
 post](http://boost.2283326.n4.nabble.com/1-58-1-bugfix-release-necessary-td4674686.html),
 Boost 1.58 is not compatible with gcc 4.8 (the default C++ compiler for
-Ubuntu 14.04) when compiling in C++11 mode (which Ezira does).
+Ubuntu 14.04) when compiling in C++11 mode (which WeYouMe does).
 So we will use Boost 1.60.
 
 Here is how to build and install Boost 1.60 into your user's home directory
