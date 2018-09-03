@@ -11,4 +11,4 @@ dependencies:
 
 test:
     override:
-        - time docker build --rm=false -t eziranetwork/ezira-test -f Dockerfile.test .
+        - time docker build --rm=false -t lopudesigns/wenode-test -f Dockerfile.test .
