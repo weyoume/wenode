@@ -246,6 +246,10 @@ namespace steem { namespace chain {
          void pre_push_virtual_operation( const operation& op );
          void post_push_virtual_operation( const operation& op );
 
+         void push_action( const automated_action& a );
+
+         void notify_pre_apply_action( const action_notification& note );
+         void notify_post_apply_action( const action_notification& note );
          /**
           *  This method is used to track applied operations during the evaluation of a block, these
           *  operations should include any operation actually included in a transaction as well
@@ -260,6 +264,7 @@ namespace steem { namespace chain {
          void notify_pre_apply_transaction( const transaction_notification& note );
          void notify_post_apply_transaction( const transaction_notification& note );
 
+         using apply_action_handler_t = std::function< void(const action_notification&) >;
          using apply_operation_handler_t = std::function< void(const operation_notification&) >;
          using apply_transaction_handler_t = std::function< void(const transaction_notification&) >;
          using apply_block_handler_t = std::function< void(const block_notification&) >;
@@ -279,6 +284,8 @@ namespace steem { namespace chain {
 
       public:
 
+         boost::signals2::connection add_pre_apply_action_handler      ( const apply_action_handler_t&         func, const abstract_plugin& plugin, int32_t group = -1 );
+         boost::signals2::connection add_post_apply_action_handler     ( const apply_action_handler_t&         func, const abstract_plugin& plugin, int32_t group = -1 );
          boost::signals2::connection add_pre_apply_operation_handler   ( const apply_operation_handler_t&      func, const abstract_plugin& plugin, int32_t group = -1 );
          boost::signals2::connection add_post_apply_operation_handler  ( const apply_operation_handler_t&      func, const abstract_plugin& plugin, int32_t group = -1 );
          boost::signals2::connection add_pre_apply_transaction_handler ( const apply_transaction_handler_t&    func, const abstract_plugin& plugin, int32_t group = -1 );
@@ -562,6 +569,9 @@ namespace steem { namespace chain {
          std::string                   _json_schema;
 
          util::advanced_benchmark_dumper  _benchmark_dumper;
+
+         fc::signal<void(const action_notification&)>          _pre_apply_action_signal;
+         fc::signal<void(const action_notification&)>          _post_apply_action_signal;
 
          fc::signal<void(const operation_notification&)>       _pre_apply_operation_signal;
          /**

@@ -10,6 +10,7 @@
 #include <steem/chain/global_property_object.hpp>
 #include <steem/chain/history_object.hpp>
 #include <steem/chain/index.hpp>
+#include <steem/chain/pending_action_object.hpp>
 #include <steem/chain/smt_objects.hpp>
 #include <steem/chain/steem_evaluator.hpp>
 #include <steem/chain/steem_objects.hpp>
@@ -1040,6 +1041,24 @@ void database::notify_pre_apply_operation( operation_notification& note )
    note.op_in_trx    = _current_op_in_trx;
 
    STEEM_TRY_NOTIFY( _pre_apply_operation_signal, note )
+}
+
+void database::push_action( const automated_action& a )
+{
+   create< pending_action_object >( [&]( pending_action_object& pending_action )
+   {
+      pending_action.action = a;
+   });
+}
+
+void database::notify_pre_apply_action( const action_notification& note )
+{
+   STEEM_TRY_NOTIFY( _pre_apply_action_signal, note );
+}
+
+void database::notify_post_apply_action( const action_notification& note )
+{
+   STEEM_TRY_NOTIFY( _post_apply_action_signal, note );
 }
 
 void database::notify_post_apply_operation( const operation_notification& note )
@@ -2689,6 +2708,7 @@ void database::initialize_indexes()
    add_core_index< reward_fund_index                       >(*this);
    add_core_index< vesting_delegation_index                >(*this);
    add_core_index< vesting_delegation_expiration_index     >(*this);
+   add_core_index< pending_action_index                    >(*this);
 #ifdef STEEM_ENABLE_SMT
    add_core_index< smt_token_index                         >(*this);
    add_core_index< smt_event_token_index                   >(*this);
@@ -3529,6 +3549,18 @@ boost::signals2::connection database::any_apply_operation_handler_impl( const ap
       return _pre_apply_operation_signal.connect(group, complex_func);
    else
       return _post_apply_operation_signal.connect(group, complex_func);
+}
+
+boost::signals2::connection database::add_pre_apply_action_handler( const apply_action_handler_t& func,
+   const abstract_plugin& plugin, int32_t group )
+{
+   return connect_impl(_pre_apply_action_signal, func, plugin, group, "->action");
+}
+
+boost::signals2::connection database::add_post_apply_action_handler( const apply_action_handler_t& func,
+   const abstract_plugin& plugin, int32_t group )
+{
+   return connect_impl(_post_apply_action_signal, func, plugin, group, "<-transaction");
 }
 
 boost::signals2::connection database::add_pre_apply_operation_handler( const apply_operation_handler_t& func,
