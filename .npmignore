@@ -18,8 +18,11 @@ libraries/wallet/Doxyfile
 libraries/wallet/api_documentation.cpp
 libraries/wallet/doxygen
 
+<<<<<<< HEAD
 libraries/fc
 
+=======
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
 programs/wallet/wallet
 programs/js_operation_serializer/js_operation_serializer
 programs/node/node

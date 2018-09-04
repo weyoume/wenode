@@ -1,0 +1,1 @@
+cmd='/Users/lopu/State/git/eziranetwork/wenode/dev-wenode/libraries/fc/vendor/secp256k1-zkp/configure;--prefix=/Users/lopu/State/git/eziranetwork/wenode/dev-wenode/cmake-build-debug/libraries/fc/vendor/secp256k1-zkp;--with-bignum=no'

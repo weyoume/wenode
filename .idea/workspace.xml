@@ -66,7 +66,17 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
+<<<<<<< HEAD
     <list default="true" id="f0846ac8-97ea-40aa-9ddf-08e42411cad8" name="Default Changelist" comment="" />
+=======
+    <list default="true" id="f0846ac8-97ea-40aa-9ddf-08e42411cad8" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/libraries/manifest/template_context/plugins.json" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/libraries/manifest/template_context/plugins.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmake-build-debug/libraries/utilities/git_revision.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/cmake-build-debug/libraries/utilities/git_revision.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/fc" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/fc" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/fc/vendor/diff-match-patch-cpp-stl" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/fc/vendor/diff-match-patch-cpp-stl" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+    </list>
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
     <ignored path="$PROJECT_DIR$/cmake-build-debug/CMakeFiles/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -169,11 +179,19 @@
           </provider>
         </entry>
       </file>
+<<<<<<< HEAD
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="210">
               <caret line="48" column="35" lean-forward="true" selection-start-line="48" selection-start-column="35" selection-end-line="48" selection-end-column="35" />
+=======
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="105">
+              <caret line="7" column="30" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
             </state>
           </provider>
         </entry>
@@ -183,7 +201,11 @@
           <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
             <state split_layout="SPLIT">
               <first_editor relative-caret-position="132">
+<<<<<<< HEAD
                 <caret line="299" selection-start-line="299" selection-end-line="299" />
+=======
+                <caret line="298" selection-start-line="298" selection-end-line="298" />
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
               </first_editor>
               <second_editor>
                 <markdownNavigatorState />
@@ -192,11 +214,19 @@
           </provider>
         </entry>
       </file>
+<<<<<<< HEAD
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/package.json">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="150">
               <caret line="10" column="62" lean-forward="true" selection-start-line="10" selection-start-column="62" selection-end-line="10" selection-end-column="62" />
+=======
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/package.json">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="199">
+              <caret line="14" column="61" selection-start-line="14" selection-start-column="61" selection-end-line="14" selection-end-column="61" />
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
             </state>
           </provider>
         </entry>
@@ -628,11 +658,18 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
+<<<<<<< HEAD
     <option name="totallyTimeSpent" value="7294000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1680" height="1050" extended-state="6" />
     <editor active="true" />
+=======
+    <option name="totallyTimeSpent" value="6284000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="0" y="0" width="1680" height="1050" extended-state="6" />
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
     <layout>
       <window_info content_ui="combo" id="Project" order="0" side_tool="true" visible="true" weight="0.07875458" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -662,7 +699,17 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
+<<<<<<< HEAD
     <entry file="file://$PROJECT_DIR$/libraries/fc/vendor/websocketpp/readme.md" />
+=======
+    <entry file="file://$PROJECT_DIR$/libraries/fc/vendor/websocketpp/readme.md">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="305">
+          <caret line="36" lean-forward="true" selection-start-line="36" selection-end-line="36" />
+        </state>
+      </provider>
+    </entry>
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
     <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/types.hpp">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1755">
@@ -672,8 +719,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state relative-caret-position="210">
           <caret line="48" column="35" lean-forward="true" selection-start-line="48" selection-start-column="35" selection-end-line="48" selection-end-column="35" />
+=======
+        <state relative-caret-position="105">
+          <caret line="7" column="30" selection-start-line="7" selection-start-column="30" selection-end-line="7" selection-end-column="30" />
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
         </state>
       </provider>
     </entry>
@@ -712,7 +764,11 @@
       <provider selected="true" editor-type-id="split-provider[text-editor;MarkdownPreviewEditor]">
         <state split_layout="SPLIT">
           <first_editor relative-caret-position="132">
+<<<<<<< HEAD
             <caret line="299" selection-start-line="299" selection-end-line="299" />
+=======
+            <caret line="298" selection-start-line="298" selection-end-line="298" />
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
           </first_editor>
           <second_editor>
             <markdownNavigatorState />
@@ -727,8 +783,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/package.json">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state relative-caret-position="150">
           <caret line="10" column="62" lean-forward="true" selection-start-line="10" selection-start-column="62" selection-end-line="10" selection-end-column="62" />
+=======
+        <state relative-caret-position="199">
+          <caret line="14" column="61" selection-start-line="14" selection-start-column="61" selection-end-line="14" selection-end-column="61" />
+>>>>>>> 5a2ff211d3a5d61a35c4af9254bb0136b79dfddc
         </state>
       </provider>
     </entry>
