@@ -111,7 +111,7 @@ RUN \
     #   > /etc/nodeversion && \
     # cat /etc/nodeversion && \
     # rm -rfv build && \
-    mkdir -p build && \
+    mkdir build && \
     cd build && \
     cmake \
         -DCMAKE_INSTALL_PREFIX=/usr/local/node \
