@@ -111,6 +111,7 @@ RUN \
     #   > /etc/nodeversion && \
     # cat /etc/nodeversion && \
     # rm -rfv build && \
+		ls libraries/fc && \
     mkdir build && \
     cd build && \
     cmake \
