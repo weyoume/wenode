@@ -1,5 +1,5 @@
 # get an apt-get dependancies pre-loaded image from lopudesigns (one of the devs of node) docker
-FROM lopudesigns/node-build-ready-image
+FROM lopudesigns/ezira-build-ready-image
 
 #ARG BLOCKCHAIN=https://example.com/node-blockchain.tbz2
 

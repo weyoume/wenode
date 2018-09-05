@@ -13,6 +13,7 @@
 		"pull" : "./scripts/pull.sh",
 		"gitmodules" : "git submodule update --init --recursive",
 		"docker" : "docker build -t lopudesigns/wenode-test .",
+		"dockerReady" : "docker build -f Dockerfiles/preinstalledDependancies.Dockerfile -t lopudesigns/wenode-test .",
 		"dockerTest" : "docker build -t lopudesigns/wenode-testing . --file test.Dockerfile",
 		"dockerDebug" : "docker build -t lopudesigns/wenode-debugging . --file debug.Dockerfile",
 		"cmake" : "mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release ..",
