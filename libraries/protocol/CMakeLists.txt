@@ -23,6 +23,7 @@ add_library( steem_protocol
 
              smt_operations.cpp
              steem_operations.cpp
+             steem_actions.cpp
              types.cpp
              schema_types.cpp
              authority.cpp
