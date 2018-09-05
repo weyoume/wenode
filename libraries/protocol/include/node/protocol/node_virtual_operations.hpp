@@ -57,7 +57,7 @@ namespace node { namespace protocol {
 
    struct interest_operation : public virtual_operation
    {
-      interest_operation( const string& o = "", const asset& i = asset(0,SYMBOL_TSD) )
+      interest_operation( const string& o = "", const asset& i = asset(0,SYMBOL_USD) )
          :owner(o),interest(i){}
 
       account_name_type owner;

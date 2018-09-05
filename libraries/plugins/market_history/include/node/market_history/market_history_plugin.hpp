@@ -84,8 +84,8 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
    share_type           TME_volume;
    share_type           TSD_volume;
 
-   price high()const { return asset( high_TSD, SYMBOL_TSD ) / asset( high_TME, SYMBOL_TME ); }
-   price low()const { return asset( low_TSD, SYMBOL_TSD ) / asset( low_TME, SYMBOL_TME ); }
+   price high()const { return asset( high_TSD, SYMBOL_USD ) / asset( high_TME, SYMBOL_COIN ); }
+   price low()const { return asset( low_TSD, SYMBOL_USD ) / asset( low_TME, SYMBOL_COIN ); }
 };
 
 typedef oid< bucket_object > bucket_id_type;

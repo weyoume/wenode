@@ -53,7 +53,7 @@ struct operation_process
       {
          b.transfers++;
 
-         if( op.amount.symbol == SYMBOL_TME )
+         if( op.amount.symbol == SYMBOL_COIN )
             b.TME_transferred += op.amount.amount;
          else
             b.TSD_transferred += op.amount.amount;
@@ -191,7 +191,7 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.TME_fund_for_SCORE_withdrawals_processed++;
-         if( op.deposited.symbol == SYMBOL_TME )
+         if( op.deposited.symbol == SYMBOL_COIN )
             b.SCORE_withdrawn += op.withdrawn.amount;
          else
             b.SCORE_transferred += op.withdrawn.amount;

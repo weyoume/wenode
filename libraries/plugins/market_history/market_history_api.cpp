@@ -34,8 +34,8 @@ market_ticker market_history_api_impl::get_ticker() const
 
    if( itr != bucket_idx.end() )
    {
-      auto open = ( asset( itr->open_TSD, SYMBOL_TSD ) / asset( itr->open_TME, SYMBOL_TME ) ).to_real();
-      result.latest = ( asset( itr->close_TSD, SYMBOL_TSD ) / asset( itr->close_TME, SYMBOL_TME ) ).to_real();
+      auto open = ( asset( itr->open_TSD, SYMBOL_USD ) / asset( itr->open_TME, SYMBOL_COIN ) ).to_real();
+      result.latest = ( asset( itr->close_TSD, SYMBOL_USD ) / asset( itr->close_TME, SYMBOL_COIN ) ).to_real();
       result.percent_change = ( ( result.latest - open ) / open ) * 100;
    }
    else
@@ -84,28 +84,28 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
    FC_ASSERT( limit <= 500 );
 
    const auto& order_idx = app.chain_database()->get_index< node::chain::limit_order_index >().indices().get< node::chain::by_price >();
-   auto itr = order_idx.lower_bound( price::max( SYMBOL_TSD, SYMBOL_TME ) );
+   auto itr = order_idx.lower_bound( price::max( SYMBOL_USD, SYMBOL_COIN ) );
 
    order_book result;
 
-   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_TSD && result.bids.size() < limit )
+   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_USD && result.bids.size() < limit )
    {
       order cur;
       cur.price = itr->sell_price.base.to_real() / itr->sell_price.quote.to_real();
-      cur.TME = ( asset( itr->for_sale, SYMBOL_TSD ) * itr->sell_price ).amount;
+      cur.TME = ( asset( itr->for_sale, SYMBOL_USD ) * itr->sell_price ).amount;
       cur.TSD = itr->for_sale;
       result.bids.push_back( cur );
       ++itr;
    }
 
-   itr = order_idx.lower_bound( price::max( SYMBOL_TME, SYMBOL_TSD ) );
+   itr = order_idx.lower_bound( price::max( SYMBOL_COIN, SYMBOL_USD ) );
 
-   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_TME && result.asks.size() < limit )
+   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_COIN && result.asks.size() < limit )
    {
       order cur;
       cur.price = itr->sell_price.quote.to_real() / itr->sell_price.base.to_real();
       cur.TME = itr->for_sale;
-      cur.TSD = ( asset( itr->for_sale, SYMBOL_TME ) * itr->sell_price ).amount;
+      cur.TSD = ( asset( itr->for_sale, SYMBOL_COIN ) * itr->sell_price ).amount;
       result.asks.push_back( cur );
       ++itr;
    }

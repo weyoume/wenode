@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( serialization_raw_test )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,SYMBOL_TME);
+      op.amount = asset(100,SYMBOL_COIN);
 
       trx.operations.push_back( op );
       auto packed = fc::raw::pack( trx );
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,SYMBOL_TME);
+      op.amount = asset(100,SYMBOL_COIN);
 
       fc::variant test(op.amount);
       auto tmp = test.as<asset>();
@@ -131,18 +131,18 @@ BOOST_AUTO_TEST_CASE( asset_test )
       BOOST_CHECK_EQUAL( TME.decimals(), 3 );
       BOOST_CHECK_EQUAL( TME.symbol_name(), "TESTS" );
       BOOST_CHECK_EQUAL( TME.to_string(), "123.456 TESTS" );
-      BOOST_CHECK_EQUAL( TME.symbol, SYMBOL_TME);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL_TME).to_string(), "0.050 TESTS" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_TME).to_string(), "50.000 TESTS" );
+      BOOST_CHECK_EQUAL( TME.symbol, SYMBOL_COIN);
+      BOOST_CHECK_EQUAL( asset(50, SYMBOL_COIN).to_string(), "0.050 TESTS" );
+      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_COIN).to_string(), "50.000 TESTS" );
 
       BOOST_CHECK( std::abs( TSD.to_real() - 654.321 ) < 0.0005 );
       BOOST_CHECK_EQUAL( TSD.amount.value, 654321 );
       BOOST_CHECK_EQUAL( TSD.decimals(), 3 );
       BOOST_CHECK_EQUAL( TSD.symbol_name(), "TBD" );
       BOOST_CHECK_EQUAL( TSD.to_string(), "654.321 TBD" );
-      BOOST_CHECK_EQUAL( TSD.symbol, SYMBOL_TSD);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL_TSD).to_string(), "0.050 TBD" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_TSD).to_string(), "50.000 TBD" );
+      BOOST_CHECK_EQUAL( TSD.symbol, SYMBOL_USD);
+      BOOST_CHECK_EQUAL( asset(50, SYMBOL_USD).to_string(), "0.050 TBD" );
+      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_USD).to_string(), "50.000 TBD" );
 
       BOOST_CHECK_THROW( TME.set_decimals(100), fc::exception );
       char* TME_sy = (char*) &TME.symbol;

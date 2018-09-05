@@ -71,7 +71,7 @@ using boost::container::flat_set;
 struct reward_fund_context
 {
    uint128_t   recent_claims = 0;
-   asset       reward_balance = asset( 0, SYMBOL_TME );
+   asset       reward_balance = asset( 0, SYMBOL_COIN );
    share_type  TME_awarded = 0;
 };
 
@@ -975,7 +975,7 @@ uint32_t database::get_slot_at_time(fc::time_point_sec when)const
  */
 std::pair< asset, asset > database::create_TSD( const account_object& to_account, asset TME, bool to_reward_balance )
 {
-   std::pair< asset, asset > assets( asset( 0, SYMBOL_TSD ), asset( 0, SYMBOL_TME ) );
+   std::pair< asset, asset > assets( asset( 0, SYMBOL_USD ), asset( 0, SYMBOL_COIN ) );
 
    try
    {
@@ -990,20 +990,20 @@ std::pair< asset, asset > database::create_TSD( const account_object& to_account
          auto to_TSD = ( gpo.TSD_print_rate * TME.amount ) / PERCENT_100;
          auto to_TME = TME.amount - to_TSD;
 
-         auto TSD = asset( to_TSD, SYMBOL_TME ) * median_price;
+         auto TSD = asset( to_TSD, SYMBOL_COIN ) * median_price;
 
          if( to_reward_balance )
          {
             adjust_reward_balance( to_account, TSD );
-            adjust_reward_balance( to_account, asset( to_TME, SYMBOL_TME ) );
+            adjust_reward_balance( to_account, asset( to_TME, SYMBOL_COIN ) );
          }
          else
          {
             adjust_balance( to_account, TSD );
-            adjust_balance( to_account, asset( to_TME, SYMBOL_TME ) );
+            adjust_balance( to_account, asset( to_TME, SYMBOL_COIN ) );
          }
 
-         adjust_supply( asset( -to_TSD, SYMBOL_TME ) );
+         adjust_supply( asset( -to_TSD, SYMBOL_COIN ) );
          adjust_supply( TSD );
          assets.first = TSD;
          assets.second = to_TME;
@@ -1215,8 +1215,8 @@ void database::clear_null_account_balance()
    if( !has_hardfork( HARDFORK_0_14__327 ) ) return;
 
    const auto& null_account = get_account( NULL_ACCOUNT );
-   asset totalTME( 0, SYMBOL_TME );
-   asset TSDtotal( 0, SYMBOL_TSD );
+   asset totalTME( 0, SYMBOL_COIN );
+   asset TSDtotal( 0, SYMBOL_USD );
 
    if( null_account.balance.amount > 0 )
    {
@@ -1361,7 +1361,7 @@ void database::process_TME_fund_for_SCORE_withdrawals()
 
       share_type SCORE_deposited_as_TME = 0;
       share_type SCORE_deposited_as_SCORE = 0;
-      asset totalTME_converted = asset( 0, SYMBOL_TME );
+      asset totalTME_converted = asset( 0, SYMBOL_COIN );
 
       // Do two passes, the first for SCORE, the second for TME. Try to maintain as much accuracy for SCORE as possible.
       for( auto itr = didx.upper_bound( boost::make_tuple( from_account.id, account_id_type() ) );
@@ -1498,7 +1498,7 @@ share_type database::pay_curators( const comment_object& c, share_type& max_rewa
             {
                unclaimed_rewards -= claim;
                const auto& voter = get(itr->voter);
-               auto reward = createTMEfundForSCORE( voter, asset( claim, SYMBOL_TME ), has_hardfork( HARDFORK_0_17__659 ) );
+               auto reward = createTMEfundForSCORE( voter, asset( claim, SYMBOL_COIN ), has_hardfork( HARDFORK_0_17__659 ) );
 
                push_virtual_operation( curationReward_operation( voter.name, reward, c.author, to_string( c.permlink ) ) );
 
@@ -1571,10 +1571,10 @@ share_type database::cashout_comment_helper( util::comment_reward_context& ctx, 
             auto TMEfundForSCOREcreated = createTMEfundForSCORE( author, SCOREvalueInTME, has_hardfork( HARDFORK_0_17__659 ) );
             auto TSDpayout = create_TSD( author, TSDvalueInTME, has_hardfork( HARDFORK_0_17__659 ) );
 
-            adjust_total_payout( comment, TSDpayout.first + to_TSD( TSDpayout.second + asset( SCOREvalueInTME, SYMBOL_TME ) ), to_TSD( asset( curation_tokens, SYMBOL_TME ) ), to_TSD( asset( total_beneficiary, SYMBOL_TME ) ) );
+            adjust_total_payout( comment, TSDpayout.first + to_TSD( TSDpayout.second + asset( SCOREvalueInTME, SYMBOL_COIN ) ), to_TSD( asset( curation_tokens, SYMBOL_COIN ) ), to_TSD( asset( total_beneficiary, SYMBOL_COIN ) ) );
 
             push_virtual_operation( authorReward_operation( comment.author, to_string( comment.permlink ), TSDpayout.first, TSDpayout.second, TMEfundForSCOREcreated ) );
-            push_virtual_operation( comment_reward_operation( comment.author, to_string( comment.permlink ), to_TSD( asset( claimed_reward, SYMBOL_TME ) ) ) );
+            push_virtual_operation( comment_reward_operation( comment.author, to_string( comment.permlink ), to_TSD( asset( claimed_reward, SYMBOL_COIN ) ) ) );
 
             #ifndef IS_LOW_MEM
                modify( comment, [&]( comment_object& c )
@@ -1827,14 +1827,14 @@ void database::process_funds()
 
       modify( props, [&]( dynamic_global_property_object& p )
       {
-         p.totalTMEfundForSCORE += asset( TME_fund_for_SCORE_reward, SYMBOL_TME );
+         p.totalTMEfundForSCORE += asset( TME_fund_for_SCORE_reward, SYMBOL_COIN );
          if( !has_hardfork( HARDFORK_0_17__774 ) )
-            p.total_reward_fund_TME  += asset( content_reward, SYMBOL_TME );
-         p.current_supply           += asset( new_TME, SYMBOL_TME );
-         p.virtual_supply           += asset( new_TME, SYMBOL_TME );
+            p.total_reward_fund_TME  += asset( content_reward, SYMBOL_COIN );
+         p.current_supply           += asset( new_TME, SYMBOL_COIN );
+         p.virtual_supply           += asset( new_TME, SYMBOL_COIN );
       });
 
-      const auto& producer_reward = createTMEfundForSCORE( get_account( cwit.owner ), asset( witness_reward, SYMBOL_TME ) );
+      const auto& producer_reward = createTMEfundForSCORE( get_account( cwit.owner ), asset( witness_reward, SYMBOL_COIN ) );
       push_virtual_operation( producer_reward_operation( cwit.owner, producer_reward ) );
 
    }
@@ -1886,11 +1886,11 @@ void database::process_savings_withdraws()
 asset database::get_liquidity_reward()const
 {
    if( has_hardfork( HARDFORK_0_12__178 ) )
-      return asset( 0, SYMBOL_TME );
+      return asset( 0, SYMBOL_COIN );
 
    const auto& props = get_dynamic_global_properties();
    static_assert( LIQUIDITY_REWARD_PERIOD_SEC == 60*60, "this code assumes a 1 hour time interval" );
-   asset percent( protocol::calc_percent_reward_per_hour< LIQUIDITY_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_TME );
+   asset percent( protocol::calc_percent_reward_per_hour< LIQUIDITY_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN );
    return std::max( percent, MIN_LIQUIDITY_REWARD );
 }
 
@@ -1898,7 +1898,7 @@ asset database::get_content_reward()const
 {
    const auto& props = get_dynamic_global_properties();
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
-   asset percent( protocol::calc_percent_reward_per_block< CONTENT_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_TME );
+   asset percent( protocol::calc_percent_reward_per_block< CONTENT_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN );
    return std::max( percent, MIN_CONTENT_REWARD );
 }
 
@@ -1906,7 +1906,7 @@ asset database::get_curationReward()const
 {
    const auto& props = get_dynamic_global_properties();
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
-   asset percent( protocol::calc_percent_reward_per_block< CURATE_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_TME);
+   asset percent( protocol::calc_percent_reward_per_block< CURATE_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN);
    return std::max( percent, MIN_CURATE_REWARD );
 }
 
@@ -1914,7 +1914,7 @@ asset database::get_producer_reward()
 {
    const auto& props = get_dynamic_global_properties();
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
-   asset percent( protocol::calc_percent_reward_per_block< PRODUCER_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_TME);
+   asset percent( protocol::calc_percent_reward_per_block< PRODUCER_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN);
    auto pay = std::max( percent, MIN_PRODUCER_REWARD );
    const auto& witness_account = get_account( props.current_witness );
 
@@ -1942,12 +1942,12 @@ asset database::get_pow_reward()const
 #ifndef IS_TEST_NET
    /// 0 block rewards until at least MAX_WITNESSES have produced a POW
    if( props.num_pow_witnesses < MAX_WITNESSES && props.head_block_number < START_TME_fund_for_SCORE_BLOCK )
-      return asset( 0, SYMBOL_TME );
+      return asset( 0, SYMBOL_COIN );
 #endif
 
    static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
   //  static_assert( MAX_WITNESSES == 21, "this code assumes 21 per round" );
-   asset percent( calc_percent_reward_per_round< POW_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_TME);
+   asset percent( calc_percent_reward_per_round< POW_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN);
    return std::max( percent, MIN_POW_REWARD );
 }
 
@@ -2007,7 +2007,7 @@ share_type database::pay_reward_funds( share_type reward )
 
       modify( *itr, [&]( reward_fund_object& rfo )
       {
-         rfo.reward_balance += asset( r, SYMBOL_TME );
+         rfo.reward_balance += asset( r, SYMBOL_COIN );
       });
 
       used_rewards += r;
@@ -2034,8 +2034,8 @@ void database::process_conversions()
    if( fhistory.current_median_history.is_null() )
       return;
 
-   asset net_TSD( 0, SYMBOL_TSD );
-   asset net_TME( 0, SYMBOL_TME );
+   asset net_TSD( 0, SYMBOL_USD );
+   asset net_TME( 0, SYMBOL_COIN );
 
    while( itr != request_by_date.end() && itr->conversion_date <= now )
    {
@@ -2401,7 +2401,7 @@ void database::init_genesis( uint64_t init_supply )
          {
             a.name = INIT_MINER_NAME + ( i ? fc::to_string( i ) : std::string() );
             a.memoKey = init_public_key;
-            a.balance  = asset( init_supply / (NUM_INIT_MINERS + NUM_INIT_EXTRAS), SYMBOL_TME );
+            a.balance  = asset( init_supply / (NUM_INIT_MINERS + NUM_INIT_EXTRAS), SYMBOL_COIN );
          } );
 
          create< account_authority_object >( [&]( account_authority_object& auth )
@@ -2427,7 +2427,7 @@ void database::init_genesis( uint64_t init_supply )
          p.time = GENESIS_TIME;
          p.recent_slots_filled = fc::uint128::max_value();
          p.participation_count = 128;
-         p.current_supply = asset( init_supply, SYMBOL_TME );
+         p.current_supply = asset( init_supply, SYMBOL_COIN );
          p.virtual_supply = p.current_supply;
          p.maximum_block_size = MAX_BLOCK_SIZE;
       } );
@@ -2812,7 +2812,7 @@ try {
             if( has_hardfork( HARDFORK_0_14__230 ) )
             {
                const auto& gpo = get_dynamic_global_properties();
-               price min_price( asset( 9 * gpo.current_TSD_supply.amount, SYMBOL_TSD ), gpo.current_supply ); // This price limits TSD to 10% market cap
+               price min_price( asset( 9 * gpo.current_TSD_supply.amount, SYMBOL_USD ), gpo.current_supply ); // This price limits TSD to 10% market cap
 
                if( min_price > fho.current_median_history )
                   fho.current_median_history = min_price;
@@ -3010,7 +3010,7 @@ void database::update_virtual_supply()
    modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& dgp )
    {
       dgp.virtual_supply = dgp.current_supply
-         + ( get_feed_history().current_median_history.is_null() ? asset( 0, SYMBOL_TME ) : dgp.current_TSD_supply * get_feed_history().current_median_history );
+         + ( get_feed_history().current_median_history.is_null() ? asset( 0, SYMBOL_COIN ) : dgp.current_TSD_supply * get_feed_history().current_median_history );
 
       auto median_price = get_feed_history().current_median_history;
 
@@ -3181,7 +3181,7 @@ int database::match( const limit_order_object& new_order, const limit_order_obje
        ( (age >= MIN_LIQUIDITY_REWARD_PERIOD_SEC && !has_hardfork( HARDFORK_0_10__149)) ||
        (age >= MIN_LIQUIDITY_REWARD_PERIOD_SEC_HF10 && has_hardfork( HARDFORK_0_10__149) ) ) )
    {
-      if( old_order_receives.symbol == SYMBOL_TME )
+      if( old_order_receives.symbol == SYMBOL_COIN )
       {
          adjust_liquidity_reward( get_account( old_order.seller ), old_order_receives, false );
          adjust_liquidity_reward( get_account( new_order.seller ), -old_order_receives, false );
@@ -3337,10 +3337,10 @@ void database::adjust_balance( const account_object& a, const asset& delta )
    {
       switch( delta.symbol )
       {
-         case SYMBOL_TME:
+         case SYMBOL_COIN:
             acnt.balance += delta;
             break;
-         case SYMBOL_TSD:
+         case SYMBOL_USD:
             if( a.TSD_seconds_last_update != head_block_time() )
             {
                acnt.TSD_seconds += fc::uint128_t(a.TSDbalance.amount.value) * (head_block_time() - a.TSD_seconds_last_update).to_seconds();
@@ -3352,7 +3352,7 @@ void database::adjust_balance( const account_object& a, const asset& delta )
                   auto interest = acnt.TSD_seconds / SECONDS_PER_YEAR;
                   interest *= get_dynamic_global_properties().TSD_interest_rate;
                   interest /= PERCENT_100;
-                  asset interest_paid(interest.to_uint64(), SYMBOL_TSD);
+                  asset interest_paid(interest.to_uint64(), SYMBOL_USD);
                   acnt.TSDbalance += interest_paid;
                   acnt.TSD_seconds = 0;
                   acnt.TSD_last_interest_payment = head_block_time();
@@ -3382,10 +3382,10 @@ void database::adjust_TMEsavingsBalance( const account_object& a, const asset& d
    {
       switch( delta.symbol )
       {
-         case SYMBOL_TME:
+         case SYMBOL_COIN:
             acnt.TMEsavingsBalance += delta;
             break;
-         case SYMBOL_TSD:
+         case SYMBOL_USD:
             if( a.savings_TSD_seconds_last_update != head_block_time() )
             {
                acnt.savings_TSD_seconds += fc::uint128_t(a.TSDsavingsBalance.amount.value) * (head_block_time() - a.savings_TSD_seconds_last_update).to_seconds();
@@ -3397,7 +3397,7 @@ void database::adjust_TMEsavingsBalance( const account_object& a, const asset& d
                   auto interest = acnt.savings_TSD_seconds / SECONDS_PER_YEAR;
                   interest *= get_dynamic_global_properties().TSD_interest_rate;
                   interest /= PERCENT_100;
-                  asset interest_paid(interest.to_uint64(), SYMBOL_TSD);
+                  asset interest_paid(interest.to_uint64(), SYMBOL_USD);
                   acnt.TSDsavingsBalance += interest_paid;
                   acnt.savings_TSD_seconds = 0;
                   acnt.savings_TSD_last_interest_payment = head_block_time();
@@ -3427,10 +3427,10 @@ void database::adjust_reward_balance( const account_object& a, const asset& delt
    {
       switch( delta.symbol )
       {
-         case SYMBOL_TME:
+         case SYMBOL_COIN:
             acnt.TMErewardBalance += delta;
             break;
-         case SYMBOL_TSD:
+         case SYMBOL_USD:
             acnt.TSDrewardBalance += delta;
             break;
          default:
@@ -3451,16 +3451,16 @@ void database::adjust_supply( const asset& delta, bool adjust_TME_fund_for_SCORE
    {
       switch( delta.symbol )
       {
-         case SYMBOL_TME:
+         case SYMBOL_COIN:
          {
-            asset newSCORE( (adjust_TME_fund_for_SCORE && delta.amount > 0) ? delta.amount * 9 : 0, SYMBOL_TME );
+            asset newSCORE( (adjust_TME_fund_for_SCORE && delta.amount > 0) ? delta.amount * 9 : 0, SYMBOL_COIN );
             props.current_supply += delta + newSCORE;
             props.virtual_supply += delta + newSCORE;
             props.totalTMEfundForSCORE += newSCORE;
             assert( props.current_supply.amount.value >= 0 );
             break;
          }
-         case SYMBOL_TSD:
+         case SYMBOL_USD:
             props.current_TSD_supply += delta;
             props.virtual_supply = props.current_TSD_supply * get_feed_history().current_median_history + props.current_supply;
             assert( props.current_TSD_supply.amount.value >= 0 );
@@ -3476,9 +3476,9 @@ asset database::get_balance( const account_object& a, asset_symbol_type symbol )
 {
    switch( symbol )
    {
-      case SYMBOL_TME:
+      case SYMBOL_COIN:
          return a.balance;
-      case SYMBOL_TSD:
+      case SYMBOL_USD:
          return a.TSDbalance;
       default:
          FC_ASSERT( false, "invalid symbol" );
@@ -3489,9 +3489,9 @@ asset database::get_TMEsavingsBalance( const account_object& a, asset_symbol_typ
 {
    switch( symbol )
    {
-      case SYMBOL_TME:
+      case SYMBOL_COIN:
          return a.TMEsavingsBalance;
-      case SYMBOL_TSD:
+      case SYMBOL_USD:
          return a.TSDsavingsBalance;
       default:
          FC_ASSERT( !"invalid symbol" );
@@ -3795,7 +3795,7 @@ void database::apply_hardfork( uint32_t hardfork )
 
             modify( gpo, [&]( dynamic_global_property_object& g )
             {
-               g.total_reward_fund_TME = asset( 0, SYMBOL_TME );
+               g.total_reward_fund_TME = asset( 0, SYMBOL_COIN );
                g.total_SCOREreward2 = 0;
             });
 
@@ -3916,10 +3916,10 @@ void database::validate_invariants()const
    try
    {
       const auto& account_idx = get_index<account_index>().indices().get<by_name>();
-      asset total_supply = asset( 0, SYMBOL_TME );
-      asset TSDtotal = asset( 0, SYMBOL_TSD );
+      asset total_supply = asset( 0, SYMBOL_COIN );
+      asset TSDtotal = asset( 0, SYMBOL_USD );
       asset totalSCORE = asset( 0, SYMBOL_SCORE );
-      asset pending_SCOREvalueInTME = asset( 0, SYMBOL_TME );
+      asset pending_SCOREvalueInTME = asset( 0, SYMBOL_COIN );
       share_type total_SCOREfundTMEbalance_votes = share_type( 0 );
 
       auto gpo = get_dynamic_global_properties();
@@ -3951,9 +3951,9 @@ void database::validate_invariants()const
 
       for( auto itr = convert_request_idx.begin(); itr != convert_request_idx.end(); ++itr )
       {
-         if( itr->amount.symbol == SYMBOL_TME )
+         if( itr->amount.symbol == SYMBOL_COIN )
             total_supply += itr->amount;
-         else if( itr->amount.symbol == SYMBOL_TSD )
+         else if( itr->amount.symbol == SYMBOL_USD )
             TSDtotal += itr->amount;
          else
             FC_ASSERT( false, "Encountered illegal symbol in convert_request_object" );
@@ -3963,13 +3963,13 @@ void database::validate_invariants()const
 
       for( auto itr = limit_order_idx.begin(); itr != limit_order_idx.end(); ++itr )
       {
-         if( itr->sell_price.base.symbol == SYMBOL_TME )
+         if( itr->sell_price.base.symbol == SYMBOL_COIN )
          {
-            total_supply += asset( itr->for_sale, SYMBOL_TME );
+            total_supply += asset( itr->for_sale, SYMBOL_COIN );
          }
-         else if ( itr->sell_price.base.symbol == SYMBOL_TSD )
+         else if ( itr->sell_price.base.symbol == SYMBOL_USD )
          {
-            TSDtotal += asset( itr->for_sale, SYMBOL_TSD );
+            TSDtotal += asset( itr->for_sale, SYMBOL_USD );
          }
       }
 
@@ -3980,9 +3980,9 @@ void database::validate_invariants()const
          total_supply += itr->TMEbalance;
          TSDtotal += itr->TSDbalance;
 
-         if( itr->pending_fee.symbol == SYMBOL_TME )
+         if( itr->pending_fee.symbol == SYMBOL_COIN )
             total_supply += itr->pending_fee;
-         else if( itr->pending_fee.symbol == SYMBOL_TSD )
+         else if( itr->pending_fee.symbol == SYMBOL_USD )
             TSDtotal += itr->pending_fee;
          else
             FC_ASSERT( false, "found escrow pending fee that is not TSD or TME" );
@@ -3992,9 +3992,9 @@ void database::validate_invariants()const
 
       for( auto itr = savings_withdraw_idx.begin(); itr != savings_withdraw_idx.end(); ++itr )
       {
-         if( itr->amount.symbol == SYMBOL_TME )
+         if( itr->amount.symbol == SYMBOL_COIN )
             total_supply += itr->amount;
-         else if( itr->amount.symbol == SYMBOL_TSD )
+         else if( itr->amount.symbol == SYMBOL_USD )
             TSDtotal += itr->amount;
          else
             FC_ASSERT( false, "found savings withdraw that is not TSD or TME" );

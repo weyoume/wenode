@@ -729,7 +729,7 @@ public:
          auto accounts = result.as<vector<account_api_obj>>();
          asset totalTME;
          asset totalSCORE(0, SYMBOL_SCORE );
-         asset totalTSD(0, SYMBOL_TSD );
+         asset totalTSD(0, SYMBOL_USD );
          for( const auto& a : accounts ) {
             totalTME += a.balance;
             totalSCORE  += a.SCORE;
@@ -781,7 +781,7 @@ public:
              ss << ' ' << setw( 10 ) << o.orderid;
              ss << ' ' << setw( 10 ) << o.real_price;
              ss << ' ' << setw( 10 ) << fc::variant( asset( o.for_sale, o.sell_price.base.symbol ) ).as_string();
-             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL_TME ? "SELL" : "BUY");
+             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL_COIN ? "SELL" : "BUY");
              ss << "\n";
           }
           return ss.str();
@@ -789,8 +789,8 @@ public:
       m["get_order_book"] = []( variant result, const fc::variants& a ) {
          auto orders = result.as< order_book >();
          std::stringstream ss;
-         asset bid_sum = asset( 0, SYMBOL_TSD );
-         asset ask_sum = asset( 0, SYMBOL_TSD );
+         asset bid_sum = asset( 0, SYMBOL_USD );
+         asset ask_sum = asset( 0, SYMBOL_USD );
          int spacing = 24;
 
          ss << setiosflags( ios::fixed ) << setiosflags( ios::left ) ;
@@ -811,11 +811,11 @@ public:
          {
             if ( i < orders.bids.size() )
             {
-               bid_sum += asset( orders.bids[i].TSD, SYMBOL_TSD );
+               bid_sum += asset( orders.bids[i].TSD, SYMBOL_USD );
                ss
                   << ' ' << setw( spacing ) << bid_sum.to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].TSD, SYMBOL_TSD ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].TME, SYMBOL_TME ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].TSD, SYMBOL_USD ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].TME, SYMBOL_COIN ).to_string()
                   << ' ' << setw( spacing ) << orders.bids[i].real_price; //(~orders.bids[i].order_price).to_real();
             }
             else
@@ -827,11 +827,11 @@ public:
 
             if ( i < orders.asks.size() )
             {
-               ask_sum += asset( orders.asks[i].TSD, SYMBOL_TSD );
+               ask_sum += asset( orders.asks[i].TSD, SYMBOL_USD );
                //ss << ' ' << setw( spacing ) << (~orders.asks[i].order_price).to_real()
                ss << ' ' << setw( spacing ) << orders.asks[i].real_price
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].TME, SYMBOL_TME ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].TSD, SYMBOL_TSD ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].TME, SYMBOL_COIN ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].TSD, SYMBOL_USD ).to_string()
                   << ' ' << setw( spacing ) << ask_sum.to_string();
             }
 
@@ -1299,7 +1299,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
    op.posting = authority( 1, posting, 1 );
    op.memoKey = memo;
    op.json = json;
-   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_TME );
+   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_COIN );
 
    signed_transaction tx;
    tx.operations.push_back(op);

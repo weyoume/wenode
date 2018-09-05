@@ -19,10 +19,10 @@
 #define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 #define CHAIN_ID                        (fc::sha256::hash("testnet"))
 
-#define SYMBOL_TME  									  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< TME/TME/TESTS with 3 digits of precision
+#define SYMBOL_COIN  									  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< TME/TME/TESTS with 3 digits of precision
 #define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< SCORE/SCORE/VESTS with 6 digits of precision
 #define SYMBOL_WYM    							  	(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('Y') << 24) | (uint64_t('M') << 32) | (uint64_t('T') << 40) ) ///< WYM/WEYOUME equity asset with 3 digits of precision
-#define SYMBOL_TSD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test / TME Backed TSD with 3 digits of precision
+#define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test / TME Backed TSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "TWYM"
 
@@ -57,10 +57,10 @@
 #define CHAIN_ID                        (fc::sha256::hash("TWYM"))
 
 // ezira
-// #define SYMBOL_TME  									  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< TME with 3 digits of precision
-// #define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< SCORE with 6 digits of precision
-// #define SYMBOL_WYM    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
-// #define SYMBOL_TSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< TME Backed TSD with 3 digits of precision
+// #define SYMBOL_ECO 									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< TME with 3 digits of precision
+// #define SYMBOL_ESCOR 									(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< SCORE with 6 digits of precision
+// #define SYMBOL_EZIRA   									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
+// #define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< TME Backed TSD with 3 digits of precision
 
 
 // weyoume
@@ -164,7 +164,7 @@
 #define CREATE_ACCOUNT_DELEGATION_RATIO    5
 #define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(30)
 
-#define MINING_REWARD                   asset( 10000, SYMBOL_TME )
+#define MINING_REWARD                   asset( 10000, SYMBOL_COIN )
 #define EQUIHASH_N                      140
 #define EQUIHASH_K                      6
 
@@ -172,14 +172,14 @@
 #define MIN_LIQUIDITY_REWARD_PERIOD_SEC (fc::seconds(60)) // 1 minute required on books to receive volume
 #define LIQUIDITY_REWARD_PERIOD_SEC     (60*60)
 #define LIQUIDITY_REWARD_BLOCKS         (LIQUIDITY_REWARD_PERIOD_SEC/BLOCK_INTERVAL)
-#define MIN_LIQUIDITY_REWARD            (asset( 1000*LIQUIDITY_REWARD_BLOCKS, SYMBOL_TME )) // Minumum reward to be paid out to liquidity providers
+#define MIN_LIQUIDITY_REWARD            (asset( 1000*LIQUIDITY_REWARD_BLOCKS, SYMBOL_COIN )) // Minumum reward to be paid out to liquidity providers
 #define MIN_CONTENT_REWARD              MINING_REWARD
 #define MIN_CURATE_REWARD               MINING_REWARD
 #define MIN_PRODUCER_REWARD             MINING_REWARD
 #define MIN_POW_REWARD                  MINING_REWARD
 
-#define ACTIVE_CHALLENGE_FEE            asset( 2000, SYMBOL_TME )
-#define OWNER_CHALLENGE_FEE             asset( 30000, SYMBOL_TME )
+#define ACTIVE_CHALLENGE_FEE            asset( 2000, SYMBOL_COIN )
+#define OWNER_CHALLENGE_FEE             asset( 30000, SYMBOL_COIN )
 #define ACTIVE_CHALLENGE_COOLDOWN       fc::days(1)
 #define OWNER_CHALLENGE_COOLDOWN        fc::days(1)
 
@@ -225,7 +225,7 @@
 #define PRODUCER_APR_PERCENT             750
 #define POW_APR_PERCENT                  750
 
-#define MIN_PAYOUT_TSD                  (asset(20,SYMBOL_TSD))
+#define MIN_PAYOUT_TSD                  (asset(20,SYMBOL_USD))
 
 #define TSD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing TSD at 5% Market Cap
 #define TSD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of TSD at 2% Market Cap

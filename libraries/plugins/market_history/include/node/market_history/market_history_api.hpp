@@ -26,14 +26,14 @@ struct market_ticker
    double      lowest_ask = 0;
    double      highest_bid = 0;
    double      percent_change = 0;
-   asset       TME_volume = asset( 0 , SYMBOL_TME );
-   asset       TSD_volume = asset( 0, SYMBOL_TSD );
+   asset       TME_volume = asset( 0 , SYMBOL_COIN );
+   asset       TSD_volume = asset( 0, SYMBOL_USD );
 };
 
 struct market_volume
 {
-   asset       TME_volume = asset( 0, SYMBOL_TME );
-   asset       TSD_volume = asset( 0, SYMBOL_TSD );
+   asset       TME_volume = asset( 0, SYMBOL_COIN );
+   asset       TSD_volume = asset( 0, SYMBOL_USD );
 };
 
 struct order

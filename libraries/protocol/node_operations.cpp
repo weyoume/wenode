@@ -13,7 +13,7 @@ namespace node { namespace protocol {
    void accountCreate_operation::validate() const
    {
       validate_account_name( newAccountName );
-      FC_ASSERT( is_asset_type( fee, SYMBOL_TME ), "Account creation fee must be TME" );
+      FC_ASSERT( is_asset_type( fee, SYMBOL_COIN ), "Account creation fee must be TME" );
       owner.validate();
       active.validate();
 
@@ -22,14 +22,14 @@ namespace node { namespace protocol {
          FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
          FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
       }
-      FC_ASSERT( fee >= asset( 0, SYMBOL_TME ), "Account creation fee cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, SYMBOL_COIN ), "Account creation fee cannot be negative" );
    }
 
    void accountCreateWithDelegation_operation::validate() const
    {
       validate_account_name( newAccountName );
       validate_account_name( creator );
-      FC_ASSERT( is_asset_type( fee, SYMBOL_TME ), "Account creation fee must be TME" );
+      FC_ASSERT( is_asset_type( fee, SYMBOL_COIN ), "Account creation fee must be TME" );
       FC_ASSERT( is_asset_type( delegation, SYMBOL_SCORE ), "Delegation must be SCORE" );
 
       owner.validate();
@@ -42,7 +42,7 @@ namespace node { namespace protocol {
          FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
       }
 
-      FC_ASSERT( fee >= asset( 0, SYMBOL_TME ), "Account creation fee cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, SYMBOL_COIN ), "Account creation fee cannot be negative" );
       FC_ASSERT( delegation >= asset( 0, SYMBOL_SCORE ), "Delegation cannot be negative" );
    }
 
@@ -121,7 +121,7 @@ namespace node { namespace protocol {
    {
       validate_account_name( author );
       FC_ASSERT( percent_TSD <= PERCENT_100, "Percent cannot exceed 100%" );
-      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_TSD, "Max accepted payout must be in TSD" );
+      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_USD, "Max accepted payout must be in TSD" );
       FC_ASSERT( max_accepted_payout.amount.value >= 0, "Cannot accept less than 0 payout" );
       validate_permlink( permlink );
       for( auto& e : extensions )
@@ -167,9 +167,9 @@ namespace node { namespace protocol {
    void transferTMEtoSCOREfund_operation::validate() const
    {
       validate_account_name( from );
-      FC_ASSERT( is_asset_type( amount, SYMBOL_TME ), "Amount must be TME" );
+      FC_ASSERT( is_asset_type( amount, SYMBOL_COIN ), "Amount must be TME" );
       if ( to != account_name_type() ) validate_account_name( to );
-      FC_ASSERT( amount > asset( 0, SYMBOL_TME ), "Must transfer a nonzero amount" );
+      FC_ASSERT( amount > asset( 0, SYMBOL_COIN ), "Must transfer a nonzero amount" );
    }
 
    void withdrawSCORE_operation::validate() const
@@ -190,7 +190,7 @@ namespace node { namespace protocol {
       validate_account_name( owner );
       FC_ASSERT( url.size() > 0, "URL size must be greater than 0" );
       FC_ASSERT( fc::is_utf8( url ), "URL is not valid UTF8" );
-      FC_ASSERT( fee >= asset( 0, SYMBOL_TME ), "Fee cannot be negative" );
+      FC_ASSERT( fee >= asset( 0, SYMBOL_COIN ), "Fee cannot be negative" );
       props.validate();
    }
 
@@ -352,8 +352,8 @@ namespace node { namespace protocol {
    void feed_publish_operation::validate()const
    {
       validate_account_name( publisher );
-      FC_ASSERT( ( is_asset_type( exchange_rate.base, SYMBOL_TME ) && is_asset_type( exchange_rate.quote, SYMBOL_TSD ) )
-         || ( is_asset_type( exchange_rate.base, SYMBOL_TSD ) && is_asset_type( exchange_rate.quote, SYMBOL_TME ) ),
+      FC_ASSERT( ( is_asset_type( exchange_rate.base, SYMBOL_COIN ) && is_asset_type( exchange_rate.quote, SYMBOL_USD ) )
+         || ( is_asset_type( exchange_rate.base, SYMBOL_USD ) && is_asset_type( exchange_rate.quote, SYMBOL_COIN ) ),
          "Price feed must be a TME/TSD price" );
       exchange_rate.validate();
    }
@@ -361,8 +361,8 @@ namespace node { namespace protocol {
    void limit_order_create_operation::validate()const
    {
       validate_account_name( owner );
-      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_TME ) && is_asset_type( min_to_receive, SYMBOL_TSD ) )
-         || ( is_asset_type( amount_to_sell, SYMBOL_TSD ) && is_asset_type( min_to_receive, SYMBOL_TME ) ),
+      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_COIN ) && is_asset_type( min_to_receive, SYMBOL_USD ) )
+         || ( is_asset_type( amount_to_sell, SYMBOL_USD ) && is_asset_type( min_to_receive, SYMBOL_COIN ) ),
          "Limit order must be for the TME:TSD market" );
       (amount_to_sell / min_to_receive).validate();
    }
@@ -372,8 +372,8 @@ namespace node { namespace protocol {
       FC_ASSERT( amount_to_sell.symbol == exchange_rate.base.symbol, "Sell asset must be the base of the price" );
       exchange_rate.validate();
 
-      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_TME ) && is_asset_type( exchange_rate.quote, SYMBOL_TSD ) ) ||
-                 ( is_asset_type( amount_to_sell, SYMBOL_TSD ) && is_asset_type( exchange_rate.quote, SYMBOL_TME ) ),
+      FC_ASSERT( ( is_asset_type( amount_to_sell, SYMBOL_COIN ) && is_asset_type( exchange_rate.quote, SYMBOL_USD ) ) ||
+                 ( is_asset_type( amount_to_sell, SYMBOL_USD ) && is_asset_type( exchange_rate.quote, SYMBOL_COIN ) ),
                  "Limit order must be for the TME:TSD market" );
 
       FC_ASSERT( (amount_to_sell * exchange_rate).amount > 0, "Amount to sell cannot round to 0 when traded" );
@@ -389,7 +389,7 @@ namespace node { namespace protocol {
       validate_account_name( owner );
       /// only allow conversion from TSD to TME, allowing the opposite can enable traders to abuse
       /// market fluxuations through converting large quantities without moving the price.
-      FC_ASSERT( is_asset_type( amount, SYMBOL_TSD ), "Can only convert TSD to TME" );
+      FC_ASSERT( is_asset_type( amount, SYMBOL_USD ), "Can only convert TSD to TME" );
       FC_ASSERT( amount.amount > 0, "Must convert some TSD" );
    }
 
@@ -413,9 +413,9 @@ namespace node { namespace protocol {
       FC_ASSERT( TMEamount.amount >= 0, "TME amount cannot be negative" );
       FC_ASSERT( TSDamount.amount > 0 || TMEamount.amount > 0, "escrow must transfer a non-zero amount" );
       FC_ASSERT( from != agent && to != agent, "agent must be a third party" );
-      FC_ASSERT( (fee.symbol == SYMBOL_TME) || (fee.symbol == SYMBOL_TSD), "fee must be TME or TSD" );
-      FC_ASSERT( TSDamount.symbol == SYMBOL_TSD, "TSD amount must contain TSD" );
-      FC_ASSERT( TMEamount.symbol == SYMBOL_TME, "TME amount must contain TME" );
+      FC_ASSERT( (fee.symbol == SYMBOL_COIN) || (fee.symbol == SYMBOL_USD), "fee must be TME or TSD" );
+      FC_ASSERT( TSDamount.symbol == SYMBOL_USD, "TSD amount must contain TSD" );
+      FC_ASSERT( TMEamount.symbol == SYMBOL_COIN, "TME amount must contain TME" );
       FC_ASSERT( ratification_deadline < escrow_expiration, "ratification deadline must be before escrow expiration" );
       if ( json.size() > 0 )
       {
@@ -454,8 +454,8 @@ namespace node { namespace protocol {
       FC_ASSERT( TSDamount.amount >= 0, "TSD amount cannot be negative" );
       FC_ASSERT( TMEamount.amount >= 0, "TME amount cannot be negative" );
       FC_ASSERT( TSDamount.amount > 0 || TMEamount.amount > 0, "escrow must release a non-zero amount" );
-      FC_ASSERT( TSDamount.symbol == SYMBOL_TSD, "TSD amount must contain TSD" );
-      FC_ASSERT( TMEamount.symbol == SYMBOL_TME, "TME amount must contain TME" );
+      FC_ASSERT( TSDamount.symbol == SYMBOL_USD, "TSD amount must contain TSD" );
+      FC_ASSERT( TMEamount.symbol == SYMBOL_COIN, "TME amount must contain TME" );
    }
 
    void request_account_recovery_operation::validate()const
@@ -486,7 +486,7 @@ namespace node { namespace protocol {
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( amount.symbol == SYMBOL_TME || amount.symbol == SYMBOL_TSD );
+      FC_ASSERT( amount.symbol == SYMBOL_COIN || amount.symbol == SYMBOL_USD );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    }
@@ -494,7 +494,7 @@ namespace node { namespace protocol {
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( amount.symbol == SYMBOL_TME || amount.symbol == SYMBOL_TSD );
+      FC_ASSERT( amount.symbol == SYMBOL_COIN || amount.symbol == SYMBOL_USD );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
       FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
    }
@@ -528,8 +528,8 @@ namespace node { namespace protocol {
    void claimRewardBalance_operation::validate()const
    {
       validate_account_name( account );
-      FC_ASSERT( is_asset_type( TMEreward, SYMBOL_TME ), "TMEreward must be TME" );
-      FC_ASSERT( is_asset_type( TSDreward, SYMBOL_TSD ), "TSDreward must be TSD" );
+      FC_ASSERT( is_asset_type( TMEreward, SYMBOL_COIN ), "TMEreward must be TME" );
+      FC_ASSERT( is_asset_type( TSDreward, SYMBOL_USD ), "TSDreward must be TSD" );
       FC_ASSERT( is_asset_type( SCOREreward, SYMBOL_SCORE ), "SCOREreward must be SCORE" );
       FC_ASSERT( TMEreward.amount >= 0, "Cannot claim a negative amount" );
       FC_ASSERT( TSDreward.amount >= 0, "Cannot claim a negative amount" );

@@ -230,7 +230,7 @@ const account_object& database_fixture::accountCreate(
          accountCreateWithDelegation_operation op;
          op.newAccountName = name;
          op.creator = creator;
-         op.fee = asset( fee, SYMBOL_TME );
+         op.fee = asset( fee, SYMBOL_COIN );
          op.delegation = asset( 0, SYMBOL_SCORE );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
@@ -245,7 +245,7 @@ const account_object& database_fixture::accountCreate(
          accountCreate_operation op;
          op.newAccountName = name;
          op.creator = creator;
-         op.fee = asset( fee, SYMBOL_TME );
+         op.fee = asset( fee, SYMBOL_COIN );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
@@ -310,7 +310,7 @@ const witness_object& database_fixture::witness_create(
       op.owner = owner;
       op.url = url;
       op.block_signing_key = signing_key;
-      op.fee = asset( fee, SYMBOL_TME );
+      op.fee = asset( fee, SYMBOL_COIN );
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -348,9 +348,9 @@ void database_fixture::fund(
       {
          db.modify( db.get_account( account_name ), [&]( account_object& a )
          {
-            if( amount.symbol == SYMBOL_TME )
+            if( amount.symbol == SYMBOL_COIN )
                a.balance += amount;
-            else if( amount.symbol == SYMBOL_TSD )
+            else if( amount.symbol == SYMBOL_USD )
             {
                a.TSDbalance += amount;
                a.TSD_seconds_last_update = db.head_block_time();
@@ -359,19 +359,19 @@ void database_fixture::fund(
 
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
          {
-            if( amount.symbol == SYMBOL_TME )
+            if( amount.symbol == SYMBOL_COIN )
                gpo.current_supply += amount;
-            else if( amount.symbol == SYMBOL_TSD )
+            else if( amount.symbol == SYMBOL_USD )
                gpo.current_TSD_supply += amount;
          });
 
-         if( amount.symbol == SYMBOL_TSD )
+         if( amount.symbol == SYMBOL_USD )
          {
             const auto& median_feed = db.get_feed_history();
             if( median_feed.current_median_history.is_null() )
                db.modify( median_feed, [&]( feed_history_object& f )
                {
-                  f.current_median_history = price( asset( 1, SYMBOL_TSD ), asset( 1, SYMBOL_TME ) );
+                  f.current_median_history = price( asset( 1, SYMBOL_USD ), asset( 1, SYMBOL_COIN ) );
                });
          }
 
@@ -390,14 +390,14 @@ void database_fixture::convert(
       const account_object& account = db.get_account( account_name );
 
 
-      if ( amount.symbol == SYMBOL_TME )
+      if ( amount.symbol == SYMBOL_COIN )
       {
          db.adjust_balance( account, -amount );
          db.adjust_balance( account, db.to_TSD( amount ) );
          db.adjust_supply( -amount );
          db.adjust_supply( db.to_TSD( amount ) );
       }
-      else if ( amount.symbol == SYMBOL_TSD )
+      else if ( amount.symbol == SYMBOL_USD )
       {
          db.adjust_balance( account, -amount );
          db.adjust_balance( account, db.to_TME( amount ) );
@@ -434,7 +434,7 @@ void database_fixture::score( const string& from, const share_type& amount )
       transferTMEtoSCOREfund_operation op;
       op.from = from;
       op.to = "";
-      op.amount = asset( amount, SYMBOL_TME );
+      op.amount = asset( amount, SYMBOL_COIN );
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -446,7 +446,7 @@ void database_fixture::score( const string& from, const share_type& amount )
 
 void database_fixture::score( const string& account, const asset& amount )
 {
-   if( amount.symbol != SYMBOL_TME )
+   if( amount.symbol != SYMBOL_COIN )
       return;
 
    db_plugin->debug_update( [=]( database& db )

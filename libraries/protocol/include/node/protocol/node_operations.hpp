@@ -127,7 +127,7 @@ namespace node { namespace protocol {
       account_name_type author;
       string            permlink;
 
-      asset             max_accepted_payout    = asset( 1000000000, SYMBOL_TSD );       /// TSD value of the maximum payout this post will receive
+      asset             max_accepted_payout    = asset( 1000000000, SYMBOL_USD );       /// TSD value of the maximum payout this post will receive
       uint16_t          percent_TSD  = PERCENT_100; /// the percent of TSD to key, unkept amounts will be received as Ezira Power
       bool              allow_votes            = true;      /// allows a post to receive votes;
       bool              allow_curationRewards = true; /// allows voters to recieve curation rewards. Rewards return to reward fund.
@@ -231,8 +231,8 @@ namespace node { namespace protocol {
       account_name_type agent;
       uint32_t          escrow_id = 30;
 
-      asset             TSDamount = asset( 0, SYMBOL_TSD );
-      asset             TMEamount = asset( 0, SYMBOL_TME );
+      asset             TSDamount = asset( 0, SYMBOL_USD );
+      asset             TMEamount = asset( 0, SYMBOL_COIN );
       asset             fee;
 
       time_point_sec    ratification_deadline;
@@ -303,8 +303,8 @@ namespace node { namespace protocol {
       account_name_type receiver; ///< the account that should receive funds (might be from, might be to)
 
       uint32_t          escrow_id = 30;
-      asset             TSDamount = asset( 0, SYMBOL_TSD ); ///< the amount of TSD to release
-      asset             TMEamount = asset( 0, SYMBOL_TME ); ///< the amount of TME to release
+      asset             TSDamount = asset( 0, SYMBOL_USD ); ///< the amount of TSD to release
+      asset             TMEamount = asset( 0, SYMBOL_COIN ); ///< the amount of TME to release
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(who); }
@@ -382,7 +382,7 @@ namespace node { namespace protocol {
        *  ability to vote and make transactions.
        */
       asset             account_creation_fee =
-         asset( MIN_ACCOUNT_CREATION_FEE, SYMBOL_TME );
+         asset( MIN_ACCOUNT_CREATION_FEE, SYMBOL_COIN );
 
       /**
        *  This witnesses vote for the maximum_block_size which is used by the network

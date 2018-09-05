@@ -42,7 +42,7 @@ uint128_t evaluate_reward_curve( const uint128_t& SCOREreward, const curve_id& c
 
 inline bool is_comment_payout_dust( const price& p, uint64_t TMEpayout )
 {
-   return to_TSD( p, asset( TMEpayout, SYMBOL_TME ) ) < MIN_PAYOUT_TSD;
+   return to_TSD( p, asset( TMEpayout, SYMBOL_COIN ) ) < MIN_PAYOUT_TSD;
 }
 
 } } } // node::chain::util

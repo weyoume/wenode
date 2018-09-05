@@ -54,8 +54,8 @@ namespace node { namespace chain {
          uint16_t          voting_power = PERCENT_100;   ///< current voting power of this account, it falls after every vote
          time_point_sec    last_vote_time; ///< used to increase the voting power of this account the longer it goes without voting.
 
-         asset             balance = asset( 0, SYMBOL_TME );  ///< total liquid SCORE held by this account
-         asset             TMEsavingsBalance = asset( 0, SYMBOL_TME );  ///< total liquid SCORE held by this account
+         asset             balance = asset( 0, SYMBOL_COIN );  ///< total liquid SCORE held by this account
+         asset             TMEsavingsBalance = asset( 0, SYMBOL_COIN );  ///< total liquid SCORE held by this account
 
          /**
           *  TSD Deposits pay interest based upon the interest rate set by witnesses. The purpose of these
@@ -71,13 +71,13 @@ namespace node { namespace chain {
           *  @defgroup TSD_data TSD Balance Data
           */
          ///@{
-         asset             TSDbalance = asset( 0, SYMBOL_TSD ); /// total TSD balance
+         asset             TSDbalance = asset( 0, SYMBOL_USD ); /// total TSD balance
          uint128_t         TSD_seconds; ///< total TSD * how long it has been hel
          time_point_sec    TSD_seconds_last_update; ///< the last time the TSD_seconds was updated
          time_point_sec    TSD_last_interest_payment; ///< used to pay interest at most once per month
 
 
-         asset             TSDsavingsBalance = asset( 0, SYMBOL_TSD ); /// total TSD balance
+         asset             TSDsavingsBalance = asset( 0, SYMBOL_USD ); /// total TSD balance
          uint128_t         savings_TSD_seconds; ///< total TSD * how long it has been hel
          time_point_sec    savings_TSD_seconds_last_update; ///< the last time the TSD_seconds was updated
          time_point_sec    savings_TSD_last_interest_payment; ///< used to pay interest at most once per month
@@ -85,10 +85,10 @@ namespace node { namespace chain {
          uint8_t           savings_withdraw_requests = 0;
          ///@}
 
-         asset             SCORErewardBalanceInTME = asset( 0, SYMBOL_TME );
-         asset             TMErewardBalance = asset( 0, SYMBOL_TME );
+         asset             SCORErewardBalanceInTME = asset( 0, SYMBOL_COIN );
+         asset             TMErewardBalance = asset( 0, SYMBOL_COIN );
          asset             SCORErewardBalance = asset( 0, SYMBOL_SCORE );
-         asset             TSDrewardBalance = asset( 0, SYMBOL_TSD );
+         asset             TSDrewardBalance = asset( 0, SYMBOL_USD );
 
          share_type        curationRewards = 0;
          share_type        posting_rewards = 0;

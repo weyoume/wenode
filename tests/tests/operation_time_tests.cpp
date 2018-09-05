@@ -463,11 +463,11 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       auto bob_SCORE = db.get_account( "bob" ).SCORE;
       auto bob_TSDbalance = db.get_account( "bob" ).TSDbalance;
 
-      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_SCOREreward.value ) * bob_comment_SCOREreward.value * TMEreward.amount.value ) / total_SCOREreward2 ).to_uint64(), SYMBOL_TME );
-      auto bob_comment_discussion_rewards = asset( bob_comment_payout.amount / 4, SYMBOL_TME );
+      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_SCOREreward.value ) * bob_comment_SCOREreward.value * TMEreward.amount.value ) / total_SCOREreward2 ).to_uint64(), SYMBOL_COIN );
+      auto bob_comment_discussion_rewards = asset( bob_comment_payout.amount / 4, SYMBOL_COIN );
       bob_comment_payout -= bob_comment_discussion_rewards;
-      auto bob_comment_TSDreward = db.to_TSD( asset( bob_comment_payout.amount / 2, SYMBOL_TME ) );
-      auto bob_comment_TME_fund_for_SCORE_reward = ( bob_comment_payout - asset( bob_comment_payout.amount / 2, SYMBOL_TME) ) * db.get_dynamic_global_properties().get_SCORE_price();
+      auto bob_comment_TSDreward = db.to_TSD( asset( bob_comment_payout.amount / 2, SYMBOL_COIN ) );
+      auto bob_comment_TME_fund_for_SCORE_reward = ( bob_comment_payout - asset( bob_comment_payout.amount / 2, SYMBOL_COIN) ) * db.get_dynamic_global_properties().get_SCORE_price();
 
       BOOST_TEST_MESSAGE( "Cause first payout" );
 
@@ -674,17 +674,17 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       auto sam_SCORE = db.get_account( "sam" ).SCORE;
       auto dave_SCORE = db.get_account( "dave" ).SCORE;
 
-      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_SCOREreward.value ) * bob_comment_SCOREreward.value * TMEreward.amount.value ) / total_SCOREreward2 ).to_uint64(), SYMBOL_TME );
-      auto bob_comment_vote_rewards = asset( bob_comment_payout.amount / 2, SYMBOL_TME );
+      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_SCOREreward.value ) * bob_comment_SCOREreward.value * TMEreward.amount.value ) / total_SCOREreward2 ).to_uint64(), SYMBOL_COIN );
+      auto bob_comment_vote_rewards = asset( bob_comment_payout.amount / 2, SYMBOL_COIN );
       bob_comment_payout -= bob_comment_vote_rewards;
-      auto bob_comment_TSDreward = asset( bob_comment_payout.amount / 2, SYMBOL_TME ) * exchange_rate;
-      auto bob_comment_TME_fund_for_SCORE_reward = ( bob_comment_payout - asset( bob_comment_payout.amount / 2, SYMBOL_TME ) ) * db.get_dynamic_global_properties().get_SCORE_price();
+      auto bob_comment_TSDreward = asset( bob_comment_payout.amount / 2, SYMBOL_COIN ) * exchange_rate;
+      auto bob_comment_TME_fund_for_SCORE_reward = ( bob_comment_payout - asset( bob_comment_payout.amount / 2, SYMBOL_COIN ) ) * db.get_dynamic_global_properties().get_SCORE_price();
       auto unclaimed_payments = bob_comment_vote_rewards;
-      auto alice_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_TME );
+      auto alice_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_COIN );
       auto alice_vote_TME_fund_for_SCORE = alice_vote_reward * db.get_dynamic_global_properties().get_SCORE_price();
-      auto bob_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_TME );
+      auto bob_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_COIN );
       auto bob_vote_TME_fund_for_SCORE = bob_vote_reward * db.get_dynamic_global_properties().get_SCORE_price();
-      auto sam_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_TME );
+      auto sam_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards.amount.value ) / bob_comment_vote_total ), SYMBOL_COIN );
       auto sam_vote_TME_fund_for_SCORE = sam_vote_reward * db.get_dynamic_global_properties().get_SCORE_price();
       unclaimed_payments -= ( alice_vote_reward + bob_vote_reward + sam_vote_reward );
 
@@ -749,19 +749,19 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       trs2 = ( trs2 << 64 ) + total_SCOREreward2.lo;
       auto rs2 = rs*rs;
 
-      auto alice_comment_payout = asset( static_cast< uint64_t >( ( rf * rs2 ) / trs2 ), SYMBOL_TME );
-      auto alice_comment_vote_rewards = asset( alice_comment_payout.amount / 2, SYMBOL_TME );
+      auto alice_comment_payout = asset( static_cast< uint64_t >( ( rf * rs2 ) / trs2 ), SYMBOL_COIN );
+      auto alice_comment_vote_rewards = asset( alice_comment_payout.amount / 2, SYMBOL_COIN );
       alice_comment_payout -= alice_comment_vote_rewards;
-      auto alice_comment_TSDreward = asset( alice_comment_payout.amount / 2, SYMBOL_TME ) * exchange_rate;
-      auto alice_comment_TME_fund_for_SCORE_reward = ( alice_comment_payout - asset( alice_comment_payout.amount / 2, SYMBOL_TME ) ) * db.get_dynamic_global_properties().get_SCORE_price();
+      auto alice_comment_TSDreward = asset( alice_comment_payout.amount / 2, SYMBOL_COIN ) * exchange_rate;
+      auto alice_comment_TME_fund_for_SCORE_reward = ( alice_comment_payout - asset( alice_comment_payout.amount / 2, SYMBOL_COIN ) ) * db.get_dynamic_global_properties().get_SCORE_price();
       unclaimed_payments = alice_comment_vote_rewards;
-      alice_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_TME );
+      alice_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_COIN );
       alice_vote_TME_fund_for_SCORE = alice_vote_reward * db.get_dynamic_global_properties().get_SCORE_price();
-      bob_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_TME );
+      bob_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_COIN );
       bob_vote_TME_fund_for_SCORE = bob_vote_reward * db.get_dynamic_global_properties().get_SCORE_price();
-      sam_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_TME );
+      sam_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_COIN );
       sam_vote_TME_fund_for_SCORE = sam_vote_reward * db.get_dynamic_global_properties().get_SCORE_price();
-      auto dave_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "dave" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_TME );
+      auto dave_vote_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "dave" ) ).id ) )->weight ) * alice_comment_vote_rewards.amount.value ) / alice_comment_vote_total ), SYMBOL_COIN );
       auto dave_vote_TME_fund_for_SCORE = dave_vote_reward * db.get_dynamic_global_properties().get_SCORE_price();
       unclaimed_payments -= ( alice_vote_reward + bob_vote_reward + sam_vote_reward + dave_vote_reward );
 
@@ -962,8 +962,8 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       auto alice_comment_vote_rewards = alice_comment_reward / 2;
       alice_comment_reward -= alice_comment_vote_rewards;
 
-      auto alice_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_TME );
-      auto bob_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_TME );
+      auto alice_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_COIN );
+      auto bob_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_COIN );
       TMEreward += alice_comment_vote_rewards - ( alice_vote_alice_reward + bob_vote_alice_reward ).amount.value;
 
       auto bob_comment_reward = ( ( TMEreward * bob_comment.net_SCOREreward.value * bob_comment.net_SCOREreward.value ) / total_SCOREreward2 ).to_uint64();
@@ -972,9 +972,9 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       auto bob_comment_vote_rewards = bob_comment_reward / 2;
       bob_comment_reward -= bob_comment_vote_rewards;
 
-      auto alice_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_TME );
-      auto bob_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_TME );
-      auto sam_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_TME );
+      auto alice_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "alice" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_COIN );
+      auto bob_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_COIN );
+      auto sam_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_COIN );
       TMEreward += bob_comment_vote_rewards - ( alice_vote_bob_reward + bob_vote_bob_reward + sam_vote_bob_reward ).amount.value;
 
       auto dave_comment_reward = ( ( TMEreward * dave_comment.net_SCOREreward.value * dave_comment.net_SCOREreward.value ) / total_SCOREreward2 ).to_uint64();
@@ -983,7 +983,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       auto dave_comment_vote_rewards = dave_comment_reward / 2;
       dave_comment_reward -= dave_comment_vote_rewards;
 
-      auto bob_vote_dave_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "dave", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * dave_comment_vote_rewards ) / dave_comment.total_vote_weight ), SYMBOL_TME );
+      auto bob_vote_dave_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "dave", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * dave_comment_vote_rewards ) / dave_comment.total_vote_weight ), SYMBOL_COIN );
       TMEreward += dave_comment_vote_rewards - bob_vote_dave_reward.amount.value;
 
       // Calculate rewards paid to parent posts
@@ -1013,13 +1013,13 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       dave_pays_bob_SCORE -= dave_pays_alice_SCORE;
 
       // Calculate total comment payouts
-      auto alice_comment_total_payout = db.to_TSD( asset( alice_pays_alice_TSD + alice_pays_alice_SCORE, SYMBOL_TME ) );
-      alice_comment_total_payout += db.to_TSD( asset( bob_pays_alice_TSD + bob_pays_alice_SCORE, SYMBOL_TME ) );
-      alice_comment_total_payout += db.to_TSD( asset( dave_pays_alice_TSD + dave_pays_alice_SCORE, SYMBOL_TME ) );
-      auto bob_comment_total_payout = db.to_TSD( asset( bob_pays_bob_TSD + bob_pays_bob_SCORE, SYMBOL_TME ) );
-      bob_comment_total_payout += db.to_TSD( asset( dave_pays_bob_TSD + dave_pays_bob_SCORE, SYMBOL_TME ) );
-      auto sam_comment_total_payout = db.to_TSD( asset( dave_pays_sam_TSD + dave_pays_sam_SCORE, SYMBOL_TME ) );
-      auto dave_comment_total_payout = db.to_TSD( asset( dave_pays_dave_TSD + dave_pays_dave_SCORE, SYMBOL_TME ) );
+      auto alice_comment_total_payout = db.to_TSD( asset( alice_pays_alice_TSD + alice_pays_alice_SCORE, SYMBOL_COIN ) );
+      alice_comment_total_payout += db.to_TSD( asset( bob_pays_alice_TSD + bob_pays_alice_SCORE, SYMBOL_COIN ) );
+      alice_comment_total_payout += db.to_TSD( asset( dave_pays_alice_TSD + dave_pays_alice_SCORE, SYMBOL_COIN ) );
+      auto bob_comment_total_payout = db.to_TSD( asset( bob_pays_bob_TSD + bob_pays_bob_SCORE, SYMBOL_COIN ) );
+      bob_comment_total_payout += db.to_TSD( asset( dave_pays_bob_TSD + dave_pays_bob_SCORE, SYMBOL_COIN ) );
+      auto sam_comment_total_payout = db.to_TSD( asset( dave_pays_sam_TSD + dave_pays_sam_SCORE, SYMBOL_COIN ) );
+      auto dave_comment_total_payout = db.to_TSD( asset( dave_pays_dave_TSD + dave_pays_dave_SCORE, SYMBOL_COIN ) );
 
       auto alice_starting_TME_fund_for_SCORE = db.get_account( "alice" ).SCORE;
       auto alice_starting_TSD = db.get_account( "alice" ).TSDbalance;
@@ -1148,23 +1148,23 @@ BOOST_AUTO_TEST_CASE( nested_comments )
 
       BOOST_TEST_MESSAGE( "Checking account balances" );
 
-      auto alice_TSDtotal = alice_starting_TSD + asset( alice_pays_alice_TSD + bob_pays_alice_TSD + dave_pays_alice_TSD, SYMBOL_TME ) * exchange_rate;
-      auto alice_totalSCORE = alice_starting_TME_fund_for_SCORE + asset( alice_pays_alice_SCORE + bob_pays_alice_SCORE + dave_pays_alice_SCORE + alice_vote_alice_reward.amount + alice_vote_bob_reward.amount, SYMBOL_TME ) * gpo.get_SCORE_price();
+      auto alice_TSDtotal = alice_starting_TSD + asset( alice_pays_alice_TSD + bob_pays_alice_TSD + dave_pays_alice_TSD, SYMBOL_COIN ) * exchange_rate;
+      auto alice_totalSCORE = alice_starting_TME_fund_for_SCORE + asset( alice_pays_alice_SCORE + bob_pays_alice_SCORE + dave_pays_alice_SCORE + alice_vote_alice_reward.amount + alice_vote_bob_reward.amount, SYMBOL_COIN ) * gpo.get_SCORE_price();
       BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSDtotal.amount.value );
       BOOST_REQUIRE( db.get_account( "alice" ).SCORE.amount.value == alice_totalSCORE.amount.value );
 
-      auto bob_TSDtotal = bob_starting_TSD + asset( bob_pays_bob_TSD + dave_pays_bob_TSD, SYMBOL_TME ) * exchange_rate;
-      auto bob_totalSCORE = bob_starting_TME_fund_for_SCORE + asset( bob_pays_bob_SCORE + dave_pays_bob_SCORE + bob_vote_alice_reward.amount + bob_vote_bob_reward.amount + bob_vote_dave_reward.amount, SYMBOL_TME ) * gpo.get_SCORE_price();
+      auto bob_TSDtotal = bob_starting_TSD + asset( bob_pays_bob_TSD + dave_pays_bob_TSD, SYMBOL_COIN ) * exchange_rate;
+      auto bob_totalSCORE = bob_starting_TME_fund_for_SCORE + asset( bob_pays_bob_SCORE + dave_pays_bob_SCORE + bob_vote_alice_reward.amount + bob_vote_bob_reward.amount + bob_vote_dave_reward.amount, SYMBOL_COIN ) * gpo.get_SCORE_price();
       BOOST_REQUIRE( db.get_account( "bob" ).TSDbalance.amount.value == bob_TSDtotal.amount.value );
       BOOST_REQUIRE( db.get_account( "bob" ).SCORE.amount.value == bob_totalSCORE.amount.value );
 
-      auto sam_TSDtotal = sam_starting_TSD + asset( dave_pays_sam_TSD, SYMBOL_TME ) * exchange_rate;
-      auto sam_totalSCORE = bob_starting_TME_fund_for_SCORE + asset( dave_pays_sam_SCORE + sam_vote_bob_reward.amount, SYMBOL_TME ) * gpo.get_SCORE_price();
+      auto sam_TSDtotal = sam_starting_TSD + asset( dave_pays_sam_TSD, SYMBOL_COIN ) * exchange_rate;
+      auto sam_totalSCORE = bob_starting_TME_fund_for_SCORE + asset( dave_pays_sam_SCORE + sam_vote_bob_reward.amount, SYMBOL_COIN ) * gpo.get_SCORE_price();
       BOOST_REQUIRE( db.get_account( "sam" ).TSDbalance.amount.value == sam_TSDtotal.amount.value );
       BOOST_REQUIRE( db.get_account( "sam" ).SCORE.amount.value == sam_totalSCORE.amount.value );
 
-      auto dave_TSDtotal = dave_starting_TSD + asset( dave_pays_dave_TSD, SYMBOL_TME ) * exchange_rate;
-      auto dave_totalSCORE = dave_starting_TME_fund_for_SCORE + asset( dave_pays_dave_SCORE, SYMBOL_TME ) * gpo.get_SCORE_price();
+      auto dave_TSDtotal = dave_starting_TSD + asset( dave_pays_dave_TSD, SYMBOL_COIN ) * exchange_rate;
+      auto dave_totalSCORE = dave_starting_TME_fund_for_SCORE + asset( dave_pays_dave_SCORE, SYMBOL_COIN ) * gpo.get_SCORE_price();
       BOOST_REQUIRE( db.get_account( "dave" ).TSDbalance.amount.value == dave_TSDtotal.amount.value );
       BOOST_REQUIRE( db.get_account( "dave" ).SCORE.amount.value == dave_totalSCORE.amount.value );
    }
@@ -1455,13 +1455,13 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
          txs.push_back( signed_transaction() );
       }
 
-      ops[0].exchange_rate = price( asset( 100000, SYMBOL_TME ), asset( 1000, SYMBOL_TSD ) );
-      ops[1].exchange_rate = price( asset( 105000, SYMBOL_TME ), asset( 1000, SYMBOL_TSD ) );
-      ops[2].exchange_rate = price( asset(  98000, SYMBOL_TME ), asset( 1000, SYMBOL_TSD ) );
-      ops[3].exchange_rate = price( asset(  97000, SYMBOL_TME ), asset( 1000, SYMBOL_TSD ) );
-      ops[4].exchange_rate = price( asset(  99000, SYMBOL_TME ), asset( 1000, SYMBOL_TSD ) );
-      ops[5].exchange_rate = price( asset(  97500, SYMBOL_TME ), asset( 1000, SYMBOL_TSD ) );
-      ops[6].exchange_rate = price( asset( 102000, SYMBOL_TME ), asset( 1000, SYMBOL_TSD ) );
+      ops[0].exchange_rate = price( asset( 100000, SYMBOL_COIN ), asset( 1000, SYMBOL_USD ) );
+      ops[1].exchange_rate = price( asset( 105000, SYMBOL_COIN ), asset( 1000, SYMBOL_USD ) );
+      ops[2].exchange_rate = price( asset(  98000, SYMBOL_COIN ), asset( 1000, SYMBOL_USD ) );
+      ops[3].exchange_rate = price( asset(  97000, SYMBOL_COIN ), asset( 1000, SYMBOL_USD ) );
+      ops[4].exchange_rate = price( asset(  99000, SYMBOL_COIN ), asset( 1000, SYMBOL_USD ) );
+      ops[5].exchange_rate = price( asset(  97500, SYMBOL_COIN ), asset( 1000, SYMBOL_USD ) );
+      ops[6].exchange_rate = price( asset( 102000, SYMBOL_COIN ), asset( 1000, SYMBOL_USD ) );
 
       for( int i = 0; i < 7; i++ )
       {
@@ -1477,8 +1477,8 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
       BOOST_TEST_MESSAGE( "Get feed history object" );
       feed_history_object feed_history = db.get_feed_history();
       BOOST_TEST_MESSAGE( "Check state" );
-      BOOST_REQUIRE( feed_history.current_median_history == price( asset( 99000, SYMBOL_TME), asset( 1000, SYMBOL_TSD ) ) );
-      BOOST_REQUIRE( feed_history.price_history[ 0 ] == price( asset( 99000, SYMBOL_TME), asset( 1000, SYMBOL_TSD ) ) );
+      BOOST_REQUIRE( feed_history.current_median_history == price( asset( 99000, SYMBOL_COIN), asset( 1000, SYMBOL_USD ) ) );
+      BOOST_REQUIRE( feed_history.price_history[ 0 ] == price( asset( 99000, SYMBOL_COIN), asset( 1000, SYMBOL_USD ) ) );
       validate_database();
 
       for ( int i = 0; i < 23; i++ )
@@ -1489,7 +1489,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
          {
             txs[j].operations.clear();
             txs[j].signatures.clear();
-            ops[j].exchange_rate = price( ops[j].exchange_rate.base, asset( ops[j].exchange_rate.quote.amount + 10, SYMBOL_TSD ) );
+            ops[j].exchange_rate = price( ops[j].exchange_rate.base, asset( ops[j].exchange_rate.quote.amount + 10, SYMBOL_USD ) );
             txs[j].set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
             txs[j].operations.push_back( ops[j] );
             txs[j].sign( keys[j], db.get_chain_id() );
@@ -1531,7 +1531,7 @@ BOOST_AUTO_TEST_CASE( convert_delay )
       tx.operations.clear();
       tx.signatures.clear();
       op.owner = "alice";
-      op.amount = asset( 2000, SYMBOL_TSD );
+      op.amount = asset( 2000, SYMBOL_USD );
       op.requestid = 2;
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -1584,11 +1584,11 @@ BOOST_AUTO_TEST_CASE( node_inflation )
       auto old_witness_balance = db.get_account( witness_name ).balance;
       auto old_witness_SCORE = db.get_account( witness_name ).SCORE;
 
-      auto new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) )
-         + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) );
-      auto witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) );
+      auto new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) )
+         + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) );
+      auto witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) );
       auto witness_pay_SCORE = asset( 0, SYMBOL_TP );
-      auto new_SCOREvalueInTME = asset( 0, SYMBOL_TME );
+      auto new_SCOREvalueInTME = asset( 0, SYMBOL_COIN );
       auto new_SCORE = gpo.totalSCORE;
 
       if ( db.get_account( witness_name ).SCORE.amount.value == 0 )
@@ -1622,10 +1622,10 @@ BOOST_AUTO_TEST_CASE( node_inflation )
          old_witness_SCORE = db.get_account( witness_name ).SCORE;
 
 
-         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) )
-            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) );
-         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) );
-         new_SCOREvalueInTME = asset( 0, SYMBOL_TME );
+         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) )
+            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) );
+         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) );
+         new_SCOREvalueInTME = asset( 0, SYMBOL_COIN );
          new_SCORE = gpo.totalSCORE;
 
          if ( db.get_account( witness_name ).SCORE.amount.value == 0 )
@@ -1634,7 +1634,7 @@ BOOST_AUTO_TEST_CASE( node_inflation )
             witness_pay_SCORE = witness_pay * gpo.get_SCORE_price();
             new_SCORE += witness_pay_SCORE;
             new_supply += witness_pay;
-            witness_pay = asset( 0, SYMBOL_TME );
+            witness_pay = asset( 0, SYMBOL_COIN );
          }
 
          new_supply = gpo.current_supply + new_rewards + witness_pay + new_SCOREvalueInTME;
@@ -1664,11 +1664,11 @@ BOOST_AUTO_TEST_CASE( node_inflation )
          witness_name = db.get_scheduled_witness(1);
          old_witness_balance = db.get_account( witness_name ).balance;
 
-         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) )
-            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) );
-         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) );
+         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) )
+            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) );
+         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) );
          auto witness_pay_SCORE = asset( 0, SYMBOL_TP );
-         new_SCOREvalueInTME = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_TME );
+         new_SCOREvalueInTME = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_COIN );
          new_SCORE = gpo.totalSCORE;
 
          if ( db.get_account( witness_name ).SCORE.amount.value == 0 )
@@ -1677,7 +1677,7 @@ BOOST_AUTO_TEST_CASE( node_inflation )
             witness_pay_SCORE = witness_pay * gpo.get_SCORE_price();
             new_SCORE += witness_pay_SCORE;
             new_supply += witness_pay;
-            witness_pay = asset( 0, SYMBOL_TME );
+            witness_pay = asset( 0, SYMBOL_COIN );
          }
 
          new_supply = gpo.current_supply + new_rewards + witness_pay + new_SCOREvalueInTME;
@@ -1705,11 +1705,11 @@ BOOST_AUTO_TEST_CASE( node_inflation )
          witness_name = db.get_scheduled_witness(1);
          old_witness_balance = db.get_account( witness_name ).balance;
 
-         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) )
-            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) );
-         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_TME ) );
+         new_rewards = std::max( MIN_CONTENT_REWARD, asset( ( CONTENT_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) )
+            + std::max( MIN_CURATE_REWARD, asset( ( CURATE_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) );
+         witness_pay = std::max( MIN_PRODUCER_REWARD, asset( ( PRODUCER_APR * gpo.virtual_supply.amount ) / ( BLOCKS_PER_YEAR * 100 ), SYMBOL_COIN ) );
          witness_pay_SCORE = witness_pay * gpo.get_SCORE_price();
-         new_SCOREvalueInTME = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_TME ) + witness_pay;
+         new_SCOREvalueInTME = asset( ( witness_pay + new_rewards ).amount * 9, SYMBOL_COIN ) + witness_pay;
          new_SCORE = gpo.totalSCORE + witness_pay_SCORE;
          new_supply = gpo.current_supply + new_rewards + new_SCOREvalueInTME;
          new_rewards += gpo.total_reward_fund_TME;
@@ -1748,7 +1748,7 @@ BOOST_AUTO_TEST_CASE( node_inflation )
       BOOST_REQUIRE_EQUAL( gpo.total_reward_fund_TME.amount.value,
          TMEreward.amount.value + virtual_supply.amount.value / 10 / BLOCKS_PER_YEAR + virtual_supply.amount.value / 10 / BLOCKS_PER_DAY );
       BOOST_REQUIRE_EQUAL( db.get_account( witness_name ).SCORE.amount.value,
-         old_witness_SCORE.amount.value + ( asset( ( ( virtual_supply.amount.value / BLOCKS_PER_YEAR ) * PERCENT_1 ) / PERCENT_100, SYMBOL_TME ) * ( SCORE / SCOREvalueInTME ) ).amount.value );
+         old_witness_SCORE.amount.value + ( asset( ( ( virtual_supply.amount.value / BLOCKS_PER_YEAR ) * PERCENT_1 ) / PERCENT_100, SYMBOL_COIN ) * ( SCORE / SCOREvalueInTME ) ).amount.value );
       validate_database();
       */
    }
@@ -1885,7 +1885,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       limit_order_create_operation op;
       op.owner = "alice";
-      op.amount_to_sell = asset( alice_TSD.amount.value / 20, SYMBOL_TSD ) ;
+      op.amount_to_sell = asset( alice_TSD.amount.value / 20, SYMBOL_USD ) ;
       op.min_to_receive = op.amount_to_sell * exchange_rate;
       op.orderid = 1;
 
@@ -1915,9 +1915,9 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       tx.sign( bob_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      alice_TME_volume += ( asset( alice_TSD.amount / 20, SYMBOL_TSD ) * exchange_rate ).amount.value;
+      alice_TME_volume += ( asset( alice_TSD.amount / 20, SYMBOL_USD ) * exchange_rate ).amount.value;
       alice_reward_last_update = db.head_block_time();
-      bob_TME_volume -= ( asset( alice_TSD.amount / 20, SYMBOL_TSD ) * exchange_rate ).amount.value;
+      bob_TME_volume -= ( asset( alice_TSD.amount / 20, SYMBOL_USD ) * exchange_rate ).amount.value;
       bob_reward_last_update = db.head_block_time();
 
       auto ops = get_last_operations( 1 );
@@ -1942,10 +1942,10 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 1 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_TSD ).amount.value );
+      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_USD ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "bob" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 2 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == ( asset( alice_TSD.amount.value / 20, SYMBOL_TSD ) * exchange_rate ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == ( asset( alice_TSD.amount.value / 20, SYMBOL_USD ) * exchange_rate ).amount.value );
 
       BOOST_CHECK( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
       BOOST_CHECK( limit_order_idx.find( std::make_tuple( "bob", 2 ) ) == limit_order_idx.end() );
@@ -1953,8 +1953,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_TEST_MESSAGE( "Creating Limit Order for TSD that will stay on the books for 60 minutes." );
 
       op.owner = "sam";
-      op.amount_to_sell = asset( ( alice_TSD.amount.value / 20 ), SYMBOL_TME );
-      op.min_to_receive = asset( ( alice_TSD.amount.value / 20 ), SYMBOL_TSD );
+      op.amount_to_sell = asset( ( alice_TSD.amount.value / 20 ), SYMBOL_COIN );
+      op.min_to_receive = asset( ( alice_TSD.amount.value / 20 ), SYMBOL_USD );
       op.orderid = 3;
 
       tx.signatures.clear();
@@ -1971,8 +1971,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       op.owner = "bob";
       op.orderid = 4;
-      op.amount_to_sell = asset( ( alice_TSD.amount.value / 10 ) * 3 - alice_TSD.amount.value / 20, SYMBOL_TME );
-      op.min_to_receive = asset( ( alice_TSD.amount.value / 10 ) * 3 - alice_TSD.amount.value / 20, SYMBOL_TSD );
+      op.amount_to_sell = asset( ( alice_TSD.amount.value / 10 ) * 3 - alice_TSD.amount.value / 20, SYMBOL_COIN );
+      op.min_to_receive = asset( ( alice_TSD.amount.value / 10 ) * 3 - alice_TSD.amount.value / 20, SYMBOL_USD );
 
       tx.signatures.clear();
       tx.operations.clear();
@@ -1989,8 +1989,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       op.owner = "alice";
       op.orderid = 5;
-      op.amount_to_sell = asset( ( alice_TSD.amount.value / 10 ) * 3, SYMBOL_TSD );
-      op.min_to_receive = asset( ( alice_TSD.amount.value / 10 ) * 3, SYMBOL_TME );
+      op.amount_to_sell = asset( ( alice_TSD.amount.value / 10 ) * 3, SYMBOL_USD );
+      op.min_to_receive = asset( ( alice_TSD.amount.value / 10 ) * 3, SYMBOL_COIN );
 
       tx.signatures.clear();
       tx.operations.clear();
@@ -2010,18 +2010,18 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       fill_order_op = ops[1].get< fill_order_operation >();
       BOOST_REQUIRE( fill_order_op.open_owner == "bob" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 4 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( ( alice_TSD.amount.value / 10 ) * 3 - alice_TSD.amount.value / 20, SYMBOL_TME ).amount.value );
+      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( ( alice_TSD.amount.value / 10 ) * 3 - alice_TSD.amount.value / 20, SYMBOL_COIN ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 5 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( ( alice_TSD.amount.value / 10 ) * 3 - alice_TSD.amount.value / 20, SYMBOL_TSD ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( ( alice_TSD.amount.value / 10 ) * 3 - alice_TSD.amount.value / 20, SYMBOL_USD ).amount.value );
 
       fill_order_op = ops[3].get< fill_order_operation >();
       BOOST_REQUIRE( fill_order_op.open_owner == "sam" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 3 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_TME ).amount.value );
+      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_COIN ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 5 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_TSD ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_USD ).amount.value );
 
       reward = liquidity_idx.find( db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
@@ -2047,8 +2047,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       BOOST_TEST_MESSAGE( "Testing a partial fill before minimum time and full fill after minimum time" );
 
       op.orderid = 6;
-      op.amount_to_sell = asset( alice_TSD.amount.value / 20 * 2, SYMBOL_TSD );
-      op.min_to_receive = asset( alice_TSD.amount.value / 20 * 2, SYMBOL_TME );
+      op.amount_to_sell = asset( alice_TSD.amount.value / 20 * 2, SYMBOL_USD );
+      op.min_to_receive = asset( alice_TSD.amount.value / 20 * 2, SYMBOL_COIN );
 
       tx.signatures.clear();
       tx.operations.clear();
@@ -2061,8 +2061,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       op.owner = "bob";
       op.orderid = 7;
-      op.amount_to_sell = asset( alice_TSD.amount.value / 20, SYMBOL_TME );
-      op.min_to_receive = asset( alice_TSD.amount.value / 20, SYMBOL_TSD );
+      op.amount_to_sell = asset( alice_TSD.amount.value / 20, SYMBOL_COIN );
+      op.min_to_receive = asset( alice_TSD.amount.value / 20, SYMBOL_USD );
 
       tx.signatures.clear();
       tx.operations.clear();
@@ -2078,10 +2078,10 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 6 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_TSD ).amount.value );
+      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_USD ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "bob" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 7 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_TME ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_COIN ).amount.value );
 
       reward = liquidity_idx.find( db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
@@ -2126,10 +2126,10 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 6 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_TSD ).amount.value );
+      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_USD ).amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "sam" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 8 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_TME ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == asset( alice_TSD.amount.value / 20, SYMBOL_COIN ).amount.value );
 
       reward = liquidity_idx.find( db.get_account( "alice" ).id );
       BOOST_REQUIRE( reward == liquidity_idx.end() );
@@ -2157,7 +2157,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       transfer_operation transfer;
       transfer.to = "dave";
       transfer.from = "alice";
-      transfer.amount = asset( alice_TSD.amount / 2, SYMBOL_TSD );
+      transfer.amount = asset( alice_TSD.amount / 2, SYMBOL_USD );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2167,8 +2167,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       db.push_transaction( tx, 0 );
 
       op.owner = "alice";
-      op.amount_to_sell = asset( 8 * ( alice_TSD.amount.value / 20 ), SYMBOL_TME );
-      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_TSD );
+      op.amount_to_sell = asset( 8 * ( alice_TSD.amount.value / 20 ), SYMBOL_COIN );
+      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_USD );
       op.orderid = 9;
       tx.operations.clear();
       tx.signatures.clear();
@@ -2179,8 +2179,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       generate_blocks( db.head_block_time() + MIN_LIQUIDITY_REWARD_PERIOD_SEC_HF10, true );
 
       op.owner = "dave";
-      op.amount_to_sell = asset( 7 * ( alice_TSD.amount.value / 20 ), SYMBOL_TSD );;
-      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_TME );
+      op.amount_to_sell = asset( 7 * ( alice_TSD.amount.value / 20 ), SYMBOL_USD );;
+      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_COIN );
       op.orderid = 10;
       tx.operations.clear();
       tx.signatures.clear();
@@ -2287,7 +2287,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       transfer.to = "bob";
       transfer.from = "alice";
-      transfer.amount = asset( alice_TSD.amount / 5, SYMBOL_TSD );
+      transfer.amount = asset( alice_TSD.amount / 5, SYMBOL_USD );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( transfer );
@@ -2297,8 +2297,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       op.owner = "bob";
       op.orderid = 12;
-      op.amount_to_sell = asset( 3 * ( alice_TSD.amount / 40 ), SYMBOL_TSD );
-      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_TME );
+      op.amount_to_sell = asset( 3 * ( alice_TSD.amount / 40 ), SYMBOL_USD );
+      op.min_to_receive = asset( op.amount_to_sell.amount, SYMBOL_COIN );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2310,7 +2310,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       op.owner = "dave";
       op.orderid = 13;
       op.amount_to_sell = op.min_to_receive;
-      op.min_to_receive.symbol = SYMBOL_TSD;
+      op.min_to_receive.symbol = SYMBOL_USD;
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2437,8 +2437,8 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       op.owner = "alice";
       op.orderid = 15;
-      op.amount_to_sell.symbol = SYMBOL_TSD;
-      op.min_to_receive.symbol = SYMBOL_TME;
+      op.amount_to_sell.symbol = SYMBOL_USD;
+      op.min_to_receive.symbol = SYMBOL_COIN;
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2722,7 +2722,7 @@ BOOST_AUTO_TEST_CASE( TSD_stability )
 
       BOOST_TEST_MESSAGE( "Changing sam and gpo to set up market cap conditions" );
 
-      asset TSDbalance = asset( ( gpo.virtual_supply.amount * ( TSD_STOP_PERCENT + 30 ) ) / PERCENT_100, SYMBOL_TME ) * exchange_rate;
+      asset TSDbalance = asset( ( gpo.virtual_supply.amount * ( TSD_STOP_PERCENT + 30 ) ) / PERCENT_100, SYMBOL_COIN ) * exchange_rate;
       db_plugin->debug_update( [=]( database& db )
       {
          db.modify( db.get_account( "sam" ), [&]( account_object& a )
@@ -2747,7 +2747,7 @@ BOOST_AUTO_TEST_CASE( TSD_stability )
       auto comment_reward = ( gpo.total_reward_fund_TME.amount + 2000 ) - ( ( gpo.total_reward_fund_TME.amount + 2000 ) * 25 * PERCENT_1 ) / PERCENT_100 ;
       comment_reward /= 2;
       auto TSDreward = ( comment_reward * gpo.TSD_print_rate ) / PERCENT_100;
-      auto alice_TSD = db.get_account( "alice" ).TSDbalance + db.get_account( "alice" ).TSDrewardBalance + asset( TSDreward, SYMBOL_TME ) * exchange_rate;
+      auto alice_TSD = db.get_account( "alice" ).TSDbalance + db.get_account( "alice" ).TSDrewardBalance + asset( TSDreward, SYMBOL_COIN ) * exchange_rate;
       auto alice_TME = db.get_account( "alice" ).balance + db.get_account( "alice" ).TMErewardBalance ;
 
       BOOST_TEST_MESSAGE( "Checking printing TSD has slowed" );
@@ -2768,7 +2768,7 @@ BOOST_AUTO_TEST_CASE( TSD_stability )
       {
          db.modify( db.get_account( "sam" ), [&]( account_object& a )
          {
-            a.TSDbalance = asset( ( 194 * TSDbalance.amount ) / 500, SYMBOL_TSD );
+            a.TSDbalance = asset( ( 194 * TSDbalance.amount ) / 500, SYMBOL_USD );
          });
       }, database::skip_witness_signature );
 
@@ -2776,7 +2776,7 @@ BOOST_AUTO_TEST_CASE( TSD_stability )
       {
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
          {
-            gpo.current_TSD_supply = alice_TSD + asset( ( 194 * TSDbalance.amount ) / 500, SYMBOL_TSD );
+            gpo.current_TSD_supply = alice_TSD + asset( ( 194 * TSDbalance.amount ) / 500, SYMBOL_USD );
          });
       }, database::skip_witness_signature );
 

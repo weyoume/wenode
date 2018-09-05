@@ -77,9 +77,9 @@ void witness_update_evaluator::do_apply( const witness_update_operation& o )
 
    if ( _db.has_hardfork( HARDFORK_0_14__410 ) )
    {
-      FC_ASSERT( o.props.account_creation_fee.symbol == SYMBOL_TME );
+      FC_ASSERT( o.props.account_creation_fee.symbol == SYMBOL_COIN );
    }
-   else if( o.props.account_creation_fee.symbol != SYMBOL_TME )
+   else if( o.props.account_creation_fee.symbol != SYMBOL_COIN )
    {
       // after HF, above check can be moved to validate() if reindex doesn't show this warning
       wlog( "Wrong fee symbol in block ${b}", ("b", _db.head_block_num()+1) );
@@ -118,8 +118,8 @@ void accountCreate_evaluator::do_apply( const accountCreate_operation& o )
    if( _db.has_hardfork( HARDFORK_0_19__987) )
    {
       const witness_schedule_object& wso = _db.get_witness_schedule_object();
-      FC_ASSERT( o.fee >= asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_TME ), "Insufficient Fee: ${f} required, ${p} provided.",
-                 ("f", wso.median_props.account_creation_fee * asset( CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_TME ) )
+      FC_ASSERT( o.fee >= asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_COIN ), "Insufficient Fee: ${f} required, ${p} provided.",
+                 ("f", wso.median_props.account_creation_fee * asset( CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_COIN ) )
                  ("p", o.fee) );
    }
    else if( _db.has_hardfork( HARDFORK_0_1 ) )
@@ -200,9 +200,9 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
                ( "creator.SCORE", creator.SCORE )
                ( "creator.SCOREDelegated", creator.SCOREDelegated )( "required", o.delegation ) );
 
-   auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_TME ) * props.get_SCORE_price();
+   auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN ) * props.get_SCORE_price();
 
-   auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_TME ) * props.get_SCORE_price() + o.delegation;
+   auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN ) * props.get_SCORE_price() + o.delegation;
 
    FC_ASSERT( current_delegation >= target_delegation, "Inssufficient Delegation ${f} required, ${p} provided.",
                ("f", target_delegation )
@@ -694,7 +694,7 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 
       asset TME_spent = o.TMEamount;
       asset TSD_spent = o.TSDamount;
-      if( o.fee.symbol == SYMBOL_TME )
+      if( o.fee.symbol == SYMBOL_COIN )
          TME_spent += o.fee;
       else
          TSD_spent += o.fee;
@@ -883,7 +883,7 @@ void transferTMEtoSCOREfund_evaluator::do_apply( const transferTMEtoSCOREfund_op
    const auto& from_account = _db.get_account(o.from);
    const auto& to_account = o.to.size() ? _db.get_account(o.to) : from_account;
 
-   FC_ASSERT( _db.get_balance( from_account, SYMBOL_TME) >= o.amount, "Account does not have sufficient TME for transfer." );
+   FC_ASSERT( _db.get_balance( from_account, SYMBOL_COIN) >= o.amount, "Account does not have sufficient TME for transfer." );
    _db.adjust_balance( from_account, -o.amount );
    _db.createTMEfundForSCORE( to_account, o.amount );
 }
@@ -2158,12 +2158,12 @@ void claimRewardBalance_evaluator::do_apply( const claimRewardBalance_operation&
    FC_ASSERT( op.SCOREreward <= acnt.SCORErewardBalance, "Cannot claim that much SCORE. Claim: ${c} Actual: ${a}",
       ("c", op.SCOREreward)("a", acnt.SCORErewardBalance) );
 
-   asset SCORErewardBalanceInTME_to_move = asset( 0, SYMBOL_TME );
+   asset SCORErewardBalanceInTME_to_move = asset( 0, SYMBOL_COIN );
    if( op.SCOREreward == acnt.SCORErewardBalance )
       SCORErewardBalanceInTME_to_move = acnt.SCORErewardBalanceInTME;
    else
       SCORErewardBalanceInTME_to_move = asset( ( ( uint128_t( op.SCOREreward.amount.value ) * uint128_t( acnt.SCORErewardBalanceInTME.amount.value ) )
-         / uint128_t( acnt.SCORErewardBalance.amount.value ) ).to_uint64(), SYMBOL_TME );
+         / uint128_t( acnt.SCORErewardBalance.amount.value ) ).to_uint64(), SYMBOL_COIN );
 
    _db.adjust_reward_balance( acnt, -op.TMEreward );
    _db.adjust_reward_balance( acnt, -op.TSDreward );
@@ -2199,7 +2199,7 @@ void delegateSCORE_evaluator::do_apply( const delegateSCORE_operation& op )
 
    const auto& wso = _db.get_witness_schedule_object();
    const auto& gpo = _db.get_dynamic_global_properties();
-   auto min_delegation = asset( wso.median_props.account_creation_fee.amount * 10, SYMBOL_TME ) * gpo.get_SCORE_price();
+   auto min_delegation = asset( wso.median_props.account_creation_fee.amount * 10, SYMBOL_COIN ) * gpo.get_SCORE_price();
    auto min_update = wso.median_props.account_creation_fee * gpo.get_SCORE_price();
 
    // If delegation doesn't exist, create it

@@ -49,22 +49,22 @@ namespace node { namespace chain {
           */
          uint32_t num_pow_witnesses = 0;
 
-         asset       virtual_supply             = asset( 0, SYMBOL_TME );
-         asset       current_supply             = asset( 0, SYMBOL_TME );
-         asset       confidential_supply        = asset( 0, SYMBOL_TME ); ///< total asset held in confidential balances
-         asset       current_TSD_supply         = asset( 0, SYMBOL_TSD );
-         asset       confidential_TSD_supply    = asset( 0, SYMBOL_TSD ); ///< total asset held in confidential balances
-         asset       totalTMEfundForSCORE   = asset( 0, SYMBOL_TME );
+         asset       virtual_supply             = asset( 0, SYMBOL_COIN );
+         asset       current_supply             = asset( 0, SYMBOL_COIN );
+         asset       confidential_supply        = asset( 0, SYMBOL_COIN ); ///< total asset held in confidential balances
+         asset       current_TSD_supply         = asset( 0, SYMBOL_USD );
+         asset       confidential_TSD_supply    = asset( 0, SYMBOL_USD ); ///< total asset held in confidential balances
+         asset       totalTMEfundForSCORE   = asset( 0, SYMBOL_COIN );
          asset       totalSCORE       = asset( 0, SYMBOL_SCORE );
-         asset       total_reward_fund_TME    = asset( 0, SYMBOL_TME );
+         asset       total_reward_fund_TME    = asset( 0, SYMBOL_COIN );
          fc::uint128 total_SCOREreward2; ///< the running total of REWARD^2
          asset       pending_rewarded_SCORE = asset( 0, SYMBOL_SCORE );
-         asset       pending_rewarded_SCOREvalueInTME = asset( 0, SYMBOL_TME );
+         asset       pending_rewarded_SCOREvalueInTME = asset( 0, SYMBOL_COIN );
 
          price       get_SCORE_price() const
          {
             if ( totalTMEfundForSCORE.amount == 0 || totalSCORE.amount == 0 )
-               return price ( asset( 1000, SYMBOL_TME ), asset( 1000000, SYMBOL_SCORE ) );
+               return price ( asset( 1000, SYMBOL_COIN ), asset( 1000000, SYMBOL_SCORE ) );
 
             return price( totalSCORE, totalTMEfundForSCORE );
          }

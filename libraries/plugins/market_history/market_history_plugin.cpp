@@ -61,7 +61,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                b.open = open;
                b.seconds = bucket;
 
-               if( op.open_pays.symbol == SYMBOL_TME )
+               if( op.open_pays.symbol == SYMBOL_COIN )
                {
                   b.high_TME = op.open_pays.amount;
                   b.high_TSD = op.current_pays.amount;
@@ -93,7 +93,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
          {
             db.modify( *itr, [&]( bucket_object& b )
             {
-               if( op.open_pays.symbol == SYMBOL_TME )
+               if( op.open_pays.symbol == SYMBOL_COIN )
                {
                   b.TME_volume += op.open_pays.amount;
                   b.TSD_volume += op.current_pays.amount;
