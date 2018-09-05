@@ -64,7 +64,7 @@ void new_chain_banner( const node::chain::database& db )
       "********************************\n"
       "*                              *\n"
       "*   ------- NEW CHAIN ------   *\n"
-      "*   -   Welcome to Ezira!  -   *\n"
+      "*   -   Welcome!  -   *\n"
       "*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
