@@ -64,6 +64,7 @@ int main(int argc, char** argv) {
 			#if SHOW_PRIVATE_KEY
 				auto initminer_private_key = graphene::utilities::key_to_wif( INIT_PRIVATE_KEY );
 				std::cerr << "init private key: " << initminer_private_key << "\n";
+			#endif
       std::cerr << "chain id: " << std::string(CHAIN_ID) << "\n";
       std::cerr << "blockchain version: " << fc::string( BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
