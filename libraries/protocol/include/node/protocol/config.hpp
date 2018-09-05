@@ -51,7 +51,7 @@
 		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
 		#define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 	#else
-		#define INIT_PUBLIC_KEY_STR             "EZT8AqecLobkeTBmffuuxdhdYG3fttawrtST77cm83DHpVTcyNNzz"
+		#define INIT_PUBLIC_KEY_STR             "TWYM6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4"
 	#endif
 
 #define CHAIN_ID                        (fc::sha256::hash("TWYM"))
