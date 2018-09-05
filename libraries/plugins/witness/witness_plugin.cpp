@@ -328,7 +328,7 @@ namespace detail
             r.average_block_size = 0;
             r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
             r.max_virtual_bandwidth = ( uint128_t( MAX_BLOCK_SIZE * MAX_RESERVE_RATIO )
-                                      * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SECONDS )
+                                      * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS )
                                       / BLOCK_INTERVAL;
          });
       }
@@ -383,7 +383,7 @@ namespace detail
                }
 
                r.max_virtual_bandwidth = ( uint128_t( max_block_size ) * uint128_t( r.current_reserve_ratio )
-                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SECONDS ) )
+                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS ) )
                                          / ( BLOCK_INTERVAL * RESERVE_RATIO_PRECISION );
             }
          });
@@ -398,7 +398,7 @@ namespace detail
       const auto& props = _db.get_dynamic_global_properties();
       bool has_bandwidth = true;
 
-      if( props.totalESCOR.amount > 0 )
+      if( props.totalSCORE.amount > 0 )
       {
          auto band = _db.find< account_bandwidth_object, by_account_bandwidth_type >( boost::make_tuple( a.name, type ) );
 
@@ -415,11 +415,11 @@ namespace detail
          share_type trx_bandwidth = trx_size * BANDWIDTH_PRECISION;
          auto delta_time = ( _db.head_block_time() - band->last_bandwidth_update ).to_seconds();
 
-         if( delta_time > BANDWIDTH_AVERAGE_WINDOW_SECONDS )
+         if( delta_time > BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS )
             new_bandwidth = 0;
          else
-            new_bandwidth = ( ( ( BANDWIDTH_AVERAGE_WINDOW_SECONDS - delta_time ) * fc::uint128( band->average_bandwidth.value ) )
-               / BANDWIDTH_AVERAGE_WINDOW_SECONDS ).to_uint64();
+            new_bandwidth = ( ( ( BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS - delta_time ) * fc::uint128( band->average_bandwidth.value ) )
+               / BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS ).to_uint64();
 
          new_bandwidth += trx_bandwidth;
 
@@ -430,21 +430,21 @@ namespace detail
             b.last_bandwidth_update = _db.head_block_time();
          });
 
-         fc::uint128 account_vESCOR( a.effective_ESCOR().amount.value );
-         fc::uint128 total_vESCOR( props.totalESCOR.amount.value );
+         fc::uint128 account_vSCORE( a.effective_SCORE().amount.value );
+         fc::uint128 total_vSCORE( props.totalSCORE.amount.value );
          fc::uint128 account_average_bandwidth( band->average_bandwidth.value );
          fc::uint128 max_virtual_bandwidth( _db.get( reserve_ratio_id_type() ).max_virtual_bandwidth );
 
-         has_bandwidth = ( account_vESCOR * max_virtual_bandwidth ) > ( account_average_bandwidth * total_vESCOR );
+         has_bandwidth = ( account_vSCORE * max_virtual_bandwidth ) > ( account_average_bandwidth * total_vSCORE );
 
          if( _db.is_producing() )
             ASSERT( has_bandwidth, chain::plugin_exception,
-               "Account: ${account} bandwidth limit exceeded. Please wait to transact or power up ECO.",
+               "Account: ${account} bandwidth limit exceeded. Please wait to transact or power up TME.",
                ("account", a.name)
-               ("account_vESCOR", account_vESCOR)
+               ("account_vSCORE", account_vSCORE)
                ("account_average_bandwidth", account_average_bandwidth)
                ("max_virtual_bandwidth", max_virtual_bandwidth)
-               ("totalESCOR", total_vESCOR) );
+               ("totalSCORE", total_vSCORE) );
       }
    }
 }

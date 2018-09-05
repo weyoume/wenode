@@ -70,21 +70,21 @@ namespace node { namespace chain {
 
          /// index on pending_payout for "things happning now... needs moderation"
          /// TRENDING = UNCLAIMED + PENDING
-         share_type        net_ESCORreward; // reward is proportional to ESCORreward^2, this is the sum of all votes (positive and negative)
-         share_type        abs_ESCORreward; /// this is used to track the total abs(weight) of votes for the purpose of calculating cashout_time
-         share_type        vote_ESCORreward; /// Total positive ESCORreward from all votes. Used to calculate delta weights. Needed to handle vote changing and removal.
+         share_type        net_SCOREreward; // reward is proportional to SCOREreward^2, this is the sum of all votes (positive and negative)
+         share_type        abs_SCOREreward; /// this is used to track the total abs(weight) of votes for the purpose of calculating cashout_time
+         share_type        vote_SCOREreward; /// Total positive SCOREreward from all votes. Used to calculate delta weights. Needed to handle vote changing and removal.
 
-         share_type        children_abs_ESCORreward; /// this is used to calculate cashout time of a discussion.
+         share_type        children_abs_SCOREreward; /// this is used to calculate cashout time of a discussion.
          time_point_sec    cashout_time; /// 24 hours from the weighted average of vote time
          time_point_sec    max_cashout_time;
          uint64_t          total_vote_weight = 0; /// the total weight of voting rewards, used to calculate pro-rata share of curation payouts
 
          uint16_t          reward_weight = 0;
 
-         /** tracks the total payout this comment has received over time, measured in EUSD */
-         asset             total_payout_value = asset(0, SYMBOL_EUSD);
-         asset             curator_payout_value = asset(0, SYMBOL_EUSD);
-         asset             beneficiary_payout_value = asset( 0, SYMBOL_EUSD );
+         /** tracks the total payout this comment has received over time, measured in TSD */
+         asset             total_payout_value = asset(0, SYMBOL_TSD);
+         asset             curator_payout_value = asset(0, SYMBOL_TSD);
+         asset             beneficiary_payout_value = asset( 0, SYMBOL_TSD );
 
          share_type        authorRewards = 0;
 
@@ -92,8 +92,8 @@ namespace node { namespace chain {
 
          id_type           root_comment;
 
-         asset             max_accepted_payout = asset( 1000000000, SYMBOL_EUSD );       /// EUSD value of the maximum payout this post will receive
-         uint16_t          percent_EUSD = PERCENT_100; /// the percent of eUSD to key, unkept amounts will be received as Ezira Power
+         asset             max_accepted_payout = asset( 1000000000, SYMBOL_TSD );       /// TSD value of the maximum payout this post will receive
+         uint16_t          percent_TSD = PERCENT_100; /// the percent of TSD to key, unkept amounts will be received as Ezira Power
          bool              allow_replies = true;      /// allows a post to disable replies.
          bool              allow_votes   = true;      /// allows a post to receive votes;
          bool              allow_curationRewards = true;
@@ -120,7 +120,7 @@ namespace node { namespace chain {
          account_id_type   voter;
          comment_id_type   comment;
          uint64_t          weight = 0; ///< defines the score this vote receives, used by vote payout calc. 0 if a negative vote or changed votes.
-         int64_t           ESCORreward = 0; ///< The number of ESCORreward this vote is responsible for
+         int64_t           SCOREreward = 0; ///< The number of SCOREreward this vote is responsible for
          int16_t           vote_percent = 0; ///< The percent weight of the vote
          time_point_sec    last_update; ///< The time of the last update of the vote
          int8_t            num_changes = 0;
@@ -248,15 +248,15 @@ FC_REFLECT( node::chain::comment_object,
              (category)(parent_author)(parent_permlink)
              (title)(body)(json)(last_update)(created)(active)(last_payout)
              (depth)(children)
-             (net_ESCORreward)(abs_ESCORreward)(vote_ESCORreward)
-             (children_abs_ESCORreward)(cashout_time)(max_cashout_time)
+             (net_SCOREreward)(abs_SCOREreward)(vote_SCOREreward)
+             (children_abs_SCOREreward)(cashout_time)(max_cashout_time)
              (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(beneficiary_payout_value)(authorRewards)(net_votes)(root_comment)
-             (max_accepted_payout)(percent_EUSD)(allow_replies)(allow_votes)(allow_curationRewards)
+             (max_accepted_payout)(percent_TSD)(allow_replies)(allow_votes)(allow_curationRewards)
              (beneficiaries)
           )
 CHAINBASE_SET_INDEX_TYPE( node::chain::comment_object, node::chain::comment_index )
 
 FC_REFLECT( node::chain::comment_vote_object,
-             (id)(voter)(comment)(weight)(ESCORreward)(vote_percent)(last_update)(num_changes)
+             (id)(voter)(comment)(weight)(SCOREreward)(vote_percent)(last_update)(num_changes)
           )
 CHAINBASE_SET_INDEX_TYPE( node::chain::comment_vote_object, node::chain::comment_vote_index )

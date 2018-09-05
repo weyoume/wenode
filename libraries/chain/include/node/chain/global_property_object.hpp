@@ -49,38 +49,38 @@ namespace node { namespace chain {
           */
          uint32_t num_pow_witnesses = 0;
 
-         asset       virtual_supply             = asset( 0, SYMBOL_ECO );
-         asset       current_supply             = asset( 0, SYMBOL_ECO );
-         asset       confidential_supply        = asset( 0, SYMBOL_ECO ); ///< total asset held in confidential balances
-         asset       current_EUSD_supply         = asset( 0, SYMBOL_EUSD );
-         asset       confidential_EUSD_supply    = asset( 0, SYMBOL_EUSD ); ///< total asset held in confidential balances
-         asset       totalECOfundForESCOR   = asset( 0, SYMBOL_ECO );
-         asset       totalESCOR       = asset( 0, SYMBOL_ESCOR );
-         asset       total_reward_fund_ECO    = asset( 0, SYMBOL_ECO );
-         fc::uint128 total_ESCORreward2; ///< the running total of REWARD^2
-         asset       pending_rewarded_ESCOR = asset( 0, SYMBOL_ESCOR );
-         asset       pending_rewarded_ESCORvalueInECO = asset( 0, SYMBOL_ECO );
+         asset       virtual_supply             = asset( 0, SYMBOL_TME );
+         asset       current_supply             = asset( 0, SYMBOL_TME );
+         asset       confidential_supply        = asset( 0, SYMBOL_TME ); ///< total asset held in confidential balances
+         asset       current_TSD_supply         = asset( 0, SYMBOL_TSD );
+         asset       confidential_TSD_supply    = asset( 0, SYMBOL_TSD ); ///< total asset held in confidential balances
+         asset       totalTMEfundForSCORE   = asset( 0, SYMBOL_TME );
+         asset       totalSCORE       = asset( 0, SYMBOL_SCORE );
+         asset       total_reward_fund_TME    = asset( 0, SYMBOL_TME );
+         fc::uint128 total_SCOREreward2; ///< the running total of REWARD^2
+         asset       pending_rewarded_SCORE = asset( 0, SYMBOL_SCORE );
+         asset       pending_rewarded_SCOREvalueInTME = asset( 0, SYMBOL_TME );
 
-         price       get_ESCOR_price() const
+         price       get_SCORE_price() const
          {
-            if ( totalECOfundForESCOR.amount == 0 || totalESCOR.amount == 0 )
-               return price ( asset( 1000, SYMBOL_ECO ), asset( 1000000, SYMBOL_ESCOR ) );
+            if ( totalTMEfundForSCORE.amount == 0 || totalSCORE.amount == 0 )
+               return price ( asset( 1000, SYMBOL_TME ), asset( 1000000, SYMBOL_SCORE ) );
 
-            return price( totalESCOR, totalECOfundForESCOR );
+            return price( totalSCORE, totalTMEfundForSCORE );
          }
 
-         price get_ESCORreward_price() const
+         price get_SCOREreward_price() const
          {
-            return price( totalESCOR + pending_rewarded_ESCOR,
-               totalECOfundForESCOR + pending_rewarded_ESCORvalueInECO );
+            return price( totalSCORE + pending_rewarded_SCORE,
+               totalTMEfundForSCORE + pending_rewarded_SCOREvalueInTME );
          }
 
          /**
-          *  This property defines the interest rate that EUSD deposits receive.
+          *  This property defines the interest rate that TSD deposits receive.
           */
-         uint16_t EUSD_interest_rate = 0;
+         uint16_t TSD_interest_rate = 0;
 
-         uint16_t EUSD_print_rate = PERCENT_100;
+         uint16_t TSD_print_rate = PERCENT_100;
 
          /**
           *  Maximum block size is decided by the set of active witnesses which change every round.
@@ -137,16 +137,16 @@ FC_REFLECT( node::chain::dynamic_global_property_object,
              (virtual_supply)
              (current_supply)
              (confidential_supply)
-             (current_EUSD_supply)
-             (confidential_EUSD_supply)
-             (totalECOfundForESCOR)
-             (totalESCOR)
-             (total_reward_fund_ECO)
-             (total_ESCORreward2)
-             (pending_rewarded_ESCOR)
-             (pending_rewarded_ESCORvalueInECO)
-             (EUSD_interest_rate)
-             (EUSD_print_rate)
+             (current_TSD_supply)
+             (confidential_TSD_supply)
+             (totalTMEfundForSCORE)
+             (totalSCORE)
+             (total_reward_fund_TME)
+             (total_SCOREreward2)
+             (pending_rewarded_SCORE)
+             (pending_rewarded_SCOREvalueInTME)
+             (TSD_interest_rate)
+             (TSD_print_rate)
              (maximum_block_size)
              (current_aslot)
              (recent_slots_filled)

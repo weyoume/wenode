@@ -8,7 +8,7 @@ namespace node { namespace protocol {
 
    struct asset
    {
-      asset( share_type a = 0, asset_symbol_type id = SYMBOL_ECO )
+      asset( share_type a = 0, asset_symbol_type id = SYMBOL_TME )
       :amount(a),symbol(id){}
 
       share_type        amount;

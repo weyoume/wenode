@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( serialization_raw_test )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,SYMBOL_ECO);
+      op.amount = asset(100,SYMBOL_TME);
 
       trx.operations.push_back( op );
       auto packed = fc::raw::pack( trx );
@@ -93,7 +93,7 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,SYMBOL_ECO);
+      op.amount = asset(100,SYMBOL_TME);
 
       fc::variant test(op.amount);
       auto tmp = test.as<asset>();
@@ -119,37 +119,37 @@ BOOST_AUTO_TEST_CASE( asset_test )
       BOOST_CHECK_EQUAL( asset().to_string(), "0.000 TESTS" );
 
       BOOST_TEST_MESSAGE( "Asset Test" );
-      asset ECO = asset::from_string( "123.456 TESTS" );
-      asset EUSD = asset::from_string( "654.321 TBD" );
+      asset TME = asset::from_string( "123.456 TESTS" );
+      asset TSD = asset::from_string( "654.321 TBD" );
       asset tmp = asset::from_string( "0.456 TESTS" );
       BOOST_CHECK_EQUAL( tmp.amount.value, 456 );
       tmp = asset::from_string( "0.056 TESTS" );
       BOOST_CHECK_EQUAL( tmp.amount.value, 56 );
 
-      BOOST_CHECK( std::abs( ECO.to_real() - 123.456 ) < 0.0005 );
-      BOOST_CHECK_EQUAL( ECO.amount.value, 123456 );
-      BOOST_CHECK_EQUAL( ECO.decimals(), 3 );
-      BOOST_CHECK_EQUAL( ECO.symbol_name(), "TESTS" );
-      BOOST_CHECK_EQUAL( ECO.to_string(), "123.456 TESTS" );
-      BOOST_CHECK_EQUAL( ECO.symbol, SYMBOL_ECO);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL_ECO).to_string(), "0.050 TESTS" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_ECO).to_string(), "50.000 TESTS" );
+      BOOST_CHECK( std::abs( TME.to_real() - 123.456 ) < 0.0005 );
+      BOOST_CHECK_EQUAL( TME.amount.value, 123456 );
+      BOOST_CHECK_EQUAL( TME.decimals(), 3 );
+      BOOST_CHECK_EQUAL( TME.symbol_name(), "TESTS" );
+      BOOST_CHECK_EQUAL( TME.to_string(), "123.456 TESTS" );
+      BOOST_CHECK_EQUAL( TME.symbol, SYMBOL_TME);
+      BOOST_CHECK_EQUAL( asset(50, SYMBOL_TME).to_string(), "0.050 TESTS" );
+      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_TME).to_string(), "50.000 TESTS" );
 
-      BOOST_CHECK( std::abs( EUSD.to_real() - 654.321 ) < 0.0005 );
-      BOOST_CHECK_EQUAL( EUSD.amount.value, 654321 );
-      BOOST_CHECK_EQUAL( EUSD.decimals(), 3 );
-      BOOST_CHECK_EQUAL( EUSD.symbol_name(), "TBD" );
-      BOOST_CHECK_EQUAL( EUSD.to_string(), "654.321 TBD" );
-      BOOST_CHECK_EQUAL( EUSD.symbol, SYMBOL_EUSD);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL_EUSD).to_string(), "0.050 TBD" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_EUSD).to_string(), "50.000 TBD" );
+      BOOST_CHECK( std::abs( TSD.to_real() - 654.321 ) < 0.0005 );
+      BOOST_CHECK_EQUAL( TSD.amount.value, 654321 );
+      BOOST_CHECK_EQUAL( TSD.decimals(), 3 );
+      BOOST_CHECK_EQUAL( TSD.symbol_name(), "TBD" );
+      BOOST_CHECK_EQUAL( TSD.to_string(), "654.321 TBD" );
+      BOOST_CHECK_EQUAL( TSD.symbol, SYMBOL_TSD);
+      BOOST_CHECK_EQUAL( asset(50, SYMBOL_TSD).to_string(), "0.050 TBD" );
+      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_TSD).to_string(), "50.000 TBD" );
 
-      BOOST_CHECK_THROW( ECO.set_decimals(100), fc::exception );
-      char* ECO_sy = (char*) &ECO.symbol;
-      ECO_sy[0] = 100;
-      BOOST_CHECK_THROW( ECO.decimals(), fc::exception );
-      ECO_sy[6] = 'A';
-      ECO_sy[7] = 'A';
+      BOOST_CHECK_THROW( TME.set_decimals(100), fc::exception );
+      char* TME_sy = (char*) &TME.symbol;
+      TME_sy[0] = 100;
+      BOOST_CHECK_THROW( TME.decimals(), fc::exception );
+      TME_sy[6] = 'A';
+      TME_sy[7] = 'A';
 
       auto check_sym = []( const asset& a ) -> std::string
       {
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE( asset_test )
          return symbol;
       };
 
-      BOOST_CHECK_THROW( check_sym(ECO), fc::exception );
+      BOOST_CHECK_THROW( check_sym(TME), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "1.00000000000000000000 TESTS" ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "1.000TESTS" ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "1. 333 TESTS" ), fc::exception ); // Fails because symbol is '333 TESTS', which is too long

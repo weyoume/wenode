@@ -19,7 +19,7 @@ namespace node { namespace protocol {
    FC_DECLARE_DERIVED_EXCEPTION( tx_irrelevant_sig,                 node::protocol::transaction_exception, 3050000, "irrelevant signature included" )
    FC_DECLARE_DERIVED_EXCEPTION( tx_duplicate_sig,                  node::protocol::transaction_exception, 3060000, "duplicate signature included" )
 
-   #define RECODE_EXC( cause_type, effect_type ) \
+   #define RELATERCODE_EXC( cause_type, effect_type ) \
       catch( const cause_type& e ) \
       { throw( effect_type( e.what(), e.get_log() ) ); }
 

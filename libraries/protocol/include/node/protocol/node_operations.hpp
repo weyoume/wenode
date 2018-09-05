@@ -119,7 +119,7 @@ namespace node { namespace protocol {
     *  operation allows authors to update properties associated with their post.
     *
     *  The max_accepted_payout may be decreased, but never increased.
-    *  The percent_EUSD may be decreased, but never increased
+    *  The percent_TSD may be decreased, but never increased
     *
     */
    struct comment_options_operation : public base_operation
@@ -127,8 +127,8 @@ namespace node { namespace protocol {
       account_name_type author;
       string            permlink;
 
-      asset             max_accepted_payout    = asset( 1000000000, SYMBOL_EUSD );       /// EUSD value of the maximum payout this post will receive
-      uint16_t          percent_EUSD  = PERCENT_100; /// the percent of eUSD to key, unkept amounts will be received as Ezira Power
+      asset             max_accepted_payout    = asset( 1000000000, SYMBOL_TSD );       /// TSD value of the maximum payout this post will receive
+      uint16_t          percent_TSD  = PERCENT_100; /// the percent of TSD to key, unkept amounts will be received as Ezira Power
       bool              allow_votes            = true;      /// allows a post to receive votes;
       bool              allow_curationRewards = true; /// allows voters to recieve curation rewards. Rewards return to reward fund.
       comment_options_extensions_type extensions;
@@ -186,7 +186,7 @@ namespace node { namespace protocol {
    /**
     * @ingroup operations
     *
-    * @brief Transfers ECO from one account to another.
+    * @brief Transfers TME from one account to another.
     */
    struct transfer_operation : public base_operation
    {
@@ -201,8 +201,8 @@ namespace node { namespace protocol {
       string            memo;
 
       void              validate()const;
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ if(amount.symbol != SYMBOL_ESCOR) a.insert(from); }
-      void get_required_owner_authorities( flat_set<account_name_type>& a )const { if(amount.symbol == SYMBOL_ESCOR) a.insert(from); }
+      void get_required_active_authorities( flat_set<account_name_type>& a )const{ if(amount.symbol != SYMBOL_SCORE) a.insert(from); }
+      void get_required_owner_authorities( flat_set<account_name_type>& a )const { if(amount.symbol == SYMBOL_SCORE) a.insert(from); }
    };
 
 
@@ -231,8 +231,8 @@ namespace node { namespace protocol {
       account_name_type agent;
       uint32_t          escrow_id = 30;
 
-      asset             EUSDamount = asset( 0, SYMBOL_EUSD );
-      asset             ECOamount = asset( 0, SYMBOL_ECO );
+      asset             TSDamount = asset( 0, SYMBOL_TSD );
+      asset             TMEamount = asset( 0, SYMBOL_TME );
       asset             fee;
 
       time_point_sec    ratification_deadline;
@@ -303,8 +303,8 @@ namespace node { namespace protocol {
       account_name_type receiver; ///< the account that should receive funds (might be from, might be to)
 
       uint32_t          escrow_id = 30;
-      asset             EUSDamount = asset( 0, SYMBOL_EUSD ); ///< the amount of EUSD to release
-      asset             ECOamount = asset( 0, SYMBOL_ECO ); ///< the amount of ECO to release
+      asset             TSDamount = asset( 0, SYMBOL_TSD ); ///< the amount of TSD to release
+      asset             TMEamount = asset( 0, SYMBOL_TME ); ///< the amount of TME to release
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(who); }
@@ -312,16 +312,16 @@ namespace node { namespace protocol {
 
 
    /**
-    *  This operation converts ECO into ESCOR (ESCOR) at
+    *  This operation converts TME into SCORE (SCORE) at
     *  the current exchange rate. With this operation it is possible to
-    *  give another account ESCOR so that faucets can
-    *  pre-fund new accounts with ESCOR.
+    *  give another account SCORE so that faucets can
+    *  pre-fund new accounts with SCORE.
     */
-   struct transferECOtoESCORfund_operation : public base_operation
+   struct transferTMEtoSCOREfund_operation : public base_operation
    {
       account_name_type from;
       account_name_type to; ///< if null, then same as from
-      asset             amount; ///< must be ECO
+      asset             amount; ///< must be TME
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(from); }
@@ -330,19 +330,19 @@ namespace node { namespace protocol {
 
    /**
     * At any given point in time an account can be withdrawing from their
-    * ESCOR. A user may change the number of ESCOR they wish to
-    * cash out at any time between 0 and their total ESCOR.
+    * SCORE. A user may change the number of SCORE they wish to
+    * cash out at any time between 0 and their total SCORE.
     *
-    * After applying this operation, ESCOR will be withdrawn
-    * at a rate of ESCOR/104 per week for two years starting
+    * After applying this operation, SCORE will be withdrawn
+    * at a rate of SCORE/104 per week for two years starting
     * one week after this operation is included in the blockchain.
     *
-    * This operation is not valid if the user has no ESCOR.
+    * This operation is not valid if the user has no SCORE.
     */
-   struct withdrawESCOR_operation : public base_operation
+   struct withdrawSCORE_operation : public base_operation
    {
       account_name_type account;
-      asset             ESCOR;
+      asset             SCORE;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(account); }
@@ -350,18 +350,18 @@ namespace node { namespace protocol {
 
 
    /**
-    * Allows an account to setup an ESCOR withdraw but with the additional
+    * Allows an account to setup an SCORE withdraw but with the additional
     * request for the funds to be transferred directly to another account's
     * balance rather than the withdrawing account. In addition, those funds
     * can be immediately scored again, circumventing the conversion from
-    * ESCOR to ECO and back, guaranteeing they maintain their value.
+    * SCORE to TME and back, guaranteeing they maintain their value.
     */
-   struct setWithdrawESCORasECOroute_operation : public base_operation
+   struct setWithdrawSCOREasTMEroute_operation : public base_operation
    {
       account_name_type from_account;
       account_name_type to_account;
       uint16_t          percent = 0;
-      bool              autoESCOR = false;
+      bool              autoSCORE = false;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( from_account ); }
@@ -376,27 +376,27 @@ namespace node { namespace protocol {
    struct chain_properties
    {
       /**
-       *  This fee, paid in ECO, is converted into ESCOR for the new account. Accounts
-       *  without ESCOR cannot earn usage rations and therefore are powerless. This minimum
+       *  This fee, paid in TME, is converted into SCORE for the new account. Accounts
+       *  without SCORE cannot earn usage rations and therefore are powerless. This minimum
        *  fee requires all accounts to have some kind of commitment to the network that includes the
        *  ability to vote and make transactions.
        */
       asset             account_creation_fee =
-         asset( MIN_ACCOUNT_CREATION_FEE, SYMBOL_ECO );
+         asset( MIN_ACCOUNT_CREATION_FEE, SYMBOL_TME );
 
       /**
        *  This witnesses vote for the maximum_block_size which is used by the network
        *  to tune rate limiting and capacity
        */
       uint32_t          maximum_block_size = MIN_BLOCK_SIZE_LIMIT * 2;
-      uint16_t          EUSD_interest_rate  = DEFAULT_EUSD_INTEREST_RATE;
+      uint16_t          TSD_interest_rate  = DEFAULT_TSD_INTEREST_RATE;
 
       void validate()const
       {
          FC_ASSERT( account_creation_fee.amount >= MIN_ACCOUNT_CREATION_FEE);
          FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT);
-         FC_ASSERT( EUSD_interest_rate >= 0 );
-         FC_ASSERT( EUSD_interest_rate <= PERCENT_100 );
+         FC_ASSERT( TSD_interest_rate >= 0 );
+         FC_ASSERT( TSD_interest_rate <= PERCENT_100 );
       }
    };
 
@@ -429,7 +429,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * All accounts with a ESCOR can vote for or against any witness.
+    * All accounts with a SCORE can vote for or against any witness.
     *
     * If a proxy is specified then all existing votes are removed.
     */
@@ -507,7 +507,7 @@ namespace node { namespace protocol {
 
    /**
     *  Feeds can only be published by the top N witnesses which are included in every round and are
-    *  used to define the exchange rate between ECO and the dollar.
+    *  used to define the exchange rate between TME and the dollar.
     */
    struct feed_publish_operation : public base_operation
    {
@@ -520,7 +520,7 @@ namespace node { namespace protocol {
 
 
    /**
-    *  This operation instructs the blockchain to start a conversion between ECO and EUSD,
+    *  This operation instructs the blockchain to start a conversion between TME and TSD,
     *  The funds are deposited after CONVERSION_DELAY
     */
    struct convert_operation : public base_operation
@@ -688,9 +688,9 @@ namespace node { namespace protocol {
     *
     * Users not in the ACTIVE witness set should not have to worry about their
     * key getting compromised and being used to produced multiple blocks so
-    * the attacker can report it and steel their ESCOR.
+    * the attacker can report it and steel their SCORE.
     *
-    * The result of the operation is to transfer the full ESCOR balance
+    * The result of the operation is to transfer the full SCORE balance
     * of the block producer to the reporter.
     */
    struct report_over_production_operation : public base_operation
@@ -913,28 +913,28 @@ namespace node { namespace protocol {
    struct claimRewardBalance_operation : public base_operation
    {
       account_name_type account;
-      asset             ECOreward;
-      asset             EUSDreward;
-      asset             ESCORreward;
+      asset             TMEreward;
+      asset             TSDreward;
+      asset             SCOREreward;
 
       void get_required_posting_authorities( flat_set< account_name_type >& a )const{ a.insert( account ); }
       void validate() const;
    };
 
    /**
-    * Delegate ESCOR from one account to the other. The ESCOR are still owned
+    * Delegate SCORE from one account to the other. The SCORE are still owned
     * by the original account, but content voting rights and bandwidth allocation are transferred
-    * to the receiving account. This sets the delegation to `ESCOR`, increasing it or
+    * to the receiving account. This sets the delegation to `SCORE`, increasing it or
     * decreasing it as needed. (i.e. a delegation of 0 removes the delegation)
     *
-    * When a delegation is removed the ESCOR are placed in limbo for a week to prevent a satoshi
-    * of ESCOR from voting on the same content twice.
+    * When a delegation is removed the SCORE are placed in limbo for a week to prevent a satoshi
+    * of SCORE from voting on the same content twice.
     */
-   struct delegateESCOR_operation : public base_operation
+   struct delegateSCORE_operation : public base_operation
    {
-      account_name_type delegator;        ///< The account delegating ESCOR
-      account_name_type delegatee;        ///< The account receiving ESCOR
-      asset             ESCOR;   ///< The amount of ESCOR delegated
+      account_name_type delegator;        ///< The account delegating SCORE
+      account_name_type delegatee;        ///< The account receiving SCORE
+      asset             SCORE;   ///< The amount of SCORE delegated
 
       void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( delegator ); }
       void validate() const;
@@ -957,7 +957,7 @@ FC_REFLECT( node::protocol::pow, (worker)(input)(signature)(work) )
 FC_REFLECT( node::protocol::pow2, (input)(pow_summary) )
 FC_REFLECT( node::protocol::pow2_input, (worker_account)(prev_block)(nonce) )
 FC_REFLECT( node::protocol::equihash_pow, (input)(proof)(prev_block)(pow_summary) )
-FC_REFLECT( node::protocol::chain_properties, (account_creation_fee)(maximum_block_size)(EUSD_interest_rate) );
+FC_REFLECT( node::protocol::chain_properties, (account_creation_fee)(maximum_block_size)(TSD_interest_rate) );
 
 FC_REFLECT_TYPENAME( node::protocol::pow2_work )
 FC_REFLECT( node::protocol::pow_operation, (worker_account)(block_id)(nonce)(work)(props) )
@@ -994,9 +994,9 @@ FC_REFLECT( node::protocol::accountUpdate_operation,
             (json) )
 
 FC_REFLECT( node::protocol::transfer_operation, (from)(to)(amount)(memo) )
-FC_REFLECT( node::protocol::transferECOtoESCORfund_operation, (from)(to)(amount) )
-FC_REFLECT( node::protocol::withdrawESCOR_operation, (account)(ESCOR) )
-FC_REFLECT( node::protocol::setWithdrawESCORasECOroute_operation, (from_account)(to_account)(percent)(autoESCOR) )
+FC_REFLECT( node::protocol::transferTMEtoSCOREfund_operation, (from)(to)(amount) )
+FC_REFLECT( node::protocol::withdrawSCORE_operation, (account)(SCORE) )
+FC_REFLECT( node::protocol::setWithdrawSCOREasTMEroute_operation, (from_account)(to_account)(percent)(autoSCORE) )
 FC_REFLECT( node::protocol::witness_update_operation, (owner)(url)(block_signing_key)(props)(fee) )
 FC_REFLECT( node::protocol::accountWitnessVote_operation, (account)(witness)(approve) )
 FC_REFLECT( node::protocol::account_witness_proxy_operation, (account)(proxy) )
@@ -1014,17 +1014,17 @@ FC_REFLECT( node::protocol::deleteComment_operation, (author)(permlink) );
 FC_REFLECT( node::protocol::beneficiary_route_type, (account)(weight) )
 FC_REFLECT( node::protocol::comment_payout_beneficiaries, (beneficiaries) )
 FC_REFLECT_TYPENAME( node::protocol::comment_options_extension )
-FC_REFLECT( node::protocol::comment_options_operation, (author)(permlink)(max_accepted_payout)(percent_EUSD)(allow_votes)(allow_curationRewards)(extensions) )
+FC_REFLECT( node::protocol::comment_options_operation, (author)(permlink)(max_accepted_payout)(percent_TSD)(allow_votes)(allow_curationRewards)(extensions) )
 
-FC_REFLECT( node::protocol::escrow_transfer_operation, (from)(to)(EUSDamount)(ECOamount)(escrow_id)(agent)(fee)(json)(ratification_deadline)(escrow_expiration) );
+FC_REFLECT( node::protocol::escrow_transfer_operation, (from)(to)(TSDamount)(TMEamount)(escrow_id)(agent)(fee)(json)(ratification_deadline)(escrow_expiration) );
 FC_REFLECT( node::protocol::escrow_approve_operation, (from)(to)(agent)(who)(escrow_id)(approve) );
 FC_REFLECT( node::protocol::escrow_dispute_operation, (from)(to)(agent)(who)(escrow_id) );
-FC_REFLECT( node::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(EUSDamount)(ECOamount) );
+FC_REFLECT( node::protocol::escrow_release_operation, (from)(to)(agent)(who)(receiver)(escrow_id)(TSDamount)(TMEamount) );
 FC_REFLECT( node::protocol::challenge_authority_operation, (challenger)(challenged)(require_owner) );
 FC_REFLECT( node::protocol::prove_authority_operation, (challenged)(require_owner) );
 FC_REFLECT( node::protocol::request_account_recovery_operation, (recoveryAccount)(accountToRecover)(new_owner_authority)(extensions) );
 FC_REFLECT( node::protocol::recover_account_operation, (accountToRecover)(new_owner_authority)(recent_owner_authority)(extensions) );
 FC_REFLECT( node::protocol::change_recoveryAccount_operation, (accountToRecover)(new_recoveryAccount)(extensions) );
 FC_REFLECT( node::protocol::decline_voting_rights_operation, (account)(decline) );
-FC_REFLECT( node::protocol::claimRewardBalance_operation, (account)(ECOreward)(EUSDreward)(ESCORreward) )
-FC_REFLECT( node::protocol::delegateESCOR_operation, (delegator)(delegatee)(ESCOR) );
+FC_REFLECT( node::protocol::claimRewardBalance_operation, (account)(TMEreward)(TSDreward)(SCOREreward) )
+FC_REFLECT( node::protocol::delegateSCORE_operation, (delegator)(delegatee)(SCORE) );

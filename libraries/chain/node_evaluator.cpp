@@ -77,9 +77,9 @@ void witness_update_evaluator::do_apply( const witness_update_operation& o )
 
    if ( _db.has_hardfork( HARDFORK_0_14__410 ) )
    {
-      FC_ASSERT( o.props.account_creation_fee.symbol == SYMBOL_ECO );
+      FC_ASSERT( o.props.account_creation_fee.symbol == SYMBOL_TME );
    }
-   else if( o.props.account_creation_fee.symbol != SYMBOL_ECO )
+   else if( o.props.account_creation_fee.symbol != SYMBOL_TME )
    {
       // after HF, above check can be moved to validate() if reindex doesn't show this warning
       wlog( "Wrong fee symbol in block ${b}", ("b", _db.head_block_num()+1) );
@@ -118,8 +118,8 @@ void accountCreate_evaluator::do_apply( const accountCreate_operation& o )
    if( _db.has_hardfork( HARDFORK_0_19__987) )
    {
       const witness_schedule_object& wso = _db.get_witness_schedule_object();
-      FC_ASSERT( o.fee >= asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_ECO_MODIFIER, SYMBOL_ECO ), "Insufficient Fee: ${f} required, ${p} provided.",
-                 ("f", wso.median_props.account_creation_fee * asset( CREATE_ACCOUNT_WITH_ECO_MODIFIER, SYMBOL_ECO ) )
+      FC_ASSERT( o.fee >= asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_TME ), "Insufficient Fee: ${f} required, ${p} provided.",
+                 ("f", wso.median_props.account_creation_fee * asset( CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_TME ) )
                  ("p", o.fee) );
    }
    else if( _db.has_hardfork( HARDFORK_0_1 ) )
@@ -181,7 +181,7 @@ void accountCreate_evaluator::do_apply( const accountCreate_operation& o )
    });
 
    if( o.fee.amount > 0 )
-      _db.createECOfundForESCOR( new_account, o.fee );
+      _db.createTMEfundForSCORE( new_account, o.fee );
 }
 
 void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDelegation_operation& o )
@@ -196,13 +196,13 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
                ( "creator.balance", creator.balance )
                ( "required", o.fee ) );
 
-   FC_ASSERT( creator.ESCOR - creator.ESCORDelegated - asset( creator.to_withdraw - creator.withdrawn, SYMBOL_ESCOR ) >= o.delegation, "Insufficient eScore to delegate to new account.",
-               ( "creator.ESCOR", creator.ESCOR )
-               ( "creator.ESCORDelegated", creator.ESCORDelegated )( "required", o.delegation ) );
+   FC_ASSERT( creator.SCORE - creator.SCOREDelegated - asset( creator.to_withdraw - creator.withdrawn, SYMBOL_SCORE ) >= o.delegation, "Insufficient SCORE to delegate to new account.",
+               ( "creator.SCORE", creator.SCORE )
+               ( "creator.SCOREDelegated", creator.SCOREDelegated )( "required", o.delegation ) );
 
-   auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_ECO_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_ECO ) * props.get_ESCOR_price();
+   auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_TME ) * props.get_SCORE_price();
 
-   auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_ECO ) * props.get_ESCOR_price() + o.delegation;
+   auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_TME ) * props.get_SCORE_price() + o.delegation;
 
    FC_ASSERT( current_delegation >= target_delegation, "Inssufficient Delegation ${f} required, ${p} provided.",
                ("f", target_delegation )
@@ -233,7 +233,7 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
    _db.modify( creator, [&]( account_object& c )
    {
       c.balance -= o.fee;
-      c.ESCORDelegated += o.delegation;
+      c.SCOREDelegated += o.delegation;
    });
 
    const auto& new_account = _db.create< account_object >( [&]( account_object& acc )
@@ -246,7 +246,7 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
 
       acc.recoveryAccount = o.creator;
 
-      acc.ESCORreceived = o.delegation;
+      acc.SCOREreceived = o.delegation;
 
       #ifndef IS_LOW_MEM
          from_string( acc.json, o.json );
@@ -264,17 +264,17 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
 
    if( o.delegation.amount > 0 || !_db.has_hardfork( HARDFORK_0_19__997 ) )
    {
-      _db.create< ECO_fund_for_ESCOR_delegation_object >( [&]( ECO_fund_for_ESCOR_delegation_object& vdo )
+      _db.create< TME_fund_for_SCORE_delegation_object >( [&]( TME_fund_for_SCORE_delegation_object& vdo )
       {
          vdo.delegator = o.creator;
          vdo.delegatee = o.newAccountName;
-         vdo.ESCOR = o.delegation;
+         vdo.SCORE = o.delegation;
          vdo.min_delegation_time = _db.head_block_time() + CREATE_ACCOUNT_DELEGATION_TIME;
       });
    }
 
    if( o.fee.amount > 0 )
-      _db.createECOfundForESCOR( new_account, o.fee );
+      _db.createTMEfundForSCORE( new_account, o.fee );
 }
 
 
@@ -355,7 +355,7 @@ void accountUpdate_evaluator::do_apply( const accountUpdate_operation& o )
 
 
 /**
- *  Because net_ESCORreward is 0 there is no need to update any pending payout calculations or parent posts.
+ *  Because net_SCOREreward is 0 there is no need to update any pending payout calculations or parent posts.
  */
 void deleteComment_evaluator::do_apply( const deleteComment_operation& o )
 {
@@ -372,9 +372,9 @@ void deleteComment_evaluator::do_apply( const deleteComment_operation& o )
       FC_ASSERT( comment.cashout_time != fc::time_point_sec::maximum() );
 
    if( _db.has_hardfork( HARDFORK_0_19__977 ) )
-      FC_ASSERT( comment.net_ESCORreward <= 0, "Cannot delete a comment with net positive votes." );
+      FC_ASSERT( comment.net_SCOREreward <= 0, "Cannot delete a comment with net positive votes." );
 
-   if( comment.net_ESCORreward > 0 ) return;
+   if( comment.net_SCOREreward > 0 ) return;
 
    const auto& vote_idx = _db.get_index<comment_vote_index>().indices().get<by_comment_voter>();
 
@@ -420,7 +420,7 @@ struct comment_options_extension_visitor
    void operator()( const comment_payout_beneficiaries& cpb ) const
    {
       FC_ASSERT( _c.beneficiaries.size() == 0, "Comment already has beneficiaries specified." );
-      FC_ASSERT( _c.abs_ESCORreward == 0, "Comment must not have been voted on before specifying beneficiaries." );
+      FC_ASSERT( _c.abs_SCOREreward == 0, "Comment must not have been voted on before specifying beneficiaries." );
 
       _db.modify( _c, [&]( comment_object& c )
       {
@@ -444,16 +444,16 @@ void comment_options_evaluator::do_apply( const comment_options_operation& o )
 
    const auto& comment = _db.get_comment( o.author, o.permlink );
    if( !o.allow_curationRewards || !o.allow_votes || o.max_accepted_payout < comment.max_accepted_payout )
-      FC_ASSERT( comment.abs_ESCORreward == 0, "One of the included comment options requires the comment to have no ESCORreward allocated to it." );
+      FC_ASSERT( comment.abs_SCOREreward == 0, "One of the included comment options requires the comment to have no SCOREreward allocated to it." );
 
    FC_ASSERT( comment.allow_curationRewards >= o.allow_curationRewards, "Curation rewards cannot be re-enabled." );
    FC_ASSERT( comment.allow_votes >= o.allow_votes, "Voting cannot be re-enabled." );
    FC_ASSERT( comment.max_accepted_payout >= o.max_accepted_payout, "A comment cannot accept a greater payout." );
-   FC_ASSERT( comment.percent_EUSD >= o.percent_EUSD, "A comment cannot accept a greater percent EUSD." );
+   FC_ASSERT( comment.percent_TSD >= o.percent_TSD, "A comment cannot accept a greater percent TSD." );
 
    _db.modify( comment, [&]( comment_object& c ) {
        c.max_accepted_payout   = o.max_accepted_payout;
-       c.percent_EUSD = o.percent_EUSD;
+       c.percent_TSD = o.percent_TSD;
        c.allow_votes           = o.allow_votes;
        c.allow_curationRewards = o.allow_curationRewards;
    });
@@ -567,7 +567,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             from_string( com.category, o.parent_permlink );
             com.root_comment = com.id;
             com.cashout_time = _db.has_hardfork( HARDFORK_0_12__177 ) ?
-               _db.head_block_time() + CASHOUT_WINDOW_SECONDS_PRE_HF17 :
+               _db.head_block_time() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF17 :
                fc::time_point_sec::maximum();
          }
          else
@@ -582,7 +582,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
          if( _db.has_hardfork( HARDFORK_0_17__769 ) )
          {
-            com.cashout_time = com.created + CASHOUT_WINDOW_SECONDS;
+            com.cashout_time = com.created + CASHOUT_WINDOW_SELATERCONDS;
          }
 
          #ifndef IS_LOW_MEM
@@ -692,18 +692,18 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
       FC_ASSERT( o.ratification_deadline > _db.head_block_time(), "The escorw ratification deadline must be after head block time." );
       FC_ASSERT( o.escrow_expiration > _db.head_block_time(), "The escrow expiration must be after head block time." );
 
-      asset ECO_spent = o.ECOamount;
-      asset EUSD_spent = o.EUSDamount;
-      if( o.fee.symbol == SYMBOL_ECO )
-         ECO_spent += o.fee;
+      asset TME_spent = o.TMEamount;
+      asset TSD_spent = o.TSDamount;
+      if( o.fee.symbol == SYMBOL_TME )
+         TME_spent += o.fee;
       else
-         EUSD_spent += o.fee;
+         TSD_spent += o.fee;
 
-      FC_ASSERT( from_account.balance >= ECO_spent, "Account cannot cover ECO costs of escrow. Required: ${r} Available: ${a}", ("r",ECO_spent)("a",from_account.balance) );
-      FC_ASSERT( from_account.EUSDbalance >= EUSD_spent, "Account cannot cover EUSD costs of escrow. Required: ${r} Available: ${a}", ("r",EUSD_spent)("a",from_account.EUSDbalance) );
+      FC_ASSERT( from_account.balance >= TME_spent, "Account cannot cover TME costs of escrow. Required: ${r} Available: ${a}", ("r",TME_spent)("a",from_account.balance) );
+      FC_ASSERT( from_account.TSDbalance >= TSD_spent, "Account cannot cover TSD costs of escrow. Required: ${r} Available: ${a}", ("r",TSD_spent)("a",from_account.TSDbalance) );
 
-      _db.adjust_balance( from_account, -ECO_spent );
-      _db.adjust_balance( from_account, -EUSD_spent );
+      _db.adjust_balance( from_account, -TME_spent );
+      _db.adjust_balance( from_account, -TSD_spent );
 
       _db.create<escrow_object>([&]( escrow_object& esc )
       {
@@ -713,8 +713,8 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
          esc.agent                  = o.agent;
          esc.ratification_deadline  = o.ratification_deadline;
          esc.escrow_expiration      = o.escrow_expiration;
-         esc.EUSDbalance            = o.EUSDamount;
-         esc.ECObalance            = o.ECOamount;
+         esc.TSDbalance            = o.TSDamount;
+         esc.TMEbalance            = o.TMEamount;
          esc.pending_fee            = o.fee;
       });
    }
@@ -762,8 +762,8 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
       if( reject_escrow )
       {
          const auto& from_account = _db.get_account( o.from );
-         _db.adjust_balance( from_account, escrow.ECObalance );
-         _db.adjust_balance( from_account, escrow.EUSDbalance );
+         _db.adjust_balance( from_account, escrow.TMEbalance );
+         _db.adjust_balance( from_account, escrow.TSDbalance );
          _db.adjust_balance( from_account, escrow.pending_fee );
 
          _db.remove( escrow );
@@ -811,8 +811,8 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
       const auto& receiver_account = _db.get_account(o.receiver);
 
       const auto& e = _db.get_escrow( o.from, o.escrow_id );
-      FC_ASSERT( e.ECObalance >= o.ECOamount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.ECOamount)("b", e.ECObalance) );
-      FC_ASSERT( e.EUSDbalance >= o.EUSDamount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.EUSDamount)("b", e.EUSDbalance) );
+      FC_ASSERT( e.TMEbalance >= o.TMEamount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.TMEamount)("b", e.TMEbalance) );
+      FC_ASSERT( e.TSDbalance >= o.TSDamount, "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.TSDamount)("b", e.TSDbalance) );
       FC_ASSERT( e.to == o.to, "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to)("e", e.to) );
       FC_ASSERT( e.agent == o.agent, "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", e.agent) );
       FC_ASSERT( o.receiver == e.from || o.receiver == e.to, "Funds must be released to 'from' (${f}) or 'to' (${t})", ("f", e.from)("t", e.to) );
@@ -842,16 +842,16 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
       }
       // If escrow expires and there is no dispute, either party can release funds to either party.
 
-      _db.adjust_balance( receiver_account, o.ECOamount );
-      _db.adjust_balance( receiver_account, o.EUSDamount );
+      _db.adjust_balance( receiver_account, o.TMEamount );
+      _db.adjust_balance( receiver_account, o.TSDamount );
 
       _db.modify( e, [&]( escrow_object& esc )
       {
-         esc.ECObalance -= o.ECOamount;
-         esc.EUSDbalance -= o.EUSDamount;
+         esc.TMEbalance -= o.TMEamount;
+         esc.TSDbalance -= o.TSDamount;
       });
 
-      if( e.ECObalance.amount == 0 && e.EUSDbalance.amount == 0 )
+      if( e.TMEbalance.amount == 0 && e.TSDbalance.amount == 0 )
       {
          _db.remove( e );
       }
@@ -878,29 +878,29 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
    _db.adjust_balance( to_account, o.amount );
 }
 
-void transferECOtoESCORfund_evaluator::do_apply( const transferECOtoESCORfund_operation& o )
+void transferTMEtoSCOREfund_evaluator::do_apply( const transferTMEtoSCOREfund_operation& o )
 {
    const auto& from_account = _db.get_account(o.from);
    const auto& to_account = o.to.size() ? _db.get_account(o.to) : from_account;
 
-   FC_ASSERT( _db.get_balance( from_account, SYMBOL_ECO) >= o.amount, "Account does not have sufficient ECO for transfer." );
+   FC_ASSERT( _db.get_balance( from_account, SYMBOL_TME) >= o.amount, "Account does not have sufficient TME for transfer." );
    _db.adjust_balance( from_account, -o.amount );
-   _db.createECOfundForESCOR( to_account, o.amount );
+   _db.createTMEfundForSCORE( to_account, o.amount );
 }
 
-void withdrawESCOR_evaluator::do_apply( const withdrawESCOR_operation& o )
+void withdrawSCORE_evaluator::do_apply( const withdrawSCORE_operation& o )
 {
    const auto& account = _db.get_account( o.account );
 
-   if( o.ESCOR.amount < 0 )
+   if( o.SCORE.amount < 0 )
    {
       // TODO: Update this to a HF 20 check
 #ifndef IS_TEST_NET
       if( _db.head_block_num() > 23847548 )
       {
 #endif
-         FC_ASSERT( false, "Cannot withdraw negative ESCOR. account: ${account}, ESCOR:${ESCOR}",
-            ("account", o.account)("ESCOR", o.ESCOR) );
+         FC_ASSERT( false, "Cannot withdraw negative SCORE. account: ${account}, SCORE:${SCORE}",
+            ("account", o.account)("SCORE", o.SCORE) );
 #ifndef IS_TEST_NET
       }
 #endif
@@ -909,64 +909,64 @@ void withdrawESCOR_evaluator::do_apply( const withdrawESCOR_operation& o )
       return;
    }
 
-   FC_ASSERT( account.ESCOR >= asset( 0, SYMBOL_ESCOR ), "Account does not have sufficient Ezira Power for withdraw." );
-   FC_ASSERT( account.ESCOR - account.ESCORDelegated >= o.ESCOR, "Account does not have sufficient Ezira Power for withdraw." );
+   FC_ASSERT( account.SCORE >= asset( 0, SYMBOL_SCORE ), "Account does not have sufficient Ezira Power for withdraw." );
+   FC_ASSERT( account.SCORE - account.SCOREDelegated >= o.SCORE, "Account does not have sufficient Ezira Power for withdraw." );
 
    if( !account.mined && _db.has_hardfork( HARDFORK_0_1 ) )
    {
       const auto& props = _db.get_dynamic_global_properties();
       const witness_schedule_object& wso = _db.get_witness_schedule_object();
 
-      asset min_ESCOR = wso.median_props.account_creation_fee * props.get_ESCOR_price();
-      min_ESCOR.amount.value *= 10;
+      asset min_SCORE = wso.median_props.account_creation_fee * props.get_SCORE_price();
+      min_SCORE.amount.value *= 10;
 
-      FC_ASSERT( account.ESCOR > min_ESCOR || ( _db.has_hardfork( HARDFORK_0_16__562 ) && o.ESCOR.amount == 0 ),
+      FC_ASSERT( account.SCORE > min_SCORE || ( _db.has_hardfork( HARDFORK_0_16__562 ) && o.SCORE.amount == 0 ),
                  "Account registered by another account requires 10x account creation fee worth of Ezira Power before it can be powered down." );
    }
 
-   if( o.ESCOR.amount == 0 )
+   if( o.SCORE.amount == 0 )
    {
       if( _db.has_hardfork( HARDFORK_0_5__57 ) )
-         FC_ASSERT( account.ESCORwithdrawRateInECO.amount  != 0, "This operation would not change the eScore ECO fund withdraw rate." );
+         FC_ASSERT( account.SCOREwithdrawRateInTME.amount  != 0, "This operation would not change the SCORE TME fund withdraw rate." );
 
       _db.modify( account, [&]( account_object& a ) {
-         a.ESCORwithdrawRateInECO = asset( 0, SYMBOL_ESCOR );
-         a.nextESCORwithdrawalTime = time_point_sec::maximum();
+         a.SCOREwithdrawRateInTME = asset( 0, SYMBOL_SCORE );
+         a.nextSCOREwithdrawalTime = time_point_sec::maximum();
          a.to_withdraw = 0;
          a.withdrawn = 0;
       });
    }
    else
    {
-      int ECO_fund_for_ESCOR_withdraw_intervals = ECO_fund_for_ESCOR_WITHDRAW_INTERVALS_PRE_HF_16;
+      int TME_fund_for_SCORE_withdraw_intervals = TME_fund_for_SCORE_WITHDRAW_INTERVALS_PRE_HF_16;
       if( _db.has_hardfork( HARDFORK_0_16__551 ) )
-         ECO_fund_for_ESCOR_withdraw_intervals = ECO_fund_for_ESCOR_WITHDRAW_INTERVALS; /// 13 weeks = 1 quarter of a year
+         TME_fund_for_SCORE_withdraw_intervals = TME_fund_for_SCORE_WITHDRAW_INTERVALS; /// 13 weeks = 1 quarter of a year
 
       _db.modify( account, [&]( account_object& a )
       {
-         auto new_ESCORwithdrawRateInECO = asset( o.ESCOR.amount / ECO_fund_for_ESCOR_withdraw_intervals, SYMBOL_ESCOR );
+         auto new_SCOREwithdrawRateInTME = asset( o.SCORE.amount / TME_fund_for_SCORE_withdraw_intervals, SYMBOL_SCORE );
 
-         if( new_ESCORwithdrawRateInECO.amount == 0 )
-            new_ESCORwithdrawRateInECO.amount = 1;
+         if( new_SCOREwithdrawRateInTME.amount == 0 )
+            new_SCOREwithdrawRateInTME.amount = 1;
 
          if( _db.has_hardfork( HARDFORK_0_5__57 ) )
-            FC_ASSERT( account.ESCORwithdrawRateInECO  != new_ESCORwithdrawRateInECO, "This operation would not change the eScore ECO fund withdraw rate." );
+            FC_ASSERT( account.SCOREwithdrawRateInTME  != new_SCOREwithdrawRateInTME, "This operation would not change the SCORE TME fund withdraw rate." );
 
-         a.ESCORwithdrawRateInECO = new_ESCORwithdrawRateInECO;
-         a.nextESCORwithdrawalTime = _db.head_block_time() + fc::seconds(ESCOR_WITHDRAW_INTERVAL_SECONDS);
-         a.to_withdraw = o.ESCOR.amount;
+         a.SCOREwithdrawRateInTME = new_SCOREwithdrawRateInTME;
+         a.nextSCOREwithdrawalTime = _db.head_block_time() + fc::seconds(SCORE_WITHDRAW_INTERVAL_SELATERCONDS);
+         a.to_withdraw = o.SCORE.amount;
          a.withdrawn = 0;
       });
    }
 }
 
-void setWithdrawESCORasECOroute_evaluator::do_apply( const setWithdrawESCORasECOroute_operation& o )
+void setWithdrawSCOREasTMEroute_evaluator::do_apply( const setWithdrawSCOREasTMEroute_operation& o )
 {
    try
    {
    const auto& from_account = _db.get_account( o.from_account );
    const auto& to_account = _db.get_account( o.to_account );
-   const auto& wd_idx = _db.get_index< withdrawESCOR_route_index >().indices().get< by_withdraw_route >();
+   const auto& wd_idx = _db.get_index< withdrawSCORE_route_index >().indices().get< by_withdraw_route >();
    auto itr = wd_idx.find( boost::make_tuple( from_account.id, to_account.id ) );
 
    if( itr == wd_idx.end() )
@@ -974,12 +974,12 @@ void setWithdrawESCORasECOroute_evaluator::do_apply( const setWithdrawESCORasECO
       FC_ASSERT( o.percent != 0, "Cannot create a 0% destination." );
       FC_ASSERT( from_account.withdraw_routes < MAX_WITHDRAW_ROUTES, "Account already has the maximum number of routes." );
 
-      _db.create< withdrawESCOR_route_object >( [&]( withdrawESCOR_route_object& wvdo )
+      _db.create< withdrawSCORE_route_object >( [&]( withdrawSCORE_route_object& wvdo )
       {
          wvdo.from_account = from_account.id;
          wvdo.to_account = to_account.id;
          wvdo.percent = o.percent;
-         wvdo.autoESCOR = o.autoESCOR;
+         wvdo.autoSCORE = o.autoSCORE;
       });
 
       _db.modify( from_account, [&]( account_object& a )
@@ -998,12 +998,12 @@ void setWithdrawESCORasECOroute_evaluator::do_apply( const setWithdrawESCORasECO
    }
    else
    {
-      _db.modify( *itr, [&]( withdrawESCOR_route_object& wvdo )
+      _db.modify( *itr, [&]( withdrawSCORE_route_object& wvdo )
       {
          wvdo.from_account = from_account.id;
          wvdo.to_account = to_account.id;
          wvdo.percent = o.percent;
-         wvdo.autoESCOR = o.autoESCOR;
+         wvdo.autoSCORE = o.autoSCORE;
       });
    }
 
@@ -1016,7 +1016,7 @@ void setWithdrawESCORasECOroute_evaluator::do_apply( const setWithdrawESCORasECO
       ++itr;
    }
 
-   FC_ASSERT( total_percent <= PERCENT_100, "More than 100% of eScore ECO fund withdrawals allocated to destinations." );
+   FC_ASSERT( total_percent <= PERCENT_100, "More than 100% of SCORE TME fund withdrawals allocated to destinations." );
    }
    FC_CAPTURE_AND_RETHROW()
 }
@@ -1030,9 +1030,9 @@ void account_witness_proxy_evaluator::do_apply( const account_witness_proxy_oper
 
    /// remove all current votes
    std::array<share_type, MAX_PROXY_RECURSION_DEPTH+1> delta;
-   delta[0] = -account.ESCOR.amount;
+   delta[0] = -account.SCORE.amount;
    for( int i = 0; i < MAX_PROXY_RECURSION_DEPTH; ++i )
-      delta[i+1] = -account.proxied_ESCORfundECObalance_votes[i];
+      delta[i+1] = -account.proxied_SCOREfundTMEbalance_votes[i];
    _db.adjust_proxied_witness_votes( account, delta );
 
    if( o.proxy.size() ) {
@@ -1179,7 +1179,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
    if( _db.has_hardfork( HARDFORK_0_11 ) )
       FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL_SEC, "Can only vote once every 3 seconds." );
 
-   int64_t regenerated_power = (PERCENT_100 * elapsed_seconds) / VOTE_REGENERATION_SECONDS;
+   int64_t regenerated_power = (PERCENT_100 * elapsed_seconds) / VOTE_REGENERATION_SELATERCONDS;
    int64_t current_power     = std::min( int64_t(voter.voting_power + regenerated_power), int64_t(PERCENT_100) );
    FC_ASSERT( current_power > 0, "Account currently does not have voting power." );
 
@@ -1190,7 +1190,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
 
    // used_power = (current_power * abs_weight / PERCENT_100) * (reserve / max_vote_denom)
    // The second multiplication is rounded up as of HF 259
-   int64_t max_vote_denom = dgpo.vote_power_reserve_rate * VOTE_REGENERATION_SECONDS / (60*60*24);
+   int64_t max_vote_denom = dgpo.vote_power_reserve_rate * VOTE_REGENERATION_SELATERCONDS / (60*60*24);
    FC_ASSERT( max_vote_denom > 0 );
 
    if( !_db.has_hardfork( HARDFORK_0_14__259 ) )
@@ -1204,16 +1204,16 @@ void vote_evaluator::do_apply( const vote_operation& o )
    }
    FC_ASSERT( used_power <= current_power, "Account does not have enough power to vote." );
 
-   int64_t abs_ESCORreward    = ((uint128_t(voter.effective_ESCOR().amount.value) * used_power) / (PERCENT_100)).to_uint64();
-   if( !_db.has_hardfork( HARDFORK_0_14__259 ) && abs_ESCORreward == 0 ) abs_ESCORreward = 1;
+   int64_t abs_SCOREreward    = ((uint128_t(voter.effective_SCORE().amount.value) * used_power) / (PERCENT_100)).to_uint64();
+   if( !_db.has_hardfork( HARDFORK_0_14__259 ) && abs_SCOREreward == 0 ) abs_SCOREreward = 1;
 
    if( _db.has_hardfork( HARDFORK_0_14__259 ) )
    {
-      FC_ASSERT( abs_ESCORreward > VOTE_DUST_THRESHOLD || o.weight == 0, "Voting weight is too small, please accumulate more voting power or ESCOR." );
+      FC_ASSERT( abs_SCOREreward > VOTE_DUST_THRESHOLD || o.weight == 0, "Voting weight is too small, please accumulate more voting power or SCORE." );
    }
    else if( _db.has_hardfork( HARDFORK_0_13__248 ) )
    {
-      FC_ASSERT( abs_ESCORreward > VOTE_DUST_THRESHOLD || abs_ESCORreward == 1, "Voting weight is too small, please accumulate more voting power or ESCOR." );
+      FC_ASSERT( abs_SCOREreward > VOTE_DUST_THRESHOLD || abs_SCOREreward == 1, "Voting weight is too small, please accumulate more voting power or SCORE." );
    }
 
 
@@ -1231,10 +1231,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
    if( itr == comment_vote_idx.end() )
    {
       FC_ASSERT( o.weight != 0, "Vote weight cannot be 0." );
-      /// this is the ESCORreward voting for or against the post
-      int64_t ESCORreward        = o.weight < 0 ? -abs_ESCORreward : abs_ESCORreward;
+      /// this is the SCOREreward voting for or against the post
+      int64_t SCOREreward        = o.weight < 0 ? -abs_SCOREreward : abs_SCOREreward;
 
-      if( ESCORreward > 0 )
+      if( SCOREreward > 0 )
       {
          if( _db.has_hardfork( HARDFORK_0_17__900 ) )
             FC_ASSERT( _db.head_block_time() < comment.cashout_time - UPVOTE_LOCKOUT_HF17, "Cannot increase payout within last twelve hours before payout." );
@@ -1250,10 +1250,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.last_vote_time = _db.head_block_time();
       });
 
-      /// if the current net_ESCORreward is less than 0, the post is getting 0 rewards so it is not factored into total ESCORreward^2
-      fc::uint128_t old_ESCORreward = std::max(comment.net_ESCORreward.value, int64_t(0));
+      /// if the current net_SCOREreward is less than 0, the post is getting 0 rewards so it is not factored into total SCOREreward^2
+      fc::uint128_t old_SCOREreward = std::max(comment.net_SCOREreward.value, int64_t(0));
       const auto& root = _db.get( comment.root_comment );
-      auto old_root_abs_ESCORreward = root.children_abs_ESCORreward.value;
+      auto old_root_abs_SCOREreward = root.children_abs_SCOREreward.value;
 
       fc::uint128_t avg_cashout_sec;
 
@@ -1263,56 +1263,56 @@ void vote_evaluator::do_apply( const vote_operation& o )
          fc::uint128_t new_cashout_time_sec;
 
          if( _db.has_hardfork( HARDFORK_0_12__177 ) && !_db.has_hardfork( HARDFORK_0_13__257)  )
-            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF17;
+            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF17;
          else
-            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF12;
+            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF12;
 
-         avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_ESCORreward + new_cashout_time_sec * abs_ESCORreward ) / ( old_root_abs_ESCORreward + abs_ESCORreward );
+         avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_SCOREreward + new_cashout_time_sec * abs_SCOREreward ) / ( old_root_abs_SCOREreward + abs_SCOREreward );
       }
 
-      FC_ASSERT( abs_ESCORreward > 0, "Cannot vote with 0 ESCORreward." );
+      FC_ASSERT( abs_SCOREreward > 0, "Cannot vote with 0 SCOREreward." );
 
-      auto old_vote_ESCORreward = comment.vote_ESCORreward;
+      auto old_vote_SCOREreward = comment.vote_SCOREreward;
 
       _db.modify( comment, [&]( comment_object& c ){
-         c.net_ESCORreward += ESCORreward;
-         c.abs_ESCORreward += abs_ESCORreward;
-         if( ESCORreward > 0 )
-            c.vote_ESCORreward += ESCORreward;
-         if( ESCORreward > 0 )
+         c.net_SCOREreward += SCOREreward;
+         c.abs_SCOREreward += abs_SCOREreward;
+         if( SCOREreward > 0 )
+            c.vote_SCOREreward += SCOREreward;
+         if( SCOREreward > 0 )
             c.net_votes++;
          else
             c.net_votes--;
-         if( !_db.has_hardfork( HARDFORK_0_6__114 ) && c.net_ESCORreward == -c.abs_ESCORreward) FC_ASSERT( c.net_votes < 0, "Comment has negative net votes?" );
+         if( !_db.has_hardfork( HARDFORK_0_6__114 ) && c.net_SCOREreward == -c.abs_SCOREreward) FC_ASSERT( c.net_votes < 0, "Comment has negative net votes?" );
       });
 
       _db.modify( root, [&]( comment_object& c )
       {
-         c.children_abs_ESCORreward += abs_ESCORreward;
+         c.children_abs_SCOREreward += abs_SCOREreward;
 
          if( !_db.has_hardfork( HARDFORK_0_17__769 ) )
          {
             if( _db.has_hardfork( HARDFORK_0_12__177 ) && c.last_payout > fc::time_point_sec::min() )
-               c.cashout_time = c.last_payout + SECOND_CASHOUT_WINDOW;
+               c.cashout_time = c.last_payout + SELATERCOND_CASHOUT_WINDOW;
             else
                c.cashout_time = fc::time_point_sec( std::min( uint32_t( avg_cashout_sec.to_uint64() ), c.max_cashout_time.sec_since_epoch() ) );
 
             if( c.max_cashout_time == fc::time_point_sec::maximum() )
-               c.max_cashout_time = _db.head_block_time() + fc::seconds( MAX_CASHOUT_WINDOW_SECONDS );
+               c.max_cashout_time = _db.head_block_time() + fc::seconds( MAX_CASHOUT_WINDOW_SELATERCONDS );
          }
       });
 
-      fc::uint128_t new_ESCORreward = std::max( comment.net_ESCORreward.value, int64_t(0));
+      fc::uint128_t new_SCOREreward = std::max( comment.net_SCOREreward.value, int64_t(0));
 
-      /// calculate ESCORreward2 value
-      new_ESCORreward = util::evaluate_reward_curve( new_ESCORreward );
-      old_ESCORreward = util::evaluate_reward_curve( old_ESCORreward );
+      /// calculate SCOREreward2 value
+      new_SCOREreward = util::evaluate_reward_curve( new_SCOREreward );
+      old_SCOREreward = util::evaluate_reward_curve( old_SCOREreward );
 
       uint64_t max_vote_weight = 0;
 
       /** this verifies uniqueness of voter
        *
-       *  cv.weight / c.total_vote_weight ==> % of ESCORreward increase that is accounted for by the vote
+       *  cv.weight / c.total_vote_weight ==> % of SCOREreward increase that is accounted for by the vote
        *
        *  W(R) = B * R / ( R + 2S )
        *  W(R) is bounded above by B. B is fixed at 2^64 - 1, so all weights fit in a 64 bit integer.
@@ -1331,11 +1331,11 @@ void vote_evaluator::do_apply( const vote_operation& o )
       _db.create<comment_vote_object>( [&]( comment_vote_object& cv ){
          cv.voter   = voter.id;
          cv.comment = comment.id;
-         cv.ESCORreward = ESCORreward;
+         cv.SCOREreward = SCOREreward;
          cv.vote_percent = o.weight;
          cv.last_update = _db.head_block_time();
 
-         bool curationReward_eligible = ESCORreward > 0 && (comment.last_payout == fc::time_point_sec()) && comment.allow_curationRewards;
+         bool curationReward_eligible = SCOREreward > 0 && (comment.last_payout == fc::time_point_sec()) && comment.allow_curationRewards;
 
          if( curationReward_eligible && _db.has_hardfork( HARDFORK_0_17__774 ) )
             curationReward_eligible = _db.get_curationRewards_percent( comment ) > 0;
@@ -1343,19 +1343,19 @@ void vote_evaluator::do_apply( const vote_operation& o )
          if( curationReward_eligible )
          {
             if( comment.created < fc::time_point_sec(HARDFORK_0_6_REVERSE_AUCTION_TIME) ) {
-               u512 ESCORreward3(ESCORreward);
-               u256 total2( comment.abs_ESCORreward.value );
+               u512 SCOREreward3(SCOREreward);
+               u256 total2( comment.abs_SCOREreward.value );
 
                if( !_db.has_hardfork( HARDFORK_0_1 ) )
                {
-                  ESCORreward3 *= 1000000;
+                  SCOREreward3 *= 1000000;
                   total2 *= 1000000;
                }
 
-               ESCORreward3 = ESCORreward3 * ESCORreward3 * ESCORreward3;
+               SCOREreward3 = SCOREreward3 * SCOREreward3 * SCOREreward3;
 
                total2 *= total2;
-               cv.weight = static_cast<uint64_t>( ESCORreward3 / total2 );
+               cv.weight = static_cast<uint64_t>( SCOREreward3 / total2 );
             } else {// cv.weight = W(R_1) - W(R_0)
                const uint128_t two_s = 2 * util::get_content_constant_s();
                if( _db.has_hardfork( HARDFORK_0_17__774 ) )
@@ -1363,20 +1363,20 @@ void vote_evaluator::do_apply( const vote_operation& o )
                   const auto& reward_fund = _db.get_reward_fund( comment );
                   auto curve = !_db.has_hardfork( HARDFORK_0_19__1052 ) && comment.created > HF_19_SQRT_PRE_CALC
                                  ? curve_id::square_root : reward_fund.curationReward_curve;
-                  uint64_t old_weight = util::evaluate_reward_curve( old_vote_ESCORreward.value, curve, reward_fund.content_constant ).to_uint64();
-                  uint64_t new_weight = util::evaluate_reward_curve( comment.vote_ESCORreward.value, curve, reward_fund.content_constant ).to_uint64();
+                  uint64_t old_weight = util::evaluate_reward_curve( old_vote_SCOREreward.value, curve, reward_fund.content_constant ).to_uint64();
+                  uint64_t new_weight = util::evaluate_reward_curve( comment.vote_SCOREreward.value, curve, reward_fund.content_constant ).to_uint64();
                   cv.weight = new_weight - old_weight;
                }
                else if ( _db.has_hardfork( HARDFORK_0_1 ) )
                {
-                  uint64_t old_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( old_vote_ESCORreward.value ) ) / ( two_s + old_vote_ESCORreward.value ) ).to_uint64();
-                  uint64_t new_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( comment.vote_ESCORreward.value ) ) / ( two_s + comment.vote_ESCORreward.value ) ).to_uint64();
+                  uint64_t old_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( old_vote_SCOREreward.value ) ) / ( two_s + old_vote_SCOREreward.value ) ).to_uint64();
+                  uint64_t new_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( comment.vote_SCOREreward.value ) ) / ( two_s + comment.vote_SCOREreward.value ) ).to_uint64();
                   cv.weight = new_weight - old_weight;
                }
                else
                {
-                  uint64_t old_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( 1000000 * old_vote_ESCORreward.value ) ) / ( two_s + ( 1000000 * old_vote_ESCORreward.value ) ) ).to_uint64();
-                  uint64_t new_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( 1000000 * comment.vote_ESCORreward.value ) ) / ( two_s + ( 1000000 * comment.vote_ESCORreward.value ) ) ).to_uint64();
+                  uint64_t old_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( 1000000 * old_vote_SCOREreward.value ) ) / ( two_s + ( 1000000 * old_vote_SCOREreward.value ) ) ).to_uint64();
+                  uint64_t new_weight = ( ( std::numeric_limits< uint64_t >::max() * fc::uint128_t( 1000000 * comment.vote_SCOREreward.value ) ) / ( two_s + ( 1000000 * comment.vote_SCOREreward.value ) ) ).to_uint64();
                   cv.weight = new_weight - old_weight;
                }
             }
@@ -1387,10 +1387,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
             {
                /// discount weight by time
                uint128_t w(max_vote_weight);
-               uint64_t delta_t = std::min( uint64_t((cv.last_update - comment.created).to_seconds()), uint64_t(REVERSE_AUCTION_WINDOW_SECONDS) );
+               uint64_t delta_t = std::min( uint64_t((cv.last_update - comment.created).to_seconds()), uint64_t(REVERSE_AUCTION_WINDOW_SELATERCONDS) );
 
                w *= delta_t;
-               w /= REVERSE_AUCTION_WINDOW_SECONDS;
+               w /= REVERSE_AUCTION_WINDOW_SELATERCONDS;
                cv.weight = w.to_uint64();
             }
          }
@@ -1408,7 +1408,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          });
       }
       if( !_db.has_hardfork( HARDFORK_0_17__774) )
-         _db.adjust_ESCORreward2( comment, old_ESCORreward, new_ESCORreward );
+         _db.adjust_SCOREreward2( comment, old_SCOREreward, new_SCOREreward );
    }
    else
    {
@@ -1417,10 +1417,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
       if( _db.has_hardfork( HARDFORK_0_6__112 ) )
          FC_ASSERT( itr->vote_percent != o.weight, "You have already voted in a similar way." );
 
-      /// this is the ESCORreward voting for or against the post
-      int64_t ESCORreward        = o.weight < 0 ? -abs_ESCORreward : abs_ESCORreward;
+      /// this is the SCOREreward voting for or against the post
+      int64_t SCOREreward        = o.weight < 0 ? -abs_SCOREreward : abs_SCOREreward;
 
-      if( itr->ESCORreward < ESCORreward )
+      if( itr->SCOREreward < SCOREreward )
       {
          if( _db.has_hardfork( HARDFORK_0_17__900 ) )
             FC_ASSERT( _db.head_block_time() < comment.cashout_time - UPVOTE_LOCKOUT_HF17, "Cannot increase payout within last twelve hours before payout." );
@@ -1433,10 +1433,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.last_vote_time = _db.head_block_time();
       });
 
-      /// if the current net_ESCORreward is less than 0, the post is getting 0 rewards so it is not factored into total ESCORreward^2
-      fc::uint128_t old_ESCORreward = std::max(comment.net_ESCORreward.value, int64_t(0));
+      /// if the current net_SCOREreward is less than 0, the post is getting 0 rewards so it is not factored into total SCOREreward^2
+      fc::uint128_t old_SCOREreward = std::max(comment.net_SCOREreward.value, int64_t(0));
       const auto& root = _db.get( comment.root_comment );
-      auto old_root_abs_ESCORreward = root.children_abs_ESCORreward.value;
+      auto old_root_abs_SCOREreward = root.children_abs_SCOREreward.value;
 
       fc::uint128_t avg_cashout_sec;
 
@@ -1446,58 +1446,58 @@ void vote_evaluator::do_apply( const vote_operation& o )
          fc::uint128_t new_cashout_time_sec;
 
          if( _db.has_hardfork( HARDFORK_0_12__177 ) && ! _db.has_hardfork( HARDFORK_0_13__257 )  )
-            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF17;
+            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF17;
          else
-            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF12;
+            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF12;
 
-         if( _db.has_hardfork( HARDFORK_0_14__259 ) && abs_ESCORreward == 0 )
+         if( _db.has_hardfork( HARDFORK_0_14__259 ) && abs_SCOREreward == 0 )
             avg_cashout_sec = cur_cashout_time_sec;
          else
-            avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_ESCORreward + new_cashout_time_sec * abs_ESCORreward ) / ( old_root_abs_ESCORreward + abs_ESCORreward );
+            avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_SCOREreward + new_cashout_time_sec * abs_SCOREreward ) / ( old_root_abs_SCOREreward + abs_SCOREreward );
       }
 
       _db.modify( comment, [&]( comment_object& c )
       {
-         c.net_ESCORreward -= itr->ESCORreward;
-         c.net_ESCORreward += ESCORreward;
-         c.abs_ESCORreward += abs_ESCORreward;
+         c.net_SCOREreward -= itr->SCOREreward;
+         c.net_SCOREreward += SCOREreward;
+         c.abs_SCOREreward += abs_SCOREreward;
 
-         /// TODO: figure out how to handle remove a vote (ESCORreward == 0 )
-         if( ESCORreward > 0 && itr->ESCORreward < 0 )
+         /// TODO: figure out how to handle remove a vote (SCOREreward == 0 )
+         if( SCOREreward > 0 && itr->SCOREreward < 0 )
             c.net_votes += 2;
-         else if( ESCORreward > 0 && itr->ESCORreward == 0 )
+         else if( SCOREreward > 0 && itr->SCOREreward == 0 )
             c.net_votes += 1;
-         else if( ESCORreward == 0 && itr->ESCORreward < 0 )
+         else if( SCOREreward == 0 && itr->SCOREreward < 0 )
             c.net_votes += 1;
-         else if( ESCORreward == 0 && itr->ESCORreward > 0 )
+         else if( SCOREreward == 0 && itr->SCOREreward > 0 )
             c.net_votes -= 1;
-         else if( ESCORreward < 0 && itr->ESCORreward == 0 )
+         else if( SCOREreward < 0 && itr->SCOREreward == 0 )
             c.net_votes -= 1;
-         else if( ESCORreward < 0 && itr->ESCORreward > 0 )
+         else if( SCOREreward < 0 && itr->SCOREreward > 0 )
             c.net_votes -= 2;
       });
 
       _db.modify( root, [&]( comment_object& c )
       {
-         c.children_abs_ESCORreward += abs_ESCORreward;
+         c.children_abs_SCOREreward += abs_SCOREreward;
 
          if( !_db.has_hardfork( HARDFORK_0_17__769 ) )
          {
             if( _db.has_hardfork( HARDFORK_0_12__177 ) && c.last_payout > fc::time_point_sec::min() )
-               c.cashout_time = c.last_payout + SECOND_CASHOUT_WINDOW;
+               c.cashout_time = c.last_payout + SELATERCOND_CASHOUT_WINDOW;
             else
                c.cashout_time = fc::time_point_sec( std::min( uint32_t( avg_cashout_sec.to_uint64() ), c.max_cashout_time.sec_since_epoch() ) );
 
             if( c.max_cashout_time == fc::time_point_sec::maximum() )
-               c.max_cashout_time = _db.head_block_time() + fc::seconds( MAX_CASHOUT_WINDOW_SECONDS );
+               c.max_cashout_time = _db.head_block_time() + fc::seconds( MAX_CASHOUT_WINDOW_SELATERCONDS );
          }
       });
 
-      fc::uint128_t new_ESCORreward = std::max( comment.net_ESCORreward.value, int64_t(0));
+      fc::uint128_t new_SCOREreward = std::max( comment.net_SCOREreward.value, int64_t(0));
 
-      /// calculate ESCORreward2 value
-      new_ESCORreward = util::evaluate_reward_curve( new_ESCORreward );
-      old_ESCORreward = util::evaluate_reward_curve( old_ESCORreward );
+      /// calculate SCOREreward2 value
+      new_SCOREreward = util::evaluate_reward_curve( new_SCOREreward );
+      old_SCOREreward = util::evaluate_reward_curve( old_SCOREreward );
 
 
       _db.modify( comment, [&]( comment_object& c )
@@ -1507,7 +1507,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
 
       _db.modify( *itr, [&]( comment_vote_object& cv )
       {
-         cv.ESCORreward = ESCORreward;
+         cv.SCOREreward = SCOREreward;
          cv.vote_percent = o.weight;
          cv.last_update = _db.head_block_time();
          cv.weight = 0;
@@ -1515,7 +1515,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
       });
 
       if( !_db.has_hardfork( HARDFORK_0_17__774) )
-         _db.adjust_ESCORreward2( comment, old_ESCORreward, new_ESCORreward );
+         _db.adjust_SCOREreward2( comment, old_SCOREreward, new_SCOREreward );
    }
 
 } FC_CAPTURE_AND_RETHROW( (o)) }
@@ -1674,7 +1674,7 @@ void pow_apply( database& db, Operation o )
    if( db.head_block_num() < START_MINER_VOTING_BLOCK )
       db.adjust_balance( inc_witness, pow_reward );
    else
-      db.createECOfundForESCOR( inc_witness, pow_reward );
+      db.createTMEfundForSCORE( inc_witness, pow_reward );
 }
 
 void pow_evaluator::do_apply( const pow_operation& o ) {
@@ -1768,7 +1768,7 @@ void pow2_evaluator::do_apply( const pow2_operation& o )
       db.adjust_supply( inc_reward, true );
 
       const auto& inc_witness = db.get_account( dgp.current_witness );
-      db.createECOfundForESCOR( inc_witness, inc_reward );
+      db.createTMEfundForSCORE( inc_witness, inc_reward );
    }
 }
 
@@ -1776,8 +1776,8 @@ void feed_publish_evaluator::do_apply( const feed_publish_operation& o )
 {
   const auto& witness = _db.get_witness( o.publisher );
   _db.modify( witness, [&]( witness_object& w ){
-      w.EUSD_exchange_rate = o.exchange_rate;
-      w.last_EUSD_exchange_update = _db.head_block_time();
+      w.TSD_exchange_rate = o.exchange_rate;
+      w.last_TSD_exchange_update = _db.head_block_time();
   });
 }
 
@@ -1789,18 +1789,18 @@ void convert_evaluator::do_apply( const convert_operation& o )
   _db.adjust_balance( owner, -o.amount );
 
   const auto& fhistory = _db.get_feed_history();
-  FC_ASSERT( !fhistory.current_median_history.is_null(), "Cannot convert EUSD because there is no price feed." );
+  FC_ASSERT( !fhistory.current_median_history.is_null(), "Cannot convert TSD because there is no price feed." );
 
-  auto ECO_conversion_delay = CONVERSION_DELAY_PRE_HF_16;
+  auto TME_conversion_delay = CONVERSION_DELAY_PRE_HF_16;
   if( _db.has_hardfork( HARDFORK_0_16__551) )
-     ECO_conversion_delay = CONVERSION_DELAY;
+     TME_conversion_delay = CONVERSION_DELAY;
 
   _db.create<convert_request_object>( [&]( convert_request_object& obj )
   {
       obj.owner           = o.owner;
       obj.requestid       = o.requestid;
       obj.amount          = o.amount;
-      obj.conversion_date = _db.head_block_time() + ECO_conversion_delay;
+      obj.conversion_date = _db.head_block_time() + TME_conversion_delay;
   });
 
 }
@@ -1879,7 +1879,7 @@ void challenge_authority_evaluator::do_apply( const challenge_authority_operatio
       FC_ASSERT( _db.head_block_time() - challenged.last_owner_proved > OWNER_CHALLENGE_COOLDOWN );
 
       _db.adjust_balance( challenger, - OWNER_CHALLENGE_FEE );
-      _db.createECOfundForESCOR( _db.get_account( o.challenged ), OWNER_CHALLENGE_FEE );
+      _db.createTMEfundForSCORE( _db.get_account( o.challenged ), OWNER_CHALLENGE_FEE );
 
       _db.modify( challenged, [&]( account_object& a )
       {
@@ -1893,7 +1893,7 @@ void challenge_authority_evaluator::do_apply( const challenge_authority_operatio
       FC_ASSERT( _db.head_block_time() - challenged.last_active_proved > ACTIVE_CHALLENGE_COOLDOWN, "Account cannot be challenged because it was recently challenged." );
 
       _db.adjust_balance( challenger, - ACTIVE_CHALLENGE_FEE );
-      _db.createECOfundForESCOR( _db.get_account( o.challenged ), ACTIVE_CHALLENGE_FEE );
+      _db.createTMEfundForSCORE( _db.get_account( o.challenged ), ACTIVE_CHALLENGE_FEE );
 
       _db.modify( challenged, [&]( account_object& a )
       {
@@ -1949,7 +1949,7 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
       {
          req.accountToRecover = o.accountToRecover;
          req.new_owner_authority = o.new_owner_authority;
-         req.expires = _db.head_block_time() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD;
+         req.expires = _db.head_block_time() + ACCOUNT_RELATERCOVERY_REQUEST_EXPIRATION_PERIOD;
       });
    }
    else if( o.new_owner_authority.weight_threshold == 0 ) // Cancel Request if authority is open
@@ -1972,7 +1972,7 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
       _db.modify( *request, [&]( account_recovery_request_object& req )
       {
          req.new_owner_authority = o.new_owner_authority;
-         req.expires = _db.head_block_time() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD;
+         req.expires = _db.head_block_time() + ACCOUNT_RELATERCOVERY_REQUEST_EXPIRATION_PERIOD;
       });
    }
 }
@@ -2025,7 +2025,7 @@ void change_recoveryAccount_evaluator::do_apply( const change_recoveryAccount_op
       {
          req.accountToRecover = o.accountToRecover;
          req.recoveryAccount = o.new_recoveryAccount;
-         req.effective_on = _db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD;
+         req.effective_on = _db.head_block_time() + OWNER_AUTH_RELATERCOVERY_PERIOD;
       });
    }
    else if( accountToRecover.recoveryAccount != o.new_recoveryAccount ) // Change existing request
@@ -2033,7 +2033,7 @@ void change_recoveryAccount_evaluator::do_apply( const change_recoveryAccount_op
       _db.modify( *request, [&]( change_recoveryAccount_request_object& req )
       {
          req.recoveryAccount = o.new_recoveryAccount;
-         req.effective_on = _db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD;
+         req.effective_on = _db.head_block_time() + OWNER_AUTH_RELATERCOVERY_PERIOD;
       });
    }
    else // Request exists and changing back to current recovery account
@@ -2049,7 +2049,7 @@ void transferToSavings_evaluator::do_apply( const transferToSavings_operation& o
    FC_ASSERT( _db.get_balance( from, op.amount.symbol ) >= op.amount, "Account does not have sufficient funds to transfer to savings." );
 
    _db.adjust_balance( from, -op.amount );
-   _db.adjust_ECOsavingsBalance( to, op.amount );
+   _db.adjust_TMEsavingsBalance( to, op.amount );
 }
 
 void transferFromSavings_evaluator::do_apply( const transferFromSavings_operation& op )
@@ -2059,8 +2059,8 @@ void transferFromSavings_evaluator::do_apply( const transferFromSavings_operatio
 
    FC_ASSERT( from.savings_withdraw_requests < SAVINGS_WITHDRAW_REQUEST_LIMIT, "Account has reached limit for pending withdraw requests." );
 
-   FC_ASSERT( _db.get_ECOsavingsBalance( from, op.amount.symbol ) >= op.amount );
-   _db.adjust_ECOsavingsBalance( from, -op.amount );
+   FC_ASSERT( _db.get_TMEsavingsBalance( from, op.amount.symbol ) >= op.amount );
+   _db.adjust_TMEsavingsBalance( from, -op.amount );
    _db.create<savings_withdraw_object>( [&]( savings_withdraw_object& s ) {
       s.from   = op.from;
       s.to     = op.to;
@@ -2081,7 +2081,7 @@ void transferFromSavings_evaluator::do_apply( const transferFromSavings_operatio
 void cancelTransferFromSavings_evaluator::do_apply( const cancelTransferFromSavings_operation& op )
 {
    const auto& swo = _db.get_savings_withdraw( op.from, op.request_id );
-   _db.adjust_ECOsavingsBalance( _db.get_account( swo.from ), swo.amount );
+   _db.adjust_TMEsavingsBalance( _db.get_account( swo.from ), swo.amount );
    _db.remove( swo );
 
    const auto& from = _db.get_account( op.from );
@@ -2106,7 +2106,7 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
       _db.create< decline_voting_rights_request_object >( [&]( decline_voting_rights_request_object& req )
       {
          req.account = account.id;
-         req.effective_date = _db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD;
+         req.effective_date = _db.head_block_time() + OWNER_AUTH_RELATERCOVERY_PERIOD;
       });
    }
    else
@@ -2151,136 +2151,136 @@ void claimRewardBalance_evaluator::do_apply( const claimRewardBalance_operation&
 {
    const auto& acnt = _db.get_account( op.account );
 
-   FC_ASSERT( op.ECOreward <= acnt.ECOrewardBalance, "Cannot claim that much ECO. Claim: ${c} Actual: ${a}",
-      ("c", op.ECOreward)("a", acnt.ECOrewardBalance) );
-   FC_ASSERT( op.EUSDreward <= acnt.EUSDrewardBalance, "Cannot claim that much EUSD. Claim: ${c} Actual: ${a}",
-      ("c", op.EUSDreward)("a", acnt.EUSDrewardBalance) );
-   FC_ASSERT( op.ESCORreward <= acnt.ESCORrewardBalance, "Cannot claim that much ESCOR. Claim: ${c} Actual: ${a}",
-      ("c", op.ESCORreward)("a", acnt.ESCORrewardBalance) );
+   FC_ASSERT( op.TMEreward <= acnt.TMErewardBalance, "Cannot claim that much TME. Claim: ${c} Actual: ${a}",
+      ("c", op.TMEreward)("a", acnt.TMErewardBalance) );
+   FC_ASSERT( op.TSDreward <= acnt.TSDrewardBalance, "Cannot claim that much TSD. Claim: ${c} Actual: ${a}",
+      ("c", op.TSDreward)("a", acnt.TSDrewardBalance) );
+   FC_ASSERT( op.SCOREreward <= acnt.SCORErewardBalance, "Cannot claim that much SCORE. Claim: ${c} Actual: ${a}",
+      ("c", op.SCOREreward)("a", acnt.SCORErewardBalance) );
 
-   asset ESCORrewardBalanceInECO_to_move = asset( 0, SYMBOL_ECO );
-   if( op.ESCORreward == acnt.ESCORrewardBalance )
-      ESCORrewardBalanceInECO_to_move = acnt.ESCORrewardBalanceInECO;
+   asset SCORErewardBalanceInTME_to_move = asset( 0, SYMBOL_TME );
+   if( op.SCOREreward == acnt.SCORErewardBalance )
+      SCORErewardBalanceInTME_to_move = acnt.SCORErewardBalanceInTME;
    else
-      ESCORrewardBalanceInECO_to_move = asset( ( ( uint128_t( op.ESCORreward.amount.value ) * uint128_t( acnt.ESCORrewardBalanceInECO.amount.value ) )
-         / uint128_t( acnt.ESCORrewardBalance.amount.value ) ).to_uint64(), SYMBOL_ECO );
+      SCORErewardBalanceInTME_to_move = asset( ( ( uint128_t( op.SCOREreward.amount.value ) * uint128_t( acnt.SCORErewardBalanceInTME.amount.value ) )
+         / uint128_t( acnt.SCORErewardBalance.amount.value ) ).to_uint64(), SYMBOL_TME );
 
-   _db.adjust_reward_balance( acnt, -op.ECOreward );
-   _db.adjust_reward_balance( acnt, -op.EUSDreward );
-   _db.adjust_balance( acnt, op.ECOreward );
-   _db.adjust_balance( acnt, op.EUSDreward );
+   _db.adjust_reward_balance( acnt, -op.TMEreward );
+   _db.adjust_reward_balance( acnt, -op.TSDreward );
+   _db.adjust_balance( acnt, op.TMEreward );
+   _db.adjust_balance( acnt, op.TSDreward );
 
    _db.modify( acnt, [&]( account_object& a )
    {
-      a.ESCOR += op.ESCORreward;
-      a.ESCORrewardBalance -= op.ESCORreward;
-      a.ESCORrewardBalanceInECO -= ESCORrewardBalanceInECO_to_move;
+      a.SCORE += op.SCOREreward;
+      a.SCORErewardBalance -= op.SCOREreward;
+      a.SCORErewardBalanceInTME -= SCORErewardBalanceInTME_to_move;
    });
 
    _db.modify( _db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
    {
-      gpo.totalESCOR += op.ESCORreward;
-      gpo.totalECOfundForESCOR += ESCORrewardBalanceInECO_to_move;
+      gpo.totalSCORE += op.SCOREreward;
+      gpo.totalTMEfundForSCORE += SCORErewardBalanceInTME_to_move;
 
-      gpo.pending_rewarded_ESCOR -= op.ESCORreward;
-      gpo.pending_rewarded_ESCORvalueInECO -= ESCORrewardBalanceInECO_to_move;
+      gpo.pending_rewarded_SCORE -= op.SCOREreward;
+      gpo.pending_rewarded_SCOREvalueInTME -= SCORErewardBalanceInTME_to_move;
    });
 
-   _db.adjust_proxied_witness_votes( acnt, op.ESCORreward.amount );
+   _db.adjust_proxied_witness_votes( acnt, op.SCOREreward.amount );
 }
 
-void delegateESCOR_evaluator::do_apply( const delegateESCOR_operation& op )
+void delegateSCORE_evaluator::do_apply( const delegateSCORE_operation& op )
 {
    const auto& delegator = _db.get_account( op.delegator );
    const auto& delegatee = _db.get_account( op.delegatee );
-   auto delegation = _db.find< ECO_fund_for_ESCOR_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
+   auto delegation = _db.find< TME_fund_for_SCORE_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
 
-   auto available_ESCOR = delegator.ESCOR - delegator.ESCORDelegated - asset( delegator.to_withdraw - delegator.withdrawn, SYMBOL_ESCOR );
+   auto available_SCORE = delegator.SCORE - delegator.SCOREDelegated - asset( delegator.to_withdraw - delegator.withdrawn, SYMBOL_SCORE );
 
    const auto& wso = _db.get_witness_schedule_object();
    const auto& gpo = _db.get_dynamic_global_properties();
-   auto min_delegation = asset( wso.median_props.account_creation_fee.amount * 10, SYMBOL_ECO ) * gpo.get_ESCOR_price();
-   auto min_update = wso.median_props.account_creation_fee * gpo.get_ESCOR_price();
+   auto min_delegation = asset( wso.median_props.account_creation_fee.amount * 10, SYMBOL_TME ) * gpo.get_SCORE_price();
+   auto min_update = wso.median_props.account_creation_fee * gpo.get_SCORE_price();
 
    // If delegation doesn't exist, create it
    if( delegation == nullptr )
    {
-      FC_ASSERT( available_ESCOR >= op.ESCOR, "Account does not have enough eScore to delegate." );
-      FC_ASSERT( op.ESCOR >= min_delegation, "Account must delegate a minimum of ${v}", ("v", min_delegation) );
+      FC_ASSERT( available_SCORE >= op.SCORE, "Account does not have enough SCORE to delegate." );
+      FC_ASSERT( op.SCORE >= min_delegation, "Account must delegate a minimum of ${v}", ("v", min_delegation) );
 
-      _db.create< ECO_fund_for_ESCOR_delegation_object >( [&]( ECO_fund_for_ESCOR_delegation_object& obj )
+      _db.create< TME_fund_for_SCORE_delegation_object >( [&]( TME_fund_for_SCORE_delegation_object& obj )
       {
          obj.delegator = op.delegator;
          obj.delegatee = op.delegatee;
-         obj.ESCOR = op.ESCOR;
+         obj.SCORE = op.SCORE;
          obj.min_delegation_time = _db.head_block_time();
       });
 
       _db.modify( delegator, [&]( account_object& a )
       {
-         a.ESCORDelegated += op.ESCOR;
+         a.SCOREDelegated += op.SCORE;
       });
 
       _db.modify( delegatee, [&]( account_object& a )
       {
-         a.ESCORreceived += op.ESCOR;
+         a.SCOREreceived += op.SCORE;
       });
    }
    // Else if the delegation is increasing
-   else if( op.ESCOR >= delegation->ESCOR )
+   else if( op.SCORE >= delegation->SCORE )
    {
-      auto delta = op.ESCOR - delegation->ESCOR;
+      auto delta = op.SCORE - delegation->SCORE;
 
       FC_ASSERT( delta >= min_update, "Ezira Power increase is not enough of a difference. min_update: ${min}", ("min", min_update) );
-      FC_ASSERT( available_ESCOR >= op.ESCOR - delegation->ESCOR, "Account does not have enough eScore to delegate." );
+      FC_ASSERT( available_SCORE >= op.SCORE - delegation->SCORE, "Account does not have enough SCORE to delegate." );
 
       _db.modify( delegator, [&]( account_object& a )
       {
-         a.ESCORDelegated += delta;
+         a.SCOREDelegated += delta;
       });
 
       _db.modify( delegatee, [&]( account_object& a )
       {
-         a.ESCORreceived += delta;
+         a.SCOREreceived += delta;
       });
 
-      _db.modify( *delegation, [&]( ECO_fund_for_ESCOR_delegation_object& obj )
+      _db.modify( *delegation, [&]( TME_fund_for_SCORE_delegation_object& obj )
       {
-         obj.ESCOR = op.ESCOR;
+         obj.SCORE = op.SCORE;
       });
    }
    // Else the delegation is decreasing
-   else /* delegation->ESCOR > op.ESCOR */
+   else /* delegation->SCORE > op.SCORE */
    {
-      auto delta = delegation->ESCOR - op.ESCOR;
+      auto delta = delegation->SCORE - op.SCORE;
 
-      if( op.ESCOR.amount > 0 )
+      if( op.SCORE.amount > 0 )
       {
          FC_ASSERT( delta >= min_update, "Ezira Power decrease is not enough of a difference. min_update: ${min}", ("min", min_update) );
-         FC_ASSERT( op.ESCOR >= min_delegation, "Delegation must be removed or leave minimum delegation amount of ${v}", ("v", min_delegation) );
+         FC_ASSERT( op.SCORE >= min_delegation, "Delegation must be removed or leave minimum delegation amount of ${v}", ("v", min_delegation) );
       }
       else
       {
-         FC_ASSERT( delegation->ESCOR.amount > 0, "Delegation would set eScore to zero, but it is already zero");
+         FC_ASSERT( delegation->SCORE.amount > 0, "Delegation would set SCORE to zero, but it is already zero");
       }
 
-      _db.create< ECO_fund_for_ESCOR_delegation_expiration_object >( [&]( ECO_fund_for_ESCOR_delegation_expiration_object& obj )
+      _db.create< TME_fund_for_SCORE_delegation_expiration_object >( [&]( TME_fund_for_SCORE_delegation_expiration_object& obj )
       {
          obj.delegator = op.delegator;
-         obj.ESCOR = delta;
-         obj.expiration = std::max( _db.head_block_time() + CASHOUT_WINDOW_SECONDS, delegation->min_delegation_time );
+         obj.SCORE = delta;
+         obj.expiration = std::max( _db.head_block_time() + CASHOUT_WINDOW_SELATERCONDS, delegation->min_delegation_time );
       });
 
       _db.modify( delegatee, [&]( account_object& a )
       {
-         a.ESCORreceived -= delta;
+         a.SCOREreceived -= delta;
       });
 
-      if( op.ESCOR.amount > 0 )
+      if( op.SCORE.amount > 0 )
       {
-         _db.modify( *delegation, [&]( ECO_fund_for_ESCOR_delegation_object& obj )
+         _db.modify( *delegation, [&]( TME_fund_for_SCORE_delegation_object& obj )
          {
-            obj.ESCOR = op.ESCOR;
+            obj.SCORE = op.SCORE;
          });
       }
       else

@@ -46,12 +46,12 @@ typedef chain::convert_request_object                  convert_request_api_obj;
 typedef chain::escrow_object                           escrow_api_obj;
 typedef chain::liquidity_reward_balance_object         liquidity_reward_balance_api_obj;
 typedef chain::limit_order_object                      limit_order_api_obj;
-typedef chain::withdrawESCOR_route_object           withdrawESCOR_route_api_obj;
+typedef chain::withdrawSCORE_route_object           withdrawSCORE_route_api_obj;
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
 typedef chain::witness_vote_object                     witness_vote_api_obj;
 typedef chain::witness_schedule_object                 witness_schedule_api_obj;
-typedef chain::ECO_fund_for_ESCOR_delegation_object               ECO_fund_for_ESCOR_delegation_api_obj;
-typedef chain::ECO_fund_for_ESCOR_delegation_expiration_object    ECO_fund_for_ESCOR_delegation_expiration_api_obj;
+typedef chain::TME_fund_for_SCORE_delegation_object               TME_fund_for_SCORE_delegation_api_obj;
+typedef chain::TME_fund_for_SCORE_delegation_expiration_object    TME_fund_for_SCORE_delegation_expiration_api_obj;
 typedef chain::reward_fund_object                      reward_fund_api_obj;
 typedef witness::account_bandwidth_object       account_bandwidth_api_obj;
 
@@ -73,10 +73,10 @@ struct comment_api_obj
       last_payout( o.last_payout ),
       depth( o.depth ),
       children( o.children ),
-      net_ESCORreward( o.net_ESCORreward ),
-      abs_ESCORreward( o.abs_ESCORreward ),
-      vote_ESCORreward( o.vote_ESCORreward ),
-      children_abs_ESCORreward( o.children_abs_ESCORreward ),
+      net_SCOREreward( o.net_SCOREreward ),
+      abs_SCOREreward( o.abs_SCOREreward ),
+      vote_SCOREreward( o.vote_SCOREreward ),
+      children_abs_SCOREreward( o.children_abs_SCOREreward ),
       cashout_time( o.cashout_time ),
       max_cashout_time( o.max_cashout_time ),
       total_vote_weight( o.total_vote_weight ),
@@ -87,7 +87,7 @@ struct comment_api_obj
       net_votes( o.net_votes ),
       root_comment( o.root_comment ),
       max_accepted_payout( o.max_accepted_payout ),
-      percent_EUSD( o.percent_EUSD ),
+      percent_TSD( o.percent_TSD ),
       allow_replies( o.allow_replies ),
       allow_votes( o.allow_votes ),
       allow_curationRewards( o.allow_curationRewards )
@@ -118,11 +118,11 @@ struct comment_api_obj
    uint8_t           depth = 0;
    uint32_t          children = 0;
 
-   share_type        net_ESCORreward;
-   share_type        abs_ESCORreward;
-   share_type        vote_ESCORreward;
+   share_type        net_SCOREreward;
+   share_type        abs_SCOREreward;
+   share_type        vote_SCOREreward;
 
-   share_type        children_abs_ESCORreward;
+   share_type        children_abs_SCOREreward;
    time_point_sec    cashout_time;
    time_point_sec    max_cashout_time;
    uint64_t          total_vote_weight = 0;
@@ -139,7 +139,7 @@ struct comment_api_obj
    comment_id_type   root_comment;
 
    asset             max_accepted_payout;
-   uint16_t          percent_EUSD = 0;
+   uint16_t          percent_TSD = 0;
    bool              allow_replies = false;
    bool              allow_votes = false;
    bool              allow_curationRewards = false;
@@ -191,27 +191,27 @@ struct account_api_obj
       voting_power( a.voting_power ),
       last_vote_time( a.last_vote_time ),
       balance( a.balance ),
-      ECOsavingsBalance( a.ECOsavingsBalance ),
-      EUSDbalance( a.EUSDbalance ),
-      EUSD_seconds( a.EUSD_seconds ),
-      EUSD_seconds_last_update( a.EUSD_seconds_last_update ),
-      EUSD_last_interest_payment( a.EUSD_last_interest_payment ),
-      EUSDsavingsBalance( a.EUSDsavingsBalance ),
-      savings_EUSD_seconds( a.savings_EUSD_seconds ),
-      savings_EUSD_seconds_last_update( a.savings_EUSD_seconds_last_update ),
-      savings_EUSD_last_interest_payment( a.savings_EUSD_last_interest_payment ),
+      TMEsavingsBalance( a.TMEsavingsBalance ),
+      TSDbalance( a.TSDbalance ),
+      TSD_seconds( a.TSD_seconds ),
+      TSD_seconds_last_update( a.TSD_seconds_last_update ),
+      TSD_last_interest_payment( a.TSD_last_interest_payment ),
+      TSDsavingsBalance( a.TSDsavingsBalance ),
+      savings_TSD_seconds( a.savings_TSD_seconds ),
+      savings_TSD_seconds_last_update( a.savings_TSD_seconds_last_update ),
+      savings_TSD_last_interest_payment( a.savings_TSD_last_interest_payment ),
       savings_withdraw_requests( a.savings_withdraw_requests ),
-      EUSDrewardBalance( a.EUSDrewardBalance ),
-      ECOrewardBalance( a.ECOrewardBalance ),
-      ESCORrewardBalance( a.ESCORrewardBalance ),
-      ESCORrewardBalanceInECO( a.ESCORrewardBalanceInECO ),
+      TSDrewardBalance( a.TSDrewardBalance ),
+      TMErewardBalance( a.TMErewardBalance ),
+      SCORErewardBalance( a.SCORErewardBalance ),
+      SCORErewardBalanceInTME( a.SCORErewardBalanceInTME ),
       curationRewards( a.curationRewards ),
       posting_rewards( a.posting_rewards ),
-      ESCOR( a.ESCOR ),
-      ESCORDelegated( a.ESCORDelegated ),
-      ESCORreceived( a.ESCORreceived ),
-      ESCORwithdrawRateInECO( a.ESCORwithdrawRateInECO ),
-      nextESCORwithdrawalTime( a.nextESCORwithdrawalTime ),
+      SCORE( a.SCORE ),
+      SCOREDelegated( a.SCOREDelegated ),
+      SCOREreceived( a.SCOREreceived ),
+      SCOREwithdrawRateInTME( a.SCOREwithdrawRateInTME ),
+      nextSCOREwithdrawalTime( a.nextSCOREwithdrawalTime ),
       withdrawn( a.withdrawn ),
       to_withdraw( a.to_withdraw ),
       withdraw_routes( a.withdraw_routes ),
@@ -219,10 +219,10 @@ struct account_api_obj
       last_post( a.last_post ),
       last_root_post( a.last_root_post )
    {
-      size_t n = a.proxied_ESCORfundECObalance_votes.size();
-      proxied_ESCORfundECObalance_votes.reserve( n );
+      size_t n = a.proxied_SCOREfundTMEbalance_votes.size();
+      proxied_SCOREfundTMEbalance_votes.reserve( n );
       for( size_t i=0; i<n; i++ )
-         proxied_ESCORfundECObalance_votes.push_back( a.proxied_ESCORfundECObalance_votes[i] );
+         proxied_SCOREfundTMEbalance_votes.push_back( a.proxied_SCOREfundTMEbalance_votes[i] );
 
       const auto& auth = db.get< account_authority_object, by_account >( name );
       owner = authority( auth.owner );
@@ -286,38 +286,38 @@ struct account_api_obj
    time_point_sec    last_vote_time;
 
    asset             balance;
-   asset             ECOsavingsBalance;
+   asset             TMEsavingsBalance;
 
-   asset             EUSDbalance;
-   uint128_t         EUSD_seconds;
-   time_point_sec    EUSD_seconds_last_update;
-   time_point_sec    EUSD_last_interest_payment;
+   asset             TSDbalance;
+   uint128_t         TSD_seconds;
+   time_point_sec    TSD_seconds_last_update;
+   time_point_sec    TSD_last_interest_payment;
 
-   asset             EUSDsavingsBalance;
-   uint128_t         savings_EUSD_seconds;
-   time_point_sec    savings_EUSD_seconds_last_update;
-   time_point_sec    savings_EUSD_last_interest_payment;
+   asset             TSDsavingsBalance;
+   uint128_t         savings_TSD_seconds;
+   time_point_sec    savings_TSD_seconds_last_update;
+   time_point_sec    savings_TSD_last_interest_payment;
 
    uint8_t           savings_withdraw_requests = 0;
 
-   asset             EUSDrewardBalance;
-   asset             ECOrewardBalance;
-   asset             ESCORrewardBalance;
-   asset             ESCORrewardBalanceInECO;
+   asset             TSDrewardBalance;
+   asset             TMErewardBalance;
+   asset             SCORErewardBalance;
+   asset             SCORErewardBalanceInTME;
 
    share_type        curationRewards;
    share_type        posting_rewards;
 
-   asset             ESCOR;
-   asset             ESCORDelegated;
-   asset             ESCORreceived;
-   asset             ESCORwithdrawRateInECO;
-   time_point_sec    nextESCORwithdrawalTime;
+   asset             SCORE;
+   asset             SCOREDelegated;
+   asset             SCOREreceived;
+   asset             SCOREwithdrawRateInTME;
+   time_point_sec    nextSCOREwithdrawalTime;
    share_type        withdrawn;
    share_type        to_withdraw;
    uint16_t          withdraw_routes = 0;
 
-   vector< share_type > proxied_ESCORfundECObalance_votes;
+   vector< share_type > proxied_SCOREfundTMEbalance_votes;
 
    uint16_t          witnesses_voted_for;
 
@@ -424,8 +424,8 @@ struct witness_api_obj
       pow_worker( w.pow_worker ),
       signing_key( w.signing_key ),
       props( w.props ),
-      EUSD_exchange_rate( w.EUSD_exchange_rate ),
-      last_EUSD_exchange_update( w.last_EUSD_exchange_update ),
+      TSD_exchange_rate( w.TSD_exchange_rate ),
+      last_TSD_exchange_update( w.last_TSD_exchange_update ),
       votes( w.votes ),
       virtual_last_update( w.virtual_last_update ),
       virtual_position( w.virtual_position ),
@@ -448,8 +448,8 @@ struct witness_api_obj
    uint64_t          pow_worker = 0;
    public_key_type   signing_key;
    chain_properties  props;
-   price             EUSD_exchange_rate;
-   time_point_sec    last_EUSD_exchange_update;
+   price             TSD_exchange_rate;
+   time_point_sec    last_TSD_exchange_update;
    share_type        votes;
    fc::uint128       virtual_last_update;
    fc::uint128       virtual_position;
@@ -512,10 +512,10 @@ FC_REFLECT( node::app::comment_api_obj,
              (category)(parent_author)(parent_permlink)
              (title)(body)(json)(last_update)(created)(active)(last_payout)
              (depth)(children)
-             (net_ESCORreward)(abs_ESCORreward)(vote_ESCORreward)
-             (children_abs_ESCORreward)(cashout_time)(max_cashout_time)
+             (net_SCOREreward)(abs_SCOREreward)(vote_SCOREreward)
+             (children_abs_SCOREreward)(cashout_time)(max_cashout_time)
              (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(authorRewards)(net_votes)(root_comment)
-             (max_accepted_payout)(percent_EUSD)(allow_replies)(allow_votes)(allow_curationRewards)
+             (max_accepted_payout)(percent_TSD)(allow_replies)(allow_votes)(allow_curationRewards)
              (beneficiaries)
           )
 
@@ -525,14 +525,14 @@ FC_REFLECT( node::app::account_api_obj,
              (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recoveryAccount)(last_account_recovery)(reset_account)
              (comment_count)(lifetime_vote_count)(post_count)(can_vote)(voting_power)(last_vote_time)
              (balance)
-             (ECOsavingsBalance)
-             (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
-             (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
-             (EUSDrewardBalance)(ECOrewardBalance)(ESCORrewardBalance)(ESCORrewardBalanceInECO)
-             (ESCOR)(ESCORDelegated)(ESCORreceived)(ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
+             (TMEsavingsBalance)
+             (TSDbalance)(TSD_seconds)(TSD_seconds_last_update)(TSD_last_interest_payment)
+             (TSDsavingsBalance)(savings_TSD_seconds)(savings_TSD_seconds_last_update)(savings_TSD_last_interest_payment)(savings_withdraw_requests)
+             (TSDrewardBalance)(TMErewardBalance)(SCORErewardBalance)(SCORErewardBalanceInTME)
+             (SCORE)(SCOREDelegated)(SCOREreceived)(SCOREwithdrawRateInTME)(nextSCOREwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)
-             (proxied_ESCORfundECObalance_votes)(witnesses_voted_for)
+             (proxied_SCOREfundTMEbalance_votes)(witnesses_voted_for)
              (average_bandwidth)(lifetime_bandwidth)(last_bandwidth_update)
              (average_market_bandwidth)(lifetime_market_bandwidth)(last_market_bandwidth_update)
              (last_post)(last_root_post)
@@ -584,7 +584,7 @@ FC_REFLECT( node::app::witness_api_obj,
              (url)(votes)(virtual_last_update)(virtual_position)(virtual_scheduled_time)(total_missed)
              (last_aslot)(last_confirmed_block_num)(pow_worker)(signing_key)
              (props)
-             (EUSD_exchange_rate)(last_EUSD_exchange_update)
+             (TSD_exchange_rate)(last_TSD_exchange_update)
              (last_work)
              (running_version)
              (hardfork_version_vote)(hardfork_time_vote)

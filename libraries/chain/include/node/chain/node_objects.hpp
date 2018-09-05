@@ -18,7 +18,7 @@ namespace node { namespace chain {
    typedef protocol::fixed_string_16 reward_fund_name_type;
 
    /**
-    *  This object is used to track pending requests to convert EUSD to ECO
+    *  This object is used to track pending requests to convert TSD to TME
     */
    class convert_request_object : public object< convert_request_object_type, convert_request_object >
    {
@@ -59,8 +59,8 @@ namespace node { namespace chain {
          account_name_type agent;
          time_point_sec    ratification_deadline;
          time_point_sec    escrow_expiration;
-         asset             EUSDbalance;
-         asset             ECObalance;
+         asset             TSDbalance;
+         asset             TMEbalance;
          asset             pending_fee;
          bool              to_approved = false;
          bool              agent_approved = false;
@@ -100,7 +100,7 @@ namespace node { namespace chain {
     *  When a user is a taker, their volume decreases
     *
     *  Every 1000 blocks, the account that has the highest volume_weight() is paid the maximum of
-    *  1000 ECO or 1000 * virtual_supply / (100*blocks_per_year) aka 10 * virtual_supply / blocks_per_year
+    *  1000 TME or 1000 * virtual_supply / (100*blocks_per_year) aka 10 * virtual_supply / blocks_per_year
     *
     *  After being paid volume gets reset to 0
     */
@@ -118,8 +118,8 @@ namespace node { namespace chain {
          id_type           id;
 
          account_id_type   owner;
-         int64_t           ECO_volume = 0;
-         int64_t           EUSD_volume = 0;
+         int64_t           TME_volume = 0;
+         int64_t           TSD_volume = 0;
          uint128_t         weight = 0;
 
          time_point_sec    last_update = fc::time_point_sec::min(); /// used to decay negative liquidity balances. block num
@@ -127,12 +127,12 @@ namespace node { namespace chain {
          /// this is the sort index
          uint128_t volume_weight()const
          {
-            return ECO_volume * EUSD_volume * is_positive();
+            return TME_volume * TSD_volume * is_positive();
          }
 
          uint128_t min_volume_weight()const
          {
-            return std::min(ECO_volume,EUSD_volume) * is_positive();
+            return std::min(TME_volume,TSD_volume) * is_positive();
          }
 
          void update_weight( bool hf9 )
@@ -142,7 +142,7 @@ namespace node { namespace chain {
 
          inline int is_positive()const
          {
-            return ( ECO_volume > 0 && EUSD_volume > 0 ) ? 1 : 0;
+            return ( TME_volume > 0 && TSD_volume > 0 ) ? 1 : 0;
          }
    };
 
@@ -210,25 +210,25 @@ namespace node { namespace chain {
 
 
    /**
-    * @breif a route to send withdrawn eScore.
+    * @breif a route to send withdrawn SCORE.
     */
-   class withdrawESCOR_route_object : public object< withdrawESCOR_route_object_type, withdrawESCOR_route_object >
+   class withdrawSCORE_route_object : public object< withdrawSCORE_route_object_type, withdrawSCORE_route_object >
    {
       public:
          template< typename Constructor, typename Allocator >
-         withdrawESCOR_route_object( Constructor&& c, allocator< Allocator > a )
+         withdrawSCORE_route_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
 
-         withdrawESCOR_route_object(){}
+         withdrawSCORE_route_object(){}
 
          id_type  id;
 
          account_id_type   from_account;
          account_id_type   to_account;
          uint16_t          percent = 0;
-         bool              autoESCOR = false;
+         bool              autoSCORE = false;
    };
 
 
@@ -270,7 +270,7 @@ namespace node { namespace chain {
 
          reward_fund_id_type     id;
          reward_fund_name_type   name;
-         asset                   reward_balance = asset( 0, SYMBOL_ECO );
+         asset                   reward_balance = asset( 0, SYMBOL_TME );
          fc::uint128_t           recent_claims = 0;
          time_point_sec          last_update;
          uint128_t               content_constant = 0;
@@ -357,31 +357,31 @@ namespace node { namespace chain {
    struct by_withdraw_route;
    struct by_destination;
    typedef multi_index_container<
-      withdrawESCOR_route_object,
+      withdrawSCORE_route_object,
       indexed_by<
-         ordered_unique< tag< by_id >, member< withdrawESCOR_route_object, withdrawESCOR_route_id_type, &withdrawESCOR_route_object::id > >,
+         ordered_unique< tag< by_id >, member< withdrawSCORE_route_object, withdrawSCORE_route_id_type, &withdrawSCORE_route_object::id > >,
          ordered_unique< tag< by_withdraw_route >,
-            composite_key< withdrawESCOR_route_object,
-               member< withdrawESCOR_route_object, account_id_type, &withdrawESCOR_route_object::from_account >,
-               member< withdrawESCOR_route_object, account_id_type, &withdrawESCOR_route_object::to_account >
+            composite_key< withdrawSCORE_route_object,
+               member< withdrawSCORE_route_object, account_id_type, &withdrawSCORE_route_object::from_account >,
+               member< withdrawSCORE_route_object, account_id_type, &withdrawSCORE_route_object::to_account >
             >,
             composite_key_compare< std::less< account_id_type >, std::less< account_id_type > >
          >,
          ordered_unique< tag< by_destination >,
-            composite_key< withdrawESCOR_route_object,
-               member< withdrawESCOR_route_object, account_id_type, &withdrawESCOR_route_object::to_account >,
-               member< withdrawESCOR_route_object, withdrawESCOR_route_id_type, &withdrawESCOR_route_object::id >
+            composite_key< withdrawSCORE_route_object,
+               member< withdrawSCORE_route_object, account_id_type, &withdrawSCORE_route_object::to_account >,
+               member< withdrawSCORE_route_object, withdrawSCORE_route_id_type, &withdrawSCORE_route_object::id >
             >
          >
       >,
-      allocator< withdrawESCOR_route_object >
-   > withdrawESCOR_route_index;
+      allocator< withdrawSCORE_route_object >
+   > withdrawSCORE_route_index;
 
    struct by_from_id;
    struct by_to;
    struct by_agent;
    struct by_ratification_deadline;
-   struct by_EUSDbalance;
+   struct by_TSDbalance;
    typedef multi_index_container<
       escrow_object,
       indexed_by<
@@ -412,9 +412,9 @@ namespace node { namespace chain {
             >,
             composite_key_compare< std::less< bool >, std::less< time_point_sec >, std::less< escrow_id_type > >
          >,
-         ordered_unique< tag< by_EUSDbalance >,
+         ordered_unique< tag< by_TSDbalance >,
             composite_key< escrow_object,
-               member< escrow_object, asset, &escrow_object::EUSDbalance >,
+               member< escrow_object, asset, &escrow_object::TSDbalance >,
                member< escrow_object, escrow_id_type, &escrow_object::id >
             >,
             composite_key_compare< std::greater< asset >, std::less< escrow_id_type > >
@@ -505,12 +505,12 @@ FC_REFLECT( node::chain::convert_request_object,
 CHAINBASE_SET_INDEX_TYPE( node::chain::convert_request_object, node::chain::convert_request_index )
 
 FC_REFLECT( node::chain::liquidity_reward_balance_object,
-             (id)(owner)(ECO_volume)(EUSD_volume)(weight)(last_update) )
+             (id)(owner)(TME_volume)(TSD_volume)(weight)(last_update) )
 CHAINBASE_SET_INDEX_TYPE( node::chain::liquidity_reward_balance_object, node::chain::liquidity_reward_balance_index )
 
-FC_REFLECT( node::chain::withdrawESCOR_route_object,
-             (id)(from_account)(to_account)(percent)(autoESCOR) )
-CHAINBASE_SET_INDEX_TYPE( node::chain::withdrawESCOR_route_object, node::chain::withdrawESCOR_route_index )
+FC_REFLECT( node::chain::withdrawSCORE_route_object,
+             (id)(from_account)(to_account)(percent)(autoSCORE) )
+CHAINBASE_SET_INDEX_TYPE( node::chain::withdrawSCORE_route_object, node::chain::withdrawSCORE_route_index )
 
 FC_REFLECT( node::chain::savings_withdraw_object,
              (id)(from)(to)(memo)(request_id)(amount)(complete) )
@@ -519,7 +519,7 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::savings_withdraw_object, node::chain::sav
 FC_REFLECT( node::chain::escrow_object,
              (id)(escrow_id)(from)(to)(agent)
              (ratification_deadline)(escrow_expiration)
-             (EUSDbalance)(ECObalance)(pending_fee)
+             (TSDbalance)(TMEbalance)(pending_fee)
              (to_approved)(agent_approved)(disputed) )
 CHAINBASE_SET_INDEX_TYPE( node::chain::escrow_object, node::chain::escrow_index )
 

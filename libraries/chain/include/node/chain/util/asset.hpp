@@ -7,20 +7,20 @@ namespace node { namespace chain { namespace util {
 using node::protocol::asset;
 using node::protocol::price;
 
-inline asset to_EUSD( const price& p, const asset& ECO )
+inline asset to_TSD( const price& p, const asset& TME )
 {
-   FC_ASSERT( ECO.symbol == SYMBOL_ECO );
+   FC_ASSERT( TME.symbol == SYMBOL_TME );
    if( p.is_null() )
-      return asset( 0, SYMBOL_EUSD );
-   return ECO * p;
+      return asset( 0, SYMBOL_TSD );
+   return TME * p;
 }
 
-inline asset to_ECO( const price& p, const asset& EUSD )
+inline asset to_TME( const price& p, const asset& TSD )
 {
-   FC_ASSERT( EUSD.symbol == SYMBOL_EUSD );
+   FC_ASSERT( TSD.symbol == SYMBOL_TSD );
    if( p.is_null() )
-      return asset( 0, SYMBOL_ECO );
-   return EUSD * p;
+      return asset( 0, SYMBOL_TME );
+   return TSD * p;
 }
 
 } } }

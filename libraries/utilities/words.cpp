@@ -33935,7 +33935,7 @@ const const_char_ptr word_list[] = {
 "recoat",
 "recock",
 "recoct",
-"recode",
+"RELATERCODE",
 "recoil",
 "recoin",
 "recoke",

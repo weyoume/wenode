@@ -114,7 +114,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.agent );
    }
 
-   void operator()( const transferECOtoESCORfund_operation& op )
+   void operator()( const transferTMEtoSCOREfund_operation& op )
    {
       _impacted.insert( op.from );
 
@@ -124,7 +124,7 @@ struct get_impacted_account_visitor
       }
    }
 
-   void operator()( const setWithdrawESCORasECOroute_operation& op )
+   void operator()( const setWithdrawSCOREasTMEroute_operation& op )
    {
       _impacted.insert( op.from_account );
       _impacted.insert( op.to_account );
@@ -198,7 +198,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.to );
    }
 
-   void operator()( const delegateESCOR_operation& op )
+   void operator()( const delegateSCORE_operation& op )
    {
       _impacted.insert( op.delegator );
       _impacted.insert( op.delegatee );
@@ -232,7 +232,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.owner );
    }
 
-   void operator()( const fillESCORWithdraw_operation& op )
+   void operator()( const fillSCOREWithdraw_operation& op )
    {
       _impacted.insert( op.from_account );
       _impacted.insert( op.to_account );
@@ -255,7 +255,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.to );
    }
 
-   void operator()( const return_ESCOR_delegation_operation& op )
+   void operator()( const return_SCORE_delegation_operation& op )
    {
       _impacted.insert( op.account );
    }

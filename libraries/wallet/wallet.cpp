@@ -296,7 +296,7 @@ public:
                                                                           time_point_sec(time_point::now()),
                                                                           " old");
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
-      result["median_EUSD_price"] = _remote_db->get_current_median_history_price();
+      result["median_TSD_price"] = _remote_db->get_current_median_history_price();
       result["account_creation_fee"] = _remote_db->get_chain_properties().account_creation_fee;
       // result["post_reward_fund"] = fc::variant(_remote_db->get_reward_fund( POST_REWARD_FUND_NAME )).get_object();
       return result;
@@ -727,23 +727,23 @@ public:
          std::stringstream out;
 
          auto accounts = result.as<vector<account_api_obj>>();
-         asset totalECO;
-         asset totalESCOR(0, SYMBOL_ESCOR );
-         asset totalEUSD(0, SYMBOL_EUSD );
+         asset totalTME;
+         asset totalSCORE(0, SYMBOL_SCORE );
+         asset totalTSD(0, SYMBOL_TSD );
          for( const auto& a : accounts ) {
-            totalECO += a.balance;
-            totalESCOR  += a.ESCOR;
-            totalEUSD  += a.EUSDbalance;
+            totalTME += a.balance;
+            totalSCORE  += a.SCORE;
+            totalTSD  += a.TSDbalance;
             out << std::left << std::setw( 17 ) << std::string(a.name)
                 << std::right << std::setw(18) << fc::variant(a.balance).as_string() <<" "
-                << std::right << std::setw(26) << fc::variant(a.ESCOR).as_string() <<" "
-                << std::right << std::setw(16) << fc::variant(a.EUSDbalance).as_string() <<"\n";
+                << std::right << std::setw(26) << fc::variant(a.SCORE).as_string() <<" "
+                << std::right << std::setw(16) << fc::variant(a.TSDbalance).as_string() <<"\n";
          }
          out << "-------------------------------------------------------------------------\n";
             out << std::left << std::setw( 17 ) << "TOTAL"
-                << std::right << std::setw(18) << fc::variant(totalECO).as_string() <<" "
-                << std::right << std::setw(26) << fc::variant(totalESCOR).as_string() <<" "
-                << std::right << std::setw(16) << fc::variant(totalEUSD).as_string() <<"\n";
+                << std::right << std::setw(18) << fc::variant(totalTME).as_string() <<" "
+                << std::right << std::setw(26) << fc::variant(totalSCORE).as_string() <<" "
+                << std::right << std::setw(16) << fc::variant(totalTSD).as_string() <<"\n";
          return out.str();
       };
       m["get_account_history"] = []( variant result, const fc::variants& a ) {
@@ -781,7 +781,7 @@ public:
              ss << ' ' << setw( 10 ) << o.orderid;
              ss << ' ' << setw( 10 ) << o.real_price;
              ss << ' ' << setw( 10 ) << fc::variant( asset( o.for_sale, o.sell_price.base.symbol ) ).as_string();
-             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL_ECO ? "SELL" : "BUY");
+             ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL_TME ? "SELL" : "BUY");
              ss << "\n";
           }
           return ss.str();
@@ -789,21 +789,21 @@ public:
       m["get_order_book"] = []( variant result, const fc::variants& a ) {
          auto orders = result.as< order_book >();
          std::stringstream ss;
-         asset bid_sum = asset( 0, SYMBOL_EUSD );
-         asset ask_sum = asset( 0, SYMBOL_EUSD );
+         asset bid_sum = asset( 0, SYMBOL_TSD );
+         asset ask_sum = asset( 0, SYMBOL_TSD );
          int spacing = 24;
 
          ss << setiosflags( ios::fixed ) << setiosflags( ios::left ) ;
 
          ss << ' ' << setw( ( spacing * 4 ) + 6 ) << "Bids" << "Asks\n"
             << ' '
-            << setw( spacing + 3 ) << "Sum(EUSD)"
-            << setw( spacing + 1) << "EUSD"
-            << setw( spacing + 1 ) << "ECO"
+            << setw( spacing + 3 ) << "Sum(TSD)"
+            << setw( spacing + 1) << "TSD"
+            << setw( spacing + 1 ) << "TME"
             << setw( spacing + 1 ) << "Price"
             << setw( spacing + 1 ) << "Price"
-            << setw( spacing + 1 ) << "ECO "
-            << setw( spacing + 1 ) << "EUSD " << "SumEUSD)"
+            << setw( spacing + 1 ) << "TME "
+            << setw( spacing + 1 ) << "TSD " << "SumTSD)"
             << "\n====================================================================================================="
             << "|=====================================================================================================\n";
 
@@ -811,11 +811,11 @@ public:
          {
             if ( i < orders.bids.size() )
             {
-               bid_sum += asset( orders.bids[i].EUSD, SYMBOL_EUSD );
+               bid_sum += asset( orders.bids[i].TSD, SYMBOL_TSD );
                ss
                   << ' ' << setw( spacing ) << bid_sum.to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].EUSD, SYMBOL_EUSD ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].ECO, SYMBOL_ECO ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].TSD, SYMBOL_TSD ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.bids[i].TME, SYMBOL_TME ).to_string()
                   << ' ' << setw( spacing ) << orders.bids[i].real_price; //(~orders.bids[i].order_price).to_real();
             }
             else
@@ -827,11 +827,11 @@ public:
 
             if ( i < orders.asks.size() )
             {
-               ask_sum += asset( orders.asks[i].EUSD, SYMBOL_EUSD );
+               ask_sum += asset( orders.asks[i].TSD, SYMBOL_TSD );
                //ss << ' ' << setw( spacing ) << (~orders.asks[i].order_price).to_real()
                ss << ' ' << setw( spacing ) << orders.asks[i].real_price
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].ECO, SYMBOL_ECO ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].EUSD, SYMBOL_EUSD ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].TME, SYMBOL_TME ).to_string()
+                  << ' ' << setw( spacing ) << asset( orders.asks[i].TSD, SYMBOL_TSD ).to_string()
                   << ' ' << setw( spacing ) << ask_sum.to_string();
             }
 
@@ -852,7 +852,7 @@ public:
          ss << ' ' << std::left << std::setw( 20 ) << "From";
          ss << ' ' << std::left << std::setw( 20 ) << "To";
          ss << ' ' << std::right << std::setw( 8 ) << "Percent";
-         ss << ' ' << std::right << std::setw( 9 ) << "autoESCOR";
+         ss << ' ' << std::right << std::setw( 9 ) << "autoSCORE";
          ss << "\n==============================================================\n";
 
          for( auto r : routes )
@@ -860,7 +860,7 @@ public:
             ss << ' ' << std::left << std::setw( 20 ) << r.from_account;
             ss << ' ' << std::left << std::setw( 20 ) << r.to_account;
             ss << ' ' << std::right << std::setw( 8 ) << std::setprecision( 2 ) << std::fixed << double( r.percent ) / 100;
-            ss << ' ' << std::right << std::setw( 9 ) << ( r.autoESCOR ? "true" : "false" ) << std::endl;
+            ss << ' ' << std::right << std::setw( 9 ) << ( r.autoSCORE ? "true" : "false" ) << std::endl;
          }
 
          return ss.str();
@@ -1299,7 +1299,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
    op.posting = authority( 1, posting, 1 );
    op.memoKey = memo;
    op.json = json;
-   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_ECO_MODIFIER, SYMBOL_ECO );
+   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_TME );
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -1314,8 +1314,8 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
  * wallet.
  */
 annotated_signed_transaction wallet_api::create_account_with_keys_delegated( string creator,
-                                      asset ECOfee,
-                                      asset delegatedESCOR,
+                                      asset TMEfee,
+                                      asset delegatedSCORE,
                                       string newAccountName,
                                       string json,
                                       public_key_type owner,
@@ -1333,8 +1333,8 @@ annotated_signed_transaction wallet_api::create_account_with_keys_delegated( str
    op.posting = authority( 1, posting, 1 );
    op.memoKey = memo;
    op.json = json;
-   op.fee = ECOfee;
-   op.delegation = delegatedESCOR;
+   op.fee = TMEfee;
+   op.delegation = delegatedSCORE;
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -1657,7 +1657,7 @@ annotated_signed_transaction wallet_api::update_account_memoKey( string account_
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::delegateESCOR( string delegator, string delegatee, asset ESCOR, bool broadcast)
+annotated_signed_transaction wallet_api::delegateSCORE( string delegator, string delegatee, asset SCORE, bool broadcast)
 {
    FC_ASSERT( !is_locked() );
 
@@ -1666,10 +1666,10 @@ annotated_signed_transaction wallet_api::delegateESCOR( string delegator, string
    FC_ASSERT( delegator == accounts[0].name, "Delegator account is not right?" );
    FC_ASSERT( delegatee == accounts[1].name, "Delegator account is not right?" );
 
-   delegateESCOR_operation op;
+   delegateSCORE_operation op;
    op.delegator = delegator;
    op.delegatee = delegatee;
-   op.ESCOR = ESCOR;
+   op.SCORE = SCORE;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -1700,7 +1700,7 @@ annotated_signed_transaction wallet_api::create_account( string creator, string 
  *  This method will genrate new owner, active, and memo keys for the new account which
  *  will be controlable by this wallet.
  */
-annotated_signed_transaction wallet_api::create_account_delegated( string creator, asset ECOfee, asset delegatedESCOR, string newAccountName, string json, bool broadcast )
+annotated_signed_transaction wallet_api::create_account_delegated( string creator, asset TMEfee, asset delegatedSCORE, string newAccountName, string json, bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
    auto owner = suggest_brain_key();
@@ -1711,7 +1711,7 @@ annotated_signed_transaction wallet_api::create_account_delegated( string creato
    import_key( active.wif_priv_key );
    import_key( posting.wif_priv_key );
    import_key( memo.wif_priv_key );
-   return create_account_with_keys_delegated( creator, ECOfee, delegatedESCOR, newAccountName, json,  owner.pub_key, active.pub_key, posting.pub_key, memo.pub_key, broadcast );
+   return create_account_with_keys_delegated( creator, TMEfee, delegatedSCORE, newAccountName, json,  owner.pub_key, active.pub_key, posting.pub_key, memo.pub_key, broadcast );
 } FC_CAPTURE_AND_RETHROW( (creator)(newAccountName)(json) ) }
 
 
@@ -1871,8 +1871,8 @@ annotated_signed_transaction wallet_api::escrow_transfer(
       string to,
       string agent,
       uint32_t escrow_id,
-      asset EUSDamount,
-      asset ECOamount,
+      asset TSDamount,
+      asset TMEamount,
       asset fee,
       time_point_sec ratification_deadline,
       time_point_sec escrow_expiration,
@@ -1886,8 +1886,8 @@ annotated_signed_transaction wallet_api::escrow_transfer(
    op.to = to;
    op.agent = agent;
    op.escrow_id = escrow_id;
-   op.EUSDamount =EUSDamount;
-   op.ECOamount = ECOamount;
+   op.TSDamount =TSDamount;
+   op.TMEamount = TMEamount;
    op.fee = fee;
    op.ratification_deadline = ratification_deadline;
    op.escrow_expiration = escrow_expiration;
@@ -1956,8 +1956,8 @@ annotated_signed_transaction wallet_api::escrow_release(
    string who,
    string receiver,
    uint32_t escrow_id,
-   asset EUSDamount,
-   asset ECOamount,
+   asset TSDamount,
+   asset TMEamount,
    bool broadcast
 )
 {
@@ -1969,8 +1969,8 @@ annotated_signed_transaction wallet_api::escrow_release(
    op.who = who;
    op.receiver = receiver;
    op.escrow_id = escrow_id;
-   op.EUSDamount =EUSDamount;
-   op.ECOamount = ECOamount;
+   op.TSDamount =TSDamount;
+   op.TMEamount = TMEamount;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -2036,10 +2036,10 @@ annotated_signed_transaction wallet_api::cancelTransferFromSavings( string from,
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::transferECOtoESCORfund(string from, string to, asset amount, bool broadcast )
+annotated_signed_transaction wallet_api::transferTMEtoSCOREfund(string from, string to, asset amount, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
-    transferECOtoESCORfund_operation op;
+    transferTMEtoSCOREfund_operation op;
     op.from = from;
     op.to = (to == from ? "" : to);
     op.amount = amount;
@@ -2051,12 +2051,12 @@ annotated_signed_transaction wallet_api::transferECOtoESCORfund(string from, str
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::withdrawESCOR(string from, asset ESCOR, bool broadcast )
+annotated_signed_transaction wallet_api::withdrawSCORE(string from, asset SCORE, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
-    withdrawESCOR_operation op;
+    withdrawSCORE_operation op;
     op.account = from;
-    op.ESCOR = ESCOR;
+    op.SCORE = SCORE;
 
     signed_transaction tx;
     tx.operations.push_back( op );
@@ -2065,14 +2065,14 @@ annotated_signed_transaction wallet_api::withdrawESCOR(string from, asset ESCOR,
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::setWithdrawESCORasECOroute( string from, string to, uint16_t percent, bool autoESCOR, bool broadcast )
+annotated_signed_transaction wallet_api::setWithdrawSCOREasTMEroute( string from, string to, uint16_t percent, bool autoSCORE, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
-    setWithdrawESCORasECOroute_operation op;
+    setWithdrawSCOREasTMEroute_operation op;
     op.from_account = from;
     op.to_account = to;
     op.percent = percent;
-    op.autoESCOR = autoESCOR;
+    op.autoSCORE = autoSCORE;
 
     signed_transaction tx;
     tx.operations.push_back( op );
@@ -2081,7 +2081,7 @@ annotated_signed_transaction wallet_api::setWithdrawESCORasECOroute( string from
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::convertEUSD(string from, asset amount, bool broadcast )
+annotated_signed_transaction wallet_api::convertTSD(string from, asset amount, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
     convert_operation op;
@@ -2161,14 +2161,14 @@ annotated_signed_transaction wallet_api::decline_voting_rights( string account, 
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::claimRewardBalance( string account, asset ECOreward, asset EUSDreward, asset ESCORreward, bool broadcast )
+annotated_signed_transaction wallet_api::claimRewardBalance( string account, asset TMEreward, asset TSDreward, asset SCOREreward, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
    claimRewardBalance_operation op;
    op.account = account;
-   op.ECOreward = ECOreward;
-   op.EUSDreward = EUSDreward;
-   op.ESCORreward = ESCORreward;
+   op.TMEreward = TMEreward;
+   op.TSDreward = TSDreward;
+   op.SCOREreward = SCOREreward;
 
    signed_transaction tx;
    tx.operations.push_back( op );

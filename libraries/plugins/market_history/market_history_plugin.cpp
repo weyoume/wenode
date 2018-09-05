@@ -61,31 +61,31 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                b.open = open;
                b.seconds = bucket;
 
-               if( op.open_pays.symbol == SYMBOL_ECO )
+               if( op.open_pays.symbol == SYMBOL_TME )
                {
-                  b.high_ECO = op.open_pays.amount;
-                  b.high_EUSD = op.current_pays.amount;
-                  b.low_ECO = op.open_pays.amount;
-                  b.low_EUSD = op.current_pays.amount;
-                  b.open_ECO = op.open_pays.amount;
-                  b.open_EUSD = op.current_pays.amount;
-                  b.close_ECO = op.open_pays.amount;
-                  b.close_EUSD = op.current_pays.amount;
-                  b.ECO_volume = op.open_pays.amount;
-                  b.EUSD_volume = op.current_pays.amount;
+                  b.high_TME = op.open_pays.amount;
+                  b.high_TSD = op.current_pays.amount;
+                  b.low_TME = op.open_pays.amount;
+                  b.low_TSD = op.current_pays.amount;
+                  b.open_TME = op.open_pays.amount;
+                  b.open_TSD = op.current_pays.amount;
+                  b.close_TME = op.open_pays.amount;
+                  b.close_TSD = op.current_pays.amount;
+                  b.TME_volume = op.open_pays.amount;
+                  b.TSD_volume = op.current_pays.amount;
                }
                else
                {
-                  b.high_ECO = op.current_pays.amount;
-                  b.high_EUSD = op.open_pays.amount;
-                  b.low_ECO = op.current_pays.amount;
-                  b.low_EUSD = op.open_pays.amount;
-                  b.open_ECO = op.current_pays.amount;
-                  b.open_EUSD = op.open_pays.amount;
-                  b.close_ECO = op.current_pays.amount;
-                  b.close_EUSD = op.open_pays.amount;
-                  b.ECO_volume = op.current_pays.amount;
-                  b.EUSD_volume = op.open_pays.amount;
+                  b.high_TME = op.current_pays.amount;
+                  b.high_TSD = op.open_pays.amount;
+                  b.low_TME = op.current_pays.amount;
+                  b.low_TSD = op.open_pays.amount;
+                  b.open_TME = op.current_pays.amount;
+                  b.open_TSD = op.open_pays.amount;
+                  b.close_TME = op.current_pays.amount;
+                  b.close_TSD = op.open_pays.amount;
+                  b.TME_volume = op.current_pays.amount;
+                  b.TSD_volume = op.open_pays.amount;
                }
             });
          }
@@ -93,42 +93,42 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
          {
             db.modify( *itr, [&]( bucket_object& b )
             {
-               if( op.open_pays.symbol == SYMBOL_ECO )
+               if( op.open_pays.symbol == SYMBOL_TME )
                {
-                  b.ECO_volume += op.open_pays.amount;
-                  b.EUSD_volume += op.current_pays.amount;
-                  b.close_ECO = op.open_pays.amount;
-                  b.close_EUSD = op.current_pays.amount;
+                  b.TME_volume += op.open_pays.amount;
+                  b.TSD_volume += op.current_pays.amount;
+                  b.close_TME = op.open_pays.amount;
+                  b.close_TSD = op.current_pays.amount;
 
                   if( b.high() < price( op.current_pays, op.open_pays ) )
                   {
-                     b.high_ECO = op.open_pays.amount;
-                     b.high_EUSD = op.current_pays.amount;
+                     b.high_TME = op.open_pays.amount;
+                     b.high_TSD = op.current_pays.amount;
                   }
 
                   if( b.low() > price( op.current_pays, op.open_pays ) )
                   {
-                     b.low_ECO = op.open_pays.amount;
-                     b.low_EUSD = op.current_pays.amount;
+                     b.low_TME = op.open_pays.amount;
+                     b.low_TSD = op.current_pays.amount;
                   }
                }
                else
                {
-                  b.ECO_volume += op.current_pays.amount;
-                  b.EUSD_volume += op.open_pays.amount;
-                  b.close_ECO = op.current_pays.amount;
-                  b.close_EUSD = op.open_pays.amount;
+                  b.TME_volume += op.current_pays.amount;
+                  b.TSD_volume += op.open_pays.amount;
+                  b.close_TME = op.current_pays.amount;
+                  b.close_TSD = op.open_pays.amount;
 
                   if( b.high() < price( op.open_pays, op.current_pays ) )
                   {
-                     b.high_ECO = op.current_pays.amount;
-                     b.high_EUSD = op.open_pays.amount;
+                     b.high_TME = op.current_pays.amount;
+                     b.high_TSD = op.open_pays.amount;
                   }
 
                   if( b.low() > price( op.open_pays, op.current_pays ) )
                   {
-                     b.low_ECO = op.current_pays.amount;
-                     b.low_EUSD = op.open_pays.amount;
+                     b.low_TME = op.current_pays.amount;
+                     b.low_TSD = op.open_pays.amount;
                   }
                }
             });

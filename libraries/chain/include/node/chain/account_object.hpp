@@ -54,56 +54,56 @@ namespace node { namespace chain {
          uint16_t          voting_power = PERCENT_100;   ///< current voting power of this account, it falls after every vote
          time_point_sec    last_vote_time; ///< used to increase the voting power of this account the longer it goes without voting.
 
-         asset             balance = asset( 0, SYMBOL_ECO );  ///< total liquid ESCOR held by this account
-         asset             ECOsavingsBalance = asset( 0, SYMBOL_ECO );  ///< total liquid ESCOR held by this account
+         asset             balance = asset( 0, SYMBOL_TME );  ///< total liquid SCORE held by this account
+         asset             TMEsavingsBalance = asset( 0, SYMBOL_TME );  ///< total liquid SCORE held by this account
 
          /**
-          *  EUSD Deposits pay interest based upon the interest rate set by witnesses. The purpose of these
-          *  fields is to track the total (time * EUSDbalance) that it is held. Then at the appointed time
+          *  TSD Deposits pay interest based upon the interest rate set by witnesses. The purpose of these
+          *  fields is to track the total (time * TSDbalance) that it is held. Then at the appointed time
           *  interest can be paid using the following equation:
           *
-          *  interest = interest_rate * EUSD_seconds / seconds_per_year
+          *  interest = interest_rate * TSD_seconds / seconds_per_year
           *
-          *  Every time the EUSDbalance is updated the EUSD_seconds is also updated. If at least
-          *  MIN_COMPOUNDING_INTERVAL_SECONDS has past since EUSD_last_interest_payment then
-          *  interest is added to EUSDbalance.
+          *  Every time the TSDbalance is updated the TSD_seconds is also updated. If at least
+          *  MIN_COMPOUNDING_INTERVAL_SELATERCONDS has past since TSD_last_interest_payment then
+          *  interest is added to TSDbalance.
           *
-          *  @defgroup EUSD_data EUSD Balance Data
+          *  @defgroup TSD_data TSD Balance Data
           */
          ///@{
-         asset             EUSDbalance = asset( 0, SYMBOL_EUSD ); /// total EUSD balance
-         uint128_t         EUSD_seconds; ///< total EUSD * how long it has been hel
-         time_point_sec    EUSD_seconds_last_update; ///< the last time the EUSD_seconds was updated
-         time_point_sec    EUSD_last_interest_payment; ///< used to pay interest at most once per month
+         asset             TSDbalance = asset( 0, SYMBOL_TSD ); /// total TSD balance
+         uint128_t         TSD_seconds; ///< total TSD * how long it has been hel
+         time_point_sec    TSD_seconds_last_update; ///< the last time the TSD_seconds was updated
+         time_point_sec    TSD_last_interest_payment; ///< used to pay interest at most once per month
 
 
-         asset             EUSDsavingsBalance = asset( 0, SYMBOL_EUSD ); /// total EUSD balance
-         uint128_t         savings_EUSD_seconds; ///< total EUSD * how long it has been hel
-         time_point_sec    savings_EUSD_seconds_last_update; ///< the last time the EUSD_seconds was updated
-         time_point_sec    savings_EUSD_last_interest_payment; ///< used to pay interest at most once per month
+         asset             TSDsavingsBalance = asset( 0, SYMBOL_TSD ); /// total TSD balance
+         uint128_t         savings_TSD_seconds; ///< total TSD * how long it has been hel
+         time_point_sec    savings_TSD_seconds_last_update; ///< the last time the TSD_seconds was updated
+         time_point_sec    savings_TSD_last_interest_payment; ///< used to pay interest at most once per month
 
          uint8_t           savings_withdraw_requests = 0;
          ///@}
 
-         asset             ESCORrewardBalanceInECO = asset( 0, SYMBOL_ECO );
-         asset             ECOrewardBalance = asset( 0, SYMBOL_ECO );
-         asset             ESCORrewardBalance = asset( 0, SYMBOL_ESCOR );
-         asset             EUSDrewardBalance = asset( 0, SYMBOL_EUSD );
+         asset             SCORErewardBalanceInTME = asset( 0, SYMBOL_TME );
+         asset             TMErewardBalance = asset( 0, SYMBOL_TME );
+         asset             SCORErewardBalance = asset( 0, SYMBOL_SCORE );
+         asset             TSDrewardBalance = asset( 0, SYMBOL_TSD );
 
          share_type        curationRewards = 0;
          share_type        posting_rewards = 0;
 
-         asset             ESCOR = asset( 0, SYMBOL_ESCOR ); ///< total ESCOR held by this account, controls its voting power
-         asset             ESCORDelegated = asset( 0, SYMBOL_ESCOR );
-         asset             ESCORreceived = asset( 0, SYMBOL_ESCOR );
+         asset             SCORE = asset( 0, SYMBOL_SCORE ); ///< total SCORE held by this account, controls its voting power
+         asset             SCOREDelegated = asset( 0, SYMBOL_SCORE );
+         asset             SCOREreceived = asset( 0, SYMBOL_SCORE );
 
-         asset             ESCORwithdrawRateInECO = asset( 0, SYMBOL_ESCOR ); ///< at the time this is updated it can be at most ESCOR/104
-         time_point_sec    nextESCORwithdrawalTime = fc::time_point_sec::maximum(); ///< after every withdrawal this is incremented by 1 week
-         share_type        withdrawn = 0; /// Track how many ESCOR have been withdrawn
+         asset             SCOREwithdrawRateInTME = asset( 0, SYMBOL_SCORE ); ///< at the time this is updated it can be at most SCORE/104
+         time_point_sec    nextSCOREwithdrawalTime = fc::time_point_sec::maximum(); ///< after every withdrawal this is incremented by 1 week
+         share_type        withdrawn = 0; /// Track how many SCORE have been withdrawn
          share_type        to_withdraw = 0; /// Might be able to look this up with operation history.
          uint16_t          withdraw_routes = 0;
 
-         fc::array<share_type, MAX_PROXY_RECURSION_DEPTH> proxied_ESCORfundECObalance_votes;// = std::vector<share_type>( MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total ESCOR votes proxied to this account
+         fc::array<share_type, MAX_PROXY_RECURSION_DEPTH> proxied_SCOREfundTMEbalance_votes;// = std::vector<share_type>( MAX_PROXY_RECURSION_DEPTH, 0 ); ///< the total SCORE votes proxied to this account
 
          uint16_t          witnesses_voted_for = 0;
 
@@ -113,17 +113,17 @@ namespace node { namespace chain {
 
          /// This function should be used only when the account votes for a witness directly
          share_type        witness_vote_weight()const {
-            return std::accumulate( proxied_ESCORfundECObalance_votes.begin(),
-                                    proxied_ESCORfundECObalance_votes.end(),
-                                    ESCOR.amount );
+            return std::accumulate( proxied_SCOREfundTMEbalance_votes.begin(),
+                                    proxied_SCOREfundTMEbalance_votes.end(),
+                                    SCORE.amount );
          }
-         share_type        proxied_ESCORfundECObalance_votes_total()const {
-            return std::accumulate( proxied_ESCORfundECObalance_votes.begin(),
-                                    proxied_ESCORfundECObalance_votes.end(),
+         share_type        proxied_SCOREfundTMEbalance_votes_total()const {
+            return std::accumulate( proxied_SCOREfundTMEbalance_votes.begin(),
+                                    proxied_SCOREfundTMEbalance_votes.end(),
                                     share_type() );
          }
 
-         asset effective_ESCOR()const { return ESCOR - ESCORDelegated + ESCORreceived; }
+         asset effective_SCORE()const { return SCORE - SCOREDelegated + SCOREreceived; }
    };
 
    class account_authority_object : public object< account_authority_object_type, account_authority_object >
@@ -149,38 +149,38 @@ namespace node { namespace chain {
          time_point_sec    last_owner_update;
    };
 
-   class ECO_fund_for_ESCOR_delegation_object : public object< ECO_fund_for_ESCOR_delegation_object_type, ECO_fund_for_ESCOR_delegation_object >
+   class TME_fund_for_SCORE_delegation_object : public object< TME_fund_for_SCORE_delegation_object_type, TME_fund_for_SCORE_delegation_object >
    {
       public:
          template< typename Constructor, typename Allocator >
-         ECO_fund_for_ESCOR_delegation_object( Constructor&& c, allocator< Allocator > a )
+         TME_fund_for_SCORE_delegation_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
 
-         ECO_fund_for_ESCOR_delegation_object() {}
+         TME_fund_for_SCORE_delegation_object() {}
 
          id_type           id;
          account_name_type delegator;
          account_name_type delegatee;
-         asset             ESCOR;
+         asset             SCORE;
          time_point_sec    min_delegation_time;
    };
 
-   class ECO_fund_for_ESCOR_delegation_expiration_object : public object< ECO_fund_for_ESCOR_delegation_expiration_object_type, ECO_fund_for_ESCOR_delegation_expiration_object >
+   class TME_fund_for_SCORE_delegation_expiration_object : public object< TME_fund_for_SCORE_delegation_expiration_object_type, TME_fund_for_SCORE_delegation_expiration_object >
    {
       public:
          template< typename Constructor, typename Allocator >
-         ECO_fund_for_ESCOR_delegation_expiration_object( Constructor&& c, allocator< Allocator > a )
+         TME_fund_for_SCORE_delegation_expiration_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
 
-         ECO_fund_for_ESCOR_delegation_expiration_object() {}
+         TME_fund_for_SCORE_delegation_expiration_object() {}
 
          id_type           id;
          account_name_type delegator;
-         asset             ESCOR;
+         asset             SCORE;
          time_point_sec    expiration;
    };
 
@@ -241,10 +241,10 @@ namespace node { namespace chain {
    struct by_name;
    struct by_proxy;
    struct by_last_post;
-   struct by_nextESCORwithdrawalTime;
-   struct by_ECObalance;
-   struct by_ESCOR_balance;
-   struct by_EUSDbalance;
+   struct by_nextSCOREwithdrawalTime;
+   struct by_TMEbalance;
+   struct by_SCORE_balance;
+   struct by_TSDbalance;
    struct by_post_count;
    struct by_vote_count;
 
@@ -264,11 +264,11 @@ namespace node { namespace chain {
                member< account_object, account_id_type, &account_object::id >
             > /// composite key by proxy
          >,
-         ordered_unique< tag< by_nextESCORwithdrawalTime >,
+         ordered_unique< tag< by_nextSCOREwithdrawalTime >,
             composite_key< account_object,
-               member< account_object, time_point_sec, &account_object::nextESCORwithdrawalTime >,
+               member< account_object, time_point_sec, &account_object::nextSCOREwithdrawalTime >,
                member< account_object, account_id_type, &account_object::id >
-            > /// composite key by_nextESCORwithdrawalTime
+            > /// composite key by_nextSCOREwithdrawalTime
          >,
          ordered_unique< tag< by_last_post >,
             composite_key< account_object,
@@ -277,23 +277,23 @@ namespace node { namespace chain {
             >,
             composite_key_compare< std::greater< time_point_sec >, std::less< account_id_type > >
          >,
-         ordered_unique< tag< by_ECObalance >,
+         ordered_unique< tag< by_TMEbalance >,
             composite_key< account_object,
                member< account_object, asset, &account_object::balance >,
                member< account_object, account_id_type, &account_object::id >
             >,
             composite_key_compare< std::greater< asset >, std::less< account_id_type > >
          >,
-         ordered_unique< tag< by_ESCOR_balance >,
+         ordered_unique< tag< by_SCORE_balance >,
             composite_key< account_object,
-               member< account_object, asset, &account_object::ESCOR >,
+               member< account_object, asset, &account_object::SCORE >,
                member< account_object, account_id_type, &account_object::id >
             >,
             composite_key_compare< std::greater< asset >, std::less< account_id_type > >
          >,
-         ordered_unique< tag< by_EUSDbalance >,
+         ordered_unique< tag< by_TSDbalance >,
             composite_key< account_object,
-               member< account_object, asset, &account_object::EUSDbalance >,
+               member< account_object, asset, &account_object::TSDbalance >,
                member< account_object, account_id_type, &account_object::id >
             >,
             composite_key_compare< std::greater< asset >, std::less< account_id_type > >
@@ -364,47 +364,47 @@ namespace node { namespace chain {
    struct by_delegation;
 
    typedef multi_index_container <
-      ECO_fund_for_ESCOR_delegation_object,
+      TME_fund_for_SCORE_delegation_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< ECO_fund_for_ESCOR_delegation_object, ECO_fund_for_ESCOR_delegation_id_type, &ECO_fund_for_ESCOR_delegation_object::id > >,
+            member< TME_fund_for_SCORE_delegation_object, TME_fund_for_SCORE_delegation_id_type, &TME_fund_for_SCORE_delegation_object::id > >,
          ordered_unique< tag< by_delegation >,
-            composite_key< ECO_fund_for_ESCOR_delegation_object,
-               member< ECO_fund_for_ESCOR_delegation_object, account_name_type, &ECO_fund_for_ESCOR_delegation_object::delegator >,
-               member< ECO_fund_for_ESCOR_delegation_object, account_name_type, &ECO_fund_for_ESCOR_delegation_object::delegatee >
+            composite_key< TME_fund_for_SCORE_delegation_object,
+               member< TME_fund_for_SCORE_delegation_object, account_name_type, &TME_fund_for_SCORE_delegation_object::delegator >,
+               member< TME_fund_for_SCORE_delegation_object, account_name_type, &TME_fund_for_SCORE_delegation_object::delegatee >
             >,
             composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
          >
       >,
-      allocator< ECO_fund_for_ESCOR_delegation_object >
-   > ECO_fund_for_ESCOR_delegation_index;
+      allocator< TME_fund_for_SCORE_delegation_object >
+   > TME_fund_for_SCORE_delegation_index;
 
    struct by_expiration;
    struct by_account_expiration;
 
    typedef multi_index_container <
-      ECO_fund_for_ESCOR_delegation_expiration_object,
+      TME_fund_for_SCORE_delegation_expiration_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< ECO_fund_for_ESCOR_delegation_expiration_object, ECO_fund_for_ESCOR_delegation_expiration_id_type, &ECO_fund_for_ESCOR_delegation_expiration_object::id > >,
+            member< TME_fund_for_SCORE_delegation_expiration_object, TME_fund_for_SCORE_delegation_expiration_id_type, &TME_fund_for_SCORE_delegation_expiration_object::id > >,
          ordered_unique< tag< by_expiration >,
-            composite_key< ECO_fund_for_ESCOR_delegation_expiration_object,
-               member< ECO_fund_for_ESCOR_delegation_expiration_object, time_point_sec, &ECO_fund_for_ESCOR_delegation_expiration_object::expiration >,
-               member< ECO_fund_for_ESCOR_delegation_expiration_object, ECO_fund_for_ESCOR_delegation_expiration_id_type, &ECO_fund_for_ESCOR_delegation_expiration_object::id >
+            composite_key< TME_fund_for_SCORE_delegation_expiration_object,
+               member< TME_fund_for_SCORE_delegation_expiration_object, time_point_sec, &TME_fund_for_SCORE_delegation_expiration_object::expiration >,
+               member< TME_fund_for_SCORE_delegation_expiration_object, TME_fund_for_SCORE_delegation_expiration_id_type, &TME_fund_for_SCORE_delegation_expiration_object::id >
             >,
-            composite_key_compare< std::less< time_point_sec >, std::less< ECO_fund_for_ESCOR_delegation_expiration_id_type > >
+            composite_key_compare< std::less< time_point_sec >, std::less< TME_fund_for_SCORE_delegation_expiration_id_type > >
          >,
          ordered_unique< tag< by_account_expiration >,
-            composite_key< ECO_fund_for_ESCOR_delegation_expiration_object,
-               member< ECO_fund_for_ESCOR_delegation_expiration_object, account_name_type, &ECO_fund_for_ESCOR_delegation_expiration_object::delegator >,
-               member< ECO_fund_for_ESCOR_delegation_expiration_object, time_point_sec, &ECO_fund_for_ESCOR_delegation_expiration_object::expiration >,
-               member< ECO_fund_for_ESCOR_delegation_expiration_object, ECO_fund_for_ESCOR_delegation_expiration_id_type, &ECO_fund_for_ESCOR_delegation_expiration_object::id >
+            composite_key< TME_fund_for_SCORE_delegation_expiration_object,
+               member< TME_fund_for_SCORE_delegation_expiration_object, account_name_type, &TME_fund_for_SCORE_delegation_expiration_object::delegator >,
+               member< TME_fund_for_SCORE_delegation_expiration_object, time_point_sec, &TME_fund_for_SCORE_delegation_expiration_object::expiration >,
+               member< TME_fund_for_SCORE_delegation_expiration_object, TME_fund_for_SCORE_delegation_expiration_id_type, &TME_fund_for_SCORE_delegation_expiration_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< time_point_sec >, std::less< ECO_fund_for_ESCOR_delegation_expiration_id_type > >
+            composite_key_compare< std::less< account_name_type >, std::less< time_point_sec >, std::less< TME_fund_for_SCORE_delegation_expiration_id_type > >
          >
       >,
-      allocator< ECO_fund_for_ESCOR_delegation_expiration_object >
-   > ECO_fund_for_ESCOR_delegation_expiration_index;
+      allocator< TME_fund_for_SCORE_delegation_expiration_object >
+   > TME_fund_for_SCORE_delegation_expiration_index;
 
    struct by_expiration;
 
@@ -463,15 +463,15 @@ FC_REFLECT( node::chain::account_object,
              (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recoveryAccount)(last_account_recovery)(reset_account)
              (comment_count)(lifetime_vote_count)(post_count)(can_vote)(voting_power)(last_vote_time)
              (balance)
-             (ECOsavingsBalance)
-             (EUSDbalance)(EUSD_seconds)(EUSD_seconds_last_update)(EUSD_last_interest_payment)
-             (EUSDsavingsBalance)(savings_EUSD_seconds)(savings_EUSD_seconds_last_update)(savings_EUSD_last_interest_payment)(savings_withdraw_requests)
-             (ECOrewardBalance)(EUSDrewardBalance)(ESCORrewardBalance)(ESCORrewardBalanceInECO)
-             (ESCOR)(ESCORDelegated)(ESCORreceived)
-             (ESCORwithdrawRateInECO)(nextESCORwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
+             (TMEsavingsBalance)
+             (TSDbalance)(TSD_seconds)(TSD_seconds_last_update)(TSD_last_interest_payment)
+             (TSDsavingsBalance)(savings_TSD_seconds)(savings_TSD_seconds_last_update)(savings_TSD_last_interest_payment)(savings_withdraw_requests)
+             (TMErewardBalance)(TSDrewardBalance)(SCORErewardBalance)(SCORErewardBalanceInTME)
+             (SCORE)(SCOREDelegated)(SCOREreceived)
+             (SCOREwithdrawRateInTME)(nextSCOREwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
              (curationRewards)
              (posting_rewards)
-             (proxied_ESCORfundECObalance_votes)(witnesses_voted_for)
+             (proxied_SCOREfundTMEbalance_votes)(witnesses_voted_for)
              (last_post)(last_root_post)(post_bandwidth)
           )
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_object, node::chain::account_index )
@@ -481,13 +481,13 @@ FC_REFLECT( node::chain::account_authority_object,
 )
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_authority_object, node::chain::account_authority_index )
 
-FC_REFLECT( node::chain::ECO_fund_for_ESCOR_delegation_object,
-            (id)(delegator)(delegatee)(ESCOR)(min_delegation_time) )
-CHAINBASE_SET_INDEX_TYPE( node::chain::ECO_fund_for_ESCOR_delegation_object, node::chain::ECO_fund_for_ESCOR_delegation_index )
+FC_REFLECT( node::chain::TME_fund_for_SCORE_delegation_object,
+            (id)(delegator)(delegatee)(SCORE)(min_delegation_time) )
+CHAINBASE_SET_INDEX_TYPE( node::chain::TME_fund_for_SCORE_delegation_object, node::chain::TME_fund_for_SCORE_delegation_index )
 
-FC_REFLECT( node::chain::ECO_fund_for_ESCOR_delegation_expiration_object,
-            (id)(delegator)(ESCOR)(expiration) )
-CHAINBASE_SET_INDEX_TYPE( node::chain::ECO_fund_for_ESCOR_delegation_expiration_object, node::chain::ECO_fund_for_ESCOR_delegation_expiration_index )
+FC_REFLECT( node::chain::TME_fund_for_SCORE_delegation_expiration_object,
+            (id)(delegator)(SCORE)(expiration) )
+CHAINBASE_SET_INDEX_TYPE( node::chain::TME_fund_for_SCORE_delegation_expiration_object, node::chain::TME_fund_for_SCORE_delegation_expiration_index )
 
 FC_REFLECT( node::chain::owner_authority_history_object,
              (id)(account)(previous_owner_authority)(last_valid_time)

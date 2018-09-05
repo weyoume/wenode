@@ -284,21 +284,21 @@ namespace node { namespace chain {
           */
          uint32_t get_slot_at_time(fc::time_point_sec when)const;
 
-         /** @return the EUSD created and deposited to_account, may return ECO if there is no median feed */
-         std::pair< asset, asset > create_EUSD( const account_object& to_account, asset ECO, bool to_reward_balance=false );
-         asset createECOfundForESCOR( const account_object& to_account, asset ECO, bool to_reward_balance=false );
-         void adjust_total_payout( const comment_object& a, const asset& EUSD, const asset& curator_EUSD_value, const asset& beneficiary_value );
+         /** @return the TSD created and deposited to_account, may return TME if there is no median feed */
+         std::pair< asset, asset > create_TSD( const account_object& to_account, asset TME, bool to_reward_balance=false );
+         asset createTMEfundForSCORE( const account_object& to_account, asset TME, bool to_reward_balance=false );
+         void adjust_total_payout( const comment_object& a, const asset& TSD, const asset& curator_TSD_value, const asset& beneficiary_value );
 
          void        adjust_liquidity_reward( const account_object& owner, const asset& volume, bool is_bid );
          void        adjust_balance( const account_object& a, const asset& delta );
-         void        adjust_ECOsavingsBalance( const account_object& a, const asset& delta );
+         void        adjust_TMEsavingsBalance( const account_object& a, const asset& delta );
          void        adjust_reward_balance( const account_object& a, const asset& delta );
-         void        adjust_supply( const asset& delta, bool adjust_ECO_fund_for_ESCOR = false );
-         void        adjust_ESCORreward2( const comment_object& comment, fc::uint128_t old_ESCORreward2, fc::uint128_t new_ESCORreward2 );
+         void        adjust_supply( const asset& delta, bool adjust_TME_fund_for_SCORE = false );
+         void        adjust_SCOREreward2( const comment_object& comment, fc::uint128_t old_SCOREreward2, fc::uint128_t new_SCOREreward2 );
          void        update_owner_authority( const account_object& account, const authority& owner_authority );
 
          asset       get_balance( const account_object& a, asset_symbol_type symbol )const;
-         asset       get_ECOsavingsBalance( const account_object& a, asset_symbol_type symbol )const;
+         asset       get_TMEsavingsBalance( const account_object& a, asset_symbol_type symbol )const;
          asset       get_balance( const string& aname, asset_symbol_type symbol )const { return get_balance( get_account(aname), symbol ); }
 
          /** this updates the votes for witnesses as a result of account voting proxy changing */
@@ -306,7 +306,7 @@ namespace node { namespace chain {
                                             const std::array< share_type, MAX_PROXY_RECURSION_DEPTH+1 >& delta,
                                             int depth = 0 );
 
-         /** this updates the votes for all witnesses as a result of account ESCOR changing */
+         /** this updates the votes for all witnesses as a result of account SCORE changing */
          void adjust_proxied_witness_votes( const account_object& a, share_type delta, int depth = 0 );
 
          /** this is called by `adjust_proxied_witness_votes` when account proxy to self */
@@ -320,7 +320,7 @@ namespace node { namespace chain {
           * adjust_proxied_witness_votes( a, -a.witness_vote_weight() )
           */
          void clear_witness_votes( const account_object& a );
-         void process_ECO_fund_for_ESCOR_withdrawals();
+         void process_TME_fund_for_SCORE_withdrawals();
          share_type pay_curators( const comment_object& c, share_type& max_rewards );
          share_type cashout_comment_helper( util::comment_reward_context& ctx, const comment_object& comment );
          void process_comment_cashout();
@@ -345,11 +345,11 @@ namespace node { namespace chain {
          void  pay_liquidity_reward();
 
          /**
-          * Helper method to return the current EUSD value of a given amount of
-          * ECO.  Return 0 EUSD if there isn't a current_median_history
+          * Helper method to return the current TSD value of a given amount of
+          * TME.  Return 0 TSD if there isn't a current_median_history
           */
-         asset to_EUSD( const asset& ECO )const;
-         asset to_ECO( const asset& EUSD )const;
+         asset to_TSD( const asset& TME )const;
+         asset to_TME( const asset& TSD )const;
 
          time_point_sec   head_block_time()const;
          uint32_t         head_block_num()const;
@@ -385,7 +385,7 @@ namespace node { namespace chain {
          void cancel_order( const limit_order_object& obj );
          int  match( const limit_order_object& bid, const limit_order_object& ask, const price& trade_price );
 
-         void perform_ESCOR_split( uint32_t magnitude );
+         void perform_SCORE_split( uint32_t magnitude );
          void retally_comment_children();
          void retally_witness_votes();
          void retally_witness_vote_counts( bool force = false );

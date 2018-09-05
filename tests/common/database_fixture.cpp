@@ -230,8 +230,8 @@ const account_object& database_fixture::accountCreate(
          accountCreateWithDelegation_operation op;
          op.newAccountName = name;
          op.creator = creator;
-         op.fee = asset( fee, SYMBOL_ECO );
-         op.delegation = asset( 0, SYMBOL_ESCOR );
+         op.fee = asset( fee, SYMBOL_TME );
+         op.delegation = asset( 0, SYMBOL_SCORE );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
@@ -245,7 +245,7 @@ const account_object& database_fixture::accountCreate(
          accountCreate_operation op;
          op.newAccountName = name;
          op.creator = creator;
-         op.fee = asset( fee, SYMBOL_ECO );
+         op.fee = asset( fee, SYMBOL_TME );
          op.owner = authority( 1, key, 1 );
          op.active = authority( 1, key, 1 );
          op.posting = authority( 1, post_key, 1 );
@@ -281,7 +281,7 @@ const account_object& database_fixture::accountCreate(
          name,
          INIT_MINER_NAME,
          init_account_priv_key,
-         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_ECO_MODIFIER, share_type( 100 ) ),
+         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER, share_type( 100 ) ),
          key,
          post_key,
          "" );
@@ -310,7 +310,7 @@ const witness_object& database_fixture::witness_create(
       op.owner = owner;
       op.url = url;
       op.block_signing_key = signing_key;
-      op.fee = asset( fee, SYMBOL_ECO );
+      op.fee = asset( fee, SYMBOL_TME );
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -348,30 +348,30 @@ void database_fixture::fund(
       {
          db.modify( db.get_account( account_name ), [&]( account_object& a )
          {
-            if( amount.symbol == SYMBOL_ECO )
+            if( amount.symbol == SYMBOL_TME )
                a.balance += amount;
-            else if( amount.symbol == SYMBOL_EUSD )
+            else if( amount.symbol == SYMBOL_TSD )
             {
-               a.EUSDbalance += amount;
-               a.EUSD_seconds_last_update = db.head_block_time();
+               a.TSDbalance += amount;
+               a.TSD_seconds_last_update = db.head_block_time();
             }
          });
 
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
          {
-            if( amount.symbol == SYMBOL_ECO )
+            if( amount.symbol == SYMBOL_TME )
                gpo.current_supply += amount;
-            else if( amount.symbol == SYMBOL_EUSD )
-               gpo.current_EUSD_supply += amount;
+            else if( amount.symbol == SYMBOL_TSD )
+               gpo.current_TSD_supply += amount;
          });
 
-         if( amount.symbol == SYMBOL_EUSD )
+         if( amount.symbol == SYMBOL_TSD )
          {
             const auto& median_feed = db.get_feed_history();
             if( median_feed.current_median_history.is_null() )
                db.modify( median_feed, [&]( feed_history_object& f )
                {
-                  f.current_median_history = price( asset( 1, SYMBOL_EUSD ), asset( 1, SYMBOL_ECO ) );
+                  f.current_median_history = price( asset( 1, SYMBOL_TSD ), asset( 1, SYMBOL_TME ) );
                });
          }
 
@@ -390,19 +390,19 @@ void database_fixture::convert(
       const account_object& account = db.get_account( account_name );
 
 
-      if ( amount.symbol == SYMBOL_ECO )
+      if ( amount.symbol == SYMBOL_TME )
       {
          db.adjust_balance( account, -amount );
-         db.adjust_balance( account, db.to_EUSD( amount ) );
+         db.adjust_balance( account, db.to_TSD( amount ) );
          db.adjust_supply( -amount );
-         db.adjust_supply( db.to_EUSD( amount ) );
+         db.adjust_supply( db.to_TSD( amount ) );
       }
-      else if ( amount.symbol == SYMBOL_EUSD )
+      else if ( amount.symbol == SYMBOL_TSD )
       {
          db.adjust_balance( account, -amount );
-         db.adjust_balance( account, db.to_ECO( amount ) );
+         db.adjust_balance( account, db.to_TME( amount ) );
          db.adjust_supply( -amount );
-         db.adjust_supply( db.to_ECO( amount ) );
+         db.adjust_supply( db.to_TME( amount ) );
       }
    } FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
@@ -431,10 +431,10 @@ void database_fixture::score( const string& from, const share_type& amount )
 {
    try
    {
-      transferECOtoESCORfund_operation op;
+      transferTMEtoSCOREfund_operation op;
       op.from = from;
       op.to = "";
-      op.amount = asset( amount, SYMBOL_ECO );
+      op.amount = asset( amount, SYMBOL_TME );
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -446,7 +446,7 @@ void database_fixture::score( const string& from, const share_type& amount )
 
 void database_fixture::score( const string& account, const asset& amount )
 {
-   if( amount.symbol != SYMBOL_ECO )
+   if( amount.symbol != SYMBOL_TME )
       return;
 
    db_plugin->debug_update( [=]( database& db )
@@ -456,7 +456,7 @@ void database_fixture::score( const string& account, const asset& amount )
          gpo.current_supply += amount;
       });
 
-      db.createECOfundForESCOR( db.get_account( account ), amount );
+      db.createTMEfundForSCORE( db.get_account( account ), amount );
 
       db.update_virtual_supply();
    }, default_skip );

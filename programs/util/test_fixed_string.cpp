@@ -34,11 +34,11 @@ void check( const std::string& s, const std::string& t,
 template< typename Storage >
 void check_variant( const std::string& s, const node::protocol::fixed_string< Storage >& fs )
 {
-   fc::variant vs, ESCOR;
+   fc::variant vs, SCORE;
    fc::to_variant( s, vs );
-   fc::to_variant( fs, ESCOR );
-   if( !(vs.is_string() && ESCOR.is_string() &&
-         (vs.get_string() == s) && (ESCOR.get_string() == s)
+   fc::to_variant( fs, SCORE );
+   if( !(vs.is_string() && SCORE.is_string() &&
+         (vs.get_string() == s) && (SCORE.get_string() == s)
      )  )
    {
       std::cout << "to_variant() check failed on " << s << std::endl;
@@ -48,7 +48,7 @@ void check_variant( const std::string& s, const node::protocol::fixed_string< St
    std::string s2;
    node::protocol::fixed_string< Storage > fs2;
    fc::from_variant( vs, s2 );
-   fc::from_variant( ESCOR, fs2 );
+   fc::from_variant( SCORE, fs2 );
    if( s2 != s )
    {
       std::cout << "from_variant() check failed on " << s << std::endl;

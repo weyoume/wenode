@@ -106,7 +106,7 @@ def run_node_tests( debug_node ):
 
       ret = rpc.get_discussions_by_cashout_time( '', '', str( 0xFFFFFFFF ) );
 
-      print( 'author, url, total_payout_value, abs_ESCORreward, num_active_votes' )
+      print( 'author, url, total_payout_value, abs_SCOREreward, num_active_votes' )
 
       for comment in ret:
          print( comment[ 'author' ] + ', ' + comment[ 'url' ] + ', ' + comment[ 'total_payout_value' ] + ', ' + comment[ 'cashout_time' ] )
@@ -114,7 +114,7 @@ def run_node_tests( debug_node ):
       '''
       print( "Printing account reward dump:" )
       sorted_rewards = sorted( account_rewards.items(), key=operator.itemgetter(1) )
-      print( "account, curation_ECO" )
+      print( "account, curation_TME" )
       for rew in sorted_rewards:
          print( rew[0] + ', ' + str( rew[1] ) + ', ' + str( vote_count[ rew[0] ] ) )
 

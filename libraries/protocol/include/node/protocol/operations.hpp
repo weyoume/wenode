@@ -14,8 +14,8 @@ namespace node { namespace protocol {
             comment_operation,
 
             transfer_operation,
-            transferECOtoESCORfund_operation,
-            withdrawESCOR_operation,
+            transferTMEtoSCOREfund_operation,
+            withdrawSCORE_operation,
 
             limit_order_create_operation,
             limit_order_cancel_operation,
@@ -39,7 +39,7 @@ namespace node { namespace protocol {
             deleteComment_operation,
             customJson_operation,
             comment_options_operation,
-            setWithdrawESCORasECOroute_operation,
+            setWithdrawSCOREasTMEroute_operation,
             limit_order_create2_operation,
             challenge_authority_operation,
             prove_authority_operation,
@@ -59,7 +59,7 @@ namespace node { namespace protocol {
             reset_account_operation,
             set_reset_account_operation,
             claimRewardBalance_operation,
-            delegateESCOR_operation,
+            delegateSCORE_operation,
             accountCreateWithDelegation_operation,
 
             /// virtual operations below this point
@@ -69,13 +69,13 @@ namespace node { namespace protocol {
             comment_reward_operation,
             liquidity_reward_operation,
             interest_operation,
-            fillESCORWithdraw_operation,
+            fillSCOREWithdraw_operation,
             fill_order_operation,
             shutdown_witness_operation,
             fill_transferFromSavings_operation,
             hardfork_operation,
             comment_payout_update_operation,
-            return_ESCOR_delegation_operation,
+            return_SCORE_delegation_operation,
             comment_benefactor_reward_operation,
             producer_reward_operation
          > operation;

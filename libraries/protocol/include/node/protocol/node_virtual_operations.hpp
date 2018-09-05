@@ -10,13 +10,13 @@ namespace node { namespace protocol {
    struct authorReward_operation : public virtual_operation {
       authorReward_operation(){}
       authorReward_operation( const account_name_type& a, const string& p, const asset& s, const asset& st, const asset& v )
-         :author(a), permlink(p), EUSDpayout(s), ECOpayout(st), ESCORpayout(v){}
+         :author(a), permlink(p), TSDpayout(s), TMEpayout(st), SCOREpayout(v){}
 
       account_name_type author;
       string            permlink;
-      asset             EUSDpayout;
-      asset             ECOpayout;
-      asset             ESCORpayout;
+      asset             TSDpayout;
+      asset             TMEpayout;
+      asset             SCOREpayout;
    };
 
 
@@ -57,7 +57,7 @@ namespace node { namespace protocol {
 
    struct interest_operation : public virtual_operation
    {
-      interest_operation( const string& o = "", const asset& i = asset(0,SYMBOL_EUSD) )
+      interest_operation( const string& o = "", const asset& i = asset(0,SYMBOL_TSD) )
          :owner(o),interest(i){}
 
       account_name_type owner;
@@ -78,10 +78,10 @@ namespace node { namespace protocol {
    };
 
 
-   struct fillESCORWithdraw_operation : public virtual_operation
+   struct fillSCOREWithdraw_operation : public virtual_operation
    {
-      fillESCORWithdraw_operation(){}
-      fillESCORWithdraw_operation( const string& f, const string& t, const asset& w, const asset& d )
+      fillSCOREWithdraw_operation(){}
+      fillSCOREWithdraw_operation( const string& f, const string& t, const asset& w, const asset& d )
          :from_account(f), to_account(t), withdrawn(w), deposited(d) {}
 
       account_name_type from_account;
@@ -145,13 +145,13 @@ namespace node { namespace protocol {
       string            permlink;
    };
 
-   struct return_ESCOR_delegation_operation : public virtual_operation
+   struct return_SCORE_delegation_operation : public virtual_operation
    {
-      return_ESCOR_delegation_operation() {}
-      return_ESCOR_delegation_operation( const account_name_type& a, const asset& v ) : account( a ), ESCOR( v ) {}
+      return_SCORE_delegation_operation() {}
+      return_SCORE_delegation_operation( const account_name_type& a, const asset& v ) : account( a ), SCORE( v ) {}
 
       account_name_type account;
-      asset             ESCOR;
+      asset             SCORE;
    };
 
    struct comment_benefactor_reward_operation : public virtual_operation
@@ -169,27 +169,27 @@ namespace node { namespace protocol {
    struct producer_reward_operation : public virtual_operation
    {
       producer_reward_operation(){}
-      producer_reward_operation( const string& p, const asset& v ) : producer( p ), ESCOR( v ) {}
+      producer_reward_operation( const string& p, const asset& v ) : producer( p ), SCORE( v ) {}
 
       account_name_type producer;
-      asset             ESCOR;
+      asset             SCORE;
 
    };
 
 } } //node::protocol
 
-FC_REFLECT( node::protocol::authorReward_operation, (author)(permlink)(EUSDpayout)(ECOpayout)(ESCORpayout) )
+FC_REFLECT( node::protocol::authorReward_operation, (author)(permlink)(TSDpayout)(TMEpayout)(SCOREpayout) )
 FC_REFLECT( node::protocol::curationReward_operation, (curator)(reward)(comment_author)(comment_permlink) )
 FC_REFLECT( node::protocol::comment_reward_operation, (author)(permlink)(payout) )
 FC_REFLECT( node::protocol::fill_convert_request_operation, (owner)(requestid)(amount_in)(amount_out) )
 FC_REFLECT( node::protocol::liquidity_reward_operation, (owner)(payout) )
 FC_REFLECT( node::protocol::interest_operation, (owner)(interest) )
-FC_REFLECT( node::protocol::fillESCORWithdraw_operation, (from_account)(to_account)(withdrawn)(deposited) )
+FC_REFLECT( node::protocol::fillSCOREWithdraw_operation, (from_account)(to_account)(withdrawn)(deposited) )
 FC_REFLECT( node::protocol::shutdown_witness_operation, (owner) )
 FC_REFLECT( node::protocol::fill_order_operation, (current_owner)(current_orderid)(current_pays)(open_owner)(open_orderid)(open_pays) )
 FC_REFLECT( node::protocol::fill_transferFromSavings_operation, (from)(to)(amount)(request_id)(memo) )
 FC_REFLECT( node::protocol::hardfork_operation, (hardfork_id) )
 FC_REFLECT( node::protocol::comment_payout_update_operation, (author)(permlink) )
-FC_REFLECT( node::protocol::return_ESCOR_delegation_operation, (account)(ESCOR) )
+FC_REFLECT( node::protocol::return_SCORE_delegation_operation, (account)(SCORE) )
 FC_REFLECT( node::protocol::comment_benefactor_reward_operation, (benefactor)(author)(permlink)(reward) )
-FC_REFLECT( node::protocol::producer_reward_operation, (producer)(ESCOR) )
+FC_REFLECT( node::protocol::producer_reward_operation, (producer)(SCORE) )

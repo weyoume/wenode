@@ -73,19 +73,19 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
 
    fc::time_point_sec   open;
    uint32_t             seconds = 0;
-   share_type           high_ECO;
-   share_type           high_EUSD;
-   share_type           low_ECO;
-   share_type           low_EUSD;
-   share_type           open_ECO;
-   share_type           open_EUSD;
-   share_type           close_ECO;
-   share_type           close_EUSD;
-   share_type           ECO_volume;
-   share_type           EUSD_volume;
+   share_type           high_TME;
+   share_type           high_TSD;
+   share_type           low_TME;
+   share_type           low_TSD;
+   share_type           open_TME;
+   share_type           open_TSD;
+   share_type           close_TME;
+   share_type           close_TSD;
+   share_type           TME_volume;
+   share_type           TSD_volume;
 
-   price high()const { return asset( high_EUSD, SYMBOL_EUSD ) / asset( high_ECO, SYMBOL_ECO ); }
-   price low()const { return asset( low_EUSD, SYMBOL_EUSD ) / asset( low_ECO, SYMBOL_ECO ); }
+   price high()const { return asset( high_TSD, SYMBOL_TSD ) / asset( high_TME, SYMBOL_TME ); }
+   price low()const { return asset( low_TSD, SYMBOL_TSD ) / asset( low_TME, SYMBOL_TME ); }
 };
 
 typedef oid< bucket_object > bucket_id_type;
@@ -139,11 +139,11 @@ typedef multi_index_container<
 FC_REFLECT( node::market_history::bucket_object,
                      (id)
                      (open)(seconds)
-                     (high_ECO)(high_EUSD)
-                     (low_ECO)(low_EUSD)
-                     (open_ECO)(open_EUSD)
-                     (close_ECO)(close_EUSD)
-                     (ECO_volume)(EUSD_volume) )
+                     (high_TME)(high_TSD)
+                     (low_TME)(low_TSD)
+                     (open_TME)(open_TSD)
+                     (close_TME)(close_TSD)
+                     (TME_volume)(TSD_volume) )
 CHAINBASE_SET_INDEX_TYPE( node::market_history::bucket_object, node::market_history::bucket_index )
 
 FC_REFLECT( node::market_history::order_history_object,

@@ -53,10 +53,10 @@ struct operation_process
       {
          b.transfers++;
 
-         if( op.amount.symbol == SYMBOL_ECO )
-            b.ECO_transferred += op.amount.amount;
+         if( op.amount.symbol == SYMBOL_TME )
+            b.TME_transferred += op.amount.amount;
          else
-            b.EUSD_transferred += op.amount.amount;
+            b.TSD_transferred += op.amount.amount;
       });
    }
 
@@ -64,7 +64,7 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.EUSD_paid_as_interest += op.interest.amount;
+         b.TSD_paid_as_interest += op.interest.amount;
       });
    }
 
@@ -154,8 +154,8 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.payouts++;
-         b.EUSD_paid_to_authors += op.EUSDpayout.amount;
-         b.ESCOR_paid_to_authors += op.ESCORpayout.amount;
+         b.TSD_paid_to_authors += op.TSDpayout.amount;
+         b.SCORE_paid_to_authors += op.SCOREpayout.amount;
       });
    }
 
@@ -163,7 +163,7 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.ESCOR_paid_to_curators += op.reward.amount;
+         b.SCORE_paid_to_curators += op.reward.amount;
       });
    }
 
@@ -175,29 +175,29 @@ struct operation_process
       });
    }
 
-   void operator()( const transferECOtoESCORfund_operation& op )const
+   void operator()( const transferTMEtoSCOREfund_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.transfers_to_ECO_fund_for_ESCOR++;
-         b.ECO_value_of_ESCOR += op.amount.amount;
+         b.transfers_to_TME_fund_for_SCORE++;
+         b.TME_value_of_SCORE += op.amount.amount;
       });
    }
 
-   void operator()( const fillESCORWithdraw_operation& op )const
+   void operator()( const fillSCOREWithdraw_operation& op )const
    {
       auto& account = _db.get_account( op.from_account );
 
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.ECO_fund_for_ESCOR_withdrawals_processed++;
-         if( op.deposited.symbol == SYMBOL_ECO )
-            b.ESCOR_withdrawn += op.withdrawn.amount;
+         b.TME_fund_for_SCORE_withdrawals_processed++;
+         if( op.deposited.symbol == SYMBOL_TME )
+            b.SCORE_withdrawn += op.withdrawn.amount;
          else
-            b.ESCOR_transferred += op.withdrawn.amount;
+            b.SCORE_transferred += op.withdrawn.amount;
 
-         if( account.ESCORwithdrawRateInECO.amount == 0 )
-            b.finished_ECO_fund_for_ESCOR_withdrawals++;
+         if( account.SCOREwithdrawRateInTME.amount == 0 )
+            b.finished_TME_fund_for_SCORE_withdrawals++;
       });
    }
 
@@ -229,8 +229,8 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.EUSD_conversion_requests_created++;
-         b.EUSD_to_be_converted += op.amount.amount;
+         b.TSD_conversion_requests_created++;
+         b.TSD_to_be_converted += op.amount.amount;
       });
    }
 
@@ -238,8 +238,8 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.EUSD_conversion_requests_filled++;
-         b.ECO_converted += op.amount_out.amount;
+         b.TSD_conversion_requests_filled++;
+         b.TME_converted += op.amount_out.amount;
       });
    }
 };
@@ -351,28 +351,28 @@ void blockchain_statistics_plugin_impl::pre_operation( const operation_notificat
                b.root_comments_deleted++;
          });
       }
-      else if( o.op.which() == operation::tag< withdrawESCOR_operation >::value )
+      else if( o.op.which() == operation::tag< withdrawSCORE_operation >::value )
       {
-         withdrawESCOR_operation op = o.op.get< withdrawESCOR_operation >();
+         withdrawSCORE_operation op = o.op.get< withdrawSCORE_operation >();
          auto& account = db.get_account( op.account );
          const auto& bucket = db.get(bucket_id);
 
-         auto newESCOR_withdrawal_rate = op.ESCOR.amount / ECO_fund_for_ESCOR_WITHDRAW_INTERVALS;
-         if( op.ESCOR.amount > 0 && newESCOR_withdrawal_rate == 0 )
-            newESCOR_withdrawal_rate = 1;
+         auto newSCORE_withdrawal_rate = op.SCORE.amount / TME_fund_for_SCORE_WITHDRAW_INTERVALS;
+         if( op.SCORE.amount > 0 && newSCORE_withdrawal_rate == 0 )
+            newSCORE_withdrawal_rate = 1;
 
          if( !db.has_hardfork( HARDFORK_0_1 ) )
-            newESCOR_withdrawal_rate *= 1000000;
+            newSCORE_withdrawal_rate *= 1000000;
 
          db.modify( bucket, [&]( bucket_object& b )
          {
-            if( account.ESCORwithdrawRateInECO.amount > 0 )
-               b.modified_ESCOR_ECO_fund_withdrawal_requests++;
+            if( account.SCOREwithdrawRateInTME.amount > 0 )
+               b.modified_SCORE_TME_fund_withdrawal_requests++;
             else
-               b.new_ESCOR_ECO_fund_withdrawal_requests++;
+               b.new_SCORE_TME_fund_withdrawal_requests++;
 
-            // TODO: Figure out how to change delta when a ESCOR ECO fund withdraw finishes. Have until March 24th 2018 to figure that out...
-            b.ESCORwithdrawRateInECO_delta += newESCOR_withdrawal_rate - account.ESCORwithdrawRateInECO.amount;
+            // TODO: Figure out how to change delta when a SCORE TME fund withdraw finishes. Have until March 24th 2018 to figure that out...
+            b.SCOREwithdrawRateInTME_delta += newSCORE_withdrawal_rate - account.SCOREwithdrawRateInTME.amount;
          });
       }
    }
