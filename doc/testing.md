@@ -8,8 +8,8 @@ Tests are broken in several categories:
 basic_tests          // Tests of "basic" functionality
 block_tests          // Tests of the block chain
 live_tests           // Tests on live chain data (currently only past hardfork testing)
-operation_tests      // Unit Tests of Ezira operations
-operation_time_tests // Tests of Ezira operations that include a time based component (ex. SCORE TME fund withdrawals)
+operation_tests      // Unit Tests of WeYouMe operations
+operation_time_tests // Tests of WeYouMe operations that include a time based component (ex. SCORE TME fund withdrawals)
 serialization_tests  // Tests related of serialization
 ```
 

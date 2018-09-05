@@ -128,7 +128,7 @@ namespace node { namespace protocol {
       string            permlink;
 
       asset             max_accepted_payout    = asset( 1000000000, SYMBOL_USD );       /// TSD value of the maximum payout this post will receive
-      uint16_t          percent_TSD  = PERCENT_100; /// the percent of TSD to key, unkept amounts will be received as Ezira Power
+      uint16_t          percent_TSD  = PERCENT_100; /// the percent of TSD to key, unkept amounts will be received as WeYouMe Power
       bool              allow_votes            = true;      /// allows a post to receive votes;
       bool              allow_curationRewards = true; /// allows voters to recieve curation rewards. Rewards return to reward fund.
       comment_options_extensions_type extensions;

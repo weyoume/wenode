@@ -5,7 +5,7 @@
 From the root of the repository:
 
     docker build --rm=false \
-        -t eziranetwork/ci-test-environment:latest \
+        -t WeYouMe/ci-test-environment:latest \
         -f tests/scripts/Dockerfile.testenv .
 
 ## To Run The Tests
@@ -13,13 +13,13 @@ From the root of the repository:
 (Also in the root of the repository.)
 
     docker build --rm=false \
-        -t eziranetwork/ezira-test \
+        -t WeYouMe/WeYouMe-test \
         -f Dockerfile.test .
 
 ## To Troubleshoot Failing Tests
 
     docker run -ti \
-        eziranetwork/ci-test-environment:latest \
+        WeYouMe/ci-test-environment:latest \
         /bin/bash
 
 Then, inside the container:
@@ -27,7 +27,7 @@ Then, inside the container:
 (These steps are taken from `/Dockerfile.test` in the
 repository root.)
 
-    git clone https://github.com/eziranetwork/ezira.git /usr/local/src/node
+    git clone https://github.com/WeYouMe/WeYouMe.git /usr/local/src/node
     cd /usr/local/src/node
     git checkout <branch> # e.g. 123-feature
     git submodule update --init --recursive

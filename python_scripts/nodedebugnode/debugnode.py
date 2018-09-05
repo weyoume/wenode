@@ -14,7 +14,7 @@ from time import sleep
 from steemapi.steemnoderpc import SteemNodeRPC
 
 class DebugNode( object ):
-   """ Wraps the node debug node plugin for easier automated testing of the Ezira Network"""
+   """ Wraps the node debug node plugin for easier automated testing of the WeYouMe Network"""
 
    def __init__( self, node, data_dir, args='', plugins=[], apis=[], node_out=None, node_err=None ):
       """ Creates a node debug node.

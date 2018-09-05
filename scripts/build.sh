@@ -1,5 +1,5 @@
 #!/bin/bash
 
-docker build -t eziranetwork/ezira . ;
+docker build -t WeYouMe/WeYouMe . ;
 
 

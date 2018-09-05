@@ -6,7 +6,7 @@ Use docker:
 ```
 docker run \
     -d -p 2001:2001 -p 8090:8090 --name node-default \
-    --restart unless-stopped eziranetwork/ezira
+    --restart unless-stopped WeYouMe/WeYouMe
 ```
 #### Low memory node?
 Above runs low memory node, which is suitable for:
@@ -20,7 +20,7 @@ docker run \
     --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_CONTENT_NODE=1 \
     -d -p 2001:2001 -p 8090:8090 --name node \
     --restart unless-stopped \
-    eziranetwork/ezira
+    WeYouMe/WeYouMe
 ```
 ### Configure for your use case
 #### Full API node
@@ -44,7 +44,7 @@ This configuration exists in Docker with the following command
 docker run -d --env TRACK_ACCOUNT="yourexchangeid" \
     --name node \
     --restart unless-stopped \
-    eziranetwork/ezira
+    WeYouMe/WeYouMe
 ```
 
 ### Resources usage

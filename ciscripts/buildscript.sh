@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
-export IMAGE_NAME="eziranetwork/ezira:$BRANCH_NAME"
-if [[ $IMAGE_NAME == "eziranetwork/ezira:stable" ]] ; then
-  IMAGE_NAME="eziranetwork/ezira:latest"
+export IMAGE_NAME="WeYouMe/wenode:$BRANCH_NAME"
+if [[ $IMAGE_NAME == "WeYouMe/wenode:stable" ]] ; then
+  IMAGE_NAME="WeYouMe/wenode:latest"
 fi
 sudo docker build -t=$IMAGE_NAME .
 sudo docker login --username=$DOCKER_USER --password=$DOCKER_PASS

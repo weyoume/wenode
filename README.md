@@ -32,13 +32,13 @@ You can read the WeYouMe Whitepaper at [WeYouMe.io/whitepaper.pdf](https://WeYou
 
 # Quickstart
 
-Just want to get up and running quickly? We have pre-build docker images for your convenience. More details are in our [quickstart guide](https://github.com/eziranetwork/ezira/blob/master/doc/exchangequickstart.md).
+Just want to get up and running quickly? We have pre-build docker images for your convenience. More details are in our [quickstart guide](https://github.com/WeYouMe/WeYouMe/blob/master/doc/exchangequickstart.md).
 
 # Building
 
-We strongly recommend using one of our pre-built Docker images or using Docker to build WeYouMe. Both of these processes are described in the [quickstart guide](https://github.com/eziranetwork/ezira/blob/master/doc/exchangequickstart.md).
+We strongly recommend using one of our pre-built Docker images or using Docker to build WeYouMe. Both of these processes are described in the [quickstart guide](https://github.com/WeYouMe/WeYouMe/blob/master/doc/exchangequickstart.md).
 
-If you would still like to build from source, we do have [build instructions](https://github.com/eziranetwork/ezira/blob/master/doc/building.md) for Linux (Ubuntu LTS) and macOS X.
+If you would still like to build from source, we do have [build instructions](https://github.com/WeYouMe/WeYouMe/blob/master/doc/building.md) for Linux (Ubuntu LTS) and macOS X.
 
 ## Dockerized p2p Node
 
@@ -46,7 +46,7 @@ To run a p2p node (ca. 2GB of memory is required at the moment):
 
     docker run \
         -d -p 2001:2001 -p 8090:8090 --name node-default \
-        eziranetwork/ezira
+        WeYouMe/WeYouMe
 
     docker logs -f node-default  # follow along
 
@@ -58,7 +58,7 @@ that uses ca. 14GB of memory and growing:
     docker run \
         --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_CONTENT_NODE=1 \
         -d -p 2001:2001 -p 8090:8090 --name node \
-        eziranetwork/ezira
+        WeYouMe/WeYouMe
 
     docker logs -f node
 
@@ -141,9 +141,9 @@ huge gain if you do not need this functionality.
 
 We ship a Dockerfile.  This builds both common node type binaries.
 
-    git clone https://github.com/eziranetwork/ezira
-    cd ezira
-    docker build -t eziranetwork/ezira .
+    git clone https://github.com/WeYouMe/WeYouMe
+    cd WeYouMe
+    docker build -t WeYouMe/WeYouMe .
 		// or
 		npm run docker
 
@@ -189,8 +189,8 @@ will build out of the box without further effort:
         libreadline-dev \
         perl
 
-    git clone https://github.com/eziranetwork/ezira
-    cd ezira
+    git clone https://github.com/WeYouMe/WeYouMe
+    cd WeYouMe
     git submodule update --init --recursive
     mkdir -p build
     cd build
@@ -250,10 +250,10 @@ Here is how to build and install Boost 1.60 into your user's home directory
     ./bootstrap.sh "--prefix=$BOOST_ROOT"
     ./b2 install
 
-Then the instructions are the same as for ezira:
+Then the instructions are the same as for WeYouMe:
 
-    git clone https://github.com/eziranetwork/ezira
-    cd ezira
+    git clone https://github.com/WeYouMe/WeYouMe
+    cd WeYouMe
     git submodule update --init --recursive
     mkdir -p build && cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -278,7 +278,7 @@ Install Homebrew by following the instructions here: http://brew.sh/
    brew doctor
    brew update
 
-### Install ezira dependencies:
+### Install WeYouMe dependencies:
 
     brew install \
         autoconf \
@@ -292,7 +292,7 @@ Install Homebrew by following the instructions here: http://brew.sh/
         python3-jinja2
 
 Note: brew recently updated to boost 1.61.0, which is not yet supported by
-ezira. Until then, this will allow you to install boost 1.60.0.
+WeYouMe. Until then, this will allow you to install boost 1.60.0.
 
 *Optional.* To use TCMalloc in LevelDB:
 
@@ -305,8 +305,8 @@ ezira. Until then, this will allow you to install boost 1.60.0.
 
 ### Clone the Repository
 
-    git clone https://github.com/eziranetwork/ezira.git
-    cd ezira
+    git clone https://github.com/WeYouMe/WeYouMe.git
+    cd WeYouMe
 
 ### Compile
 

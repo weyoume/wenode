@@ -1,9 +1,9 @@
 Exchange Quickstart
 -------------------
 
-System Requirements: A dedicated server or virtual machine with a minimum of 32GB of RAM, and at least 100GB of fast local SSD storage. EZIRA is one of the most active blockchains in the world and handles an incredibly large amount of transactions per second, as such, it requires fast storage to run efficiently.
+System Requirements: A dedicated server or virtual machine with a minimum of 32GB of RAM, and at least 100GB of fast local SSD storage. WeYouMe is one of the most active blockchains in the world and handles an incredibly large amount of transactions per second, as such, it requires fast storage to run efficiently.
 
-We recommend using docker to both build and run EZIRA for exchanges. Docker is the world's leading containerization platform and using it guarantees that your build and run environment is identical to what our developers use. You can still build from source and you can keep both blockchain data and wallet data outside of the docker container. The instructions below will show you how to do this in just a few easy steps.
+We recommend using docker to both build and run WeYouMe for exchanges. Docker is the world's leading containerization platform and using it guarantees that your build and run environment is identical to what our developers use. You can still build from source and you can keep both blockchain data and wallet data outside of the docker container. The instructions below will show you how to do this in just a few easy steps.
 
 ### Install docker and git (if not already installed)
 
@@ -18,12 +18,12 @@ curl -fsSL get.docker.com -o get-docker.sh
 sh get-docker.sh
 ```
 
-### Clone the ezira repo
+### Clone the WeYouMe repo
 
-Pull in the ezira repo from the official source on github and then change into the directory that's created for it.
+Pull in the WeYouMe repo from the official source on github and then change into the directory that's created for it.
 ```
-git clone https://github.com/eziranetwork/ezira
-cd ezira
+git clone https://github.com/WeYouMe/WeYouMe
+cd WeYouMe
 ```
 
 ### Build the image from source with docker
@@ -31,7 +31,7 @@ cd ezira
 Docker isn't just for downloading already built images, it can be used to build from source the same way you would otherwise build. By doing this you ensure that your build environment is identical to what we use to develop the software. Use the below command to start the build:
 
 ```
-docker build -t=eziranetwork/ezira .
+docker build -t=WeYouMe/WeYouMe .
 ```
 
 Don't forget the `.` at the end of the line which indicates the build target is in the current directory.
@@ -45,7 +45,7 @@ When the build completes you will see a message indicating that it is 'successfu
 If you'd like to use our already pre-built official binary images, it's as simple as downloading it from the Dockerhub registry with only one command:
 
 ```
-docker pull eziranetwork/ezira
+docker pull WeYouMe/WeYouMe
 ```
 
 ### Running a binary build without a Docker container
@@ -55,7 +55,7 @@ If you build with Docker but do not want to run node from within a docker contai
 To extract the binary you need to start a container and then copy the file from it.
 
 ```
-docker run -d --name node-exchange eziranetwork/ezira
+docker run -d --name node-exchange WeYouMe/WeYouMe
 docker cp node-exchange:/usr/local/node-default/bin/node /local/path/to/node
 docker cp node-exchange:/usr/local/node-default/bin/cli_wallet /local/path/to/cli_wallet
 docker stop node-exchange
@@ -77,7 +77,7 @@ mkdir wallet
 The below command will start a daemonized instance opening ports for p2p and RPC  while linking the directories we created for blockchain and wallet data inside the container. Fill in `TRACK_ACCOUNT` with the name of your exchange account that you want to follow. The `-v` flags are how you map directories outside of the container to the inside, you list the path to the directories you created earlier before the `:` for each `-v` flag. The restart policy ensures that the container will automatically restart even if your system is restarted.
 
 ```
-docker run -d --name node-exchange --env TRACK_ACCOUNT=nameofaccount -p 2001:2001 -p 8090:8090 -v /path/to/wallet:/var/wallet -v /path/to/blockchain:/var/lib/node/blockchain --restart always eziranetwork/ezira
+docker run -d --name node-exchange --env TRACK_ACCOUNT=nameofaccount -p 2001:2001 -p 8090:8090 -v /path/to/wallet:/var/wallet -v /path/to/blockchain:/var/lib/node/blockchain --restart always WeYouMe/WeYouMe
 ```
 
 You can see that the container is running with the `docker ps` command.

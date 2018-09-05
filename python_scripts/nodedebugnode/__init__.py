@@ -1,3 +1,3 @@
-from eziradebugnode.debugnode import DebugNode
+from WeYouMedebugnode.debugnode import DebugNode
 
 __all__ = [ 'debugnode' ]

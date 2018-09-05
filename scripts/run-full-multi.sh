@@ -4,7 +4,7 @@ docker rm -f wenode-test ;
 
 
 # will make webuilder1 - webuilder99 if end=100 and start=0
-PRIVATE_KEYS=$(cat ./private-keys)
+PRIVATE_KEYS=$(cat ./scripts/private-keys)
 start=1
 end=50
 witness_names=""

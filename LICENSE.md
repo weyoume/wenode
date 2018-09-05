@@ -1,7 +1,7 @@
-Copyright (c) 2017 Ezira Network., and contributors.
+Copyright (c) 2017 WeYouMe Network., and contributors.
 
 The following license applies to code contained within this repository that
-is created by Ezira Network. Other copy right holders have licensed dependencies such
+is created by WeYouMe Network. Other copy right holders have licensed dependencies such
 as Graphene, FC, and Boost under their own individual licenses.
 
 The MIT License

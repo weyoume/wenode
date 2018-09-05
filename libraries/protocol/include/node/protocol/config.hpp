@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Ezira Network., and contributors.
+ * Copyright (c) 2016 WeYouMe Network., and contributors.
  */
 #pragma once
 
@@ -21,7 +21,7 @@
 
 #define SYMBOL_COIN  									  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< TME/TME/TESTS with 3 digits of precision
 #define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< SCORE/SCORE/VESTS with 6 digits of precision
-#define SYMBOL_WYM    							  	(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('Y') << 24) | (uint64_t('M') << 32) | (uint64_t('T') << 40) ) ///< WYM/WEYOUME equity asset with 3 digits of precision
+#define SYMBOL_WYM    							  	(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('Y') << 24) | (uint64_t('M') << 32) | (uint64_t('T') << 40) ) ///< WYM/WeYouMe equity asset with 3 digits of precision
 #define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test / TME Backed TSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "TWYM"
@@ -56,14 +56,14 @@
 
 #define CHAIN_ID                        (fc::sha256::hash("TWYM"))
 
-// ezira
+// WeYouMe
 // #define SYMBOL_ECO 									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< TME with 3 digits of precision
 // #define SYMBOL_ESCOR 									(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< SCORE with 6 digits of precision
-// #define SYMBOL_EZIRA   									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
+// #define SYMBOL_WeYouMe   									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< WeYouMe with 3 digits of precision
 // #define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< TME Backed TSD with 3 digits of precision
 
 
-// weyoume
+// WeYouMe
 #define SYMBOL_COIN  									  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('E') << 24) ) ///< TME with 3 digits of precision
 #define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('S') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('R') << 32) | (uint64_t('E') << 40) ) ///< SCORE with 6 digits of precision
 #define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('U') << 16) | (uint64_t('S') << 24) ) ///< TME Backed TSD with 3 digits of precision

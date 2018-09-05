@@ -230,7 +230,7 @@ import sys
 
 def main(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument("provider", help="Name of plugin provider (eziranetwork for plugins developed by the Ezira Network)")
+    parser.add_argument("provider", help="Name of plugin provider (WeYouMe for plugins developed by the WeYouMe Network)")
     parser.add_argument("name", help="Name of plugin to create")
     args = parser.parse_args(argv[1:])
     ctx = {

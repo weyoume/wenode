@@ -161,7 +161,7 @@ void accountCreate_evaluator::do_apply( const accountCreate_operation& o )
       acc.mined = false;
 
       if( !_db.has_hardfork( HARDFORK_0_11__169 ) )
-         acc.recoveryAccount = "ezira";
+         acc.recoveryAccount = "WeYouMe";
       else
          acc.recoveryAccount = o.creator;
 
@@ -909,8 +909,8 @@ void withdrawSCORE_evaluator::do_apply( const withdrawSCORE_operation& o )
       return;
    }
 
-   FC_ASSERT( account.SCORE >= asset( 0, SYMBOL_SCORE ), "Account does not have sufficient Ezira Power for withdraw." );
-   FC_ASSERT( account.SCORE - account.SCOREDelegated >= o.SCORE, "Account does not have sufficient Ezira Power for withdraw." );
+   FC_ASSERT( account.SCORE >= asset( 0, SYMBOL_SCORE ), "Account does not have sufficient WeYouMe Power for withdraw." );
+   FC_ASSERT( account.SCORE - account.SCOREDelegated >= o.SCORE, "Account does not have sufficient WeYouMe Power for withdraw." );
 
    if( !account.mined && _db.has_hardfork( HARDFORK_0_1 ) )
    {
@@ -921,7 +921,7 @@ void withdrawSCORE_evaluator::do_apply( const withdrawSCORE_operation& o )
       min_SCORE.amount.value *= 10;
 
       FC_ASSERT( account.SCORE > min_SCORE || ( _db.has_hardfork( HARDFORK_0_16__562 ) && o.SCORE.amount == 0 ),
-                 "Account registered by another account requires 10x account creation fee worth of Ezira Power before it can be powered down." );
+                 "Account registered by another account requires 10x account creation fee worth of WeYouMe Power before it can be powered down." );
    }
 
    if( o.SCORE.amount == 0 )
@@ -1611,7 +1611,7 @@ void pow_apply( database& db, Operation o )
          acc.last_vote_time = dgp.time;
 
          if( !db.has_hardfork( HARDFORK_0_11__169 ) )
-            acc.recoveryAccount = "ezira";
+            acc.recoveryAccount = "WeYouMe";
          else
             acc.recoveryAccount = ""; /// highest voted witness at time of recovery
       });
@@ -2231,7 +2231,7 @@ void delegateSCORE_evaluator::do_apply( const delegateSCORE_operation& op )
    {
       auto delta = op.SCORE - delegation->SCORE;
 
-      FC_ASSERT( delta >= min_update, "Ezira Power increase is not enough of a difference. min_update: ${min}", ("min", min_update) );
+      FC_ASSERT( delta >= min_update, "WeYouMe Power increase is not enough of a difference. min_update: ${min}", ("min", min_update) );
       FC_ASSERT( available_SCORE >= op.SCORE - delegation->SCORE, "Account does not have enough SCORE to delegate." );
 
       _db.modify( delegator, [&]( account_object& a )
@@ -2256,7 +2256,7 @@ void delegateSCORE_evaluator::do_apply( const delegateSCORE_operation& op )
 
       if( op.SCORE.amount > 0 )
       {
-         FC_ASSERT( delta >= min_update, "Ezira Power decrease is not enough of a difference. min_update: ${min}", ("min", min_update) );
+         FC_ASSERT( delta >= min_update, "WeYouMe Power decrease is not enough of a difference. min_update: ${min}", ("min", min_update) );
          FC_ASSERT( op.SCORE >= min_delegation, "Delegation must be removed or leave minimum delegation amount of ${v}", ("v", min_delegation) );
       }
       else

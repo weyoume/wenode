@@ -1,4 +1,4 @@
-# Building Ezira
+# Building WeYouMe
 
 ## Compile-Time Options (cmake)
 
@@ -32,13 +32,13 @@ huge gain if you do not need this functionality.
 
 We ship a Dockerfile.  This builds both common node type binaries.
 
-    git clone https://github.com/eziranetwork/ezira
-    cd ezira
-    docker build -t eziranetwork/ezira .
+    git clone https://github.com/WeYouMe/WeYouMe
+    cd WeYouMe
+    docker build -t WeYouMe/WeYouMe .
 
 ## Building on Ubuntu 16.04
 
-For Ubuntu 16.04 users, after installing the right packages with `apt` Ezira
+For Ubuntu 16.04 users, after installing the right packages with `apt` WeYouMe
 will build out of the box without further effort:
 
     # Required packages
@@ -78,8 +78,8 @@ will build out of the box without further effort:
         libreadline-dev \
         perl
 
-    git clone https://github.com/eziranetwork/ezira
-    cd ezira
+    git clone https://github.com/WeYouMe/WeYouMe
+    cd WeYouMe
     git submodule update --init --recursive
     mkdir -p build
     cd build
@@ -115,14 +115,14 @@ Here are the required packages:
         python3-jinja2
 
 The Boost provided in the Ubuntu 14.04 package manager (Boost 1.55) is too old.
-Ezira requires Boost 1.58 (as in Ubuntu 16.04) and works with versions up to 1.60 (including).
-So building Ezira on Ubuntu 14.04 requires downloading and installing a more recent
+WeYouMe requires Boost 1.58 (as in Ubuntu 16.04) and works with versions up to 1.60 (including).
+So building WeYouMe on Ubuntu 14.04 requires downloading and installing a more recent
 version of Boost.
 
 According to [this mailing list
 post](http://boost.2283326.n4.nabble.com/1-58-1-bugfix-release-necessary-td4674686.html),
 Boost 1.58 is not compatible with gcc 4.8 (the default C++ compiler for
-Ubuntu 14.04) when compiling in C++11 mode (which Ezira does).
+Ubuntu 14.04) when compiling in C++11 mode (which WeYouMe does).
 So we will use Boost 1.60.
 
 Here is how to build and install Boost 1.60 into your user's home directory
@@ -139,10 +139,10 @@ Here is how to build and install Boost 1.60 into your user's home directory
     ./bootstrap.sh "--prefix=$BOOST_ROOT"
     ./b2 install
 
-Then the instructions are the same as for ezira:
+Then the instructions are the same as for WeYouMe:
 
-    git clone https://github.com/eziranetwork/ezira
-    cd ezira
+    git clone https://github.com/WeYouMe/WeYouMe
+    cd WeYouMe
     git submodule update --init --recursive
     mkdir -p build && cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -167,7 +167,7 @@ Install Homebrew by following the instructions here: http://brew.sh/
    brew doctor
    brew update
 
-### Install ezira dependencies:
+### Install WeYouMe dependencies:
 
     brew install \
         autoconf \
@@ -181,7 +181,7 @@ Install Homebrew by following the instructions here: http://brew.sh/
         python3-jinja2
 
 Note: brew recently updated to boost 1.61.0, which is not yet supported by
-ezira. Until then, this will allow you to install boost 1.60.0.
+WeYouMe. Until then, this will allow you to install boost 1.60.0.
 
 *Optional.* To use TCMalloc in LevelDB:
 
@@ -194,8 +194,8 @@ ezira. Until then, this will allow you to install boost 1.60.0.
 
 ### Clone the Repository
 
-    git clone https://github.com/eziranetwork/ezira.git
-    cd ezira
+    git clone https://github.com/WeYouMe/WeYouMe.git
+    cd WeYouMe
 
 ### Compile
 

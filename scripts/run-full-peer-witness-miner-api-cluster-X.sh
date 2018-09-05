@@ -11,9 +11,9 @@ docker network create nodes
 for ((i=0;i<$peerCount;i++)) ; do
 	if [[ ! -z ${witnesses[$i]} ]] ; then
 		echo "#### LOOP "$i" ####"
-		echo "starting docker container ezira"$i" with witness "${witnesses[$i]}
+		echo "starting docker container WeYouMe"$i" with witness "${witnesses[$i]}
 		echo "no linked ports, nginx-router will handle"
-		echo "image eziranetwork/ezira"
+		echo "image WeYouMe/WeYouMe"
 		echo "not load balanced internally"
 		echo "full web node"
 		echo "peer, witness, api"
@@ -25,8 +25,8 @@ for ((i=0;i<$peerCount;i++)) ; do
 			--env USE_NGINX_FRONTEND=1 \
 			--env WITNESS_NAME=${witnesses[$i]} \
 			--env PRIVATE_KEY=${keys[$i]}  \
-			-d --name ezira$i \
-			eziranetwork/ezira &
+			-d --name WeYouMe$i \
+			WeYouMe/WeYouMe &
 		((nodescount++))
 		# sleep 1
 	fi

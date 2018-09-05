@@ -1,5 +1,5 @@
 #!/bin/bash
 
-docker build -t eziranetwork/ezira0-lb .
+docker build -t WeYouMe/WeYouMe0-lb .
 
 

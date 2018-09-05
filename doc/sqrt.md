@@ -1,8 +1,8 @@
 
 # Introduction
 
-In this document we derive the approximate integer square root function used by Ezira for the curation curve
-[here](https://github.com/eziranetwork/ezira/issues/1052).
+In this document we derive the approximate integer square root function used by WeYouMe for the curation curve
+[here](https://github.com/WeYouMe/WeYouMe/issues/1052).
 
 # MSB function
 

@@ -1,6 +1,6 @@
 # $repos is an environment variable which is 
 # an absolute path to the directory your github 
-# repo for the ezira node software resides in
+# repo for the WeYouMe node software resides in
 
 # cd $repos/node/dev ;
 rm -r build/ ;
