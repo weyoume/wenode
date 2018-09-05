@@ -567,7 +567,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             from_string( com.category, o.parent_permlink );
             com.root_comment = com.id;
             com.cashout_time = _db.has_hardfork( HARDFORK_0_12__177 ) ?
-               _db.head_block_time() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF17 :
+               _db.head_block_time() + CASHOUT_WINDOW_SECONDS_PRE_HF17 :
                fc::time_point_sec::maximum();
          }
          else
@@ -582,7 +582,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
          if( _db.has_hardfork( HARDFORK_0_17__769 ) )
          {
-            com.cashout_time = com.created + CASHOUT_WINDOW_SELATERCONDS;
+            com.cashout_time = com.created + CASHOUT_WINDOW_SECONDS;
          }
 
          #ifndef IS_LOW_MEM
@@ -953,7 +953,7 @@ void withdrawSCORE_evaluator::do_apply( const withdrawSCORE_operation& o )
             FC_ASSERT( account.SCOREwithdrawRateInTME  != new_SCOREwithdrawRateInTME, "This operation would not change the SCORE TME fund withdraw rate." );
 
          a.SCOREwithdrawRateInTME = new_SCOREwithdrawRateInTME;
-         a.nextSCOREwithdrawalTime = _db.head_block_time() + fc::seconds(SCORE_WITHDRAW_INTERVAL_SELATERCONDS);
+         a.nextSCOREwithdrawalTime = _db.head_block_time() + fc::seconds(SCORE_WITHDRAW_INTERVAL_SECONDS);
          a.to_withdraw = o.SCORE.amount;
          a.withdrawn = 0;
       });
@@ -1179,7 +1179,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
    if( _db.has_hardfork( HARDFORK_0_11 ) )
       FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL_SEC, "Can only vote once every 3 seconds." );
 
-   int64_t regenerated_power = (PERCENT_100 * elapsed_seconds) / VOTE_REGENERATION_SELATERCONDS;
+   int64_t regenerated_power = (PERCENT_100 * elapsed_seconds) / VOTE_REGENERATION_SECONDS;
    int64_t current_power     = std::min( int64_t(voter.voting_power + regenerated_power), int64_t(PERCENT_100) );
    FC_ASSERT( current_power > 0, "Account currently does not have voting power." );
 
@@ -1190,7 +1190,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
 
    // used_power = (current_power * abs_weight / PERCENT_100) * (reserve / max_vote_denom)
    // The second multiplication is rounded up as of HF 259
-   int64_t max_vote_denom = dgpo.vote_power_reserve_rate * VOTE_REGENERATION_SELATERCONDS / (60*60*24);
+   int64_t max_vote_denom = dgpo.vote_power_reserve_rate * VOTE_REGENERATION_SECONDS / (60*60*24);
    FC_ASSERT( max_vote_denom > 0 );
 
    if( !_db.has_hardfork( HARDFORK_0_14__259 ) )
@@ -1263,9 +1263,9 @@ void vote_evaluator::do_apply( const vote_operation& o )
          fc::uint128_t new_cashout_time_sec;
 
          if( _db.has_hardfork( HARDFORK_0_12__177 ) && !_db.has_hardfork( HARDFORK_0_13__257)  )
-            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF17;
+            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF17;
          else
-            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF12;
+            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF12;
 
          avg_cashout_sec = ( cur_cashout_time_sec * old_root_abs_SCOREreward + new_cashout_time_sec * abs_SCOREreward ) / ( old_root_abs_SCOREreward + abs_SCOREreward );
       }
@@ -1293,12 +1293,12 @@ void vote_evaluator::do_apply( const vote_operation& o )
          if( !_db.has_hardfork( HARDFORK_0_17__769 ) )
          {
             if( _db.has_hardfork( HARDFORK_0_12__177 ) && c.last_payout > fc::time_point_sec::min() )
-               c.cashout_time = c.last_payout + SELATERCOND_CASHOUT_WINDOW;
+               c.cashout_time = c.last_payout + SECOND_CASHOUT_WINDOW;
             else
                c.cashout_time = fc::time_point_sec( std::min( uint32_t( avg_cashout_sec.to_uint64() ), c.max_cashout_time.sec_since_epoch() ) );
 
             if( c.max_cashout_time == fc::time_point_sec::maximum() )
-               c.max_cashout_time = _db.head_block_time() + fc::seconds( MAX_CASHOUT_WINDOW_SELATERCONDS );
+               c.max_cashout_time = _db.head_block_time() + fc::seconds( MAX_CASHOUT_WINDOW_SECONDS );
          }
       });
 
@@ -1387,10 +1387,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
             {
                /// discount weight by time
                uint128_t w(max_vote_weight);
-               uint64_t delta_t = std::min( uint64_t((cv.last_update - comment.created).to_seconds()), uint64_t(REVERSE_AUCTION_WINDOW_SELATERCONDS) );
+               uint64_t delta_t = std::min( uint64_t((cv.last_update - comment.created).to_seconds()), uint64_t(REVERSE_AUCTION_WINDOW_SECONDS) );
 
                w *= delta_t;
-               w /= REVERSE_AUCTION_WINDOW_SELATERCONDS;
+               w /= REVERSE_AUCTION_WINDOW_SECONDS;
                cv.weight = w.to_uint64();
             }
          }
@@ -1446,9 +1446,9 @@ void vote_evaluator::do_apply( const vote_operation& o )
          fc::uint128_t new_cashout_time_sec;
 
          if( _db.has_hardfork( HARDFORK_0_12__177 ) && ! _db.has_hardfork( HARDFORK_0_13__257 )  )
-            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF17;
+            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF17;
          else
-            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF12;
+            new_cashout_time_sec = _db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS_PRE_HF12;
 
          if( _db.has_hardfork( HARDFORK_0_14__259 ) && abs_SCOREreward == 0 )
             avg_cashout_sec = cur_cashout_time_sec;
@@ -1484,12 +1484,12 @@ void vote_evaluator::do_apply( const vote_operation& o )
          if( !_db.has_hardfork( HARDFORK_0_17__769 ) )
          {
             if( _db.has_hardfork( HARDFORK_0_12__177 ) && c.last_payout > fc::time_point_sec::min() )
-               c.cashout_time = c.last_payout + SELATERCOND_CASHOUT_WINDOW;
+               c.cashout_time = c.last_payout + SECOND_CASHOUT_WINDOW;
             else
                c.cashout_time = fc::time_point_sec( std::min( uint32_t( avg_cashout_sec.to_uint64() ), c.max_cashout_time.sec_since_epoch() ) );
 
             if( c.max_cashout_time == fc::time_point_sec::maximum() )
-               c.max_cashout_time = _db.head_block_time() + fc::seconds( MAX_CASHOUT_WINDOW_SELATERCONDS );
+               c.max_cashout_time = _db.head_block_time() + fc::seconds( MAX_CASHOUT_WINDOW_SECONDS );
          }
       });
 
@@ -1949,7 +1949,7 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
       {
          req.accountToRecover = o.accountToRecover;
          req.new_owner_authority = o.new_owner_authority;
-         req.expires = _db.head_block_time() + ACCOUNT_RELATERCOVERY_REQUEST_EXPIRATION_PERIOD;
+         req.expires = _db.head_block_time() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD;
       });
    }
    else if( o.new_owner_authority.weight_threshold == 0 ) // Cancel Request if authority is open
@@ -1972,7 +1972,7 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
       _db.modify( *request, [&]( account_recovery_request_object& req )
       {
          req.new_owner_authority = o.new_owner_authority;
-         req.expires = _db.head_block_time() + ACCOUNT_RELATERCOVERY_REQUEST_EXPIRATION_PERIOD;
+         req.expires = _db.head_block_time() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD;
       });
    }
 }
@@ -2025,7 +2025,7 @@ void change_recoveryAccount_evaluator::do_apply( const change_recoveryAccount_op
       {
          req.accountToRecover = o.accountToRecover;
          req.recoveryAccount = o.new_recoveryAccount;
-         req.effective_on = _db.head_block_time() + OWNER_AUTH_RELATERCOVERY_PERIOD;
+         req.effective_on = _db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD;
       });
    }
    else if( accountToRecover.recoveryAccount != o.new_recoveryAccount ) // Change existing request
@@ -2033,7 +2033,7 @@ void change_recoveryAccount_evaluator::do_apply( const change_recoveryAccount_op
       _db.modify( *request, [&]( change_recoveryAccount_request_object& req )
       {
          req.recoveryAccount = o.new_recoveryAccount;
-         req.effective_on = _db.head_block_time() + OWNER_AUTH_RELATERCOVERY_PERIOD;
+         req.effective_on = _db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD;
       });
    }
    else // Request exists and changing back to current recovery account
@@ -2106,7 +2106,7 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
       _db.create< decline_voting_rights_request_object >( [&]( decline_voting_rights_request_object& req )
       {
          req.account = account.id;
-         req.effective_date = _db.head_block_time() + OWNER_AUTH_RELATERCOVERY_PERIOD;
+         req.effective_date = _db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD;
       });
    }
    else
@@ -2268,7 +2268,7 @@ void delegateSCORE_evaluator::do_apply( const delegateSCORE_operation& op )
       {
          obj.delegator = op.delegator;
          obj.SCORE = delta;
-         obj.expiration = std::max( _db.head_block_time() + CASHOUT_WINDOW_SELATERCONDS, delegation->min_delegation_time );
+         obj.expiration = std::max( _db.head_block_time() + CASHOUT_WINDOW_SECONDS, delegation->min_delegation_time );
       });
 
       _db.modify( delegatee, [&]( account_object& a )

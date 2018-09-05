@@ -500,7 +500,7 @@ namespace graphene { namespace net
     bool peer_connection::is_inventory_advertised_to_us_list_full_for_transactions() const
     {
       VERIFY_CORRECT_THREAD();
-      return inventory_peer_advertised_to_us.size() > GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES * GRAPHENE_NET_MAX_TRX_PER_SELATERCOND * 60;
+      return inventory_peer_advertised_to_us.size() > GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES * GRAPHENE_NET_MAX_TRX_PER_SECOND * 60;
     }
 
     bool peer_connection::is_inventory_advertised_to_us_list_full() const
@@ -510,7 +510,7 @@ namespace graphene { namespace net
       // plus the maximum number of blocks that would be generated in GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES (plus one,
       // to give us some wiggle room)
       return inventory_peer_advertised_to_us.size() >
-        GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES * GRAPHENE_NET_MAX_TRX_PER_SELATERCOND * 60 +
+        GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES * GRAPHENE_NET_MAX_TRX_PER_SECOND * 60 +
         (GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES + 1) * 60 / BLOCK_INTERVAL;
     }
 

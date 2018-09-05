@@ -65,7 +65,7 @@ namespace node { namespace chain {
           *  interest = interest_rate * TSD_seconds / seconds_per_year
           *
           *  Every time the TSDbalance is updated the TSD_seconds is also updated. If at least
-          *  MIN_COMPOUNDING_INTERVAL_SELATERCONDS has past since TSD_last_interest_payment then
+          *  MIN_COMPOUNDING_INTERVAL_SECONDS has past since TSD_last_interest_payment then
           *  interest is added to TSDbalance.
           *
           *  @defgroup TSD_data TSD Balance Data

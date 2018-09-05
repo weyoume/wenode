@@ -103,7 +103,7 @@ class reserve_ratio_object : public object< reserve_ratio_object_type, reserve_r
       /**
        * The maximum bandwidth the blockchain can support is:
        *
-       *    max_bandwidth = maximum_block_size * BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS / BLOCK_INTERVAL
+       *    max_bandwidth = maximum_block_size * BANDWIDTH_AVERAGE_WINDOW_SECONDS / BLOCK_INTERVAL
        *
        * The maximum virtual bandwidth is:
        *

@@ -617,7 +617,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
 
       BOOST_TEST_MESSAGE( "Generating blocks..." );
 
-      generate_blocks( fc::time_point_sec( db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SELATERCONDS / 2 ), true );
+      generate_blocks( fc::time_point_sec( db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS / 2 ), true );
 
       BOOST_TEST_MESSAGE( "Second round of votes." );
 
@@ -1194,7 +1194,7 @@ BOOST_AUTO_TEST_CASE( TME_fund_for_SCORE_withdrawals )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto next_withdrawal = db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SELATERCONDS;
+      auto next_withdrawal = db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SECONDS;
       asset SCORE = new_alice.SCORE;
       asset to_withdraw = op.SCORE;
       asset original_TME_fund_for_SCORE = SCORE;
@@ -1227,7 +1227,7 @@ BOOST_AUTO_TEST_CASE( TME_fund_for_SCORE_withdrawals )
 
       for( int i = 1; i < TME_fund_for_SCORE_WITHDRAW_INTERVALS - 1; i++ )
       {
-         generate_blocks( db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SELATERCONDS );
+         generate_blocks( db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SECONDS );
 
          const auto& alice = db.get_account( "alice" );
 
@@ -1244,7 +1244,7 @@ BOOST_AUTO_TEST_CASE( TME_fund_for_SCORE_withdrawals )
          if ( i == TME_fund_for_SCORE_WITHDRAW_INTERVALS - 1 )
             BOOST_REQUIRE( alice.nextSCOREwithdrawalTime == fc::time_point_sec::maximum() );
          else
-            BOOST_REQUIRE( alice.nextSCOREwithdrawalTime.sec_since_epoch() == ( old_next_TME_fund_for_SCORE + SCORE_WITHDRAW_INTERVAL_SELATERCONDS ).sec_since_epoch() );
+            BOOST_REQUIRE( alice.nextSCOREwithdrawalTime.sec_since_epoch() == ( old_next_TME_fund_for_SCORE + SCORE_WITHDRAW_INTERVAL_SECONDS ).sec_since_epoch() );
 
          validate_database();
 
@@ -1256,17 +1256,17 @@ BOOST_AUTO_TEST_CASE( TME_fund_for_SCORE_withdrawals )
       if (  to_withdraw.amount.value % withdraw_rate.amount.value != 0 )
       {
          BOOST_TEST_MESSAGE( "Generating one more block to take care of remainder" );
-         generate_blocks( db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SELATERCONDS, true );
+         generate_blocks( db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SECONDS, true );
          fill_op = get_last_operations( 1 )[0].get< fillSCOREWithdraw_operation >();
          gpo = db.get_dynamic_global_properties();
 
-         BOOST_REQUIRE( db.get_account( "alice" ).nextSCOREwithdrawalTime.sec_since_epoch() == ( old_next_TME_fund_for_SCORE + SCORE_WITHDRAW_INTERVAL_SELATERCONDS ).sec_since_epoch() );
+         BOOST_REQUIRE( db.get_account( "alice" ).nextSCOREwithdrawalTime.sec_since_epoch() == ( old_next_TME_fund_for_SCORE + SCORE_WITHDRAW_INTERVAL_SECONDS ).sec_since_epoch() );
          BOOST_REQUIRE( fill_op.from_account == "alice" );
          BOOST_REQUIRE( fill_op.to_account == "alice" );
          BOOST_REQUIRE( fill_op.withdrawn.amount.value == withdraw_rate.amount.value );
          BOOST_REQUIRE( std::abs( ( fill_op.deposited - fill_op.withdrawn * gpo.get_SCORE_price() ).amount.value ) <= 1 );
 
-         generate_blocks( db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SELATERCONDS, true );
+         generate_blocks( db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SECONDS, true );
          gpo = db.get_dynamic_global_properties();
          fill_op = get_last_operations( 1 )[0].get< fillSCOREWithdraw_operation >();
 
@@ -1280,7 +1280,7 @@ BOOST_AUTO_TEST_CASE( TME_fund_for_SCORE_withdrawals )
       }
       else
       {
-         generate_blocks( db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SELATERCONDS, true );
+         generate_blocks( db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SECONDS, true );
 
          BOOST_REQUIRE( db.get_account( "alice" ).nextSCOREwithdrawalTime.sec_since_epoch() == fc::time_point_sec::maximum().sec_since_epoch() );
 
@@ -1793,7 +1793,7 @@ BOOST_AUTO_TEST_CASE( TSD_interest )
       auto interest_op = get_last_operations( 1 )[0].get< interest_operation >();
 
       BOOST_REQUIRE( gpo.TSD_interest_rate > 0 );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value + ( ( ( ( uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds() ) / SELATERCONDS_PER_YEAR ) * gpo.TSD_interest_rate ) / PERCENT_100 ).to_uint64() );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value + ( ( ( ( uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds() ) / SECONDS_PER_YEAR ) * gpo.TSD_interest_rate ) / PERCENT_100 ).to_uint64() );
       BOOST_REQUIRE( interest_op.owner == "alice" );
       BOOST_REQUIRE( interest_op.interest.amount.value == db.get_account( "alice" ).TSDbalance.amount.value - ( alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value ) );
       validate_database();
@@ -1830,7 +1830,7 @@ BOOST_AUTO_TEST_CASE( TSD_interest )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value + ( ( ( ( uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds() + alice_coindays ) / SELATERCONDS_PER_YEAR ) * gpo.TSD_interest_rate ) / PERCENT_100 ).to_uint64() );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value + ( ( ( ( uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds() + alice_coindays ) / SECONDS_PER_YEAR ) * gpo.TSD_interest_rate ) / PERCENT_100 ).to_uint64() );
       validate_database();
    }
    FC_LOG_AND_RETHROW();

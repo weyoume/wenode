@@ -28,11 +28,11 @@
 
 #define GENESIS_TIME                    (fc::time_point_sec(1451606400))
 #define MINING_TIME                     (fc::time_point_sec(1451606400))
-#define CASHOUT_WINDOW_SELATERCONDS          (60*60) /// 1 hr
-#define CASHOUT_WINDOW_SELATERCONDS_PRE_HF12 (CASHOUT_WINDOW_SELATERCONDS)
-#define CASHOUT_WINDOW_SELATERCONDS_PRE_HF17 (CASHOUT_WINDOW_SELATERCONDS)
-#define SELATERCOND_CASHOUT_WINDOW           (60*60*24*3) /// 3 days
-#define MAX_CASHOUT_WINDOW_SELATERCONDS      (60*60*24) /// 1 day
+#define CASHOUT_WINDOW_SECONDS          (60*60) /// 1 hr
+#define CASHOUT_WINDOW_SECONDS_PRE_HF12 (CASHOUT_WINDOW_SECONDS)
+#define CASHOUT_WINDOW_SECONDS_PRE_HF17 (CASHOUT_WINDOW_SECONDS)
+#define SECOND_CASHOUT_WINDOW           (60*60*24*3) /// 3 days
+#define MAX_CASHOUT_WINDOW_SECONDS      (60*60*24) /// 1 day
 #define VOTE_CHANGE_LOCKOUT_PERIOD      (60*10) /// 10 minutes
 #define UPVOTE_LOCKOUT_HF7              (fc::minutes(1))
 #define UPVOTE_LOCKOUT_HF17             (fc::minutes(5))
@@ -41,8 +41,8 @@
 #define ORIGINAL_MIN_ACCOUNT_CREATION_FEE 0
 #define MIN_ACCOUNT_CREATION_FEE          0
 
-#define OWNER_AUTH_RELATERCOVERY_PERIOD                  fc::seconds(60)
-#define ACCOUNT_RELATERCOVERY_REQUEST_EXPIRATION_PERIOD  fc::seconds(12)
+#define OWNER_AUTH_RECOVERY_PERIOD                  fc::seconds(60)
+#define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD  fc::seconds(12)
 #define OWNER_UPDATE_LIMIT                          fc::seconds(0)
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 1
 #else // IS LIVE NETWORK
@@ -72,11 +72,11 @@
 
 #define GENESIS_TIME                    (fc::time_point_sec(0))
 #define MINING_TIME                     (fc::time_point_sec(1000))
-#define CASHOUT_WINDOW_SELATERCONDS_PRE_HF12 (60*60*24)    /// 1 day
-#define CASHOUT_WINDOW_SELATERCONDS_PRE_HF17 (60*60*12)    /// 12 hours
-#define CASHOUT_WINDOW_SELATERCONDS          (60*60*24*7)  /// 7 days
-#define SELATERCOND_CASHOUT_WINDOW           (60*60*24*30) /// 30 days
-#define MAX_CASHOUT_WINDOW_SELATERCONDS      (60*60*24*14) /// 2 weeks
+#define CASHOUT_WINDOW_SECONDS_PRE_HF12 (60*60*24)    /// 1 day
+#define CASHOUT_WINDOW_SECONDS_PRE_HF17 (60*60*12)    /// 12 hours
+#define CASHOUT_WINDOW_SECONDS          (60*60*24*7)  /// 7 days
+#define SECOND_CASHOUT_WINDOW           (60*60*24*30) /// 30 days
+#define MAX_CASHOUT_WINDOW_SECONDS      (60*60*24*14) /// 2 weeks
 #define VOTE_CHANGE_LOCKOUT_PERIOD      (60*60*2)     /// 2 hours
 #define UPVOTE_LOCKOUT_HF7              (fc::minutes(1))
 #define UPVOTE_LOCKOUT_HF17             (fc::hours(12))
@@ -84,8 +84,8 @@
 #define ORIGINAL_MIN_ACCOUNT_CREATION_FEE  0
 #define MIN_ACCOUNT_CREATION_FEE           0
 
-#define OWNER_AUTH_RELATERCOVERY_PERIOD                  fc::days(30)
-#define ACCOUNT_RELATERCOVERY_REQUEST_EXPIRATION_PERIOD  fc::days(1)
+#define OWNER_AUTH_RECOVERY_PERIOD                  fc::days(30)
+#define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD  fc::days(1)
 #define OWNER_UPDATE_LIMIT                          fc::minutes(60)
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 3186477
 
@@ -118,13 +118,13 @@
 #define MAX_PROXY_RECURSION_DEPTH       4
 #define TME_fund_for_SCORE_WITHDRAW_INTERVALS_PRE_HF_16 104
 #define TME_fund_for_SCORE_WITHDRAW_INTERVALS      13
-#define SCORE_WITHDRAW_INTERVAL_SELATERCONDS (60*60*24*7) /// 1 week per interval
+#define SCORE_WITHDRAW_INTERVAL_SECONDS (60*60*24*7) /// 1 week per interval
 #define MAX_WITHDRAW_ROUTES             10
 #define SAVINGS_WITHDRAW_TIME        	(fc::days(3))
 #define SAVINGS_WITHDRAW_REQUEST_LIMIT  100
-#define VOTE_REGENERATION_SELATERCONDS       (5*60*60*24) // 5 day
+#define VOTE_REGENERATION_SECONDS       (5*60*60*24) // 5 day
 #define MAX_VOTE_CHANGES                5
-#define REVERSE_AUCTION_WINDOW_SELATERCONDS  (60*30) /// 30 minutes
+#define REVERSE_AUCTION_WINDOW_SECONDS  (60*30) /// 30 minutes
 #define MIN_VOTE_INTERVAL_SEC           3
 #define VOTE_DUST_THRESHOLD             (50000000)
 
@@ -152,7 +152,7 @@
 #define MAX_RATION_DECAY_RATE           (1000000)
 #define FREE_TRANSACTIONS_WITH_NEW_ACCOUNT 100
 
-#define BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS (60*60*24*7) ///< 1 week
+#define BANDWIDTH_AVERAGE_WINDOW_SECONDS (60*60*24*7) ///< 1 week
 #define BANDWIDTH_PRECISION             (uint64_t(1000000)) ///< 1 million
 #define MAX_COMMENT_DEPTH_PRE_HF17      6
 #define MAX_COMMENT_DEPTH               0xffff // 64k
@@ -242,7 +242,7 @@
 #define MAX_SIG_CHECK_DEPTH             2
 
 #define MIN_TRANSACTION_SIZE_LIMIT      1024
-#define SELATERCONDS_PER_YEAR                (uint64_t(60*60*24*365ll))
+#define SECONDS_PER_YEAR                (uint64_t(60*60*24*365ll))
 
 #define TSD_INTEREST_COMPOUND_INTERVAL_SEC  (60*60*24*30)
 #define MAX_TRANSACTION_SIZE            (1024*64)
@@ -253,7 +253,7 @@
 #define FEED_INTERVAL_BLOCKS            (BLOCKS_PER_HOUR)
 #define FEED_HISTORY_WINDOW_PRE_HF_16   (24*7) /// 7 days * 24 hours per day
 #define FEED_HISTORY_WINDOW             (12*7) // 3.5 days
-#define MAX_FEED_AGE_SELATERCONDS            (60*60*24*7) // 7 days
+#define MAX_FEED_AGE_SECONDS            (60*60*24*7) // 7 days
 #define MIN_FEEDS                       (MAX_WITNESSES/3) /// protects the network from conversions before price has been established
 #define CONVERSION_DELAY_PRE_HF_16      (fc::days(7))
 #define CONVERSION_DELAY                (fc::hours(FEED_HISTORY_WINDOW)) //3.5 day conversion

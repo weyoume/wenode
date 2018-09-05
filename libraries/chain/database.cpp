@@ -1438,7 +1438,7 @@ void database::process_TME_fund_for_SCORE_withdrawals()
          }
          else
          {
-            a.nextSCOREwithdrawalTime += fc::seconds( SCORE_WITHDRAW_INTERVAL_SELATERCONDS );
+            a.nextSCOREwithdrawalTime += fc::seconds( SCORE_WITHDRAW_INTERVAL_SECONDS );
          }
       });
 
@@ -1615,7 +1615,7 @@ share_type database::cashout_comment_helper( util::comment_reward_context& ctx, 
          else if( c.parent_author == ROOT_POST_PARENT )
          {
             if( has_hardfork( HARDFORK_0_12__177 ) && c.last_payout == fc::time_point_sec::min() )
-               c.cashout_time = head_block_time() + SELATERCOND_CASHOUT_WINDOW;
+               c.cashout_time = head_block_time() + SECOND_CASHOUT_WINDOW;
             else
                c.cashout_time = fc::time_point_sec::maximum();
          }
@@ -2089,7 +2089,7 @@ void database::account_recovery_processing()
    const auto& hist_idx = get_index< owner_authority_history_index >().indices(); //by id
    auto hist = hist_idx.begin();
 
-   while( hist != hist_idx.end() && time_point_sec( hist->last_valid_time + OWNER_AUTH_RELATERCOVERY_PERIOD ) < head_block_time() )
+   while( hist != hist_idx.end() && time_point_sec( hist->last_valid_time + OWNER_AUTH_RECOVERY_PERIOD ) < head_block_time() )
    {
       remove( *hist );
       hist = hist_idx.begin();
@@ -2766,13 +2766,13 @@ try {
       const auto& wit = get_witness( wso.current_shuffled_witnesses[i] );
       if( has_hardfork( HARDFORK_0_19__822 ) )
       {
-         if( now < wit.last_TSD_exchange_update + MAX_FEED_AGE_SELATERCONDS
+         if( now < wit.last_TSD_exchange_update + MAX_FEED_AGE_SECONDS
             && !wit.TSD_exchange_rate.is_null() )
          {
             feeds.push_back( wit.TSD_exchange_rate );
          }
       }
-      else if( wit.last_TSD_exchange_update < now + MAX_FEED_AGE_SELATERCONDS &&
+      else if( wit.last_TSD_exchange_update < now + MAX_FEED_AGE_SECONDS &&
           !wit.TSD_exchange_rate.is_null() )
       {
          feeds.push_back( wit.TSD_exchange_rate );
@@ -3349,7 +3349,7 @@ void database::adjust_balance( const account_object& a, const asset& delta )
                if( acnt.TSD_seconds > 0 &&
                    (acnt.TSD_seconds_last_update - acnt.TSD_last_interest_payment).to_seconds() > TSD_INTEREST_COMPOUND_INTERVAL_SEC )
                {
-                  auto interest = acnt.TSD_seconds / SELATERCONDS_PER_YEAR;
+                  auto interest = acnt.TSD_seconds / SECONDS_PER_YEAR;
                   interest *= get_dynamic_global_properties().TSD_interest_rate;
                   interest /= PERCENT_100;
                   asset interest_paid(interest.to_uint64(), SYMBOL_TSD);
@@ -3394,7 +3394,7 @@ void database::adjust_TMEsavingsBalance( const account_object& a, const asset& d
                if( acnt.savings_TSD_seconds > 0 &&
                    (acnt.savings_TSD_seconds_last_update - acnt.savings_TSD_last_interest_payment).to_seconds() > TSD_INTEREST_COMPOUND_INTERVAL_SEC )
                {
-                  auto interest = acnt.savings_TSD_seconds / SELATERCONDS_PER_YEAR;
+                  auto interest = acnt.savings_TSD_seconds / SECONDS_PER_YEAR;
                   interest *= get_dynamic_global_properties().TSD_interest_rate;
                   interest /= PERCENT_100;
                   asset interest_paid(interest.to_uint64(), SYMBOL_TSD);
@@ -3708,7 +3708,7 @@ void database::apply_hardfork( uint32_t hardfork )
                   {
                      modify( *itr, [&]( comment_object & c )
                      {
-                        c.cashout_time = head_block_time() + CASHOUT_WINDOW_SELATERCONDS_PRE_HF17;
+                        c.cashout_time = head_block_time() + CASHOUT_WINDOW_SECONDS_PRE_HF17;
                      });
                   }
                   // Has been paid out, needs to be on second cashout window
@@ -3716,7 +3716,7 @@ void database::apply_hardfork( uint32_t hardfork )
                   {
                      modify( *itr, [&]( comment_object& c )
                      {
-                        c.cashout_time = c.last_payout + SELATERCOND_CASHOUT_WINDOW;
+                        c.cashout_time = c.last_payout + SECOND_CASHOUT_WINDOW;
                      });
                   }
                }
@@ -3832,7 +3832,7 @@ void database::apply_hardfork( uint32_t hardfork )
             {
                modify( *itr, [&]( comment_object& c )
                {
-                  c.cashout_time = std::max( c.created + CASHOUT_WINDOW_SELATERCONDS, c.cashout_time );
+                  c.cashout_time = std::max( c.created + CASHOUT_WINDOW_SECONDS, c.cashout_time );
                });
             }
 
@@ -3840,7 +3840,7 @@ void database::apply_hardfork( uint32_t hardfork )
             {
                modify( *itr, [&]( comment_object& c )
                {
-                  c.cashout_time = std::max( calculate_discussion_payout_time( c ), c.created + CASHOUT_WINDOW_SELATERCONDS );
+                  c.cashout_time = std::max( calculate_discussion_payout_time( c ), c.created + CASHOUT_WINDOW_SECONDS );
                });
             }
          }

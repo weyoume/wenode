@@ -328,7 +328,7 @@ namespace detail
             r.average_block_size = 0;
             r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
             r.max_virtual_bandwidth = ( uint128_t( MAX_BLOCK_SIZE * MAX_RESERVE_RATIO )
-                                      * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS )
+                                      * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SECONDS )
                                       / BLOCK_INTERVAL;
          });
       }
@@ -383,7 +383,7 @@ namespace detail
                }
 
                r.max_virtual_bandwidth = ( uint128_t( max_block_size ) * uint128_t( r.current_reserve_ratio )
-                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS ) )
+                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SECONDS ) )
                                          / ( BLOCK_INTERVAL * RESERVE_RATIO_PRECISION );
             }
          });
@@ -415,11 +415,11 @@ namespace detail
          share_type trx_bandwidth = trx_size * BANDWIDTH_PRECISION;
          auto delta_time = ( _db.head_block_time() - band->last_bandwidth_update ).to_seconds();
 
-         if( delta_time > BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS )
+         if( delta_time > BANDWIDTH_AVERAGE_WINDOW_SECONDS )
             new_bandwidth = 0;
          else
-            new_bandwidth = ( ( ( BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS - delta_time ) * fc::uint128( band->average_bandwidth.value ) )
-               / BANDWIDTH_AVERAGE_WINDOW_SELATERCONDS ).to_uint64();
+            new_bandwidth = ( ( ( BANDWIDTH_AVERAGE_WINDOW_SECONDS - delta_time ) * fc::uint128( band->average_bandwidth.value ) )
+               / BANDWIDTH_AVERAGE_WINDOW_SECONDS ).to_uint64();
 
          new_bandwidth += trx_bandwidth;
 
