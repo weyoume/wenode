@@ -1,5 +1,5 @@
-peer.ezira.io:2001
-peer0.ezira.io:2001 
-peer0.ezira.io:2002
-peer0.ezira.io:2003
-peer1.ezira.io:2001
+peer.weyoume.io:2001
+peer0.weyoume.io:2001 
+peer0.weyoume.io:2002
+peer0.weyoume.io:2003
+peer1.weyoume.io:2001
