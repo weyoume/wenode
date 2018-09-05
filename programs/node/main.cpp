@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
       std::cerr << "            STARTING NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
       std::cerr << "init public key: " << INIT_PUBLIC_KEY_STR << "\n";
-			#ifdef SHOW_PRIVATE_KEY
+			#if SHOW_PRIVATE_KEY
 				std::cerr << "init private key: " << initminer_private_key << "\n";
       std::cerr << "chain id: " << std::string(CHAIN_ID) << "\n";
       std::cerr << "blockchain version: " << fc::string( BLOCKCHAIN_VERSION ) << "\n";
