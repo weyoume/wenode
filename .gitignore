@@ -61,3 +61,5 @@ scripts/private*
 /nbproject/private/
 
 cmake-build-debug/
+
+nbproject/
