@@ -144,6 +144,8 @@ We ship a Dockerfile.  This builds both common node type binaries.
     git clone https://github.com/eziranetwork/ezira
     cd ezira
     docker build -t eziranetwork/ezira .
+		// or
+		npm run docker
 
 ## Building on Ubuntu 16.04
 

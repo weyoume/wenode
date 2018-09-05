@@ -16,6 +16,8 @@ fc::variant_object get_config()
    result[ "IS_TEST_NET" ] = false;
 #endif
 
+   result[ "SHOW_PRIVATE_KEY" ] = SHOW_PRIVATE_KEY;
+   result[ "GEN_PRIVATE_KEY" ] = GEN_PRIVATE_KEY;
    result["SYMBOL_EUSD"] = SYMBOL_EUSD;
    result["PERCENT_100"] = PERCENT_100;
    result["PERCENT_1"] = PERCENT_1;

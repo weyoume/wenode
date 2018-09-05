@@ -58,15 +58,17 @@ int main(int argc, char** argv) {
       std::cerr << "------------------------------------------------------\n";
 		#else
       std::cerr << "------------------------------------------------------\n\n";
-      std::cerr << "            STARTING EZIRA NETWORK\n\n";
+      std::cerr << "            STARTING NETWORK\n\n";
       std::cerr << "------------------------------------------------------\n";
       std::cerr << "init public key: " << INIT_PUBLIC_KEY_STR << "\n";
+			#ifdef SHOW_PRIVATE_KEY
+				std::cerr << "init private key: " << initminer_private_key << "\n";
       std::cerr << "chain id: " << std::string(CHAIN_ID) << "\n";
       std::cerr << "blockchain version: " << fc::string( BLOCKCHAIN_VERSION ) << "\n";
       std::cerr << "------------------------------------------------------\n";
 		#endif
-      bpo::options_description app_options("Ezira Daemon");
-      bpo::options_description cfg_options("Ezira Daemon");
+      bpo::options_description app_options("Daemon");
+      bpo::options_description cfg_options("Daemon");
       app_options.add_options()
             ("help,h", "Print this help message and exit.")
             ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"), "Directory containing databases, configuration file, etc.")

@@ -6,6 +6,14 @@
 #define BLOCKCHAIN_VERSION              ( version(0, 19, 5) )
 #define BLOCKCHAIN_HARDFORK_VERSION     ( hardfork_version( BLOCKCHAIN_VERSION ) )
 
+#ifndef SHOW_PRIVATE_KEY
+	#define SHOW_PRIVATE_KEY 								0
+#endif
+
+#ifndef GEN_PRIVATE_KEY
+	#define GEN_PRIVATE_KEY 								0
+#endif
+
 #ifdef IS_TEST_NET
 #define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
 #define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
@@ -37,11 +45,16 @@
 #define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD  fc::seconds(12)
 #define OWNER_UPDATE_LIMIT                          fc::seconds(0)
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 1
-#else // IS LIVE EZIRA NETWORK
+#else // IS LIVE NETWORK
 
-#define INIT_PUBLIC_KEY_STR             ""
+	#if GEN_PRIVATE_KEY
+		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
+		#define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
+	#else
+		#define INIT_PUBLIC_KEY_STR             "EZT8AqecLobkeTBmffuuxdhdYG3fttawrtST77cm83DHpVTcyNNzz"
+	#endif
+	
 #define CHAIN_ID                        (fc::sha256::hash("tWYM"))
-
 #define SYMBOL_ECO  									  (uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< eCoin with 3 digits of precision
 #define SYMBOL_ESCOR  									(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< ESCOR with 6 digits of precision
 #define SYMBOL_WYM    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< EZIRA with 3 digits of precision
@@ -259,14 +272,9 @@
  *  Reserved Account IDs with special meaning
  */
 ///@{
-/// Represents the current witnesses
-#define MINER_ACCOUNT                   "webuilders"
-/// Represents the canonical account with NO authority (nobody can access funds in null account)
-#define NULL_ACCOUNT                    "null"
-/// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
-#define TEMP_ACCOUNT                    "temp"
-/// Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
-#define PROXY_TO_SELF_ACCOUNT           ""
-/// Represents the canonical root post parent account
-#define ROOT_POST_PARENT                (account_name_type())
+#define MINER_ACCOUNT                   "webuilders" /// Represents the current witnesses
+#define NULL_ACCOUNT                    "null" /// Represents the canonical account with NO authority (nobody can access funds in null account)
+#define TEMP_ACCOUNT                    "temp" /// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
+#define PROXY_TO_SELF_ACCOUNT           "" /// Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
+#define ROOT_POST_PARENT                (account_name_type()) /// Represents the canonical root post parent account
 ///@}
