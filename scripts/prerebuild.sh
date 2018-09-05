@@ -1,1 +1,1 @@
-docker rm -f ezira-test-node
+docker rm -f wenode-test

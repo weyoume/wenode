@@ -76,7 +76,7 @@
 #define START_ECO_fund_for_ESCOR_BLOCK             (BLOCKS_PER_DAY * 7)
 #define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 30)
 
-#define INIT_MINER_NAME                 "ezbuilder"
+#define INIT_MINER_NAME                 "webuilder"
 #define NUM_INIT_MINERS                 50
 #define NUM_INIT_EXTRAS									0
 #define INIT_TIME                       (fc::time_point_sec(0));
@@ -260,7 +260,7 @@
  */
 ///@{
 /// Represents the current witnesses
-#define MINER_ACCOUNT                   "ezbuilders"
+#define MINER_ACCOUNT                   "webuilders"
 /// Represents the canonical account with NO authority (nobody can access funds in null account)
 #define NULL_ACCOUNT                    "null"
 /// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)

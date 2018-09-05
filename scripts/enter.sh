@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker exec -it ezira-test-node /bin/bash
+docker exec -it wenode-test /bin/bash

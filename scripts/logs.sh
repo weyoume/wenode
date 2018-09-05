@@ -1,1 +1,1 @@
-docker logs -f --tail 3000 ezira-test-node
+docker logs -f --tail 3000 wenode-test

@@ -1,5 +1,1 @@
 peer.weyoume.io:2001
-peer0.weyoume.io:2001 
-peer0.weyoume.io:2002
-peer0.weyoume.io:2003
-peer1.weyoume.io:2001

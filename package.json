@@ -12,6 +12,7 @@
 		"push" : "./scripts/push.sh",
 		"pull" : "./scripts/pull.sh",
 		"gitmodules" : "git submodule update --init --recursive",
+		"run" : "./scripts/run-full-multi.sh",
 		"docker" : "docker build -t lopudesigns/wenode-test .",
 		"dockerReady" : "docker build -f Dockerfiles/preinstalledDependancies.Dockerfile -t lopudesigns/wenode-test .",
 		"dockerTest" : "docker build -t lopudesigns/wenode-testing . --file test.Dockerfile",
