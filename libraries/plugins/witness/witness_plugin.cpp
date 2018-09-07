@@ -60,15 +60,38 @@ using chain::account_object;
 
 void new_chain_banner( const node::chain::database& db )
 {
-   std::cerr << "\n"
+  std::cerr << "\n"
       "********************************\n"
       "*                              *\n"
       "*   ------- NEW CHAIN ------   *\n"
-      "*   -   Welcome!  -   *\n"
+      "*   -        Welcome       -   *\n"
       "*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
-      "\n";
+      "\n"
+			"\n";
+  std::cerr << "\n"
+      "********************************\n"
+      "*   ------ PUBLIC KEY ------   *\n"
+      "* " << INIT_PUBLIC_KEY_STR <<  "*\n"
+      "*   ------------------------   *\n"
+      "*                              *\n"
+      "********************************\n"
+      "\n"
+			"\n";
+	#if SHOW_PRIVATE_KEY
+		auto initminer_private_key = graphene::utilities::key_to_wif( INIT_PRIVATE_KEY );
+		std::cerr << "\n"
+      "********************************\n"
+      "*   ------ PRIVATE KEY -----   *\n"
+      "* " << initminer_private_key <<  "*\n"
+      "*   ------------------------   *\n"
+      "*                              *\n"
+      "********************************\n"
+      "\n"
+			"\n";
+	#endif
+
    return;
 }
 
