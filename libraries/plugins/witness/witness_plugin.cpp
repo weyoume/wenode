@@ -85,14 +85,12 @@ void new_chain_banner( const node::chain::database& db )
       "*   ------- KEYPAIRS -------   *\n"
       "*   ------------------------   *\n";
 			for (auto const& [key, val] : _private_keys){
-				std::cerr << 
-				"*   -------- PUB ---------   *\n" <<
-				key << "   *\n"
-				"*   ------ PRIVATE -------  *\n" <<
-				val << "   *\n";
+				std::cerr << "*   -------- PUB ---------   *\n" 
+				"*   " << key << "   *\n"
+				"*   ------ PRIVATE -------  *\n" 
+				"*   " << val << "   *\n";
 			};
-    std:cerr <<
-			"*   ------------------------   *\n"
+    std:cerr <<	"*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
       "\n"
