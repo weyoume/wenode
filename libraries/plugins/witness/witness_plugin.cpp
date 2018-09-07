@@ -73,7 +73,7 @@ void new_chain_banner( const node::chain::database& db )
   std::cerr << "\n"
       "********************************\n"
       "*   ---- INIT PUBLIC KEY ---   *\n"
-      "* " << INIT_PUBLIC_KEY_STR <<  "*\n"
+      "*   " << INIT_PUBLIC_KEY_STR <<  "   *\n"
       "*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
@@ -89,7 +89,7 @@ void new_chain_banner( const node::chain::database& db )
 				"*   " << key << "   *\n"
 				"*   ------ PRIVATE -------  *\n" 
 				"*   " << val << "   *\n";
-			};
+			}
     std:cerr <<	"*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
@@ -97,7 +97,7 @@ void new_chain_banner( const node::chain::database& db )
 			"\n";
 	#endif
 
-   return;
+  return;
 }
 
 namespace detail
