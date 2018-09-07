@@ -71,9 +71,11 @@ fc::variant_object get_config()
    result["INIT_MINER_NAME"] = INIT_MINER_NAME;
    result["INIT_PUBLIC_KEY_STR"] = INIT_PUBLIC_KEY_STR;
 #if SHOW_PRIVATE_KEYS
-   // do not expose private key, period.
-   // we need this line present but inactivated so CI check for all constants in config.hpp doesn't complain.
+	#if INIT_PRIVATE_KEY
    result["INIT_PRIVATE_KEY"] = INIT_PRIVATE_KEY;
+	#endif
+   // do not expose private key, period. - from steem devs, hmmmmmm - from lopugit
+   // we need this line present but inactivated so CI check for all constants in config.hpp doesn't complain.
 #endif
    result["INIT_SUPPLY"] = INIT_SUPPLY;
    result["INIT_TIME"] = INIT_TIME;
