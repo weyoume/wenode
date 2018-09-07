@@ -66,7 +66,7 @@
 // WeYouMe
 #define SYMBOL_COIN  									  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('E') << 24) ) ///< TME with 3 digits of precision
 #define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('S') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('R') << 32) | (uint64_t('E') << 40) ) ///< SCORE with 6 digits of precision
-#define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('U') << 16) | (uint64_t('S') << 24) ) ///< TME Backed TSD with 3 digits of precision
+#define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('S') << 16) | (uint64_t('D') << 24) ) ///< TME Backed TSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "TWYM"
 
