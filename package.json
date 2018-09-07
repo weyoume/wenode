@@ -20,6 +20,7 @@
 		"dockerStart" : "./scripts/start-full-multi.sh",
 		"dockerStartGenesis" : "./scripts/start-full-multi-genesis.sh",
 		"dockerRun" : "npm run dockerBuildReady && npm run dockerStart && dockerLogs",
+		"dockerRunGenesis" : "npm run dockerBuildReadyGenesis && npm run dockerStartGenesis && dockerLogs",
 		"dockerDebug" : "docker build -t lopudesigns/wenode-debugging . -f Dockerfiles/debug.Dockerfile",
 		"dockerLogs" : "docker logs --tail 1000 -f wenode-test",
 		"dockerWallet" : "docker exec -it wenode-test /usr/local/node/bin/wallet",
