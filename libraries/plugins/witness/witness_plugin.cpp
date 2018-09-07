@@ -72,20 +72,25 @@ void new_chain_banner( const node::chain::database& db )
 			"\n";
   std::cerr << "\n"
       "********************************\n"
-      "*   ------ PUBLIC KEY ------   *\n"
+      "*   ---- INIT PUBLIC KEY ---   *\n"
       "* " << INIT_PUBLIC_KEY_STR <<  "*\n"
       "*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
       "\n"
 			"\n";
-	#if SHOW_PRIVATE_KEY
-		auto initminer_private_key = graphene::utilities::key_to_wif( INIT_PRIVATE_KEY );
+	#if SHOW_PRIVATE_KEYS
 		std::cerr << "\n"
       "********************************\n"
-      "*   ------ PRIVATE KEY -----   *\n"
-      "* " << initminer_private_key <<  "*\n"
-      "*   ------------------------   *\n"
+      "*   ------- KEYPAIRS -------   *\n"
+      "*   ------------------------   *\n";
+			for (auto const& [key, val] : _private_keys){
+				std::cerr << "*   ------ PUBLIC KEY ------ " <<
+				key << "\n*   ------ PRIVATE KEY ------ " <<
+				val;
+			};
+    std:cerr <<
+			"\n*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
       "\n"

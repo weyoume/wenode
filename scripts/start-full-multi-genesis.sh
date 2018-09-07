@@ -19,7 +19,7 @@ docker run \
         --env USE_FULL_CONTENT_NODE=1 \
 				--env USE_NGINX_FRONTEND=1 \
 				--env GEN_PRIVATE_KEY=1 \
-				--env SHOW_PRIVATE_KEY=1 \
+				--env SHOW_PRIVATE_KEYS=1 \
         --env WITNESS_NAMES="$witness_names" \
        	--env WITNESS_NAME="webuilder" \
         -d -p 2001:2001 -p 8090:8090 --name wenode-test \

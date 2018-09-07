@@ -16,7 +16,7 @@ fc::variant_object get_config()
    result[ "IS_TEST_NET" ] = false;
 #endif
 
-   result[ "SHOW_PRIVATE_KEY" ] = SHOW_PRIVATE_KEY;
+   result[ "SHOW_PRIVATE_KEYS" ] = SHOW_PRIVATE_KEYS;
    result[ "GEN_PRIVATE_KEY" ] = GEN_PRIVATE_KEY;
    result["SYMBOL_USD"] = SYMBOL_USD;
    result["PERCENT_100"] = PERCENT_100;
@@ -70,7 +70,7 @@ fc::variant_object get_config()
    result["INFLATION_RATE_STOP_PERCENT"] = INFLATION_RATE_STOP_PERCENT;
    result["INIT_MINER_NAME"] = INIT_MINER_NAME;
    result["INIT_PUBLIC_KEY_STR"] = INIT_PUBLIC_KEY_STR;
-#if SHOW_PRIVATE_KEY
+#if SHOW_PRIVATE_KEYS
    // do not expose private key, period.
    // we need this line present but inactivated so CI check for all constants in config.hpp doesn't complain.
    result["INIT_PRIVATE_KEY"] = INIT_PRIVATE_KEY;

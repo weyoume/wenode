@@ -117,7 +117,7 @@ RUN \
         -DCMAKE_INSTALL_PREFIX=/usr/local/node \
         -DCMAKE_BUILD_TYPE=Release \
 				-DGEN_PRIVATE_KEY=1 \
-				-DSHOW_PRIVATE_KEY=1 \
+				-DSHOW_PRIVATE_KEYS=1 \
         -DLOW_MEMORY_NODE=OFF \
         -DCLEAR_VOTES=OFF \
         -DSKIP_BY_TX_ID=ON \

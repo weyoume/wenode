@@ -6,8 +6,8 @@
 #define BLOCKCHAIN_VERSION              ( version(0, 19, 5) )
 #define BLOCKCHAIN_HARDFORK_VERSION     ( hardfork_version( BLOCKCHAIN_VERSION ) )
 
-#ifndef SHOW_PRIVATE_KEY
-	#define SHOW_PRIVATE_KEY 								1
+#ifndef SHOW_PRIVATE_KEYS
+	#define SHOW_PRIVATE_KEYS 								1
 #endif
 
 #ifndef GEN_PRIVATE_KEY
@@ -286,3 +286,6 @@
 #define PROXY_TO_SELF_ACCOUNT           "" /// Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
 #define ROOT_POST_PARENT                (account_name_type()) /// Represents the canonical root post parent account
 ///@}
+
+// do later / need to know how to define arrays - signed lopugit
+// #define PRIVATE_KEYS std::map<public_key_type, fc::ecc::private_key>;
