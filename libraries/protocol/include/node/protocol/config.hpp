@@ -94,7 +94,7 @@
 #define BLOCK_INTERVAL                  3
 #define BLOCKS_PER_YEAR                 (365*24*60*60/BLOCK_INTERVAL)
 #define BLOCKS_PER_DAY                  (24*60*60/BLOCK_INTERVAL)
-#define START_TME_fund_for_SCORE_BLOCK             (BLOCKS_PER_DAY * 7)
+#define START_TME_fund_for_SCORE_BLOCK  (BLOCKS_PER_DAY * 7)
 #define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 30)
 
 #define INIT_MINER_NAME                 "webuilder"
@@ -164,7 +164,7 @@
 #define CREATE_ACCOUNT_DELEGATION_RATIO    5
 #define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(30)
 
-#define MINING_REWARD                   asset( 10000, SYMBOL_COIN )
+#define MINING_REWARD                   asset( 1, SYMBOL_COIN )
 #define EQUIHASH_N                      140
 #define EQUIHASH_K                      6
 
@@ -237,7 +237,7 @@
 #define MAX_PERMLINK_LENGTH             256
 #define MAX_WITNESS_URL_LENGTH          2048
 
-#define INIT_SUPPLY                     int64_t(10000000000)
+#define INIT_SUPPLY                     int64_t(999999999999)
 #define MAX_SCORE_SUPPLY                int64_t(1000000000000000ll)
 #define MAX_SIG_CHECK_DEPTH             2
 
