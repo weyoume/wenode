@@ -208,7 +208,7 @@ RUN chmod +x /usr/local/bin/node-sv-run.sh
 
 # add nginx templates
 ADD contrib/node.nginx.conf /etc/nginx/node.nginx.conf
-ADD contrib/healthcheck.conf.template /etc/nginx/healthcheck.conf.template
+ADD contrib/nginx.api.template.conf /etc/nginx/nginx.api.template.conf
 
 # add PaaS startup script and service script
 ADD contrib/startpaasnode.sh /usr/local/bin/startpaasnode.sh

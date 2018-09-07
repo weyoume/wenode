@@ -137,7 +137,7 @@ fi
 chown -R node:node $HOME/*
 
 # let's get going
-cp /etc/nginx/healthcheck.conf.template /etc/nginx/healthcheck.conf
+cp /etc/nginx/nginx.api.template.conf /etc/nginx/healthcheck.conf
 echo server 127.0.0.1:8091\; >> /etc/nginx/healthcheck.conf
 echo } >> /etc/nginx/healthcheck.conf
 rm /etc/nginx/sites-enabled/default

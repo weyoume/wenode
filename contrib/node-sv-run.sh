@@ -134,7 +134,7 @@ if [[ "$USE_MULTICORE_READONLY" ]]; then
     # sleep for a moment to allow the writer node to be ready to accept connections from the readers
     sleep 30
     PORT_NUM=8092
-    cp /etc/nginx/healthcheck.conf.template /etc/nginx/healthcheck.conf
+    cp /etc/nginx/nginx.api.template.conf /etc/nginx/healthcheck.conf
     CORES=$(nproc)
     PROCESSES=$((CORES * 4))
     for (( i=2; i<=$PROCESSES; i++ ))
@@ -165,7 +165,7 @@ if [[ "$USE_MULTICORE_READONLY" ]]; then
     echo daemon off\; >> /etc/nginx/nginx.conf
     service nginx restart
 elif [[ "$USE_NGINX_FRONTEND" ]]; then
-    cp /etc/nginx/healthcheck.conf.template /etc/nginx/healthcheck.conf
+    cp /etc/nginx/nginx.api.template.conf /etc/nginx/healthcheck.conf
     echo server 127.0.0.1:8091\; >> /etc/nginx/healthcheck.conf
     echo } >> /etc/nginx/healthcheck.conf
     rm /etc/nginx/sites-enabled/default
