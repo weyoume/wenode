@@ -18,6 +18,7 @@
 		"dockerBuildReadyGenesis" : "docker build -f Dockerfiles/preinstalledDependanciesGenesis.Dockerfile -t lopudesigns/wenode-test .",
 		"dockerTest" : "docker build -t lopudesigns/wenode-testing . -f Dockerfiles/test.Dockerfile",
 		"dockerStart" : "./scripts/start-full-multi.sh",
+		"dockerStartGenesis" : "./scripts/start-full-multi-genesis.sh",
 		"dockerRun" : "npm run dockerBuildReady && npm run dockerStart && dockerLogs",
 		"dockerDebug" : "docker build -t lopudesigns/wenode-debugging . -f Dockerfiles/debug.Dockerfile",
 		"dockerLogs" : "docker logs --tail 1000 -f wenode-test",
