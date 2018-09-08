@@ -1,6 +1,6 @@
 {
   "name": "wenode",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "WeYouMe Network Node Software",
   "main": "index.js",
   "directories": {
