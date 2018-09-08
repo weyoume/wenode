@@ -81,8 +81,8 @@
 #define UPVOTE_LOCKOUT_HF7              (fc::minutes(1))
 #define UPVOTE_LOCKOUT_HF17             (fc::hours(12))
 
-#define ORIGINAL_MIN_ACCOUNT_CREATION_FEE  1
-#define MIN_ACCOUNT_CREATION_FEE           1
+#define ORIGINAL_MIN_ACCOUNT_CREATION_FEE  1000
+#define MIN_ACCOUNT_CREATION_FEE           1000
 
 #define OWNER_AUTH_RECOVERY_PERIOD                  fc::days(30)
 #define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD  fc::days(1)
@@ -160,7 +160,7 @@
 
 #define MAX_RESERVE_RATIO               (20000)
 
-#define CREATE_ACCOUNT_WITH_TME_MODIFIER 			 30
+#define CREATE_ACCOUNT_WITH_TME_MODIFIER 	 1
 #define CREATE_ACCOUNT_DELEGATION_RATIO    5
 #define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(30)
 
