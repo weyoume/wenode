@@ -7,7 +7,7 @@
 #define BLOCKCHAIN_HARDFORK_VERSION     ( hardfork_version( BLOCKCHAIN_VERSION ) )
 
 #ifndef SHOW_PRIVATE_KEYS
-	#define SHOW_PRIVATE_KEYS 								1
+	#define SHOW_PRIVATE_KEYS 							1
 #endif
 
 #ifndef GEN_PRIVATE_KEY
