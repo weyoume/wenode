@@ -38,6 +38,8 @@ tests/performance_test
 doxygen
 
 build/*
+windows_build/*
+osx_build/*
 made/*
 
 wallet.json
@@ -62,3 +64,5 @@ nbproject
 libraries/fc/*
 
 data-dir/*
+windows_data-dir/*
+osx_data-dir/*

@@ -147,6 +147,9 @@
 		<Unit filename="/Users/lopu/Dropbox/git/weyoume/wenode/dev-wenode/libraries/wallet/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\libraries\wallet\"/>
 		</Unit>
+		<Unit filename="/Users/lopu/Dropbox/git/weyoume/wenode/dev-wenode/libraries/wallet/Doxyfile.in">
+			<Option virtualFolder="CMake Files\libraries\wallet\"/>
+		</Unit>
 		<Unit filename="/Users/lopu/Dropbox/git/weyoume/wenode/dev-wenode/libraries/manifest/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\libraries\manifest\"/>
 		</Unit>

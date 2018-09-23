@@ -203,7 +203,7 @@ will build out of the box without further effort:
 		./b2 -s NO_BZIP2=1 install
 
 		# also you might need gcc g++ v5 instead of v7 which is the current apt version
-		see https://gist.github.com/2a2091f282042ed20cda
+		# see https://gist.github.com/2a2091f282042ed20cda
 		sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 		sudo apt-get update
 		sudo apt-get install gcc-5 g++-5
@@ -212,12 +212,12 @@ will build out of the box without further effort:
 		# and you'll probably also need v1.0.1h of openssl due to some CBigNum error bullshit
 		wget https://github.com/openssl/openssl/releases/tag/OpenSSL_1_0_2h
 		# You'll have to build this with
-		unzip openssl-OpenSSL_1_0_1h
-		cd openssl-OpenSSL_1_0_1h
+		unzip openssl-OpenSSL_1_0_2h
+		cd openssl-OpenSSL_1_0_2h
 		./config
 		make depend
 		make
-		
+
     # Optional packages (not required, but will make a nicer experience)
     sudo apt-get install -y \
         doxygen \
@@ -294,7 +294,7 @@ Here is how to build and install Boost 1.60 into your user's home directory
 		./b2 -s NO_BZIP2=1 install
 
 		# also you might need gcc g++ v5 instead of v7 which is the current apt version
-		see https://gist.github.com/2a2091f282042ed20cda
+		# see https://gist.github.com/2a2091f282042ed20cda
 		sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 		sudo apt-get update
 		sudo apt-get install gcc-5 g++-5
@@ -305,8 +305,8 @@ Here is how to build and install Boost 1.60 into your user's home directory
 		# and you'll probably also need v1.0.1h of openssl due to some CBigNum error bullshit
 		wget https://github.com/openssl/openssl/releases/tag/OpenSSL_1_0_2h
 		# You'll have to build this with
-		unzip openssl-OpenSSL_1_0_1h
-		cd openssl-OpenSSL_1_0_1h
+		unzip openssl-OpenSSL_1_0_2h
+		cd openssl-OpenSSL_1_0_2h
 		./config
 		make depend
 		make
