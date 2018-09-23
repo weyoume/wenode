@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
 
 		#ifdef IS_TEST_NET
       std::cerr << "------------------------------------------------------\n\n";
-      std::cerr << "            STARTING TEST NETWORK\n\n";
+      std::cerr << "            STARTING TEST NODE\n\n";
       std::cerr << "------------------------------------------------------\n";
       auto initminer_private_key = graphene::utilities::key_to_wif( INIT_PRIVATE_KEY );
       std::cerr << "init public key: " << INIT_PUBLIC_KEY_STR << "\n";
@@ -58,11 +58,11 @@ int main(int argc, char** argv) {
       std::cerr << "------------------------------------------------------\n";
 		#else
       std::cerr << "------------------------------------------------------\n\n";
-      std::cerr << "            STARTING NETWORK\n\n";
+      std::cerr << "            STARTING NODE\n\n";
       std::cerr << "------------------------------------------------------\n";
       std::cerr << "init public key: " << INIT_PUBLIC_KEY_STR << "\n";
 			#if SHOW_PRIVATE_KEYS
-				#if INIT_PRIVATE_KEY
+				#ifdef INIT_PRIVATE_KEY
 					auto initminer_private_key = graphene::utilities::key_to_wif( INIT_PRIVATE_KEY );
 					std::cerr << "init private key: " << initminer_private_key << "\n";
 				#endif

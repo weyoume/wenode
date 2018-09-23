@@ -57,7 +57,7 @@ To extract the binary you need to start a container and then copy the file from 
 ```
 docker run -d --name node-exchange WeYouMe/WeYouMe
 docker cp node-exchange:/usr/local/node-default/bin/node /local/path/to/node
-docker cp node-exchange:/usr/local/node-default/bin/cli_wallet /local/path/to/cli_wallet
+docker cp node-exchange:/usr/local/node-default/bin/cliwallet /local/path/to/cliwallet
 docker stop node-exchange
 ```
 
@@ -86,10 +86,10 @@ To follow along with the logs, use `docker logs -f`.
 
 Initial syncing will take between 6 and 48 hours depending on your equipment, faster storage devices will take less time and be more efficient. Subsequent restarts will not take as long.
 
-### Running the cli_wallet
+### Running the cliwallet
 
-The command below will run the cli_wallet from inside the running container while mapping the `wallet.json` to the directory you created for it on the host.
+The command below will run the cliwallet from inside the running container while mapping the `wallet.json` to the directory you created for it on the host.
 
 ```
-docker exec -it node-exchange /usr/local/node-default/bin/cli_wallet -w /var/wallet/wallet.json
+docker exec -it node-exchange /usr/local/node-default/bin/cliwallet -w /var/wallet/wallet.json
 ```

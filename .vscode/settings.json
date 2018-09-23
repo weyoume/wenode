@@ -36,6 +36,9 @@
 		"locale": "cpp",
 		"memory": "cpp",
 		"tuple": "cpp",
-		"utility": "cpp"
+		"utility": "cpp",
+		"stdexcept": "cpp",
+		"queue": "cpp",
+		"stack": "cpp"
 	}
 }

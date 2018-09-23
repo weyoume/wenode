@@ -18,7 +18,7 @@ libraries/wallet/Doxyfile
 libraries/wallet/api_documentation.cpp
 libraries/wallet/doxygen
 
-programs/wallet/wallet
+programs/cliwallet/wallet
 programs/js_operation_serializer/js_operation_serializer
 programs/node/node
 programs/node/test
@@ -55,6 +55,10 @@ scripts/private*
 /build/
 /nbproject/private/
 
-cmake-build-debug/
+cmake-build-debug
 
-nbproject/
+nbproject
+
+libraries/fc/*
+
+data-dir/*

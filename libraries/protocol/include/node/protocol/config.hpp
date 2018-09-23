@@ -11,7 +11,7 @@
 #endif
 
 #ifndef GEN_PRIVATE_KEY
-	#define GEN_PRIVATE_KEY 								0
+	#define GEN_PRIVATE_KEY 							0
 #endif
 
 #ifdef IS_TEST_NET
@@ -19,15 +19,15 @@
 #define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 #define CHAIN_ID                        (fc::sha256::hash("testnet"))
 
-#define SYMBOL_COIN  									  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< TME/TME/TESTS with 3 digits of precision
-#define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< SCORE/SCORE/VESTS with 6 digits of precision
-#define SYMBOL_WYM    							  	(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('Y') << 24) | (uint64_t('M') << 32) | (uint64_t('T') << 40) ) ///< WYM/WeYouMe equity asset with 3 digits of precision
-#define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test / TME Backed TSD with 3 digits of precision
+#define SYMBOL_COIN  					(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< TME/TME/TESTS with 3 digits of precision
+#define SYMBOL_SCORE  					(uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< SCORE/SCORE/VESTS with 6 digits of precision
+#define SYMBOL_WYM    					(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('Y') << 24) | (uint64_t('M') << 32) | (uint64_t('T') << 40) ) ///< WYM/WeYouMe equity asset with 3 digits of precision
+#define SYMBOL_USD    					(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test / TME Backed TSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "TWYM"
 
-#define GENESIS_TIME                    (fc::time_point_sec(1451606400))
-#define MINING_TIME                     (fc::time_point_sec(1451606400))
+#define GENESIS_TIME                    (fc::time_point_sec(1537329413))
+#define MINING_TIME                     (fc::time_point_sec(1537329413))
 #define CASHOUT_WINDOW_SECONDS          (60*60) /// 1 hr
 #define CASHOUT_WINDOW_SECONDS_PRE_HF12 (CASHOUT_WINDOW_SECONDS)
 #define CASHOUT_WINDOW_SECONDS_PRE_HF17 (CASHOUT_WINDOW_SECONDS)
@@ -46,32 +46,30 @@
 #define OWNER_UPDATE_LIMIT                          fc::seconds(0)
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 1
 #else // IS LIVE NETWORK
-
 	#if GEN_PRIVATE_KEY
-		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
-		#define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
+		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("webuilderpassword1owner"))))
+        #define INIT_PUBLIC_KEY_STR         (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 	#else
-		#define INIT_PUBLIC_KEY_STR             "TWYM6LLegbAgLAy28EHrffBVuANFWcFgmqRMW13wBmTExqFE9SCkg4"
+		#define INIT_PUBLIC_KEY_STR             "TWYM7GXFkFDNkweQJHhegS1iX5vg1oEouAhZ5EZZR34cYUxQvHFii5"
 	#endif
-
 #define CHAIN_ID                        (fc::sha256::hash("TWYM"))
 
 // WeYouMe
 // #define SYMBOL_ECO 									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< TME with 3 digits of precision
-// #define SYMBOL_ESCOR 									(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< SCORE with 6 digits of precision
-// #define SYMBOL_WeYouMe   									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< WeYouMe with 3 digits of precision
-// #define SYMBOL_EUSD    									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< TME Backed TSD with 3 digits of precision
+// #define SYMBOL_ESCOR 								(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< SCORE with 6 digits of precision
+// #define SYMBOL_WeYouMe   							(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< WeYouMe with 3 digits of precision
+// #define SYMBOL_EUSD    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< TME Backed TSD with 3 digits of precision
 
 
 // WeYouMe
-#define SYMBOL_COIN  									  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('M') << 16) | (uint64_t('E') << 24) ) ///< TME with 3 digits of precision
+#define SYMBOL_COIN  									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('M') << 16) | (uint64_t('E') << 24) ) ///< TME with 3 digits of precision
 #define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('S') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('R') << 32) | (uint64_t('E') << 40) ) ///< SCORE with 6 digits of precision
 #define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('S') << 16) | (uint64_t('D') << 24) ) ///< TME Backed TSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "TWYM"
 
-#define GENESIS_TIME                    (fc::time_point_sec(0))
-#define MINING_TIME                     (fc::time_point_sec(1000))
+#define GENESIS_TIME                    (fc::time_point_sec(1537329413))
+#define MINING_TIME                     (fc::time_point_sec(1537334413))
 #define CASHOUT_WINDOW_SECONDS_PRE_HF12 (60*60*24)    /// 1 day
 #define CASHOUT_WINDOW_SECONDS_PRE_HF17 (60*60*12)    /// 12 hours
 #define CASHOUT_WINDOW_SECONDS          (60*60*24*7)  /// 7 days
@@ -100,7 +98,7 @@
 #define INIT_MINER_NAME                 "webuilder"
 #define NUM_INIT_MINERS                 50
 #define NUM_INIT_EXTRAS									0
-#define INIT_TIME                       (fc::time_point_sec(0));
+#define INIT_TIME                       (fc::time_point_sec());
 
 #define MAX_WITNESSES                   50
 
@@ -134,12 +132,12 @@
 #define POST_MAX_BANDWIDTH              (4*PERCENT_100) // 2 posts per 1 days, average 1 every 12 hours
 #define POST_WEIGHT_CONSTANT            (uint64_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
 
-#define MAX_accountWitnessVoteS       30
+#define MAX_accountWitnessVoteS         30
 
 #define PERCENT_100                     10000
 #define PERCENT_1                       (PERCENT_100/100)
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)
-#define DEFAULT_TSD_INTEREST_RATE      (10*PERCENT_1) ///< 10% APR
+#define DEFAULT_TSD_INTEREST_RATE       (10*PERCENT_1) ///< 10% APR
 
 #define INFLATION_RATE_START_PERCENT    (978) // Fixes block 7,000,000 to 9.5%
 #define INFLATION_RATE_STOP_PERCENT     (95) // 0.95%
@@ -162,7 +160,7 @@
 
 #define CREATE_ACCOUNT_WITH_TME_MODIFIER 	 1
 #define CREATE_ACCOUNT_DELEGATION_RATIO    5
-#define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(30)
+#define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(1)
 
 #define MINING_REWARD                   asset( 1, SYMBOL_COIN )
 #define EQUIHASH_N                      140
@@ -183,10 +181,10 @@
 #define ACTIVE_CHALLENGE_COOLDOWN       fc::days(1)
 #define OWNER_CHALLENGE_COOLDOWN        fc::days(1)
 
-#define POST_REWARD_FUND_NAME           ("post")
-#define COMMENT_REWARD_FUND_NAME        ("comment")
-#define RECENT_RSCORE_DECAY_RATE_HF17  (fc::days(30))
-#define RECENT_RSCORE_DECAY_RATE_HF19  (fc::days(15))
+#define POST_REWARD_FUND_NAME           ("postrewards")
+#define COMMENT_REWARD_FUND_NAME        ("commentrewards")
+#define RECENT_RSCORE_DECAY_RATE_HF17   (fc::days(30))
+#define RECENT_RSCORE_DECAY_RATE_HF19   (fc::days(15))
 #define CONTENT_CONSTANT_HF0            (uint128_t(uint64_t(2000000000000ll)))
 // note, if redefining these constants make sure calculate_claims doesn't overflow
 
@@ -225,7 +223,7 @@
 #define PRODUCER_APR_PERCENT             750
 #define POW_APR_PERCENT                  750
 
-#define MIN_PAYOUT_TSD                  (asset(20,SYMBOL_USD))
+#define MIN_PAYOUT_TSD                  (asset(1,SYMBOL_USD))
 
 #define TSD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing TSD at 5% Market Cap
 #define TSD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of TSD at 2% Market Cap
@@ -237,7 +235,7 @@
 #define MAX_PERMLINK_LENGTH             256
 #define MAX_WITNESS_URL_LENGTH          2048
 
-#define INIT_SUPPLY                     int64_t(999999999999)
+#define INIT_SUPPLY                     int64_t(1000000000000000ll)
 #define MAX_SCORE_SUPPLY                int64_t(1000000000000000ll)
 #define MAX_SIG_CHECK_DEPTH             2
 
@@ -255,8 +253,10 @@
 #define FEED_HISTORY_WINDOW             (12*7) // 3.5 days
 #define MAX_FEED_AGE_SECONDS            (60*60*24*7) // 7 days
 #define MIN_FEEDS                       (MAX_WITNESSES/3) /// protects the network from conversions before price has been established
-#define CONVERSION_DELAY_PRE_HF_16      (fc::days(7))
-#define CONVERSION_DELAY                (fc::hours(FEED_HISTORY_WINDOW)) //3.5 day conversion
+//#define CONVERSION_DELAY_PRE_HF_16      (fc::days(7))
+#define CONVERSION_DELAY_PRE_HF_16      (fc::seconds(10))
+//#define CONVERSION_DELAY                (fc::hours(FEED_HISTORY_WINDOW)) //3.5 day conversion
+#define CONVERSION_DELAY                (fc::seconds(10)) //3.5 day conversion
 
 #define MIN_UNDO_HISTORY                10
 #define MAX_UNDO_HISTORY                10000

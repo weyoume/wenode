@@ -1,5 +1,5 @@
 add_subdirectory( build_helpers )
-add_subdirectory( wallet )
+add_subdirectory( cliwallet )
 add_subdirectory( node )
 #add_subdirectory( delayed_node )
 add_subdirectory( js_operation_serializer )

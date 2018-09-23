@@ -117,7 +117,7 @@ If we want to take control of an account we can do so by editing its key with `d
     curl --data '{"jsonrpc": "2.0", "method": "call", "params": [2,"debug_update_object",[{"_action":"update","id":"2.2.28","active":{"weight_threshold":1,"key_auths":[["STM6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",1]]}}]], "id": 9}]' http://127.0.0.1:8090/rpc
 
 Now that we've reset its key, we can take control of it in the wallet:
-    programs/cli_wallet/cli_wallet -w debug_wallet.json -s ws://127.0.0.1:8090
+    programs/cliwallet/cliwallet -w debug_wallet.json -s ws://127.0.0.1:8090
     set_password abc
     unlock abc
     import_key 5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3

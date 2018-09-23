@@ -34,7 +34,6 @@ endif(MSVC)
 
 install( TARGETS
    node_wallet
-
    RUNTIME DESTINATION bin
    LIBRARY DESTINATION lib
    ARCHIVE DESTINATION lib

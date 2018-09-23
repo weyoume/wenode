@@ -89,9 +89,9 @@ Then in your `config.ini` you must give the server access to the key and certifi
     server-pem = data/ss-cert-key.pem
     server-pem-password = password
 
-When connecting to the API, you can use the `cli_wallet` to honor a specific certificate, individual CA, or CA bundle file with the `-a` option:
+When connecting to the API, you can use the `cliwallet` to honor a specific certificate, individual CA, or CA bundle file with the `-a` option:
 
-    programs/cli_wallet/cli_wallet -s wss://mydomain.tld:8091 -a data/ss-cert.pem
+    programs/cliwallet/cliwallet -s wss://mydomain.tld:8091 -a data/ss-cert.pem
 
 Note that the hostname `mydomain.tld` needs to match the CN field in the certificate.
 
@@ -117,4 +117,4 @@ Username/password access is only available through websockets, since login is in
     {"jsonrpc": "2.0", "params": ["hello_api_api", "get_message", []], "id":4, "method":"call"}
     < (ok)
 
-The `cli_wallet` also has the capability to login to provide access to restricted API's.
+The `cliwallet` also has the capability to login to provide access to restricted API's.

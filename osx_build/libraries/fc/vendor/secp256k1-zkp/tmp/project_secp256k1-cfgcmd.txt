@@ -1,0 +1,1 @@
+cmd='/Users/lopu/Dropbox/git/weyoume/wenode/dev-wenode/libraries/fc/vendor/secp256k1-zkp/configure;--prefix=/Users/lopu/Dropbox/git/weyoume/wenode/dev-wenode/osx_build/libraries/fc/vendor/secp256k1-zkp;--with-bignum=no'

@@ -85,7 +85,7 @@ will build out of the box without further effort:
     cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..
     make -j$(nproc) node
-    make -j$(nproc) cli_wallet
+    make -j$(nproc) cliwallet
     # optional
     make install  # defaults to /usr/local
 
@@ -147,7 +147,7 @@ Then the instructions are the same as for WeYouMe:
     mkdir -p build && cd build
     cmake -DCMAKE_BUILD_TYPE=Release ..
     make -j$(nproc) node
-    make -j$(nproc) cli_wallet
+    make -j$(nproc) cliwallet
 
 ## Building on macOS X
 
@@ -187,7 +187,7 @@ WeYouMe. Until then, this will allow you to install boost 1.60.0.
 
     brew install google-perftools
 
-*Optional.* To use cli_wallet and override macOS's default readline installation:
+*Optional.* To use cliwallet and override macOS's default readline installation:
 
     brew install --force readline
     brew link --force readline
@@ -210,7 +210,7 @@ Also, some useful build targets for `make` are:
 
     node
     chain_test
-    cli_wallet
+    cliwallet
 
 e.g.:
 
