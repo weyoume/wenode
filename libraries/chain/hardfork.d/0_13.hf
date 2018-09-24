@@ -4,7 +4,7 @@
 #define HARDFORK_0_13__256 (HARDFORK_0_13)
 #define HARDFORK_0_13__257 (HARDFORK_0_13)
 
-#define HARDFORK_0_13_TIME  1537330130
+#define HARDFORK_0_13_TIME  1531630130
 #define HARDFORK_0_13_VERSION hardfork_version( 0, 13 )
 
 #endif

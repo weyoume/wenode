@@ -239,6 +239,7 @@ struct account_api_obj
             average_bandwidth = forum_bandwidth->average_bandwidth;
             lifetime_bandwidth = forum_bandwidth->lifetime_bandwidth;
             last_bandwidth_update = forum_bandwidth->last_bandwidth_update;
+
          }
 
          auto market_bandwidth = db.find< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( name, witness::bandwidth_type::market ) );

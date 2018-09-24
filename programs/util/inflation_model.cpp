@@ -66,12 +66,12 @@ int main( int argc, char** argv, char** envp )
    std::vector< share_type > reward_total;
 
 /*
-#define GENESIS_TIME                    (fc::time_point_sec(1458835200))
-#define MINING_TIME                     (fc::time_point_sec(1458838800))
-#define FIRST_CASHOUT_TIME              (fc::time_point_sec(1467590400))  /// July 4th
+#define GENESIS_TIME                    (fc::time_point_sec(1531629413))
+#define MINING_TIME                     (fc::time_point_sec(1531634413))
+#define FIRST_CASHOUT_TIME              (fc::time_point_sec(1531644413))  /// July 4th
 */
 
-   uint32_t liquidity_begin_block = (1467590400 - 1458835200) / 3;
+   uint32_t liquidity_begin_block = (1531644413 - 1531629413) / 3;
    uint32_t pow_deficit = 100;
 
    for( int i=0; i<REWARD_TYPES; i++ )

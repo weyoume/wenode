@@ -1,5 +1,5 @@
 #ifndef HARDFORK_0_1
 #define HARDFORK_0_1 1
-#define HARDFORK_0_1_TIME 1537329410
+#define HARDFORK_0_1_TIME 1531629410
 #define HARDFORK_0_1_VERSION hardfork_version( 0, 1 )
 #endif

@@ -949,7 +949,9 @@ fc::time_point_sec database::get_slot_time(uint32_t slot_num)const
       // n.b. first block is at genesis_time plus one block interval
       fc::time_point_sec genesis_time = dpo.time;
       return genesis_time + slot_num * interval;
+
    }
+
 
    int64_t head_block_abs_slot = head_block_time().sec_since_epoch() / interval;
    fc::time_point_sec head_slot_time( head_block_abs_slot * interval );
@@ -1331,6 +1333,7 @@ void database::update_owner_authority( const account_object& account, const auth
    {
       auth.owner = owner_authority;
       auth.last_owner_update = head_block_time();
+
    });
 }
 
@@ -2406,6 +2409,7 @@ void database::init_genesis( uint64_t init_supply )
 
          create< account_authority_object >( [&]( account_authority_object& auth )
          {
+
             auth.account = INIT_MINER_NAME + ( i ? fc::to_string( i ) : std::string() );
             auth.owner.add_authority( init_public_key, 1 );
             auth.owner.weight_threshold = 1;
@@ -2430,6 +2434,7 @@ void database::init_genesis( uint64_t init_supply )
          p.current_supply = asset( init_supply, SYMBOL_COIN );
          p.virtual_supply = p.current_supply;
          p.maximum_block_size = MAX_BLOCK_SIZE;
+
       } );
 
       // Nothing to do
@@ -2439,6 +2444,7 @@ void database::init_genesis( uint64_t init_supply )
       create< hardfork_property_object >( [&](hardfork_property_object& hpo )
       {
          hpo.processed_hardforks.push_back( GENESIS_TIME );
+
       } );
 
       // Create witness scheduler

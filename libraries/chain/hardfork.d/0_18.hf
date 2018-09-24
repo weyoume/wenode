@@ -1,7 +1,7 @@
 #ifndef HARDFORK_0_18
 #define HARDFORK_0_18 18
 
-#define HARDFORK_0_18_TIME  1537330180
+#define HARDFORK_0_18_TIME  1531630180
 
 #define HARDFORK_0_18_VERSION hardfork_version( 0, 18 )
 

@@ -26,8 +26,8 @@
 
 #define ADDRESS_PREFIX                  "TWYM"
 
-#define GENESIS_TIME                    (fc::time_point_sec(1537329413))
-#define MINING_TIME                     (fc::time_point_sec(1537329413))
+#define GENESIS_TIME                    (fc::time_point_sec(1531629413))
+#define MINING_TIME                     (fc::time_point_sec(1531629413))
 #define CASHOUT_WINDOW_SECONDS          (60*60) /// 1 hr
 #define CASHOUT_WINDOW_SECONDS_PRE_HF12 (CASHOUT_WINDOW_SECONDS)
 #define CASHOUT_WINDOW_SECONDS_PRE_HF17 (CASHOUT_WINDOW_SECONDS)
@@ -68,8 +68,8 @@
 
 #define ADDRESS_PREFIX                  "TWYM"
 
-#define GENESIS_TIME                    (fc::time_point_sec(1537329413))
-#define MINING_TIME                     (fc::time_point_sec(1537334413))
+#define GENESIS_TIME                    (fc::time_point_sec(1531629413))
+#define MINING_TIME                     (fc::time_point_sec(1531634413))
 #define CASHOUT_WINDOW_SECONDS_PRE_HF12 (60*60*24)    /// 1 day
 #define CASHOUT_WINDOW_SECONDS_PRE_HF17 (60*60*12)    /// 12 hours
 #define CASHOUT_WINDOW_SECONDS          (60*60*24*7)  /// 7 days
@@ -85,7 +85,7 @@
 #define OWNER_AUTH_RECOVERY_PERIOD                  fc::days(30)
 #define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD  fc::days(1)
 #define OWNER_UPDATE_LIMIT                          fc::minutes(60)
-#define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 3186477
+#define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 1
 
 #endif
 
@@ -123,7 +123,7 @@
 #define VOTE_REGENERATION_SECONDS       (5*60*60*24) // 5 day
 #define MAX_VOTE_CHANGES                5
 #define REVERSE_AUCTION_WINDOW_SECONDS  (60*30) /// 30 minutes
-#define MIN_VOTE_INTERVAL_SEC           3
+#define MIN_VOTE_INTERVAL_SEC           1
 #define VOTE_DUST_THRESHOLD             (50000000)
 
 #define MIN_ROOT_COMMENT_INTERVAL       (fc::seconds(60*5)) // 5 minutes
@@ -132,7 +132,7 @@
 #define POST_MAX_BANDWIDTH              (4*PERCENT_100) // 2 posts per 1 days, average 1 every 12 hours
 #define POST_WEIGHT_CONSTANT            (uint64_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
 
-#define MAX_accountWitnessVoteS         30
+#define MAX_accountWitnessVoteS         90
 
 #define PERCENT_100                     10000
 #define PERCENT_1                       (PERCENT_100/100)
@@ -256,7 +256,7 @@
 //#define CONVERSION_DELAY_PRE_HF_16      (fc::days(7))
 #define CONVERSION_DELAY_PRE_HF_16      (fc::seconds(10))
 //#define CONVERSION_DELAY                (fc::hours(FEED_HISTORY_WINDOW)) //3.5 day conversion
-#define CONVERSION_DELAY                (fc::seconds(10)) //3.5 day conversion
+#define CONVERSION_DELAY                (fc::seconds(10))
 
 #define MIN_UNDO_HISTORY                10
 #define MAX_UNDO_HISTORY                10000

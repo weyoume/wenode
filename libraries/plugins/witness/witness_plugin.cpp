@@ -351,14 +351,16 @@ namespace detail
 
       if( BOOST_UNLIKELY( reserve_ratio_ptr == nullptr ) )
       {
-         db.create< reserve_ratio_object >( [&]( reserve_ratio_object& r )
-         {
-            r.average_block_size = 0;
-            r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
-            r.max_virtual_bandwidth = ( uint128_t( MAX_BLOCK_SIZE * MAX_RESERVE_RATIO )
-                                      * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SECONDS )
-                                      / BLOCK_INTERVAL;
-         });
+          db.create<reserve_ratio_object>([&](reserve_ratio_object &r) {
+              r.average_block_size = 0;
+              r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
+              r.max_virtual_bandwidth = (uint128_t(MAX_BLOCK_SIZE * MAX_RESERVE_RATIO)
+                                         * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SECONDS)
+                                        / BLOCK_INTERVAL;
+
+
+
+          });
       }
       else
       {
@@ -456,6 +458,9 @@ namespace detail
             b.average_bandwidth = new_bandwidth;
             b.lifetime_bandwidth += trx_bandwidth;
             b.last_bandwidth_update = _db.head_block_time();
+
+
+
          });
 
          fc::uint128 account_vSCORE( a.effective_SCORE().amount.value );
