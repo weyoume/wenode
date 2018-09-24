@@ -62,11 +62,11 @@
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
     <configurations>
-      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" GENERATION_OPTIONS="-DBOOST_ROOT=&quot;/usr/local/Cellar/boost@1.60/1.60.0/&quot; -DCMAKE_BUILD_TYPE=Debug -DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=ON -DBUILD_TESTNET=OFF" GENERATION_DIR="osx_build">
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" GENERATION_OPTIONS="-DBOOST_ROOT=&quot;/home/lopu-pc/opt/boost1600&quot; -DCMAKE_BUILD_TYPE=Debug -DLOW_MEMORY_NODE=OFF -DCLEAR_VOTES=OFF -DSKIP_BY_TX_ID=ON -DBUILD_TESTNET=OFF" GENERATION_DIR="windows_build">
         <ADDITIONAL_GENERATION_ENVIRONMENT>
           <envs>
-            <env name="OPENSSL_ROOT_DIR" value="/usr/local/Cellar/openssl/1.0.2o_1/" />
-            <env name="BOOST_ROOT" value="/usr/local/Cellar/boost@1.60/1.60.0/" />
+            <env name="OPENSSL_ROOT_DIR" value="/home/lopu-pc/opt/openssl102h/" />
+            <env name="BOOST_ROOT" value="/home/lopu-pc/opt/boost1600" />
           </envs>
         </ADDITIONAL_GENERATION_ENVIRONMENT>
       </configuration>
@@ -76,7 +76,8 @@
     <list default="true" id="288b397b-236a-4a93-ba00-a63440deb476" name="Default Changelist" comment="" />
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <ignored path="$PROJECT_DIR$/build/CMakeFiles/" />
-    <ignored path="$PROJECT_DIR$/osx_build/CMakeFiles/" />
+    <ignored path="$PROJECT_DIR$/osx_build/" />
+    <ignored path="$PROJECT_DIR$/windows_build/CMakeFiles/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -129,14 +130,22 @@
         </counts>
       </usages-collector>
     </session>
+    <session id="655210068">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.open.time.6" value="1" />
+          <entry key="project.opened" value="1" />
+        </counts>
+      </usages-collector>
+    </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="739" column="45" selection-start-line="739" selection-start-column="45" selection-end-line="739" selection-end-column="45" />
+            <state relative-caret-position="12563">
+              <caret line="744" column="4" selection-start-line="744" selection-start-column="4" selection-end-line="744" selection-end-column="4" />
               <folding>
                 <element signature="e#1163#1205#0" expanded="true" />
               </folding>
@@ -147,7 +156,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/app/application.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="333">
+            <state relative-caret-position="19533">
               <caret line="1149" column="13" selection-start-line="1149" selection-start-column="13" selection-end-line="1149" selection-end-column="13" />
             </state>
           </provider>
@@ -156,7 +165,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/app/include/node/app/node_api_objects.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="177">
+            <state relative-caret-position="3927">
               <caret line="231" selection-start-line="231" selection-end-line="231" />
               <folding>
                 <element signature="e#13#53#0" expanded="true" />
@@ -168,7 +177,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/app/include/node/app/state.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="420">
+            <state relative-caret-position="561">
               <caret line="33" column="25" selection-start-line="33" selection-start-column="25" selection-end-line="33" selection-end-column="25" />
             </state>
           </provider>
@@ -177,7 +186,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/app/database_api.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="175">
+            <state relative-caret-position="7429">
               <caret line="437" column="15" selection-start-line="437" selection-start-column="15" selection-end-line="437" selection-end-column="15" />
             </state>
           </provider>
@@ -186,8 +195,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/chain/database.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="175">
-              <caret line="2448" selection-start-line="2448" selection-end-line="2448" />
+            <state relative-caret-position="41616">
+              <caret line="2454" selection-start-line="2454" selection-end-line="2454" />
               <folding>
                 <element signature="e#0#44#0" expanded="true" />
               </folding>
@@ -198,8 +207,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="291">
-              <caret line="247" column="76" selection-start-line="247" selection-start-column="62" selection-end-line="247" selection-end-column="76" />
+            <state relative-caret-position="325">
+              <caret line="249" column="50" selection-start-line="249" selection-start-column="50" selection-end-line="249" selection-end-column="50" />
             </state>
           </provider>
         </entry>
@@ -207,7 +216,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/sidechain/include/node/sidechain/sidechain.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="197">
+            <state relative-caret-position="578">
               <caret line="34" column="72" selection-start-line="34" selection-start-column="58" selection-end-line="34" selection-end-column="72" />
             </state>
           </provider>
@@ -216,7 +225,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/chain/include/node/chain/account_object.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="241">
+            <state relative-caret-position="629">
               <caret line="37" column="45" selection-start-line="37" selection-start-column="27" selection-end-line="37" selection-end-column="45" />
             </state>
           </provider>
@@ -225,7 +234,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/chainbase/include/chainbase/chainbase.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="276">
+            <state relative-caret-position="15640">
               <caret line="920" column="78" selection-start-line="920" selection-start-column="78" selection-end-line="920" selection-end-column="78" />
             </state>
           </provider>
@@ -296,8 +305,10 @@
   </component>
   <component name="OCFindUsagesOptions" text="true" ivars="false" properties="true" derivedClasses="false" />
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="width" value="1680" />
-    <option name="height" value="1050" />
+    <option name="x" value="1866" />
+    <option name="y" value="168" />
+    <option name="width" value="1936" />
+    <option name="height" value="1096" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="1" id="Add" />
@@ -307,6 +318,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -328,7 +340,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -336,7 +347,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+    <property name="settings.editor.selected.configurable" value="CMakeSettings" />
   </component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
@@ -365,344 +376,14 @@
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
-    <configuration name="all_tests" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="all_tests" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="all_tests">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="api" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="api" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="api">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="bip_lock" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="bip_lock" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="bip_lock">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="blind" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="blind" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="blind">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="blinding_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="blinding_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="blinding_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="bloom_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="bloom_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="bloom_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="build_hardfork_hpp" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="build_hardfork_hpp" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="cat-parts" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="cat-parts" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="cat-parts">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="chain_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="chain_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="chain_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="chainbase" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="chainbase" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="chainbase_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="chainbase_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="chainbase_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="cliwallet" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="cliwallet" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="cliwallet">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="ecc_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="ecc_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="ecc_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="equihash" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="equihash" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="fc" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="fc" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="get_dev_key" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="get_dev_key" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="get_dev_key">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="graphene_net" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="graphene_net" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="graphene_schema" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="graphene_schema" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="graphene_utilities" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="graphene_utilities" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="hmac_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="hmac_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="hmac_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="inflation_model" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="inflation_model" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="inflation_model">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="js_operation_serializer" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="js_operation_serializer" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="js_operation_serializer">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="log_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="log_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="log_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="node" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--witness=\&quot;webuilder\&quot; --witness=\&quot;webuilder1\&quot; --witness=\&quot;webuilder2\&quot; --witness=\&quot;webuilder3\&quot; --witness=\&quot;webuilder4\&quot; --witness=\&quot;webuilder5\&quot; --witness=\&quot;webuilder6\&quot; --witness=\&quot;webuilder7\&quot; --witness=\&quot;webuilder8\&quot; --witness=\&quot;webuilder9\&quot; --witness=\&quot;webuilder10\&quot; --witness=\&quot;webuilder11\&quot; --witness=\&quot;webuilder12\&quot; --witness=\&quot;webuilder13\&quot; --witness=\&quot;webuilder14\&quot; --witness=\&quot;webuilder15\&quot; --witness=\&quot;webuilder16\&quot; --witness=\&quot;webuilder17\&quot; --witness=\&quot;webuilder18\&quot; --witness=\&quot;webuilder19\&quot; --witness=\&quot;webuilder20\&quot; --witness=\&quot;webuilder21\&quot; --witness=\&quot;webuilder22\&quot; --witness=\&quot;webuilder23\&quot; --witness=\&quot;webuilder24\&quot; --witness=\&quot;webuilder25\&quot; --witness=\&quot;webuilder26\&quot; --witness=\&quot;webuilder27\&quot; --witness=\&quot;webuilder28\&quot; --witness=\&quot;webuilder29\&quot; --witness=\&quot;webuilder30\&quot; --witness=\&quot;webuilder31\&quot; --witness=\&quot;webuilder32\&quot; --witness=\&quot;webuilder33\&quot; --witness=\&quot;webuilder34\&quot; --witness=\&quot;webuilder35\&quot; --witness=\&quot;webuilder36\&quot; --witness=\&quot;webuilder37\&quot; --witness=\&quot;webuilder38\&quot; --witness=\&quot;webuilder39\&quot; --witness=\&quot;webuilder40\&quot; --witness=\&quot;webuilder41\&quot; --witness=\&quot;webuilder42\&quot; --witness=\&quot;webuilder43\&quot; --witness=\&quot;webuilder44\&quot; --witness=\&quot;webuilder45\&quot; --witness=\&quot;webuilder46\&quot; --witness=\&quot;webuilder47\&quot; --witness=\&quot;webuilder48\&quot; --witness=\&quot;webuilder49\&quot; --rpc-endpoint=&quot;127.0.0.1:8090&quot; --p2p-endpoint=&quot;0.0.0.0:2001&quot; --data-dir=&quot;$PROJECT_DIR$/osx_data-dir/&quot; --private-key=5KfPinD8yJWb6g3GXwy35eoubeiAu8n6w5npRmNs7tooPna4eqG" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="node">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_account_by_key" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_account_by_key" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_account_history" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_account_history" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_account_statistics" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_account_statistics" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_app" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_app" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_auth_util" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_auth_util" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_block_info" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_block_info" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_blockchain_statistics" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_blockchain_statistics" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_chain" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_chain" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_debug_node" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_debug_node" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_delayed_node" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_delayed_node" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_follow" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_follow" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_market_history" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_market_history" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_mf_plugins" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_mf_plugins" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_plugins" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_plugins" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_private_message" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_private_message" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_protocol" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_protocol" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_raw_block" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_raw_block" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_tags" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_tags" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_wallet" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_wallet" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="node_witness" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="node_witness" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="ntp_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="ntp_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="ntp_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="plugin_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="plugin_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="plugin_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="project_secp256k1" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="project_secp256k1" CONFIG_NAME="Debug">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="real128_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="real128_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="real128_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="sign_digest" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="sign_digest" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="sign_digest">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="sign_transaction" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="sign_transaction" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="sign_transaction">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="size_checker" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="size_checker" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="size_checker">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="task_cancel_test" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="task_cancel_test" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="task_cancel_test">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="test_block_log" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="test_block_log" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="test_block_log">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="test_fixed_string" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="test_fixed_string" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="test_fixed_string">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="test_shared_mem" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="test_shared_mem" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="test_shared_mem">
-      <method v="2">
-        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="test_sqrt" type="CMakeRunConfiguration" factoryName="Application" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Node" TARGET_NAME="test_sqrt" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Node" RUN_TARGET_NAME="test_sqrt">
       <method v="2">
         <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
       </method>
     </configuration>
     <list>
       <item itemvalue="Application.Build All" />
-      <item itemvalue="Application.node_mf_plugins" />
-      <item itemvalue="Application.node_plugins" />
-      <item itemvalue="Application.node_app" />
-      <item itemvalue="Application.build_hardfork_hpp" />
-      <item itemvalue="Application.node_chain" />
-      <item itemvalue="Application.chainbase" />
-      <item itemvalue="Application.chainbase_test" />
-      <item itemvalue="Application.fc" />
-      <item itemvalue="Application.project_secp256k1" />
-      <item itemvalue="Application.all_tests" />
-      <item itemvalue="Application.api" />
-      <item itemvalue="Application.bip_lock" />
-      <item itemvalue="Application.blind" />
-      <item itemvalue="Application.blinding_test" />
-      <item itemvalue="Application.bloom_test" />
-      <item itemvalue="Application.ecc_test" />
-      <item itemvalue="Application.hmac_test" />
-      <item itemvalue="Application.log_test" />
-      <item itemvalue="Application.ntp_test" />
-      <item itemvalue="Application.real128_test" />
-      <item itemvalue="Application.task_cancel_test" />
-      <item itemvalue="Application.equihash" />
-      <item itemvalue="Application.graphene_net" />
-      <item itemvalue="Application.node_account_by_key" />
-      <item itemvalue="Application.node_account_history" />
-      <item itemvalue="Application.node_account_statistics" />
-      <item itemvalue="Application.node_auth_util" />
-      <item itemvalue="Application.node_block_info" />
-      <item itemvalue="Application.node_blockchain_statistics" />
-      <item itemvalue="Application.node_debug_node" />
-      <item itemvalue="Application.node_delayed_node" />
-      <item itemvalue="Application.node_follow" />
-      <item itemvalue="Application.node_market_history" />
-      <item itemvalue="Application.node_private_message" />
-      <item itemvalue="Application.node_raw_block" />
-      <item itemvalue="Application.node_tags" />
-      <item itemvalue="Application.node_witness" />
-      <item itemvalue="Application.node_protocol" />
-      <item itemvalue="Application.graphene_schema" />
-      <item itemvalue="Application.graphene_utilities" />
-      <item itemvalue="Application.node_wallet" />
-      <item itemvalue="Application.cat-parts" />
-      <item itemvalue="Application.cliwallet" />
-      <item itemvalue="Application.js_operation_serializer" />
       <item itemvalue="Application.node" />
-      <item itemvalue="Application.size_checker" />
-      <item itemvalue="Application.get_dev_key" />
-      <item itemvalue="Application.inflation_model" />
-      <item itemvalue="Application.sign_digest" />
-      <item itemvalue="Application.sign_transaction" />
-      <item itemvalue="Application.test_block_log" />
-      <item itemvalue="Application.test_fixed_string" />
-      <item itemvalue="Application.test_shared_mem" />
-      <item itemvalue="Application.test_sqrt" />
-      <item itemvalue="Application.chain_test" />
-      <item itemvalue="Application.plugin_test" />
     </list>
   </component>
   <component name="SvnConfiguration">
@@ -721,11 +402,12 @@
       <workItem from="1537647775885" duration="4499000" />
       <workItem from="1537719267923" duration="3445000" />
       <workItem from="1537742491019" duration="21367000" />
+      <workItem from="1537810151634" duration="1297000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="37642000" />
+    <option name="totallyTimeSpent" value="38939000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -737,9 +419,10 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="0" width="1680" height="1050" extended-state="6" />
+    <frame x="1912" y="-14" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.26495728" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2675906" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
@@ -754,7 +437,7 @@
       <window_info anchor="bottom" id="Terminal" order="9" weight="0.32985386" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Version Control" order="11" />
-      <window_info anchor="bottom" id="CMake" order="12" weight="0.32985386" />
+      <window_info active="true" anchor="bottom" id="CMake" order="12" visible="true" weight="0.37201735" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -772,17 +455,17 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp</url>
-          <line>459</line>
+          <line>464</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp</url>
-          <line>429</line>
+          <line>431</line>
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp</url>
-          <line>428</line>
+          <line>430</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
@@ -792,22 +475,22 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/libraries/chain/database.cpp</url>
-          <line>1335</line>
+          <line>1338</line>
           <option name="timeStamp" value="48" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp</url>
-          <line>460</line>
+          <line>465</line>
           <option name="timeStamp" value="66" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp</url>
-          <line>461</line>
+          <line>466</line>
           <option name="timeStamp" value="67" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp</url>
-          <line>463</line>
+          <line>468</line>
           <option name="timeStamp" value="68" />
         </line-breakpoint>
       </breakpoints>
@@ -884,55 +567,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/app/include/node/app/state.hpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="420">
-          <caret line="33" column="25" selection-start-line="33" selection-start-column="25" selection-end-line="33" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/app/database_api.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="175">
-          <caret line="437" column="15" selection-start-line="437" selection-start-column="15" selection-end-line="437" selection-end-column="15" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/app/application.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="333">
-          <caret line="1149" column="13" selection-start-line="1149" selection-start-column="13" selection-end-line="1149" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/chainbase/include/chainbase/chainbase.hpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="276">
-          <caret line="920" column="78" selection-start-line="920" selection-start-column="78" selection-end-line="920" selection-end-column="78" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/osx_build/programs/cliwallet/CMakeFiles/cliwallet.dir/CXX.includecache">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="223">
-          <caret line="119" column="29" lean-forward="true" selection-start-line="119" selection-start-column="29" selection-end-line="119" selection-end-column="29" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/sidechain/include/node/sidechain/sidechain.hpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="197">
-          <caret line="34" column="72" selection-start-line="34" selection-start-column="58" selection-end-line="34" selection-end-column="72" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/chain/include/node/chain/account_object.hpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="241">
-          <caret line="37" column="45" selection-start-line="37" selection-start-column="27" selection-end-line="37" selection-end-column="45" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/osx_build/programs/cliwallet/CMakeFiles/cliwallet.dir/CXX.includecache" />
     <entry file="file://$PROJECT_DIR$/libraries/chain/CMakeLists.txt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="220">
@@ -942,27 +577,24 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="739" column="45" selection-start-line="739" selection-start-column="45" selection-end-line="739" selection-end-column="45" />
+        <state relative-caret-position="12563">
+          <caret line="744" column="4" selection-start-line="744" selection-start-column="4" selection-end-line="744" selection-end-column="4" />
           <folding>
             <element signature="e#1163#1205#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/chain/database.cpp">
+    <entry file="file://$PROJECT_DIR$/libraries/app/application.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="175">
-          <caret line="2448" selection-start-line="2448" selection-end-line="2448" />
-          <folding>
-            <element signature="e#0#44#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="19533">
+          <caret line="1149" column="13" selection-start-line="1149" selection-start-column="13" selection-end-line="1149" selection-end-column="13" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/libraries/app/include/node/app/node_api_objects.hpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="177">
+        <state relative-caret-position="3927">
           <caret line="231" selection-start-line="231" selection-end-line="231" />
           <folding>
             <element signature="e#13#53#0" expanded="true" />
@@ -970,10 +602,55 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/app/include/node/app/state.hpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="561">
+          <caret line="33" column="25" selection-start-line="33" selection-start-column="25" selection-end-line="33" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/app/database_api.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7429">
+          <caret line="437" column="15" selection-start-line="437" selection-start-column="15" selection-end-line="437" selection-end-column="15" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/chain/database.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="41616">
+          <caret line="2454" selection-start-line="2454" selection-end-line="2454" />
+          <folding>
+            <element signature="e#0#44#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/sidechain/include/node/sidechain/sidechain.hpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="578">
+          <caret line="34" column="72" selection-start-line="34" selection-start-column="58" selection-end-line="34" selection-end-column="72" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/chain/include/node/chain/account_object.hpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="629">
+          <caret line="37" column="45" selection-start-line="37" selection-start-column="27" selection-end-line="37" selection-end-column="45" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/chainbase/include/chainbase/chainbase.hpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15640">
+          <caret line="920" column="78" selection-start-line="920" selection-start-column="78" selection-end-line="920" selection-end-column="78" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="291">
-          <caret line="247" column="76" selection-start-line="247" selection-start-column="62" selection-end-line="247" selection-end-column="76" />
+        <state relative-caret-position="325">
+          <caret line="249" column="50" selection-start-line="249" selection-start-column="50" selection-end-line="249" selection-end-column="50" />
         </state>
       </provider>
     </entry>
