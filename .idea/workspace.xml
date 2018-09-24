@@ -73,48 +73,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="288b397b-236a-4a93-ba00-a63440deb476" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.npmignore" beforeDir="false" afterPath="$PROJECT_DIR$/.npmignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/app/include/node/app/node_api_objects.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/app/include/node/app/node_api_objects.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/database.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/database.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_1.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_1.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_10.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_10.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_11.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_11.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_12.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_12.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_13.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_13.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_14.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_14.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_15.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_15.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_16.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_16.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_17.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_17.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_18.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_18.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_19.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_19.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_2.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_2.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_3.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_3.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_4.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_4.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_5.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_5.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_6.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_6.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_7.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_7.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_8.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_8.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_9.hf" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/hardfork.d/0_9.hf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/wallet/CMakeLists.txt" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/wallet/CMakeLists.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/Node.cbp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/chainbase/ChainBase.cbp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/fc/fc.cbp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/fc/git_revision.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/fc/vendor/secp256k1-zkp/tmp/project_secp256k1-cfgcmd.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/fc/vendor/secp256k1-zkp/tmp/project_secp256k1-cfgcmd.txt.in" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/fc/vendor/websocketpp/websocketpp.cbp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/manifest/gensrc/plugins/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/manifest/gensrc/plugins/include/node/manifest/plugins.hpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/manifest/gensrc/plugins/mf_plugins.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/manifest/gensrc/plugins/plugins.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/manifest/template_context/plugins.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_build/libraries/utilities/git_revision.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/programs/util/inflation_model.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/programs/util/inflation_model.cpp" afterDir="false" />
-    </list>
+    <list default="true" id="288b397b-236a-4a93-ba00-a63440deb476" name="Default Changelist" comment="" />
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <ignored path="$PROJECT_DIR$/build/CMakeFiles/" />
     <ignored path="$PROJECT_DIR$/osx_build/CMakeFiles/" />
@@ -239,8 +198,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
-              <caret line="248" column="43" lean-forward="true" selection-start-line="248" selection-start-column="43" selection-end-line="248" selection-end-column="43" />
+            <state relative-caret-position="291">
+              <caret line="247" column="76" selection-start-line="247" selection-start-column="62" selection-end-line="247" selection-end-column="76" />
             </state>
           </provider>
         </entry>
@@ -761,12 +720,12 @@
       <workItem from="1537643371858" duration="3768000" />
       <workItem from="1537647775885" duration="4499000" />
       <workItem from="1537719267923" duration="3445000" />
-      <workItem from="1537742491019" duration="20611000" />
+      <workItem from="1537742491019" duration="21367000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="36886000" />
+    <option name="totallyTimeSpent" value="37642000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -779,7 +738,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1680" height="1050" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.26495728" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -1014,8 +972,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="248" column="43" lean-forward="true" selection-start-line="248" selection-start-column="43" selection-end-line="248" selection-end-column="43" />
+        <state relative-caret-position="291">
+          <caret line="247" column="76" selection-start-line="247" selection-start-column="62" selection-end-line="247" selection-end-column="76" />
         </state>
       </provider>
     </entry>

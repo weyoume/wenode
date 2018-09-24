@@ -63,6 +63,9 @@ nbproject
 
 libraries/fc/*
 
-data-dir/*
-windows_data-dir/*
-osx_data-dir/*
+data-dir/blockchain
+data-dir/logs
+windows_data-dir/blockchain
+windows_data-dir/logs
+osx_data-dir/blockchain
+osx_data-dir/logs
