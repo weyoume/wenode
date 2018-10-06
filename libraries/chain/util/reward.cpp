@@ -40,10 +40,10 @@ uint64_t get_SCORE_reward( const comment_reward_context& ctx )
    try
    {
    FC_ASSERT( ctx.SCOREreward > 0 );
-   FC_ASSERT( ctx.total_SCOREreward2 > 0 );
+   FC_ASSERT( ctx.totalSCOREreward2 > 0 );
 
    u256 rf(ctx.total_reward_fund_TME.amount.value);
-   u256 total_claims = to256( ctx.total_SCOREreward2 );
+   u256 total_claims = to256( ctx.totalSCOREreward2 );
 
    //idump( (ctx) );
 

@@ -61,14 +61,14 @@ clean_database_fixture::clean_database_fixture()
 
    //ahplugin->plugin_startup();
    db_plugin->plugin_startup();
-   score( INIT_MINER_NAME, 10000 );
+   score( genesisAccountBasename, 10000 );
 
    // Fill up the rest of the required miners
-   for( int i = NUM_INIT_MINERS; i < MAX_WITNESSES; i++ )
+   for( int i = numberOfGenesisWitnessAccounts; i < MAX_WITNESSES; i++ )
    {
-      accountCreate( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
-      fund( INIT_MINER_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
-      witness_create( INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
+      accountCreate( genesisAccountBasename + fc::to_string( i ), init_account_pub_key );
+      fund( genesisAccountBasename + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
+      witness_create( genesisAccountBasename + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
    }
 
    validate_database();
@@ -119,14 +119,14 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
    db.set_hardfork( NUM_HARDFORKS );
    generate_block();
 
-   score( INIT_MINER_NAME, 10000 );
+   score( genesisAccountBasename, 10000 );
 
    // Fill up the rest of the required miners
-   for( int i = NUM_INIT_MINERS; i < MAX_WITNESSES; i++ )
+   for( int i = numberOfGenesisWitnessAccounts; i < MAX_WITNESSES; i++ )
    {
-      accountCreate( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
-      fund( INIT_MINER_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
-      witness_create( INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
+      accountCreate( genesisAccountBasename + fc::to_string( i ), init_account_pub_key );
+      fund( genesisAccountBasename + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
+      witness_create( genesisAccountBasename + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
    }
 
    validate_database();
@@ -279,9 +279,9 @@ const account_object& database_fixture::accountCreate(
    {
       return accountCreate(
          name,
-         INIT_MINER_NAME,
+         genesisAccountBasename,
          init_account_priv_key,
-         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER, share_type( 100 ) ),
+         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount, share_type( 100 ) ),
          key,
          post_key,
          "" );
@@ -332,7 +332,7 @@ void database_fixture::fund(
 {
    try
    {
-      transfer( INIT_MINER_NAME, account_name, amount );
+      transfer( genesisAccountBasename, account_name, amount );
 
    } FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
@@ -482,7 +482,7 @@ void database_fixture::set_price_feed( const price& new_price )
       for ( int i = 1; i < 8; i++ )
       {
          feed_publish_operation op;
-         op.publisher = INIT_MINER_NAME + fc::to_string( i );
+         op.publisher = genesisAccountBasename + fc::to_string( i );
          op.exchange_rate = new_price;
          trx.operations.push_back( op );
          trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );

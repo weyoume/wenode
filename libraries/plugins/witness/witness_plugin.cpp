@@ -438,6 +438,7 @@ namespace detail
             {
                b.account = a.name;
                b.type = type;
+
             });
          }
 
@@ -466,8 +467,22 @@ namespace detail
          fc::uint128 account_vSCORE( a.effective_SCORE().amount.value );
          fc::uint128 total_vSCORE( props.totalSCORE.amount.value );
          fc::uint128 account_average_bandwidth( band->average_bandwidth.value );
+         share_type account_lifetime_bandwidth( band->lifetime_bandwidth );
          fc::uint128 max_virtual_bandwidth( _db.get( reserve_ratio_id_type() ).max_virtual_bandwidth );
+         // in effect
+         // if a users score times the global max virtual bandwidth is great than the accounts average bandwidth times the total score of the network then it has enough bandwidth
+         // max network bandwidth * account score // 50 * 10 = 500
+         // account average bandwidth * total network score // 1 * 1000 = 1000
+         // max network bandwidth * account score // 50 * 10 = 500
+         // 528482304000000000000 * 0 = 0
+         // needs to be greater than
+         // account average bandwidth * total network score
+         // 288000000 * 842277942443315491 = 2.4257604742367484e+26
 
+         // This basically says that if it's the accounts first transaction they have the bandwidth.
+         // This is a hack to get around not being able to claim score reward balance in the first place due to not having enough score to do so.....
+//         if(trx_bandwidth.value != account_lifetime_bandwidth.value && trx_bandwidth.value != new_bandwidth.value){
+//         }
          has_bandwidth = ( account_vSCORE * max_virtual_bandwidth ) > ( account_average_bandwidth * total_vSCORE );
 
          if( _db.is_producing() )

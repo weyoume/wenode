@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       std::vector< voter_actor > voters;
 
       authors.emplace_back( "alice", alice_private_key );
-      authors.emplace_back( "bob"  , bob_private_key, ASSET( "0.000 TBD" ) );
+      authors.emplace_back( "bob"  , bob_private_key, ASSET( "0.000 TSD" ) );
       authors.emplace_back( "dave" , dave_private_key );
       voters.emplace_back( "ulysses", ulysses_private_key, "alice");
       voters.emplace_back( "vivian" , vivian_private_key , "bob"  );
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       // U,V,W : voters
 
       // set a ridiculously high TME price ($1 / satoshi) to disable dust threshold
-      set_price_feed( price( ASSET( "0.001 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "0.001 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       for( const auto& voter : voters )
       {
@@ -145,8 +145,8 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       const account_object& bob_account   = db.get_account("bob");
       const account_object& dave_account  = db.get_account("dave");
 
-      BOOST_CHECK( alice_account.TSDrewardBalance == ASSET( "14288.000 TBD" ) );
-      BOOST_CHECK( bob_account.TSDrewardBalance == ASSET( "0.000 TBD" ) );
+      BOOST_CHECK( alice_account.TSDrewardBalance == ASSET( "14288.000 TSD" ) );
+      BOOST_CHECK( bob_account.TSDrewardBalance == ASSET( "0.000 TSD" ) );
       BOOST_CHECK( dave_account.TSDrewardBalance == alice_account.TSDrewardBalance );
    }
    FC_LOG_AND_RETHROW()
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_dust )
       score( "alice", ASSET( "10.000 TESTS" ) );
       score( "bob", ASSET( "10.000 TESTS" ) );
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       generate_block();
       validate_database();
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE( reward_funds )
       ACTORS( (alice)(bob) )
       generate_block();
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
       generate_block();
 
       comment_operation comment;
@@ -296,7 +296,7 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       ACTORS( (alice)(bob) )
       generate_block();
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
       generate_block();
 
       comment_operation comment;
@@ -385,7 +385,7 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       fund( "dave", 5000 );
       score( "dave", 5000 );
 
-      price exchange_rate( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      price exchange_rate( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) );
       set_price_feed( exchange_rate );
 
       signed_transaction tx;
@@ -458,12 +458,12 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       //generate_blocks( db.get_comment( "bob", string( "test" ) ).cashout_time - BLOCK_INTERVAL, true );
 
       auto TMEreward = db.get_dynamic_global_properties().total_reward_fund_TME + ASSET( "1.667 TESTS" );
-      auto total_SCOREreward2 = db.get_dynamic_global_properties().total_SCOREreward2;
+      auto totalSCOREreward2 = db.get_dynamic_global_properties().totalSCOREreward2;
       auto bob_comment_SCOREreward = db.get_comment( "bob", string( "test" ) ).net_SCOREreward;
       auto bob_SCORE = db.get_account( "bob" ).SCORE;
       auto bob_TSDbalance = db.get_account( "bob" ).TSDbalance;
 
-      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_SCOREreward.value ) * bob_comment_SCOREreward.value * TMEreward.amount.value ) / total_SCOREreward2 ).to_uint64(), SYMBOL_COIN );
+      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_SCOREreward.value ) * bob_comment_SCOREreward.value * TMEreward.amount.value ) / totalSCOREreward2 ).to_uint64(), SYMBOL_COIN );
       auto bob_comment_discussion_rewards = asset( bob_comment_payout.amount / 4, SYMBOL_COIN );
       bob_comment_payout -= bob_comment_discussion_rewards;
       auto bob_comment_TSDreward = db.to_TSD( asset( bob_comment_payout.amount / 2, SYMBOL_COIN ) );
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       fund( "dave", 5000 );
       score( "dave", 5000 );
 
-      price exchange_rate( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      price exchange_rate( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) );
       set_price_feed( exchange_rate );
 
       auto gpo = db.get_dynamic_global_properties();
@@ -665,7 +665,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       validate_database();
 
       auto TMEreward = db.get_dynamic_global_properties().total_reward_fund_TME + ASSET( "2.000 TESTS" );
-      auto total_SCOREreward2 = db.get_dynamic_global_properties().total_SCOREreward2;
+      auto totalSCOREreward2 = db.get_dynamic_global_properties().totalSCOREreward2;
       auto bob_comment_vote_total = db.get_comment( "bob", string( "test" ) ).total_vote_weight;
       auto bob_comment_SCOREreward = db.get_comment( "bob", string( "test" ) ).net_SCOREreward;
       auto bob_TSDbalance = db.get_account( "bob" ).TSDbalance;
@@ -674,7 +674,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       auto sam_SCORE = db.get_account( "sam" ).SCORE;
       auto dave_SCORE = db.get_account( "dave" ).SCORE;
 
-      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_SCOREreward.value ) * bob_comment_SCOREreward.value * TMEreward.amount.value ) / total_SCOREreward2 ).to_uint64(), SYMBOL_COIN );
+      auto bob_comment_payout = asset( ( ( uint128_t( bob_comment_SCOREreward.value ) * bob_comment_SCOREreward.value * TMEreward.amount.value ) / totalSCOREreward2 ).to_uint64(), SYMBOL_COIN );
       auto bob_comment_vote_rewards = asset( bob_comment_payout.amount / 2, SYMBOL_COIN );
       bob_comment_payout -= bob_comment_vote_rewards;
       auto bob_comment_TSDreward = asset( bob_comment_payout.amount / 2, SYMBOL_COIN ) * exchange_rate;
@@ -734,7 +734,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       BOOST_TEST_MESSAGE( "Generate block to cause payout" );
 
       TMEreward = db.get_dynamic_global_properties().total_reward_fund_TME + ASSET( "2.000 TESTS" );
-      total_SCOREreward2 = db.get_dynamic_global_properties().total_SCOREreward2;
+      totalSCOREreward2 = db.get_dynamic_global_properties().totalSCOREreward2;
       auto alice_comment_vote_total = db.get_comment( "alice", string( "test" ) ).total_vote_weight;
       auto alice_comment_SCOREreward = db.get_comment( "alice", string( "test" ) ).net_SCOREreward;
       auto alice_TSDbalance = db.get_account( "alice" ).TSDbalance;
@@ -745,8 +745,8 @@ BOOST_AUTO_TEST_CASE( comment_payout )
 
       u256 rs( alice_comment_SCOREreward.value );
       u256 rf( TMEreward.amount.value );
-      u256 trs2 = total_SCOREreward2.hi;
-      trs2 = ( trs2 << 64 ) + total_SCOREreward2.lo;
+      u256 trs2 = totalSCOREreward2.hi;
+      trs2 = ( trs2 << 64 ) + totalSCOREreward2.lo;
       auto rs2 = rs*rs;
 
       auto alice_comment_payout = asset( static_cast< uint64_t >( ( rf * rs2 ) / trs2 ), SYMBOL_COIN );
@@ -866,7 +866,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       fund( "dave", 10000 );
       score( "dave", 10000 );
 
-      price exchange_rate( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      price exchange_rate( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) );
       set_price_feed( exchange_rate );
 
       signed_transaction tx;
@@ -946,7 +946,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
 
       auto gpo = db.get_dynamic_global_properties();
       uint128_t TMEreward = gpo.total_reward_fund_TME.amount.value + ASSET( "2.000 TESTS" ).amount.value;
-      uint128_t total_SCOREreward2 = gpo.total_SCOREreward2;
+      uint128_t totalSCOREreward2 = gpo.totalSCOREreward2;
 
       auto alice_comment = db.get_comment( "alice", string( "test" ) );
       auto bob_comment = db.get_comment( "bob", string( "test" ) );
@@ -956,8 +956,8 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       const auto& vote_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
 
       // Calculate total comment rewards and voting rewards.
-      auto alice_comment_reward = ( ( TMEreward * alice_comment.net_SCOREreward.value * alice_comment.net_SCOREreward.value ) / total_SCOREreward2 ).to_uint64();
-      total_SCOREreward2 -= uint128_t( alice_comment.net_SCOREreward.value ) * ( alice_comment.net_SCOREreward.value );
+      auto alice_comment_reward = ( ( TMEreward * alice_comment.net_SCOREreward.value * alice_comment.net_SCOREreward.value ) / totalSCOREreward2 ).to_uint64();
+      totalSCOREreward2 -= uint128_t( alice_comment.net_SCOREreward.value ) * ( alice_comment.net_SCOREreward.value );
       TMEreward -= alice_comment_reward;
       auto alice_comment_vote_rewards = alice_comment_reward / 2;
       alice_comment_reward -= alice_comment_vote_rewards;
@@ -966,8 +966,8 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       auto bob_vote_alice_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "alice", string( "test" ).id, db.get_account( "bob" ) ).id ) )->weight ) * alice_comment_vote_rewards ) / alice_comment.total_vote_weight ), SYMBOL_COIN );
       TMEreward += alice_comment_vote_rewards - ( alice_vote_alice_reward + bob_vote_alice_reward ).amount.value;
 
-      auto bob_comment_reward = ( ( TMEreward * bob_comment.net_SCOREreward.value * bob_comment.net_SCOREreward.value ) / total_SCOREreward2 ).to_uint64();
-      total_SCOREreward2 -= uint128_t( bob_comment.net_SCOREreward.value ) * bob_comment.net_SCOREreward.value;
+      auto bob_comment_reward = ( ( TMEreward * bob_comment.net_SCOREreward.value * bob_comment.net_SCOREreward.value ) / totalSCOREreward2 ).to_uint64();
+      totalSCOREreward2 -= uint128_t( bob_comment.net_SCOREreward.value ) * bob_comment.net_SCOREreward.value;
       TMEreward -= bob_comment_reward;
       auto bob_comment_vote_rewards = bob_comment_reward / 2;
       bob_comment_reward -= bob_comment_vote_rewards;
@@ -977,8 +977,8 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       auto sam_vote_bob_reward = asset( static_cast< uint64_t >( ( u256( vote_idx.find( std::make_tuple( db.get_comment( "bob", string( "test" ).id, db.get_account( "sam" ) ).id ) )->weight ) * bob_comment_vote_rewards ) / bob_comment.total_vote_weight ), SYMBOL_COIN );
       TMEreward += bob_comment_vote_rewards - ( alice_vote_bob_reward + bob_vote_bob_reward + sam_vote_bob_reward ).amount.value;
 
-      auto dave_comment_reward = ( ( TMEreward * dave_comment.net_SCOREreward.value * dave_comment.net_SCOREreward.value ) / total_SCOREreward2 ).to_uint64();
-      total_SCOREreward2 -= uint128_t( dave_comment.net_SCOREreward.value ) * dave_comment.net_SCOREreward.value;
+      auto dave_comment_reward = ( ( TMEreward * dave_comment.net_SCOREreward.value * dave_comment.net_SCOREreward.value ) / totalSCOREreward2 ).to_uint64();
+      totalSCOREreward2 -= uint128_t( dave_comment.net_SCOREreward.value ) * dave_comment.net_SCOREreward.value;
       TMEreward -= dave_comment_reward;
       auto dave_comment_vote_rewards = dave_comment_reward / 2;
       dave_comment_reward -= dave_comment_vote_rewards;
@@ -1446,7 +1446,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
       // Upgrade accounts to witnesses
       for( int i = 0; i < 7; i++ )
       {
-         transfer( INIT_MINER_NAME, accounts[i], 10000 );
+         transfer( genesisAccountBasename, accounts[i], 10000 );
          witness_create( accounts[i], keys[i], "foo.bar", keys[i].get_public_key(), 1000 );
 
          ops.push_back( feed_publish_operation() );
@@ -1518,14 +1518,14 @@ BOOST_AUTO_TEST_CASE( convert_delay )
       ACTORS( (alice) )
       generate_block();
       score( "alice", ASSET( "10.000 TESTS" ) );
-      fund( "alice", ASSET( "25.000 TBD" ) );
+      fund( "alice", ASSET( "25.000 TSD" ) );
 
-      set_price_feed( price( asset::from_string( "1.250 TESTS" ), asset::from_string( "1.000 TBD" ) ) );
+      set_price_feed( price( asset::from_string( "1.250 TESTS" ), asset::from_string( "1.000 TSD" ) ) );
 
       convert_operation op;
       signed_transaction tx;
 
-      auto start_balance = ASSET( "25.000 TBD" );
+      auto start_balance = ASSET( "25.000 TSD" );
 
       BOOST_TEST_MESSAGE( "Setup conversion to TESTS" );
       tx.operations.clear();
@@ -1564,7 +1564,7 @@ BOOST_AUTO_TEST_CASE( convert_delay )
       BOOST_REQUIRE( alice_3.TSDbalance.amount.value == ( start_balance - op.amount ).amount.value );
       BOOST_REQUIRE( vop.owner == "alice" );
       BOOST_REQUIRE( vop.requestid == 2 );
-      BOOST_REQUIRE( vop.amount_in.amount.value == ASSET( "2.000 TBD" ).amount.value );
+      BOOST_REQUIRE( vop.amount_in.amount.value == ASSET( "2.000 TSD" ).amount.value );
       BOOST_REQUIRE( vop.amount_out.amount.value == ASSET( "2.500 TESTS" ).amount.value );
       validate_database();
    }
@@ -1764,14 +1764,14 @@ BOOST_AUTO_TEST_CASE( TSD_interest )
       score( "alice", ASSET( "10.000 TESTS" ) );
       score( "bob", ASSET( "10.000 TESTS" ) );
 
-      set_price_feed( price( asset::from_string( "1.000 TESTS" ), asset::from_string( "1.000 TBD" ) ) );
+      set_price_feed( price( asset::from_string( "1.000 TESTS" ), asset::from_string( "1.000 TSD" ) ) );
 
       BOOST_TEST_MESSAGE( "Testing interest over smallest interest period" );
 
       convert_operation op;
       signed_transaction tx;
 
-      fund( "alice", ASSET( "31.903 TBD" ) );
+      fund( "alice", ASSET( "31.903 TSD" ) );
 
       auto start_time = db.get_account( "alice" ).TSD_seconds_last_update;
       auto alice_TSD = db.get_account( "alice" ).TSDbalance;
@@ -1781,7 +1781,7 @@ BOOST_AUTO_TEST_CASE( TSD_interest )
       transfer_operation transfer;
       transfer.to = "bob";
       transfer.from = "alice";
-      transfer.amount = ASSET( "1.000 TBD" );
+      transfer.amount = ASSET( "1.000 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -1793,9 +1793,9 @@ BOOST_AUTO_TEST_CASE( TSD_interest )
       auto interest_op = get_last_operations( 1 )[0].get< interest_operation >();
 
       BOOST_REQUIRE( gpo.TSD_interest_rate > 0 );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value + ( ( ( ( uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds() ) / SECONDS_PER_YEAR ) * gpo.TSD_interest_rate ) / PERCENT_100 ).to_uint64() );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TSD" ).amount.value + ( ( ( ( uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds() ) / SECONDS_PER_YEAR ) * gpo.TSD_interest_rate ) / PERCENT_100 ).to_uint64() );
       BOOST_REQUIRE( interest_op.owner == "alice" );
-      BOOST_REQUIRE( interest_op.interest.amount.value == db.get_account( "alice" ).TSDbalance.amount.value - ( alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value ) );
+      BOOST_REQUIRE( interest_op.interest.amount.value == db.get_account( "alice" ).TSDbalance.amount.value - ( alice_TSD.amount.value - ASSET( "1.000 TSD" ).amount.value ) );
       validate_database();
 
       BOOST_TEST_MESSAGE( "Testing interest under interest period" );
@@ -1812,7 +1812,7 @@ BOOST_AUTO_TEST_CASE( TSD_interest )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TSD" ).amount.value );
       validate_database();
 
       auto alice_coindays = uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds();
@@ -1830,7 +1830,7 @@ BOOST_AUTO_TEST_CASE( TSD_interest )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TBD" ).amount.value + ( ( ( ( uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds() + alice_coindays ) / SECONDS_PER_YEAR ) * gpo.TSD_interest_rate ) / PERCENT_100 ).to_uint64() );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance.amount.value == alice_TSD.amount.value - ASSET( "1.000 TSD" ).amount.value + ( ( ( ( uint128_t( alice_TSD.amount.value ) * ( db.head_block_time() - start_time ).to_seconds() + alice_coindays ) / SECONDS_PER_YEAR ) * gpo.TSD_interest_rate ) / PERCENT_100 ).to_uint64() );
       validate_database();
    }
    FC_LOG_AND_RETHROW();
@@ -1853,12 +1853,12 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
 
       BOOST_TEST_MESSAGE( "Rewarding Bob with TESTS" );
 
-      auto exchange_rate = price( ASSET( "1.250 TESTS" ), ASSET( "1.000 TBD" ) );
+      auto exchange_rate = price( ASSET( "1.250 TESTS" ), ASSET( "1.000 TSD" ) );
       set_price_feed( exchange_rate );
 
       signed_transaction tx;
 
-      fund( "alice", ASSET( "25.522 TBD" ) );
+      fund( "alice", ASSET( "25.522 TSD" ) );
       asset alice_TSD = db.get_account( "alice" ).TSDbalance;
 
       generate_block();
@@ -2416,7 +2416,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       op.owner = "sam";
       op.orderid = 14;
       op.amount_to_sell = ASSET( "1.000 TESTS" );
-      op.min_to_receive = ASSET( "1.000 TBD" );
+      op.min_to_receive = ASSET( "1.000 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2446,7 +2446,7 @@ BOOST_AUTO_TEST_CASE( liquidity_rewards )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      sam_TSD_volume = ASSET( "1.000 TBD" ).amount.value;
+      sam_TSD_volume = ASSET( "1.000 TSD" ).amount.value;
       sam_TME_volume = 0;
       sam_reward_last_update = db.head_block_time();
 
@@ -2555,7 +2555,7 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
       score( "sam", 10000 );
       score( "dave", 10000 );
 
-      auto exchange_rate = price( ASSET( "1.250 TESTS" ), ASSET( "1.000 TBD" ) );
+      auto exchange_rate = price( ASSET( "1.250 TESTS" ), ASSET( "1.000 TSD" ) );
       set_price_feed( exchange_rate );
 
       signed_transaction tx;
@@ -2683,7 +2683,7 @@ BOOST_AUTO_TEST_CASE( TSD_stability )
       score( "alice", 10000 );
       score( "bob", 10000 );
 
-      auto exchange_rate = price( ASSET( "1.000 TBD" ), ASSET( "10.000 TESTS" ) );
+      auto exchange_rate = price( ASSET( "1.000 TSD" ), ASSET( "10.000 TESTS" ) );
       set_price_feed( exchange_rate );
 
       BOOST_REQUIRE( db.get_dynamic_global_properties().TSD_print_rate == PERCENT_100 );
@@ -2813,7 +2813,7 @@ BOOST_AUTO_TEST_CASE( TSD_price_feed_limit )
       generate_block();
       score( "alice", ASSET( "10.000 TESTS" ) );
 
-      price exchange_rate( ASSET( "1.000 TBD" ), ASSET( "1.000 TESTS" ) );
+      price exchange_rate( ASSET( "1.000 TSD" ), ASSET( "1.000 TESTS" ) );
       set_price_feed( exchange_rate );
 
       comment_operation comment;
@@ -2860,10 +2860,10 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       ACTORS( (alice) );
       generate_block();
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       fund( "alice", ASSET( "10.000 TESTS" ) );
-      fund( "alice", ASSET( "10.000 TBD" ) );
+      fund( "alice", ASSET( "10.000 TSD" ) );
 
       transfer_operation transfer1;
       transfer1.from = "alice";
@@ -2873,7 +2873,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       transfer_operation transfer2;
       transfer2.from = "alice";
       transfer2.to = NULL_ACCOUNT;
-      transfer2.amount = ASSET( "2.000 TBD" );
+      transfer2.amount = ASSET( "2.000 TSD" );
 
       transferTMEtoSCOREfund_operation score;
       score.from = "alice";
@@ -2888,7 +2888,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       transferToSavings_operation save2;
       save2.from = "alice";
       save2.to = NULL_ACCOUNT;
-      save2.amount = ASSET( "5.000 TBD" );
+      save2.amount = ASSET( "5.000 TSD" );
 
       BOOST_TEST_MESSAGE( "--- Transferring to NULL Account" );
 
@@ -2908,7 +2908,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
          db.modify( db.get_account( NULL_ACCOUNT ), [&]( account_object& a )
          {
             a.TMErewardBalance = ASSET( "1.000 TESTS" );
-            a.TSDrewardBalance = ASSET( "1.000 TBD" );
+            a.TSDrewardBalance = ASSET( "1.000 TSD" );
             a.SCORErewardBalanceInTME = ASSET( "1.000000 TP" );
             a.SCORErewardBalance = ASSET( "1.000 TESTS" );
          });
@@ -2917,7 +2917,7 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
          {
             gpo.current_supply += ASSET( "2.000 TESTS" );
             gpo.virtual_supply += ASSET( "3.000 TESTS" );
-            gpo.current_TSD_supply += ASSET( "1.000 TBD" );
+            gpo.current_TSD_supply += ASSET( "1.000 TSD" );
             gpo.pending_rewarded_SCORE += ASSET( "1.000000 TP" );
             gpo.pending_rewarded_SCOREvalueInTME += ASSET( "1.000 TESTS" );
          });
@@ -2926,32 +2926,32 @@ BOOST_AUTO_TEST_CASE( clear_null_account )
       validate_database();
 
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDbalance == ASSET( "2.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDbalance == ASSET( "2.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).SCORE > ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TMEsavingsBalance == ASSET( "4.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDsavingsBalance == ASSET( "5.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDrewardBalance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDsavingsBalance == ASSET( "5.000 TSD" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDrewardBalance == ASSET( "1.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TMErewardBalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).SCORErewardBalanceInTME == ASSET( "1.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).SCORErewardBalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "2.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "3.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "3.000 TSD" ) );
 
       BOOST_TEST_MESSAGE( "--- Generating block to clear balances" );
       generate_block();
       validate_database();
 
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDbalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).SCORE == ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TMEsavingsBalance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDsavingsBalance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDrewardBalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDsavingsBalance == ASSET( "0.000 TSD" ) );
+      BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TSDrewardBalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).TMErewardBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).SCORErewardBalanceInTME == ASSET( "0.000000 TP" ) );
       BOOST_REQUIRE( db.get_account( NULL_ACCOUNT ).SCORErewardBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "2.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "3.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "3.000 TSD" ) );
    }
    FC_LOG_AND_RETHROW()
 }

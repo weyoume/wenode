@@ -1091,7 +1091,7 @@ void database_api::set_pending_payout( discussion& d )const
    if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
       total_r2 = to256( my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) ).recent_claims );
    else
-      total_r2 = to256( props.total_SCOREreward2 );
+      total_r2 = to256( props.totalSCOREreward2 );
 
    if( total_r2 > 0 )
    {
@@ -1208,15 +1208,27 @@ map< uint32_t, applied_operation > database_api::get_account_history( string acc
       const auto& idx = my->_db.get_index<account_history_index>().indices().get<by_account>();
       auto itr = idx.lower_bound( boost::make_tuple( account, from ) );
    //   if( itr != idx.end() ) idump((*itr));
-      auto end = idx.upper_bound( boost::make_tuple( account, std::max( int64_t(0), int64_t(itr->sequence)-limit ) ) );
+      // auto end = idx.upper_bound( boost::make_tuple( account, std::max( int64_t(0), int64_t(itr->sequence)-limit ) ) );
    //   if( end != idx.end() ) idump((*end));
-
+			uint32_t n = 0;
       map<uint32_t, applied_operation> result;
-      while( itr != end )
-      {
-         result[itr->sequence] = my->_db.get(itr->op);
-         ++itr;
-      }
+      // while( itr != end )
+      // {
+      //    result[itr->sequence] = my->_db.get(itr->op);
+      //    ++itr;
+      // }
+			while( true )
+			{
+					if( itr == idx.end() )
+						break;
+					if( itr->account != account )
+						break;
+					if( n >= limit )
+						break;
+					result[ itr->sequence ] = my->_db.get( itr->op );
+					++itr;
+					++n;
+			}
       return result;
    });
 }

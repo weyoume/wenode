@@ -68,8 +68,9 @@ fc::variant_object get_config()
    result["INFLATION_NARROWING_PERIOD"] = INFLATION_NARROWING_PERIOD;
    result["INFLATION_RATE_START_PERCENT"] = INFLATION_RATE_START_PERCENT;
    result["INFLATION_RATE_STOP_PERCENT"] = INFLATION_RATE_STOP_PERCENT;
-   result["INIT_MINER_NAME"] = INIT_MINER_NAME;
+   result["genesisAccountBasename"] = genesisAccountBasename;
    result["INIT_PUBLIC_KEY_STR"] = INIT_PUBLIC_KEY_STR;
+	 result["genesisAccountSCORE"] = genesisAccountSCORE;
 #ifdef SHOW_PRIVATE_KEYS
    #if SHOW_PRIVATE_KEYS
       #ifdef INIT_PRIVATE_KEY
@@ -142,8 +143,8 @@ fc::variant_object get_config()
    result["MIN_TRANSACTION_SIZE_LIMIT"] = MIN_TRANSACTION_SIZE_LIMIT;
    result["MIN_UNDO_HISTORY"] = MIN_UNDO_HISTORY;
    result["NULL_ACCOUNT"] = NULL_ACCOUNT;
-   result["NUM_INIT_MINERS"] = NUM_INIT_MINERS;
-   result["NUM_INIT_EXTRAS"] = NUM_INIT_EXTRAS;
+   result["numberOfGenesisWitnessAccounts"] = numberOfGenesisWitnessAccounts;
+   result["numberOfExtraGenesisAccounts"] = numberOfExtraGenesisAccounts;
    result["ORIGINAL_MIN_ACCOUNT_CREATION_FEE"] = ORIGINAL_MIN_ACCOUNT_CREATION_FEE;
    result["OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM"] = OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM;
    result["OWNER_AUTH_RECOVERY_PERIOD"] = OWNER_AUTH_RECOVERY_PERIOD;

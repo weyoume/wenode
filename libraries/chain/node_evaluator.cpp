@@ -118,8 +118,8 @@ void accountCreate_evaluator::do_apply( const accountCreate_operation& o )
    if( _db.has_hardfork( HARDFORK_0_19__987) )
    {
       const witness_schedule_object& wso = _db.get_witness_schedule_object();
-      FC_ASSERT( o.fee >= asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_COIN ), "Insufficient Fee: ${f} required, ${p} provided.",
-                 ("f", wso.median_props.account_creation_fee * asset( CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_COIN ) )
+      FC_ASSERT( o.fee >= asset( wso.median_props.account_creation_fee.amount, SYMBOL_COIN ), "Insufficient Fee: ${f} required, ${p} provided.",
+                 ("f", wso.median_props.account_creation_fee )
                  ("p", o.fee) );
    }
    else if( _db.has_hardfork( HARDFORK_0_1 ) )
@@ -200,7 +200,7 @@ void accountCreateWithDelegation_evaluator::do_apply( const accountCreateWithDel
                ( "creator.SCORE", creator.SCORE )
                ( "creator.SCOREDelegated", creator.SCOREDelegated )( "required", o.delegation ) );
 
-   auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN ) * props.get_SCORE_price();
+   auto target_delegation = asset( wso.median_props.account_creation_fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN ) * props.get_SCORE_price();
 
    auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN ) * props.get_SCORE_price() + o.delegation;
 
@@ -1177,7 +1177,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
    int64_t elapsed_seconds   = (_db.head_block_time() - voter.last_vote_time).to_seconds();
 
    if( _db.has_hardfork( HARDFORK_0_11 ) )
-      FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL_SEC, "Can only vote once every 3 seconds." );
+      FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL_SEC, "Can only vote once every ${s} seconds.", ("s", MIN_VOTE_INTERVAL_SEC) );
 
    int64_t regenerated_power = (PERCENT_100 * elapsed_seconds) / VOTE_REGENERATION_SECONDS;
    int64_t current_power     = std::min( int64_t(voter.voting_power + regenerated_power), int64_t(PERCENT_100) );

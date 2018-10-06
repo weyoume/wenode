@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       fund( "bob", 1000000 );
       fund( "sam", 1000000 );
 
-      set_price_feed( price( ASSET( "0.500 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "0.500 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       signed_transaction tx;
       comment_operation comment;
@@ -68,7 +68,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
 
       limit_order_create_operation op;
       op.owner = "alice";
-      op.amount_to_sell = ASSET( "1.000 TBD" );
+      op.amount_to_sell = ASSET( "1.000 TSD" );
       op.min_to_receive = ASSET( "2.000 TESTS" );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -80,7 +80,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
 
       op.owner = "bob";
       op.amount_to_sell = ASSET( "1.500 TESTS" );
-      op.min_to_receive = ASSET( "0.750 TBD" );
+      op.min_to_receive = ASSET( "0.750 TSD" );
       tx.operations.push_back( op );
       tx.sign( bob_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -94,7 +94,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
 
       op.owner = "sam";
       op.amount_to_sell = ASSET( "1.000 TESTS" );
-      op.min_to_receive = ASSET( "0.500 TBD" );
+      op.min_to_receive = ASSET( "0.500 TSD" );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( sam_private_key, db.get_chain_id() );
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       tx.signatures.clear();
 
       op.owner = "alice";
-      op.amount_to_sell = ASSET( "0.500 TBD" );
+      op.amount_to_sell = ASSET( "0.500 TSD" );
       op.min_to_receive = ASSET( "0.900 TESTS" );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
 
       op.owner = "bob";
       op.amount_to_sell = ASSET( "0.450 TESTS" );
-      op.min_to_receive = ASSET( "0.250 TBD" );
+      op.min_to_receive = ASSET( "0.250 TSD" );
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       tx.sign( bob_private_key, db.get_chain_id() );
@@ -132,155 +132,155 @@ BOOST_AUTO_TEST_CASE( mh_test )
       BOOST_REQUIRE( bucket->seconds == 15 );
       BOOST_REQUIRE( bucket->open == time_a );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "1.500 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "1.500 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 15 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "0.500 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "0.500 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.250 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 15 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) + 60 );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "0.450 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "0.450 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "0.950 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.500 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.500 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 60 );
       BOOST_REQUIRE( bucket->open == time_a );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "1.500 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "1.500 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 60 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "0.500 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "0.500 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.250 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 60 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) + 60 );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "0.450 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "0.450 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "0.950 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.500 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.500 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 300 );
       BOOST_REQUIRE( bucket->open == time_a );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "1.500 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "1.500 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 300 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 90 ) );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "0.450 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "0.450 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "1.450 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 3600 );
       BOOST_REQUIRE( bucket->open == time_a );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "1.500 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "1.500 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 3600 );
       BOOST_REQUIRE( bucket->open == time_a + ( 60 * 60 ) );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "0.450 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "0.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "0.450 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "1.450 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "0.750 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket->seconds == 86400 );
       BOOST_REQUIRE( bucket->open == GENESIS_TIME );
       BOOST_REQUIRE( bucket->high_TME == ASSET( "0.450 TESTS " ).amount );
-      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->high_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->low_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->low_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->open_TME == ASSET( "1.500 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TBD" ).amount );
+      BOOST_REQUIRE( bucket->open_TSD == ASSET( "0.750 TSD" ).amount );
       BOOST_REQUIRE( bucket->close_TME == ASSET( "0.450 TESTS").amount );
-      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TBD" ).amount );
+      BOOST_REQUIRE( bucket->close_TSD == ASSET( "0.250 TSD" ).amount );
       BOOST_REQUIRE( bucket->TME_volume == ASSET( "2.950 TESTS" ).amount );
-      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "1.500 TBD" ).amount );
+      BOOST_REQUIRE( bucket->TSD_volume == ASSET( "1.500 TSD" ).amount );
       bucket++;
 
       BOOST_REQUIRE( bucket == bucket_idx.end() );
@@ -293,7 +293,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       BOOST_REQUIRE( order->op.current_pays == ASSET( "1.500 TESTS" ) );
       BOOST_REQUIRE( order->op.open_owner == "alice" );
       BOOST_REQUIRE( order->op.open_orderid == 0 );
-      BOOST_REQUIRE( order->op.open_pays == ASSET( "0.750 TBD" ) );
+      BOOST_REQUIRE( order->op.open_pays == ASSET( "0.750 TSD" ) );
       order++;
 
       BOOST_REQUIRE( order->time == fill_order_b_time );
@@ -302,13 +302,13 @@ BOOST_AUTO_TEST_CASE( mh_test )
       BOOST_REQUIRE( order->op.current_pays == ASSET( "0.500 TESTS" ) );
       BOOST_REQUIRE( order->op.open_owner == "alice" );
       BOOST_REQUIRE( order->op.open_orderid == 0 );
-      BOOST_REQUIRE( order->op.open_pays == ASSET( "0.250 TBD" ) );
+      BOOST_REQUIRE( order->op.open_pays == ASSET( "0.250 TSD" ) );
       order++;
 
       BOOST_REQUIRE( order->time == fill_order_c_time );
       BOOST_REQUIRE( order->op.current_owner == "alice" );
       BOOST_REQUIRE( order->op.current_orderid == 0 );
-      BOOST_REQUIRE( order->op.current_pays == ASSET( "0.250 TBD" ) );
+      BOOST_REQUIRE( order->op.current_pays == ASSET( "0.250 TSD" ) );
       BOOST_REQUIRE( order->op.open_owner == "sam" );
       BOOST_REQUIRE( order->op.open_orderid == 0 );
       BOOST_REQUIRE( order->op.open_pays == ASSET( "0.500 TESTS" ) );
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       BOOST_REQUIRE( order->op.current_pays == ASSET( "0.450 TESTS" ) );
       BOOST_REQUIRE( order->op.open_owner == "alice" );
       BOOST_REQUIRE( order->op.open_orderid == 0 );
-      BOOST_REQUIRE( order->op.open_pays == ASSET( "0.250 TBD" ) );
+      BOOST_REQUIRE( order->op.open_pays == ASSET( "0.250 TSD" ) );
       order++;
 
       BOOST_REQUIRE( order == order_hist_idx.end() );

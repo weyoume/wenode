@@ -73,12 +73,12 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
    {
       BOOST_TEST_MESSAGE( "Testing: accountCreate_apply" );
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       signed_transaction tx;
       private_key_type priv_key = generate_private_key( "alice" );
 
-      const account_object& init = db.get_account( INIT_MINER_NAME );
+      const account_object& init = db.get_account( genesisAccountBasename );
       asset init_starting_balance = init.balance;
 
       const auto& gpo = db.get_dynamic_global_properties();
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
 
       op.fee = asset( 100, SYMBOL_COIN );
       op.newAccountName = "alice";
-      op.creator = INIT_MINER_NAME;
+      op.creator = genesisAccountBasename;
       op.owner = authority( 1, priv_key.get_public_key(), 1 );
       op.active = authority( 2, priv_key.get_public_key(), 2 );
       op.memoKey = priv_key.get_public_key();
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
       BOOST_REQUIRE( acct.proxy == "" );
       BOOST_REQUIRE( acct.created == db.head_block_time() );
       BOOST_REQUIRE( acct.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( acct.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( acct.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
 
       /// because init_witness has created SCORE and blocks have been produced, 100 TME is worth less than 100 SCORE due to rounding
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
       BOOST_REQUIRE( acct.proxy == "" );
       BOOST_REQUIRE( acct.created == db.head_block_time() );
       BOOST_REQUIRE( acct.balance.amount.value == ASSET( "0.000 TME " ).amount.value );
-      BOOST_REQUIRE( acct.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( acct.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       BOOST_REQUIRE( acct.SCORE.amount.value == ( op.fee * ( score_SCORE / SCORE ) ).amount.value );
       BOOST_REQUIRE( acct.SCOREwithdrawRateInTME.amount.value == ASSET( "0.000000 VESTS" ).amount.value );
       BOOST_REQUIRE( acct.proxied_SCOREfundTMEbalance_votes_total().value == 0 );
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE( accountCreate_apply )
       BOOST_TEST_MESSAGE( "--- Test failure when creator cannot cover fee" );
       tx.signatures.clear();
       tx.operations.clear();
-      op.fee = asset( db.get_account( INIT_MINER_NAME ).balance.amount + 1, SYMBOL_COIN );
+      op.fee = asset( db.get_account( genesisAccountBasename ).balance.amount + 1, SYMBOL_COIN );
       op.newAccountName = "bob";
       tx.operations.push_back( op );
       tx.sign( init_account_priv_key, db.get_chain_id() );
@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE( comment_apply )
 
       db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& o)
       {
-         o.total_SCOREreward2 = node::chain::util::evaluate_reward_curve( 10 );
+         o.totalSCOREreward2 = node::chain::util::evaluate_reward_curve( 10 );
       });
 
       tx.signatures.clear();
@@ -608,7 +608,7 @@ BOOST_AUTO_TEST_CASE( comment_delete_apply )
 
       generate_block();
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       signed_transaction tx;
       comment_operation comment;
@@ -2093,7 +2093,7 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
       BOOST_TEST_MESSAGE( "--- Test votes are transferred when a proxy is added" );
       accountWitnessVote_operation vote;
       vote.account= "bob";
-      vote.witness = INIT_MINER_NAME;
+      vote.witness = genesisAccountBasename;
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( vote );
@@ -2110,7 +2110,7 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
 
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_witness( INIT_MINER_NAME ).votes == ( alice.SCORE + bob.SCORE ).amount );
+      BOOST_REQUIRE( db.get_witness( genesisAccountBasename ).votes == ( alice.SCORE + bob.SCORE ).amount );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test votes are removed when a proxy is removed" );
@@ -2122,7 +2122,7 @@ BOOST_AUTO_TEST_CASE( account_witness_proxy_apply )
 
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_witness( INIT_MINER_NAME ).votes == bob.SCORE.amount );
+      BOOST_REQUIRE( db.get_witness( genesisAccountBasename ).votes == bob.SCORE.amount );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -2229,7 +2229,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_authorities )
 
       feed_publish_operation op;
       op.publisher = "alice";
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) );
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -2277,7 +2277,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_apply )
       BOOST_TEST_MESSAGE( "--- Test publishing price feed" );
       feed_publish_operation op;
       op.publisher = "alice";
-      op.exchange_rate = price( ASSET( "1000.000 TESTS" ), ASSET( "1.000 TBD" ) ); // 1000 TME : 1 TSD
+      op.exchange_rate = price( ASSET( "1000.000 TESTS" ), ASSET( "1.000 TSD" ) ); // 1000 TME : 1 TSD
 
       signed_transaction tx;
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -2306,7 +2306,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_apply )
 
       tx.operations.clear();
       tx.signatures.clear();
-      op.exchange_rate = price( ASSET(" 1500.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      op.exchange_rate = price( ASSET(" 1500.000 TESTS" ), ASSET( "1.000 TSD" ) );
       op.publisher = "alice";
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -2339,7 +2339,7 @@ BOOST_AUTO_TEST_CASE( convert_authorities )
       ACTORS( (alice)(bob) )
       fund( "alice", 10000 );
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       convert( "alice", ASSET( "2.500 TESTS" ) );
 
@@ -2347,7 +2347,7 @@ BOOST_AUTO_TEST_CASE( convert_authorities )
 
       convert_operation op;
       op.owner = "alice";
-      op.amount = ASSET( "2.500 TBD" );
+      op.amount = ASSET( "2.500 TSD" );
 
       signed_transaction tx;
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -2397,7 +2397,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
 
       const auto& convert_request_idx = db.get_index< convert_request_index >().indices().get< by_owner >();
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       convert( "alice", ASSET( "2.500 TESTS" ) );
       convert( "bob", ASSET( "7.000 TESTS" ) );
@@ -2413,12 +2413,12 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "3.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.TSDbalance.amount.value == ASSET( "7.000 TBD" ).amount.value );
+      BOOST_REQUIRE( new_bob.TSDbalance.amount.value == ASSET( "7.000 TSD" ).amount.value );
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test failure when account does not have the required TBD" );
+      BOOST_TEST_MESSAGE( "--- Test failure when account does not have the required TSD" );
       op.owner = "alice";
-      op.amount = ASSET( "5.000 TBD" );
+      op.amount = ASSET( "5.000 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2426,7 +2426,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_REQUIRE( new_alice.balance.amount.value == ASSET( "7.500 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_alice.TSDbalance.amount.value == ASSET( "2.500 TBD" ).amount.value );
+      BOOST_REQUIRE( new_alice.TSDbalance.amount.value == ASSET( "2.500 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when account does not exist" );
@@ -2439,7 +2439,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
 
       BOOST_TEST_MESSAGE( "--- Test success converting TSD to TESTS" );
       op.owner = "bob";
-      op.amount = ASSET( "3.000 TBD" );
+      op.amount = ASSET( "3.000 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2448,7 +2448,7 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       db.push_transaction( tx, 0 );
 
       BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "3.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.TSDbalance.amount.value == ASSET( "4.000 TBD" ).amount.value );
+      BOOST_REQUIRE( new_bob.TSDbalance.amount.value == ASSET( "4.000 TSD" ).amount.value );
 
       auto convert_request = convert_request_idx.find( std::make_tuple( op.owner, op.requestid ) );
       BOOST_REQUIRE( convert_request != convert_request_idx.end() );
@@ -2467,13 +2467,13 @@ BOOST_AUTO_TEST_CASE( convert_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "3.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.TSDbalance.amount.value == ASSET( "4.000 TBD" ).amount.value );
+      BOOST_REQUIRE( new_bob.TSDbalance.amount.value == ASSET( "4.000 TSD" ).amount.value );
 
       convert_request = convert_request_idx.find( std::make_tuple( op.owner, op.requestid ) );
       BOOST_REQUIRE( convert_request != convert_request_idx.end() );
       BOOST_REQUIRE( convert_request->owner == op.owner );
       BOOST_REQUIRE( convert_request->requestid == op.requestid );
-      BOOST_REQUIRE( convert_request->amount.amount.value == ASSET( "3.000 TBD" ).amount.value );
+      BOOST_REQUIRE( convert_request->amount.amount.value == ASSET( "3.000 TSD" ).amount.value );
       //BOOST_REQUIRE( convert_request->premium == 100000 );
       BOOST_REQUIRE( convert_request->conversion_date == db.head_block_time() + CONVERSION_DELAY );
       validate_database();
@@ -2502,7 +2502,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_authorities )
       limit_order_create_operation op;
       op.owner = "alice";
       op.amount_to_sell = ASSET( "1.000 TESTS" );
-      op.min_to_receive = ASSET( "1.000 TBD" );
+      op.min_to_receive = ASSET( "1.000 TSD" );
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -2541,7 +2541,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
    {
       BOOST_TEST_MESSAGE( "Testing: limit_order_create_apply" );
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       ACTORS( (alice)(bob) )
       fund( "alice", 1000000 );
@@ -2557,7 +2557,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       op.owner = "bob";
       op.orderid = 1;
       op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.min_to_receive = ASSET( "10.000 TBD" );
+      op.min_to_receive = ASSET( "10.000 TSD" );
       op.fill_or_kill = false;
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -2566,13 +2566,13 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "100.0000 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "100.0000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when amount to receive is 0" );
 
       op.owner = "alice";
-      op.min_to_receive = ASSET( "0.000 TBD" );
+      op.min_to_receive = ASSET( "0.000 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2581,13 +2581,13 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when amount to sell is 0" );
 
       op.amount_to_sell = ASSET( "0.000 TESTS" );
-      op.min_to_receive = ASSET( "10.000 TBD" ) ;
+      op.min_to_receive = ASSET( "10.000 TSD" ) ;
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2596,13 +2596,13 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test success creating limit order that will not be filled" );
 
       op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.min_to_receive = ASSET( "15.000 TBD" );
+      op.min_to_receive = ASSET( "15.000 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2617,7 +2617,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->sell_price == price( op.amount_to_sell / op.min_to_receive ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure creating limit order with duplicate id" );
@@ -2637,7 +2637,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), op.min_to_receive ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test sucess killing an order that will not be filled" );
@@ -2652,7 +2652,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test having a partial match to limit order" );
@@ -2661,7 +2661,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       op.owner = "bob";
       op.orderid = 1;
-      op.amount_to_sell = ASSET( "7.500 TBD" );
+      op.amount_to_sell = ASSET( "7.500 TSD" );
       op.min_to_receive = ASSET( "5.000 TESTS" );
       op.fill_or_kill = false;
       tx.operations.clear();
@@ -2678,24 +2678,24 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->seller == "alice" );
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 5000 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), ASSET( "15.000 TBD" ) ) );
+      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), ASSET( "15.000 TSD" ) ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "7.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "7.500 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "992.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "992.500 TSD" ).amount.value );
       BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 1 );
       BOOST_REQUIRE( fill_order_op.open_pays.amount.value == ASSET( "5.000 TESTS").amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "bob" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 1 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == ASSET( "7.500 TBD" ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == ASSET( "7.500 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling an existing order fully, but the new order partially" );
 
-      op.amount_to_sell = ASSET( "15.000 TBD" );
+      op.amount_to_sell = ASSET( "15.000 TSD" );
       op.min_to_receive = ASSET( "10.000 TESTS" );
       tx.operations.clear();
       tx.signatures.clear();
@@ -2708,13 +2708,13 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->seller == "bob" );
       BOOST_REQUIRE( limit_order->orderid == 1 );
       BOOST_REQUIRE( limit_order->for_sale.value == 7500 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "15.000 TBD" ), ASSET( "10.000 TESTS" ) ) );
+      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "15.000 TSD" ), ASSET( "10.000 TESTS" ) ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "15.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "15.000 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "977.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "977.500 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling an existing order and new order fully" );
@@ -2722,7 +2722,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       op.owner = "alice";
       op.orderid = 3;
       op.amount_to_sell = ASSET( "5.000 TESTS" );
-      op.min_to_receive = ASSET( "7.500 TBD" );
+      op.min_to_receive = ASSET( "7.500 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2732,9 +2732,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 3 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "985.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "22.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "22.500 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "15.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "977.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "977.500 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is better." );
@@ -2742,7 +2742,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       op.owner = "alice";
       op.orderid = 4;
       op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.min_to_receive = ASSET( "11.000 TBD" );
+      op.min_to_receive = ASSET( "11.000 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2751,7 +2751,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       op.owner = "bob";
       op.orderid = 4;
-      op.amount_to_sell = ASSET( "12.000 TBD" );
+      op.amount_to_sell = ASSET( "12.000 TSD" );
       op.min_to_receive = ASSET( "10.000 TESTS" );
       tx.operations.clear();
       tx.signatures.clear();
@@ -2765,12 +2765,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->seller == "bob" );
       BOOST_REQUIRE( limit_order->orderid == 4 );
       BOOST_REQUIRE( limit_order->for_sale.value == 1000 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "12.000 TBD" ), ASSET( "10.000 TESTS" ) ) );
+      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "12.000 TSD" ), ASSET( "10.000 TESTS" ) ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "975.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "33.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "33.500 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "25.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "965.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "965.500 TSD" ).amount.value );
       validate_database();
 
       limit_order_cancel_operation can;
@@ -2790,7 +2790,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       op.owner = "alice";
       op.orderid = 5;
       op.amount_to_sell = ASSET( "20.000 TESTS" );
-      op.min_to_receive = ASSET( "22.000 TBD" );
+      op.min_to_receive = ASSET( "22.000 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2799,7 +2799,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
 
       op.owner = "bob";
       op.orderid = 5;
-      op.amount_to_sell = ASSET( "12.000 TBD" );
+      op.amount_to_sell = ASSET( "12.000 TSD" );
       op.min_to_receive = ASSET( "10.000 TESTS" );
       tx.operations.clear();
       tx.signatures.clear();
@@ -2813,12 +2813,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( limit_order->seller == "alice" );
       BOOST_REQUIRE( limit_order->orderid == 5 );
       BOOST_REQUIRE( limit_order->for_sale.value == 9091 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "20.000 TESTS" ), ASSET( "22.000 TBD" ) ) );
+      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "20.000 TESTS" ), ASSET( "22.000 TSD" ) ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "955.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "45.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "45.500 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "954.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "954.500 TSD" ).amount.value );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -2836,7 +2836,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_authorities )
       limit_order_create2_operation op;
       op.owner = "alice";
       op.amount_to_sell = ASSET( "1.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) );
 
       signed_transaction tx;
       tx.operations.push_back( op );
@@ -2875,7 +2875,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
    {
       BOOST_TEST_MESSAGE( "Testing: limit_order_create2_apply" );
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       ACTORS( (alice)(bob) )
       fund( "alice", 1000000 );
@@ -2891,7 +2891,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       op.owner = "bob";
       op.orderid = 1;
       op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) );
       op.fill_or_kill = false;
       tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -2900,13 +2900,13 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "100.0000 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "100.0000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when price is 0" );
 
       op.owner = "alice";
-      op.exchange_rate = price( ASSET( "0.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      op.exchange_rate = price( ASSET( "0.000 TESTS" ), ASSET( "1.000 TSD" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2915,13 +2915,13 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure when amount to sell is 0" );
 
       op.amount_to_sell = ASSET( "0.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) );
+      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2930,13 +2930,13 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test success creating limit order that will not be filled" );
 
       op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.exchange_rate = price( ASSET( "2.000 TESTS" ), ASSET( "3.000 TBD" ) );
+      op.exchange_rate = price( ASSET( "2.000 TESTS" ), ASSET( "3.000 TSD" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -2951,7 +2951,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure creating limit order with duplicate id" );
@@ -2971,7 +2971,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test sucess killing an order that will not be filled" );
@@ -2986,7 +2986,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test having a partial match to limit order" );
@@ -2995,8 +2995,8 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       op.owner = "bob";
       op.orderid = 1;
-      op.amount_to_sell = ASSET( "7.500 TBD" );
-      op.exchange_rate = price( ASSET( "3.000 TBD" ), ASSET( "2.000 TESTS" ) );
+      op.amount_to_sell = ASSET( "7.500 TSD" );
+      op.exchange_rate = price( ASSET( "3.000 TSD" ), ASSET( "2.000 TESTS" ) );
       op.fill_or_kill = false;
       tx.operations.clear();
       tx.signatures.clear();
@@ -3012,25 +3012,25 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->seller == "alice" );
       BOOST_REQUIRE( limit_order->orderid == op.orderid );
       BOOST_REQUIRE( limit_order->for_sale == 5000 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "2.000 TESTS" ), ASSET( "3.000 TBD" ) ) );
+      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "2.000 TESTS" ), ASSET( "3.000 TSD" ) ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "7.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "7.500 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "992.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "992.500 TSD" ).amount.value );
       BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
       BOOST_REQUIRE( fill_order_op.open_orderid == 1 );
       BOOST_REQUIRE( fill_order_op.open_pays.amount.value == ASSET( "5.000 TESTS").amount.value );
       BOOST_REQUIRE( fill_order_op.current_owner == "bob" );
       BOOST_REQUIRE( fill_order_op.current_orderid == 1 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == ASSET( "7.500 TBD" ).amount.value );
+      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == ASSET( "7.500 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling an existing order fully, but the new order partially" );
 
-      op.amount_to_sell = ASSET( "15.000 TBD" );
-      op.exchange_rate = price( ASSET( "3.000 TBD" ), ASSET( "2.000 TESTS" ) );
+      op.amount_to_sell = ASSET( "15.000 TSD" );
+      op.exchange_rate = price( ASSET( "3.000 TSD" ), ASSET( "2.000 TESTS" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -3042,13 +3042,13 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->seller == "bob" );
       BOOST_REQUIRE( limit_order->orderid == 1 );
       BOOST_REQUIRE( limit_order->for_sale.value == 7500 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "3.000 TBD" ), ASSET( "2.000 TESTS" ) ) );
+      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "3.000 TSD" ), ASSET( "2.000 TESTS" ) ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "15.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "15.000 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "977.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "977.500 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling an existing order and new order fully" );
@@ -3056,7 +3056,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       op.owner = "alice";
       op.orderid = 3;
       op.amount_to_sell = ASSET( "5.000 TESTS" );
-      op.exchange_rate = price( ASSET( "2.000 TESTS" ), ASSET( "3.000 TBD" ) );
+      op.exchange_rate = price( ASSET( "2.000 TESTS" ), ASSET( "3.000 TSD" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -3066,9 +3066,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 3 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", 1 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "985.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "22.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "22.500 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "15.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "977.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "977.500 TSD" ).amount.value );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is better." );
@@ -3076,7 +3076,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       op.owner = "alice";
       op.orderid = 4;
       op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.100 TBD" ) );
+      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.100 TSD" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -3085,8 +3085,8 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       op.owner = "bob";
       op.orderid = 4;
-      op.amount_to_sell = ASSET( "12.000 TBD" );
-      op.exchange_rate = price( ASSET( "1.200 TBD" ), ASSET( "1.000 TESTS" ) );
+      op.amount_to_sell = ASSET( "12.000 TSD" );
+      op.exchange_rate = price( ASSET( "1.200 TSD" ), ASSET( "1.000 TESTS" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -3102,9 +3102,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "975.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "33.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "33.500 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "25.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "965.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "965.500 TSD" ).amount.value );
       validate_database();
 
       limit_order_cancel_operation can;
@@ -3124,7 +3124,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       op.owner = "alice";
       op.orderid = 5;
       op.amount_to_sell = ASSET( "20.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.100 TBD" ) );
+      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.100 TSD" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -3133,8 +3133,8 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
 
       op.owner = "bob";
       op.orderid = 5;
-      op.amount_to_sell = ASSET( "12.000 TBD" );
-      op.exchange_rate = price( ASSET( "1.200 TBD" ), ASSET( "1.000 TESTS" ) );
+      op.amount_to_sell = ASSET( "12.000 TSD" );
+      op.exchange_rate = price( ASSET( "1.200 TSD" ), ASSET( "1.000 TESTS" ) );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -3147,12 +3147,12 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       BOOST_REQUIRE( limit_order->seller == "alice" );
       BOOST_REQUIRE( limit_order->orderid == 5 );
       BOOST_REQUIRE( limit_order->for_sale.value == 9091 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "1.000 TESTS" ), ASSET( "1.100 TBD" ) ) );
+      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "1.000 TESTS" ), ASSET( "1.100 TSD" ) ) );
       BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "955.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "45.500 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "45.500 TSD" ).amount.value );
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "954.500 TBD" ).amount.value );
+      BOOST_REQUIRE( bob.TSDbalance.amount.value == ASSET( "954.500 TSD" ).amount.value );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -3180,7 +3180,7 @@ BOOST_AUTO_TEST_CASE( limit_order_cancel_authorities )
       c.owner = "alice";
       c.orderid = 1;
       c.amount_to_sell = ASSET( "1.000 TESTS" );
-      c.min_to_receive = ASSET( "1.000 TBD" );
+      c.min_to_receive = ASSET( "1.000 TSD" );
 
       signed_transaction tx;
       tx.operations.push_back( c );
@@ -3252,7 +3252,7 @@ BOOST_AUTO_TEST_CASE( limit_order_cancel_apply )
       create.owner = "alice";
       create.orderid = 5;
       create.amount_to_sell = ASSET( "5.000 TESTS" );
-      create.min_to_receive = ASSET( "7.500 TBD" );
+      create.min_to_receive = ASSET( "7.500 TSD" );
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( create );
@@ -3269,7 +3269,7 @@ BOOST_AUTO_TEST_CASE( limit_order_cancel_apply )
 
       BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 5 ) ) == limit_order_idx.end() );
       BOOST_REQUIRE( alice.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TBD" ).amount.value );
+      BOOST_REQUIRE( alice.TSDbalance.amount.value == ASSET( "0.000 TSD" ).amount.value );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -3656,7 +3656,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.TSDamount = ASSET( "1.000 TBD" );
+      op.TSDamount = ASSET( "1.000 TSD" );
       op.TMEamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
@@ -3665,7 +3665,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.ratification_deadline = db.head_block_time() + 100;
       op.escrow_expiration = db.head_block_time() + 200;
 
-      BOOST_TEST_MESSAGE( "--- failure when TSD symbol != TBD" );
+      BOOST_TEST_MESSAGE( "--- failure when TSD symbol != TSD" );
       op.TSDamount.symbol = SYMBOL_COIN;
       REQUIRE_THROW( op.validate(), fc::exception );
 
@@ -3674,18 +3674,18 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.TMEamount.symbol = SYMBOL_USD;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when fee symbol != TBD and fee symbol != TESTS" );
+      BOOST_TEST_MESSAGE( "--- failure when fee symbol != TSD and fee symbol != TESTS" );
       op.TMEamount.symbol = SYMBOL_COIN;
       op.fee.symbol = SYMBOL_SCORE;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when TBD == 0 and TESTS == 0" );
+      BOOST_TEST_MESSAGE( "--- failure when TSD == 0 and TESTS == 0" );
       op.fee.symbol = SYMBOL_COIN;
       op.TSDamount.amount = 0;
       op.TMEamount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when TBD < 0" );
+      BOOST_TEST_MESSAGE( "--- failure when TSD < 0" );
       op.TSDamount.amount = -100;
       op.TMEamount.amount = 1000;
       REQUIRE_THROW( op.validate(), fc::exception );
@@ -3725,7 +3725,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_authorities )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.TSDamount = ASSET( "1.000 TBD" );
+      op.TSDamount = ASSET( "1.000 TSD" );
       op.TMEamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
@@ -3763,7 +3763,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       escrow_transfer_operation op;
       op.from = "alice";
       op.to = "bob";
-      op.TSDamount = ASSET( "1.000 TBD" );
+      op.TSDamount = ASSET( "1.000 TSD" );
       op.TMEamount = ASSET( "1.000 TESTS" );
       op.escrow_id = 0;
       op.agent = "sam";
@@ -3985,7 +3985,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
@@ -4004,7 +4004,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
@@ -4026,7 +4026,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( escrow.agent == "sam" );
       BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
       BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
       BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
       BOOST_REQUIRE( escrow.to_approved );
@@ -4142,7 +4142,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TBD" ) );
+         BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TSD" ) );
          BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
@@ -4163,7 +4163,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
          BOOST_REQUIRE( escrow.agent == "sam" );
          BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
          BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TBD" ) );
+         BOOST_REQUIRE( escrow.TSDbalance == ASSET( "0.000 TSD" ) );
          BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
          BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
          BOOST_REQUIRE( escrow.to_approved );
@@ -4477,7 +4477,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
 
       BOOST_TEST_MESSAGE( "--- failure when TME is not TME symbol" );
       op.TSDamount.symbol = SYMBOL_USD;
-      op.TMEamount = ASSET( "1.000 TBD" );
+      op.TMEamount = ASSET( "1.000 TSD" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
@@ -4731,7 +4731,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
       BOOST_TEST_MESSAGE( "--- failure when releasing less TME than available" );
       op.TMEamount = ASSET( "0.000 TESTS" );
-      op.TSDamount = ASSET( "1.000 TBD" );
+      op.TSDamount = ASSET( "1.000 TSD" );
 
       tx.clear();
       tx.operations.push_back( op );
@@ -4756,7 +4756,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       op.receiver = et_op.from;
       op.who = et_op.to;
       op.TMEamount = ASSET( "0.100 TESTS" );
-      op.TSDamount = ASSET( "0.000 TBD" );
+      op.TSDamount = ASSET( "0.000 TSD" );
       tx.operations.push_back( op );
       tx.sign( bob_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -5022,8 +5022,8 @@ BOOST_AUTO_TEST_CASE( transferToSavings_validate )
       REQUIRE_THROW( op.validate(), fc::exception );
 
 
-      BOOST_TEST_MESSAGE( "success when amount is TBD" );
-      op.amount = ASSET( "1.000 TBD" );
+      BOOST_TEST_MESSAGE( "success when amount is TSD" );
+      op.amount = ASSET( "1.000 TSD" );
       op.validate();
 
 
@@ -5078,10 +5078,10 @@ BOOST_AUTO_TEST_CASE( transferToSavings_apply )
       generate_block();
 
       fund( "alice", ASSET( "10.000 TESTS" ) );
-      fund( "alice", ASSET( "10.000 TBD" ) );
+      fund( "alice", ASSET( "10.000 TSD" ) );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "10.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "10.000 TSD" ) );
 
       transferToSavings_operation op;
       signed_transaction tx;
@@ -5123,15 +5123,15 @@ BOOST_AUTO_TEST_CASE( transferToSavings_apply )
 
 
       BOOST_TEST_MESSAGE( "--- success transferring TSD to self" );
-      op.amount = ASSET( "1.000 TBD" );
+      op.amount = ASSET( "1.000 TSD" );
 
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "9.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDsavingsBalance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "9.000 TSD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDsavingsBalance == ASSET( "1.000 TSD" ) );
       validate_database();
 
 
@@ -5150,15 +5150,15 @@ BOOST_AUTO_TEST_CASE( transferToSavings_apply )
 
 
       BOOST_TEST_MESSAGE( "--- success transferring TSD to other" );
-      op.amount = ASSET( "1.000 TBD" );
+      op.amount = ASSET( "1.000 TSD" );
 
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "8.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).TSDsavingsBalance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "8.000 TSD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).TSDsavingsBalance == ASSET( "1.000 TSD" ) );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -5200,7 +5200,7 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_validate )
 
 
       BOOST_TEST_MESSAGE( "success when amount is TSD" );
-      op.amount = ASSET( "1.000 TBD" );
+      op.amount = ASSET( "1.000 TSD" );
       op.validate();
 
 
@@ -5255,7 +5255,7 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_apply )
       generate_block();
 
       fund( "alice", ASSET( "10.000 TESTS" ) );
-      fund( "alice", ASSET( "10.000 TBD" ) );
+      fund( "alice", ASSET( "10.000 TSD" ) );
 
       transferToSavings_operation save;
       save.from = "alice";
@@ -5268,7 +5268,7 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      save.amount = ASSET( "10.000 TBD" );
+      save.amount = ASSET( "10.000 TSD" );
       tx.clear();
       tx.operations.push_back( save );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -5319,7 +5319,7 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_apply )
 
 
       BOOST_TEST_MESSAGE( "--- success withdrawing TSD to self" );
-      op.amount = ASSET( "1.000 TBD" );
+      op.amount = ASSET( "1.000 TSD" );
       op.request_id = 1;
 
       tx.clear();
@@ -5327,8 +5327,8 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDsavingsBalance == ASSET( "9.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "0.000 TSD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDsavingsBalance == ASSET( "9.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 2 );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
@@ -5371,7 +5371,7 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_apply )
 
 
       BOOST_TEST_MESSAGE( "--- success withdrawing TSD to other" );
-      op.amount = ASSET( "1.000 TBD" );
+      op.amount = ASSET( "1.000 TSD" );
       op.request_id = 4;
 
       tx.clear();
@@ -5379,8 +5379,8 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_apply )
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "0.000 TBD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDsavingsBalance == ASSET( "8.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "0.000 TSD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDsavingsBalance == ASSET( "8.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 4 );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
       BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
@@ -5395,18 +5395,18 @@ BOOST_AUTO_TEST_CASE( transferFromSavings_apply )
       generate_blocks( db.head_block_time() + SAVINGS_WITHDRAW_TIME - fc::seconds( BLOCK_INTERVAL ), true );
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).TSDbalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).TSDbalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 4 );
       validate_database();
 
       generate_block();
 
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == ASSET( "1.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).TSDbalance == ASSET( "1.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).TSDbalance == ASSET( "1.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 0 );
       validate_database();
 
@@ -5794,7 +5794,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_validate )
       claimRewardBalance_operation op;
       op.account = "alice";
       op.TMEreward = ASSET( "0.000 TESTS" );
-      op.TSDreward = ASSET( "0.000 TBD" );
+      op.TSDreward = ASSET( "0.000 TSD" );
       op.SCOREreward = ASSET( "0.000000 VESTS" );
 
 
@@ -5829,7 +5829,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_validate )
 
 
       BOOST_TEST_MESSAGE( "Testing wrong SCORE symbol" );
-      op.TSDreward = ASSET( "1.000 TBD" );
+      op.TSDreward = ASSET( "1.000 TSD" );
       op.SCOREreward = ASSET( "1.000000 WRONG" );
       REQUIRE_THROW( op.validate(), fc::assert_exception );
 
@@ -6002,7 +6002,7 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
       BOOST_TEST_MESSAGE( "--- Test success using only TME to reach target delegation." );
 
       tx.clear();
-      op.fee=asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN );
+      op.fee=asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN );
       op.delegation = asset(0, SYMBOL_SCORE);
       op.newAccountName = "sam";
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
@@ -6022,7 +6022,7 @@ BOOST_AUTO_TEST_CASE( accountCreateWithDelegation_apply )
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- Test failure when insufficient fee fo reach target delegation." );
-      fund( "alice" , asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_WITH_TME_MODIFIER * CREATE_ACCOUNT_DELEGATION_RATIO , SYMBOL_COIN ));
+      fund( "alice" , asset( db.get_witness_schedule_object().median_props.account_creation_fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO , SYMBOL_COIN ));
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       validate_database();
@@ -6060,14 +6060,14 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
       ACTORS( (alice) )
       generate_block();
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       db_plugin->debug_update( []( database& db )
       {
          db.modify( db.get_account( "alice" ), []( account_object& a )
          {
             a.TMErewardBalance = ASSET( "10.000 TESTS" );
-            a.TSDrewardBalance = ASSET( "10.000 TBD" );
+            a.TSDrewardBalance = ASSET( "10.000 TSD" );
             a.SCORErewardBalance = ASSET( "10.000000 VESTS" );
             a.SCORErewardBalanceInTME = ASSET( "10.000 TESTS" );
          });
@@ -6075,7 +6075,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
          db.modify( db.get_dynamic_global_properties(), []( dynamic_global_property_object& gpo )
          {
             gpo.current_supply += ASSET( "20.000 TESTS" );
-            gpo.current_TSD_supply += ASSET( "10.000 TBD" );
+            gpo.current_TSD_supply += ASSET( "10.000 TSD" );
             gpo.virtual_supply += ASSET( "20.000 TESTS" );
             gpo.pending_rewarded_SCORE += ASSET( "10.000000 VESTS" );
             gpo.pending_rewarded_SCOREvalueInTME += ASSET( "10.000 TESTS" );
@@ -6097,7 +6097,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
 
       op.account = "alice";
       op.TMEreward = ASSET( "20.000 TESTS" );
-      op.TSDreward = ASSET( "0.000 TBD" );
+      op.TSDreward = ASSET( "0.000 TSD" );
       op.SCOREreward = ASSET( "0.000000 VESTS" );
 
       tx.operations.push_back( op );
@@ -6118,7 +6118,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
       BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_TME + op.TMEreward );
       BOOST_REQUIRE( db.get_account( "alice" ).TMErewardBalance == ASSET( "10.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == alice_TSD + op.TSDreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDrewardBalance == ASSET( "10.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDrewardBalance == ASSET( "10.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).SCORE == alice_SCORE + op.SCOREreward );
       BOOST_REQUIRE( db.get_account( "alice" ).SCORErewardBalance == ASSET( "5.000000 VESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).SCORErewardBalanceInTME == ASSET( "5.000 TESTS" ) );
@@ -6130,7 +6130,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
       BOOST_TEST_MESSAGE( "--- Claiming the full reward balance" );
 
       op.TMEreward = ASSET( "10.000 TESTS" );
-      op.TSDreward = ASSET( "10.000 TBD" );
+      op.TSDreward = ASSET( "10.000 TSD" );
       tx.clear();
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
@@ -6139,7 +6139,7 @@ BOOST_AUTO_TEST_CASE( claimRewardBalance_apply )
       BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_TME + op.TMEreward );
       BOOST_REQUIRE( db.get_account( "alice" ).TMErewardBalance == ASSET( "0.000 TESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).TSDbalance == alice_TSD + op.TSDreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).TSDrewardBalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TSDrewardBalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).SCORE == alice_SCORE + op.SCOREreward );
       BOOST_REQUIRE( db.get_account( "alice" ).SCORErewardBalance == ASSET( "0.000000 VESTS" ) );
       BOOST_REQUIRE( db.get_account( "alice" ).SCORErewardBalanceInTME == ASSET( "0.000 TESTS" ) );
@@ -6548,7 +6548,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
       ACTORS( (alice)(bob)(sam)(dave) )
       generate_block();
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TBD" ) ) );
+      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 TSD" ) ) );
 
       comment_operation comment;
       vote_operation vote;
@@ -6572,7 +6572,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
 
       for( size_t i = 0; i < 8; i++ )
       {
-         b.beneficiaries.push_back( beneficiary_route_type( account_name_type( INIT_MINER_NAME + fc::to_string( i ) ), PERCENT_1 ) );
+         b.beneficiaries.push_back( beneficiary_route_type( account_name_type( genesisAccountBasename + fc::to_string( i ) ), PERCENT_1 ) );
       }
 
       op.author = "alice";
@@ -6653,7 +6653,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
       generate_block();
 
       BOOST_REQUIRE( db.get_account( "bob" ).TMErewardBalance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).TSDrewardBalance == ASSET( "0.000 TBD" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).TSDrewardBalance == ASSET( "0.000 TSD" ) );
       BOOST_REQUIRE( db.get_account( "bob" ).SCORErewardBalanceInTME.amount + db.get_account( "sam" ).SCORErewardBalanceInTME.amount == db.get_comment( "alice", string( "test" ) ).beneficiary_payout_value.amount );
       BOOST_REQUIRE( ( db.get_account( "alice" ).TSDrewardBalance.amount + db.get_account( "alice" ).SCORErewardBalanceInTME.amount ) == db.get_account( "bob" ).SCORErewardBalanceInTME.amount + 2 );
       BOOST_REQUIRE( ( db.get_account( "alice" ).TSDrewardBalance.amount + db.get_account( "alice" ).SCORErewardBalanceInTME.amount ) * 2 == db.get_account( "sam" ).SCORErewardBalanceInTME.amount + 3 );

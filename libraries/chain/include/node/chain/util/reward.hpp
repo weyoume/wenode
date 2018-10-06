@@ -24,7 +24,7 @@ struct comment_reward_context
    share_type SCOREreward;
    uint16_t   reward_weight = 0;
    asset      max_TSD;
-   uint128_t  total_SCOREreward2;
+   uint128_t  totalSCOREreward2;
    asset      total_reward_fund_TME;
    price      current_TME_price;
    curve_id   reward_curve = quadratic;
@@ -51,7 +51,7 @@ FC_REFLECT( node::chain::util::comment_reward_context,
    (SCOREreward)
    (reward_weight)
    (max_TSD)
-   (total_SCOREreward2)
+   (totalSCOREreward2)
    (total_reward_fund_TME)
    (current_TME_price)
    (reward_curve)

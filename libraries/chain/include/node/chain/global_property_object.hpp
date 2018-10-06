@@ -57,7 +57,7 @@ namespace node { namespace chain {
          asset       totalTMEfundForSCORE   = asset( 0, SYMBOL_COIN );
          asset       totalSCORE       = asset( 0, SYMBOL_SCORE );
          asset       total_reward_fund_TME    = asset( 0, SYMBOL_COIN );
-         fc::uint128 total_SCOREreward2; ///< the running total of REWARD^2
+         fc::uint128 totalSCOREreward2; ///< the running total of REWARD^2
          asset       pending_rewarded_SCORE = asset( 0, SYMBOL_SCORE );
          asset       pending_rewarded_SCOREvalueInTME = asset( 0, SYMBOL_COIN );
 
@@ -142,7 +142,7 @@ FC_REFLECT( node::chain::dynamic_global_property_object,
              (totalTMEfundForSCORE)
              (totalSCORE)
              (total_reward_fund_TME)
-             (total_SCOREreward2)
+             (totalSCOREreward2)
              (pending_rewarded_SCORE)
              (pending_rewarded_SCOREvalueInTME)
              (TSD_interest_rate)

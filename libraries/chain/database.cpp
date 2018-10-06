@@ -364,7 +364,7 @@ const witness_object* database::find_witness( const account_name_type& name ) co
 
 const account_object& database::get_account( const account_name_type& name )const
 { try {
-   return get< account_object, by_name >( name );
+	return get< account_object, by_name >( name );
 } FC_CAPTURE_AND_RETHROW( (name) ) }
 
 const account_object* database::find_account( const account_name_type& name )const
@@ -732,12 +732,12 @@ signed_block database::_generate_block(
    if( has_hardfork( HARDFORK_0_5__54 ) )
    {
       const auto& witness = get_witness( witness_owner );
-
+      auto blockchainVersion = BLOCKCHAIN_VERSION;
       if( witness.running_version != BLOCKCHAIN_VERSION )
          pending_block.extensions.insert( block_header_extensions( BLOCKCHAIN_VERSION ) );
 
       const auto& hfp = get_hardfork_property_object();
-
+      auto blockchainHardforkVersion = BLOCKCHAIN_HARDFORK_VERSION;
       if( hfp.current_hardfork_version < BLOCKCHAIN_HARDFORK_VERSION // Binary is newer hardfork than has been applied
          && ( witness.hardfork_version_vote != _hardfork_versions[ hfp.last_hardfork + 1 ] || witness.hardfork_time_vote != _hardfork_times[ hfp.last_hardfork + 1 ] ) ) // Witness vote does not match binary configuration
       {
@@ -1054,7 +1054,7 @@ asset database::createTMEfundForSCORE( const account_object& to_account, asset T
             to.SCORErewardBalanceInTME += TME;
          }
          else
-            to.SCORErewardBalance += newSCORE;
+            to.SCORE += newSCORE;
       } );
 
       modify( cprops, [&]( dynamic_global_property_object& props )
@@ -1302,9 +1302,9 @@ void database::clear_null_account_balance()
 }
 
 /**
- * This method updates total_SCOREreward2 on DGPO, and children_SCOREreward2 on comments, when a comment's SCOREreward2 changes
+ * This method updates totalSCOREreward2 on DGPO, and children_SCOREreward2 on comments, when a comment's SCOREreward2 changes
  * from old_SCOREreward2 to new_SCOREreward2.  Maintaining invariants that children_SCOREreward2 is the sum of all descendants' SCOREreward2,
- * and dgpo.total_SCOREreward2 is the total number of SCOREreward2 outstanding.
+ * and dgpo.totalSCOREreward2 is the total number of SCOREreward2 outstanding.
  */
 void database::adjust_SCOREreward2( const comment_object& c, fc::uint128_t old_SCOREreward2, fc::uint128_t new_SCOREreward2 )
 {
@@ -1312,8 +1312,8 @@ void database::adjust_SCOREreward2( const comment_object& c, fc::uint128_t old_S
    const auto& dgpo = get_dynamic_global_properties();
    modify( dgpo, [&]( dynamic_global_property_object& p )
    {
-      p.total_SCOREreward2 -= old_SCOREreward2;
-      p.total_SCOREreward2 += new_SCOREreward2;
+      p.totalSCOREreward2 -= old_SCOREreward2;
+      p.totalSCOREreward2 += new_SCOREreward2;
    } );
 }
 
@@ -1735,7 +1735,7 @@ void database::process_comment_cashout()
       if( has_hardfork( HARDFORK_0_17__771 ) )
       {
          auto fund_id = get_reward_fund( *current ).id._id;
-         ctx.total_SCOREreward2 = funds[ fund_id ].recent_claims;
+         ctx.totalSCOREreward2 = funds[ fund_id ].recent_claims;
          ctx.total_reward_fund_TME = funds[ fund_id ].reward_balance;
          funds[ fund_id ].TME_awarded += cashout_comment_helper( ctx, *current );
       }
@@ -1745,7 +1745,7 @@ void database::process_comment_cashout()
          while( itr != com_by_root.end() && itr->root_comment == current->root_comment )
          {
             const auto& comment = *itr; ++itr;
-            ctx.total_SCOREreward2 = gpo.total_SCOREreward2;
+            ctx.totalSCOREreward2 = gpo.totalSCOREreward2;
             ctx.total_reward_fund_TME = gpo.total_reward_fund_TME;
 
             auto reward = cashout_comment_helper( ctx, comment );
@@ -1900,7 +1900,7 @@ asset database::get_liquidity_reward()const
 asset database::get_content_reward()const
 {
    const auto& props = get_dynamic_global_properties();
-   static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
+  //  static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
    asset percent( protocol::calc_percent_reward_per_block< CONTENT_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN );
    return std::max( percent, MIN_CONTENT_REWARD );
 }
@@ -1908,7 +1908,7 @@ asset database::get_content_reward()const
 asset database::get_curationReward()const
 {
    const auto& props = get_dynamic_global_properties();
-   static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
+  //  static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
    asset percent( protocol::calc_percent_reward_per_block< CURATE_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN);
    return std::max( percent, MIN_CURATE_REWARD );
 }
@@ -1916,7 +1916,7 @@ asset database::get_curationReward()const
 asset database::get_producer_reward()
 {
    const auto& props = get_dynamic_global_properties();
-   static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
+  //  static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
    asset percent( protocol::calc_percent_reward_per_block< PRODUCER_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN);
    auto pay = std::max( percent, MIN_PRODUCER_REWARD );
    const auto& witness_account = get_account( props.current_witness );
@@ -1948,7 +1948,7 @@ asset database::get_pow_reward()const
       return asset( 0, SYMBOL_COIN );
 #endif
 
-   static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
+  //  static_assert( BLOCK_INTERVAL == 3, "this code assumes a 3-second time interval" );
   //  static_assert( MAX_WITNESSES == 21, "this code assumes 21 per round" );
    asset percent( calc_percent_reward_per_round< POW_APR_PERCENT >( props.virtual_supply.amount ), SYMBOL_COIN);
    return std::max( percent, MIN_POW_REWARD );
@@ -2398,43 +2398,44 @@ void database::init_genesis( uint64_t init_supply )
          auth.active.weight_threshold = 0;
       });
 
-      for( int i = 0; i < (NUM_INIT_MINERS + NUM_INIT_EXTRAS); ++i )
+      for( int i = 0; i < (numberOfGenesisWitnessAccounts + numberOfExtraGenesisAccounts); ++i )
       {
          create< account_object >( [&]( account_object& a )
          {
-            a.name = INIT_MINER_NAME + ( i ? fc::to_string( i ) : std::string() );
+            a.name = genesisAccountBasename + ( i ? fc::to_string( i ) : std::string() );
             a.memoKey = init_public_key;
-            a.balance  = asset( init_supply / (NUM_INIT_MINERS + NUM_INIT_EXTRAS), SYMBOL_COIN );
+            a.balance  = asset( init_supply / (numberOfGenesisWitnessAccounts + (numberOfExtraGenesisAccounts)), SYMBOL_COIN );
+            a.SCORE = asset(genesisAccountSCORE, SYMBOL_SCORE);
          } );
 
          create< account_authority_object >( [&]( account_authority_object& auth )
          {
-
-            auth.account = INIT_MINER_NAME + ( i ? fc::to_string( i ) : std::string() );
+            auth.account = genesisAccountBasename + ( i ? fc::to_string( i ) : std::string() );
             auth.owner.add_authority( init_public_key, 1 );
             auth.owner.weight_threshold = 1;
             auth.active  = auth.owner;
             auth.posting = auth.active;
          });
-
-         create< witness_object >( [&]( witness_object& w )
-         {
-            w.owner        = INIT_MINER_NAME + ( i ? fc::to_string(i) : std::string() );
-            w.signing_key  = init_public_key;
-            w.schedule = witness_object::miner;
-         } );
+         if(i < numberOfGenesisWitnessAccounts){
+             create< witness_object >( [&]( witness_object& w )
+             {
+                w.owner        = genesisAccountBasename + ( i ? fc::to_string(i) : std::string() );
+                w.signing_key  = init_public_key;
+                w.schedule = witness_object::miner;
+             } );
+         }
       }
 
       create< dynamic_global_property_object >( [&]( dynamic_global_property_object& p )
       {
-         p.current_witness = INIT_MINER_NAME;
+         p.current_witness = genesisAccountBasename;
          p.time = GENESIS_TIME;
          p.recent_slots_filled = fc::uint128::max_value();
          p.participation_count = 128;
          p.current_supply = asset( init_supply, SYMBOL_COIN );
          p.virtual_supply = p.current_supply;
          p.maximum_block_size = MAX_BLOCK_SIZE;
-
+         p.totalSCORE = asset(genesisAccountSCORE*(numberOfGenesisWitnessAccounts + numberOfExtraGenesisAccounts), SYMBOL_SCORE);
       } );
 
       // Nothing to do
@@ -2450,7 +2451,7 @@ void database::init_genesis( uint64_t init_supply )
       // Create witness scheduler
       create< witness_schedule_object >( [&]( witness_schedule_object& wso )
       {
-         wso.current_shuffled_witnesses[0] = INIT_MINER_NAME;
+         wso.current_shuffled_witnesses[0] = genesisAccountBasename;
       } );
    }
    FC_CAPTURE_AND_RETHROW()
@@ -3646,7 +3647,7 @@ void database::apply_hardfork( uint32_t hardfork )
             custom_operation test_op;
             string op_msg = "Testnet: Hardfork applied";
             test_op.data = vector< char >( op_msg.begin(), op_msg.end() );
-            test_op.required_auths.insert( INIT_MINER_NAME );
+            test_op.required_auths.insert( genesisAccountBasename );
             operation op = test_op;   // we need the operation object to live to the end of this scope
             operation_notification note( op );
             notify_pre_apply_operation( note );
@@ -3683,12 +3684,12 @@ void database::apply_hardfork( uint32_t hardfork )
                if( account == nullptr )
                   continue;
 
-               update_owner_authority( *account, authority( 1, public_key_type( "STM7sw22HqsXbz7D2CmJfmMwt9rimtk518dRzsR1f8Cgw52dQR1pR" ), 1 ) );
+               update_owner_authority( *account, authority( 1, public_key_type( "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj" ), 1 ) );
 
                modify( get< account_authority_object, by_account >( account->name ), [&]( account_authority_object& auth )
                {
-                  auth.active  = authority( 1, public_key_type( "STM7sw22HqsXbz7D2CmJfmMwt9rimtk518dRzsR1f8Cgw52dQR1pR" ), 1 );
-                  auth.posting = authority( 1, public_key_type( "STM7sw22HqsXbz7D2CmJfmMwt9rimtk518dRzsR1f8Cgw52dQR1pR" ), 1 );
+                  auth.active  = authority( 1, public_key_type( "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj" ), 1 );
+                  auth.posting = authority( 1, public_key_type( "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj" ), 1 );
                });
             }
          }
@@ -3802,7 +3803,7 @@ void database::apply_hardfork( uint32_t hardfork )
             modify( gpo, [&]( dynamic_global_property_object& g )
             {
                g.total_reward_fund_TME = asset( 0, SYMBOL_COIN );
-               g.total_SCOREreward2 = 0;
+               g.totalSCOREreward2 = 0;
             });
 
             /*
@@ -3926,7 +3927,7 @@ void database::validate_invariants()const
       asset TSDtotal = asset( 0, SYMBOL_USD );
       asset totalSCORE = asset( 0, SYMBOL_SCORE );
       asset pending_SCOREvalueInTME = asset( 0, SYMBOL_COIN );
-      share_type total_SCOREfundTMEbalance_votes = share_type( 0 );
+      share_type totalSCOREfundTMEbalance_votes = share_type( 0 );
 
       auto gpo = get_dynamic_global_properties();
 
@@ -3945,12 +3946,24 @@ void database::validate_invariants()const
          TSDtotal += itr->TSDrewardBalance;
          totalSCORE += itr->SCORE;
          totalSCORE += itr->SCORErewardBalance;
+         auto itr_name = itr->name;
+         auto itr_witness_vote_weight = itr->witness_vote_weight();
+         auto itr_proxied_SCOREfundTMEbalance_votes = itr->proxied_SCOREfundTMEbalance_votes;
+         auto itr_proxied_SCOREfundTMEbalance_votes_something = itr->proxied_SCOREfundTMEbalance_votes[MAX_PROXY_RECURSION_DEPTH - 1];
+         auto itr_something = ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
+                         itr->witness_vote_weight() :
+                         ( MAX_PROXY_RECURSION_DEPTH > 0 ?
+                           itr->proxied_SCOREfundTMEbalance_votes[MAX_PROXY_RECURSION_DEPTH - 1] :
+                           itr->SCORE.amount ) );
          pending_SCOREvalueInTME += itr->SCORErewardBalanceInTME;
-         total_SCOREfundTMEbalance_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
+         totalSCOREfundTMEbalance_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
                                  itr->witness_vote_weight() :
                                  ( MAX_PROXY_RECURSION_DEPTH > 0 ?
                                       itr->proxied_SCOREfundTMEbalance_votes[MAX_PROXY_RECURSION_DEPTH - 1] :
                                       itr->SCORE.amount ) );
+
+         auto debug1 = 'debug';
+
       }
 
       const auto& convert_request_idx = get_index< convert_request_index >().indices();
@@ -4005,7 +4018,7 @@ void database::validate_invariants()const
          else
             FC_ASSERT( false, "found savings withdraw that is not TSD or TME" );
       }
-      fc::uint128_t total_SCOREreward2;
+      fc::uint128_t totalSCOREreward2;
 
       const auto& comment_idx = get_index< comment_index >().indices();
 
@@ -4014,7 +4027,7 @@ void database::validate_invariants()const
          if( itr->net_SCOREreward.value > 0 )
          {
             auto delta = util::evaluate_reward_curve( itr->net_SCOREreward.value );
-            total_SCOREreward2 += delta;
+            totalSCOREreward2 += delta;
          }
       }
 
@@ -4024,13 +4037,12 @@ void database::validate_invariants()const
       {
          total_supply += itr->reward_balance;
       }
-
       total_supply += gpo.totalTMEfundForSCORE + gpo.total_reward_fund_TME + gpo.pending_rewarded_SCOREvalueInTME;
 
       FC_ASSERT( gpo.current_supply == total_supply, "", ("gpo.current_supply",gpo.current_supply)("total_supply",total_supply) );
       FC_ASSERT( gpo.current_TSD_supply == TSDtotal, "", ("gpo.current_TSD_supply",gpo.current_TSD_supply)("TSDtotal",TSDtotal) );
       FC_ASSERT( gpo.totalSCORE + gpo.pending_rewarded_SCORE == totalSCORE, "", ("gpo.totalSCORE",gpo.totalSCORE)("totalSCORE",totalSCORE) );
-      FC_ASSERT( gpo.totalSCORE.amount == total_SCOREfundTMEbalance_votes, "", ("totalSCORE",gpo.totalSCORE)("total_SCOREfundTMEbalance_votes",total_SCOREfundTMEbalance_votes) );
+      FC_ASSERT( gpo.totalSCORE.amount == totalSCOREfundTMEbalance_votes, "", ("totalSCORE",gpo.totalSCORE)("totalSCOREfundTMEbalance_votes",totalSCOREfundTMEbalance_votes) );
       FC_ASSERT( gpo.pending_rewarded_SCOREvalueInTME == pending_SCOREvalueInTME, "", ("pending_rewarded_SCOREvalueInTME",gpo.pending_rewarded_SCOREvalueInTME)("pending_SCOREvalueInTME", pending_SCOREvalueInTME));
 
       FC_ASSERT( gpo.virtual_supply >= gpo.current_supply );
@@ -4050,7 +4062,7 @@ void database::perform_SCORE_split( uint32_t magnitude )
       modify( get_dynamic_global_properties(), [&]( dynamic_global_property_object& d )
       {
          d.totalSCORE.amount *= magnitude;
-         d.total_SCOREreward2 = 0;
+         d.totalSCOREreward2 = 0;
       } );
 
       // Need to update all SCORE in accounts and the total SCORE in the dgpo

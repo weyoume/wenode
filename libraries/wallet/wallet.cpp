@@ -1299,7 +1299,7 @@ annotated_signed_transaction wallet_api::create_account_with_keys( string creato
    op.posting = authority( 1, posting, 1 );
    op.memoKey = memo;
    op.json = json;
-   op.fee = my->_remote_db->get_chain_properties().account_creation_fee * asset( CREATE_ACCOUNT_WITH_TME_MODIFIER, SYMBOL_COIN );
+   op.fee = my->_remote_db->get_chain_properties().account_creation_fee;
 
    signed_transaction tx;
    tx.operations.push_back(op);

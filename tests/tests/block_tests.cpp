@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       signed_transaction trx;
       accountCreate_operation cop;
       cop.newAccountName = "alice";
-      cop.creator = INIT_MINER_NAME;
+      cop.creator = genesisAccountBasename;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
@@ -301,7 +301,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       signed_transaction trx;
       accountCreate_operation cop;
       cop.newAccountName = "alice";
-      cop.creator = INIT_MINER_NAME;
+      cop.creator = genesisAccountBasename;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       trx = decltype(trx)();
       transfer_operation t;
-      t.from = INIT_MINER_NAME;
+      t.from = genesisAccountBasename;
       t.to = "alice";
       t.amount = asset(500,SYMBOL_COIN);
       trx.operations.push_back(t);
@@ -355,7 +355,7 @@ BOOST_AUTO_TEST_CASE( tapos )
 
       accountCreate_operation cop;
       cop.newAccountName = "alice";
-      cop.creator = INIT_MINER_NAME;
+      cop.creator = genesisAccountBasename;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
@@ -370,7 +370,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.clear();
 
       transfer_operation t;
-      t.from = INIT_MINER_NAME;
+      t.from = genesisAccountBasename;
       t.to = "alice";
       t.amount = asset(50,SYMBOL_COIN);
       trx.operations.push_back(t);
@@ -393,14 +393,14 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
 {
    try
    {
-      idump((db.get_account(INIT_MINER_NAME)));
+      idump((db.get_account(genesisAccountBasename)));
       ACTORS( (alice)(bob) );
 
       generate_block();
 
       BOOST_TEST_MESSAGE( "Create transaction" );
 
-      transfer( INIT_MINER_NAME, "alice", 1000000 );
+      transfer( genesisAccountBasename, "alice", 1000000 );
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
@@ -465,7 +465,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    share_type amount = 1000;
 
    transfer_operation t;
-   t.from = INIT_MINER_NAME;
+   t.from = genesisAccountBasename;
    t.to = "bob";
    t.amount = asset(amount,SYMBOL_COIN);
    trx.operations.push_back(t);
@@ -476,7 +476,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
 
    trx.operations.clear();
    t.from = "bob";
-   t.to = INIT_MINER_NAME;
+   t.to = genesisAccountBasename;
    t.amount = asset(amount,SYMBOL_COIN);
    trx.operations.push_back(t);
    trx.validate();
@@ -522,9 +522,9 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
       transaction tx;
       signed_transaction ptx;
 
-      db.get_account( INIT_MINER_NAME );
+      db.get_account( genesisAccountBasename );
       // transfer from committee account to Sam account
-      transfer( INIT_MINER_NAME, "sam", 100000 );
+      transfer( genesisAccountBasename, "sam", 100000 );
 
       generate_block(skip_flags);
 
@@ -731,14 +731,14 @@ BOOST_FIXTURE_TEST_CASE( hardfork_test, database_fixture )
       ahplugin->plugin_startup();
       db_plugin->plugin_startup();
 
-      score( INIT_MINER_NAME, 10000 );
+      score( genesisAccountBasename, 10000 );
 
       // Fill up the rest of the required miners
-      for( int i = NUM_INIT_MINERS; i < MAX_WITNESSES; i++ )
+      for( int i = numberOfGenesisWitnessAccounts; i < MAX_WITNESSES; i++ )
       {
-         accountCreate( INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
-         fund( INIT_MINER_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
-         witness_create( INIT_MINER_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
+         accountCreate( genesisAccountBasename + fc::to_string( i ), init_account_pub_key );
+         fund( genesisAccountBasename + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
+         witness_create( genesisAccountBasename + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
       }
 
       validate_database();
@@ -801,7 +801,7 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
 
       transfer_operation op;
-      op.from = INIT_MINER_NAME;
+      op.from = genesisAccountBasename;
       op.to = TEMP_ACCOUNT;
       op.amount = asset( 1000, SYMBOL_COIN );
 

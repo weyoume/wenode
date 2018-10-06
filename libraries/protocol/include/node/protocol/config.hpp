@@ -19,10 +19,9 @@
 #define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 #define CHAIN_ID                        (fc::sha256::hash("testnet"))
 
-#define SYMBOL_COIN  					(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< TME/TME/TESTS with 3 digits of precision
-#define SYMBOL_SCORE  					(uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40) ) ///< SCORE/SCORE/VESTS with 6 digits of precision
-#define SYMBOL_WYM    					(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('W') << 16) | (uint64_t('Y') << 24) | (uint64_t('M') << 32) | (uint64_t('T') << 40) ) ///< WYM/WeYouMe equity asset with 3 digits of precision
-#define SYMBOL_USD    					(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test / TME Backed TSD with 3 digits of precision
+#define SYMBOL_COIN  										(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('M') << 16) | (uint64_t('E') << 24) ) ///< TME with 3 digits of precision
+#define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('S') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('R') << 32) | (uint64_t('E') << 40) ) ///< SCORE with 6 digits of precision
+#define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('S') << 16) | (uint64_t('D') << 24) ) ///< TME Backed TSD with 3 digits of precision
 
 #define ADDRESS_PREFIX                  "TWYM"
 
@@ -47,12 +46,14 @@
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 1
 #else // IS LIVE NETWORK
 	#if GEN_PRIVATE_KEY
-		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("webuilderpassword1owner"))))
-        #define INIT_PUBLIC_KEY_STR         (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
+		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountnameownerpassword")))) // accountName + permission + password
+    #define INIT_PUBLIC_KEY_STR         (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 	#else
-		#define INIT_PUBLIC_KEY_STR             "TWYM7GXFkFDNkweQJHhegS1iX5vg1oEouAhZ5EZZR34cYUxQvHFii5"
+		#define INIT_PUBLIC_KEY_STR             "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj"
 	#endif
-#define CHAIN_ID                        (fc::sha256::hash("TWYM"))
+#define CHAIN_ID                        (fc::sha256::hash("TWYM")) 
+// TESTWYM 	0e64b5d0747c9f7872c96f32d7250258db94f6b28e907e126dc12eedf3af8828
+// TWYM 		7d51ab195015bb72fa61f159fc91227d826a2c28fc718078356c18837d0ebbf5
 
 // WeYouMe
 // #define SYMBOL_ECO 									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< TME with 3 digits of precision
@@ -89,24 +90,24 @@
 
 #endif
 
-#define BLOCK_INTERVAL                  3
+#define BLOCK_INTERVAL                  1
 #define BLOCKS_PER_YEAR                 (365*24*60*60/BLOCK_INTERVAL)
 #define BLOCKS_PER_DAY                  (24*60*60/BLOCK_INTERVAL)
 #define START_TME_fund_for_SCORE_BLOCK  (BLOCKS_PER_DAY * 7)
 #define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 30)
 
-#define INIT_MINER_NAME                 "webuilder"
-#define NUM_INIT_MINERS                 50
-#define NUM_INIT_EXTRAS									0
+#define genesisAccountBasename          "webuilder"
+#define numberOfGenesisWitnessAccounts  5
+#define numberOfExtraGenesisAccounts    45
 #define INIT_TIME                       (fc::time_point_sec());
+#define genesisAccountSCORE							0
+#define MAX_WITNESSES                   5
 
-#define MAX_WITNESSES                   50
-
-#define MAX_VOTED_WITNESSES_HF0         48
+#define MAX_VOTED_WITNESSES_HF0         3
 #define MAX_MINER_WITNESSES_HF0         1
 #define MAX_RUNNER_WITNESSES_HF0        1
 
-#define MAX_VOTED_WITNESSES_HF17        49
+#define MAX_VOTED_WITNESSES_HF17        4
 #define MAX_MINER_WITNESSES_HF17        0
 #define MAX_RUNNER_WITNESSES_HF17       1
 
@@ -118,21 +119,21 @@
 #define TME_fund_for_SCORE_WITHDRAW_INTERVALS      13
 #define SCORE_WITHDRAW_INTERVAL_SECONDS (60*60*24*7) /// 1 week per interval
 #define MAX_WITHDRAW_ROUTES             10
-#define SAVINGS_WITHDRAW_TIME        	(fc::days(3))
+#define SAVINGS_WITHDRAW_TIME        		(fc::days(3))
 #define SAVINGS_WITHDRAW_REQUEST_LIMIT  100
 #define VOTE_REGENERATION_SECONDS       (5*60*60*24) // 5 day
-#define MAX_VOTE_CHANGES                5
+#define MAX_VOTE_CHANGES                30
 #define REVERSE_AUCTION_WINDOW_SECONDS  (60*30) /// 30 minutes
 #define MIN_VOTE_INTERVAL_SEC           1
-#define VOTE_DUST_THRESHOLD             (50000000)
+#define VOTE_DUST_THRESHOLD             (0)
 
-#define MIN_ROOT_COMMENT_INTERVAL       (fc::seconds(60*5)) // 5 minutes
-#define MIN_REPLY_INTERVAL              (fc::seconds(20)) // 20 seconds
+#define MIN_ROOT_COMMENT_INTERVAL       (fc::seconds(3)) // 5 minutes // 1 second
+#define MIN_REPLY_INTERVAL              (fc::seconds(2)) // 20 seconds // 1 second
 #define POST_AVERAGE_WINDOW             (60*60*24u) // 1 day
 #define POST_MAX_BANDWIDTH              (4*PERCENT_100) // 2 posts per 1 days, average 1 every 12 hours
 #define POST_WEIGHT_CONSTANT            (uint64_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
 
-#define MAX_accountWitnessVoteS         90
+#define MAX_accountWitnessVoteS         1000
 
 #define PERCENT_100                     10000
 #define PERCENT_1                       (PERCENT_100/100)
@@ -158,11 +159,11 @@
 
 #define MAX_RESERVE_RATIO               (20000)
 
-#define CREATE_ACCOUNT_WITH_TME_MODIFIER 	 1
-#define CREATE_ACCOUNT_DELEGATION_RATIO    5
+#define CREATE_ACCOUNT_WITH_TME_MODIFIER   1
+#define CREATE_ACCOUNT_DELEGATION_RATIO    2
 #define CREATE_ACCOUNT_DELEGATION_TIME     fc::days(1)
 
-#define MINING_REWARD                   asset( 1, SYMBOL_COIN )
+#define MINING_REWARD                   asset( 10000000, SYMBOL_COIN )
 #define EQUIHASH_N                      140
 #define EQUIHASH_K                      6
 
@@ -181,8 +182,8 @@
 #define ACTIVE_CHALLENGE_COOLDOWN       fc::days(1)
 #define OWNER_CHALLENGE_COOLDOWN        fc::days(1)
 
-#define POST_REWARD_FUND_NAME           ("postrewards")
-#define COMMENT_REWARD_FUND_NAME        ("commentrewards")
+#define POST_REWARD_FUND_NAME           ("post")
+#define COMMENT_REWARD_FUND_NAME        ("comment")
 #define RECENT_RSCORE_DECAY_RATE_HF17   (fc::days(30))
 #define RECENT_RSCORE_DECAY_RATE_HF19   (fc::days(15))
 #define CONTENT_CONSTANT_HF0            (uint128_t(uint64_t(2000000000000ll)))
@@ -228,14 +229,14 @@
 #define TSD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing TSD at 5% Market Cap
 #define TSD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of TSD at 2% Market Cap
 
-#define MIN_ACCOUNT_NAME_LENGTH          3
-#define MAX_ACCOUNT_NAME_LENGTH         16
+#define MIN_ACCOUNT_NAME_LENGTH          1
+#define MAX_ACCOUNT_NAME_LENGTH         100
 
 #define MIN_PERMLINK_LENGTH             0
-#define MAX_PERMLINK_LENGTH             256
+#define MAX_PERMLINK_LENGTH             2048
 #define MAX_WITNESS_URL_LENGTH          2048
 
-#define INIT_SUPPLY                     int64_t(1000000000000000ll)
+#define INIT_SUPPLY                     int64_t(0)
 #define MAX_SCORE_SUPPLY                int64_t(1000000000000000ll)
 #define MAX_SIG_CHECK_DEPTH             2
 
@@ -245,7 +246,7 @@
 #define TSD_INTEREST_COMPOUND_INTERVAL_SEC  (60*60*24*30)
 #define MAX_TRANSACTION_SIZE            (1024*64)
 #define MIN_BLOCK_SIZE_LIMIT            (MAX_TRANSACTION_SIZE)
-#define MAX_BLOCK_SIZE                  (MAX_TRANSACTION_SIZE*BLOCK_INTERVAL*2000)
+#define MAX_BLOCK_SIZE                  (MAX_TRANSACTION_SIZE*BLOCK_INTERVAL*6000) // for 3 seconds MAX_TRANSACTION_SIZE*3*2000 for 1 second MAX_TRANSACTION_SIZE*1*6000 
 #define MIN_BLOCK_SIZE                  115
 #define BLOCKS_PER_HOUR                 (60*60/BLOCK_INTERVAL)
 #define FEED_INTERVAL_BLOCKS            (BLOCKS_PER_HOUR)
@@ -280,7 +281,7 @@
  *  Reserved Account IDs with special meaning
  */
 ///@{
-#define MINER_ACCOUNT                   "webuilders" /// Represents the current witnesses
+#define MINER_ACCOUNT                   "genesis" /// Represents the current witnesses
 #define NULL_ACCOUNT                    "null" /// Represents the canonical account with NO authority (nobody can access funds in null account)
 #define TEMP_ACCOUNT                    "temp" /// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
 #define PROXY_TO_SELF_ACCOUNT           "" /// Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)

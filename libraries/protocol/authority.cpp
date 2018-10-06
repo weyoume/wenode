@@ -45,9 +45,9 @@ void authority::validate()const
 
 bool is_valid_account_name( const string& name )
 {
-#if MIN_ACCOUNT_NAME_LENGTH < 3
-#error This is_valid_account_name implementation implicitly enforces minimum name length of 3.
-#endif
+// #if MIN_ACCOUNT_NAME_LENGTH < 3
+// #error This is_valid_account_name implementation implicitly enforces minimum name length of 3.
+// #endif
 
    const size_t len = name.size();
    if( len < MIN_ACCOUNT_NAME_LENGTH )
@@ -62,7 +62,7 @@ bool is_valid_account_name( const string& name )
       size_t end = name.find_first_of( '.', begin );
       if( end == std::string::npos )
          end = len;
-      if( end - begin < 3 )
+      if( end - begin < MIN_ACCOUNT_NAME_LENGTH )
          return false;
       switch( name[begin] )
       {
@@ -86,22 +86,24 @@ bool is_valid_account_name( const string& name )
          default:
             return false;
       }
-      for( size_t i=begin+1; i<end-1; i++ )
-      {
-         switch( name[i] )
-         {
-            case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h':
-            case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p':
-            case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x':
-            case 'y': case 'z':
-            case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7':
-            case '8': case '9':
-            case '-':
-               break;
-            default:
-               return false;
-         }
-      }
+			if(len > 2){
+				for( size_t i=begin+1; i<end-1; i++ )
+				{
+					switch( name[i] )
+					{
+							case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h':
+							case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p':
+							case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x':
+							case 'y': case 'z':
+							case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7':
+							case '8': case '9':
+							case '-':
+								break;
+							default:
+								return false;
+					}
+				}
+			}
       if( end == len )
          break;
       begin = end+1;

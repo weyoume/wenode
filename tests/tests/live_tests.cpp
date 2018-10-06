@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE( SCORE_stock_split )
       auto old_current_supply = db.get_dynamic_global_properties().current_supply;
       auto old_SCORE_fund = db.get_dynamic_global_properties().totalTMEfundForSCORE;
       auto old_SCORE = db.get_dynamic_global_properties().totalSCORE;
-      auto old_SCOREreward2 = db.get_dynamic_global_properties().total_SCOREreward2;
+      auto old_SCOREreward2 = db.get_dynamic_global_properties().totalSCOREreward2;
       auto old_reward_fund = db.get_dynamic_global_properties().total_reward_fund_TME;
 
       flat_map< std::tuple< account_name_type, string >, share_type > comment_net_SCOREreward;
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE( SCORE_stock_split )
       flat_map< comment_id_type, uint64_t > total_vote_weights;
       flat_map< comment_id_type, uint64_t > orig_vote_weight;
       flat_map< comment_id_type, uint64_t > expected_reward;
-      fc::uint128_t total_SCOREreward2 = 0;
+      fc::uint128_t totalSCOREreward2 = 0;
       const auto& com_idx = db.get_index< comment_index >().indices().get< by_permlink >();
       auto com_itr = com_idx.begin();
       auto gpo = db.get_dynamic_global_properties();
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE( SCORE_stock_split )
 
          if( com_itr->net_SCOREreward.value > 0 )
          {
-            total_SCOREreward2 += com_itr->net_SCOREreward.value > 0 ? fc::uint128_t( com_itr->net_SCOREreward.value ) * com_itr->net_SCOREreward.value * magnitude * magnitude : 0;
+            totalSCOREreward2 += com_itr->net_SCOREreward.value > 0 ? fc::uint128_t( com_itr->net_SCOREreward.value ) * com_itr->net_SCOREreward.value * magnitude * magnitude : 0;
             u256 rs( com_itr->net_SCOREreward.value );
             u256 rf( gpo.total_reward_fund_TME.amount.value );
             auto rs2 = rs * rs;
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE( SCORE_stock_split )
       BOOST_REQUIRE( db.get_dynamic_global_properties().virtual_supply == old_virtual_supply );
       BOOST_REQUIRE( db.get_dynamic_global_properties().totalTMEfundForSCORE == old_SCORE_fund );
       BOOST_REQUIRE( db.get_dynamic_global_properties().totalSCORE.amount == old_SCORE.amount * magnitude );
-      BOOST_REQUIRE( db.get_dynamic_global_properties().total_SCOREreward2 == total_SCOREreward2 );
+      BOOST_REQUIRE( db.get_dynamic_global_properties().totalSCOREreward2 == totalSCOREreward2 );
       BOOST_REQUIRE( db.get_dynamic_global_properties().total_reward_fund_TME == old_reward_fund );
 
       BOOST_TEST_MESSAGE( "Check accounts were updated" );
@@ -130,8 +130,8 @@ BOOST_AUTO_TEST_CASE( SCORE_stock_split )
          {
             u256 rs( com_itr->net_SCOREreward.value );
             u256 rf( gpo.total_reward_fund_TME.amount.value );
-            u256 SCOREreward2 = total_SCOREreward2.hi;
-            SCOREreward2 = ( SCOREreward2 << 64 ) + total_SCOREreward2.lo;
+            u256 SCOREreward2 = totalSCOREreward2.hi;
+            SCOREreward2 = ( SCOREreward2 << 64 ) + totalSCOREreward2.lo;
             auto rs2 = rs * rs;
 
             BOOST_REQUIRE( static_cast< uint64_t >( ( rf * rs2 ) / SCOREreward2 ) == expected_reward[ com_itr->id] );

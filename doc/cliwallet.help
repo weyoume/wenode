@@ -4,10 +4,12 @@ variant_object about()
 					annotated_signed_transaction challenge(string challenger, string challenged, bool broadcast)
 					annotated_signed_transaction change_recoveryAccount(string owner, string new_recoveryAccount, bool broadcast)
 					annotated_signed_transaction claimRewardBalance(string account, asset TMEreward, asset TSDreward, asset SCOREreward, bool broadcast)
+																			 claimRewardBalance webuilder "0.000 TME" "0.000 TSD" "100.000000 SCORE" 1
 					annotated_signed_transaction convertTSD(string from, asset amount, bool broadcast)
 					annotated_signed_transaction create_account(string creator, string newAccountName, string json, bool broadcast)
+																			 create_account webuilder wetest "{}" 1
 					annotated_signed_transaction create_account_delegated(string creator, asset TMEfee, asset delegatedSCORE, string newAccountName, string json, bool broadcast)
-																			 create_account_delegated webuilder "1.000 TME" "10.000000 SCORE" wetest "{}" 1
+																			 create_account_delegated webuilder "5.000 TME" "500.000000 SCORE" wetest "{}" 1
 					annotated_signed_transaction create_account_with_keys(string creator, string newname, string json, public_key_type owner, public_key_type active, public_key_type posting, public_key_type memo, bool broadcast)
 					annotated_signed_transaction create_account_with_keys_delegated(string creator, asset TMEfee, asset delegatedSCORE, string newname, string json, public_key_type owner, public_key_type active, public_key_type posting, public_key_type memo, bool broadcast)
 					annotated_signed_transaction create_order(string owner, uint32_t order_id, asset amount_to_sell, asset min_to_receive, bool fill_or_kill, uint32_t expiration, bool broadcast)
@@ -35,6 +37,7 @@ variant_object about()
 vector<owner_authority_history_api_obj> get_owner_history(string account)
 																string get_private_key(public_key_type pubkey)
 					pair<public_key_type, string> get_private_key_from_password(string account, string role, string password)
+																				get_private_key_from_password account owner password
 															operation get_prototype_operation(string operation_type)
 														app::state get_state(string url)
 					annotated_signed_transaction get_transaction(transaction_id_type trx_id)
@@ -70,6 +73,7 @@ vector<owner_authority_history_api_obj> get_owner_history(string account)
 					annotated_signed_transaction sign_transaction(signed_transaction tx, bool broadcast)
 												brain_key_info suggest_brain_key()
 					annotated_signed_transaction transfer(string from, string to, asset amount, string memo, bool broadcast)
+																			 transfer webuilder lopu "10000.000 TME" "hey man" 1
 					annotated_signed_transaction transferFromSavings(string from, uint32_t request_id, string to, asset amount, string memo, bool broadcast)
 					annotated_signed_transaction transferTMEtoSCOREfund(string from, string to, asset amount, bool broadcast)
 					annotated_signed_transaction transferToSavings(string from, string to, asset amount, string memo, bool broadcast)

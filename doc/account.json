@@ -1,0 +1,91 @@
+{
+  "id": 3,
+  "name": "webuilder",
+  "owner": {
+    "weight_threshold": 1,
+    "account_auths": [],
+    "key_auths": [[
+        "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj",
+        1
+      ]
+    ]
+  },
+  "active": {
+    "weight_threshold": 1,
+    "account_auths": [],
+    "key_auths": [[
+        "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj",
+        1
+      ]
+    ]
+  },
+  "posting": {
+    "weight_threshold": 1,
+    "account_auths": [],
+    "key_auths": [[
+        "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj",
+        1
+      ]
+    ]
+  },
+  "memoKey": "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj",
+  "json": "",
+  "proxy": "",
+  "last_owner_update": "1970-01-01T00:00:00",
+  "last_accountUpdate": "1970-01-01T00:00:00",
+  "created": "1970-01-01T00:00:00",
+  "mined": true,
+  "owner_challenged": false,
+  "active_challenged": false,
+  "last_owner_proved": "1970-01-01T00:00:00",
+  "last_active_proved": "1970-01-01T00:00:00",
+  "recoveryAccount": "",
+  "last_account_recovery": "1970-01-01T00:00:00",
+  "reset_account": "null",
+  "comment_count": 0,
+  "lifetime_vote_count": 0,
+  "post_count": 0,
+  "can_vote": true,
+  "voting_power": 10000,
+  "last_vote_time": "1970-01-01T00:00:00",
+  "balance": "19999999999.000 TME",
+  "TMEsavingsBalance": "0.000 TME",
+  "TSDbalance": "0.000 TSD",
+  "TSD_seconds": "0",
+  "TSD_seconds_last_update": "1970-01-01T00:00:00",
+  "TSD_last_interest_payment": "1970-01-01T00:00:00",
+  "TSDsavingsBalance": "0.000 TSD",
+  "savings_TSD_seconds": "0",
+  "savings_TSD_seconds_last_update": "1970-01-01T00:00:00",
+  "savings_TSD_last_interest_payment": "1970-01-01T00:00:00",
+  "savings_withdraw_requests": 0,
+  "TSDrewardBalance": "0.000 TSD",
+  "TMErewardBalance": "0.000 TME",
+  "SCORErewardBalance": "26705162494.540000 SCORE",
+  "SCORErewardBalanceInTME": "0.000 TME",
+  "SCORE": "0.000000 SCORE",
+  "SCOREDelegated": "0.000000 SCORE",
+  "SCOREreceived": "0.000000 SCORE",
+  "SCOREwithdrawRateInTME": "0.000001 SCORE",
+  "nextSCOREwithdrawalTime": "1969-12-31T23:59:59",
+  "withdrawn": 0,
+  "to_withdraw": 0,
+  "withdraw_routes": 0,
+  "curationRewards": 0,
+  "posting_rewards": 0,
+  "proxied_SCOREfundTMEbalance_votes": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "witnesses_voted_for": 0,
+  "average_bandwidth": 271000000,
+  "lifetime_bandwidth": 271000000,
+  "last_bandwidth_update": "2018-09-25T01:16:42",
+  "average_market_bandwidth": 0,
+  "lifetime_market_bandwidth": 0,
+  "last_market_bandwidth_update": "1970-01-01T00:00:00",
+  "last_post": "1970-01-01T00:00:00",
+  "last_root_post": "1970-01-01T00:00:00"
+}
