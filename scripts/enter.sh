@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker exec -it wenode-test /bin/bash
+docker exec -it testnet-wenode /bin/bash

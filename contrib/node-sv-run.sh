@@ -70,7 +70,7 @@ FEED_START_TIME=`expr $NOW - 1209600`
 ARGS+=" --follow-start-feeds=$FEED_START_TIME"
 
 # overwrite local config with image one
-if [[ "$USE_FULL_CONTENT_NODE" ]]; then
+if [[ "$USE_FULLNODE" ]]; then
   cp /etc/node/config-for-fullnode.ini $HOME/config.ini
 elif [[ "$IS_BROADCAST_NODE" ]]; then
   cp /etc/node/config-for-broadcaster.ini $HOME/config.ini

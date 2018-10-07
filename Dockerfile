@@ -118,7 +118,6 @@ RUN \
         -DCMAKE_BUILD_TYPE=Release \
         -DLOW_MEMORY_NODE=OFF \
         -DCLEAR_VOTES=OFF \
-        -DSKIP_BY_TX_ID=ON \
         -DBUILD_TESTNET=OFF \
         -DSTATIC_BUILD=${STATIC_BUILD} \
         .. \

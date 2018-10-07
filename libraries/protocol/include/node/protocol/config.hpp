@@ -49,7 +49,7 @@
 		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountnameownerpassword")))) // accountName + permission + password
     #define INIT_PUBLIC_KEY_STR         (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 	#else
-		#define INIT_PUBLIC_KEY_STR             "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj"
+		#define INIT_PUBLIC_KEY_STR             "TWYM5dLTuQw2sSEMZ8vxqTHZKaMn9RA49FzMwadcTzsLP7fvxzuL6r"
 	#endif
 #define CHAIN_ID                        (fc::sha256::hash("TWYM")) 
 // TESTWYM 	0e64b5d0747c9f7872c96f32d7250258db94f6b28e907e126dc12eedf3af8828
@@ -90,28 +90,28 @@
 
 #endif
 
-#define BLOCK_INTERVAL                  1
+#define BLOCK_INTERVAL                  1 // seconds
 #define BLOCKS_PER_YEAR                 (365*24*60*60/BLOCK_INTERVAL)
 #define BLOCKS_PER_DAY                  (24*60*60/BLOCK_INTERVAL)
 #define START_TME_fund_for_SCORE_BLOCK  (BLOCKS_PER_DAY * 7)
 #define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 30)
 
 #define genesisAccountBasename          "webuilder"
-#define numberOfGenesisWitnessAccounts  5
-#define numberOfExtraGenesisAccounts    45
+#define numberOfGenesisWitnessAccounts  50
+#define MAX_WITNESSES                   (numberOfGenesisWitnessAccounts)
+#define numberOfExtraGenesisAccounts    (300-numberOfGenesisWitnessAccounts)
 #define INIT_TIME                       (fc::time_point_sec());
 #define genesisAccountSCORE							0
-#define MAX_WITNESSES                   5
 
-#define MAX_VOTED_WITNESSES_HF0         3
+#define MAX_VOTED_WITNESSES_HF0         (MAX_WITNESSES-2)
 #define MAX_MINER_WITNESSES_HF0         1
 #define MAX_RUNNER_WITNESSES_HF0        1
 
-#define MAX_VOTED_WITNESSES_HF17        4
+#define MAX_VOTED_WITNESSES_HF17        (MAX_WITNESSES-1)
 #define MAX_MINER_WITNESSES_HF17        0
 #define MAX_RUNNER_WITNESSES_HF17       1
 
-#define HARDFORK_REQUIRED_WITNESSES     0 // 17 of the 21 dpos witnesses (20 elected and 1 virtual time) required for hardfork. This guarantees 75% participation on all subsequent rounds.
+#define HARDFORK_REQUIRED_WITNESSES     ((numberOfGenesisWitnessAccounts/3)*2) // 17 of the 21 dpos witnesses (20 elected and 1 virtual time) required for hardfork. This guarantees 75% participation on all subsequent rounds.
 #define MAX_TIME_UNTIL_EXPIRATION       (60*60) // seconds,  aka: 1 hour
 #define MAX_MEMO_SIZE                   2048
 #define MAX_PROXY_RECURSION_DEPTH       4
@@ -281,7 +281,7 @@
  *  Reserved Account IDs with special meaning
  */
 ///@{
-#define MINER_ACCOUNT                   "genesis" /// Represents the current witnesses
+#define MINER_ACCOUNT                   "builders" /// Represents the current witnesses
 #define NULL_ACCOUNT                    "null" /// Represents the canonical account with NO authority (nobody can access funds in null account)
 #define TEMP_ACCOUNT                    "temp" /// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
 #define PROXY_TO_SELF_ACCOUNT           "" /// Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)

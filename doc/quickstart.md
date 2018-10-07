@@ -17,14 +17,14 @@ For full api node use:
 
 ```
 docker run \
-    --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULL_CONTENT_NODE=1 \
+    --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULLNODE=1 \
     -d -p 2001:2001 -p 8090:8090 --name node \
     --restart unless-stopped \
     WeYouMe/WeYouMe
 ```
 ### Configure for your use case
 #### Full API node
-You need to use `USE_WAY_TOO_MUCH_RAM=1` and `USE_FULL_CONTENT_NODE=1` as stated above.
+You need to use `USE_WAY_TOO_MUCH_RAM=1` and `USE_FULLNODE=1` as stated above.
 You can Use `contrib/config-for-fullnode.ini` as a base for your `config.ini` file.
 
 #### Exchanges
