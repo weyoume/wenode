@@ -25,7 +25,7 @@
     "dockerREadyGenesis": "npm run dockerReadyGenesis",
     "dockerReadyGenesisLogs": "npm run dockerReadyGenesis && npm run dockerLogs",
     "dockerREadyGenesisLogs": "npm run dockerReadyGenesisLogs",
-    "dockerBuild": "./scripts/build-testnet",
+    "dockerBuild": "docker build -t lopudesigns/testnet-wenode .",
     "dockerBuildReady": "docker build -f Dockerfiles/preinstalledDependancies.Dockerfile -t lopudesigns/testnet-wenode .",
     "dockerBuildGenesis": "docker build -f Dockerfiles/genesis.Dockerfile -t lopudesigns/testnet-wenode .",
     "dockerBuildReadyGenesis": "docker build -f Dockerfiles/preinstalledDependanciesGenesis.Dockerfile -t lopudesigns/testnet-wenode .",
