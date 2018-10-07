@@ -2,62 +2,62 @@
 <project version="4">
   <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true" buildAllGenerated="true">
     <generated>
-      <config projectName="Node" targetName="chainbase_test" />
-      <config projectName="Node" targetName="graphene_net" />
-      <config projectName="Node" targetName="chain_test" />
-      <config projectName="Node" targetName="ntp_test" />
-      <config projectName="Node" targetName="js_operation_serializer" />
-      <config projectName="Node" targetName="node_block_info" />
-      <config projectName="Node" targetName="chainbase" />
-      <config projectName="Node" targetName="node_witness" />
-      <config projectName="Node" targetName="node_market_history" />
-      <config projectName="Node" targetName="node_account_statistics" />
-      <config projectName="Node" targetName="test_sqrt" />
-      <config projectName="Node" targetName="node" />
-      <config projectName="Node" targetName="bloom_test" />
       <config projectName="Node" targetName="graphene_schema" />
-      <config projectName="Node" targetName="node_wallet" />
+      <config projectName="Node" targetName="node_delayed_node" />
+      <config projectName="Node" targetName="node_debug_node" />
+      <config projectName="Node" targetName="bloom_test" />
+      <config projectName="Node" targetName="node" />
       <config projectName="Node" targetName="bip_lock" />
-      <config projectName="Node" targetName="graphene_utilities" />
       <config projectName="Node" targetName="ecc_test" />
       <config projectName="Node" targetName="sign_digest" />
-      <config projectName="Node" targetName="test_fixed_string" />
-      <config projectName="Node" targetName="node_raw_block" />
-      <config projectName="Node" targetName="all_tests" />
-      <config projectName="Node" targetName="node_chain" />
-      <config projectName="Node" targetName="get_dev_key" />
-      <config projectName="Node" targetName="node_protocol" />
-      <config projectName="Node" targetName="test_block_log" />
-      <config projectName="Node" targetName="blind" />
-      <config projectName="Node" targetName="fc" />
-      <config projectName="Node" targetName="sign_transaction" />
-      <config projectName="Node" targetName="node_auth_util" />
-      <config projectName="Node" targetName="node_mf_plugins" />
-      <config projectName="Node" targetName="inflation_model" />
-      <config projectName="Node" targetName="cliwallet" />
-      <config projectName="Node" targetName="api" />
-      <config projectName="Node" targetName="cat-parts" />
-      <config projectName="Node" targetName="test_shared_mem" />
-      <config projectName="Node" targetName="node_debug_node" />
-      <config projectName="Node" targetName="real128_test" />
-      <config projectName="Node" targetName="log_test" />
-      <config projectName="Node" targetName="node_follow" />
-      <config projectName="Node" targetName="node_delayed_node" />
-      <config projectName="Node" targetName="equihash" />
-      <config projectName="Node" targetName="project_secp256k1" />
-      <config projectName="Node" targetName="node_private_message" />
-      <config projectName="Node" targetName="node_plugins" />
-      <config projectName="Node" targetName="task_cancel_test" />
-      <config projectName="Node" targetName="plugin_test" />
-      <config projectName="Node" targetName="node_blockchain_statistics" />
-      <config projectName="Node" targetName="blinding_test" />
-      <config projectName="Node" targetName="node_account_by_key" />
-      <config projectName="Node" targetName="build_hardfork_hpp" />
-      <config projectName="Node" targetName="node_account_history" />
-      <config projectName="Node" targetName="size_checker" />
-      <config projectName="Node" targetName="hmac_test" />
-      <config projectName="Node" targetName="node_app" />
       <config projectName="Node" targetName="node_tags" />
+      <config projectName="Node" targetName="test_fixed_string" />
+      <config projectName="Node" targetName="node_account_by_key" />
+      <config projectName="Node" targetName="all_tests" />
+      <config projectName="Node" targetName="graphene_net" />
+      <config projectName="Node" targetName="node_witness" />
+      <config projectName="Node" targetName="inflation_model" />
+      <config projectName="Node" targetName="fc" />
+      <config projectName="Node" targetName="node_block_info" />
+      <config projectName="Node" targetName="chainbase" />
+      <config projectName="Node" targetName="node_mf_plugins" />
+      <config projectName="Node" targetName="node_chain" />
+      <config projectName="Node" targetName="test_block_log" />
+      <config projectName="Node" targetName="test_shared_mem" />
+      <config projectName="Node" targetName="build_hardfork_hpp" />
+      <config projectName="Node" targetName="node_blockchain_statistics" />
+      <config projectName="Node" targetName="api" />
+      <config projectName="Node" targetName="plugin_test" />
+      <config projectName="Node" targetName="hmac_test" />
+      <config projectName="Node" targetName="node_protocol" />
+      <config projectName="Node" targetName="task_cancel_test" />
+      <config projectName="Node" targetName="ntp_test" />
+      <config projectName="Node" targetName="cliwallet" />
+      <config projectName="Node" targetName="graphene_utilities" />
+      <config projectName="Node" targetName="project_secp256k1" />
+      <config projectName="Node" targetName="node_wallet" />
+      <config projectName="Node" targetName="log_test" />
+      <config projectName="Node" targetName="real128_test" />
+      <config projectName="Node" targetName="node_market_history" />
+      <config projectName="Node" targetName="node_auth_util" />
+      <config projectName="Node" targetName="node_raw_block" />
+      <config projectName="Node" targetName="node_follow" />
+      <config projectName="Node" targetName="chainbase_test" />
+      <config projectName="Node" targetName="sign_transaction" />
+      <config projectName="Node" targetName="node_plugins" />
+      <config projectName="Node" targetName="blind" />
+      <config projectName="Node" targetName="get_dev_key" />
+      <config projectName="Node" targetName="test_sqrt" />
+      <config projectName="Node" targetName="blinding_test" />
+      <config projectName="Node" targetName="node_account_history" />
+      <config projectName="Node" targetName="js_operation_serializer" />
+      <config projectName="Node" targetName="size_checker" />
+      <config projectName="Node" targetName="node_account_statistics" />
+      <config projectName="Node" targetName="node_app" />
+      <config projectName="Node" targetName="chain_test" />
+      <config projectName="Node" targetName="equihash" />
+      <config projectName="Node" targetName="cat-parts" />
+      <config projectName="Node" targetName="node_private_message" />
     </generated>
   </component>
   <component name="CMakeSettings" AUTO_RELOAD="true">
@@ -73,33 +73,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="288b397b-236a-4a93-ba00-a63440deb476" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contrib/clion/osxsettings.jar" beforeDir="false" afterPath="$PROJECT_DIR$/contrib/clion/osxsettings.jar" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data-dir/config.ini" beforeDir="false" afterPath="$PROJECT_DIR$/data-dir/config.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/doc/cliwallet.help" beforeDir="false" afterPath="$PROJECT_DIR$/doc/cliwallet.help" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/app/database_api.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/app/database_api.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/database.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/database.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/include/node/chain/global_property_object.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/include/node/chain/global_property_object.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/include/node/chain/util/reward.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/include/node/chain/util/reward.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/node_evaluator.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/node_evaluator.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/chain/util/reward.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/util/reward.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/plugins/account_by_key/account_by_key_plugin.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/plugins/account_by_key/account_by_key_plugin.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/protocol/authority.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/protocol/authority.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/protocol/get_config.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/protocol/get_config.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/libraries/wallet/wallet.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/wallet/wallet.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/osx_data-dir/config.ini" beforeDir="false" afterPath="$PROJECT_DIR$/osx_data-dir/config.ini" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/common/database_fixture.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/common/database_fixture.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/plugin_tests/market_history.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/plugin_tests/market_history.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tests/block_tests.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tests/block_tests.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tests/live_tests.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tests/live_tests.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tests/operation_tests.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tests/operation_tests.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tests/operation_time_tests.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tests/operation_time_tests.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/tests/serialization_tests.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/tests/tests/serialization_tests.cpp" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows_data-dir/config.ini" beforeDir="false" afterPath="$PROJECT_DIR$/windows_data-dir/config.ini" afterDir="false" />
-    </list>
+    <list default="true" id="288b397b-236a-4a93-ba00-a63440deb476" name="Default Changelist" comment="" />
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <ignored path="$PROJECT_DIR$/build/CMakeFiles/" />
     <ignored path="$PROJECT_DIR$/windows_build/" />
@@ -194,7 +168,7 @@
         <entry file="file://$PROJECT_DIR$/libraries/fc/src/io/json.cpp">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="205">
-              <caret line="470" column="100" lean-forward="true" selection-start-line="470" selection-start-column="100" selection-end-line="470" selection-end-column="100" />
+              <caret line="470" column="100" selection-start-line="470" selection-start-column="100" selection-end-line="470" selection-end-column="100" />
             </state>
           </provider>
         </entry>
@@ -203,7 +177,7 @@
         <entry file="file:///usr/local/Cellar/boost@1.60/1.60.0/include/boost/thread/pthread/condition_variable.hpp">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="68">
-              <caret line="100" column="47" lean-forward="true" selection-start-line="100" selection-start-column="47" selection-end-line="100" selection-end-column="47" />
+              <caret line="100" column="47" selection-start-line="100" selection-start-column="47" selection-end-line="100" selection-end-column="47" />
             </state>
           </provider>
         </entry>
@@ -764,12 +738,12 @@
       <workItem from="1538483527364" duration="24000" />
       <workItem from="1538483969747" duration="1125000" />
       <workItem from="1538574803656" duration="30441000" />
-      <workItem from="1538754433195" duration="8696000" />
+      <workItem from="1538754433195" duration="10756000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="180734000" />
+    <option name="totallyTimeSpent" value="182794000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -1114,14 +1088,14 @@
     <entry file="file://$PROJECT_DIR$/libraries/fc/src/io/json.cpp">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="205">
-          <caret line="470" column="100" lean-forward="true" selection-start-line="470" selection-start-column="100" selection-end-line="470" selection-end-column="100" />
+          <caret line="470" column="100" selection-start-line="470" selection-start-column="100" selection-end-line="470" selection-end-column="100" />
         </state>
       </provider>
     </entry>
     <entry file="file:///usr/local/Cellar/boost@1.60/1.60.0/include/boost/thread/pthread/condition_variable.hpp">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="68">
-          <caret line="100" column="47" lean-forward="true" selection-start-line="100" selection-start-column="47" selection-end-line="100" selection-end-column="47" />
+          <caret line="100" column="47" selection-start-line="100" selection-start-column="47" selection-end-line="100" selection-end-column="47" />
         </state>
       </provider>
     </entry>

@@ -8,6 +8,7 @@ Makefile
 compile_commands.json
 moc_*
 *.moc
+.idea
 hardfork.hpp
 
 lcov
