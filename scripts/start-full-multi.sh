@@ -49,6 +49,6 @@ docker run \
 	--env PRIVATE_KEYS=$PRIVATE_KEYS \
 	--env WITNESS_NAMES="$witness_names" \
 	--env WITNESS_NAME="webuilder" \
-	-d -p 2003:2001 -p 8093:8090 --name testnet-wenode \
+	-d -p 2001:2001 -p 8090:8090 --name testnet-wenode \
 	lopudesigns/testnet-wenode
 
