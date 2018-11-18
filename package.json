@@ -8,8 +8,9 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "push": "git add . ; git commit -m 'ready' ; git push origin dev",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"commit" : "git add . ; git commit -m 'ready'",
+    "push": "npm run commit ; git push origin dev",
     "pull": "git pull origin dev",
     "gitmodules": "git submodule update --init --recursive",
     "submodules": "npm run gitmodules",
@@ -38,7 +39,10 @@
     "cmake": "mkdir -p build && cd build ; cmake -DCMAKE_BUILD_TYPE=Release ..",
     "cmakeDebug": "mkdir -p build && cd build ; cmake -DCMAKE_BUILD_TYPE=Debug ..",
     "make": "mkdir -p build && cd build && make -j$(sysctl -n hw.logicalcpu)",
-    "makeGrapheneNet": "mkdir -p build && cd build && make -j$(sysctl -n hw.logicalcpu) graphene_net"
+		"makeGrapheneNet": "mkdir -p build && cd build && make -j$(sysctl -n hw.logicalcpu) graphene_net",
+		"buildosx" : "./scripts/buildosx.sh",
+		"startosx" : "./scripts/startosx.sh",
+		"runosx" : "npm run buildosx ; npm run startosx"
   },
   "repository": {
     "type": "git",

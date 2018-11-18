@@ -8,8 +8,8 @@
       <config projectName="Node" targetName="bloom_test" />
       <config projectName="Node" targetName="node" />
       <config projectName="Node" targetName="bip_lock" />
-      <config projectName="Node" targetName="ecc_test" />
       <config projectName="Node" targetName="sign_digest" />
+      <config projectName="Node" targetName="ecc_test" />
       <config projectName="Node" targetName="node_tags" />
       <config projectName="Node" targetName="test_fixed_string" />
       <config projectName="Node" targetName="node_account_by_key" />
@@ -73,11 +73,17 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="288b397b-236a-4a93-ba00-a63440deb476" name="Default Changelist" comment="" />
+    <list default="true" id="288b397b-236a-4a93-ba00-a63440deb476" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/chain/database.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/chain/database.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp" beforeDir="false" afterPath="$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/buildosx.sh" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/buildosx.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scripts/start-full-multi.sh" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/start-full-multi.sh" afterDir="false" />
+    </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <ignored path="$PROJECT_DIR$/build/CMakeFiles/" />
     <ignored path="$PROJECT_DIR$/windows_build/" />
-    <ignored path="$PROJECT_DIR$/osx_build/CMakeFiles/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -89,21 +95,24 @@
     <session id="350809252">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="13" />
+          <entry key="project.closed" value="15" />
           <entry key="project.open.time.10" value="3" />
-          <entry key="project.open.time.11" value="4" />
+          <entry key="project.open.time.11" value="5" />
           <entry key="project.open.time.12" value="1" />
-          <entry key="project.open.time.14" value="1" />
+          <entry key="project.open.time.14" value="2" />
+          <entry key="project.open.time.16" value="1" />
+          <entry key="project.open.time.22" value="1" />
+          <entry key="project.open.time.24" value="1" />
           <entry key="project.open.time.5" value="1" />
           <entry key="project.open.time.7" value="2" />
           <entry key="project.open.time.9" value="3" />
-          <entry key="project.opened" value="15" />
+          <entry key="project.opened" value="20" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="cpp" value="20" />
-          <entry key="hpp" value="21" />
+          <entry key="cpp" value="21" />
+          <entry key="hpp" value="22" />
           <entry key="includecache" value="1" />
           <entry key="ini" value="2" />
           <entry key="txt" value="4" />
@@ -112,14 +121,14 @@
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="CMakeLists.txt" value="4" />
-          <entry key="ObjectiveC" value="41" />
+          <entry key="ObjectiveC" value="43" />
           <entry key="PLAIN_TEXT" value="3" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="cpp" value="1060" />
-          <entry key="hpp" value="218" />
+          <entry key="cpp" value="1061" />
+          <entry key="hpp" value="264" />
           <entry key="ini" value="39" />
           <entry key="mm" value="79" />
           <entry key="txt" value="9" />
@@ -128,7 +137,7 @@
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="CMakeLists.txt" value="9" />
-          <entry key="ObjectiveC" value="1357" />
+          <entry key="ObjectiveC" value="1404" />
           <entry key="PLAIN_TEXT" value="39" />
         </counts>
       </usages-collector>
@@ -143,23 +152,23 @@
         </counts>
       </usages-collector>
     </session>
+    <session id="-1102155669">
+      <usages-collector id="statistics.lifecycle.project">
+        <counts>
+          <entry key="project.closed" value="1" />
+          <entry key="project.open.time.7" value="1" />
+          <entry key="project.opened" value="1" />
+        </counts>
+      </usages-collector>
+    </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/libraries/app/database_api.cpp">
+        <entry file="file://$PROJECT_DIR$/libraries/fc/include/fc/exception/exception.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="262">
-              <caret line="1220" column="13" selection-start-line="1220" selection-start-column="13" selection-end-line="1220" selection-end-column="13" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/libraries/fc/src/io/sstream.cpp">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="188">
-              <caret line="103" column="32" selection-start-line="103" selection-start-column="32" selection-end-line="103" selection-end-column="32" />
+            <state relative-caret-position="5175">
+              <caret line="345" column="33" selection-start-line="345" selection-start-column="33" selection-end-line="345" selection-end-column="33" />
             </state>
           </provider>
         </entry>
@@ -167,17 +176,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/fc/src/io/json.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="205">
+            <state relative-caret-position="7050">
               <caret line="470" column="100" selection-start-line="470" selection-start-column="100" selection-end-line="470" selection-end-column="100" />
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file:///usr/local/Cellar/boost@1.60/1.60.0/include/boost/thread/pthread/condition_variable.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="68">
-              <caret line="100" column="47" selection-start-line="100" selection-start-column="47" selection-end-line="100" selection-end-column="47" />
+            <state relative-caret-position="1740">
+              <caret line="116" column="9" selection-start-line="116" selection-start-column="9" selection-end-line="116" selection-end-column="9" />
             </state>
           </provider>
         </entry>
@@ -212,8 +221,17 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="328">
-              <caret line="177" column="53" selection-start-line="177" selection-start-column="53" selection-end-line="177" selection-end-column="53" />
+            <state relative-caret-position="1305">
+              <caret line="87" column="67" selection-start-line="87" selection-start-column="67" selection-end-line="87" selection-end-column="67" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/libraries/chain/database.cpp">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="593">
+              <caret line="4001" column="7" selection-start-line="4001" selection-start-column="7" selection-end-line="4001" selection-end-column="7" />
             </state>
           </provider>
         </entry>
@@ -240,14 +258,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>Zg&quot;</find>
-      <find>a.score =</find>
-      <find>public</find>
-      <find>lopu</find>
-      <find>nikolaj</find>
-      <find>TWYM51PgmtZjz5Mf11MW3Govas8ftp2dmVHcuwDwMSDuGgdy7ccUzy</find>
-      <find>public_key</find>
-      <find>ess.running_version != BLOCK</find>
       <find>total_supply</find>
       <find>totalSCORE</find>
       <find>totalSCOREe</find>
@@ -270,6 +280,14 @@
       <find>reward</find>
       <find>history</find>
       <find>mining_re</find>
+      <find>idx = my-&gt;_db.get_index&lt; fo</find>
+      <find>200</find>
+      <find>vote_cha</find>
+      <find>itr_witness_vote_weight</find>
+      <find>vote_change</find>
+      <find>itr_proxied_SCOREfundTMEbalance_votes</find>
+      <find>itr_proxied_SCOREfundTMEbalance_votes_something</find>
+      <find>itr_name</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -284,9 +302,9 @@
         <option value="$PROJECT_DIR$/libraries/app/include/node/app/node_api_objects.hpp" />
         <option value="$PROJECT_DIR$/libraries/plugins/witness/witness_plugin.cpp" />
         <option value="$PROJECT_DIR$/libraries/wallet/wallet.cpp" />
-        <option value="$PROJECT_DIR$/libraries/chain/database.cpp" />
         <option value="$PROJECT_DIR$/libraries/app/database_api.cpp" />
         <option value="$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp" />
+        <option value="$PROJECT_DIR$/libraries/chain/database.cpp" />
       </list>
     </option>
   </component>
@@ -314,6 +332,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -335,7 +354,6 @@
           <select />
         </subPane>
       </pane>
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -738,12 +756,18 @@
       <workItem from="1538483527364" duration="24000" />
       <workItem from="1538483969747" duration="1125000" />
       <workItem from="1538574803656" duration="30441000" />
-      <workItem from="1538754433195" duration="10756000" />
+      <workItem from="1538754433195" duration="18578000" />
+      <workItem from="1539354692596" duration="3295000" />
+      <workItem from="1539912740486" duration="1077000" />
+      <workItem from="1540172637851" duration="4706000" />
+      <workItem from="1540265561991" duration="1935000" />
+      <workItem from="1540558220437" duration="1162000" />
+      <workItem from="1542179121162" duration="2664000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="182794000" />
+    <option name="totallyTimeSpent" value="205455000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -756,14 +780,15 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1680" height="1050" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.14835165" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.15934066" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32985386" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.32985386" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.498779" visible="true" weight="0.5480167" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.498779" weight="0.5480167" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" sideWeight="0.4993895" weight="0.32985386" />
@@ -937,9 +962,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1635">
           <caret line="109" column="13" selection-start-line="109" selection-start-column="13" selection-end-line="109" selection-end-column="13" />
-          <folding>
-            <element signature="e#1163#1205#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -954,9 +976,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2610">
           <caret line="174" column="10" selection-start-line="174" selection-start-column="10" selection-end-line="174" selection-end-column="10" />
-          <folding>
-            <element signature="e#0#34#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -992,9 +1011,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="344">
           <caret line="886" column="49" selection-start-line="886" selection-start-column="49" selection-end-line="886" selection-end-column="49" />
-          <folding>
-            <element signature="e#0#40#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1009,9 +1025,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="32685">
           <caret line="2179" column="63" selection-start-line="2179" selection-start-column="44" selection-end-line="2179" selection-end-column="63" />
-          <folding>
-            <element signature="e#0#46#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1022,10 +1035,38 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/chain/database.cpp">
+    <entry file="file://$PROJECT_DIR$/libraries/app/database_api.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="59460">
-          <caret line="3964" column="31" selection-start-line="3964" selection-start-column="31" selection-end-line="3964" selection-end-column="31" />
+        <state relative-caret-position="342">
+          <caret line="1632" column="79" selection-start-line="1632" selection-start-column="79" selection-end-line="1632" selection-end-column="79" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/fc/src/io/sstream.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1545">
+          <caret line="103" column="32" selection-start-line="103" selection-start-column="32" selection-end-line="103" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/fc/include/fc/exception/exception.hpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5175">
+          <caret line="345" column="33" selection-start-line="345" selection-start-column="33" selection-end-line="345" selection-end-column="33" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/fc/src/io/json.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="7050">
+          <caret line="470" column="100" selection-start-line="470" selection-start-column="100" selection-end-line="470" selection-end-column="100" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/Cellar/boost@1.60/1.60.0/include/boost/thread/pthread/condition_variable.hpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1740">
+          <caret line="116" column="9" selection-start-line="116" selection-start-column="9" selection-end-line="116" selection-end-column="9" />
         </state>
       </provider>
     </entry>
@@ -1050,6 +1091,13 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1305">
+          <caret line="87" column="67" selection-start-line="87" selection-start-column="67" selection-end-line="87" selection-end-column="67" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/libraries/protocol/transaction.cpp">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2340">
@@ -1064,38 +1112,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/protocol/include/node/protocol/config.hpp">
+    <entry file="file://$PROJECT_DIR$/libraries/chain/database.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="328">
-          <caret line="177" column="53" selection-start-line="177" selection-start-column="53" selection-end-line="177" selection-end-column="53" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/app/database_api.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="262">
-          <caret line="1220" column="13" selection-start-line="1220" selection-start-column="13" selection-end-line="1220" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/fc/src/io/sstream.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="188">
-          <caret line="103" column="32" selection-start-line="103" selection-start-column="32" selection-end-line="103" selection-end-column="32" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/libraries/fc/src/io/json.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="205">
-          <caret line="470" column="100" selection-start-line="470" selection-start-column="100" selection-end-line="470" selection-end-column="100" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/Cellar/boost@1.60/1.60.0/include/boost/thread/pthread/condition_variable.hpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="100" column="47" selection-start-line="100" selection-start-column="47" selection-end-line="100" selection-end-column="47" />
+        <state relative-caret-position="593">
+          <caret line="4001" column="7" selection-start-line="4001" selection-start-column="7" selection-end-line="4001" selection-end-column="7" />
         </state>
       </provider>
     </entry>

@@ -39,12 +39,10 @@ tests/performance_test
 doxygen
 
 build/*
-windows_build/*
-osx_build/*
+builds/*
 made/*
 
 wallet.json
-witness_node_data_dir
 
 *.wallet
 
@@ -52,9 +50,9 @@ witness_node_data_dir
 *.pyo
 *.egg-info/
 
-contrib/private*
+contrib/**/private*
 contrib/credentials/private*
-scripts/private*
+scripts/**/private*
 /build/
 /nbproject/private/
 
@@ -64,9 +62,4 @@ nbproject
 
 libraries/fc/*
 
-data-dir/blockchain
-data-dir/logs
-windows_data-dir/blockchain
-windows_data-dir/logs
-osx_data-dir/blockchain
-osx_data-dir/logs
+dbs/*

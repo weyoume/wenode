@@ -3946,23 +3946,12 @@ void database::validate_invariants()const
          TSDtotal += itr->TSDrewardBalance;
          totalSCORE += itr->SCORE;
          totalSCORE += itr->SCORErewardBalance;
-         auto itr_name = itr->name;
-         auto itr_witness_vote_weight = itr->witness_vote_weight();
-         auto itr_proxied_SCOREfundTMEbalance_votes = itr->proxied_SCOREfundTMEbalance_votes;
-         auto itr_proxied_SCOREfundTMEbalance_votes_something = itr->proxied_SCOREfundTMEbalance_votes[MAX_PROXY_RECURSION_DEPTH - 1];
-         auto itr_something = ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
-                         itr->witness_vote_weight() :
-                         ( MAX_PROXY_RECURSION_DEPTH > 0 ?
-                           itr->proxied_SCOREfundTMEbalance_votes[MAX_PROXY_RECURSION_DEPTH - 1] :
-                           itr->SCORE.amount ) );
          pending_SCOREvalueInTME += itr->SCORErewardBalanceInTME;
          totalSCOREfundTMEbalance_votes += ( itr->proxy == PROXY_TO_SELF_ACCOUNT ?
                                  itr->witness_vote_weight() :
                                  ( MAX_PROXY_RECURSION_DEPTH > 0 ?
                                       itr->proxied_SCOREfundTMEbalance_votes[MAX_PROXY_RECURSION_DEPTH - 1] :
                                       itr->SCORE.amount ) );
-
-         auto debug1 = 'debug';
 
       }
 

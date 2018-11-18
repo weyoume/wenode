@@ -13,5 +13,5 @@ cmake \
 	..
 
 # -DCMAKE_INSTALL_PREFIX=$repos/node/dev/made \
-# make -j$(sysctl -n hw.logicalcpu)
+make -j$(sysctl -n hw.logicalcpu)
 

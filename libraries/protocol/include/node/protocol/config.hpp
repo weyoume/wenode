@@ -76,7 +76,7 @@
 #define CASHOUT_WINDOW_SECONDS          (60*60*24*7)  /// 7 days
 #define SECOND_CASHOUT_WINDOW           (60*60*24*30) /// 30 days
 #define MAX_CASHOUT_WINDOW_SECONDS      (60*60*24*14) /// 2 weeks
-#define VOTE_CHANGE_LOCKOUT_PERIOD      (60*60*2)     /// 2 hours
+#define VOTE_CHANGE_LOCKOUT_PERIOD      (1)     /// 2 hours 60*60*2 original /// now 1 second
 #define UPVOTE_LOCKOUT_HF7              (fc::minutes(1))
 #define UPVOTE_LOCKOUT_HF17             (fc::hours(12))
 
@@ -122,7 +122,7 @@
 #define SAVINGS_WITHDRAW_TIME        		(fc::days(3))
 #define SAVINGS_WITHDRAW_REQUEST_LIMIT  100
 #define VOTE_REGENERATION_SECONDS       (5*60*60*24) // 5 day
-#define MAX_VOTE_CHANGES                30
+#define MAX_VOTE_CHANGES                127
 #define REVERSE_AUCTION_WINDOW_SECONDS  (60*30) /// 30 minutes
 #define MIN_VOTE_INTERVAL_SEC           1
 #define VOTE_DUST_THRESHOLD             (0)
