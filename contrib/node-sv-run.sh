@@ -128,6 +128,7 @@ if [[ "$USE_MULTICORE_READONLY" ]]; then
             --rpc-endpoint=127.0.0.1:8091 \
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
+						--config=$HOME"/config.ini" \
             $ARGS \
             $EXTRA_OPTS \
             2>&1 &
@@ -150,6 +151,7 @@ if [[ "$USE_MULTICORE_READONLY" ]]; then
         $NODE \
           --rpc-endpoint=127.0.0.1:$PORT_NUM \
           --data-dir=$HOME \
+          --config=$HOME"/config.ini" \
           --read-forward-rpc=127.0.0.1:8091 \
           --read-only \
           2>&1 &
@@ -177,6 +179,7 @@ elif [[ "$USE_NGINX_FRONTEND" ]]; then
             --rpc-endpoint=0.0.0.0:8091 \
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
+            --config=$HOME"/config.ini" \
             $ARGS \
             $EXTRA_OPTS \
             2>&1
@@ -186,6 +189,7 @@ else
             --rpc-endpoint=0.0.0.0:8090 \
             --p2p-endpoint=0.0.0.0:2001 \
             --data-dir=$HOME \
+            --config=$HOME"/config.ini" \
             $ARGS \
             $EXTRA_OPTS \
             2>&1

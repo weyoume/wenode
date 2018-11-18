@@ -149,6 +149,7 @@ exec chpst -unode \
         --rpc-endpoint=0.0.0.0:8091 \
         --p2p-endpoint=0.0.0.0:2001 \
         --data-dir=$HOME \
+        --config=$HOME"/config.ini" \
         $ARGS \
         $EXTRA_OPTS \
         2>&1&

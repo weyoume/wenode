@@ -12,7 +12,7 @@ done
 
 args+=" --rpc-endpoint=\"127.0.0.1:8090\""
 args+=" --p2p-endpoint=\"0.0.0.0:2001\""
-args+=" --data-dir=\"/Users/lopu/Sync/git/weyoume/wenode/dev-wenode/dbs/osx/\""
+args+=" --data-dir=\"dbs/osx/\""
 
 touch scripts/generate-arguments-genesis.output
 echo $args > scripts/generate-arguments-genesis.output

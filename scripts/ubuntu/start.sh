@@ -40,8 +40,13 @@ args+=' --rpc-endpoint=127.0.0.1:8090'
 # add argument
 args+=' --p2p-endpoint=0.0.0.0:2001'
 
+dataDir="dbs/ubuntu"
 # add argument
-args+=' --data-dir="/Users/lopu/Sync/git/weyoume/wenode/dev-wenode/dbs/osx"'
+args+=' --data-dir="'$dataDir'"'
+
+configPath="contrib/config.ini"
+# add argument
+args+=' --config="'$configPath'"'
 
 # or set witness names manually as a list
 # witness_names="witnessname1 witnessname2 witnessname3"
@@ -57,4 +62,4 @@ echo [$witness_names]
 # an absolute path to the directory your github 
 # repo for the WeYouMe node software resides in
 
-./osx_build/programs/node/node $args
+./builds/ubuntu/programs/node/node $args

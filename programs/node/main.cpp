@@ -75,7 +75,8 @@ int main(int argc, char** argv) {
       bpo::options_description cfg_options("Daemon");
       app_options.add_options()
             ("help,h", "Print this help message and exit.")
-            ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"), "Directory containing databases, configuration file, etc.")
+            ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"), "Directory containing databases, etc.")
+            ("config,c", bpo::value<boost::filesystem::path>()->default_value("contrib/config.ini"), "Configuration file path.")
             ("version,v", "Print node version and exit.")
             ;
 
@@ -120,7 +121,14 @@ int main(int argc, char** argv) {
             data_dir = fc::current_path() / data_dir;
       }
 
-      fc::path config_ini_path = data_dir / "config.ini";
+      fc::path config_ini_path;
+      if( options.count("config") )
+      {
+         config_ini_path = options["config"].as<boost::filesystem::path>();
+         if( config_ini_path.is_relative() )
+            config_ini_path = fc::current_path() / config_ini_path;
+      }
+
       if( fc::exists(config_ini_path) )
       {
          // get the basic options
