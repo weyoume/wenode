@@ -1,4 +1,6 @@
-mkdir -p builds/ubuntu16
-cd builds/ubuntu16
+git submodule update --init --recursive
+
+mkdir -p builds/ubuntu
+cd builds/ubuntu
 cmake -DCMAKE_BUILD_TYPE=Release ../..
 make -j$(nproc)

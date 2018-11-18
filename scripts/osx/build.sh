@@ -3,6 +3,7 @@
 # repo for the WeYouMe node software resides in
 
 # cd $repos/node/dev ;
+git submodule update --init --recursive
 rm -r build/ ;
 mkdir -p build && cd build ;
 cmake \
