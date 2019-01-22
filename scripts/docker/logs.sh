@@ -1,1 +1,1 @@
-docker logs -f --tail 3000 wenode-test
+docker logs -f --tail 3000 testnet-wenode

@@ -77,7 +77,7 @@ fc::variant_object get_config()
         result["INIT_PRIVATE_KEY"] = INIT_PRIVATE_KEY;
       #endif
    #endif
-   // do not expose private key, period. - from steem devs, hmmmmmm - from lopugit
+   // do not expose private key, period. - from steem devs
    // we need this line present but inactivated so CI check for all constants in config.hpp doesn't complain.
 #endif
    result["INIT_SUPPLY"] = INIT_SUPPLY;

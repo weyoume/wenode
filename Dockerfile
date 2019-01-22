@@ -103,13 +103,6 @@ RUN \
     # make -j$(nproc) && \
     # make install && \
     # cd .. && \
-    # ( /usr/local/node-default/bin/node --version \
-    #   | grep -o '[0-9]*\.[0-9]*\.[0-9]*' \
-    #   && echo '_' \
-    #   && git rev-parse --short HEAD ) \
-    #   | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g' \
-    #   > /etc/nodeversion && \
-    # cat /etc/nodeversion && \
     # rm -rfv build && \
     mkdir build && \
     cd build && \
@@ -118,13 +111,19 @@ RUN \
         -DCMAKE_BUILD_TYPE=Release \
         -DLOW_MEMORY_NODE=OFF \
         -DCLEAR_VOTES=OFF \
-        -DSKIP_BY_TX_ID=ON \
         -DBUILD_TESTNET=OFF \
         -DSTATIC_BUILD=${STATIC_BUILD} \
         .. \
     && \
     make -j$(nproc) && \
     make install && \
+    ( /usr/local/node/bin/node --version \
+      | grep -o '[0-9]*\.[0-9]*\.[0-9]*' \
+      && echo '_' \
+      && git rev-parse --short HEAD ) \
+      | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g' \
+      > /etc/nodeversion && \
+    cat /etc/nodeversion && \
     rm -rf /usr/local/src/node
 
 # RUN \

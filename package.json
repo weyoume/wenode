@@ -8,10 +8,9 @@
     "test": "tests"
   },
   "scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1",
-		"commit" : "git add . ; git commit -m 'ready'",
-    "push": "npm run commit ; git push origin master",
-    "pull": "git pull origin master",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "push": "git add . ; git commit -m 'ready' ; git push origin testnet",
+    "pull": "git pull origin testnet",
     "gitmodules": "git submodule update --init --recursive",
     "submodules": "npm run gitmodules",
     "generateArgumentsDev": "./scripts/generate-arguments-genesis.sh && cat scripts/generate-arguments-genesis.output",
@@ -26,16 +25,16 @@
     "dockerREadyGenesis": "npm run dockerReadyGenesis",
     "dockerReadyGenesisLogs": "npm run dockerReadyGenesis && npm run dockerLogs",
     "dockerREadyGenesisLogs": "npm run dockerReadyGenesisLogs",
-    "dockerBuild": "docker build -t lopudesigns/wenode-test .",
-    "dockerBuildReady": "docker build -f Dockerfiles/preinstalledDependancies.Dockerfile -t lopudesigns/wenode-test .",
-    "dockerBuildGenesis": "docker build -f Dockerfiles/genesis.Dockerfile -t lopudesigns/wenode-test .",
-    "dockerBuildReadyGenesis": "docker build -f Dockerfiles/preinstalledDependanciesGenesis.Dockerfile -t lopudesigns/wenode-test .",
-    "dockerTest": "docker build -t lopudesigns/wenode-testing . -f Dockerfiles/test.Dockerfile",
+    "dockerBuild": "docker build -t weyoume/testnet-wenode .",
+    "dockerBuildReady": "docker build -f Dockerfiles/preinstalledDependancies.Dockerfile -t weyoume/testnet-wenode .",
+    "dockerBuildGenesis": "docker build -f Dockerfiles/genesis.Dockerfile -t weyoume/testnet-wenode .",
+    "dockerBuildReadyGenesis": "docker build -f Dockerfiles/preinstalledDependanciesGenesis.Dockerfile -t weyoume/testnet-wenode .",
+    "dockerTest": "docker build -t weyoume/testnet-wenode-test . -f Dockerfiles/test.Dockerfile",
     "dockerStart": "./scripts/start-full-multi.sh",
     "dockerStartGenesis": "./scripts/start-full-multi-genesis.sh",
-    "dockerDebug": "docker build -t lopudesigns/wenode-debugging . -f Dockerfiles/debug.Dockerfile",
-    "dockerLogs": "docker logs --tail 1000 -f wenode-test",
-    "dockerWallet": "docker exec -it wenode-test /usr/local/node/bin/wallet",
+    "dockerDebug": "docker build -t weyoume/wenode-debugging . -f Dockerfiles/debug.Dockerfile",
+    "dockerLogs": "docker logs --tail 1000 -f testnet-wenode",
+    "dockerWallet": "docker exec -it testnet-wenode /usr/local/node/bin/wallet",
     "cmake": "mkdir -p build && cd build ; cmake -DCMAKE_BUILD_TYPE=Release ..",
     "cmakeDebug": "mkdir -p build && cd build ; cmake -DCMAKE_BUILD_TYPE=Debug ..",
     "make": "mkdir -p build && cd build && make -j$(sysctl -n hw.logicalcpu)",
@@ -46,7 +45,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lopudesigns/wenode.git"
+    "url": "git+https://github.com/weyoume/wenode.git"
   },
   "keywords": [
     "WeYouMe",
@@ -59,10 +58,10 @@
     "Social",
     "Media"
   ],
-  "author": "lopu",
+  "author": "weyoume",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/lopudesigns/wenode/issues"
+    "url": "https://github.com/weyoume/wenode/issues"
   },
-  "homepage": "https://github.com/lopudesigns/wenode#readme"
+  "homepage": "https://github.com/weyoume/wenode#readme"
 }

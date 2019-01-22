@@ -2,7 +2,7 @@
 
 # this will remove the currently running docker node process
 # be careful
-docker rm -f wenode-test ;
+docker rm -f testnet-wenode ;
 
 # EITHER ADD YOUR PRIVATE KEYS AS A LIST IN ./scripts/private-keys
 # eg. no whitespaces start and finish of the file
@@ -14,7 +14,7 @@ docker rm -f wenode-test ;
 # privatekey3"
 
 # and use the following PRIVATE_KEYS definition
-PRIVATE_KEYS=$(cat ./scripts/private-keys)
+PRIVATE_KEYS=$(cat /home/haz/things/git/weyoume/wenode/master-wenode/scripts/private-keys)
 
 # OR
 # PRIVATE_KEYS="privatekey1 privatekey2 privatekey3"
@@ -44,11 +44,11 @@ echo [$witness_names]
 
 docker run \
 	--env USE_WAY_TOO_MUCH_RAM=1 \
-	--env USE_FULL_CONTENT_NODE=1 \
+	--env USE_FULLNODE=1 \
 	--env USE_NGINX_FRONTEND=1 \
 	--env PRIVATE_KEYS=$PRIVATE_KEYS \
 	--env WITNESS_NAMES="$witness_names" \
 	--env WITNESS_NAME="webuilder" \
-	-d -p 2001:2001 -p 8090:8090 --name wenode-test \
-	lopudesigns/wenode-test
+	-d -p 2001:2001 -p 8090:8090 --name testnet-wenode \
+	weyoume/testnet-wenode
 

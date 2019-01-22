@@ -73,7 +73,6 @@ vector<owner_authority_history_api_obj> get_owner_history(string account)
 					annotated_signed_transaction sign_transaction(signed_transaction tx, bool broadcast)
 												brain_key_info suggest_brain_key()
 					annotated_signed_transaction transfer(string from, string to, asset amount, string memo, bool broadcast)
-																			 transfer webuilder lopu "10000.000 TME" "hey man" 1
 					annotated_signed_transaction transferFromSavings(string from, uint32_t request_id, string to, asset amount, string memo, bool broadcast)
 					annotated_signed_transaction transferTMEtoSCOREfund(string from, string to, asset amount, bool broadcast)
 					annotated_signed_transaction transferToSavings(string from, string to, asset amount, string memo, bool broadcast)

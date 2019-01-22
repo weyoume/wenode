@@ -1,1 +1,1 @@
-docker build -t lopudesigns/node-test .
+docker build -t weyoume/node-test .

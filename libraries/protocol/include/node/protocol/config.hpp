@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2016 WeYouMe Network., and contributors.
- */
 #pragma once
 
 #define BLOCKCHAIN_VERSION              ( version(0, 19, 5) )
@@ -46,10 +43,10 @@
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 1
 #else // IS LIVE NETWORK
 	#if GEN_PRIVATE_KEY
-		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountnameownerpassword")))) // accountName + permission + password
+		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountNameownerpassword")))) // accountName + permission + password
     #define INIT_PUBLIC_KEY_STR         (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 	#else
-		#define INIT_PUBLIC_KEY_STR             "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj"
+		#define INIT_PUBLIC_KEY_STR             "TWYM7sbABVQcfuGVS6bXrnt8DRKi58YUWKWM7bVLTj8xvfZBVKfhoU"
 	#endif
 #define CHAIN_ID                        (fc::sha256::hash("TWYM")) 
 // TESTWYM 	0e64b5d0747c9f7872c96f32d7250258db94f6b28e907e126dc12eedf3af8828
@@ -69,8 +66,8 @@
 
 #define ADDRESS_PREFIX                  "TWYM"
 
-#define GENESIS_TIME                    (fc::time_point_sec(1531629413))
-#define MINING_TIME                     (fc::time_point_sec(1531634413))
+#define GENESIS_TIME                    (fc::time_point_sec(1548124950))
+#define MINING_TIME                     (fc::time_point_sec(1548125950))
 #define CASHOUT_WINDOW_SECONDS_PRE_HF12 (60*60*24)    /// 1 day
 #define CASHOUT_WINDOW_SECONDS_PRE_HF17 (60*60*12)    /// 12 hours
 #define CASHOUT_WINDOW_SECONDS          (60*60*24*7)  /// 7 days
@@ -90,28 +87,28 @@
 
 #endif
 
-#define BLOCK_INTERVAL                  1
+#define BLOCK_INTERVAL                  1 // seconds
 #define BLOCKS_PER_YEAR                 (365*24*60*60/BLOCK_INTERVAL)
 #define BLOCKS_PER_DAY                  (24*60*60/BLOCK_INTERVAL)
 #define START_TME_fund_for_SCORE_BLOCK  (BLOCKS_PER_DAY * 7)
 #define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 30)
 
 #define genesisAccountBasename          "webuilder"
-#define numberOfGenesisWitnessAccounts  5
-#define numberOfExtraGenesisAccounts    45
+#define numberOfGenesisWitnessAccounts  50
+#define MAX_WITNESSES                   (numberOfGenesisWitnessAccounts)
+#define numberOfExtraGenesisAccounts    (100-numberOfGenesisWitnessAccounts)
 #define INIT_TIME                       (fc::time_point_sec());
-#define genesisAccountSCORE							0
-#define MAX_WITNESSES                   5
+#define genesisAccountSCORE							1000000
 
-#define MAX_VOTED_WITNESSES_HF0         3
+#define MAX_VOTED_WITNESSES_HF0         (MAX_WITNESSES-2)
 #define MAX_MINER_WITNESSES_HF0         1
 #define MAX_RUNNER_WITNESSES_HF0        1
 
-#define MAX_VOTED_WITNESSES_HF17        4
+#define MAX_VOTED_WITNESSES_HF17        (MAX_WITNESSES-1)
 #define MAX_MINER_WITNESSES_HF17        0
 #define MAX_RUNNER_WITNESSES_HF17       1
 
-#define HARDFORK_REQUIRED_WITNESSES     0 // 17 of the 21 dpos witnesses (20 elected and 1 virtual time) required for hardfork. This guarantees 75% participation on all subsequent rounds.
+#define HARDFORK_REQUIRED_WITNESSES     ((numberOfGenesisWitnessAccounts/3)*2) // 17 of the 21 dpos witnesses (20 elected and 1 virtual time) required for hardfork. This guarantees 75% participation on all subsequent rounds.
 #define MAX_TIME_UNTIL_EXPIRATION       (60*60) // seconds,  aka: 1 hour
 #define MAX_MEMO_SIZE                   2048
 #define MAX_PROXY_RECURSION_DEPTH       4
@@ -123,12 +120,12 @@
 #define SAVINGS_WITHDRAW_REQUEST_LIMIT  100
 #define VOTE_REGENERATION_SECONDS       (5*60*60*24) // 5 day
 #define MAX_VOTE_CHANGES                127
-#define REVERSE_AUCTION_WINDOW_SECONDS  (60*30) /// 30 minutes
+#define REVERSE_AUCTION_WINDOW_SECONDS  (60*10) /// 10 minutes
 #define MIN_VOTE_INTERVAL_SEC           1
 #define VOTE_DUST_THRESHOLD             (0)
 
-#define MIN_ROOT_COMMENT_INTERVAL       (fc::seconds(3)) // 5 minutes // 1 second
-#define MIN_REPLY_INTERVAL              (fc::seconds(2)) // 20 seconds // 1 second
+#define MIN_ROOT_COMMENT_INTERVAL       (fc::seconds(3)) // 3 seconds
+#define MIN_REPLY_INTERVAL              (fc::seconds(2)) // 2 seconds
 #define POST_AVERAGE_WINDOW             (60*60*24u) // 1 day
 #define POST_MAX_BANDWIDTH              (4*PERCENT_100) // 2 posts per 1 days, average 1 every 12 hours
 #define POST_WEIGHT_CONSTANT            (uint64_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
@@ -140,9 +137,9 @@
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)
 #define DEFAULT_TSD_INTEREST_RATE       (10*PERCENT_1) ///< 10% APR
 
-#define INFLATION_RATE_START_PERCENT    (978) // Fixes block 7,000,000 to 9.5%
-#define INFLATION_RATE_STOP_PERCENT     (95) // 0.95%
-#define INFLATION_NARROWING_PERIOD      (250000) // Narrow 0.01% every 250k blocks
+#define INFLATION_RATE_START_PERCENT    (1500) // 15.00%
+#define INFLATION_RATE_STOP_PERCENT     (100) // 1.00%
+#define INFLATION_NARROWING_PERIOD      (250000) // Narrow 0.01% every 250,000 blocks
 #define CONTENT_REWARD_PERCENT          (75*PERCENT_1) //75% of inflation, 7.125% inflation
 #define SCORE_fund_PERCENT            	(15*PERCENT_1) //15% of inflation, 1.425% inflation
 
@@ -218,25 +215,25 @@
 
 // These constants add up to GRAPHENE_PERCENT_100.  Each GRAPHENE_PERCENT_1 is equivalent to 1% per year APY
 // *including the corresponding 9x SCORE held rewards*
-#define CURATE_APR_PERCENT              3875
-#define CONTENT_APR_PERCENT             3875
+#define CURATE_APR_PERCENT               3875
+#define CONTENT_APR_PERCENT              3875
 #define LIQUIDITY_APR_PERCENT            750
 #define PRODUCER_APR_PERCENT             750
 #define POW_APR_PERCENT                  750
 
-#define MIN_PAYOUT_TSD                  (asset(1,SYMBOL_USD))
+#define MIN_PAYOUT_TSD                  (asset(20,SYMBOL_USD))
 
-#define TSD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing TSD at 5% Market Cap
-#define TSD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of TSD at 2% Market Cap
+#define TSD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing TSD at 2% Market Cap
+#define TSD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of TSD at 1% Market Cap
 
-#define MIN_ACCOUNT_NAME_LENGTH          1
-#define MAX_ACCOUNT_NAME_LENGTH         100
+#define MIN_ACCOUNT_NAME_LENGTH          3
+#define MAX_ACCOUNT_NAME_LENGTH         16
 
 #define MIN_PERMLINK_LENGTH             0
 #define MAX_PERMLINK_LENGTH             2048
 #define MAX_WITNESS_URL_LENGTH          2048
 
-#define INIT_SUPPLY                     int64_t(0)
+#define INIT_SUPPLY                     int64_t(1000000000)
 #define MAX_SCORE_SUPPLY                int64_t(1000000000000000ll)
 #define MAX_SIG_CHECK_DEPTH             2
 
@@ -252,12 +249,12 @@
 #define FEED_INTERVAL_BLOCKS            (BLOCKS_PER_HOUR)
 #define FEED_HISTORY_WINDOW_PRE_HF_16   (24*7) /// 7 days * 24 hours per day
 #define FEED_HISTORY_WINDOW             (12*7) // 3.5 days
-#define MAX_FEED_AGE_SECONDS            (60*60*24*7) // 7 days
-#define MIN_FEEDS                       (MAX_WITNESSES/3) /// protects the network from conversions before price has been established
-//#define CONVERSION_DELAY_PRE_HF_16      (fc::days(7))
-#define CONVERSION_DELAY_PRE_HF_16      (fc::seconds(10))
-//#define CONVERSION_DELAY                (fc::hours(FEED_HISTORY_WINDOW)) //3.5 day conversion
-#define CONVERSION_DELAY                (fc::seconds(10))
+#define MAX_FEED_AGE_SECONDS            (60*60*24*30) // 30 days
+#define MIN_FEEDS                       (MAX_WITNESSES/4) /// protects the network from conversions before price has been established
+#define CONVERSION_DELAY_PRE_HF_16      (fc::days(7))
+//#define CONVERSION_DELAY_PRE_HF_16      (fc::seconds(10))
+#define CONVERSION_DELAY                (fc::hours(FEED_HISTORY_WINDOW)) //3.5 day conversion
+//#define CONVERSION_DELAY                (fc::seconds(10))
 
 #define MIN_UNDO_HISTORY                10
 #define MAX_UNDO_HISTORY                10000
@@ -281,12 +278,11 @@
  *  Reserved Account IDs with special meaning
  */
 ///@{
-#define MINER_ACCOUNT                   "genesis" /// Represents the current witnesses
+#define MINER_ACCOUNT                   "builders" /// Represents the current witnesses
 #define NULL_ACCOUNT                    "null" /// Represents the canonical account with NO authority (nobody can access funds in null account)
 #define TEMP_ACCOUNT                    "temp" /// Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
 #define PROXY_TO_SELF_ACCOUNT           "" /// Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
 #define ROOT_POST_PARENT                (account_name_type()) /// Represents the canonical root post parent account
 ///@}
 
-// do later / need to know how to define arrays - signed lopugit
 // #define PRIVATE_KEYS std::map<public_key_type, fc::ecc::private_key>;
