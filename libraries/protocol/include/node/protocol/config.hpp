@@ -53,13 +53,6 @@
 // TWYM 		7d51ab195015bb72fa61f159fc91227d826a2c28fc718078356c18837d0ebbf5
 
 // WeYouMe
-// #define SYMBOL_ECO 									(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('T') << 32) ) ///< TME with 3 digits of precision
-// #define SYMBOL_ESCOR 								(uint64_t(6) | (uint64_t('E') << 8) | (uint64_t('S') << 16) | (uint64_t('C') << 24) | (uint64_t('O') << 32) | (uint64_t('R') << 40) ) ///< SCORE with 6 digits of precision
-// #define SYMBOL_WeYouMe   							(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('T') << 24) | (uint64_t('S') << 32) | (uint64_t('T') << 40) ) ///< WeYouMe with 3 digits of precision
-// #define SYMBOL_EUSD    								(uint64_t(3) | (uint64_t('E') << 8) | (uint64_t('Z') << 16) | (uint64_t('D') << 24) | (uint64_t('T') << 32) ) ///< TME Backed TSD with 3 digits of precision
-
-
-// WeYouMe
 #define SYMBOL_COIN  									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('M') << 16) | (uint64_t('E') << 24) ) ///< TME with 3 digits of precision
 #define SYMBOL_SCORE  									(uint64_t(6) | (uint64_t('S') << 8) | (uint64_t('C') << 16) | (uint64_t('O') << 24) | (uint64_t('R') << 32) | (uint64_t('E') << 40) ) ///< SCORE with 6 digits of precision
 #define SYMBOL_USD    									(uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('S') << 16) | (uint64_t('D') << 24) ) ///< TME Backed TSD with 3 digits of precision
@@ -90,15 +83,15 @@
 #define BLOCK_INTERVAL                  1 // seconds
 #define BLOCKS_PER_YEAR                 (365*24*60*60/BLOCK_INTERVAL)
 #define BLOCKS_PER_DAY                  (24*60*60/BLOCK_INTERVAL)
-#define START_TME_fund_for_SCORE_BLOCK  (BLOCKS_PER_DAY * 7)
-#define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 30)
+#define START_TME_fund_for_SCORE_BLOCK  (BLOCKS_PER_DAY * 1)
+#define START_MINER_VOTING_BLOCK        (BLOCKS_PER_DAY * 1)
 
 #define genesisAccountBasename          "webuilder"
 #define numberOfGenesisWitnessAccounts  50
 #define MAX_WITNESSES                   (numberOfGenesisWitnessAccounts)
 #define numberOfExtraGenesisAccounts    (100-numberOfGenesisWitnessAccounts)
 #define INIT_TIME                       (fc::time_point_sec());
-#define genesisAccountSCORE							1000000
+#define genesisAccountSCORE							1
 
 #define MAX_VOTED_WITNESSES_HF0         (MAX_WITNESSES-2)
 #define MAX_MINER_WITNESSES_HF0         1
@@ -113,12 +106,12 @@
 #define MAX_MEMO_SIZE                   2048
 #define MAX_PROXY_RECURSION_DEPTH       4
 #define TME_fund_for_SCORE_WITHDRAW_INTERVALS_PRE_HF_16 104
-#define TME_fund_for_SCORE_WITHDRAW_INTERVALS      13
+#define TME_fund_for_SCORE_WITHDRAW_INTERVALS      4
 #define SCORE_WITHDRAW_INTERVAL_SECONDS (60*60*24*7) /// 1 week per interval
 #define MAX_WITHDRAW_ROUTES             10
 #define SAVINGS_WITHDRAW_TIME        		(fc::days(3))
 #define SAVINGS_WITHDRAW_REQUEST_LIMIT  100
-#define VOTE_REGENERATION_SECONDS       (5*60*60*24) // 5 day
+#define VOTE_REGENERATION_SECONDS       (3*60*60*24) // 3 days
 #define MAX_VOTE_CHANGES                127
 #define REVERSE_AUCTION_WINDOW_SECONDS  (60*10) /// 10 minutes
 #define MIN_VOTE_INTERVAL_SEC           1
@@ -137,7 +130,7 @@
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)
 #define DEFAULT_TSD_INTEREST_RATE       (10*PERCENT_1) ///< 10% APR
 
-#define INFLATION_RATE_START_PERCENT    (1500) // 15.00%
+#define INFLATION_RATE_START_PERCENT    (1000) // 10.00%
 #define INFLATION_RATE_STOP_PERCENT     (100) // 1.00%
 #define INFLATION_NARROWING_PERIOD      (250000) // Narrow 0.01% every 250,000 blocks
 #define CONTENT_REWARD_PERCENT          (75*PERCENT_1) //75% of inflation, 7.125% inflation
@@ -223,8 +216,8 @@
 
 #define MIN_PAYOUT_TSD                  (asset(20,SYMBOL_USD))
 
-#define TSD_STOP_PERCENT                (5*PERCENT_1 ) // Stop printing TSD at 2% Market Cap
-#define TSD_START_PERCENT               (2*PERCENT_1) // Start reducing printing of TSD at 1% Market Cap
+#define TSD_STOP_PERCENT                (2*PERCENT_1 ) // Stop printing TSD at 2% Market Cap
+#define TSD_START_PERCENT               (1*PERCENT_1) // Start reducing printing of TSD at 1% Market Cap
 
 #define MIN_ACCOUNT_NAME_LENGTH          3
 #define MAX_ACCOUNT_NAME_LENGTH         16
@@ -233,8 +226,8 @@
 #define MAX_PERMLINK_LENGTH             2048
 #define MAX_WITNESS_URL_LENGTH          2048
 
-#define INIT_SUPPLY                     int64_t(1000000000)
-#define MAX_SCORE_SUPPLY                int64_t(1000000000000000ll)
+#define INIT_SUPPLY                     int64_t(1000000000ll)
+#define MAX_SCORE_SUPPLY                int64_t(1000000000000000000ll)
 #define MAX_SIG_CHECK_DEPTH             2
 
 #define MIN_TRANSACTION_SIZE_LIMIT      1024

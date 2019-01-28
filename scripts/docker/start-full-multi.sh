@@ -14,7 +14,7 @@ docker rm -f testnet-wenode ;
 # privatekey3"
 
 # and use the following PRIVATE_KEYS definition
-PRIVATE_KEYS=$(cat /home/haz/things/git/weyoume/wenode/master-wenode/scripts/private-keys)
+PRIVATE_KEYS=$(cat /var/www/nodes/wenode/wenode/scripts/private-keys)
 
 # OR
 # PRIVATE_KEYS="privatekey1 privatekey2 privatekey3"
@@ -32,13 +32,6 @@ witness_base_name="webuilder"
 for ((n=$start;n<$end;n++)); do
 	witness_names+="$witness_base_name$((n)) "
 done
-
-# or set witness names manually as a list
-# witness_names="witnessname1 witnessname2 witnessname3"
-# or use a file
-# witness_names=$(cat ./scripts/private-witness-names)
-# witness names don't need to be private but the repo ignores
-# files beginning with scripts/private* when commiting and publishing
 
 echo [$witness_names]
 
