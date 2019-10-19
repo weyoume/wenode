@@ -45,7 +45,7 @@ class debug_node_api_impl
 
       uint32_t debug_push_blocks( const std::string& src_filename, uint32_t count, bool skip_validate_invariants );
       uint32_t debug_generate_blocks( const std::string& debug_key, uint32_t count );
-      uint32_t debug_generate_blocks_until( const std::string& debug_key, const fc::time_point_sec& head_block_time, bool generate_sparsely );
+      uint32_t debug_generate_blocks_until( const std::string& debug_key, const fc::time_point& head_block_time, bool generate_sparsely );
       fc::optional< node::chain::signed_block > debug_pop_block();
       //void debug_push_block( const node::chain::signed_block& block );
       node::chain::witness_schedule_object debug_get_witness_schedule();
@@ -119,18 +119,18 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
 {
    std::shared_ptr< chain::database > db = app.chain_database();
 
-   chain::pow2 work;
+   chain::proof_of_work work;
    work.input.worker_account = args.worker_account;
    work.input.prev_block = db->head_block_id();
-   get_plugin()->debug_mine_work( work, db->get_pow_summary_target() );
+   get_plugin()->debug_mine_work( work, db->pow_difficulty() );
 
-   chain::pow2_operation op;
+   chain::proof_of_work_operation op;
    op.work = work;
 
    if( args.props.valid() )
       op.props = *(args.props);
    else
-      op.props = db->get_witness_schedule_object().median_props;
+      op.props = db->get_witness_schedule().median_props;
 
    const auto& acct_idx  = db->get_index< chain::account_index >().indices().get< chain::by_name >();
    auto acct_it = acct_idx.find( args.worker_account );
@@ -232,7 +232,7 @@ uint32_t debug_node_api_impl::debug_generate_blocks( const std::string& debug_ke
    return get_plugin()->debug_generate_blocks( debug_key, count, node::chain::database::skip_nothing, 0, &key_storage );
 }
 
-uint32_t debug_node_api_impl::debug_generate_blocks_until( const std::string& debug_key, const fc::time_point_sec& head_block_time, bool generate_sparsely )
+uint32_t debug_node_api_impl::debug_generate_blocks_until( const std::string& debug_key, const fc::time_point& head_block_time, bool generate_sparsely )
 {
    return get_plugin()->debug_generate_blocks_until( debug_key, head_block_time, generate_sparsely, node::chain::database::skip_nothing, &key_storage );
 }
@@ -332,7 +332,7 @@ uint32_t debug_node_api::debug_generate_blocks( std::string debug_key, uint32_t 
    return my->debug_generate_blocks( debug_key, count );
 }
 
-uint32_t debug_node_api::debug_generate_blocks_until( std::string debug_key, fc::time_point_sec head_block_time, bool generate_sparsely )
+uint32_t debug_node_api::debug_generate_blocks_until( std::string debug_key, fc::time_point head_block_time, bool generate_sparsely )
 {
    return my->debug_generate_blocks_until( debug_key, head_block_time, generate_sparsely );
 }

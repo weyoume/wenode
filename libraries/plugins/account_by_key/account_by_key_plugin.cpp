@@ -45,17 +45,12 @@ struct pre_operation_visitor
    template< typename T >
    void operator()( const T& )const {}
 
-   void operator()( const accountCreate_operation& op )const
+   void operator()( const account_create_operation& op )const
    {
       _plugin.my->clear_cache();
    }
 
-   void operator()( const accountCreateWithDelegation_operation& op )const
-   {
-      _plugin.my->clear_cache();
-   }
-
-   void operator()( const accountUpdate_operation& op )const
+   void operator()( const account_update_operation& op )const
    {
       _plugin.my->clear_cache();
       auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.account );
@@ -65,22 +60,17 @@ struct pre_operation_visitor
    void operator()( const recover_account_operation& op )const
    {
       _plugin.my->clear_cache();
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.accountToRecover );
+      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.account_to_recover );
       if( acct_itr ) _plugin.my->cache_auths( *acct_itr );
    }
 
-   void operator()( const pow_operation& op )const
-   {
-      _plugin.my->clear_cache();
-   }
-
-   void operator()( const pow2_operation& op )const
+   void operator()( const proof_of_work_operation& op )const
    {
       _plugin.my->clear_cache();
    }
 };
 
-struct pow2_work_get_account_visitor
+struct proof_of_work_get_account_visitor
 {
    typedef const account_name_type* result_type;
 
@@ -102,19 +92,13 @@ struct post_operation_visitor
    template< typename T >
    void operator()( const T& )const {}
 
-   void operator()( const accountCreate_operation& op )const
+   void operator()( const account_create_operation& op )const
    {
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.newAccountName );
+      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.new_account_name );
       if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
    }
 
-   void operator()( const accountCreateWithDelegation_operation& op )const
-   {
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.newAccountName );
-      if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
-   }
-
-   void operator()( const accountUpdate_operation& op )const
+   void operator()( const account_update_operation& op )const
    {
       auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.account );
       if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
@@ -122,44 +106,17 @@ struct post_operation_visitor
 
    void operator()( const recover_account_operation& op )const
    {
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.accountToRecover );
+      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.account_to_recover );
       if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
    }
 
-   void operator()( const pow_operation& op )const
+   void operator()( const proof_of_work_operation& op )const
    {
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( op.worker_account );
-      if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
-   }
-
-   void operator()( const pow2_operation& op )const
-   {
-      const account_name_type* worker_account = op.work.visit( pow2_work_get_account_visitor() );
+      const account_name_type* worker_account = op.work.visit( proof_of_work_get_account_visitor() );
       if( worker_account == nullptr )
          return;
       auto acct_itr = _plugin.database().find< account_authority_object, by_account >( *worker_account );
       if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
-   }
-
-   void operator()( const hardfork_operation& op )const
-   {
-      if( op.hardfork_id == HARDFORK_0_9 )
-      {
-         auto& db = _plugin.database();
-
-         for( const std::string& acc : hardfork9::get_compromised_accounts() )
-         {
-            const account_object* account = db.find_account( acc );
-            if( account == nullptr )
-               continue;
-
-            db.create< key_lookup_object >( [&]( key_lookup_object& o )
-            {
-               o.key = public_key_type( "TWYM68K7veT6Wz9tp9vXoAwgSH5D5nFqfKqs7j8KXugwBWoyPykoPj" );
-               o.account = account->name;
-            });
-         }
-      }
    }
 };
 

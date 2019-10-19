@@ -120,7 +120,7 @@ BOOST_AUTO_TEST_CASE( asset_test )
 
       BOOST_TEST_MESSAGE( "Asset Test" );
       asset TME = asset::from_string( "123.456 TESTS" );
-      asset TSD = asset::from_string( "654.321 TSD" );
+      asset USD = asset::from_string( "654.321 USD" );
       asset tmp = asset::from_string( "0.456 TESTS" );
       BOOST_CHECK_EQUAL( tmp.amount.value, 456 );
       tmp = asset::from_string( "0.056 TESTS" );
@@ -135,14 +135,14 @@ BOOST_AUTO_TEST_CASE( asset_test )
       BOOST_CHECK_EQUAL( asset(50, SYMBOL_COIN).to_string(), "0.050 TESTS" );
       BOOST_CHECK_EQUAL( asset(50000, SYMBOL_COIN).to_string(), "50.000 TESTS" );
 
-      BOOST_CHECK( std::abs( TSD.to_real() - 654.321 ) < 0.0005 );
-      BOOST_CHECK_EQUAL( TSD.amount.value, 654321 );
-      BOOST_CHECK_EQUAL( TSD.decimals(), 3 );
-      BOOST_CHECK_EQUAL( TSD.symbol_name(), "TSD" );
-      BOOST_CHECK_EQUAL( TSD.to_string(), "654.321 TSD" );
-      BOOST_CHECK_EQUAL( TSD.symbol, SYMBOL_USD);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL_USD).to_string(), "0.050 TSD" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_USD).to_string(), "50.000 TSD" );
+      BOOST_CHECK( std::abs( USD.to_real() - 654.321 ) < 0.0005 );
+      BOOST_CHECK_EQUAL( USD.amount.value, 654321 );
+      BOOST_CHECK_EQUAL( USD.decimals(), 3 );
+      BOOST_CHECK_EQUAL( USD.symbol_name(), "USD" );
+      BOOST_CHECK_EQUAL( USD.to_string(), "654.321 USD" );
+      BOOST_CHECK_EQUAL( USD.symbol, SYMBOL_USD);
+      BOOST_CHECK_EQUAL( asset(50, SYMBOL_USD).to_string(), "0.050 USD" );
+      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_USD).to_string(), "50.000 USD" );
 
       BOOST_CHECK_THROW( TME.set_decimals(100), fc::exception );
       char* TME_sy = (char*) &TME.symbol;

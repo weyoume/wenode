@@ -3,7 +3,7 @@
  */
 #pragma once
 #include <node/chain/global_property_object.hpp>
-#include <node/chain/hardfork.hpp>
+//#include <node/chain/hardfork.hpp>
 #include <node/chain/node_property_object.hpp>
 #include <node/chain/fork_database.hpp>
 #include <node/chain/block_log.hpp>
@@ -77,7 +77,13 @@ namespace node { namespace chain {
           *
           * @param data_dir Path to open or create database in
           */
-         void open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t initial_supply = INIT_SUPPLY, uint64_t shared_file_size = 0, uint32_t chainbase_flags = 0 );
+         void open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size = 0, uint32_t chainbase_flags = 0 );
+
+
+         /**
+          * Begins a new blockchain and creates initial objects for the network.
+          */
+         void init_genesis();
 
          /**
           * @brief Rebuild object graph from block history and open detabase
@@ -104,8 +110,8 @@ namespace node { namespace chain {
           */
          bool                       is_known_block( const block_id_type& id )const;
          bool                       is_known_transaction( const transaction_id_type& id )const;
-         fc::sha256                 get_pow_target()const;
-         uint32_t                   get_pow_summary_target()const;
+         
+         uint32_t                   pow_difficulty()const;
          block_id_type              find_block_id_for_num( uint32_t block_num )const;
          block_id_type              get_block_id_for_num( uint32_t block_num )const;
          optional<signed_block>     fetch_block_by_id( const block_id_type& id )const;
@@ -113,14 +119,105 @@ namespace node { namespace chain {
          const signed_transaction   get_recent_transaction( const transaction_id_type& trx_id )const;
          std::vector<block_id_type> get_block_ids_on_fork(block_id_type head_of_fork) const;
 
-         chain_id_type             get_chain_id()const;
+         chain_id_type                          get_chain_id()const;
+         const dynamic_global_property_object&  get_dynamic_global_properties()const;
+         time_point                             head_block_time()const;
+         time_point                             next_maintenance_time()const;
+         uint32_t                               head_block_num()const;
+         block_id_type                          head_block_id()const;
+         const witness_schedule_object&         get_witness_schedule()const;
+         const chain_properties&                chain_properties()const;
+         const price&                           get_usd_price()const;
+         
+         const node_property_object&            get_node_properties()const;
+         const feed_history_object&             get_feed_history()const;
 
+         const asset_object&        get_core_asset() const;
+         const asset_object*        find_core_asset() const;
 
-         const witness_object&  get_witness(  const account_name_type& name )const;
-         const witness_object*  find_witness( const account_name_type& name )const;
+         const asset_object& get_asset( const asset_symbol_type& symbol ) const;
+         const asset_object* find_asset( const asset_symbol_type& symbol ) const;
 
-         const account_object&  get_account(  const account_name_type& name )const;
-         const account_object*  find_account( const account_name_type& name )const;
+         const asset_dynamic_data_object& get_core_dynamic_data() const;
+         const asset_dynamic_data_object* find_core_dynamic_data() const;
+
+         const asset_dynamic_data_object& get_dynamic_data( const asset_symbol_type& symbol ) const;
+         const asset_dynamic_data_object* find_dynamic_data( const asset_symbol_type& symbol ) const;
+
+         const asset_bitasset_data_object& get_bitasset_data( const asset_symbol_type& symbol ) const;
+         const asset_bitasset_data_object* find_bitasset_data( const asset_symbol_type& symbol ) const;
+
+         const asset_equity_data_object& get_equity_data( const asset_symbol_type& symbol ) const;
+         const asset_equity_data_object* find_equity_data( const asset_symbol_type& symbol ) const;
+
+         const asset_credit_data_object& get_credit_data( const asset_symbol_type& symbol ) const;
+         const asset_credit_data_object* find_credit_data( const asset_symbol_type& symbol ) const;
+
+         const witness_object& get_witness( const account_name_type& name ) const;
+         const witness_object* find_witness( const account_name_type& name ) const;
+
+         const block_validation_object& get_block_validation( const account_name_type& producer, uint32_t height ) const;
+         const block_validation_object* find_block_validation( const account_name_type& producer, uint32_t height ) const;
+
+         const account_object& get_account(  const account_name_type& name )const;
+         const account_object* find_account( const account_name_type& name )const;
+
+         const account_following_object& get_account_following( const account_name_type& account )const;
+         const account_following_object* find_account_following( const account_name_type& account )const;
+
+         const account_business_object& get_account_business( const account_name_type& account )const;
+         const account_business_object* find_account_business( const account_name_type& account )const;
+
+         const account_executive_vote_object& get_account_executive_vote( const account_name_type& account, const account_name_type& business, const account_name_type& executive )const;
+         const account_executive_vote_object* find_account_executive_vote( const account_name_type& account, const account_name_type& business, const account_name_type& executive )const;
+
+         const account_officer_vote_object& get_account_officer_vote( const account_name_type& account, const account_name_type& business, const account_name_type& officer )const;
+         const account_officer_vote_object* find_account_officer_vote( const account_name_type& account, const account_name_type& business, const account_name_type& officer )const;
+
+         const account_member_request_object& get_account_member_request( const account_name_type& account, const account_name_type& business )const;
+         const account_member_request_object* find_account_member_request( const account_name_type& account, const account_name_type& business )const;
+
+         const account_member_invite_object& get_account_member_invite( const account_name_type& member, const account_name_type& business )const;
+         const account_member_invite_object* find_account_member_invite( const account_name_type& member, const account_name_type& business )const;
+
+         const account_member_key_object& get_account_member_key( const account_name_type& account )const;
+         const account_member_key_object* find_account_member_key( const account_name_type& account )const;
+
+         const account_balance_object& get_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const;
+         const account_balance_object* find_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const;
+
+         const account_permission_object& get_account_permissions( const account_name_type& account )const;
+         const account_permission_object* find_account_permissions( const account_name_type& account )const;
+
+         const account_authority_object& get_account_authority( const account_name_type& account )const;
+         const account_authority_object* find_account_authority( const account_name_type& account )const;
+
+         const network_officer_object& get_network_officer( const account_name_type& account )const;
+         const network_officer_object* find_network_officer( const account_name_type& account )const;
+
+         const executive_board_object& get_executive_board( const account_name_type& account )const;
+         const executive_board_object* find_executive_board( const account_name_type& account )const;
+
+         const supernode_object& get_supernode( const account_name_type& account )const;
+         const supernode_object* find_supernode( const account_name_type& account )const;
+
+         const interface_object& get_interface( const account_name_type& account )const;
+         const interface_object* find_interface( const account_name_type& account )const;
+
+         const governance_account_object& get_governance_account( const account_name_type& name )const;
+         const governance_account_object* find_governance_account( const account_name_type& name )const;
+
+         const community_enterprise_object& get_community_enterprise( const account_name_type& creator, const shared_string& enterprise_id )const;
+         const community_enterprise_object* find_community_enterprise( const account_name_type& creator, const shared_string& enterprise_id )const;
+
+         const board_object& get_board( const board_name_type& board )const;
+         const board_object* find_board( const board_name_type& board )const;
+
+         const board_member_object& get_board_member( const board_name_type& board )const;
+         const board_member_object* find_board_member( const board_name_type& board )const;
+
+         const governance_account_object& get_governance_account( const account_name_type& name )const;
+         const governance_account_object* find_governance_account( const account_name_type& name )const;
 
          const comment_object&  get_comment(  const account_name_type& author, const shared_string& permlink )const;
          const comment_object*  find_comment( const account_name_type& author, const shared_string& permlink )const;
@@ -128,23 +225,72 @@ namespace node { namespace chain {
          const comment_object&  get_comment(  const account_name_type& author, const string& permlink )const;
          const comment_object*  find_comment( const account_name_type& author, const string& permlink )const;
 
+         const comment_vote_object& get_comment_vote( const account_name_type& voter, const comment_id_type& vote_id )const;
+         const comment_vote_object* find_comment_vote( const account_name_type& voter, const comment_id_type& vote_id )const;
+
+         const comment_view_object& get_comment_view( const account_name_type& viewer, const comment_id_type& view_id )const;
+         const comment_view_object* find_comment_view( const account_name_type& viewer, const comment_id_type& view_id )const;
+
+         const comment_share_object& get_comment_share( const account_name_type& sharer, const comment_id_type& share_id )const;
+         const comment_share_object* find_comment_share( const account_name_type& sharer, const comment_id_type& share_id )const;
+
+         const ad_creative_object& get_ad_creative( const account_name_type& account, const string& creative_id )const;
+         const ad_creative_object* find_ad_creative( const account_name_type& account, const string& creative_id )const;
+
+         const ad_campaign_object& get_ad_campaign( const account_name_type& account, const string& campaign_id )const;
+         const ad_campaign_object* find_ad_campaign( const account_name_type& account, const string& campaign_id )const;
+
+         const ad_inventory_object& get_ad_inventory( const account_name_type& account, const string& inventory_id )const;
+         const ad_inventory_object* find_ad_inventory( const account_name_type& account, const string& inventory_id )const;
+
+         const ad_audience_object& get_ad_audience( const account_name_type& account, const string& audience_id )const;
+         const ad_audience_object* find_ad_audience( const account_name_type& account, const string& audience_id )const;
+
+         const ad_bid_object& get_ad_bid( const account_name_type& account, const string& bid_id )const;
+         const ad_bid_object* find_ad_bid( const account_name_type& account, const string& bid_id )const;
+
+         const asset_liquidity_pool_object& get_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const;
+         const asset_liquidity_pool_object* find_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const;
+
+         const asset_liquidity_pool_object& get_liquidity_pool( const asset_symbol_type& symbol )const;
+         const asset_liquidity_pool_object* find_liquidity_pool( const asset_symbol_type& symbol )const;
+
+         const asset_credit_pool_object& get_credit_pool( const asset_symbol_type& symbol, bool credit_asset )const;
+         const asset_credit_pool_object* find_credit_pool( const asset_symbol_type& symbol, bool credit_asset )const;
+
+         const credit_collateral_object& get_collateral( const account_name_type& owner, const asset_symbol_type& symbol  )const;
+         const credit_collateral_object* find_collateral( const account_name_type& owner, const asset_symbol_type& symbol )const;
+
+         const credit_loan_object& get_loan( const account_name_type& owner, string& loan_id  )const;
+         const credit_loan_object* find_loan( const account_name_type& owner, string& loan_id )const;
+
          const escrow_object&   get_escrow(  const account_name_type& name, uint32_t escrow_id )const;
          const escrow_object*   find_escrow( const account_name_type& name, uint32_t escrow_id )const;
 
          const limit_order_object& get_limit_order(  const account_name_type& owner, uint32_t id )const;
          const limit_order_object* find_limit_order( const account_name_type& owner, uint32_t id )const;
 
+         const call_order_object& get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const call_order_object* find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
+
+         const margin_order_object& get_margin_order(  const account_name_type& name, string& margin_id )const;
+         const margin_order_object* find_margin_order( const account_name_type& name, string& margin_id )const;
+
          const savings_withdraw_object& get_savings_withdraw(  const account_name_type& owner, uint32_t request_id )const;
          const savings_withdraw_object* find_savings_withdraw( const account_name_type& owner, uint32_t request_id )const;
 
-         const dynamic_global_property_object&  get_dynamic_global_properties()const;
-         const node_property_object&            get_node_properties()const;
-         const feed_history_object&             get_feed_history()const;
-         const witness_schedule_object&         get_witness_schedule_object()const;
+         annotated_signed_transaction get_transaction( const transaction_id_type& id )const;
+
+         const reward_fund_object&              get_reward_fund() const;
+         const comment_metrics_object&          get_comment_metrics() const;
+
+         const asset&                           asset_to_USD( const asset& a) const;
+         const asset&                           USD_to_asset( const asset& a) const;
+         
          const hardfork_property_object&        get_hardfork_property_object()const;
 
-         const time_point_sec                   calculate_discussion_payout_time( const comment_object& comment )const;
-         const reward_fund_object&              get_reward_fund( const comment_object& c )const;
+         const time_point                       calculate_discussion_payout_time( const comment_object& comment )const;
+         const reward_fund_object&              get_reward_fund()const;
 
          /**
           *  Deducts fee from the account and the share supply
@@ -170,13 +316,13 @@ namespace node { namespace chain {
          void _push_transaction( const signed_transaction& trx );
 
          signed_block generate_block(
-            const fc::time_point_sec when,
+            const fc::time_point when,
             const account_name_type& witness_owner,
             const fc::ecc::private_key& block_signing_private_key,
             uint32_t skip
             );
          signed_block _generate_block(
-            const fc::time_point_sec when,
+            const fc::time_point when,
             const account_name_type& witness_owner,
             const fc::ecc::private_key& block_signing_private_key
             );
@@ -192,7 +338,7 @@ namespace node { namespace chain {
           */
          void notify_pre_apply_operation( operation_notification& note );
          void notify_post_apply_operation( const operation_notification& note );
-         inline const void push_virtual_operation( const operation& op, bool force = false ); // vops are not needed for low mem. Force will push them on low mem.
+         void push_virtual_operation( const operation& op, bool force = false ); // vops are not needed for low mem. Force will push them on low mem.
          void notify_pre_apply_block( const signed_block& block );
          void notify_applied_block( const signed_block& block );
          void notify_on_pending_transaction( const signed_transaction& tx );
@@ -267,12 +413,12 @@ namespace node { namespace chain {
          /**
           * Get the time at which the given slot occurs.
           *
-          * If slot_num == 0, return time_point_sec().
+          * If slot_num == 0, return time_point().
           *
           * If slot_num == N for N > 0, return the Nth next
           * block-interval-aligned time greater than head_block_time().
           */
-         fc::time_point_sec get_slot_time(uint32_t slot_num)const;
+         fc::time_point get_slot_time(uint32_t slot_num)const;
 
          /**
           * Get the last slot which occurs AT or BEFORE the given time.
@@ -282,78 +428,213 @@ namespace node { namespace chain {
           *
           * If no such N exists, return 0.
           */
-         uint32_t get_slot_at_time(fc::time_point_sec when)const;
+         uint32_t get_slot_at_time(fc::time_point when)const;
 
-         /** @return the TSD created and deposited to_account, may return TME if there is no median feed */
-         std::pair< asset, asset > create_TSD( const account_object& to_account, asset TME, bool to_reward_balance=false );
-         asset createTMEfundForSCORE( const account_object& to_account, asset TME, bool to_reward_balance=false );
-         void adjust_total_payout( const comment_object& a, const asset& TSD, const asset& curator_TSD_value, const asset& beneficiary_value );
+         void claim_proof_of_work_reward( const account_name_type& miner );
 
-         void        adjust_liquidity_reward( const account_object& owner, const asset& volume, bool is_bid );
-         void        adjust_balance( const account_object& a, const asset& delta );
-         void        adjust_TMEsavingsBalance( const account_object& a, const asset& delta );
-         void        adjust_reward_balance( const account_object& a, const asset& delta );
-         void        adjust_supply( const asset& delta, bool adjust_TME_fund_for_SCORE = false );
-         void        adjust_SCOREreward2( const comment_object& comment, fc::uint128_t old_SCOREreward2, fc::uint128_t new_SCOREreward2 );
+         asset claim_activity_reward( const account_object& account, const witness_object& witness );
+
+         /** @return the USD value of content rewards created and deposited to_account, may return coin if there is no median feed */
+         void adjust_total_payout( const comment_object& a, const asset& USD, const asset& curator_USD_value, const asset& beneficiary_value );
+
+         void adjust_liquid_balance( const account_name_type& a, const asset& delta );
+         void adjust_liquid_balance( const account_object& a, const asset& delta );
+
+         void adjust_staked_balance( const account_name_type& a, const asset& delta );
+         void adjust_staked_balance( const account_object& a, const asset& delta );
+
+         void adjust_savings_balance( const account_name_type& a, const asset& delta );
+         void adjust_savings_balance( const account_object& a, const asset& delta );
+         
+         void adjust_reward_balance( const account_name_type& a, const asset& delta );
+         void adjust_reward_balance( const account_object& a, const asset& delta );
+
+         void adjust_delegated_balance( const account_name_type& a, const asset& delta );
+         void adjust_delegated_balance( const account_object& a, const asset& delta );
+
+         void adjust_receiving_balance( const account_name_type& a, const asset& delta );
+         void adjust_receiving_balance( const account_object& a, const asset& delta );
+
+         void adjust_pending_supply( const asset& delta );
+
+         asset get_liquid_balance( const account_object& a, const asset_symbol_type& symbol)const;
+         asset get_liquid_balance( const account_name_type& a, const asset_symbol_type& symbol)const;
+
+         asset get_staked_balance( const account_object& a, const asset_symbol_type& symbol )const;
+         asset get_staked_balance( const account_name_type& a, const asset_symbol_type& symbol)const;
+
+         asset get_reward_balance( const account_object& a, const asset_symbol_type& symbol )const;
+         asset get_reward_balance( const account_name_type& a, const asset_symbol_type& symbol)const;
+
+         asset get_savings_balance( const account_object& a, const asset_symbol_type& symbol )const;
+         asset get_savings_balance( const account_name_type& a, const asset_symbol_type& symbol)const;
+
+         asset get_delegated_balance( const account_object& a, const asset_symbol_type& symbol )const;
+         asset get_delegated_balance( const account_name_type& a, const asset_symbol_type& symbol)const;
+
+         asset get_receiving_balance( const account_object& a, const asset_symbol_type& symbol )const;
+         asset get_receiving_balance( const account_name_type& a, const asset_symbol_type& symbol)const;
+
+         share_type get_voting_power( const account_object& a )const;
+         share_type get_voting_power( const account_name_type& a )const;
+         share_type get_voting_power( const account_object& a, const price& equity_price )const;
+         share_type get_voting_power( const account_name_type& a, const price& equity_price )const;
+         share_type get_proxied_voting_power( const account_object& a, const price& equity_price )const;
+         share_type get_proxied_voting_power( const account_name_type& a, const price& equity_price )const;
+
+         share_type get_equity_voting_power( const account_object& a, const account_business_object& b )const;
+         share_type get_equity_voting_power( const account_name_type& a, const account_business_object& b )const;
+
+         string to_pretty_string( const asset& a )const;
+
+         void globally_settle_asset( const asset_object& mia, const price& settlement_price );
+         void revive_bitasset( const asset_object& bitasset );
+         void cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad );
+         void cancel_bid(const collateral_bid_object& bid, bool create_virtual_op);
+         void execute_bid( const collateral_bid_object& bid, share_type debt_covered, share_type collateral_from_fund, const price_feed& current_feed );
+         void cancel_settle_order(const force_settlement_object& order, bool create_virtual_op );
+
+         void cancel_limit_order( const limit_order_object& order );
+         bool maybe_cull_small_order( const limit_order_object& order );
+         
+         void close_margin_order( const margin_order_object& order );
+         bool maybe_cull_small_order( const margin_order_object& order );
+
+         bool apply_order(const limit_order_object& new_order_object );
+         bool apply_order(const margin_order_object& new_order_object );
+
+         int match( const limit_order_object& taker, const limit_order_object& maker, const price& match_price );
+
+         int match( const margin_order_object& taker, const margin_order_object& maker, const price& match_price );
+
+         int match( const limit_order_object& taker, const margin_order_object& maker, const price& match_price );
+
+         int match( const margin_order_object& taker, const limit_order_object& maker, const price& match_price );
+
+         int match( const limit_order_object& order, const asset_liquidity_pool_object& pool, const price& match_price );
+
+         int match( const margin_order_object& order, const asset_liquidity_pool_object& pool, const price& match_price );
+
+         int match( const limit_order_object& bid, const call_order_object& ask, const price& match_price,
+                     const price& feed_price, const uint16_t maintenance_collateral_ratio,
+                     const optional<price>& maintenance_collateralization );
+
+         int match( const margin_order_object& bid, const call_order_object& ask, const price& match_price,
+                     const price& feed_price, const uint16_t maintenance_collateral_ratio,
+                     const optional<price>& maintenance_collateralization );
+
+         asset match( const call_order_object& call, const force_settlement_object& settle, const price& match_price, 
+            asset max_settlement, const price& fill_price );
+
+         bool fill_limit_order( const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
+            const price& fill_price, const bool is_maker, const account_name_type& match_interface );
+
+         bool fill_margin_order( const margin_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
+            const price& fill_price, const bool is_maker, const account_name_type& match_interface );
+
+         bool fill_call_order( const call_order_object& order, const asset& pays, const asset& receives,
+            const price& fill_price, const bool is_maker );
+         
+         bool fill_settle_order( const force_settlement_object& settle, const asset& pays, const asset& receives,
+            const price& fill_price, const bool is_maker, const account_name_type& match_interface );
+
+         bool check_call_orders( const asset_object& mia, bool enable_black_swan, bool for_new_limit_order );
+
+         asset calculate_issuer_fee( const asset_object& trade_asset, const asset& trade_amount );
+         asset pay_issuer_fees( const asset_object& recv_asset, const asset& receives );
+         asset pay_issuer_fees( const account_object& seller, const asset_object& recv_asset, const asset& receives );
+
+         asset pay_network_fees( const account_object& payer, const asset& amount );
+         asset pay_network_fees( const asset& amount );
+
+         asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
+         asset pay_trading_fees( const account_object& taker, const asset& receives, const account_name_type& maker_int, 
+            const account_name_type& taker_int );
+         asset pay_advertising_delivery( const account_object& provider, const account_object& demand, 
+            const account_object& bidder, const account_object& delivery, flat_set< account_object& > audience, const asset& value );
+
+         asset pay_fee_share( const account_object& payee, const asset& amount );
+         asset pay_multi_fee_share( const flat_set < account_object& > payees, const asset& amount );
+
+         bool check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_bitasset_data_object* bitasset_ptr );
+
+         void        adjust_reward_shares( const comment_object& comment, fc::uint128_t old_reward_shares, fc::uint128_t new_reward_shares );
          void        update_owner_authority( const account_object& account, const authority& owner_authority );
 
-         asset       get_balance( const account_object& a, asset_symbol_type symbol )const;
-         asset       get_TMEsavingsBalance( const account_object& a, asset_symbol_type symbol )const;
-         asset       get_balance( const string& aname, asset_symbol_type symbol )const { return get_balance( get_account(aname), symbol ); }
+         void adjust_moderator_votes( const account_name_type& moderator, const board_member_object& member, share_type delta );
 
-         /** this updates the votes for witnesses as a result of account voting proxy changing */
-         void adjust_proxied_witness_votes( const account_object& a,
-                                            const std::array< share_type, MAX_PROXY_RECURSION_DEPTH+1 >& delta,
-                                            int depth = 0 );
+         void adjust_governance_subscription( const governance_account_object& gov_account, share_type delta );
+         void adjust_network_officer_votes( const network_officer_object& officer, share_type delta );
+         void adjust_executive_board_votes( const executive_board_object& executive, share_type delta );
+         void adjust_community_enterprise_votes( const community_enterprise_object& enterprise, share_type delta );
+         void adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true );
+         void adjust_interface_users( const interface_object& interface, bool adjust = true );
 
-         /** this updates the votes for all witnesses as a result of account SCORE changing */
-         void adjust_proxied_witness_votes( const account_object& a, share_type delta, int depth = 0 );
+         /** clears all vote records for a particular account */
+         void clear_network_votes( const account_object& a );
 
-         /** this is called by `adjust_proxied_witness_votes` when account proxy to self */
-         void adjust_witness_votes( const account_object& a, share_type delta );
+         void process_unstake_assets();
+         share_type pay_voters( const comment_object& c, share_type& max_rewards );
+         share_type pay_viewers( const comment_object& c, share_type& max_rewards );
+         share_type pay_sharers( const comment_object& c, share_type& max_rewards );
+         share_type pay_commenters( const comment_object& c, share_type& max_rewards );
+         share_type pay_moderators( const comment_object& c, share_type& max_rewards );
+         share_type pay_storage( const comment_object& c, share_type& max_rewards );
 
-         /** this updates the vote of a single witness as a result of a vote being added or removed*/
-         void adjust_witness_vote( const witness_object& obj, share_type delta );
-
-         /** clears all vote records for a particular account but does not update the
-          * witness vote totals.  Vote totals should be updated first via a call to
-          * adjust_proxied_witness_votes( a, -a.witness_vote_weight() )
-          */
-         void clear_witness_votes( const account_object& a );
-         void process_TME_fund_for_SCORE_withdrawals();
-         share_type pay_curators( const comment_object& c, share_type& max_rewards );
-         share_type cashout_comment_helper( util::comment_reward_context& ctx, const comment_object& comment );
+         share_type distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
          void process_comment_cashout();
          void process_funds();
+         
          void process_conversions();
          void process_savings_withdraws();
          void account_recovery_processing();
          void expire_escrow_ratification();
          void process_decline_voting_rights();
          void update_median_feed();
+         void update_median_liquidity();
+         void update_comment_metrics();
+         void process_asset_staking();
+         void process_recurring_transfers();
+         void process_equity_rewards();
+         void process_power_rewards();
+         void process_credit_updates();
+         void process_credit_buybacks();
+         void process_margin_updates();
+         void process_credit_interest();
+         void process_membership_updates();
+         void update_proof_of_work_target();
+         void process_txn_stake_rewards();
+         void process_validation_rewards();
+         void process_producer_activity_rewards();
+         void process_network_officer_rewards();
+         void process_supernode_rewards();
+         void process_community_enterprise_fund();
+         void update_network_votes();
 
-         asset get_liquidity_reward()const;
+         void add_comment_to_feeds( const account_name_type& sharer, const comment_id_type& comment_id );
+         void add_comment_to_board( const account_name_type& sharer, const board_object& board, const comment_id_type& comment_id );
+         void update_enterprise( const community_enterprise_object& enterprise, const witness_schedule_object& witness_schedule, const dynamic_global_property_object& props );
+
          asset get_content_reward()const;
          asset get_producer_reward();
-         asset get_curationReward()const;
+         asset get_curation_reward()const;
          asset get_pow_reward()const;
+         share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
+         share_type get_power_shares( const account_balance_object& balance );
+         uint128_t get_supernode_shares( const supernode_object& supernode );
 
-         uint16_t get_curationRewards_percent( const comment_object& c ) const;
-
-         share_type pay_reward_funds( share_type reward );
-
-         void  pay_liquidity_reward();
+         void liquidate_credit_loan( const credit_loan_object& loan );
+         asset network_credit_acquisition( const asset& amount, bool execute );
+         share_type pay_content_rewards( share_type reward );
 
          /**
-          * Helper method to return the current TSD value of a given amount of
-          * TME.  Return 0 TSD if there isn't a current_median_history
+          * Helper method to return the current USD value of a given amount of
+          * an asset. Return 0 USD if there isn't a current_median_history
           */
-         asset to_TSD( const asset& TME )const;
-         asset to_TME( const asset& TSD )const;
+         asset asset_to_USD( const asset& asset )const;
+         asset USD_to_asset( const asset& USD )const;
 
-         time_point_sec   head_block_time()const;
-         uint32_t         head_block_num()const;
-         block_id_type    head_block_id()const;
+         
 
          node_property_object& node_properties();
 
@@ -362,12 +643,12 @@ namespace node { namespace chain {
 
          void initialize_evaluators();
          void set_custom_operation_interpreter( const std::string& id, std::shared_ptr< custom_operation_interpreter > registry );
-         std::shared_ptr< custom_operation_interpreter > get_customJson_evaluator( const std::string& id );
+         std::shared_ptr< custom_operation_interpreter > get_custom_json_evaluator( const std::string& id );
 
          /// Reset the object graph in-memory
          void initialize_indexes();
          void init_schema();
-         void init_genesis(uint64_t initial_supply = INIT_SUPPLY );
+         
 
          /**
           *  This method validates transactions without adding it to the pending state.
@@ -379,18 +660,36 @@ namespace node { namespace chain {
           * can be reapplied at the proper time */
          std::deque< signed_transaction >       _popped_tx;
 
+         void liquid_exchange( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool, 
+            const account_object& int_account);
 
-         bool apply_order( const limit_order_object& new_order_object );
-         bool fill_order( const limit_order_object& order, const asset& pays, const asset& receives );
-         void cancel_order( const limit_order_object& obj );
+         asset liquid_exchange( const asset& input, const asset_symbol_type& receive, bool execute = true, bool apply_fees = true );
+
+         void liquid_acquire( const asset& receive, const account_object& account, const asset_liquidity_pool_object& pool, 
+            const account_object& int_account);
+
+         asset liquid_acquire( const asset& receive, const asset_symbol_type& input, bool execute = true, bool apply_fees = true );
+
+         void liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
+            const asset_liquidity_pool_object& pool, const account_object& int_account );
+            
+         pair< asset, asset > liquid_limit_exchange( const asset& input, const price& limit_price, 
+            const asset_liquidity_pool_object& pool, bool execute = true, bool apply_fees = true );
+
+         void liquid_fund( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool);
+         void liquid_withdraw( const asset& input, const asset_symbol_type& receive, const account_object& account, const asset_liquidity_pool_object& pool);
+
+         void credit_borrow( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
+         void credit_repay( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
+         void credit_lend( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
+         void credit_withdraw( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
+         bool credit_check( const asset& debt, const asset& collateral, const asset_credit_pool_object& credit_pool);
+
          int  match( const limit_order_object& bid, const limit_order_object& ask, const price& trade_price );
 
-         void perform_SCORE_split( uint32_t magnitude );
          void retally_comment_children();
          void retally_witness_votes();
          void retally_witness_vote_counts( bool force = false );
-         void retally_liquidity_weight();
-         void update_virtual_supply();
 
          bool has_hardfork( uint32_t hardfork )const;
 
@@ -427,22 +726,27 @@ namespace node { namespace chain {
          void _apply_block( const signed_block& next_block );
          void _apply_transaction( const signed_transaction& trx );
          void apply_operation( const operation& op );
-
+         void update_stake(const signed_transaction& trx );
 
          ///Steps involved in applying a new block
-         ///@{
 
          const witness_object& validate_block_header( uint32_t skip, const signed_block& next_block )const;
          void create_block_summary(const signed_block& next_block);
 
-         void clear_null_account_balance();
-
          void update_global_dynamic_data( const signed_block& b );
          void update_signing_witness(const witness_object& signing_witness, const signed_block& new_block);
+         void update_transaction_stake(const witness_object& signing_witness, const uint128_t& transaction_stake);
          void update_last_irreversible_block();
          void clear_expired_transactions();
          void clear_expired_orders();
+         
          void clear_expired_delegations();
+         void update_core_exchange_rates();
+         void update_expired_feeds();
+         void update_maintenance_flag( bool new_maintenance_flag );
+         void update_withdraw_permissions();
+         void clear_expired_htlcs();
+
          void process_header_extensions( const signed_block& next_block );
 
          void init_hardforks();
@@ -455,7 +759,7 @@ namespace node { namespace chain {
 
          vector< signed_transaction >  _pending_tx;
          fork_database                 _fork_db;
-         fc::time_point_sec            _hardfork_times[ NUM_HARDFORKS + 1 ];
+         fc::time_point                _hardfork_times[ NUM_HARDFORKS + 1 ];
          protocol::hardfork_version    _hardfork_versions[ NUM_HARDFORKS + 1 ];
 
          block_log                     _block_log;
@@ -467,10 +771,11 @@ namespace node { namespace chain {
          fc::signal< void() >          _plugin_index_signal;
 
          transaction_id_type           _current_trx_id;
-         uint32_t                      _current_block_num    = 0;
-         uint16_t                      _current_trx_in_block = 0;
-         uint16_t                      _current_op_in_trx    = 0;
-         uint16_t                      _current_virtual_op   = 0;
+         uint32_t                      _current_block_num           = 0;
+         uint16_t                      _current_trx_in_block        = 0;
+         uint16_t                      _current_op_in_trx           = 0;
+         uint16_t                      _current_virtual_op          = 0;
+         uint128_t                     _current_trx_stake_weight    = 0;
 
          flat_map<uint32_t,block_id_type>  _checkpoints;
 

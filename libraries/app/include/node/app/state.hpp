@@ -47,19 +47,19 @@ namespace node { namespace app {
    {
       string         voter;
       uint64_t       weight = 0;
-      int64_t        SCOREreward = 0;
+      int64_t        reward = 0;
       int16_t        percent = 0;
       share_type     reputation = 0;
-      time_point_sec time;
+      time_point     time;
    };
 
    struct account_vote
    {
       string         authorperm;
       uint64_t       weight = 0;
-      int64_t        SCOREreward = 0;
+      int64_t        reward = 0;
       int16_t        percent = 0;
-      time_point_sec time;
+      time_point     time;
    };
 
    struct  discussion : public comment_api_obj {
@@ -68,8 +68,8 @@ namespace node { namespace app {
 
       string                      url; /// /category/@rootauthor/root_permlink#author/permlink
       string                      root_title;
-      asset                       pending_payout_value; ///< TSD
-      asset                       total_pending_payout_value; ///< TSD including replies
+      asset                       pending_payout_value; ///< USD
+      asset                       total_pending_payout_value; ///< USD including replies
       vector<vote_state>          active_votes;
       vector<string>              replies; ///< author/slug mapping
       share_type                  author_reputation = 0;
@@ -77,20 +77,16 @@ namespace node { namespace app {
       uint32_t                    body_length = 0;
       vector<account_name_type>   reblogged_by;
       optional<account_name_type> first_reblogged_by;
-      optional<time_point_sec>    first_reblogged_on;
+      optional<time_point>        first_reblogged_on;
    };
 
-   /**
-    *  Convert's SCORE
-    */
    struct extended_account : public account_api_obj
    {
       extended_account(){}
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
 
-      asset                                   SCOREbalanceInTME; /// convert SCORE to TME value
       share_type                              reputation = 0;
-      map<uint64_t,applied_operation>         transfer_history; /// transfer to/from SCORE TME fund
+      map<uint64_t,applied_operation>         transfer_history; /// transfer to/from
       map<uint64_t,applied_operation>         market_history; /// limit order / cancel / fill
       map<uint64_t,applied_operation>         post_history;
       map<uint64_t,applied_operation>         vote_history;
@@ -110,21 +106,21 @@ namespace node { namespace app {
 
 
    struct candle_stick {
-      time_point_sec  open_time;
+      time_point      open_time;
       uint32_t        period = 0;
       double          high = 0;
       double          low = 0;
       double          open = 0;
       double          close = 0;
-      double          TME_volume = 0;
-      double          TSD_volume = 0;
+      double          buy_asset_volume = 0;
+      double          sell_asset_volume = 0;
    };
 
    struct order_history_item {
-      time_point_sec time;
+      time_point     time;
       string         type; // buy or sell
-      asset          TSD_quantity;
-      asset          TME_quantity;
+      asset          buy_asset_quantity;
+      asset          sell_asset_quantity;
       double         real_price = 0;
    };
 
@@ -177,20 +173,124 @@ namespace node { namespace app {
 
 FC_REFLECT_DERIVED( node::app::extended_account,
                    (node::app::account_api_obj),
-                   (SCOREbalanceInTME)(reputation)
-                   (transfer_history)(market_history)(post_history)(vote_history)(other_history)(witness_votes)(tags_usage)(guest_bloggers)(open_orders)(comments)(feed)(blog)(recent_replies)(recommended) )
+                   (reputation)
+                   (transfer_history)
+                   (market_history)
+                   (post_history)
+                   (vote_history)
+                   (other_history)
+                   (witness_votes)
+                   (tags_usage)
+                   (guest_bloggers)
+                   (open_orders)
+                   (comments)
+                   (feed)
+                   (blog)
+                   (recent_replies)
+                   (recommended) 
+                   )
 
+FC_REFLECT( node::app::vote_state, 
+            (voter)
+            (weight)
+            (reward)
+            (percent)
+            (reputation)
+            (time) 
+            );
 
-FC_REFLECT( node::app::vote_state, (voter)(weight)(SCOREreward)(percent)(reputation)(time) );
-FC_REFLECT( node::app::account_vote, (authorperm)(weight)(SCOREreward)(percent)(time) );
+FC_REFLECT( node::app::account_vote, 
+            (authorperm)
+            (weight)
+            (reward)
+            (percent)
+            (time) 
+            );
 
-FC_REFLECT( node::app::discussion_index, (category)(trending)(payout)(payout_comments)(trending30)(updated)(created)(responses)(active)(votes)(maturing)(best)(hot)(promoted)(cashout) )
-FC_REFLECT( node::app::tag_index, (trending) )
-FC_REFLECT_DERIVED( node::app::discussion, (node::app::comment_api_obj), (url)(root_title)(pending_payout_value)(total_pending_payout_value)(active_votes)(replies)(author_reputation)(promoted)(body_length)(reblogged_by)(first_reblogged_by)(first_reblogged_on) )
+FC_REFLECT( node::app::discussion_index, 
+         (category)
+         (trending)
+         (payout)
+         (payout_comments)
+         (trending30)
+         (updated)
+         (created)
+         (responses)
+         (active)
+         (votes)
+         (maturing)
+         (best)
+         (hot)
+         (promoted)
+         (cashout) 
+         );
 
-FC_REFLECT( node::app::state, (current_route)(props)(tag_idx)(tags)(content)(accounts)(pow_queue)(witnesses)(discussion_idx)(witness_schedule)(feed_price)(error)(market_data) )
+FC_REFLECT( node::app::tag_index, 
+         (trending) 
+         );
 
-FC_REFLECT_DERIVED( node::app::extended_limit_order, (node::app::limit_order_api_obj), (real_price)(rewarded) )
-FC_REFLECT( node::app::order_history_item, (time)(type)(TSD_quantity)(TME_quantity)(real_price) );
-FC_REFLECT( node::app::market, (bids)(asks)(history)(price_history)(available_candlesticks)(available_zoom)(current_candlestick)(current_zoom) )
-FC_REFLECT( node::app::candle_stick, (open_time)(period)(high)(low)(open)(close)(TME_volume)(TSD_volume) );
+FC_REFLECT_DERIVED( node::app::discussion, (node::app::comment_api_obj), 
+         (url)
+         (root_title)
+         (pending_payout_value)
+         (total_pending_payout_value)
+         (active_votes)
+         (replies)
+         (author_reputation)
+         (promoted)
+         (body_length)
+         (reblogged_by)
+         (first_reblogged_by)
+         (first_reblogged_on) 
+         )
+
+FC_REFLECT( node::app::state, 
+         (current_route)
+         (props)
+         (tag_idx)
+         (tags)
+         (content)
+         (accounts)
+         (pow_queue)
+         (witnesses)
+         (discussion_idx)
+         (witness_schedule)
+         (feed_price)
+         (error)
+         (market_data) 
+         )
+
+FC_REFLECT_DERIVED( node::app::extended_limit_order, (node::app::limit_order_api_obj), 
+         (real_price)
+         (rewarded) 
+         )
+
+FC_REFLECT( node::app::order_history_item, 
+         (time)
+         (type)
+         (buy_asset_quantity)
+         (sell_asset_quantity)
+         (real_price) 
+         );
+
+FC_REFLECT( node::app::market, 
+         (bids)
+         (asks)
+         (history)
+         (price_history)
+         (available_candlesticks)
+         (available_zoom)
+         (current_candlestick)
+         (current_zoom) 
+         );
+
+FC_REFLECT( node::app::candle_stick, 
+         (open_time)
+         (period)
+         (high)
+         (low)
+         (open)
+         (close)
+         (buy_asset_volume)
+         (sell_asset_volume) 
+         );

@@ -49,7 +49,7 @@ BOOST_AUTO_TEST_SUITE(block_tests)
 BOOST_AUTO_TEST_CASE( generate_empty_blocks )
 {
    try {
-      fc::time_point_sec now( TESTING_GENESIS_TIMESTAMP );
+      fc::time_point now( TESTING_GENESIS_TIMESTAMP );
       fc::temp_directory data_dir( graphene::utilities::temp_directory_path() );
       signed_block b;
 
@@ -113,8 +113,8 @@ BOOST_AUTO_TEST_CASE( undo_block )
          database db;
          db._log_hardforks = false;
          db.open(data_dir.path(), data_dir.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
-         fc::time_point_sec now( TESTING_GENESIS_TIMESTAMP );
-         std::vector< time_point_sec > time_stack;
+         fc::time_point now( TESTING_GENESIS_TIMESTAMP );
+         std::vector< time_point > time_stack;
 
          auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
          for( uint32_t i = 0; i < 5; ++i )
@@ -239,9 +239,9 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       //*
       signed_transaction trx;
-      accountCreate_operation cop;
-      cop.newAccountName = "alice";
-      cop.creator = genesisAccountBasename;
+      account_create_operation cop;
+      cop.new_account_name = "alice";
+      cop.creator = GENESIS_ACCOUNT_BASE_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
@@ -299,9 +299,9 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
 
       signed_transaction trx;
-      accountCreate_operation cop;
-      cop.newAccountName = "alice";
-      cop.creator = genesisAccountBasename;
+      account_create_operation cop;
+      cop.new_account_name = "alice";
+      cop.creator = GENESIS_ACCOUNT_BASE_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
@@ -311,7 +311,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       trx = decltype(trx)();
       transfer_operation t;
-      t.from = genesisAccountBasename;
+      t.from = GENESIS_ACCOUNT_BASE_NAME;
       t.to = "alice";
       t.amount = asset(500,SYMBOL_COIN);
       trx.operations.push_back(t);
@@ -353,9 +353,9 @@ BOOST_AUTO_TEST_CASE( tapos )
       //This transaction must be in the next block after its reference, or it is invalid.
       trx.set_reference_block( db1.head_block_id() );
 
-      accountCreate_operation cop;
-      cop.newAccountName = "alice";
-      cop.creator = genesisAccountBasename;
+      account_create_operation cop;
+      cop.new_account_name = "alice";
+      cop.creator = GENESIS_ACCOUNT_BASE_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
@@ -370,7 +370,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.clear();
 
       transfer_operation t;
-      t.from = genesisAccountBasename;
+      t.from = GENESIS_ACCOUNT_BASE_NAME;
       t.to = "alice";
       t.amount = asset(50,SYMBOL_COIN);
       trx.operations.push_back(t);
@@ -393,14 +393,14 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
 {
    try
    {
-      idump((db.get_account(genesisAccountBasename)));
+      idump((db.get_account(GENESIS_ACCOUNT_BASE_NAME)));
       ACTORS( (alice)(bob) );
 
       generate_block();
 
       BOOST_TEST_MESSAGE( "Create transaction" );
 
-      transfer( genesisAccountBasename, "alice", 1000000 );
+      transfer( GENESIS_ACCOUNT_BASE_NAME, "alice", 1000000 );
       transfer_operation op;
       op.from = "alice";
       op.to = "bob";
@@ -465,7 +465,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    share_type amount = 1000;
 
    transfer_operation t;
-   t.from = genesisAccountBasename;
+   t.from = GENESIS_ACCOUNT_BASE_NAME;
    t.to = "bob";
    t.amount = asset(amount,SYMBOL_COIN);
    trx.operations.push_back(t);
@@ -476,7 +476,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
 
    trx.operations.clear();
    t.from = "bob";
-   t.to = genesisAccountBasename;
+   t.to = GENESIS_ACCOUNT_BASE_NAME;
    t.amount = asset(amount,SYMBOL_COIN);
    trx.operations.push_back(t);
    trx.validate();
@@ -514,7 +514,7 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
       // Sam is the creator of accounts
       auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
       private_key_type sam_key = generate_private_key( "sam" );
-      account_object sam_account_object = accountCreate( "sam", sam_key.get_public_key() );
+      account_object sam_account_object = account_create( "sam", sam_key.get_public_key() );
 
       //Get a sane head block time
       generate_block( skip_flags );
@@ -522,15 +522,15 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
       transaction tx;
       signed_transaction ptx;
 
-      db.get_account( genesisAccountBasename );
+      db.get_account( GENESIS_ACCOUNT_BASE_NAME );
       // transfer from committee account to Sam account
-      transfer( genesisAccountBasename, "sam", 100000 );
+      transfer( GENESIS_ACCOUNT_BASE_NAME, "sam", 100000 );
 
       generate_block(skip_flags);
 
-      accountCreate( "alice", generate_private_key( "alice" ).get_public_key() );
+      account_create( "alice", generate_private_key( "alice" ).get_public_key() );
       generate_block(skip_flags);
-      accountCreate( "bob", generate_private_key( "bob" ).get_public_key() );
+      account_create( "bob", generate_private_key( "bob" ).get_public_key() );
       generate_block(skip_flags);
 
       db.pop_block();
@@ -700,90 +700,6 @@ BOOST_FIXTURE_TEST_CASE( skip_block, clean_database_fixture )
    FC_LOG_AND_RETHROW();
 }
 
-BOOST_FIXTURE_TEST_CASE( hardfork_test, database_fixture )
-{
-   try
-   {
-      try {
-      int argc = boost::unit_test::framework::master_test_suite().argc;
-      char** argv = boost::unit_test::framework::master_test_suite().argv;
-      for( int i=1; i<argc; i++ )
-      {
-         const std::string arg = argv[i];
-         if( arg == "--record-assert-trip" )
-            fc::enable_record_assert_trip = true;
-         if( arg == "--show-test-names" )
-            std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
-      }
-      auto ahplugin = app.register_plugin< node::account_history::account_history_plugin >();
-      db_plugin = app.register_plugin< node::plugin::debug_node::debug_node_plugin >();
-      init_account_pub_key = init_account_priv_key.get_public_key();
-
-      boost::program_options::variables_map options;
-
-      ahplugin->plugin_initialize( options );
-      db_plugin->plugin_initialize( options );
-
-      open_database();
-
-      generate_blocks( 2 );
-
-      ahplugin->plugin_startup();
-      db_plugin->plugin_startup();
-
-      score( genesisAccountBasename, 10000 );
-
-      // Fill up the rest of the required miners
-      for( int i = numberOfGenesisWitnessAccounts; i < MAX_WITNESSES; i++ )
-      {
-         accountCreate( genesisAccountBasename + fc::to_string( i ), init_account_pub_key );
-         fund( genesisAccountBasename + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
-         witness_create( genesisAccountBasename + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
-      }
-
-      validate_database();
-      } catch ( const fc::exception& e )
-      {
-         edump( (e.to_detail_string()) );
-         throw;
-      }
-
-      BOOST_TEST_MESSAGE( "Check hardfork not applied at genesis" );
-      BOOST_REQUIRE( db.has_hardfork( 0 ) );
-      BOOST_REQUIRE( !db.has_hardfork( HARDFORK_0_1 ) );
-
-      BOOST_TEST_MESSAGE( "Generate blocks up to the hardfork time and check hardfork still not applied" );
-      generate_blocks( fc::time_point_sec( HARDFORK_0_1_TIME - BLOCK_INTERVAL ), true );
-
-      BOOST_REQUIRE( db.has_hardfork( 0 ) );
-      BOOST_REQUIRE( !db.has_hardfork( HARDFORK_0_1 ) );
-
-      BOOST_TEST_MESSAGE( "Generate a block and check hardfork is applied" );
-      generate_block();
-
-      string op_msg = "Testnet: Hardfork applied";
-      auto itr = db.get_index< account_history_index >().indices().get< by_id >().end();
-      itr--;
-
-      BOOST_REQUIRE( db.has_hardfork( 0 ) );
-      BOOST_REQUIRE( db.has_hardfork( HARDFORK_0_1 ) );
-      BOOST_REQUIRE( get_last_operations( 1 )[0].get< custom_operation >().data == vector< char >( op_msg.begin(), op_msg.end() ) );
-      BOOST_REQUIRE( db.get(itr->op).timestamp == db.head_block_time() );
-
-      BOOST_TEST_MESSAGE( "Testing hardfork is only applied once" );
-      generate_block();
-
-      itr = db.get_index< account_history_index >().indices().get< by_id >().end();
-      itr--;
-
-      BOOST_REQUIRE( db.has_hardfork( 0 ) );
-      BOOST_REQUIRE( db.has_hardfork( HARDFORK_0_1 ) );
-      BOOST_REQUIRE( get_last_operations( 1 )[0].get< custom_operation >().data == vector< char >( op_msg.begin(), op_msg.end() ) );
-      BOOST_REQUIRE( db.get(itr->op).timestamp == db.head_block_time() - BLOCK_INTERVAL );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
 BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
 {
    try
@@ -801,7 +717,7 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
       tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
 
       transfer_operation op;
-      op.from = genesisAccountBasename;
+      op.from = GENESIS_ACCOUNT_BASE_NAME;
       op.to = TEMP_ACCOUNT;
       op.amount = asset( 1000, SYMBOL_COIN );
 

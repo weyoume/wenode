@@ -18,33 +18,33 @@ struct feed_entry
    string                    author;
    string                    permlink;
    vector<account_name_type> reblog_by;
-   time_point_sec reblog_on;
-   uint32_t       entry_id = 0;
+   time_point                reblog_on;
+   uint32_t                  entry_id = 0;
 };
 
 struct comment_feed_entry
 {
-   comment_api_obj   comment;
+   comment_api_obj           comment;
    vector<account_name_type> reblog_by;
-   time_point_sec    reblog_on;
-   uint32_t          entry_id = 0;
+   time_point                reblog_on;
+   uint32_t                  entry_id = 0;
 };
 
 struct blog_entry
 {
-   string         author;
-   string         permlink;
-   string         blog;
-   time_point_sec reblog_on;
-   uint32_t entry_id = 0;
+   string                    author;
+   string                    permlink;
+   string                    blog;
+   time_point                reblog_on;
+   uint32_t                  entry_id = 0;
 };
 
 struct comment_blog_entry
 {
-   comment_api_obj   comment;
-   string            blog;
-   time_point_sec    reblog_on;
-   uint32_t          entry_id = 0;
+   comment_api_obj           comment;
+   string                    blog;
+   time_point                reblog_on;
+   uint32_t                  entry_id = 0;
 };
 
 struct account_reputation

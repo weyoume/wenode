@@ -30,9 +30,10 @@ namespace node { namespace chain {
       public:
          enum witness_schedule_type
          {
-            top19,
-            timeshare,
-            miner,
+            top_witness,
+            additional_witness,
+            top_miner,
+            additional_miner,
             none
          };
 
@@ -43,56 +44,71 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type           id;
+         id_type                      id;
 
-         /** the account that has authority over this witness */
-         account_name_type owner;
-         time_point_sec    created;
-         shared_string     url;
-         uint32_t          total_missed = 0;
-         uint64_t          last_aslot = 0;
-         uint64_t          last_confirmed_block_num = 0;
+         account_name_type            owner;                            // The name of the account that has authority over this witness.
 
-         /**
-          * Some witnesses have the job because they did a proof of work,
-          * this field indicates where they were in the POW order. After
-          * each round, the witness with the lowest pow_worker value greater
-          * than 0 is removed.
-          */
-         uint64_t          pow_worker = 0;
+         bool                         active;                           // True if the witness is actively seeking to produce blocks, set false to deactivate the witness and remove from production.
 
-         /**
-          *  This is the key used to sign blocks on behalf of this witness
-          */
-         public_key_type   signing_key;
+         witness_schedule_type        schedule = none;                  // How the witness was scheduled the last time it was scheduled.
 
-         chain_properties  props;
-         price             TSD_exchange_rate;
-         time_point_sec    last_TSD_exchange_update;
+         uint64_t                     last_confirmed_block_num = 0;     // Number of the last block that was successfully produced by this witness. 
 
+         shared_string                details;                          // Witness or miner's details, explaining who they are, machine specs, capabilties.
 
-         /**
-          *  The total votes for this witness. This determines how the witness is ranked for
-          *  scheduling.  The top N witnesses by votes are scheduled every round, every one
-          *  else takes turns being scheduled proportional to their votes.
-          */
-         share_type        votes;
-         witness_schedule_type schedule = none; /// How the witness was scheduled the last time it was scheduled
+         shared_string                url;                              // The witnesses or miners URL explaining their details.
+
+         shared_string                json;                             // The witnesses or miners json metadata.
+
+         fc::array<uint16_t, 2>       location;                         // Longitude / Latitude Co-ordinates of the witness or miner's approximate geo-location.
+
+         public_key_type              signing_key;                      // The key used to sign blocks on behalf of this witness or miner.
+
+         time_point                   created;                          // The time the witness was created.
+
+         uint32_t                     last_commit_height;               // Block height that has been most recently committed by the producer
+
+         block_id_type                last_commit_id;                   // Block ID of the height that was most recently committed by the producer. 
+
+         uint32_t                     total_blocks = 0;                 // Accumulated number of blocks produced.
+
+         share_type                   voting_power = 0;                 // The total weighted voting power that supports the witness. 
+
+         uint32_t                     vote_count = 0;                   // The number of accounts that have voted for the witness.
+
+         share_type                   mining_power = 0;                 // The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
+
+         uint32_t                     mining_count = 0;                 // Accumulated number of proofs of work published.
+
+         time_point                   last_mining_update;               // Time that the account last published a proof of work. 
+
+         uint128_t                    recent_txn_stake_weight = 0;      // Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+
+         time_point                   last_txn_stake_weight_update;     // Time that the recent bandwith and txn stake were last updated.
+
+         uint128_t                    accumulated_activity_stake = 0;   // Recent amount of activity reward stake for the prime witness. 
+
+         uint32_t                     total_missed = 0;                 // Number of blocks missed recently.
+
+         uint64_t                     last_aslot = 0;                   // Last absolute slot that the witness was assigned to produce a block.
+
+         chain_properties             props;                            // The chain properties object that the witness currently proposes for global network variables
 
          /**
           * These fields are used for the witness scheduling algorithm which uses
           * virtual time to ensure that all witnesses are given proportional time
           * for producing blocks.
           *
-          * @ref votes is used to determine speed. The @ref virtual_scheduled_time is
-          * the expected time at which this witness should complete a virtual lap which
-          * is defined as the position equal to 1000 times MAXVOTES.
+          * voting power is used to determine witness speed, and recent_pow is used to determine miner speed.
+          * The virtual_scheduled_time is the expected time at which this witness should complete a virtual lap.
           *
           * virtual_scheduled_time = virtual_last_update + (1000*MAXVOTES - virtual_position) / votes
           *
           * Every time the number of votes changes the virtual_position and virtual_scheduled_time must
-          * update.  There is a global current virtual_scheduled_time which gets updated every time
-          * a witness is scheduled.  To update the virtual_position the following math is performed.
+          * update. There is a global current virtual_scheduled_time which gets updated every time
+          * a witness is scheduled. 
+          * 
+          * To Update the virtual_position:
           *
           * virtual_position       = virtual_position + votes * (virtual_current_time - virtual_last_update)
           * virtual_last_update    = virtual_current_time
@@ -101,21 +117,26 @@ namespace node { namespace chain {
           *
           * @defgroup virtual_time Virtual Time Scheduling
           */
-         ///@{
-         fc::uint128       virtual_last_update;
-         fc::uint128       virtual_position;
-         fc::uint128       virtual_scheduled_time = fc::uint128::max_value();
-         ///@}
+         
+         uint128_t            witness_virtual_last_update;
 
-         digest_type       last_work;
+         uint128_t            witness_virtual_position;
 
-         /**
-          * This field represents the WeYouMe blockchain version the witness is running.
-          */
-         version           running_version;
+         uint128_t            witness_virtual_scheduled_time = fc::uint128::max_value();
 
-         hardfork_version  hardfork_version_vote;
-         time_point_sec    hardfork_time_vote = GENESIS_TIME;
+         uint128_t            miner_virtual_last_update;
+
+         uint128_t            miner_virtual_position;
+
+         uint128_t            miner_virtual_scheduled_time = fc::uint128::max_value();
+         
+         digest_type          last_work;
+
+         version              running_version;  // This field represents the WeYouMe blockchain version the witness is running.
+
+         hardfork_version     hardfork_version_vote;
+
+         time_point           hardfork_time_vote = GENESIS_TIME;
    };
 
 
@@ -130,10 +151,11 @@ namespace node { namespace chain {
 
          witness_vote_object(){}
 
-         id_type           id;
+         id_type                id;
 
-         witness_id_type   witness;
-         account_id_type   account;
+         account_name_type      witness;
+
+         account_name_type      account;
    };
 
    class witness_schedule_object : public object< witness_schedule_object_type, witness_schedule_object >
@@ -149,30 +171,106 @@ namespace node { namespace chain {
 
          id_type                                                           id;
 
-         fc::uint128                                                       current_virtual_time;
-         uint32_t                                                          next_shuffle_block_num = 1;
-         fc::array< account_name_type, MAX_WITNESSES >             				 current_shuffled_witnesses;
-         uint8_t                                                           num_scheduled_witnesses = 1;
-         uint8_t                                                           top19_weight = 1;
-         uint8_t                                                           timeshare_weight = 5;
-         uint8_t                                                           miner_weight = 1;
-         uint32_t                                                          witness_pay_normalization_factor = 25;
+         fc::uint128                                                       current_witness_virtual_time; // Tracks the time used for block producer additional selection
+
+         fc::uint128                                                       current_miner_virtual_time; // Tracks the time used for block producer additional selection
+
+         uint32_t                                                          next_shuffle_block_num = 1; //
+
+         fc::array< account_name_type, TOTAL_PRODUCERS >             		current_shuffled_producers;
+
+         vector<account_name_type>                                         top_witnesses;
+
+         vector<account_name_type>                                         top_miners;
+
+         uint8_t                                                           num_scheduled_producers = 1;
+
+         uint32_t                                                          pow_target_difficulty = -1; //
+
+         uint64_t                                                          recent_pow;              // Rolling average amount of blocks (x prec) mined in the last 7 days.
+
+         time_point                                                        last_pow_update;
+         
          chain_properties                                                  median_props;
+
          version                                                           majority_version;
 
-         uint8_t max_voted_witnesses            = MAX_VOTED_WITNESSES_HF0;
-         uint8_t max_miner_witnesses            = MAX_MINER_WITNESSES_HF0;
-         uint8_t max_runner_witnesses           = MAX_RUNNER_WITNESSES_HF0;
-         uint8_t hardfork_required_witnesses    = HARDFORK_REQUIRED_WITNESSES;
+         uint8_t                                                           dpos_witness_producers            = DPOS_WITNESS_PRODUCERS;
+
+         uint8_t                                                           dpos_witness_additional_producers = DPOS_WITNESS_ADDITONAL;
+
+         uint8_t                                                           pow_miner_producers               = POW_MINER_PRODUCERS;
+
+         uint8_t                                                           pow_miner_additional_producers    = POW_MINER_ADDITIONAL;
+         
+         uint8_t                                                           hardfork_required_witnesses       = HARDFORK_REQUIRED_WITNESSES;
+
+         fc::microseconds                                                  pow_target_time                   = POW_TARGET_TIME;
+
+         fc::microseconds                                                  pow_decay_time                    = POW_DECAY_TIME;
+
+         fc::microseconds                                                  txn_stake_decay_time              = TXN_STAKE_DECAY_TIME;
+
+         bool     is_top_producer( const account_name_type& producer )const    // finds if a given producer name is in the top witnesses or miners set. 
+         {
+            return (std::find( top_witnesses.begin(), top_witnesses.end(), producer) != top_witnesses.end() ||
+            std::find( top_miners.begin(), top_miners.end(), producer) != top_miners.end());
+         }
+
+         bool     is_top_witness( const account_name_type& producer )const    // finds if a given producer name is in the top witnesses set. 
+         {
+            return std::find( top_witnesses.begin(), top_witnesses.end(), producer) != top_witnesses.end();
+         }
+
+         bool     is_top_miner( const account_name_type& producer )const    // finds if a given producer name is in the top miners set. 
+         {
+            return std::find( top_miners.begin(), top_miners.end(), producer) != top_miners.end();
+         }
    };
 
 
+   class block_validation_object : public object< block_validation_object_type, block_validation_object >
+   {
+      public:
+         template< typename Constructor, typename Allocator >
+         block_validation_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
 
-   struct by_vote_name;
+         block_validation_object(){}
+
+         id_type                          id;
+
+         account_name_type                producer;
+
+         block_id_type                    block_id;
+
+         uint32_t                         height;
+
+         time_point                       created; 
+
+         flat_set<transaction_id_type>    verifications;
+
+         flat_set<account_name_type>      verifiers;
+
+         bool                             committed = false;
+
+         time_point                       commit_time = fc::time_point::min();
+
+         asset                            stake = asset( 0 , SYMBOL_COIN );            // Stake must be at least 1 Core asset to receive validation reward split
+   };
+
+   struct by_voting_power;
+   struct by_mining_power;
    struct by_name;
    struct by_pow;
    struct by_work;
-   struct by_schedule_time;
+   struct by_witness_schedule_time;
+   struct by_miner_schedule_time;
+   struct by_txn_stake_weight;
+   struct by_activity_stake;
+
    /**
     * @ingroup object_index
     */
@@ -182,17 +280,49 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >, member< witness_object, witness_id_type, &witness_object::id > >,
          ordered_non_unique< tag< by_work >, member< witness_object, digest_type, &witness_object::last_work > >,
          ordered_unique< tag< by_name >, member< witness_object, account_name_type, &witness_object::owner > >,
-         ordered_non_unique< tag< by_pow >, member< witness_object, uint64_t, &witness_object::pow_worker > >,
-         ordered_unique< tag< by_vote_name >,
+         
+         ordered_unique< tag< by_voting_power >,
             composite_key< witness_object,
-               member< witness_object, share_type, &witness_object::votes >,
+               member< witness_object, share_type, &witness_object::voting_power >,
                member< witness_object, account_name_type, &witness_object::owner >
             >,
             composite_key_compare< std::greater< share_type >, std::less< account_name_type > >
          >,
-         ordered_unique< tag< by_schedule_time >,
+
+         ordered_unique< tag< by_mining_power >,
             composite_key< witness_object,
-               member< witness_object, fc::uint128, &witness_object::virtual_scheduled_time >,
+               member< witness_object, share_type, &witness_object::mining_power >,
+               member< witness_object, account_name_type, &witness_object::owner >
+            >,
+            composite_key_compare< std::greater< share_type >, std::less< account_name_type > >
+         >,
+
+         ordered_unique< tag< by_activity_stake >,
+            composite_key< witness_object,
+               member< witness_object, uint128_t, &witness_object::accumulated_activity_stake >,
+               member< witness_object, witness_id_type, &witness_object::id >
+            >,
+            composite_key_compare< std::greater< uint128_t >, std::less< witness_id_type > >
+         >,
+
+         ordered_unique< tag< by_txn_stake_weight >,
+            composite_key< witness_object,
+               member< witness_object, uint128_t, &witness_object::recent_txn_stake_weight >,
+               member< witness_object, witness_id_type, &witness_object::id >
+            >,
+            composite_key_compare< std::greater< uint128_t >, std::less< witness_id_type > >
+         >,
+
+         ordered_unique< tag< by_witness_schedule_time >,
+            composite_key< witness_object,
+               member< witness_object, uint128_t, &witness_object::witness_virtual_scheduled_time >,
+               member< witness_object, witness_id_type, &witness_object::id >
+            >
+         >,
+
+         ordered_unique< tag< by_miner_schedule_time >,
+            composite_key< witness_object,
+               member< witness_object, uint128_t, &witness_object::miner_virtual_scheduled_time >,
                member< witness_object, witness_id_type, &witness_object::id >
             >
          >
@@ -202,25 +332,26 @@ namespace node { namespace chain {
 
    struct by_account_witness;
    struct by_witness_account;
+
    typedef multi_index_container<
       witness_vote_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< witness_vote_object, witness_vote_id_type, &witness_vote_object::id > >,
          ordered_unique< tag<by_account_witness>,
             composite_key< witness_vote_object,
-               member<witness_vote_object, account_id_type, &witness_vote_object::account >,
-               member<witness_vote_object, witness_id_type, &witness_vote_object::witness >
+               member<witness_vote_object, account_name_type, &witness_vote_object::account >,
+               member<witness_vote_object, account_name_type, &witness_vote_object::witness >
             >,
-            composite_key_compare< std::less< account_id_type >, std::less< witness_id_type > >
+            composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
          >,
          ordered_unique< tag<by_witness_account>,
             composite_key< witness_vote_object,
-               member<witness_vote_object, witness_id_type, &witness_vote_object::witness >,
-               member<witness_vote_object, account_id_type, &witness_vote_object::account >
+               member<witness_vote_object, account_name_type, &witness_vote_object::witness >,
+               member<witness_vote_object, account_name_type, &witness_vote_object::account >
             >,
-            composite_key_compare< std::less< witness_id_type >, std::less< account_id_type > >
+            composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
          >
-      >, // indexed_by
+      >,
       allocator< witness_vote_object >
    > witness_vote_index;
 
@@ -232,34 +363,116 @@ namespace node { namespace chain {
       allocator< witness_schedule_object >
    > witness_schedule_index;
 
-} }
 
-FC_REFLECT_ENUM( node::chain::witness_object::witness_schedule_type, (top19)(timeshare)(miner)(none) )
+   struct by_producer_height;
+   struct by_height_stake;
+   struct by_created;
+   struct by_commit_time;
+   struct by_producer_block_id;
+   
+
+
+   typedef multi_index_container<
+      block_validation_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< block_validation_object, block_validation_id_type, &block_validation_object::id > >,
+         ordered_unique< tag<by_producer_height>,
+            composite_key< block_validation_object,
+               member<block_validation_object, account_name_type, &block_validation_object::producer >,
+               member<block_validation_object, uint32_t, &block_validation_object::height >
+            >,
+            composite_key_compare< std::less< account_name_type >, std::less< witness_id_type > >
+         >,
+         ordered_unique< tag<by_height_stake>,
+            composite_key< block_validation_object,
+               member<block_validation_object, uint32_t, &block_validation_object::height >,
+               member<block_validation_object, asset , &block_validation_object::stake >
+            >,
+            composite_key_compare< std::greater< uint32_t >, std::greater< asset > >
+         >,
+         ordered_unique< tag<by_producer_block_id>,
+            composite_key< block_validation_object,
+               member<block_validation_object, account_name_type, &block_validation_object::producer >,
+               member<block_validation_object, block_id_type, &block_validation_object::block_id >
+            >,
+            composite_key_compare< std::less< account_name_type >, std::less< block_id_type > >
+         >,
+         ordered_unique< tag<by_created>,
+            composite_key< block_validation_object,
+               member<block_validation_object, time_point, &block_validation_object::created >,
+               member< block_validation_object, block_validation_id_type, &block_validation_object::id >
+            >,
+            composite_key_compare< std::less< time_point >, std::less< block_validation_id_type > >
+         >,
+         ordered_unique< tag<by_commit_time>,
+            composite_key< block_validation_object,
+               member<block_validation_object, time_point, &block_validation_object::commit_time >,
+               member< block_validation_object, block_validation_id_type, &block_validation_object::id >
+            >,
+            composite_key_compare< std::less< time_point >, std::less< block_validation_id_type > >
+         >
+      >,
+      allocator< block_validation_object >
+   > block_validation_index;
+
+} }      // node:chain 
+
+FC_REFLECT_ENUM( node::chain::witness_object::witness_schedule_type, 
+         (top_witness)
+         (additional_witness)
+         (top_miner)
+         (additional_miner)
+         (none) 
+         );
 
 FC_REFLECT( node::chain::witness_object,
-             (id)
-             (owner)
-             (created)
-             (url)(votes)(schedule)(virtual_last_update)(virtual_position)(virtual_scheduled_time)(total_missed)
-             (last_aslot)(last_confirmed_block_num)(pow_worker)(signing_key)
-             (props)
-             (TSD_exchange_rate)(last_TSD_exchange_update)
-             (last_work)
-             (running_version)
-             (hardfork_version_vote)(hardfork_time_vote)
-          )
-CHAINBASE_SET_INDEX_TYPE( node::chain::witness_object, node::chain::witness_index )
+         (id)
+         (owner)
+         (created)
+         (url)(votes)(schedule)
+         (virtual_last_update)
+         (virtual_position)
+         (virtual_scheduled_time)
+         (total_missed)
+         (last_aslot)
+         (last_confirmed_block_num)
+         (pow_worker)
+         (signing_key)
+         (props)
+         (USD_exchange_rate)
+         (last_USD_exchange_update)
+         (last_work)
+         (running_version)
+         (hardfork_version_vote)
+         (hardfork_time_vote)
+         );
 
-FC_REFLECT( node::chain::witness_vote_object, (id)(witness)(account) )
-CHAINBASE_SET_INDEX_TYPE( node::chain::witness_vote_object, node::chain::witness_vote_index )
+CHAINBASE_SET_INDEX_TYPE( node::chain::witness_object, node::chain::witness_index );
+
+FC_REFLECT( node::chain::witness_vote_object, 
+         (id)
+         (witness)
+         (account) 
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::witness_vote_object, node::chain::witness_vote_index );
 
 FC_REFLECT( node::chain::witness_schedule_object,
-             (id)(current_virtual_time)(next_shuffle_block_num)(current_shuffled_witnesses)(num_scheduled_witnesses)
-             (top19_weight)(timeshare_weight)(miner_weight)(witness_pay_normalization_factor)
-             (median_props)(majority_version)
-             (max_voted_witnesses)
-             (max_miner_witnesses)
-             (max_runner_witnesses)
-             (hardfork_required_witnesses)
-          )
-CHAINBASE_SET_INDEX_TYPE( node::chain::witness_schedule_object, node::chain::witness_schedule_index )
+         (id)
+         (current_virtual_time)
+         (next_shuffle_block_num)
+         (current_shuffled_producers)
+         (num_scheduled_witnesses)
+         (top_witness_weight)
+         (additional_witness_weight)
+         (miner_weight)
+         (witness_pay_normalization_factor)
+         (median_props)
+         (majority_version)
+         (max_voted_witnesses)
+         (max_miner_witnesses)
+         (max_runner_witnesses)
+         (hardfork_required_witnesses)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::witness_schedule_object, node::chain::witness_schedule_index );

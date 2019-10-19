@@ -61,14 +61,14 @@ clean_database_fixture::clean_database_fixture()
 
    //ahplugin->plugin_startup();
    db_plugin->plugin_startup();
-   score( genesisAccountBasename, 10000 );
+   score( GENESIS_ACCOUNT_BASE_NAME, 10000 );
 
    // Fill up the rest of the required miners
-   for( int i = numberOfGenesisWitnessAccounts; i < MAX_WITNESSES; i++ )
+   for( int i = GENESIS_WITNESS_AMOUNT; i < TOTAL_PRODUCERS; i++ )
    {
-      accountCreate( genesisAccountBasename + fc::to_string( i ), init_account_pub_key );
-      fund( genesisAccountBasename + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
-      witness_create( genesisAccountBasename + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
+      account_create( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), init_account_pub_key );
+      fund( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
+      witness_create( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
    }
 
    validate_database();
@@ -119,14 +119,14 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
    db.set_hardfork( NUM_HARDFORKS );
    generate_block();
 
-   score( genesisAccountBasename, 10000 );
+   score( GENESIS_ACCOUNT_BASE_NAME, 10000 );
 
    // Fill up the rest of the required miners
-   for( int i = numberOfGenesisWitnessAccounts; i < MAX_WITNESSES; i++ )
+   for( int i = GENESIS_WITNESS_AMOUNT; i < TOTAL_PRODUCERS; i++ )
    {
-      accountCreate( genesisAccountBasename + fc::to_string( i ), init_account_pub_key );
-      fund( genesisAccountBasename + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
-      witness_create( genesisAccountBasename + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
+      account_create( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), init_account_pub_key );
+      fund( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
+      witness_create( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
    }
 
    validate_database();
@@ -207,13 +207,13 @@ void database_fixture::generate_blocks( uint32_t block_count )
    BOOST_REQUIRE( produced == block_count );
 }
 
-void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_intermediate_blocks)
+void database_fixture::generate_blocks(fc::time_point timestamp, bool miss_intermediate_blocks)
 {
    db_plugin->debug_generate_blocks_until( debug_key, timestamp, miss_intermediate_blocks, default_skip );
-   BOOST_REQUIRE( ( db.head_block_time() - timestamp ).to_seconds() < BLOCK_INTERVAL );
+   BOOST_REQUIRE( ( db.head_block_time() - timestamp ) < BLOCK_INTERVAL );
 }
 
-const account_object& database_fixture::accountCreate(
+const account_object& database_fixture::account_create(
    const string& name,
    const string& creator,
    const private_key_type& creator_key,
@@ -225,35 +225,20 @@ const account_object& database_fixture::accountCreate(
 {
    try
    {
-      if( db.has_hardfork( HARDFORK_0_17 ) )
-      {
-         accountCreateWithDelegation_operation op;
-         op.newAccountName = name;
-         op.creator = creator;
-         op.fee = asset( fee, SYMBOL_COIN );
-         op.delegation = asset( 0, SYMBOL_SCORE );
-         op.owner = authority( 1, key, 1 );
-         op.active = authority( 1, key, 1 );
-         op.posting = authority( 1, post_key, 1 );
-         op.memoKey = key;
-         op.json = json;
+      
+      account_create_operation op;
+      op.new_account_name = name;
+      op.creator = creator;
+      op.fee = asset( fee, SYMBOL_COIN );
+      op.delegation = asset( 0, SYMBOL_COIN );
+      op.owner = authority( 1, key, 1 );
+      op.active = authority( 1, key, 1 );
+      op.posting = authority( 1, post_key, 1 );
+      op.secure_public_key = key;
+      op.json = json;
 
-         trx.operations.push_back( op );
-      }
-      else
-      {
-         accountCreate_operation op;
-         op.newAccountName = name;
-         op.creator = creator;
-         op.fee = asset( fee, SYMBOL_COIN );
-         op.owner = authority( 1, key, 1 );
-         op.active = authority( 1, key, 1 );
-         op.posting = authority( 1, post_key, 1 );
-         op.memoKey = key;
-         op.json = json;
-
-         trx.operations.push_back( op );
-      }
+      trx.operations.push_back( op );
+      
 
       trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
       trx.sign( creator_key, db.get_chain_id() );
@@ -269,7 +254,7 @@ const account_object& database_fixture::accountCreate(
    FC_CAPTURE_AND_RETHROW( (name)(creator) )
 }
 
-const account_object& database_fixture::accountCreate(
+const account_object& database_fixture::account_create(
    const string& name,
    const public_key_type& key,
    const public_key_type& post_key
@@ -277,11 +262,11 @@ const account_object& database_fixture::accountCreate(
 {
    try
    {
-      return accountCreate(
+      return account_create(
          name,
-         genesisAccountBasename,
+         GENESIS_ACCOUNT_BASE_NAME,
          init_account_priv_key,
-         std::max( db.get_witness_schedule_object().median_props.account_creation_fee.amount, share_type( 100 ) ),
+         std::max( db.get_witness_schedule().median_props.account_creation_fee.amount, share_type( 100 ) ),
          key,
          post_key,
          "" );
@@ -289,12 +274,12 @@ const account_object& database_fixture::accountCreate(
    FC_CAPTURE_AND_RETHROW( (name) );
 }
 
-const account_object& database_fixture::accountCreate(
+const account_object& database_fixture::account_create(
    const string& name,
    const public_key_type& key
 )
 {
-   return accountCreate( name, key, key );
+   return account_create( name, key, key );
 }
 
 const witness_object& database_fixture::witness_create(
@@ -332,7 +317,7 @@ void database_fixture::fund(
 {
    try
    {
-      transfer( genesisAccountBasename, account_name, amount );
+      transfer( GENESIS_ACCOUNT_BASE_NAME, account_name, amount );
 
    } FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
@@ -352,8 +337,8 @@ void database_fixture::fund(
                a.balance += amount;
             else if( amount.symbol == SYMBOL_USD )
             {
-               a.TSDbalance += amount;
-               a.TSD_seconds_last_update = db.head_block_time();
+               a.USDbalance += amount;
+               a.USD_seconds_last_update = db.head_block_time();
             }
          });
 
@@ -362,7 +347,7 @@ void database_fixture::fund(
             if( amount.symbol == SYMBOL_COIN )
                gpo.current_supply += amount;
             else if( amount.symbol == SYMBOL_USD )
-               gpo.current_TSD_supply += amount;
+               gpo.current_USD_supply += amount;
          });
 
          if( amount.symbol == SYMBOL_USD )
@@ -375,36 +360,9 @@ void database_fixture::fund(
                });
          }
 
-         db.update_virtual_supply();
       }, default_skip );
    }
    FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
-}
-
-void database_fixture::convert(
-   const string& account_name,
-   const asset& amount )
-{
-   try
-   {
-      const account_object& account = db.get_account( account_name );
-
-
-      if ( amount.symbol == SYMBOL_COIN )
-      {
-         db.adjust_balance( account, -amount );
-         db.adjust_balance( account, db.to_TSD( amount ) );
-         db.adjust_supply( -amount );
-         db.adjust_supply( db.to_TSD( amount ) );
-      }
-      else if ( amount.symbol == SYMBOL_USD )
-      {
-         db.adjust_balance( account, -amount );
-         db.adjust_balance( account, db.to_TME( amount ) );
-         db.adjust_supply( -amount );
-         db.adjust_supply( db.to_TME( amount ) );
-      }
-   } FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
 
 void database_fixture::transfer(
@@ -427,11 +385,11 @@ void database_fixture::transfer(
    } FC_CAPTURE_AND_RETHROW( (from)(to)(amount) )
 }
 
-void database_fixture::score( const string& from, const share_type& amount )
+void database_fixture::stake( const string& from, const share_type& amount )
 {
    try
    {
-      transferTMEtoSCOREfund_operation op;
+      stake_asset_operation op;
       op.from = from;
       op.to = "";
       op.amount = asset( amount, SYMBOL_COIN );
@@ -444,29 +402,16 @@ void database_fixture::score( const string& from, const share_type& amount )
    } FC_CAPTURE_AND_RETHROW( (from)(amount) )
 }
 
-void database_fixture::score( const string& account, const asset& amount )
+void database_fixture::stake( const string& account, const asset& amount )
 {
-   if( amount.symbol != SYMBOL_COIN )
-      return;
-
-   db_plugin->debug_update( [=]( database& db )
-   {
-      db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
-      {
-         gpo.current_supply += amount;
-      });
-
-      db.createTMEfundForSCORE( db.get_account( account ), amount );
-
-      db.update_virtual_supply();
-   }, default_skip );
+   db.adjust_staked_balance( account , amount );
 }
 
 void database_fixture::proxy( const string& account, const string& proxy )
 {
    try
    {
-      account_witness_proxy_operation op;
+      account_update_proxy_operation op;
       op.account = account;
       op.proxy = proxy;
       trx.operations.push_back( op );
@@ -482,7 +427,7 @@ void database_fixture::set_price_feed( const price& new_price )
       for ( int i = 1; i < 8; i++ )
       {
          feed_publish_operation op;
-         op.publisher = genesisAccountBasename + fc::to_string( i );
+         op.publisher = GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i );
          op.exchange_rate = new_price;
          trx.operations.push_back( op );
          trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );

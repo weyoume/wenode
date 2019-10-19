@@ -24,7 +24,7 @@ struct get_raw_block_result
 {
    chain::block_id_type          block_id;
    chain::block_id_type          previous;
-   fc::time_point_sec            timestamp;
+   fc::time_point                timestamp;
    std::string                   raw_block;
 };
 

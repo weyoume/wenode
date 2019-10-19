@@ -122,7 +122,7 @@ Now that we've reset its key, we can take control of it in the wallet:
     unlock abc
     import_key 5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3
     list_my_accounts
-    transfer WeYouMe dantheman "1.234 TME" "make -j100 money" true
+    transfer WeYouMe dantheman "1.234 MEC" "make -j100 money" true
     list_my_accounts
     get_account_history WeYouMe -1 1000
 

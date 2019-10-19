@@ -152,7 +152,7 @@ struct operation_visitor
       }
 
       /// the universal tag applies to everything safe for work or nsfw with a non-negative payout
-      if( c.net_SCOREreward >= 0 )
+      if( c.net_reward >= 0 )
       {
          lower_tags.insert( string() ); /// add it to the universal tag
       }
@@ -167,16 +167,16 @@ struct operation_visitor
        const auto& stats = get_stats( current.tag );
        remove_stats( current, stats );
 
-       if( comment.cashout_time != fc::time_point_sec::maximum() ) {
+       if( comment.cashout_time != fc::time_point::maximum() ) {
           _db.modify( current, [&]( tag_object& obj ) {
              obj.active            = comment.active;
              obj.cashout           = _db.calculate_discussion_payout_time( comment );
              obj.children          = comment.children;
-             obj.net_SCOREreward       = comment.net_SCOREreward.value;
+             obj.net_reward        = comment.net_reward.value;
              obj.net_votes         = comment.net_votes;
              obj.hot               = hot;
              obj.trending          = trending;
-             if( obj.cashout == fc::time_point_sec() )
+             if( obj.cashout == fc::time_point() )
                obj.promoted_balance = 0;
          });
          add_stats( current, stats );
@@ -203,7 +203,7 @@ struct operation_visitor
           obj.cashout           = comment.cashout_time;
           obj.net_votes         = comment.net_votes;
           obj.children          = comment.children;
-          obj.net_SCOREreward       = comment.net_SCOREreward.value;
+          obj.net_reward       = comment.net_reward.value;
           obj.author            = author;
           obj.hot               = hot;
           obj.trending          = trending;
@@ -231,33 +231,165 @@ struct operation_visitor
       }
    }
 
+/*  ########## WEYOUME SORTING ALGORITHM ##########
+
+Latency Factor (LF): Varies the weighting of post age against post scoring from all sources.
+Equalization Factor (EF): Varies the distribution of weighted Power values to be more democratic (one account one vote) or meritocratic (one power one vote).
+Reputation Factor (REPF): Determines the relative weight of posts made by users with higher reputations, measured by lifetime content rewards earned.
+Activity Factor (AF): Varies the weight of the time used for latency between the post time, and the time of last comment. 
+Vote Rank (VR): Varies the weight of post score by voting score.
+View Rank (VIR): Varies the weight of the post score by view score.
+Share Rank (SR): Varies the weight of the post score by the share score.
+Comment Rank (CR): Varies the weight of the post score by the comment score.
+
+Each sorting parameter should be between -100 and +100.
+
+*/
+   template< double LF, double EF, double REPF, double AF, double VR, double VIR, double SR, double CR >
+   double calulate_total_post_score(
+   const double& vote_count, 
+   const double& vote_power,
+   const double& view_count, 
+   const double& view_power,
+   const double& share_count, 
+   const double& share_power,
+   const double& comment_count, 
+   const double& comment_power,
+   const double& ave_vote_power, 
+   const double& ave_view_power,
+   const double& ave_share_power,
+   const double& ave_comment_power,
+   const double& vote_view_ratio,
+   const double& vote_share_ratio,
+   const double& vote_comment_ratio,
+   const double& rep_score, 
+   const time_point& created_time, 
+   const time_point& active_time )const 
+   {
+      double weighted_vote_power = vote_power * ( 1 - ( EF / 100 ) ) + vote_count * ave_vote_power * ( EF / 100 );
+      double weighted_view_power = view_power * ( 1 - ( EF / 100 ) ) + view_count * ave_view_power * ( EF / 100 );
+      double weighted_share_power = share_power * ( 1 - ( EF / 100 ) ) + share_count * ave_share_power * ( EF / 100 );
+      double weighted_comment_power = comment_power * ( 1 - ( EF / 100 ) ) + comment_count * ave_comment_power * ( EF / 100 );
+
+      int vote_sign = 0;
+      if( weighted_vote_power > 0 ) 
+      {
+         vote_sign = 1;
+      } 
+      else if( weighted_vote_power < 0 ) 
+      {
+         vote_sign = -1;
+      }
+
+      double vote_score = log2( std::abs( weighted_vote_power ) + 1 ) * vote_sign;
+      double view_score = log2( weighted_view_power + 1 ) * vote_view_ratio;
+      double share_score = log2( weighted_share_power + 1 ) * vote_share_ratio;
+      double comment_score = log2( weighted_comment_power + 1 ) * vote_comment_ratio;
+
+      double base_post_score = vote_score * ( VR / 100 ) + view_score * ( VIR / 100 ) + share_score * ( SR / 100 ) + comment_score * ( CR / 100 );
+      double post_score = base_post_score * ( 1 + rep_score * ( REPF / 100 ) );
+      double activity_weighted_time = created_time.sec_since_epoch() * ( 1 - ( AF / 100 ) ) + active_time.sec_since_epoch() * ( AF / 100 );
+      return post_score * ( 1 - ( LF / 100 ) ) + ( activity_weighted_time / 3600 ) * ( LF / 100 );
+   }
+
+   /*
+   Quality (Mid)	50	10	10	10	50	50	50	50
+   Quality (Rapid)	25	10	10	10	50	50	50	50
+   Quality (Elite)	75	10	10	10	50	50	50	50
+   Votes (Mid)	50	10	10	10	100	10	10	10
+   Votes (Rapid)	25	10	10	10	100	10	10	10
+   Votes (Elite)	75	10	10	10	100	10	10	10
+   Discussion (Mid)	50	10	10	10	10	10	10	100
+   Discussion (Rapid)	25	10	10	10	10	10	10	100
+   Discussion (Elite)	75	10	10	10	10	10	10	100
+   Views (Mid)	50	10	10	10	10	100	10	10
+   Views (Rapid)	25	10	10	10	10	100	10	10
+   Views (Elite)	75	10	10	10	10	100	10	10
+   Shares (Mid)	50	10	10	10	10	10	100	10
+   Shares (Rapid)	25	10	10	10	10	10	100	10
+   Shares (Elite)	75	10	10	10	10	10	100	10
+   Latest	0	0	0	0	0	0	0	0
+   Active	0	0	0	100	0	0	0	0
+   Most Voted	100	100	0	0	100	0	0	0
+   Most Viewed	100	100	0	0	0	100	0	0
+   Most Shared	100	100	0	0	0	0	100	0
+   Most Discussed	100	100	0	0	0	0	0	100
+   Viral	75	50	10	10	0	100	100	0
+   Elite	90	0	100	10	100	100	100	100
+   Rising	10	25	10	10	100	100	100	100
+   Popular	50	50	10	10	100	100	100	100
+   Featured	100	0	0	0	100	100	100	100
+
+   */
+
+   inline double calulate_quality_mid(
+   const double& vote_count, 
+   const double& vote_power,
+   const double& view_count, 
+   const double& view_power,
+   const double& share_power,
+   const double& comment_count, 
+   const double& comment_power,
+   const double& ave_vote_power, 
+   const double& ave_view_power,
+   const double& ave_share_power,
+   const double& ave_comment_power,
+   const double& vote_view_ratio,
+   const double& vote_share_ratio,
+   const double& vote_comment_ratio,
+   const double& rep_score, 
+   const time_point& created_time, 
+   const time_point& active_time )const 
+   {
+      return calulate_total_post_score< 50, 10, 10, 10, 50, 50, 50, 50 > (
+         vote_count, 
+         vote_power,
+         view_count, 
+         view_power,
+         share_count, 
+         share_power,
+         comment_count, 
+         comment_power,
+         ave_vote_power, 
+         ave_view_power,
+         ave_share_power,
+         ave_comment_power,
+         vote_view_ratio,
+         vote_share_ratio,
+         vote_comment_ratio,
+         rep_score,
+         created_time, 
+         active_time );
+   }
+   
 
    /**
     * https://medium.com/hacking-and-gonzo/how-reddit-ranking-algorithms-work-ef111e33d0d9#.lcbj6auuw
+    * SORTING ALGORITHM
     */
    template< int64_t S, int32_t T >
-   double calculate_SCORE( const share_type& score, const time_point_sec& created ) const
+   double calculate_sortrank( const share_type& voting_power, const time_point& created_time ) const
    {
       /// new algorithm
-      auto mod_SCORE = score.value / S;
+      auto mod_sortrank = voting_power.value / S;
 
       /// reddit algorithm
-      double order = log10( std::max<int64_t>( std::abs( mod_SCORE ), 1) );
+      double order = log10( std::max<int64_t>( std::abs( mod_sortrank ), 1) );
       int sign = 0;
-      if( mod_SCORE > 0 ) sign = 1;
-      else if( mod_SCORE < 0 ) sign = -1;
+      if( mod_sortrank > 0 ) sign = 1;
+      else if( mod_sortrank < 0 ) sign = -1;
 
-      return sign * order + double( created.sec_since_epoch() ) / double( T );
+      return sign * order + double( created_time.sec_since_epoch() ) / double( T );
    }
 
-   inline double calculate_hot( const share_type& score, const time_point_sec& created )const
+   inline double calculate_hot( const share_type& voting_power, const time_point& created_time )const
    {
-      return calculate_SCORE< 10000000, 10000 >( score, created );
+      return calculate_sortrank< 10000000, 10000 >( voting_power, created_time );
    }
 
-   inline double calculate_trending( const share_type& score, const time_point_sec& created )const
+   inline double calculate_trending( const share_type& voting_power, const time_point& created_time )const
    {
-      return calculate_SCORE< 10000000, 480000 >( score, created );
+      return calculate_sortrank< 10000000, 480000 >( voting_power, created_time );
    }
 
    /** finds tags that have been added or removed or updated */
@@ -265,8 +397,8 @@ struct operation_visitor
    {
       try {
 
-      auto hot = calculate_hot( c.net_SCOREreward, c.created );
-      auto trending = calculate_trending( c.net_SCOREreward, c.created );
+      auto hot = calculate_hot( c.net_reward, c.created_time );
+      auto trending = calculate_trending( c.net_reward, c.created_time );
 
       const auto& comment_idx = _db.get_index< tag_index >().indices().get< by_comment >();
 
@@ -410,7 +542,7 @@ struct operation_visitor
                {
                   _db.modify( *citr, [&]( tag_object& t )
                   {
-                      if( t.cashout != fc::time_point_sec::maximum() )
+                      if( t.cashout != fc::time_point::maximum() )
                           t.promoted_balance += op.amount.amount;
                   });
                   ++citr;
@@ -433,24 +565,6 @@ struct operation_visitor
                          _db.get_comment(op.author, op.permlink),
                          op.weight );
                          */
-   }
-
-   void operator()( const deleteComment_operation& op )const
-   {
-      const auto& idx = _db.get_index<tag_index>().indices().get<by_author_comment>();
-
-      const auto& auth = _db.get_account(op.author);
-      auto itr = idx.lower_bound( boost::make_tuple( auth.id ) );
-      while( itr != idx.end() && itr->author == auth.id )
-      {
-         const auto& tobj = *itr;
-         const auto* obj = _db.find< comment_object >( itr->comment );
-         ++itr;
-         if( !obj )
-         {
-            _db.remove( tobj );
-         }
-      }
    }
 
    void operator()( const comment_reward_operation& op )const

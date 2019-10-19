@@ -147,7 +147,7 @@ class wallet_api
       app::state                          get_state( string url );
 
       /**
-       * Returns SCORE TME fund withdraw routes for an account.
+       * Returns fund withdraw routes for an account.
        *
        * @param account Account to query routes
        * @param type Withdraw type type [incoming, outgoing, all]
@@ -347,11 +347,11 @@ class wallet_api
        *  'info' wallet command.
        *
        *  @param creator The account creating the new account
-       *  @param newAccountName The name of the new account
+       *  @param new_account_name The name of the new account
        *  @param json JSON Metadata associated with the new account
        *  @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction create_account( string creator, string newAccountName, string json, bool broadcast );
+      annotated_signed_transaction create_account( string creator, string new_account_name, string json, bool broadcast );
 
       /**
        * This method is used by faucets to create new accounts for other users which must
@@ -383,16 +383,16 @@ class wallet_api
        *  that is paid by the creator. The current account creation fee can be found with the
        *  'info' wallet command.
        *
-       *  These accounts are created with combination of TME and SCORE
+       *  These accounts are created with Coin Fee and delegation
        *
        *  @param creator The account creating the new account
-       *  @param TMEfee The amount of the fee to be paid with TME
-       *  @param delegatedSCORE The amount of the fee to be paid with delegation
-       *  @param newAccountName The name of the new account
+       *  @param fee The amount of the fee to be paid
+       *  @param delegation The amount of the fee to be paid with delegation
+       *  @param new_account_name The name of the new account
        *  @param json JSON Metadata associated with the new account
        *  @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction create_account_delegated( string creator, asset TMEfee, asset delegatedSCORE, string newAccountName, string json, bool broadcast );
+      annotated_signed_transaction create_account_delegated( string creator, asset fee, asset delegation, string new_account_name, string json, bool broadcast );
 
       /**
        * This method is used by faucets to create new accounts for other users which must
@@ -400,11 +400,11 @@ class wallet_api
        * wallet. There is a fee associated with account creation that is paid by the creator.
        * The current account creation fee can be found with the 'info' wallet command.
        *
-       * These accounts are created with combination of TME and SCORE
+       * These accounts are created with combination of Coin fee and delegated Stake
        *
        * @param creator The account creating the new account
-       * @param TMEfee The amount of the fee to be paid with TME
-       * @param delegatedSCORE The amount of the fee to be paid with delegation
+       * @param fee The amount of the fee to be paid
+       * @param delegation The amount of the fee to be paid with delegation
        * @param newname The name of the new account
        * @param json JSON Metadata associated with the new account
        * @param owner public owner key of the new account
@@ -414,8 +414,8 @@ class wallet_api
        * @param broadcast true if you wish to broadcast the transaction
        */
       annotated_signed_transaction create_account_with_keys_delegated( string creator,
-                                            asset TMEfee,
-                                            asset delegatedSCORE,
+                                            asset fee,
+                                            asset delegation,
                                             string newname,
                                             string json,
                                             public_key_type owner,
@@ -501,18 +501,18 @@ class wallet_api
        * @param key The new memo public key
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction update_account_memoKey( string account_name, public_key_type key, bool broadcast );
+      annotated_signed_transaction update_account_secure_public_key( string account_name, public_key_type key, bool broadcast );
 
 
       /**
-       * This method delegates SCORE from one account to another.
+       * This method delegates assets from one account to another.
        *
-       * @param delegator The name of the account delegating SCORE
-       * @param delegatee The name of the account receiving SCORE
-       * @param SCORE The amount of SCORE to delegate
+       * @param delegator The name of the account delegating assets
+       * @param delegatee The name of the account receiving assets
+       * @param assets The amount of assets to delegate
        * @param broadcast true if you wish to broadcast the transaction
        */
-       annotated_signed_transaction delegateSCORE( string delegator, string delegatee, asset SCORE, bool broadcast );
+       annotated_signed_transaction delegate_asset( string delegator, string delegatee, asset assets, bool broadcast );
 
 
       /**
@@ -540,15 +540,6 @@ class wallet_api
        * @returns the information about the witness stored in the block chain
        */
       optional< witness_api_obj > get_witness(string owner_account);
-
-      /** Returns conversion requests by an account
-       *
-       * @param owner Account name of the account owning the requests
-       *
-       * @returns All pending conversion requests by account
-       */
-      vector<convert_request_api_obj> get_conversion_requests( string owner );
-
 
       /**
        * Update a witness object owned by the given account.
@@ -588,7 +579,7 @@ class wallet_api
        * Vote for a witness to become a block producer. By default an account has not voted
        * positively or negatively for a witness. The account can either vote for with positively
        * votes or against with negative votes. The vote will remain until updated with another
-       * vote. Vote strength is determined by the accounts SCORE.
+       * vote. Vote strength is determined by the account's Equity and staked coin balance.
        *
        * @param account_to_vote_with The account voting for a witness
        * @param witness_to_vote_for The witness that is being voted for
@@ -601,25 +592,24 @@ class wallet_api
                                           bool broadcast = false);
 
       /**
-       * Transfer funds from one account to another. TME and TSD can be transferred.
+       * Transfer funds from one account to another.
        *
        * @param from The account the funds are coming from
        * @param to The account the funds are going to
-       * @param amount The funds being transferred. i.e. "100.000 TME"
+       * @param amount The funds being transferred
        * @param memo A memo for the transactionm, encrypted with the to account's public memo key
        * @param broadcast true if you wish to broadcast the transaction
        */
       annotated_signed_transaction transfer(string from, string to, asset amount, string memo, bool broadcast = false);
 
       /**
-       * Transfer funds from one account to another using escrow. TME and TSD can be transferred.
+       * Transfer funds from one account to another using escrow.
        *
        * @param from The account the funds are coming from
        * @param to The account the funds are going to
        * @param agent The account acting as the agent in case of dispute
        * @param escrow_id A unique id for the escrow transfer. (from, escrow_id) must be a unique pair
-       * @param TSDamount The amount of TSD to transfer
-       * @param TMEamount The amount of TME to transfer
+       * @param amount The amount of assets to transfer
        * @param fee The fee paid to the agent
        * @param ratification_deadline The deadline for 'to' and 'agent' to approve the escrow transfer
        * @param escrow_expiration The expiration of the escrow transfer, after which either party can claim the funds
@@ -631,11 +621,10 @@ class wallet_api
          string to,
          string agent,
          uint32_t escrow_id,
-         asset TSDamount,
-         asset TMEamount,
+         asset amount,
          asset fee,
-         time_point_sec ratification_deadline,
-         time_point_sec escrow_expiration,
+         time_point ratification_deadline,
+         time_point escrow_expiration,
          string json,
          bool broadcast = false
       );
@@ -682,7 +671,7 @@ class wallet_api
       );
 
       /**
-       * Release funds help in escrow
+       * Release funds held in escrow
        *
        * @param from The account that funded the escrow
        * @param to The account the funds are originally going to
@@ -690,8 +679,7 @@ class wallet_api
        * @param who The account authorizing the release
        * @param receiver The account that will receive funds being released
        * @param escrow_id A unique id for the escrow transfer
-       * @param TSDamount The amount of TSD that will be released
-       * @param TMEamount The amount of TME that will be released
+       * @param amount The amount of assets that will be released
        * @param broadcast true if you wish to broadcast the transaction
        */
       annotated_signed_transaction escrow_release(
@@ -701,77 +689,62 @@ class wallet_api
          string who,
          string receiver,
          uint32_t escrow_id,
-         asset TSDamount,
-         asset TMEamount,
+         asset amount,
          bool broadcast = false
       );
 
       /**
-       * Transfer TME into the SCORE fund (SCORE). SCORE are required to be held
-       * for a minimum of one coin year and can be withdrawn once a week over a two year withdraw period.
-       * SCORE are protected against dilution up until 90% of TME is in SCORE.
-       *
-       * @param from The account the TME is coming from
-       * @param to The account getting the SCORE
-       * @param amount The amount of TME to SCORE i.e. "100.00 TME"
+       * Stake Asset Transaction
+
+       * @param from The account the assets is coming from
+       * @param to The account getting the staked assets
+       * @param amount The amount of assets to stake.
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction transferTMEtoSCOREfund(string from, string to, asset amount, bool broadcast = false);
+      annotated_signed_transaction stake_asset(string from, string to, asset amount, bool broadcast = false);
 
       /**
        *  Transfers into savings happen immediately, transfers from savings take 72 hours
        */
-      annotated_signed_transaction transferToSavings( string from, string to, asset amount, string memo, bool broadcast = false );
+      annotated_signed_transaction transfer_to_savings( string from, string to, asset amount, string memo, bool broadcast = false );
 
       /**
        * @param request_id - an unique ID assigned by from account, the id is used to cancel the operation and can be reused after the transfer completes
        */
-      annotated_signed_transaction transferFromSavings( string from, uint32_t request_id, string to, asset amount, string memo, bool broadcast = false );
+      annotated_signed_transaction transfer_from_savings( string from, uint32_t request_id, string to, asset amount, string memo, bool broadcast = false );
 
       /**
-       *  @param request_id the id used in transferFromSavings
+       *  @param request_id the id used in transfer_from_savings
        *  @param from the account that initiated the transfer
        */
-      annotated_signed_transaction cancelTransferFromSavings( string from, uint32_t request_id, bool broadcast = false );
+      annotated_signed_transaction cancel_transfer_from_savings( string from, uint32_t request_id, bool broadcast = false );
 
 
       /**
-       * Set up an SCORE withdraw request. The request is fulfilled once a week over the next two year (104 weeks).
+       * Set up an unstake assets request. The request is fulfilled once a week over the duration of the operation.
        *
-       * @param from The account the SCORE are withdrawn from
-       * @param SCORE The amount of SCORE to withdraw over the next two years. Each week (amount/104) SCORE are
-       *    withdrawn and deposited back as TME. i.e. "10.000000 SCORE"
+       * @param from The account the assets are withdrawn from
+       * @param assets The amount of assets to withdraw 
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction withdrawSCORE( string from, asset SCORE, bool broadcast = false );
+      annotated_signed_transaction unstake_asset( string from, asset amount, bool broadcast = false );
 
       /**
-       * Set up an SCORE withdraw route. When SCORE are withdrawn, they will be routed to these accounts
+       * Set up an asset withdraw route. When assets are withdrawn, they will be routed to these accounts
        * based on the specified weights.
        *
-       * @param from The account the SCORE are withdrawn from.
-       * @param to   The account receiving either SCORE or TME.
+       * @param from The account the assets are withdrawn from.
+       * @param to   The account receiving either assets or new stake.
        * @param percent The percent of the withdraw to go to the 'to' account. This is denoted in hundreths of a percent.
        *    i.e. 100 is 1% and 10000 is 100%. This value must be between 1 and 100000
-       * @param autoSCORE Set to true if the from account should receive the SCORE as SCORE, or false if it should receive
-       *    them as TME.
+       * @param auto_stake Set to true if the from account should receive the withdrawn assets as stake, or false if it should receive
+       *    them as a liquid balance.
        * @param broadcast true if you wish to broadcast the transaction.
        */
-      annotated_signed_transaction setWithdrawSCOREasTMEroute( string from, string to, uint16_t percent, bool autoSCORE, bool broadcast = false );
+      annotated_signed_transaction unstake_asset_route( string from, string to, uint16_t percent, bool auto_stake, bool broadcast = false );
 
       /**
-       *  This method will convert TSD to TME at the current_median_history price one
-       *  week from the time it is executed. This method depends upon there being a valid price feed.
-       *
-       *  @param from The account requesting conversion of its TSD i.e. "1.000 TSD"
-       *  @param amount The amount of TSD to convert
-       *  @param broadcast true if you wish to broadcast the transaction
-       */
-      annotated_signed_transaction convertTSD( string from, asset amount, bool broadcast = false );
-
-      /**
-       * A witness can public a price feed for the TME:TSD market. The median price feed is used
-       * to process conversion requests from TSD to TME.
+       * A witness can publish a price feed.
        *
        * @param witness The witness publishing the price feed
        * @param exchange_rate The desired exchange rate
@@ -811,7 +784,7 @@ class wallet_api
       vector< variant > network_get_connected_peers();
 
       /**
-       * Gets the current order book for TME:TSD
+       * Gets the current order book
        *
        * @param limit Maximum number of orders to return for bids and asks. Max is 1000.
        */
@@ -823,7 +796,7 @@ class wallet_api
        *
        *  @param owner The name of the account creating the order
        *  @param order_id is a unique identifier assigned by the creator of the order, it can be reused after the order has been filled
-       *  @param amount_to_sell The amount of either TSD or TME you wish to sell
+       *  @param amount_to_sell The amount you wish to sell
        *  @param min_to_receive The amount of the other asset you will receive at a minimum
        *  @param fill_or_kill true if you want the order to be killed if it cannot immediately be filled
        *  @param expiration the time the order should expire if it has not been filled
@@ -860,7 +833,7 @@ class wallet_api
       message_body try_decrypt_message( const message_api_obj& mo );
 
       /**
-       * Vote on a comment to be paid TME
+       * Vote on a comment
        *
        * @param voter The account voting
        * @param author The author of the comment to be voted on
@@ -876,8 +849,8 @@ class wallet_api
       void set_transaction_expiration(uint32_t seconds);
 
       /**
-       * Challenge a user's authority. The challenger pays a fee to the challenged which is depositted as
-       * TME Power. Until the challenged proves their active key, all posting rights are revoked.
+       * Challenge a user's authority. The challenger pays a fee to the challenged which is deposited as
+       * Power. Until the challenged proves their active key, all posting rights are revoked.
        *
        * @param challenger The account issuing the challenge
        * @param challenged The account being challenged
@@ -889,14 +862,14 @@ class wallet_api
        * Create an account recovery request as a recover account. The syntax for this command contains a serialized authority object
        * so there is an example below on how to pass in the authority.
        *
-       * request_account_recovery "your_account" "accountToRecover" {"weight_threshold": 1,"account_auths": [], "key_auths": [["new_public_key",1]]} true
+       * request_account_recovery "your_account" "account_to_recover" {"weight_threshold": 1,"account_auths": [], "key_auths": [["new_public_key",1]]} true
        *
-       * @param recoveryAccount The name of your account
-       * @param accountToRecover The name of the account you are trying to recover
+       * @param recovery_account The name of your account
+       * @param account_to_recover The name of the account you are trying to recover
        * @param newAuthority The new owner authority for the recovered account. This should be given to you by the holder of the compromised or lost account.
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction request_account_recovery( string recoveryAccount, string accountToRecover, authority newAuthority, bool broadcast );
+      annotated_signed_transaction request_account_recovery( string recovery_account, string account_to_recover, authority newAuthority, bool broadcast );
 
       /**
        * Recover your account using a recovery request created by your recovery account. The syntax for this commain contains a serialized
@@ -904,21 +877,21 @@ class wallet_api
        *
        * recover_account "your_account" {"weight_threshold": 1,"account_auths": [], "key_auths": [["old_public_key",1]]} {"weight_threshold": 1,"account_auths": [], "key_auths": [["new_public_key",1]]} true
        *
-       * @param accountToRecover The name of your account
+       * @param account_to_recover The name of your account
        * @param recent_authority A recent owner authority on your account
        * @param newAuthority The new authority that your recovery account used in the account recover request.
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction recover_account( string accountToRecover, authority recent_authority, authority newAuthority, bool broadcast );
+      annotated_signed_transaction recover_account( string account_to_recover, authority recent_authority, authority newAuthority, bool broadcast );
 
       /**
        * Change your recovery account after a 30 day delay.
        *
        * @param owner The name of your account
-       * @param new_recoveryAccount The name of the recovery account you wish to have
+       * @param new_recovery_account The name of the recovery account you wish to have
        * @param broadcast true if you wish to broadcast the transaction
        */
-      annotated_signed_transaction change_recoveryAccount( string owner, string new_recoveryAccount, bool broadcast );
+      annotated_signed_transaction change_recovery_account( string owner, string new_recovery_account, bool broadcast );
 
       vector< owner_authority_history_api_obj > get_owner_history( string account )const;
 
@@ -973,7 +946,7 @@ class wallet_api
 
       annotated_signed_transaction decline_voting_rights( string account, bool decline, bool broadcast );
 
-      annotated_signed_transaction claimRewardBalance( string account, asset TMEreward, asset TSDreward, asset SCOREreward, bool broadcast );
+      annotated_signed_transaction claim_reward_balance( string account, asset reward, bool broadcast );
 };
 
 struct plain_keys {
@@ -998,9 +971,16 @@ FC_REFLECT_ENUM( node::wallet::authority_type, (owner)(active)(posting) )
 
 FC_API( node::wallet::wallet_api,
         /// wallet api
-        (help)(gethelp)
-        (about)(is_new)(is_locked)(lock)(unlock)(set_password)
-        (load_wallet_file)(save_wallet_file)
+        (help)
+        (gethelp)
+        (about)
+        (is_new)
+        (is_locked)
+        (lock)
+        (unlock)
+        (set_password)
+        (load_wallet_file)
+        (save_wallet_file)
 
         /// key api
         (import_key)
@@ -1035,8 +1015,8 @@ FC_API( node::wallet::wallet_api,
         (update_account_auth_account)
         (update_account_auth_threshold)
         (update_account_meta)
-        (update_account_memoKey)
-        (delegateSCORE)
+        (update_account_secure_public_key)
+        (delegate_asset)
         (update_witness)
         (set_voting_proxy)
         (vote_for_witness)
@@ -1046,10 +1026,9 @@ FC_API( node::wallet::wallet_api,
         (escrow_approve)
         (escrow_dispute)
         (escrow_release)
-        (transferTMEtoSCOREfund)
-        (withdrawSCORE)
-        (setWithdrawSCOREasTMEroute)
-        (convertTSD)
+        (stake_asset)
+        (unstake_asset)
+        (unstake_asset_route)
         (publishFeed)
         (get_order_book)
         (get_open_orders)
@@ -1062,15 +1041,15 @@ FC_API( node::wallet::wallet_api,
         (prove)
         (request_account_recovery)
         (recover_account)
-        (change_recoveryAccount)
+        (change_recovery_account)
         (get_owner_history)
-        (transferToSavings)
-        (transferFromSavings)
-        (cancelTransferFromSavings)
+        (transfer_to_savings)
+        (transfer_from_savings)
+        (cancel_transfer_from_savings)
         (get_encrypted_memo)
         (decrypt_memo)
         (decline_voting_rights)
-        (claimRewardBalance)
+        (claim_reward_balance)
 
         // private message api
         (send_private_message)

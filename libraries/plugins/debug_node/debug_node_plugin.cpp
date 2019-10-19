@@ -55,7 +55,7 @@ struct debug_mine_state
    std::string                    worker_account;
    chain::block_id_type           prev_block;
    uint32_t                       summary_target = 0;
-   fc::promise< chain::pow2 >::ptr work;
+   fc::promise< chain::proof_of_work >::ptr work;
    fc::mutex                      set_work_mutex;
 };
 
@@ -63,7 +63,7 @@ debug_mine_state::debug_mine_state() {}
 debug_mine_state::~debug_mine_state() {}
 
 void debug_node_plugin::debug_mine_work(
-   chain::pow2& work,
+   chain::proof_of_work& work,
    uint32_t summary_target
    )
 {
@@ -71,7 +71,7 @@ void debug_node_plugin::debug_mine_work(
    mine_state->worker_account = work.input.worker_account;
    mine_state->prev_block = work.input.prev_block;
    mine_state->summary_target = summary_target;
-   mine_state->work = fc::promise< chain::pow2 >::ptr( new fc::promise< chain::pow2 >() );
+   mine_state->work = fc::promise< chain::proof_of_work >::ptr( new fc::promise< chain::proof_of_work >() );
 
    uint32_t thread_num = 0;
    uint32_t num_threads = _my->_mining_threads;
@@ -88,7 +88,7 @@ void debug_node_plugin::debug_mine_work(
       wlog( "Launching thread ${i}", ("i", thread_num) );
       t->async( [mine_state,nonce_offset,nonce_stride]()
       {
-         chain::pow2 work;
+         chain::proof_of_work work;
          std::string worker_account = mine_state->worker_account;
          chain::block_id_type prev_block = mine_state->prev_block;
          uint32_t summary_target = mine_state->summary_target;
@@ -295,7 +295,7 @@ uint32_t debug_node_plugin::debug_generate_blocks(
    {
       uint32_t new_slot = miss_blocks+1;
       std::string scheduled_witness_name = db.get_scheduled_witness( slot );
-      fc::time_point_sec scheduled_time = db.get_slot_time( slot );
+      fc::time_point scheduled_time = db.get_slot_time( slot );
       const chain::witness_object& scheduled_witness = db.get_witness( scheduled_witness_name );
       node::chain::public_key_type scheduled_key = scheduled_witness.signing_key;
       if( debug_key != "" )
@@ -335,7 +335,7 @@ uint32_t debug_node_plugin::debug_generate_blocks(
 
 uint32_t debug_node_plugin::debug_generate_blocks_until(
    const std::string& debug_key,
-   const fc::time_point_sec& head_block_time,
+   const fc::time_point& head_block_time,
    bool generate_sparsely,
    uint32_t skip,
    private_key_storage* key_storage

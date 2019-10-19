@@ -77,10 +77,10 @@ class tag_object : public object< tag_object_type, tag_object >
       id_type           id;
 
       tag_name_type     tag;
-      time_point_sec    created;
-      time_point_sec    active;
-      time_point_sec    cashout;
-      int64_t           net_SCOREreward = 0;
+      time_point        created;
+      time_point        active;
+      time_point        cashout;
+      int64_t           net_reward = 0;
       int32_t           net_votes   = 0;
       int32_t           children    = 0;
       double            hot         = 0;
@@ -98,18 +98,18 @@ typedef oid< tag_object > tag_id_type;
 
 
 struct by_cashout; /// all posts regardless of depth
-struct by_net_SCOREreward; /// all comments regardless of depth
+struct by_net_reward; /// all comments regardless of depth
 struct by_parent_created;
 struct by_parent_active;
 struct by_parent_promoted;
-struct by_parent_net_SCOREreward; /// all top level posts by direct pending payout
+struct by_parent_net_reward; /// all top level posts by direct pending payout
 struct by_parent_net_votes; /// all top level posts by direct votes
 struct by_parent_trending;
 struct by_parent_children; /// all top level posts with the most discussion (replies at all levels)
 struct by_parent_hot;
 struct by_author_parent_created;  /// all blog posts by author with tag
 struct by_author_comment;
-struct by_reward_fund_net_SCOREreward;
+struct by_reward_fund_net_reward;
 struct by_comment;
 struct by_tag;
 
@@ -137,19 +137,19 @@ typedef multi_index_container<
             composite_key< tag_object,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, time_point_sec, &tag_object::created >,
+               member< tag_object, time_point, &tag_object::created >,
                member<tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less< tag_name_type >, std::less<comment_id_type>, std::greater< time_point_sec >, std::less< tag_id_type > >
+            composite_key_compare< std::less< tag_name_type >, std::less<comment_id_type>, std::greater< time_point >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_parent_active >,
             composite_key< tag_object,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, time_point_sec, &tag_object::active >,
+               member< tag_object, time_point, &tag_object::active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< time_point_sec >, std::less< tag_id_type > >
+            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< time_point >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_parent_promoted >,
             composite_key< tag_object,
@@ -160,11 +160,11 @@ typedef multi_index_container<
             >,
             composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< share_type >, std::less< tag_id_type > >
       >,
-      ordered_unique< tag< by_parent_net_SCOREreward >,
+      ordered_unique< tag< by_parent_net_reward >,
             composite_key< tag_object,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, int64_t, &tag_object::net_SCOREreward >,
+               member< tag_object, int64_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int64_t >, std::less< tag_id_type > >
@@ -208,15 +208,15 @@ typedef multi_index_container<
       ordered_unique< tag< by_cashout >,
             composite_key< tag_object,
                member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, time_point_sec, &tag_object::cashout >,
+               member< tag_object, time_point, &tag_object::cashout >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less< time_point_sec >, std::less< tag_id_type > >
+            composite_key_compare< std::less<tag_name_type>, std::less< time_point >, std::less< tag_id_type > >
       >,
-      ordered_unique< tag< by_net_SCOREreward >,
+      ordered_unique< tag< by_net_reward >,
             composite_key< tag_object,
                member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, int64_t, &tag_object::net_SCOREreward >,
+               member< tag_object, int64_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less<tag_name_type>, std::greater< int64_t >, std::less< tag_id_type > >
@@ -225,16 +225,16 @@ typedef multi_index_container<
             composite_key< tag_object,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, account_id_type, &tag_object::author >,
-               member< tag_object, time_point_sec, &tag_object::created >,
+               member< tag_object, time_point, &tag_object::created >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less<account_id_type>, std::greater< time_point_sec >, std::less< tag_id_type > >
+            composite_key_compare< std::less<tag_name_type>, std::less<account_id_type>, std::greater< time_point >, std::less< tag_id_type > >
       >,
-      ordered_unique< tag< by_reward_fund_net_SCOREreward >,
+      ordered_unique< tag< by_reward_fund_net_reward >,
             composite_key< tag_object,
                member< tag_object, tag_name_type, &tag_object::tag >,
                const_mem_fun< tag_object, bool, &tag_object::is_post >,
-               member< tag_object, int64_t, &tag_object::net_SCOREreward >,
+               member< tag_object, int64_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less<tag_name_type>, std::less< bool >,std::greater< int64_t >, std::less< tag_id_type > >
@@ -309,7 +309,7 @@ typedef multi_index_container<
 
 /**
  *  The purpose of this object is to track the relationship between accounts based upon how a user votes. Every time
- *  a user votes on a post, the relationship between voter and author increases direct SCOREreward.
+ *  a user votes on a post, the relationship between voter and author increases direct reward.
  */
 class peer_stats_object : public object< peer_stats_object_type, peer_stats_object >
 {
@@ -504,7 +504,7 @@ class tag_api : public std::enable_shared_from_this<tag_api> {
 FC_API( node::tags::tag_api, (get_tags) );
 
 FC_REFLECT( node::tags::tag_object,
-   (id)(tag)(created)(active)(cashout)(net_SCOREreward)(net_votes)(hot)(trending)(promoted_balance)(children)(author)(parent)(comment) )
+   (id)(tag)(created)(active)(cashout)(net_reward)(net_votes)(hot)(trending)(promoted_balance)(children)(author)(parent)(comment) )
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_index )
 
 FC_REFLECT( node::tags::tag_stats_object,

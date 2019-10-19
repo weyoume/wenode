@@ -79,7 +79,7 @@ struct pre_operation_visitor
          auto& db = _plugin.database();
          const auto& c = db.get_comment( op.author, op.permlink );
 
-         if( db.calculate_discussion_payout_time( c ) == fc::time_point_sec::maximum() ) return;
+         if( db.calculate_discussion_payout_time( c ) == fc::time_point::maximum() ) return;
 
          const auto& cv_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
          auto cv = cv_idx.find( std::make_tuple( c.id, db.get_account( op.voter ).id ) );
@@ -93,45 +93,12 @@ struct pre_operation_visitor
             {
                db.modify( *rep, [&]( reputation_object& r )
                {
-                  r.reputation -= ( cv->SCOREreward >> 6 ); // Shift away precision from SCORE. It is noise
+                  r.reputation -= ( cv->reward >> 6 );
                });
             }
          }
       }
       catch( const fc::exception& e ) {}
-   }
-
-   void operator()( const deleteComment_operation& op )const
-   {
-      try
-      {
-         auto& db = _plugin.database();
-         const auto* comment = db.find_comment( op.author, op.permlink );
-
-         if( comment == nullptr ) return;
-         if( comment->parent_author.size() ) return;
-
-         const auto& feed_idx = db.get_index< feed_index >().indices().get< by_comment >();
-         auto itr = feed_idx.lower_bound( comment->id );
-
-         while( itr != feed_idx.end() && itr->comment == comment->id )
-         {
-            const auto& old_feed = *itr;
-            ++itr;
-            db.remove( old_feed );
-         }
-
-         const auto& blog_idx = db.get_index< blog_index >().indices().get< by_comment >();
-         auto blog_itr = blog_idx.lower_bound( comment->id );
-
-         while( blog_itr != blog_idx.end() && blog_itr->comment == comment->id )
-         {
-            const auto& old_blog = *blog_itr;
-            ++blog_itr;
-            db.remove( old_blog );
-         }
-      }
-      FC_CAPTURE_AND_RETHROW()
    }
 };
 
@@ -147,13 +114,13 @@ struct post_operation_visitor
    template< typename T >
    void operator()( const T& )const {}
 
-   void operator()( const customJson_operation& op )const
+   void operator()( const custom_json_operation& op )const
    {
       try
       {
          if( op.id == FOLLOW_PLUGIN_NAME )
          {
-            customJson_operation new_cop;
+            custom_json_operation new_cop;
 
             new_cop.required_auths = op.required_auths;
             new_cop.required_posting_auths = op.required_posting_auths;
@@ -171,7 +138,7 @@ struct post_operation_visitor
 
             auto new_fop = follow_plugin_operation( fop );
             new_cop.json = fc::json::to_string( new_fop );
-            std::shared_ptr< custom_operation_interpreter > eval = _plugin.database().get_customJson_evaluator( op.id );
+            std::shared_ptr< custom_operation_interpreter > eval = _plugin.database().get_custom_json_evaluator( op.id );
             eval->apply( new_cop );
          }
       }
@@ -271,7 +238,7 @@ struct post_operation_visitor
          auto& db = _plugin.database();
          const auto& comment = db.get_comment( op.author, op.permlink );
 
-         if( db.calculate_discussion_payout_time( comment ) == fc::time_point_sec::maximum() )
+         if( db.calculate_discussion_payout_time( comment ) == fc::time_point::maximum() )
             return;
 
          const auto& cv_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
@@ -289,22 +256,22 @@ struct post_operation_visitor
          {
             // Rule #2: If you are down voting another user, you must have more reputation than them to impact their reputation
             // User rep is 0, so requires voter having positive rep
-            if( cv->SCOREreward < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > 0 )) return;
+            if( cv->reward < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > 0 )) return;
 
             db.create< reputation_object >( [&]( reputation_object& r )
             {
                r.account = op.author;
-               r.reputation = ( cv->SCOREreward >> 6 ); // Shift away precision from SCORE. It is noise
+               r.reputation = ( cv->reward >> 6 );
             });
          }
          else
          {
             // Rule #2: If you are down voting another user, you must have more reputation than them to impact their reputation
-            if( cv->SCOREreward < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > author_rep->reputation ) ) return;
+            if( cv->reward < 0 && !( voter_rep != rep_idx.end() && voter_rep->reputation > author_rep->reputation ) ) return;
 
             db.modify( *author_rep, [&]( reputation_object& r )
             {
-               r.reputation += ( cv->SCOREreward >> 6 ); // Shift away precision from SCORE. It is noise
+               r.reputation += ( cv->reward >> 6 ); 
             });
          }
       }
@@ -378,7 +345,7 @@ void follow_plugin::plugin_initialize( const boost::program_options::variables_m
 
       if( options.count( "follow-start-feeds" ) )
       {
-         start_feeds = fc::time_point_sec( options[ "follow-start-feeds" ].as< uint32_t >() );
+         start_feeds = fc::time_point( options[ "follow-start-feeds" ].as< uint32_t >() );
       }
    }
    FC_CAPTURE_AND_RETHROW()

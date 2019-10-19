@@ -12,7 +12,7 @@ namespace node { namespace protocol {
       uint16_t           ref_block_num    = 0;
       uint32_t           ref_block_prefix = 0;
 
-      fc::time_point_sec expiration;
+      fc::time_point     expiration;
 
       vector<operation>  operations;
       extensions_type    extensions;
@@ -22,7 +22,7 @@ namespace node { namespace protocol {
       void                validate() const;
       digest_type         sig_digest( const chain_id_type& chain_id )const;
 
-      void set_expiration( fc::time_point_sec expiration_time );
+      void set_expiration( fc::time_point expiration_time );
       void set_reference_block( const block_id_type& reference_block );
 
       template<typename Visitor>

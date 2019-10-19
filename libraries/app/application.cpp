@@ -310,7 +310,7 @@ namespace detail {
             {
                try
                {
-                  _chain_db->open(_data_dir / "blockchain", _shared_dir, INIT_SUPPLY, _shared_file_size, chainbase::database::read_write );\
+                  _chain_db->open(_data_dir / "blockchain", _shared_dir, INIT_COIN_SUPPLY, _shared_file_size, chainbase::database::read_write );\
                }
                catch( fc::assert_exception& )
                {
@@ -323,7 +323,7 @@ namespace detail {
                   catch( chain::block_log_exception& )
                   {
                      wlog( "Error opening block log. Having to resync from network..." );
-                     _chain_db->open( _data_dir / "blockchain", _shared_dir, INIT_SUPPLY, _shared_file_size, chainbase::database::read_write );
+                     _chain_db->open( _data_dir / "blockchain", _shared_dir, INIT_COIN_SUPPLY, _shared_file_size, chainbase::database::read_write );
                   }
                }
             }
@@ -337,7 +337,7 @@ namespace detail {
          else
          {
             ilog( "Starting WeYouMe node in read mode." );
-            _chain_db->open( _data_dir / "blockchain", _shared_dir, INIT_SUPPLY, _shared_file_size, chainbase::database::read_only );
+            _chain_db->open( _data_dir / "blockchain", _shared_dir, INIT_COIN_SUPPLY, _shared_file_size, chainbase::database::read_only );
 
             if( _options->count( "read-forward-rpc" ) )
             {
@@ -493,11 +493,11 @@ namespace detail {
                   ("n", blk_msg.block.block_num()) );
             }
 
-            time_point_sec now = fc::time_point::now();
+            time_point now = fc::time_point::now();
 
-            uint64_t max_accept_time = now.sec_since_epoch();
+            uint64_t max_accept_time = now.time_since_epoch();
             max_accept_time += allow_future_time;
-            FC_ASSERT( blk_msg.block.timestamp.sec_since_epoch() <= max_accept_time );
+            FC_ASSERT( blk_msg.block.timestamp.time_since_epoch() <= max_accept_time );
 
             try {
                // TODO: in the case where this block is valid but on a fork that's too old for us to switch to,
@@ -858,20 +858,20 @@ namespace detail {
 
       /**
        * Returns the time a block was produced (if block_id = 0, returns genesis time).
-       * If we don't know about the block, returns time_point_sec::min()
+       * If we don't know about the block, returns time_point::min()
        */
-      virtual fc::time_point_sec get_block_time(const item_hash_t& block_id) override
+      virtual fc::time_point get_block_time(const item_hash_t& block_id) override
       { try {
          return _chain_db->with_read_lock( [&]()
          {
             auto opt_block = _chain_db->fetch_block_by_id( block_id );
             if( opt_block.valid() ) return opt_block->timestamp;
-            return fc::time_point_sec::min();
+            return fc::time_point::min();
          });
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }
 
       /** returns fc::time_point::now(); */
-      virtual fc::time_point_sec get_blockchain_now() override
+      virtual fc::time_point get_blockchain_now() override
       {
          return fc::time_point::now();
       }

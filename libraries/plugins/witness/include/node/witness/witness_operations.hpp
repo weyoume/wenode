@@ -16,7 +16,7 @@ class witness_plugin;
 struct enable_content_editing_operation : base_operation
 {
    protocol::account_name_type   account;
-   fc::time_point_sec            relock_time;
+   fc::time_point                relock_time;
 
    void validate()const;
 

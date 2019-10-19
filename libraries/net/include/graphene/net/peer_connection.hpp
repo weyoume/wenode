@@ -202,9 +202,9 @@ namespace graphene { namespace net
       uint32_t         core_protocol_version = 0;
       std::string      user_agent;
       fc::optional<std::string> graphene_git_revision_sha;
-      fc::optional<fc::time_point_sec> graphene_git_revision_unix_timestamp;
+      fc::optional<fc::time_point> graphene_git_revision_unix_timestamp;
       fc::optional<std::string> fc_git_revision_sha;
-      fc::optional<fc::time_point_sec> fc_git_revision_unix_timestamp;
+      fc::optional<fc::time_point> fc_git_revision_unix_timestamp;
       fc::optional<std::string> platform;
       fc::optional<uint32_t> bitness;
       fc::optional<::node::protocol::chain_id_type> chain_id;
@@ -230,7 +230,7 @@ namespace graphene { namespace net
       fc::time_point last_sync_item_received_time; /// the time we received the last sync item or the time we sent the last batch of sync item requests to this peer
       std::set<item_hash_t> sync_items_requested_from_peer; /// ids of blocks we've requested from this peer during sync.  fetch from another peer if this peer disconnects
       item_hash_t last_block_delegate_has_seen; /// the hash of the last block  this peer has told us about that the peer knows
-      fc::time_point_sec last_block_time_delegate_has_seen;
+      fc::time_point last_block_time_delegate_has_seen;
       bool inhibit_fetching_sync_blocks = false;
       /// @}
 
@@ -239,8 +239,8 @@ namespace graphene { namespace net
       struct timestamped_item_id
       {
         item_id            item;
-        fc::time_point_sec timestamp;
-        timestamped_item_id(const item_id& item, const fc::time_point_sec timestamp) :
+        fc::time_point timestamp;
+        timestamped_item_id(const item_id& item, const fc::time_point timestamp) :
           item(item),
           timestamp(timestamp)
         {}
@@ -250,7 +250,7 @@ namespace graphene { namespace net
                                            boost::multi_index::indexed_by<boost::multi_index::hashed_unique<boost::multi_index::member<timestamped_item_id, item_id, &timestamped_item_id::item>,
                                                                                                             std::hash<item_id> >,
                                                                           boost::multi_index::ordered_non_unique<boost::multi_index::tag<timestamp_index>,
-                                                                                                                 boost::multi_index::member<timestamped_item_id, fc::time_point_sec, &timestamped_item_id::timestamp> > > > timestamped_items_set_type;
+                                                                                                                 boost::multi_index::member<timestamped_item_id, fc::time_point, &timestamped_item_id::timestamp> > > > timestamped_items_set_type;
       timestamped_items_set_type inventory_peer_advertised_to_us;
       timestamped_items_set_type inventory_advertised_to_peer;
 

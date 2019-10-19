@@ -50,7 +50,7 @@ namespace graphene { namespace net {
       typedef boost::multi_index_container<potential_peer_record, 
                                            indexed_by<ordered_non_unique<tag<last_seen_time_index>, 
                                                                          member<potential_peer_record, 
-                                                                                fc::time_point_sec, 
+                                                                                fc::time_point, 
                                                                                 &potential_peer_record::last_seen_time> >,
                                                       hashed_unique<tag<endpoint_index>, 
                                                                     member<potential_peer_record, 

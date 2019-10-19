@@ -79,23 +79,24 @@ void new_chain_banner( const node::chain::database& db )
       "********************************\n"
       "\n"
 			"\n";
-	// #if SHOW_PRIVATE_KEYS
-	// 	std::cerr << "\n"
-  //     "********************************\n"
-  //     "*   ------- KEYPAIRS -------   *\n"
-  //     "*   ------------------------   *\n";
-	// 		for (auto const& [key, val] : _private_keys){
-	// 			std::cerr << "*   -------- PUB ---------   *\n" 
-	// 			"*   " << key << "   *\n"
-	// 			"*   ------ PRIVATE -------  *\n" 
-	// 			"*   " << val << "   *\n";
-	// 		}
-  //   std:cerr <<	"*   ------------------------   *\n"
-  //     "*                              *\n"
-  //     "********************************\n"
-  //     "\n"
-	// 		"\n";
-	// #endif
+
+	#if SHOW_PRIVATE_KEYS
+		std::cerr << "\n"
+      "********************************\n"
+      "*   ------- KEYPAIRS -------   *\n"
+      "*   ------------------------   *\n";
+			for (auto const& [key, val] : _private_keys){
+				std::cerr << "*   -------- PUB ---------   *\n" 
+				"*   " << key << "   *\n"
+				"*   ------ PRIVATE -------  *\n" 
+				"*   " << val << "   *\n";
+			}
+    std:cerr <<	"*   ------------------------   *\n"
+      "*                              *\n"
+      "********************************\n"
+      "\n"
+			"\n";
+	#endif
 
   return;
 }
@@ -103,7 +104,6 @@ void new_chain_banner( const node::chain::database& db )
 namespace detail
 {
    using namespace node::chain;
-
 
    class witness_plugin_impl
    {
@@ -205,9 +205,9 @@ namespace detail
                "Detected private posting key in memo field. You should change your posting keys." );
       }
 
-      const auto& memoKey = account.memoKey;
+      const auto& secure_public_key = account.secure_public_key;
       for( auto& key : keys )
-         ASSERT( memoKey != key, chain::plugin_exception,
+         ASSERT( secure_public_key != key, chain::plugin_exception,
             "Detected private memo key in memo field. You should change your memo key." );
    }
 
@@ -248,7 +248,7 @@ namespace detail
 
          auto itr = _db.find< comment_object, by_permlink >( boost::make_tuple( o.author, o.permlink ) );
 
-         if( itr != nullptr && itr->cashout_time == fc::time_point_sec::maximum() )
+         if( itr != nullptr && itr->cashout_time == fc::time_point::maximum() )
          {
             auto edit_lock = _db.find< content_edit_lock_object, by_account >( o.author );
 
@@ -266,7 +266,7 @@ namespace detail
                         _db.get< account_authority_object, chain::by_account >( o.from ) );
       }
 
-      void operator()( const transferToSavings_operation& o )const
+      void operator()( const transfer_to_savings_operation& o )const
       {
          if( o.memo.length() > 0 )
             check_memo( o.memo,
@@ -274,7 +274,7 @@ namespace detail
                         _db.get< account_authority_object, chain::by_account >( o.from ) );
       }
 
-      void operator()( const transferFromSavings_operation& o )const
+      void operator()( const transfer_from_savings_operation& o )const
       {
          if( o.memo.length() > 0 )
             check_memo( o.memo,
@@ -324,8 +324,7 @@ namespace detail
       switch( note.op.which() )
       {
          case operation::tag< custom_operation >::value:
-         case operation::tag< customJson_operation >::value:
-         case operation::tag< custom_binary_operation >::value:
+         case operation::tag< custom_json_operation >::value:
          {
             flat_set< account_name_type > impacted;
             app::operation_get_impacted_accounts( note.op, impacted );
@@ -351,21 +350,18 @@ namespace detail
 
       if( BOOST_UNLIKELY( reserve_ratio_ptr == nullptr ) )
       {
-          db.create<reserve_ratio_object>([&](reserve_ratio_object &r) {
-              r.average_block_size = 0;
-              r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
-              r.max_virtual_bandwidth = (uint128_t(MAX_BLOCK_SIZE * MAX_RESERVE_RATIO)
-                                         * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SECONDS)
-                                        / BLOCK_INTERVAL;
-
-
-
+          db.create<reserve_ratio_object>([&](reserve_ratio_object &r) 
+          {
+            r.average_block_size = 0;
+            r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
+            r.max_virtual_bandwidth = (uint128_t(MAX_BLOCK_SIZE * MAX_RESERVE_RATIO) * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS) / uint128_t(BLOCK_INTERVAL.count());
           });
       }
       else
       {
          db.modify( *reserve_ratio_ptr, [&]( reserve_ratio_object& r )
          {
+            // 100 Block moving average block size.
             r.average_block_size = ( 99 * r.average_block_size + fc::raw::pack_size( b ) ) / 100;
 
             /**
@@ -413,8 +409,8 @@ namespace detail
                }
 
                r.max_virtual_bandwidth = ( uint128_t( max_block_size ) * uint128_t( r.current_reserve_ratio )
-                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_SECONDS ) )
-                                         / ( BLOCK_INTERVAL * RESERVE_RATIO_PRECISION );
+                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS ) )
+                                         / ( BLOCK_INTERVAL.count() * RESERVE_RATIO_PRECISION );
             }
          });
       }
@@ -425,10 +421,10 @@ namespace detail
    void witness_plugin_impl::update_account_bandwidth( const account_object& a, uint32_t trx_size, const bandwidth_type type )
    {
       database& _db = _self.database();
-      const auto& props = _db.get_dynamic_global_properties();
+      const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
       bool has_bandwidth = true;
 
-      if( props.totalSCORE.amount > 0 )
+      if( props.total_voting_power > 0 )
       {
          auto band = _db.find< account_bandwidth_object, by_account_bandwidth_type >( boost::make_tuple( a.name, type ) );
 
@@ -446,11 +442,11 @@ namespace detail
          share_type trx_bandwidth = trx_size * BANDWIDTH_PRECISION;
          auto delta_time = ( _db.head_block_time() - band->last_bandwidth_update ).to_seconds();
 
-         if( delta_time > BANDWIDTH_AVERAGE_WINDOW_SECONDS )
+         if( delta_time > BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS )
             new_bandwidth = 0;
          else
-            new_bandwidth = ( ( ( BANDWIDTH_AVERAGE_WINDOW_SECONDS - delta_time ) * fc::uint128( band->average_bandwidth.value ) )
-               / BANDWIDTH_AVERAGE_WINDOW_SECONDS ).to_uint64();
+            new_bandwidth = ( ( ( BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS - delta_time ) * fc::uint128( band->average_bandwidth.value ) )
+               / BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS ).to_uint64();
 
          new_bandwidth += trx_bandwidth;
 
@@ -459,18 +455,16 @@ namespace detail
             b.average_bandwidth = new_bandwidth;
             b.lifetime_bandwidth += trx_bandwidth;
             b.last_bandwidth_update = _db.head_block_time();
-
-
-
          });
 
-         fc::uint128 account_vSCORE( a.effective_SCORE().amount.value );
-         fc::uint128 total_vSCORE( props.totalSCORE.amount.value );
+         fc::uint128 account_voting_power( _db.get_voting_power(a).value );
+         fc::uint128 total_voting_power( props.total_voting_power );
          fc::uint128 account_average_bandwidth( band->average_bandwidth.value );
          share_type account_lifetime_bandwidth( band->lifetime_bandwidth );
          fc::uint128 max_virtual_bandwidth( _db.get( reserve_ratio_id_type() ).max_virtual_bandwidth );
          // in effect
-         // if a users score times the global max virtual bandwidth is great than the accounts average bandwidth times the total score of the network then it has enough bandwidth
+         // if a users voting power times the global max virtual bandwidth is great than the accounts average bandwidth 
+         // times the total score of the network then it has enough bandwidth
          // max network bandwidth * account score // 50 * 10 = 500
          // account average bandwidth * total network score // 1 * 1000 = 1000
          // max network bandwidth * account score // 50 * 10 = 500
@@ -483,16 +477,16 @@ namespace detail
          // This is a hack to get around not being able to claim score reward balance in the first place due to not having enough score to do so.....
 //         if(trx_bandwidth.value != account_lifetime_bandwidth.value && trx_bandwidth.value != new_bandwidth.value){
 //         }
-         has_bandwidth = ( account_vSCORE * max_virtual_bandwidth ) > ( account_average_bandwidth * total_vSCORE );
+         has_bandwidth = ( account_voting_power * max_virtual_bandwidth ) > ( account_average_bandwidth * total_voting_power );
 
          if( _db.is_producing() )
             ASSERT( has_bandwidth, chain::plugin_exception,
-               "Account: ${account} bandwidth limit exceeded. Please wait to transact or power up TME.",
+               "Account: ${account} bandwidth limit exceeded. Please wait to transact or increase staked balance.",
                ("account", a.name)
-               ("account_vSCORE", account_vSCORE)
+               ("account_voting_power", account_voting_power)
                ("account_average_bandwidth", account_average_bandwidth)
                ("max_virtual_bandwidth", max_virtual_bandwidth)
-               ("totalSCORE", total_vSCORE) );
+               ("total_voting_power", total_voting_power) );
       }
    }
 }
@@ -689,7 +683,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
 {
    chain::database& db = database();
    fc::time_point now_fine = fc::time_point::now();
-   fc::time_point_sec now = now_fine + fc::microseconds( 500000 );
+   fc::time_point now = now_fine + fc::microseconds( 500000 );
 
    // If the next block production opportunity is in the present or future, we're synced.
    if( !_production_enabled )
@@ -708,14 +702,12 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
       return block_production_condition::not_time_yet;
    }
 
-   //
    // this assert should not fail, because now <= db.head_block_time()
    // should have resulted in slot == 0.
    //
    // if this assert triggers, there is a serious bug in get_slot_at_time()
    // which would result in allowing a later block to have a timestamp
    // less than or equal to the previous block
-   //
 	 
    assert( now > db.head_block_time() );
 
@@ -731,7 +723,7 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
    const auto& witness_by_name = db.get_index< chain::witness_index >().indices().get< chain::by_name >();
    auto itr = witness_by_name.find( scheduled_witness );
 
-   fc::time_point_sec scheduled_time = db.get_slot_time( slot );
+   fc::time_point scheduled_time = db.get_slot_time( slot );
    node::protocol::public_key_type scheduled_key = itr->signing_key;
    auto private_key_itr = _private_keys.find( scheduled_key );
 

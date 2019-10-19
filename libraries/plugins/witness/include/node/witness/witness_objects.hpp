@@ -44,7 +44,7 @@ class account_bandwidth_object : public object< account_bandwidth_object_type, a
       bandwidth_type    type;
       share_type        average_bandwidth;
       share_type        lifetime_bandwidth;
-      time_point_sec    last_bandwidth_update;
+      time_point        last_bandwidth_update;
 };
 
 typedef oid< account_bandwidth_object > account_bandwidth_id_type;
@@ -63,7 +63,7 @@ class content_edit_lock_object : public object< content_edit_lock_object_type, c
 
       id_type           id;
       account_name_type account;
-      time_point_sec    lock_time;
+      time_point        lock_time;
 };
 
 typedef oid< content_edit_lock_object > content_edit_lock_id_type;
@@ -103,7 +103,7 @@ class reserve_ratio_object : public object< reserve_ratio_object_type, reserve_r
       /**
        * The maximum bandwidth the blockchain can support is:
        *
-       *    max_bandwidth = maximum_block_size * BANDWIDTH_AVERAGE_WINDOW_SECONDS / BLOCK_INTERVAL
+       *    max_bandwidth = maximum_block_size * BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS / BLOCK_INTERVAL
        *
        * The maximum virtual bandwidth is:
        *

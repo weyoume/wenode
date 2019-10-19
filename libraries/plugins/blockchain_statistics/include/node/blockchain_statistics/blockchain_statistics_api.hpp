@@ -22,9 +22,7 @@ struct statistics
    uint32_t             operations = 0;                              ///< Operations evaluated
    uint32_t             transactions = 0;                            ///< Transactions processed
    uint32_t             transfers = 0;                               ///< Account to account transfers
-   share_type           TME_transferred = 0;                       ///< TME transferred from account to account
-   share_type           TSD_transferred = 0;                         ///< TSD transferred from account to account
-   share_type           TSD_paid_as_interest = 0;                    ///< TSD paid as interest
+   share_type           assets_transferred = 0;                      ///< total assets transferred from account to account
    uint32_t             accounts_created = 0;                        ///< Total accounts created
    uint32_t             paid_accounts_created = 0;                   ///< Accounts created with fee
    uint32_t             mined_accounts_created = 0;                  ///< Accounts mined for free
@@ -47,23 +45,17 @@ struct statistics
    uint32_t             new_reply_votes = 0;                         ///< New votes on replies
    uint32_t             changed_reply_votes = 0;                     ///< Changed votes on replies
    uint32_t             payouts = 0;                                 ///< Number of comment payouts
-   share_type           TSD_paid_to_authors = 0;                     ///< Ammount of TSD paid to authors
-   share_type           SCORE_paid_to_authors = 0;                   ///< Ammount of VESS paid to authors
-   share_type           SCORE_paid_to_curators = 0;                  ///< Ammount of SCORE paid to curators
-   share_type           liquidity_rewards_paid = 0;                  ///< Ammount of TME paid to market makers
-   uint32_t             transfers_to_TME_fund_for_SCORE = 0;                    ///< Transfers of TME into SCORE
-   share_type           TME_value_of_SCORE = 0;                            ///< Ammount of SCORE value in TME
-   uint32_t             new_SCORE_TME_fund_withdrawal_requests = 0;         ///< New SCORE TME fund withdrawal requests
-   uint32_t             modified_SCORE_TME_fund_withdrawal_requests = 0;    ///< Changes to SCORE TME fund withdrawal requests
-   share_type           SCOREwithdrawRateInTME_delta = 0;
-   uint32_t             TME_fund_for_SCORE_withdrawals_processed = 0;           ///< Number of SCORE TME fund withdrawals
-   uint32_t             finished_TME_fund_for_SCORE_withdrawals = 0;            ///< Processed SCORE TME fund withdrawals that are now finished
-   share_type           SCORE_withdrawn = 0;                         ///< Ammount of SCORE withdrawn to TME
-   share_type           SCORE_transferred = 0;                       ///< Ammount of SCORE transferred to another account
-   uint32_t             TSD_conversion_requests_created = 0;         ///< TSD conversion requests created
-   share_type           TSD_to_be_converted = 0;                     ///< Amount of TSD to be converted
-   uint32_t             TSD_conversion_requests_filled = 0;          ///< TSD conversion requests filled
-   share_type           TME_converted = 0;                         ///< Amount of TME that was converted
+   share_type           rewards_paid_to_authors = 0;                 ///< Amount of rewards paid to authors
+   share_type           rewards_paid_to_curators = 0;                  ///< Amount of rewards paid to curators
+   uint32_t             asset_stake_transfers = 0;                    ///< Transfers of liquid to staked balances
+   share_type           asset_stake_value = 0;                            ///< Amount of stake value added
+   uint32_t             asset_unstake_transfers = 0;                    ///< New asset unstake requests
+   uint32_t             asset_unstake_adjustments = 0;                ///< Changes to asset unstake withdrawal requests
+   share_type           asset_unstake_rate_total = 0;
+   uint32_t             asset_unstake_withdrawals = 0;                ///< Number of unstake withdrawal intervals
+   uint32_t             asset_unstake_completed = 0;                 ///< Processed unstake withdrawals that are now finished
+   share_type           total_assets_unstaked = 0;                   ///< Amount of assets withdrawn
+   share_type           total_stake_transferred = 0;                 ///< Amount of stake transferred directly to another account
    uint32_t             limit_orders_created = 0;                    ///< Limit orders created
    uint32_t             limit_orders_filled = 0;                     ///< Limit orders filled
    uint32_t             limit_orders_cancelled = 0;                  ///< Limit orders cancelled
@@ -86,7 +78,7 @@ class blockchain_statistics_api
       * @param interval The size of the window for which statistics were aggregated.
       * @returns Statistics for the window.
       */
-      statistics get_stats_for_time( fc::time_point_sec open, uint32_t interval )const;
+      statistics get_stats_for_time( fc::time_point open, uint32_t interval )const;
 
       /**
       * @brief Aggregates statistics over a time interval.
@@ -94,7 +86,7 @@ class blockchain_statistics_api
       * @param stop The end time of the window. stop must take place after start.
       * @returns Aggregated statistics over the interval.
       */
-      statistics get_stats_for_interval( fc::time_point_sec start, fc::time_point_sec end )const;
+      statistics get_stats_for_interval( fc::time_point start, fc::time_point end )const;
 
       /**
        * @brief Returns lifetime statistics.
@@ -113,9 +105,9 @@ FC_REFLECT( node::blockchain_statistics::statistics,
    (operations)
    (transactions)
    (transfers)
-   (TME_transferred)
-   (TSD_transferred)
-   (TSD_paid_as_interest)
+   (assets_transferred)
+   (USD_transferred)
+   (USD_paid_as_interest)
    (accounts_created)
    (paid_accounts_created)
    (mined_accounts_created)
@@ -138,23 +130,19 @@ FC_REFLECT( node::blockchain_statistics::statistics,
    (new_reply_votes)
    (changed_reply_votes)
    (payouts)
-   (TSD_paid_to_authors)
-   (SCORE_paid_to_authors)
-   (SCORE_paid_to_curators)
+   (USD_paid_to_authors)
+   (rewards_paid_to_authors)
+   (rewards_paid_to_curators)
    (liquidity_rewards_paid)
-   (transfers_to_TME_fund_for_SCORE)
-   (TME_value_of_SCORE)
-   (new_SCORE_TME_fund_withdrawal_requests)
-   (modified_SCORE_TME_fund_withdrawal_requests)
-   (SCOREwithdrawRateInTME_delta)
-   (TME_fund_for_SCORE_withdrawals_processed)
-   (finished_TME_fund_for_SCORE_withdrawals)
-   (SCORE_withdrawn)
-   (SCORE_transferred)
-   (TSD_conversion_requests_created)
-   (TSD_to_be_converted)
-   (TSD_conversion_requests_filled)
-   (TME_converted)
+   (asset_stake_transfers)
+   (asset_stake_value)
+   (asset_unstake_transfers)
+   (asset_unstake_adjustments)
+   (asset_unstake_rate_total)
+   (asset_unstake_withdrawals)
+   (asset_unstake_completed)
+   (total_assets_unstaked)
+   (total_stake_transferred)
    (limit_orders_created)
    (limit_orders_filled)
    (limit_orders_cancelled)

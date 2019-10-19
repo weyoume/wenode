@@ -10,7 +10,7 @@
 
 namespace node { namespace protocol {
    struct chain_properties;
-   struct pow2;
+   struct proof_of_work;
    struct signed_block;
 } }
 
@@ -79,7 +79,7 @@ class debug_node_plugin : public node::app::plugin
          );
       uint32_t debug_generate_blocks_until(
          const std::string& debug_key,
-         const fc::time_point_sec& head_block_time,
+         const fc::time_point& head_block_time,
          bool generate_sparsely,
          uint32_t skip = node::chain::database::skip_nothing,
          private_key_storage* key_storage = nullptr
@@ -92,7 +92,7 @@ class debug_node_plugin : public node::app::plugin
       void load_debug_updates( const fc::variant_object& target );
 
       void debug_mine_work(
-         chain::pow2& work,
+         chain::proof_of_work& work,
          uint32_t summary_target
          );
 

@@ -1,7 +1,0 @@
-#ifndef HARDFORK_0_8
-#define HARDFORK_0_8 8
-#define HARDFORK_0_8__116 HARDFORK_0_8
-
-#define HARDFORK_0_8_TIME 1531629480
-#define HARDFORK_0_8_VERSION hardfork_version( 0, 8 )
-#endif

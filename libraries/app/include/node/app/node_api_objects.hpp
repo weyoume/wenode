@@ -31,29 +31,27 @@ using namespace node::chain;
    limit_order(){}
 
    chain::limit_order_id_type id;
-   time_point_sec             created;
-   time_point_sec             expiration;
+   time_point             created;
+   time_point             expiration;
    account_name_type          seller;
    uint32_t                   orderid = 0;
    share_type                 for_sale;
    price                      sell_price;
 };*/
 
-typedef chain::change_recoveryAccount_request_object  change_recoveryAccount_request_api_obj;
+typedef chain::change_recovery_account_request_object  change_recovery_account_request_api_obj;
 typedef chain::block_summary_object                    block_summary_api_obj;
 typedef chain::comment_vote_object                     comment_vote_api_obj;
-typedef chain::convert_request_object                  convert_request_api_obj;
 typedef chain::escrow_object                           escrow_api_obj;
-typedef chain::liquidity_reward_balance_object         liquidity_reward_balance_api_obj;
 typedef chain::limit_order_object                      limit_order_api_obj;
-typedef chain::withdrawSCORE_route_object           withdrawSCORE_route_api_obj;
+typedef chain::unstake_asset_route_object              unstake_asset_route_api_obj;
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
 typedef chain::witness_vote_object                     witness_vote_api_obj;
 typedef chain::witness_schedule_object                 witness_schedule_api_obj;
-typedef chain::TME_fund_for_SCORE_delegation_object               TME_fund_for_SCORE_delegation_api_obj;
-typedef chain::TME_fund_for_SCORE_delegation_expiration_object    TME_fund_for_SCORE_delegation_expiration_api_obj;
+typedef chain::asset_delegation_object                 asset_delegation_api_obj;
+typedef chain::asset_delegation_expiration_object      asset_delegation_expiration_api_obj;
 typedef chain::reward_fund_object                      reward_fund_api_obj;
-typedef witness::account_bandwidth_object       account_bandwidth_api_obj;
+typedef witness::account_bandwidth_object              account_bandwidth_api_obj;
 
 struct comment_api_obj
 {
@@ -73,24 +71,26 @@ struct comment_api_obj
       last_payout( o.last_payout ),
       depth( o.depth ),
       children( o.children ),
-      net_SCOREreward( o.net_SCOREreward ),
-      abs_SCOREreward( o.abs_SCOREreward ),
-      vote_SCOREreward( o.vote_SCOREreward ),
-      children_abs_SCOREreward( o.children_abs_SCOREreward ),
+      net_reward( o.net_reward ),
+      abs_reward( o.abs_reward ),
+      vote_reward( o.vote_reward ),
+      children_abs_reward( o.children_abs_reward ),
       cashout_time( o.cashout_time ),
       max_cashout_time( o.max_cashout_time ),
       total_vote_weight( o.total_vote_weight ),
-      reward_weight( o.reward_weight ),
+      total_view_weight( o.total_view_weight ),
+      total_share_weight( o.total_share_weight ),
+      total_comment_weight( o.total_comment_weight ),
       total_payout_value( o.total_payout_value ),
       curator_payout_value( o.curator_payout_value ),
-      authorRewards( o.authorRewards ),
+      author_rewards( o.author_rewards ),
       net_votes( o.net_votes ),
       root_comment( o.root_comment ),
       max_accepted_payout( o.max_accepted_payout ),
-      percent_TSD( o.percent_TSD ),
+      percent_liquid( o.percent_liquid ),
       allow_replies( o.allow_replies ),
       allow_votes( o.allow_votes ),
-      allow_curationRewards( o.allow_curationRewards )
+      allow_curation_rewards( o.allow_curation_rewards )
    {
       for( auto& route : o.beneficiaries )
       {
@@ -110,39 +110,40 @@ struct comment_api_obj
    string            title;
    string            body;
    string            json;
-   time_point_sec    last_update;
-   time_point_sec    created;
-   time_point_sec    active;
-   time_point_sec    last_payout;
+   time_point    last_update;
+   time_point    created;
+   time_point    active;
+   time_point    last_payout;
 
    uint8_t           depth = 0;
    uint32_t          children = 0;
 
-   share_type        net_SCOREreward;
-   share_type        abs_SCOREreward;
-   share_type        vote_SCOREreward;
+   share_type        net_reward;
+   share_type        abs_reward;
+   share_type        vote_reward;
 
-   share_type        children_abs_SCOREreward;
-   time_point_sec    cashout_time;
-   time_point_sec    max_cashout_time;
+   share_type        children_abs_reward;
+   time_point    cashout_time;
+   time_point    max_cashout_time;
    uint64_t          total_vote_weight = 0;
-
-   uint16_t          reward_weight = 0;
+   uint64_t          total_view_weight = 0;
+   uint64_t          total_share_weight = 0;
+   uint64_t          total_comment_weight = 0;
 
    asset             total_payout_value;
    asset             curator_payout_value;
 
-   share_type        authorRewards;
+   share_type        author_rewards;
 
    int32_t           net_votes = 0;
 
    comment_id_type   root_comment;
 
    asset             max_accepted_payout;
-   uint16_t          percent_TSD = 0;
+   uint16_t          percent_liquid = 0;
    bool              allow_replies = false;
    bool              allow_votes = false;
-   bool              allow_curationRewards = false;
+   bool              allow_curation_rewards = false;
    vector< beneficiary_route_type > beneficiaries;
 };
 
@@ -171,17 +172,18 @@ struct account_api_obj
    account_api_obj( const chain::account_object& a, const chain::database& db ) :
       id( a.id ),
       name( a.name ),
-      memoKey( a.memoKey ),
+      secure_public_key( a.secure_public_key ),
       json( to_string( a.json ) ),
+      json_private( to_string( a.json_private ) ),
       proxy( a.proxy ),
-      last_accountUpdate( a.last_accountUpdate ),
+      last_account_update( a.last_account_update ),
       created( a.created ),
       mined( a.mined ),
       owner_challenged( a.owner_challenged ),
       active_challenged( a.active_challenged ),
       last_owner_proved( a.last_owner_proved ),
       last_active_proved( a.last_active_proved ),
-      recoveryAccount( a.recoveryAccount ),
+      recovery_account( a.recovery_account ),
       reset_account( a.reset_account ),
       last_account_recovery( a.last_account_recovery ),
       comment_count( a.comment_count ),
@@ -190,39 +192,18 @@ struct account_api_obj
       can_vote( a.can_vote ),
       voting_power( a.voting_power ),
       last_vote_time( a.last_vote_time ),
-      balance( a.balance ),
-      TMEsavingsBalance( a.TMEsavingsBalance ),
-      TSDbalance( a.TSDbalance ),
-      TSD_seconds( a.TSD_seconds ),
-      TSD_seconds_last_update( a.TSD_seconds_last_update ),
-      TSD_last_interest_payment( a.TSD_last_interest_payment ),
-      TSDsavingsBalance( a.TSDsavingsBalance ),
-      savings_TSD_seconds( a.savings_TSD_seconds ),
-      savings_TSD_seconds_last_update( a.savings_TSD_seconds_last_update ),
-      savings_TSD_last_interest_payment( a.savings_TSD_last_interest_payment ),
       savings_withdraw_requests( a.savings_withdraw_requests ),
-      TSDrewardBalance( a.TSDrewardBalance ),
-      TMErewardBalance( a.TMErewardBalance ),
-      SCORErewardBalance( a.SCORErewardBalance ),
-      SCORErewardBalanceInTME( a.SCORErewardBalanceInTME ),
-      curationRewards( a.curationRewards ),
+      curation_rewards( a.curation_rewards ),
       posting_rewards( a.posting_rewards ),
-      SCORE( a.SCORE ),
-      SCOREDelegated( a.SCOREDelegated ),
-      SCOREreceived( a.SCOREreceived ),
-      SCOREwithdrawRateInTME( a.SCOREwithdrawRateInTME ),
-      nextSCOREwithdrawalTime( a.nextSCOREwithdrawalTime ),
-      withdrawn( a.withdrawn ),
-      to_withdraw( a.to_withdraw ),
       withdraw_routes( a.withdraw_routes ),
       witnesses_voted_for( a.witnesses_voted_for ),
       last_post( a.last_post ),
       last_root_post( a.last_root_post )
    {
-      size_t n = a.proxied_SCOREfundTMEbalance_votes.size();
-      proxied_SCOREfundTMEbalance_votes.reserve( n );
+      size_t n = a.proxied_voting_power.size();
+      proxied_voting_power.reserve( n );
       for( size_t i=0; i<n; i++ )
-         proxied_SCOREfundTMEbalance_votes.push_back( a.proxied_SCOREfundTMEbalance_votes[i] );
+         proxied_voting_power.push_back( a.proxied_voting_power[i] );
 
       const auto& auth = db.get< account_authority_object, by_account >( name );
       owner = authority( auth.owner );
@@ -262,76 +243,49 @@ struct account_api_obj
    authority         owner;
    authority         active;
    authority         posting;
-   public_key_type   memoKey;
+   public_key_type   secure_public_key;
    string            json;
    account_name_type proxy;
 
-   time_point_sec    last_owner_update;
-   time_point_sec    last_accountUpdate;
+   time_point    last_owner_update;
+   time_point    last_account_update;
 
-   time_point_sec    created;
+   time_point    created;
    bool              mined = false;
    bool              owner_challenged = false;
    bool              active_challenged = false;
-   time_point_sec    last_owner_proved;
-   time_point_sec    last_active_proved;
-   account_name_type recoveryAccount;
+   time_point    last_owner_proved;
+   time_point    last_active_proved;
+   account_name_type recovery_account;
    account_name_type reset_account;
-   time_point_sec    last_account_recovery;
+   time_point    last_account_recovery;
    uint32_t          comment_count = 0;
    uint32_t          lifetime_vote_count = 0;
    uint32_t          post_count = 0;
 
    bool              can_vote = false;
    uint16_t          voting_power = 0;
-   time_point_sec    last_vote_time;
+   time_point    last_vote_time;
 
-   asset             balance;
-   asset             TMEsavingsBalance;
-
-   asset             TSDbalance;
-   uint128_t         TSD_seconds;
-   time_point_sec    TSD_seconds_last_update;
-   time_point_sec    TSD_last_interest_payment;
-
-   asset             TSDsavingsBalance;
-   uint128_t         savings_TSD_seconds;
-   time_point_sec    savings_TSD_seconds_last_update;
-   time_point_sec    savings_TSD_last_interest_payment;
-
-   uint8_t           savings_withdraw_requests = 0;
-
-   asset             TSDrewardBalance;
-   asset             TMErewardBalance;
-   asset             SCORErewardBalance;
-   asset             SCORErewardBalanceInTME;
-
-   share_type        curationRewards;
+   share_type        curation_rewards;
    share_type        posting_rewards;
 
-   asset             SCORE;
-   asset             SCOREDelegated;
-   asset             SCOREreceived;
-   asset             SCOREwithdrawRateInTME;
-   time_point_sec    nextSCOREwithdrawalTime;
-   share_type        withdrawn;
-   share_type        to_withdraw;
    uint16_t          withdraw_routes = 0;
 
-   vector< share_type > proxied_SCOREfundTMEbalance_votes;
+   vector< share_type > proxied_voting_power;
 
    uint16_t          witnesses_voted_for;
 
    share_type        average_bandwidth = 0;
    share_type        lifetime_bandwidth = 0;
-   time_point_sec    last_bandwidth_update;
+   time_point    last_bandwidth_update;
 
    share_type        average_market_bandwidth = 0;
    share_type        lifetime_market_bandwidth = 0;
-   time_point_sec    last_market_bandwidth_update;
+   time_point    last_market_bandwidth_update;
 
-   time_point_sec    last_post;
-   time_point_sec    last_root_post;
+   time_point    last_post;
+   time_point    last_root_post;
 };
 
 struct owner_authority_history_api_obj
@@ -349,14 +303,14 @@ struct owner_authority_history_api_obj
 
    account_name_type                account;
    authority                        previous_owner_authority;
-   time_point_sec                   last_valid_time;
+   time_point                   last_valid_time;
 };
 
 struct account_recovery_request_api_obj
 {
    account_recovery_request_api_obj( const chain::account_recovery_request_object& o ) :
       id( o.id ),
-      accountToRecover( o.accountToRecover ),
+      account_to_recover( o.account_to_recover ),
       new_owner_authority( authority( o.new_owner_authority ) ),
       expires( o.expires )
    {}
@@ -364,9 +318,9 @@ struct account_recovery_request_api_obj
    account_recovery_request_api_obj() {}
 
    account_recovery_request_id_type id;
-   account_name_type                accountToRecover;
+   account_name_type                account_to_recover;
    authority                        new_owner_authority;
-   time_point_sec                   expires;
+   time_point                   expires;
 };
 
 struct account_history_api_obj
@@ -394,7 +348,7 @@ struct savings_withdraw_api_obj
    string                     memo;
    uint32_t                   request_id = 0;
    asset                      amount;
-   time_point_sec             complete;
+   time_point             complete;
 };
 
 struct feed_history_api_obj
@@ -425,8 +379,8 @@ struct witness_api_obj
       pow_worker( w.pow_worker ),
       signing_key( w.signing_key ),
       props( w.props ),
-      TSD_exchange_rate( w.TSD_exchange_rate ),
-      last_TSD_exchange_update( w.last_TSD_exchange_update ),
+      USD_exchange_rate( w.USD_exchange_rate ),
+      last_USD_exchange_update( w.last_USD_exchange_update ),
       votes( w.votes ),
       virtual_last_update( w.virtual_last_update ),
       virtual_position( w.virtual_position ),
@@ -441,7 +395,7 @@ struct witness_api_obj
 
    witness_id_type   id;
    account_name_type owner;
-   time_point_sec    created;
+   time_point    created;
    string            url;
    uint32_t          total_missed = 0;
    uint64_t          last_aslot = 0;
@@ -449,8 +403,8 @@ struct witness_api_obj
    uint64_t          pow_worker = 0;
    public_key_type   signing_key;
    chain_properties  props;
-   price             TSD_exchange_rate;
-   time_point_sec    last_TSD_exchange_update;
+   price             USD_exchange_rate;
+   time_point    last_USD_exchange_update;
    share_type        votes;
    fc::uint128       virtual_last_update;
    fc::uint128       virtual_position;
@@ -458,7 +412,7 @@ struct witness_api_obj
    digest_type       last_work;
    version           running_version;
    hardfork_version  hardfork_version_vote;
-   time_point_sec    hardfork_time_vote;
+   time_point    hardfork_time_vote;
 };
 
 struct signed_block_api_obj : public signed_block
@@ -509,96 +463,155 @@ struct dynamic_global_property_api_obj : public dynamic_global_property_object
 } } // node::app
 
 FC_REFLECT( node::app::comment_api_obj,
-             (id)(author)(permlink)
-             (category)(parent_author)(parent_permlink)
-             (title)(body)(json)(last_update)(created)(active)(last_payout)
-             (depth)(children)
-             (net_SCOREreward)(abs_SCOREreward)(vote_SCOREreward)
-             (children_abs_SCOREreward)(cashout_time)(max_cashout_time)
-             (total_vote_weight)(reward_weight)(total_payout_value)(curator_payout_value)(authorRewards)(net_votes)(root_comment)
-             (max_accepted_payout)(percent_TSD)(allow_replies)(allow_votes)(allow_curationRewards)
-             (beneficiaries)
-          )
+         (id)
+         (author)
+         (permlink)
+         (category)
+         (parent_author)
+         (parent_permlink)
+         (title)
+         (body)
+         (json)
+         (last_update)
+         (created)
+         (active)
+         (last_payout)
+         (depth)
+         (children)
+         (net_reward)
+         (abs_reward)
+         (vote_reward)
+         (children_abs_reward)
+         (cashout_time)
+         (max_cashout_time)
+         (total_vote_weight)
+         (total_view_weight)
+         (total_share_weight)
+         (total_comment_weight)
+         (total_payout_value)
+         (curator_payout_value)
+         (author_rewards)
+         (net_votes)
+         (root_comment)
+         (max_accepted_payout)
+         (percent_liquid)
+         (allow_replies)
+         (allow_votes)
+         (allow_curation_rewards)
+         (beneficiaries)
+         );
 
 FC_REFLECT( node::app::account_api_obj,
-             (id)(name)(owner)(active)(posting)(memoKey)(json)(proxy)(last_owner_update)(last_accountUpdate)
-             (created)(mined)
-             (owner_challenged)(active_challenged)(last_owner_proved)(last_active_proved)(recoveryAccount)(last_account_recovery)(reset_account)
-             (comment_count)(lifetime_vote_count)(post_count)(can_vote)(voting_power)(last_vote_time)
-             (balance)
-             (TMEsavingsBalance)
-             (TSDbalance)(TSD_seconds)(TSD_seconds_last_update)(TSD_last_interest_payment)
-             (TSDsavingsBalance)(savings_TSD_seconds)(savings_TSD_seconds_last_update)(savings_TSD_last_interest_payment)(savings_withdraw_requests)
-             (TSDrewardBalance)(TMErewardBalance)(SCORErewardBalance)(SCORErewardBalanceInTME)
-             (SCORE)(SCOREDelegated)(SCOREreceived)(SCOREwithdrawRateInTME)(nextSCOREwithdrawalTime)(withdrawn)(to_withdraw)(withdraw_routes)
-             (curationRewards)
-             (posting_rewards)
-             (proxied_SCOREfundTMEbalance_votes)(witnesses_voted_for)
-             (average_bandwidth)(lifetime_bandwidth)(last_bandwidth_update)
-             (average_market_bandwidth)(lifetime_market_bandwidth)(last_market_bandwidth_update)
-             (last_post)(last_root_post)
-          )
+         (id)
+         (name)
+         (owner)
+         (active)
+         (posting)
+         (secure_public_key)
+         (json)
+         (proxy)
+         (last_owner_update)
+         (last_account_update)
+         (created)
+         (mined)
+         (owner_challenged)
+         (active_challenged)
+         (last_owner_proved)
+         (last_active_proved)
+         (recovery_account)
+         (last_account_recovery)
+         (reset_account)
+         (comment_count)
+         (lifetime_vote_count)
+         (post_count)
+         (can_vote)
+         (voting_power)
+         (last_vote_time)
+         (savings_withdraw_requests)
+         (withdraw_routes)
+         (curation_rewards)
+         (posting_rewards)
+         (proxied_voting_power)
+         (witnesses_voted_for)
+         (average_bandwidth)
+         (lifetime_bandwidth)
+         (last_bandwidth_update)
+         (average_market_bandwidth)
+         (lifetime_market_bandwidth)
+         (last_market_bandwidth_update)
+         (last_post)
+         (last_root_post)
+         );
 
 FC_REFLECT( node::app::owner_authority_history_api_obj,
-             (id)
-             (account)
-             (previous_owner_authority)
-             (last_valid_time)
-          )
+         (id)
+         (account)
+         (previous_owner_authority)
+         (last_valid_time)
+         );
 
 FC_REFLECT( node::app::account_recovery_request_api_obj,
-             (id)
-             (accountToRecover)
-             (new_owner_authority)
-             (expires)
-          )
+         (id)
+         (account_to_recover)
+         (new_owner_authority)
+         (expires)
+         );
 
 FC_REFLECT( node::app::savings_withdraw_api_obj,
-             (id)
-             (from)
-             (to)
-             (memo)
-             (request_id)
-             (amount)
-             (complete)
-          )
+         (id)
+         (from)
+         (to)
+         (memo)
+         (request_id)
+         (amount)
+         (complete)
+         );
 
 FC_REFLECT( node::app::feed_history_api_obj,
-             (id)
-             (current_median_history)
-             (price_history)
-          )
+         (id)
+         (current_median_history)
+         (price_history)
+         );
 
 FC_REFLECT( node::app::tag_api_obj,
-            (name)
-            (total_payouts)
-            (net_votes)
-            (top_posts)
-            (comments)
-            (trending)
-          )
+         (name)
+         (total_payouts)
+         (net_votes)
+         (top_posts)
+         (comments)
+         (trending)
+         );
 
 FC_REFLECT( node::app::witness_api_obj,
-             (id)
-             (owner)
-             (created)
-             (url)(votes)(virtual_last_update)(virtual_position)(virtual_scheduled_time)(total_missed)
-             (last_aslot)(last_confirmed_block_num)(pow_worker)(signing_key)
-             (props)
-             (TSD_exchange_rate)(last_TSD_exchange_update)
-             (last_work)
-             (running_version)
-             (hardfork_version_vote)(hardfork_time_vote)
-          )
+         (id)
+         (owner)
+         (created)
+         (url)(votes)
+         (virtual_last_update)
+         (virtual_position)
+         (virtual_scheduled_time)
+         (total_missed)
+         (last_aslot)
+         (last_confirmed_block_num)
+         (pow_worker)
+         (signing_key)
+         (props)
+         (USD_exchange_rate)
+         (last_USD_exchange_update)
+         (last_work)
+         (running_version)
+         (hardfork_version_vote)
+         (hardfork_time_vote)
+         );
 
 FC_REFLECT_DERIVED( node::app::signed_block_api_obj, (node::protocol::signed_block),
-                     (block_id)
-                     (signing_key)
-                     (transaction_ids)
-                  )
+         (block_id)
+         (signing_key)
+         (transaction_ids)
+         );
 
 FC_REFLECT_DERIVED( node::app::dynamic_global_property_api_obj, (node::chain::dynamic_global_property_object),
-                     (current_reserve_ratio)
-                     (average_block_size)
-                     (max_virtual_bandwidth)
-                  )
+         (current_reserve_ratio)
+         (average_block_size)
+         (max_virtual_bandwidth)
+         );

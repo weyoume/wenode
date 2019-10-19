@@ -49,16 +49,10 @@ struct get_impacted_account_visitor
    }
 
    // ops
-   void operator()( const accountCreate_operation& op )
+   void operator()( const account_create_operation& op )
    {
-      _impacted.insert( op.newAccountName );
-      _impacted.insert( op.creator );
-   }
-
-   void operator()( const accountCreateWithDelegation_operation& op )
-   {
-      _impacted.insert( op.newAccountName );
-      _impacted.insert( op.creator );
+      _impacted.insert( op.new_account_name );
+      _impacted.insert( op.registrar );
    }
 
    void operator()( const comment_operation& op )
@@ -114,7 +108,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.agent );
    }
 
-   void operator()( const transferTMEtoSCOREfund_operation& op )
+   void operator()( const stake_asset_operation& op )
    {
       _impacted.insert( op.from );
 
@@ -124,19 +118,19 @@ struct get_impacted_account_visitor
       }
    }
 
-   void operator()( const setWithdrawSCOREasTMEroute_operation& op )
+   void operator()( const unstake_asset_route_operation& op )
    {
       _impacted.insert( op.from_account );
       _impacted.insert( op.to_account );
    }
 
-   void operator()( const accountWitnessVote_operation& op )
+   void operator()( const account_witness_vote_operation& op )
    {
       _impacted.insert( op.account );
       _impacted.insert( op.witness );
    }
 
-   void operator()( const account_witness_proxy_operation& op )
+   void operator()( const account_update_proxy_operation& op )
    {
       _impacted.insert( op.account );
       _impacted.insert( op.proxy );
@@ -147,14 +141,9 @@ struct get_impacted_account_visitor
       _impacted.insert( op.publisher );
    }
 
-   void operator()( const pow_operation& op )
+   struct proof_of_work_impacted_visitor
    {
-      _impacted.insert( op.worker_account );
-   }
-
-   struct pow2_impacted_visitor
-   {
-      pow2_impacted_visitor(){}
+      proof_of_work_impacted_visitor(){}
 
       typedef const account_name_type& result_type;
 
@@ -165,77 +154,60 @@ struct get_impacted_account_visitor
       }
    };
 
-   void operator()( const pow2_operation& op )
+   void operator()( const proof_of_work_operation& op )
    {
-      _impacted.insert( op.work.visit( pow2_impacted_visitor() ) );
+      _impacted.insert( op.work.visit( proof_of_work_impacted_visitor() ) );
    }
 
    void operator()( const request_account_recovery_operation& op )
    {
-      _impacted.insert( op.accountToRecover );
-      _impacted.insert( op.recoveryAccount );
+      _impacted.insert( op.account_to_recover );
+      _impacted.insert( op.recovery_account );
    }
 
    void operator()( const recover_account_operation& op )
    {
-      _impacted.insert( op.accountToRecover );
+      _impacted.insert( op.account_to_recover );
    }
 
-   void operator()( const change_recoveryAccount_operation& op )
+   void operator()( const change_recovery_account_operation& op )
    {
-      _impacted.insert( op.accountToRecover );
+      _impacted.insert( op.account_to_recover );
    }
 
-   void operator()( const transferToSavings_operation& op )
-   {
-      _impacted.insert( op.from );
-      _impacted.insert( op.to );
-   }
-
-   void operator()( const transferFromSavings_operation& op )
+   void operator()( const transfer_to_savings_operation& op )
    {
       _impacted.insert( op.from );
       _impacted.insert( op.to );
    }
 
-   void operator()( const delegateSCORE_operation& op )
+   void operator()( const transfer_from_savings_operation& op )
+   {
+      _impacted.insert( op.from );
+      _impacted.insert( op.to );
+   }
+
+   void operator()( const delegate_asset_operation& op )
    {
       _impacted.insert( op.delegator );
       _impacted.insert( op.delegatee );
    }
 
-
    // vops
 
-   void operator()( const authorReward_operation& op )
+   void operator()( const author_reward_operation& op )
    {
       _impacted.insert( op.author );
    }
 
-   void operator()( const curationReward_operation& op )
+   void operator()( const curation_reward_operation& op )
    {
       _impacted.insert( op.curator );
-   }
-
-   void operator()( const liquidity_reward_operation& op )
-   {
-      _impacted.insert( op.owner );
    }
 
    void operator()( const interest_operation& op )
    {
       _impacted.insert( op.owner );
-   }
-
-   void operator()( const fill_convert_request_operation& op )
-   {
-      _impacted.insert( op.owner );
-   }
-
-   void operator()( const fillSCOREWithdraw_operation& op )
-   {
-      _impacted.insert( op.from_account );
-      _impacted.insert( op.to_account );
    }
 
    void operator()( const shutdown_witness_operation& op )
@@ -249,13 +221,13 @@ struct get_impacted_account_visitor
       _impacted.insert( op.open_owner );
    }
 
-   void operator()( const fill_transferFromSavings_operation& op )
+   void operator()( const fill_transfer_from_savings_operation& op )
    {
       _impacted.insert( op.from );
       _impacted.insert( op.to );
    }
 
-   void operator()( const return_SCORE_delegation_operation& op )
+   void operator()( const return_asset_delegation_operation& op )
    {
       _impacted.insert( op.account );
    }

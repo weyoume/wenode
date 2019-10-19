@@ -54,9 +54,9 @@ struct operation_process
          b.transfers++;
 
          if( op.amount.symbol == SYMBOL_COIN )
-            b.TME_transferred += op.amount.amount;
+            b.assets_transferred += op.amount.amount;
          else
-            b.TSD_transferred += op.amount.amount;
+            b.USD_transferred += op.amount.amount;
       });
    }
 
@@ -64,11 +64,11 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.TSD_paid_as_interest += op.interest.amount;
+         b.USD_paid_as_interest += op.interest.amount;
       });
    }
 
-   void operator()( const accountCreate_operation& op )const
+   void operator()( const account_create_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
@@ -76,7 +76,7 @@ struct operation_process
       });
    }
 
-   void operator()( const pow_operation& op )const
+   void operator()( const proof_of_work_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
@@ -149,55 +149,29 @@ struct operation_process
       });
    }
 
-   void operator()( const authorReward_operation& op )const
+   void operator()( const author_reward_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.payouts++;
-         b.TSD_paid_to_authors += op.TSDpayout.amount;
-         b.SCORE_paid_to_authors += op.SCOREpayout.amount;
+         b.rewards_paid_to_authors += op.reward.amount;
       });
    }
 
-   void operator()( const curationReward_operation& op )const
+   void operator()( const curation_reward_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.SCORE_paid_to_curators += op.reward.amount;
+         b.rewards_paid_to_curators += op.reward.amount;
       });
    }
 
-   void operator()( const liquidity_reward_operation& op )const
+   void operator()( const stake_asset_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         b.liquidity_rewards_paid += op.payout.amount;
-      });
-   }
-
-   void operator()( const transferTMEtoSCOREfund_operation& op )const
-   {
-      _db.modify( _bucket, [&]( bucket_object& b )
-      {
-         b.transfers_to_TME_fund_for_SCORE++;
-         b.TME_value_of_SCORE += op.amount.amount;
-      });
-   }
-
-   void operator()( const fillSCOREWithdraw_operation& op )const
-   {
-      auto& account = _db.get_account( op.from_account );
-
-      _db.modify( _bucket, [&]( bucket_object& b )
-      {
-         b.TME_fund_for_SCORE_withdrawals_processed++;
-         if( op.deposited.symbol == SYMBOL_COIN )
-            b.SCORE_withdrawn += op.withdrawn.amount;
-         else
-            b.SCORE_transferred += op.withdrawn.amount;
-
-         if( account.SCOREwithdrawRateInTME.amount == 0 )
-            b.finished_TME_fund_for_SCORE_withdrawals++;
+         b.asset_stake_transfers++;
+         b.asset_stake_value += op.amount.amount;
       });
    }
 
@@ -222,24 +196,6 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.limit_orders_cancelled++;
-      });
-   }
-
-   void operator()( const convert_operation& op )const
-   {
-      _db.modify( _bucket, [&]( bucket_object& b )
-      {
-         b.TSD_conversion_requests_created++;
-         b.TSD_to_be_converted += op.amount.amount;
-      });
-   }
-
-   void operator()( const fill_convert_request_operation& op )const
-   {
-      _db.modify( _bucket, [&]( bucket_object& b )
-      {
-         b.TSD_conversion_requests_filled++;
-         b.TME_converted += op.amount_out.amount;
       });
    }
 };
@@ -281,7 +237,7 @@ void blockchain_statistics_plugin_impl::on_block( const signed_block& b )
 
    for( auto bucket : _tracked_buckets )
    {
-      auto open = fc::time_point_sec( ( db.head_block_time().sec_since_epoch() / bucket ) * bucket );
+      auto open = fc::time_point( ( db.head_block_time().time_since_epoch() / bucket ) * bucket );
       auto itr = bucket_idx.find( boost::make_tuple( bucket, open ) );
 
       if( itr == bucket_idx.end() )
@@ -298,9 +254,9 @@ void blockchain_statistics_plugin_impl::on_block( const signed_block& b )
          {
             try
             {
-               auto cutoff = fc::time_point_sec( ( safe< uint32_t >( db.head_block_time().sec_since_epoch() ) - safe< uint32_t >( bucket ) * safe< uint32_t >( _maximum_history_per_bucket_size ) ).value );
+               auto cutoff = fc::time_point( ( safe< uint32_t >( db.head_block_time().time_since_epoch() ) - safe< uint32_t >( bucket ) * safe< uint32_t >( _maximum_history_per_bucket_size ) ).value );
 
-               itr = bucket_idx.lower_bound( boost::make_tuple( bucket, fc::time_point_sec() ) );
+               itr = bucket_idx.lower_bound( boost::make_tuple( bucket, fc::time_point() ) );
 
                while( itr->seconds == bucket && itr->open < cutoff )
                {
@@ -337,42 +293,24 @@ void blockchain_statistics_plugin_impl::pre_operation( const operation_notificat
 
    for( auto bucket_id : _current_buckets )
    {
-      if( o.op.which() == operation::tag< deleteComment_operation >::value )
+      else if( o.op.which() == operation::tag< unstake_asset_operation >::value )
       {
-         deleteComment_operation op = o.op.get< deleteComment_operation >();
-         auto comment = db.get_comment( op.author, op.permlink );
+         unstake_asset_operation op = o.op.get< unstake_asset_operation >();
+         auto& account_balance = db.get_account_balance( op.account, op.amount.symbol);
          const auto& bucket = db.get(bucket_id);
+
+         auto new_asset_withdrawal_rate = op.amount.amount / COIN_UNSTAKE_INTERVALS;
+         if( op.amount.amount > 0 && new_asset_withdrawal_rate == 0 )
+            new_asset_withdrawal_rate = 1;
 
          db.modify( bucket, [&]( bucket_object& b )
          {
-            if( comment.parent_author.length() )
-               b.replies_deleted++;
+            if( account_balance.unstake_rate.amount > 0 )
+               b.asset_unstake_adjustments++;
             else
-               b.root_comments_deleted++;
-         });
-      }
-      else if( o.op.which() == operation::tag< withdrawSCORE_operation >::value )
-      {
-         withdrawSCORE_operation op = o.op.get< withdrawSCORE_operation >();
-         auto& account = db.get_account( op.account );
-         const auto& bucket = db.get(bucket_id);
+               b.asset_unstake_transfers++;
 
-         auto newSCORE_withdrawal_rate = op.SCORE.amount / TME_fund_for_SCORE_WITHDRAW_INTERVALS;
-         if( op.SCORE.amount > 0 && newSCORE_withdrawal_rate == 0 )
-            newSCORE_withdrawal_rate = 1;
-
-         if( !db.has_hardfork( HARDFORK_0_1 ) )
-            newSCORE_withdrawal_rate *= 1000000;
-
-         db.modify( bucket, [&]( bucket_object& b )
-         {
-            if( account.SCOREwithdrawRateInTME.amount > 0 )
-               b.modified_SCORE_TME_fund_withdrawal_requests++;
-            else
-               b.new_SCORE_TME_fund_withdrawal_requests++;
-
-            // TODO: Figure out how to change delta when a SCORE TME fund withdraw finishes. Have until March 24th 2018 to figure that out...
-            b.SCOREwithdrawRateInTME_delta += newSCORE_withdrawal_rate - account.SCOREwithdrawRateInTME.amount;
+            b.asset_unstake_rate_total += (new_asset_withdrawal_rate - account_balance.unstake_rate.amount);
          });
       }
    }

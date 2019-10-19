@@ -69,7 +69,7 @@ class feed_object : public object< feed_object_type, feed_object >
       account_name_type                account;
       shared_vector<account_name_type> reblogged_by;
       account_name_type                first_reblogged_by;
-      time_point_sec                   first_reblogged_on;
+      time_point                       first_reblogged_on;
       comment_id_type                  comment;
       uint32_t                         reblogs;
       uint32_t                         account_feed_id = 0;
@@ -93,7 +93,7 @@ class blog_object : public object< blog_object_type, blog_object >
 
       account_name_type account;
       comment_id_type   comment;
-      time_point_sec    reblogged_on;
+      time_point        reblogged_on;
       uint32_t          blog_feed_id = 0;
 };
 typedef oid< blog_object > blog_id_type;

@@ -6,10 +6,10 @@ This creates an executable `./tests/chain_test` that will run all unit tests.
 Tests are broken in several categories:
 ```
 basic_tests          // Tests of "basic" functionality
-block_tests          // Tests of the block chain
+block_tests          // Tests of the blockchain
 live_tests           // Tests on live chain data (currently only past hardfork testing)
 operation_tests      // Unit Tests of WeYouMe operations
-operation_time_tests // Tests of WeYouMe operations that include a time based component (ex. SCORE TME fund withdrawals)
+operation_time_tests // Tests of WeYouMe operations that include a time based component
 serialization_tests  // Tests related of serialization
 ```
 

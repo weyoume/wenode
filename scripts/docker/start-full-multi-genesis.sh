@@ -16,12 +16,12 @@ echo [$witness_names]
 
 docker run \
 	--env USE_WAY_TOO_MUCH_RAM=1 \
-        --env USE_FULLNODE=1 \
-				--env USE_NGINX_FRONTEND=1 \
-				--env GEN_PRIVATE_KEY=1 \
-				--env SHOW_PRIVATE_KEYS=1 \
-        --env WITNESS_NAMES="$witness_names" \
-       	--env WITNESS_NAME="webuilder" \
-        -d -p 2001:2001 -p 8090:8090 --name testnet-wenode \
-        weyoume/testnet-wenode
+    --env USE_FULLNODE=1 \
+	--env USE_NGINX_FRONTEND=1 \
+	--env GEN_PRIVATE_KEY=1 \
+	--env SHOW_PRIVATE_KEYS=1 \
+    --env WITNESS_NAMES="$witness_names" \
+    --env WITNESS_NAME="webuilder" \
+    -d -p 2001:2001 -p 8090:8090 --name testnet-wenode \
+    weyoume/testnet-wenode
 

@@ -7,20 +7,38 @@ namespace node { namespace chain { namespace util {
 using node::protocol::asset;
 using node::protocol::price;
 
-inline asset to_TSD( const price& p, const asset& TME )
+asset asset_to_USD( const price& p, const asset& a )
 {
-   FC_ASSERT( TME.symbol == SYMBOL_COIN );
+   FC_ASSERT( a.symbol != SYMBOL_USD );
+   asset_symbol_type quote_symbol = p.quote.symbol;
+   asset_symbol_type base_symbol = p.base.symbol;
+   FC_ASSERT( base_symbol == SYMBOL_USD || quote_symbol == SYMBOL_USD );
+
    if( p.is_null() )
       return asset( 0, SYMBOL_USD );
-   return TME * p;
+   return a * p;
 }
 
-inline asset to_TME( const price& p, const asset& TSD )
+asset USD_to_asset( const price& p, const asset& a )
 {
-   FC_ASSERT( TSD.symbol == SYMBOL_USD );
-   if( p.is_null() )
-      return asset( 0, SYMBOL_COIN );
-   return TSD * p;
+   FC_ASSERT( a.symbol == SYMBOL_USD );
+   asset_symbol_type quote_symbol = p.quote.symbol;
+   asset_symbol_type base_symbol = p.base.symbol;
+   FC_ASSERT( base_symbol == SYMBOL_USD || quote_symbol == SYMBOL_USD );
+
+   if( p.is_null() ) 
+   {
+      if( base_symbol == SYMBOL_USD) 
+      {
+         return asset( 0, quote_symbol );
+      } 
+      else if( quote_symbol == SYMBOL_USD ) 
+      {
+         return asset( 0, base_symbol );
+      }
+   }
+    
+   return a * p;
 }
 
 } } }

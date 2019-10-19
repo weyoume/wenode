@@ -46,9 +46,9 @@ namespace graphene { namespace net {
   struct potential_peer_record
   {
     fc::ip::endpoint                  endpoint;
-    fc::time_point_sec                last_seen_time;
+    fc::time_point                last_seen_time;
     fc::enum_type<uint8_t,potential_peer_last_connection_disposition> last_connection_disposition;
-    fc::time_point_sec                last_connection_attempt_time;
+    fc::time_point                last_connection_attempt_time;
     uint32_t                          number_of_successful_connection_attempts;
     uint32_t                          number_of_failed_connection_attempts;
     fc::optional<fc::exception>       last_error;
@@ -58,7 +58,7 @@ namespace graphene { namespace net {
     number_of_failed_connection_attempts(0){}
 
     potential_peer_record(fc::ip::endpoint endpoint,
-                          fc::time_point_sec last_seen_time = fc::time_point_sec(),
+                          fc::time_point last_seen_time = fc::time_point(),
                           potential_peer_last_connection_disposition last_connection_disposition = never_attempted_to_connect) :
       endpoint(endpoint),
       last_seen_time(last_seen_time),

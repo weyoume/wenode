@@ -63,7 +63,7 @@ class debug_node_api
       /*
        * Generate blocks locally until a specified head block time. Can generate them sparsely.
        */
-      uint32_t debug_generate_blocks_until( std::string debug_key, fc::time_point_sec head_block_time, bool generate_sparsely = true );
+      uint32_t debug_generate_blocks_until( std::string debug_key, fc::time_point head_block_time, bool generate_sparsely = true );
 
       /*
        * Pop a block from the blockchain, returning it

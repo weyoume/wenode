@@ -16,9 +16,9 @@ class market_history_api_impl
       market_ticker get_ticker() const;
       market_volume get_volume() const;
       order_book get_order_book( uint32_t limit ) const;
-      vector< market_trade > get_trade_history( time_point_sec start, time_point_sec end, uint32_t limit ) const;
+      vector< market_trade > get_trade_history( time_point start, time_point end, uint32_t limit ) const;
       vector< market_trade > get_recent_trades( uint32_t limit ) const;
-      vector< bucket_object > get_market_history( uint32_t bucket_seconds, time_point_sec start, time_point_sec end ) const;
+      vector< bucket_object > get_market_history( uint32_t bucket_seconds, time_point start, time_point end ) const;
       flat_set< uint32_t > get_market_history_buckets() const;
 
       node::app::application& app;
@@ -34,8 +34,8 @@ market_ticker market_history_api_impl::get_ticker() const
 
    if( itr != bucket_idx.end() )
    {
-      auto open = ( asset( itr->open_TSD, SYMBOL_USD ) / asset( itr->open_TME, SYMBOL_COIN ) ).to_real();
-      result.latest = ( asset( itr->close_TSD, SYMBOL_USD ) / asset( itr->close_TME, SYMBOL_COIN ) ).to_real();
+      auto open = ( asset( itr->open_USD, SYMBOL_USD ) / asset( itr->open_TME, SYMBOL_COIN ) ).to_real();
+      result.latest = ( asset( itr->close_USD, SYMBOL_USD ) / asset( itr->close_TME, SYMBOL_COIN ) ).to_real();
       result.percent_change = ( ( result.latest - open ) / open ) * 100;
    }
    else
@@ -52,7 +52,7 @@ market_ticker market_history_api_impl::get_ticker() const
 
    auto volume = get_volume();
    result.TME_volume = volume.TME_volume;
-   result.TSD_volume = volume.TSD_volume;
+   result.USD_volume = volume.USD_volume;
 
    return result;
 }
@@ -71,7 +71,7 @@ market_volume market_history_api_impl::get_volume() const
    do
    {
       result.TME_volume.amount += itr->TME_volume;
-      result.TSD_volume.amount += itr->TSD_volume;
+      result.USD_volume.amount += itr->USD_volume;
 
       ++itr;
    } while( itr != bucket_idx.end() && itr->seconds == bucket_size );
@@ -93,7 +93,7 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
       order cur;
       cur.price = itr->sell_price.base.to_real() / itr->sell_price.quote.to_real();
       cur.TME = ( asset( itr->for_sale, SYMBOL_USD ) * itr->sell_price ).amount;
-      cur.TSD = itr->for_sale;
+      cur.USD = itr->for_sale;
       result.bids.push_back( cur );
       ++itr;
    }
@@ -105,7 +105,7 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
       order cur;
       cur.price = itr->sell_price.quote.to_real() / itr->sell_price.base.to_real();
       cur.TME = itr->for_sale;
-      cur.TSD = ( asset( itr->for_sale, SYMBOL_COIN ) * itr->sell_price ).amount;
+      cur.USD = ( asset( itr->for_sale, SYMBOL_COIN ) * itr->sell_price ).amount;
       result.asks.push_back( cur );
       ++itr;
    }
@@ -113,7 +113,7 @@ order_book market_history_api_impl::get_order_book( uint32_t limit ) const
    return result;
 }
 
-std::vector< market_trade > market_history_api_impl::get_trade_history( time_point_sec start, time_point_sec end, uint32_t limit ) const
+std::vector< market_trade > market_history_api_impl::get_trade_history( time_point start, time_point end, uint32_t limit ) const
 {
    FC_ASSERT( limit <= 1000 );
    const auto& bucket_idx = app.chain_database()->get_index< order_history_index >().indices().get< by_time >();
@@ -155,7 +155,7 @@ vector< market_trade > market_history_api_impl::get_recent_trades( uint32_t limi
    return result;
 }
 
-std::vector< bucket_object > market_history_api_impl::get_market_history( uint32_t bucket_seconds, time_point_sec start, time_point_sec end ) const
+std::vector< bucket_object > market_history_api_impl::get_market_history( uint32_t bucket_seconds, time_point start, time_point end ) const
 {
    const auto& bucket_idx = app.chain_database()->get_index< bucket_index >().indices().get< by_bucket >();
    auto itr = bucket_idx.lower_bound( boost::make_tuple( bucket_seconds, start ) );
@@ -211,7 +211,7 @@ order_book market_history_api::get_order_book( uint32_t limit ) const
    });
 }
 
-std::vector< market_trade > market_history_api::get_trade_history( time_point_sec start, time_point_sec end, uint32_t limit ) const
+std::vector< market_trade > market_history_api::get_trade_history( time_point start, time_point end, uint32_t limit ) const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
@@ -227,7 +227,7 @@ std::vector< market_trade > market_history_api::get_recent_trades( uint32_t limi
    });
 }
 
-std::vector< bucket_object > market_history_api::get_market_history( uint32_t bucket_seconds, time_point_sec start, time_point_sec end ) const
+std::vector< bucket_object > market_history_api::get_market_history( uint32_t bucket_seconds, time_point start, time_point end ) const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {

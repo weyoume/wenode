@@ -56,10 +56,10 @@ struct hardfork_version : version
 struct hardfork_version_vote
 {
    hardfork_version_vote() {}
-   hardfork_version_vote( hardfork_version v, fc::time_point_sec t ):hf_version( v ),hf_time( t ) {}
+   hardfork_version_vote( hardfork_version v, fc::time_point t ):hf_version( v ),hf_time( t ) {}
 
    hardfork_version   hf_version;
-   fc::time_point_sec hf_time;
+   fc::time_point     hf_time;
 };
 
 } } // node::protocol

@@ -50,7 +50,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
       {
          auto cutoff = db.head_block_time() - fc::seconds( bucket * _maximum_history_per_bucket_size );
 
-         auto open = fc::time_point_sec( ( db.head_block_time().sec_since_epoch() / bucket ) * bucket );
+         auto open = fc::time_point( ( db.head_block_time().time_since_epoch() / bucket ) * bucket );
          auto seconds = bucket;
 
          auto itr = bucket_idx.find( boost::make_tuple( seconds, open ) );
@@ -64,28 +64,28 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                if( op.open_pays.symbol == SYMBOL_COIN )
                {
                   b.high_TME = op.open_pays.amount;
-                  b.high_TSD = op.current_pays.amount;
+                  b.high_USD = op.current_pays.amount;
                   b.low_TME = op.open_pays.amount;
-                  b.low_TSD = op.current_pays.amount;
+                  b.low_USD = op.current_pays.amount;
                   b.open_TME = op.open_pays.amount;
-                  b.open_TSD = op.current_pays.amount;
+                  b.open_USD = op.current_pays.amount;
                   b.close_TME = op.open_pays.amount;
-                  b.close_TSD = op.current_pays.amount;
+                  b.close_USD = op.current_pays.amount;
                   b.TME_volume = op.open_pays.amount;
-                  b.TSD_volume = op.current_pays.amount;
+                  b.USD_volume = op.current_pays.amount;
                }
                else
                {
                   b.high_TME = op.current_pays.amount;
-                  b.high_TSD = op.open_pays.amount;
+                  b.high_USD = op.open_pays.amount;
                   b.low_TME = op.current_pays.amount;
-                  b.low_TSD = op.open_pays.amount;
+                  b.low_USD = op.open_pays.amount;
                   b.open_TME = op.current_pays.amount;
-                  b.open_TSD = op.open_pays.amount;
+                  b.open_USD = op.open_pays.amount;
                   b.close_TME = op.current_pays.amount;
-                  b.close_TSD = op.open_pays.amount;
+                  b.close_USD = op.open_pays.amount;
                   b.TME_volume = op.current_pays.amount;
-                  b.TSD_volume = op.open_pays.amount;
+                  b.USD_volume = op.open_pays.amount;
                }
             });
          }
@@ -96,46 +96,46 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
                if( op.open_pays.symbol == SYMBOL_COIN )
                {
                   b.TME_volume += op.open_pays.amount;
-                  b.TSD_volume += op.current_pays.amount;
+                  b.USD_volume += op.current_pays.amount;
                   b.close_TME = op.open_pays.amount;
-                  b.close_TSD = op.current_pays.amount;
+                  b.close_USD = op.current_pays.amount;
 
                   if( b.high() < price( op.current_pays, op.open_pays ) )
                   {
                      b.high_TME = op.open_pays.amount;
-                     b.high_TSD = op.current_pays.amount;
+                     b.high_USD = op.current_pays.amount;
                   }
 
                   if( b.low() > price( op.current_pays, op.open_pays ) )
                   {
                      b.low_TME = op.open_pays.amount;
-                     b.low_TSD = op.current_pays.amount;
+                     b.low_USD = op.current_pays.amount;
                   }
                }
                else
                {
                   b.TME_volume += op.current_pays.amount;
-                  b.TSD_volume += op.open_pays.amount;
+                  b.USD_volume += op.open_pays.amount;
                   b.close_TME = op.current_pays.amount;
-                  b.close_TSD = op.open_pays.amount;
+                  b.close_USD = op.open_pays.amount;
 
                   if( b.high() < price( op.open_pays, op.current_pays ) )
                   {
                      b.high_TME = op.current_pays.amount;
-                     b.high_TSD = op.open_pays.amount;
+                     b.high_USD = op.open_pays.amount;
                   }
 
                   if( b.low() > price( op.open_pays, op.current_pays ) )
                   {
                      b.low_TME = op.current_pays.amount;
-                     b.low_TSD = op.open_pays.amount;
+                     b.low_USD = op.open_pays.amount;
                   }
                }
             });
 
             if( _maximum_history_per_bucket_size > 0 )
             {
-               open = fc::time_point_sec();
+               open = fc::time_point();
                itr = bucket_idx.lower_bound( boost::make_tuple( seconds, open ) );
 
                while( itr->seconds == seconds && itr->open < cutoff )

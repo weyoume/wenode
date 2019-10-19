@@ -50,7 +50,7 @@ struct by_date;
 
 /**
  * This is a relatively standard boost multi_index_container definition that has three 
- * requirements to be used withn a chainbase database:
+ * requirements to be used within a chainbase database:
  *   - it must use chainbase::allocator<T> 
  *   - the first index must be on the primary key (id) and must be unique (hashed or ordered)
  */

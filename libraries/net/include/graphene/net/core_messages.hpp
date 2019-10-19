@@ -271,7 +271,7 @@ namespace graphene { namespace net {
   struct address_info
   {
     fc::ip::endpoint          remote_endpoint;
-    fc::time_point_sec        last_seen_time;
+    fc::time_point            last_seen_time;
     fc::microseconds          latency;
     node_id_t                 node_id;
     fc::enum_type<uint8_t, peer_connection_direction> direction;
@@ -279,7 +279,7 @@ namespace graphene { namespace net {
 
     address_info() {}
     address_info(const fc::ip::endpoint& remote_endpoint,
-                 const fc::time_point_sec last_seen_time,
+                 const fc::time_point last_seen_time,
                  const fc::microseconds latency,
                  const node_id_t& node_id,
                  peer_connection_direction direction,

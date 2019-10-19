@@ -391,8 +391,8 @@ namespace graphene { namespace net { namespace detail {
       void     sync_status( uint32_t item_type, uint32_t item_count ) override;
       void     connection_count_changed( uint32_t c ) override;
       uint32_t get_block_number(const item_hash_t& block_id) override;
-      fc::time_point_sec get_block_time(const item_hash_t& block_id) override;
-      fc::time_point_sec get_blockchain_now() override;
+      fc::time_point get_block_time(const item_hash_t& block_id) override;
+      fc::time_point get_blockchain_now() override;
       item_hash_t get_head_block_id() const override;
       uint32_t estimate_last_known_fork_from_git_revision_timestamp(uint32_t unix_timestamp) const override;
       void error_encountered(const std::string& message, const fc::oexception& error) override;
@@ -489,7 +489,7 @@ namespace graphene { namespace net { namespace detail {
        * from connecting to the same client multiple times (sent in hello messages).
        * Since this was introduced after the hello_message was finalized, this is sent in the
        * user_data field.
-       * While this SCORE the same underlying type as a public key, it is really just a random
+       * While this is the same underlying type as a public key, it is really just a random
        * number.
        */
       node_id_t            _node_id;
@@ -541,7 +541,7 @@ namespace graphene { namespace net { namespace detail {
       unsigned _average_network_usage_second_counter;
       unsigned _average_network_usage_minute_counter;
 
-      fc::time_point_sec _bandwidth_monitor_last_update_time;
+      fc::time_point _bandwidth_monitor_last_update_time;
       fc::future<void> _bandwidth_monitor_loop_done;
 
       fc::future<void> _dump_node_status_task_done;
@@ -1544,7 +1544,7 @@ namespace graphene { namespace net { namespace detail {
 
       // this has nothing to do with updating the peer list, but we need to prune this list
       // at regular intervals, this is a fine place to do it.
-      fc::time_point_sec oldest_failed_ids_to_keep(fc::time_point::now() - fc::minutes(15));
+      fc::time_point oldest_failed_ids_to_keep(fc::time_point::now() - fc::minutes(15));
       auto oldest_failed_ids_to_keep_iter = _recently_failed_items.get<peer_connection::timestamp_index>().lower_bound(oldest_failed_ids_to_keep);
       auto begin_iter = _recently_failed_items.get<peer_connection::timestamp_index>().begin();
       _recently_failed_items.get<peer_connection::timestamp_index>().erase(begin_iter, oldest_failed_ids_to_keep_iter);
@@ -1581,9 +1581,9 @@ namespace graphene { namespace net { namespace detail {
     void node_impl::bandwidth_monitor_loop()
     {
       VERIFY_CORRECT_THREAD();
-      fc::time_point_sec current_time = fc::time_point::now();
+      fc::time_point current_time = fc::time_point::now();
 
-      if (_bandwidth_monitor_last_update_time == fc::time_point_sec::min())
+      if (_bandwidth_monitor_last_update_time == fc::time_point::min())
         _bandwidth_monitor_last_update_time = current_time;
 
       uint32_t seconds_since_last_update = current_time.sec_since_epoch() - _bandwidth_monitor_last_update_time.sec_since_epoch();
@@ -1887,11 +1887,11 @@ namespace graphene { namespace net { namespace detail {
       if (user_data.contains("graphene_git_revision_sha"))
         originating_peer->graphene_git_revision_sha = user_data["graphene_git_revision_sha"].as_string();
       if (user_data.contains("graphene_git_revision_unix_timestamp"))
-        originating_peer->graphene_git_revision_unix_timestamp = fc::time_point_sec(user_data["graphene_git_revision_unix_timestamp"].as<uint32_t>());
+        originating_peer->graphene_git_revision_unix_timestamp = fc::time_point(user_data["graphene_git_revision_unix_timestamp"].as<uint32_t>());
       if (user_data.contains("fc_git_revision_sha"))
         originating_peer->fc_git_revision_sha = user_data["fc_git_revision_sha"].as_string();
       if (user_data.contains("fc_git_revision_unix_timestamp"))
-        originating_peer->fc_git_revision_unix_timestamp = fc::time_point_sec(user_data["fc_git_revision_unix_timestamp"].as<uint32_t>());
+        originating_peer->fc_git_revision_unix_timestamp = fc::time_point(user_data["fc_git_revision_unix_timestamp"].as<uint32_t>());
       if (user_data.contains("platform"))
         originating_peer->platform = user_data["platform"].as_string();
       if (user_data.contains("bitness"))
@@ -2215,7 +2215,7 @@ namespace graphene { namespace net { namespace detail {
       }
       std::vector<graphene::net::address_info> updated_addresses = address_message_received.addresses;
       for (address_info& address : updated_addresses)
-        address.last_seen_time = fc::time_point_sec(fc::time_point::now());
+        address.last_seen_time = fc::time_point(fc::time_point::now());
       bool new_information_received = merge_address_info_with_potential_peer_database(updated_addresses);
       if (new_information_received)
         trigger_p2p_network_connect_loop();
@@ -2669,9 +2669,9 @@ namespace graphene { namespace net { namespace detail {
           // at any given time, there's a maximum number of blocks that can possibly be out there
           // [(now - genesis time) / block interval].  If they offer us more blocks than that,
           // they must be an attacker or have a buggy client.
-          fc::time_point_sec minimum_time_of_last_offered_block =
+          fc::time_point minimum_time_of_last_offered_block =
               originating_peer->last_block_time_delegate_has_seen + // timestamp of the block immediately before the first unfetched block
-              originating_peer->number_of_unfetched_item_ids * BLOCK_INTERVAL;
+              originating_peer->number_of_unfetched_item_ids * BLOCK_INTERVAL.count();
           if (minimum_time_of_last_offered_block > _delegate->get_blockchain_now() + GRAPHENE_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC)
           {
             wlog("Disconnecting from peer ${peer} who offered us an implausible number of blocks, their last block would be in the future (${timestamp})",
@@ -3481,7 +3481,7 @@ namespace graphene { namespace net { namespace detail {
 
         item_id block_message_item_id(core_message_type_enum::block_message_type, message_hash);
         uint32_t block_number = block_message_to_process.block.block_num();
-        fc::time_point_sec block_time = block_message_to_process.block.timestamp;
+        fc::time_point block_time = block_message_to_process.block.timestamp;
 
         for (const peer_connection_ptr& peer : _active_connections)
         {
@@ -4550,7 +4550,7 @@ namespace graphene { namespace net { namespace detail {
         for (peer_database::iterator itr = _potential_peer_db.begin(); itr != _potential_peer_db.end(); ++itr)
         {
           potential_peer_record updated_peer_record = *itr;
-          updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time,
+          updated_peer_record.last_connection_attempt_time = std::min<fc::time_point>(updated_peer_record.last_connection_attempt_time,
                                                                                           fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout));
           _potential_peer_db.update_entry(updated_peer_record);
         }
@@ -4693,7 +4693,7 @@ namespace graphene { namespace net { namespace detail {
 
       // if we've recently connected to this peer, reset the last_connection_attempt_time to allow
       // us to immediately retry this peer
-      updated_peer_record.last_connection_attempt_time = std::min<fc::time_point_sec>(updated_peer_record.last_connection_attempt_time,
+      updated_peer_record.last_connection_attempt_time = std::min<fc::time_point>(updated_peer_record.last_connection_attempt_time,
                                                                                       fc::time_point::now() - fc::seconds(_peer_connection_retry_timeout));
       _add_once_node_list.push_back(updated_peer_record);
       _potential_peer_db.update_entry(updated_peer_record);
@@ -4965,9 +4965,9 @@ namespace graphene { namespace net { namespace detail {
         {
           peer_details["fc_git_revision_unix_timestamp"] = *peer->fc_git_revision_unix_timestamp;
           std::string age_string = fc::get_approximate_relative_time_string( *peer->fc_git_revision_unix_timestamp);
-          if (*peer->fc_git_revision_unix_timestamp == fc::time_point_sec(fc::git_revision_unix_timestamp))
+          if (*peer->fc_git_revision_unix_timestamp == fc::time_point(fc::git_revision_unix_timestamp))
             age_string += " (same as ours)";
-          else if (*peer->fc_git_revision_unix_timestamp > fc::time_point_sec(fc::git_revision_unix_timestamp))
+          else if (*peer->fc_git_revision_unix_timestamp > fc::time_point(fc::git_revision_unix_timestamp))
             age_string += " (newer than ours)";
           else
             age_string += " (older than ours)";
@@ -5588,13 +5588,13 @@ namespace graphene { namespace net { namespace detail {
       return _node_delegate->get_block_number(block_id);
     }
 
-    fc::time_point_sec statistics_gathering_node_delegate_wrapper::get_block_time(const item_hash_t& block_id)
+    fc::time_point statistics_gathering_node_delegate_wrapper::get_block_time(const item_hash_t& block_id)
     {
       INVOKE_AND_COLLECT_STATISTICS(get_block_time, block_id);
     }
 
     /** returns graphene::blockchain::now() */
-    fc::time_point_sec statistics_gathering_node_delegate_wrapper::get_blockchain_now()
+    fc::time_point statistics_gathering_node_delegate_wrapper::get_blockchain_now()
     {
       // this function doesn't need to block,
       ASSERT_TASK_NOT_PREEMPTED();

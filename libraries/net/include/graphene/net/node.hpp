@@ -152,12 +152,12 @@ namespace graphene { namespace net {
 
          /**
           * Returns the time a block was produced (if block_id = 0, returns genesis time).
-          * If we don't know about the block, returns time_point_sec::min()
+          * If we don't know about the block, returns time_point::min()
           */
-         virtual fc::time_point_sec get_block_time(const item_hash_t& block_id) = 0;
+         virtual fc::time_point get_block_time(const item_hash_t& block_id) = 0;
 
          /** returns graphene::blockchain::now() */
-         virtual fc::time_point_sec get_blockchain_now() = 0;
+         virtual fc::time_point get_blockchain_now() = 0;
 
          virtual item_hash_t get_head_block_id() const = 0;
 

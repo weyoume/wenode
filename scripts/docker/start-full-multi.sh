@@ -14,7 +14,7 @@ docker rm -f testnet-wenode ;
 # privatekey3"
 
 # and use the following PRIVATE_KEYS definition
-PRIVATE_KEYS=$(cat /var/www/nodes/wenode/wenode/scripts/private-keys)
+PRIVATE_KEYS=$(cat /home/haz/things/git/weyoume/wenode/scripts/private-keys)
 
 # OR
 # PRIVATE_KEYS="privatekey1 privatekey2 privatekey3"

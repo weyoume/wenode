@@ -477,7 +477,7 @@ namespace graphene { namespace net
     void peer_connection::clear_old_inventory()
     {
       VERIFY_CORRECT_THREAD();
-      fc::time_point_sec oldest_inventory_to_keep(fc::time_point::now() - fc::minutes(GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES));
+      fc::time_point oldest_inventory_to_keep(fc::time_point::now() - fc::minutes(GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES));
 
       // expire old items from inventory_advertised_to_peer
       auto oldest_inventory_to_keep_iter = inventory_advertised_to_peer.get<timestamp_index>().lower_bound(oldest_inventory_to_keep);
@@ -511,7 +511,7 @@ namespace graphene { namespace net
       // to give us some wiggle room)
       return inventory_peer_advertised_to_us.size() >
         GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES * GRAPHENE_NET_MAX_TRX_PER_SECOND * 60 +
-        (GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES + 1) * 60 / BLOCK_INTERVAL;
+        (GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES + 1) * 60 * MILLION / BLOCK_INTERVAL.count();
     }
 
     bool peer_connection::performing_firewall_check() const

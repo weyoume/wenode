@@ -62,7 +62,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Market
       order_book get_order_book( uint32_t limit )const;
-      vector< liquidity_balance > get_liquidity_queue( string start_account, uint32_t limit )const;
 
       // Authority / validation
       std::string get_transaction_hex(const signed_transaction& trx)const;
@@ -258,11 +257,29 @@ dynamic_global_property_api_obj database_api::get_dynamic_global_properties()con
    });
 }
 
+dynamic_global_property_api_obj database_api_impl::get_dynamic_global_properties()const
+{
+   return dynamic_global_property_api_obj( _db.get( dynamic_global_property_id_type() ), _db );
+}
+
+reward_fund_api_obj database_api::get_reward_fund()const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_reward_fund();
+   });
+}
+
+reward_fund_api_obj database_api_impl::get_reward_fund()const
+{
+   return reward_fund_api_obj( _db.get( reward_fund_id_type() ), _db );
+}
+
 chain_properties database_api::get_chain_properties()const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->_db.get_witness_schedule_object().median_props;
+      return my->_db.get_witness_schedule().median_props;
    });
 }
 
@@ -282,10 +299,9 @@ price database_api::get_current_median_history_price()const
    });
 }
 
-dynamic_global_property_api_obj database_api_impl::get_dynamic_global_properties()const
-{
-   return dynamic_global_property_api_obj( _db.get( dynamic_global_property_id_type() ), _db );
-}
+
+
+
 
 witness_schedule_api_obj database_api::get_witness_schedule()const
 {
@@ -315,16 +331,7 @@ scheduled_hardfork database_api::get_next_scheduled_hardfork() const
    });
 }
 
-reward_fund_api_obj database_api::get_reward_fund( string name )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      auto fund = my->_db.find< reward_fund_object, by_name >( name );
-      FC_ASSERT( fund != nullptr, "Invalid reward fund name" );
 
-      return *fund;
-   });
-}
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
@@ -546,7 +553,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
 
       if( type == outgoing || type == all )
       {
-         const auto& by_route = my->_db.get_index< withdrawSCORE_route_index >().indices().get< by_withdraw_route >();
+         const auto& by_route = my->_db.get_index< unstake_asset_route_index >().indices().get< by_withdraw_route >();
          auto route = by_route.lower_bound( acc.id );
 
          while( route != by_route.end() && route->from_account == acc.id )
@@ -555,7 +562,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
             r.from_account = account;
             r.to_account = my->_db.get( route->to_account ).name;
             r.percent = route->percent;
-            r.autoSCORE = route->autoSCORE;
+            r.auto_stake = route->auto_stake;
 
             result.push_back( r );
 
@@ -565,7 +572,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
 
       if( type == incoming || type == all )
       {
-         const auto& by_dest = my->_db.get_index< withdrawSCORE_route_index >().indices().get< by_destination >();
+         const auto& by_dest = my->_db.get_index< unstake_asset_route_index >().indices().get< by_destination >();
          auto route = by_dest.lower_bound( acc.id );
 
          while( route != by_dest.end() && route->to_account == acc.id )
@@ -574,7 +581,7 @@ vector< withdraw_route > database_api::get_withdraw_routes( string account, with
             r.from_account = my->_db.get( route->from_account ).name;
             r.to_account = account;
             r.percent = route->percent;
-            r.autoSCORE = route->autoSCORE;
+            r.auto_stake = route->auto_stake;
 
             result.push_back( r );
 
@@ -771,7 +778,7 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
       order cur;
       cur.order_price = itr->sell_price;
       cur.real_price  = (cur.order_price).to_real();
-      cur.TSD = itr->for_sale;
+      cur.USD = itr->for_sale;
       cur.TME = ( asset( itr->for_sale, SYMBOL_USD ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.bids.push_back( cur );
@@ -784,7 +791,7 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
       cur.order_price = itr->sell_price;
       cur.real_price  = (~cur.order_price).to_real();
       cur.TME   = itr->for_sale;
-      cur.TSD     = ( asset( itr->for_sale, SYMBOL_COIN ) * cur.order_price ).amount;
+      cur.USD     = ( asset( itr->for_sale, SYMBOL_COIN ) * cur.order_price ).amount;
       cur.created = itr->created;
       result.asks.push_back( cur );
       ++buy_itr;
@@ -794,51 +801,6 @@ order_book database_api_impl::get_order_book( uint32_t limit )const
    return result;
 }
 
-vector< liquidity_balance > database_api::get_liquidity_queue( string start_account, uint32_t limit )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_liquidity_queue( start_account, limit );
-   });
-}
-
-vector< liquidity_balance > database_api_impl::get_liquidity_queue( string start_account, uint32_t limit )const
-{
-   FC_ASSERT( limit <= 1000 );
-
-   const auto& liq_idx = _db.get_index< liquidity_reward_balance_index >().indices().get< by_volume_weight >();
-   auto itr = liq_idx.begin();
-   vector< liquidity_balance > result;
-
-   result.reserve( limit );
-
-   if( start_account.length() )
-   {
-      const auto& liq_by_acc = _db.get_index< liquidity_reward_balance_index >().indices().get< by_owner >();
-      auto acc = liq_by_acc.find( _db.get_account( start_account ).id );
-
-      if( acc != liq_by_acc.end() )
-      {
-         itr = liq_idx.find( boost::make_tuple( acc->weight, acc->owner ) );
-      }
-      else
-      {
-         itr = liq_idx.end();
-      }
-   }
-
-   while( itr != liq_idx.end() && result.size() < limit )
-   {
-      liquidity_balance bal;
-      bal.account = _db.get(itr->owner).name;
-      bal.weight = itr->weight;
-      result.push_back( bal );
-
-      ++itr;
-   }
-
-   return result;
-}
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
@@ -964,21 +926,6 @@ bool database_api_impl::verify_account_authority( const string& name, const flat
    return verify_authority( trx );
 }
 
-vector<convert_request_api_obj> database_api::get_conversion_requests( const string& account )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      const auto& idx = my->_db.get_index< convert_request_index >().indices().get< by_owner >();
-      vector< convert_request_api_obj > result;
-      auto itr = idx.lower_bound(account);
-      while( itr != idx.end() && itr->owner == account ) {
-         result.push_back(*itr);
-         ++itr;
-      }
-      return result;
-   });
-}
-
 discussion database_api::get_content( string author, string permlink )const
 {
    return my->_db.with_read_lock( [&]()
@@ -1011,7 +958,7 @@ vector<vote_state> database_api::get_active_votes( string author, string permlin
          vote_state vstate;
          vstate.voter = vo.name;
          vstate.weight = itr->weight;
-         vstate.SCOREreward = itr->SCOREreward;
+         vstate.reward = itr->reward;
          vstate.percent = itr->vote_percent;
          vstate.time = itr->last_update;
 
@@ -1047,7 +994,7 @@ vector<account_vote> database_api::get_account_votes( string voter )const
          account_vote avote;
          avote.authorperm = vo.author+"/"+to_string( vo.permlink );
          avote.weight = itr->weight;
-         avote.SCOREreward = itr->SCOREreward;
+         avote.reward = itr->reward;
          avote.percent = itr->vote_percent;
          avote.time = itr->last_update;
          result.push_back(avote);
@@ -1079,32 +1026,20 @@ void database_api::set_pending_payout( discussion& d )const
    const auto& props = my->_db.get_dynamic_global_properties();
    const auto& hist  = my->_db.get_feed_history();
 
-   asset pot;
-   if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
-      pot = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) ).reward_balance;
-   else
-      pot = props.total_reward_fund_TME;
-
+   asset pot = my->_db.get_reward_fund().content_reward_balance;
+   
    if( !hist.current_median_history.is_null() ) pot = pot * hist.current_median_history;
 
-   u256 total_r2 = 0;
-   if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
-      total_r2 = to256( my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) ).recent_claims );
-   else
-      total_r2 = to256( props.totalSCOREreward2 );
-
+   u256 total_r2 = to256( my->_db.get_reward_fund().recent_content_claims );
+   
    if( total_r2 > 0 )
    {
-      uint128_t vSCORE;
-      if( my->_db.has_hardfork( HARDFORK_0_17__774 ) )
-      {
-         const auto& rf = my->_db.get_reward_fund( my->_db.get_comment( d.author, d.permlink ) );
-         vSCORE = d.net_SCOREreward.value > 0 ? node::chain::util::evaluate_reward_curve( d.net_SCOREreward.value, rf.authorReward_curve, rf.content_constant ) : 0;
-      }
-      else
-         vSCORE = d.net_SCOREreward.value > 0 ? node::chain::util::evaluate_reward_curve( d.net_SCOREreward.value ) : 0;
-
-      u256 r2 = to256(vSCORE); //to256(abs_net_SCOREreward);
+      uint128_t pending_reward_shares;
+      
+      const auto& rf = my->_db.get_reward_fund();
+      pending_reward_shares = d.net_reward.value > 0 ? node::chain::util::evaluate_reward_curve( d.net_reward.value, rf.author_reward_curve, rf.content_constant ) : 0;
+      
+      u256 r2 = to256(pending_reward_shares); //to256(abs_net_reward);
       r2 *= pot.amount.value;
       r2 /= total_r2;
 
@@ -1403,10 +1338,10 @@ vector<discussion> database_api::get_discussions_by_payout( const discussion_que
       auto tag = fc::to_lower( query.tag );
       auto parent = get_parent( query );
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_net_SCOREreward>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_net_reward>();
       auto tidx_itr = tidx.lower_bound( tag );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_SCOREreward <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1421,10 +1356,10 @@ vector<discussion> database_api::get_post_discussions_by_payout( const discussio
       auto tag = fc::to_lower( query.tag );
       auto parent = comment_id_type();
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_SCOREreward>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_reward>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, true ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_SCOREreward <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1439,10 +1374,10 @@ vector<discussion> database_api::get_comment_discussions_by_payout( const discus
       auto tag = fc::to_lower( query.tag );
       auto parent = comment_id_type(1);
 
-      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_SCOREreward>();
+      const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_reward>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, false ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_SCOREreward <= 0; }, exit_default, tag_exit_default, true );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
    });
 }
 
@@ -1458,7 +1393,7 @@ vector<discussion> database_api::get_discussions_by_promoted( const discussion_q
       auto parent = get_parent( query );
 
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_promoted>();
-      auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, share_type(MAX_SCORE_SUPPLY) )  );
+      auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, share_type(MAX_ASSET_SUPPLY) )  );
 
       return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, []( const tags::tag_object& t ){ return t.promoted_balance == 0; }  );
    });
@@ -1478,7 +1413,7 @@ vector<discussion> database_api::get_discussions_by_trending( const discussion_q
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_trending>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, std::numeric_limits<double>::max() )  );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_SCOREreward <= 0; } );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_reward <= 0; } );
    });
 }
 
@@ -1494,7 +1429,7 @@ vector<discussion> database_api::get_discussions_by_created( const discussion_qu
       auto parent = get_parent( query );
 
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_created>();
-      auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, fc::time_point_sec::maximum() )  );
+      auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, fc::time_point::maximum() )  );
 
       return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body );
    });
@@ -1512,7 +1447,7 @@ vector<discussion> database_api::get_discussions_by_active( const discussion_que
       auto parent = get_parent( query );
 
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_active>();
-      auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, fc::time_point_sec::maximum() )  );
+      auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, fc::time_point::maximum() )  );
 
       return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body );
    });
@@ -1534,7 +1469,7 @@ vector<discussion> database_api::get_discussions_by_cashout( const discussion_qu
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_cashout>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, fc::time_point::now() - fc::minutes(60) ) );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_SCOREreward < 0; });
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward < 0; });
    });
 }
 
@@ -1588,7 +1523,7 @@ vector<discussion> database_api::get_discussions_by_hot( const discussion_query&
       const auto& tidx = my->_db.get_index<tags::tag_index>().indices().get<tags::by_parent_hot>();
       auto tidx_itr = tidx.lower_bound( boost::make_tuple( tag, parent, std::numeric_limits<double>::max() )  );
 
-      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_SCOREreward <= 0; } );
+      return get_discussions( query, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_reward <= 0; } );
    });
 }
 
@@ -1704,7 +1639,7 @@ vector<discussion> database_api::get_discussions_by_blog( const discussion_query
             }
 
             result.push_back( get_discussion( blog_itr->comment, query.truncate_body ) );
-            if( blog_itr->reblogged_on > time_point_sec() )
+            if( blog_itr->reblogged_on > time_point() )
             {
                result.back().first_reblogged_on = blog_itr->reblogged_on;
             }
@@ -1825,18 +1760,18 @@ vector< account_name_type > database_api::get_active_witnesses()const
 {
    return my->_db.with_read_lock( [&]()
    {
-      const auto& wso = my->_db.get_witness_schedule_object();
-      size_t n = wso.current_shuffled_witnesses.size();
+      const auto& wso = my->_db.get_witness_schedule();
+      size_t n = wso.current_shuffled_producers.size();
       vector< account_name_type > result;
       result.reserve( n );
       for( size_t i=0; i<n; i++ )
-         result.push_back( wso.current_shuffled_witnesses[i] );
+         result.push_back( wso.current_shuffled_producers[i] );
       return result;
    });
 }
 
 vector<discussion>  database_api::get_discussions_by_author_before_date(
-    string author, string start_permlink, time_point_sec before_date, uint32_t limit )const
+    string author, string start_permlink, time_point before_date, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
@@ -1849,10 +1784,10 @@ vector<discussion>  database_api::get_discussions_by_author_before_date(
          uint32_t count = 0;
          const auto& didx = my->_db.get_index<comment_index>().indices().get<by_author_last_update>();
 
-         if( before_date == time_point_sec() )
-            before_date = time_point_sec::maximum();
+         if( before_date == time_point() )
+            before_date = time_point::maximum();
 
-         auto itr = didx.lower_bound( boost::make_tuple( author, time_point_sec::maximum() ) );
+         auto itr = didx.lower_bound( boost::make_tuple( author, time_point::maximum() ) );
          if( start_permlink.size() )
          {
             const auto& comment = my->_db.get_comment( author, start_permlink );
@@ -1911,16 +1846,16 @@ vector< savings_withdraw_api_obj > database_api::get_savings_withdraw_to( string
    });
 }
 
-vector< TME_fund_for_SCORE_delegation_api_obj > database_api::get_SCORE_delegations( string account, string from, uint32_t limit )const
+vector< asset_delegation_api_obj > database_api::get_asset_delegations( string account, string from, uint32_t limit )const
 {
    FC_ASSERT( limit <= 1000 );
 
    return my->_db.with_read_lock( [&]()
    {
-      vector< TME_fund_for_SCORE_delegation_api_obj > result;
+      vector< asset_delegation_api_obj > result;
       result.reserve( limit );
 
-      const auto& delegation_idx = my->_db.get_index< TME_fund_for_SCORE_delegation_index, by_delegation >();
+      const auto& delegation_idx = my->_db.get_index< asset_delegation_index, by_delegation >();
       auto itr = delegation_idx.lower_bound( boost::make_tuple( account, from ) );
       while( result.size() < limit && itr != delegation_idx.end() && itr->delegator == account )
       {
@@ -1932,16 +1867,16 @@ vector< TME_fund_for_SCORE_delegation_api_obj > database_api::get_SCORE_delegati
    });
 }
 
-vector< TME_fund_for_SCORE_delegation_expiration_api_obj > database_api::get_expiring_TME_fund_for_SCORE_delegations( string account, time_point_sec from, uint32_t limit )const
+vector< asset_delegation_expiration_api_obj > database_api::get_expiring_asset_delegations( string account, time_point from, uint32_t limit )const
 {
    FC_ASSERT( limit <= 1000 );
 
    return my->_db.with_read_lock( [&]()
    {
-      vector< TME_fund_for_SCORE_delegation_expiration_api_obj > result;
+      vector< asset_delegation_expiration_api_obj > result;
       result.reserve( limit );
 
-      const auto& exp_idx = my->_db.get_index< TME_fund_for_SCORE_delegation_expiration_index, by_account_expiration >();
+      const auto& exp_idx = my->_db.get_index< asset_delegation_expiration_index, by_account_expiration >();
       auto itr = exp_idx.lower_bound( boost::make_tuple( account, from ) );
       while( result.size() < limit && itr != exp_idx.end() && itr->delegator == account )
       {
@@ -1999,24 +1934,23 @@ state database_api::get_state( string path )const
             auto history = get_account_history( acnt, uint64_t(-1), 10000 );
             for( auto& item : history ) {
                switch( item.second.op.which() ) {
-                  case operation::tag<transferTMEtoSCOREfund_operation>::value:
-                  case operation::tag<withdrawSCORE_operation>::value:
+                  case operation::tag<stake_asset_operation>::value:
+                  case operation::tag<unstake_asset_operation>::value:
                   case operation::tag<interest_operation>::value:
                   case operation::tag<transfer_operation>::value:
                   case operation::tag<liquidity_reward_operation>::value:
-                  case operation::tag<authorReward_operation>::value:
-                  case operation::tag<curationReward_operation>::value:
+                  case operation::tag<author_reward_operation>::value:
+                  case operation::tag<curation_reward_operation>::value:
                   case operation::tag<comment_benefactor_reward_operation>::value:
-                  case operation::tag<transferToSavings_operation>::value:
-                  case operation::tag<transferFromSavings_operation>::value:
-                  case operation::tag<cancelTransferFromSavings_operation>::value:
+                  case operation::tag<transfer_to_savings_operation>::value:
+                  case operation::tag<transfer_from_savings_operation>::value:
+                  case operation::tag<cancel_transfer_from_savings_operation>::value:
                   case operation::tag<escrow_transfer_operation>::value:
                   case operation::tag<escrow_approve_operation>::value:
                   case operation::tag<escrow_dispute_operation>::value:
                   case operation::tag<escrow_release_operation>::value:
-                  case operation::tag<fill_convert_request_operation>::value:
                   case operation::tag<fill_order_operation>::value:
-                  case operation::tag<claimRewardBalance_operation>::value:
+                  case operation::tag<claim_reward_balance_operation>::value:
                      eacnt.transfer_history[item.first] =  item.second;
                      break;
                   case operation::tag<comment_operation>::value:
@@ -2027,14 +1961,13 @@ state database_api::get_state( string path )const
                   //   eacnt.market_history[item.first] =  item.second;
                      break;
                   case operation::tag<vote_operation>::value:
-                  case operation::tag<accountWitnessVote_operation>::value:
-                  case operation::tag<account_witness_proxy_operation>::value:
+                  case operation::tag<account_witness_vote_operation>::value:
+                  case operation::tag<account_update_proxy_operation>::value:
                   //   eacnt.vote_history[item.first] =  item.second;
                      break;
-                  case operation::tag<accountCreate_operation>::value:
-                  case operation::tag<accountUpdate_operation>::value:
+                  case operation::tag<account_create_operation>::value:
+                  case operation::tag<account_update_operation>::value:
                   case operation::tag<witness_update_operation>::value:
-                  case operation::tag<pow_operation>::value:
                   case operation::tag<custom_operation>::value:
                   case operation::tag<producer_reward_operation>::value:
                   default:
@@ -2091,7 +2024,7 @@ state database_api::get_state( string path )const
                   _state.content[ link ] = my->_db.get_comment( b.author, b.permlink );
                   set_pending_payout( _state.content[ link ] );
 
-                  if( b.reblog_on > time_point_sec() )
+                  if( b.reblog_on > time_point() )
                   {
                      _state.content[ link ].first_reblogged_on = b.reblog_on;
                   }
@@ -2353,7 +2286,7 @@ state database_api::get_state( string path )const
          d.second.active_votes = get_active_votes( d.second.author, d.second.permlink );
       }
 
-      _state.witness_schedule = my->_db.get_witness_schedule_object();
+      _state.witness_schedule = my->_db.get_witness_schedule();
 
    } catch ( const fc::exception& e ) {
       _state.error = e.to_detail_string();

@@ -71,21 +71,21 @@ struct bucket_object : public object< bucket_object_type, bucket_object >
 
    id_type              id;
 
-   fc::time_point_sec   open;
+   fc::time_point       open;
    uint32_t             seconds = 0;
    share_type           high_TME;
-   share_type           high_TSD;
+   share_type           high_USD;
    share_type           low_TME;
-   share_type           low_TSD;
+   share_type           low_USD;
    share_type           open_TME;
-   share_type           open_TSD;
+   share_type           open_USD;
    share_type           close_TME;
-   share_type           close_TSD;
+   share_type           close_USD;
    share_type           TME_volume;
-   share_type           TSD_volume;
+   share_type           USD_volume;
 
-   price high()const { return asset( high_TSD, SYMBOL_USD ) / asset( high_TME, SYMBOL_COIN ); }
-   price low()const { return asset( low_TSD, SYMBOL_USD ) / asset( low_TME, SYMBOL_COIN ); }
+   price high()const { return asset( high_USD, SYMBOL_USD ) / asset( high_TME, SYMBOL_COIN ); }
+   price low()const { return asset( low_USD, SYMBOL_USD ) / asset( low_TME, SYMBOL_COIN ); }
 };
 
 typedef oid< bucket_object > bucket_id_type;
@@ -101,7 +101,7 @@ struct order_history_object : public object< order_history_object_type, order_hi
 
    id_type                          id;
 
-   fc::time_point_sec               time;
+   fc::time_point                   time;
    protocol::fill_order_operation   op;
 };
 
@@ -116,9 +116,9 @@ typedef multi_index_container<
       ordered_unique< tag< by_bucket >,
          composite_key< bucket_object,
             member< bucket_object, uint32_t, &bucket_object::seconds >,
-            member< bucket_object, fc::time_point_sec, &bucket_object::open >
+            member< bucket_object, fc::time_point, &bucket_object::open >
          >,
-         composite_key_compare< std::less< uint32_t >, std::less< fc::time_point_sec > >
+         composite_key_compare< std::less< uint32_t >, std::less< fc::time_point > >
       >
    >,
    allocator< bucket_object >
@@ -129,7 +129,7 @@ typedef multi_index_container<
    order_history_object,
    indexed_by<
       ordered_unique< tag< by_id >, member< order_history_object, order_history_id_type, &order_history_object::id > >,
-      ordered_non_unique< tag< by_time >, member< order_history_object, time_point_sec, &order_history_object::time > >
+      ordered_non_unique< tag< by_time >, member< order_history_object, time_point, &order_history_object::time > >
    >,
    allocator< order_history_object >
 > order_history_index;
@@ -139,15 +139,16 @@ typedef multi_index_container<
 FC_REFLECT( node::market_history::bucket_object,
                      (id)
                      (open)(seconds)
-                     (high_TME)(high_TSD)
-                     (low_TME)(low_TSD)
-                     (open_TME)(open_TSD)
-                     (close_TME)(close_TSD)
-                     (TME_volume)(TSD_volume) )
-CHAINBASE_SET_INDEX_TYPE( node::market_history::bucket_object, node::market_history::bucket_index )
+                     (high_TME)(high_USD)
+                     (low_TME)(low_USD)
+                     (open_TME)(open_USD)
+                     (close_TME)(close_USD)
+                     (TME_volume)(USD_volume) );
+                     
+CHAINBASE_SET_INDEX_TYPE( node::market_history::bucket_object, node::market_history::bucket_index );
 
 FC_REFLECT( node::market_history::order_history_object,
                      (id)
                      (time)
-                     (op) )
-CHAINBASE_SET_INDEX_TYPE( node::market_history::order_history_object, node::market_history::order_history_index )
+                     (op) );
+CHAINBASE_SET_INDEX_TYPE( node::market_history::order_history_object, node::market_history::order_history_index );

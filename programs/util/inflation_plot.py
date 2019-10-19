@@ -65,5 +65,5 @@ for m in markers:
     print(m)
     plt.plot(*m[0], **m[1])
 plt.legend(loc=4)
-plt.title("10-year TME supply projection")
+plt.title("10-year supply projection")
 plt.savefig("myfig.png")

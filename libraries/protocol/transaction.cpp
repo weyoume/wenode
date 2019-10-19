@@ -62,7 +62,7 @@ signature_type node::protocol::signed_transaction::sign(const private_key_type& 
    return key.sign_compact(enc.result());
 }
 
-void transaction::set_expiration( fc::time_point_sec expiration_time )
+void transaction::set_expiration( fc::time_point expiration_time )
 {
     expiration = expiration_time;
 }

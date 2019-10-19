@@ -87,10 +87,10 @@ class message_object : public object< message_object_type, message_object >
 
       account_name_type from;
       account_name_type to;
-      public_key_type   from_memoKey;
-      public_key_type   to_memoKey;
+      public_key_type   from_secure_public_key;
+      public_key_type   to_secure_public_key;
       uint64_t          sent_time = 0; /// used as seed to secret generation
-      time_point_sec    receive_time; /// time received by blockchain
+      time_point        receive_time; /// time received by blockchain
       uint32_t          checksum = 0;
       buffer_type       encrypted_message;
 };
@@ -103,8 +103,8 @@ struct message_api_obj
       id( o.id ),
       from( o.from ),
       to( o.to ),
-      from_memoKey( o.from_memoKey ),
-      to_memoKey( o.to_memoKey ),
+      from_secure_public_key( o.from_secure_public_key ),
+      to_secure_public_key( o.to_secure_public_key ),
       sent_time( o.sent_time ),
       receive_time( o.receive_time ),
       checksum( o.checksum ),
@@ -116,10 +116,10 @@ struct message_api_obj
    message_id_type   id;
    account_name_type from;
    account_name_type to;
-   public_key_type   from_memoKey;
-   public_key_type   to_memoKey;
+   public_key_type   from_secure_public_key;
+   public_key_type   to_secure_public_key;
    uint64_t          sent_time;
-   time_point_sec    receive_time;
+   time_point        receive_time;
    uint32_t          checksum;
    vector< char >    encrypted_message;
 };
@@ -144,18 +144,18 @@ typedef multi_index_container<
       ordered_unique< tag< by_to_date >,
             composite_key< message_object,
                member< message_object, account_name_type, &message_object::to >,
-               member< message_object, time_point_sec, &message_object::receive_time >,
+               member< message_object, time_point, &message_object::receive_time >,
                member< message_object, message_id_type, &message_object::id >
             >,
-            composite_key_compare< std::less< string >, std::greater< time_point_sec >, std::less< message_id_type > >
+            composite_key_compare< std::less< string >, std::greater< time_point >, std::less< message_id_type > >
       >,
       ordered_unique< tag< by_from_date >,
             composite_key< message_object,
                member< message_object, account_name_type, &message_object::from >,
-               member< message_object, time_point_sec, &message_object::receive_time >,
+               member< message_object, time_point, &message_object::receive_time >,
                member< message_object, message_id_type, &message_object::id >
             >,
-            composite_key_compare< std::less< string >, std::greater< time_point_sec >, std::less< message_id_type > >
+            composite_key_compare< std::less< string >, std::greater< time_point >, std::less< message_id_type > >
       >
    >,
    allocator< message_object >
@@ -212,9 +212,9 @@ FC_API( node::private_message::private_message_api, (get_inbox)(get_outbox) );
 
 FC_REFLECT( node::private_message::message_body, (thread_start)(subject)(body)(json)(cc) );
 
-FC_REFLECT( node::private_message::message_object, (id)(from)(to)(from_memoKey)(to_memoKey)(sent_time)(receive_time)(checksum)(encrypted_message) );
+FC_REFLECT( node::private_message::message_object, (id)(from)(to)(from_secure_public_key)(to_secure_public_key)(sent_time)(receive_time)(checksum)(encrypted_message) );
 CHAINBASE_SET_INDEX_TYPE( node::private_message::message_object, node::private_message::message_index );
 
-FC_REFLECT( node::private_message::message_api_obj, (id)(from)(to)(from_memoKey)(to_memoKey)(sent_time)(receive_time)(checksum)(encrypted_message) );
+FC_REFLECT( node::private_message::message_api_obj, (id)(from)(to)(from_secure_public_key)(to_secure_public_key)(sent_time)(receive_time)(checksum)(encrypted_message) );
 
 FC_REFLECT_DERIVED( node::private_message::extended_message_object, (node::private_message::message_api_obj), (message) );

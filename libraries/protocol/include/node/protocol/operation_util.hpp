@@ -22,9 +22,10 @@ void from_variant( const fc::variant&, OperationType& );                        
                                                                                  \
 } /* fc */                                                                       \
                                                                                  \
-namespace node { namespace protocol {                                         \
+namespace node { namespace protocol {                                            \
                                                                                  \
 void operation_validate( const OperationType& o );                               \
+const account_name_type& operation_creator_name( const OperationType& o );       \
 void operation_get_required_authorities( const OperationType& op,                \
                                          flat_set< account_name_type >& active,  \
                                          flat_set< account_name_type >& owner,   \

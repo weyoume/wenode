@@ -21,39 +21,45 @@ using fc::uint128_t;
 
 struct comment_reward_context
 {
-   share_type SCOREreward;
-   uint16_t   reward_weight = 0;
-   asset      max_TSD;
-   uint128_t  totalSCOREreward2;
-   asset      total_reward_fund_TME;
-   price      current_TME_price;
-   curve_id   reward_curve = quadratic;
-   uint128_t  content_constant = CONTENT_CONSTANT_HF0;
+   share_type          reward;
+   asset               max_reward;                                   // Max reward Asset in USD
+   uint128_t           total_reward_squared;
+   asset               total_reward_fund;
+   price               current_COIN_USD_price;
+   uint32_t            cashouts_received;                            // Number of days that the comment has received rewards for
+   fc::microseconds    cashout_decay = CONTENT_REWARD_DECAY_RATE;    // Days over which the content reward linearly decays
+   curve_id            reward_curve = convergent_semi_quadratic;
+   uint128_t           content_constant = CONTENT_CONSTANT;
 };
 
-uint64_t get_SCORE_reward( const comment_reward_context& ctx );
+uint64_t get_comment_reward( const comment_reward_context& ctx );
 
 inline uint128_t get_content_constant_s()
 {
-   return CONTENT_CONSTANT_HF0; // looking good for posters
+   return CONTENT_CONSTANT;
 }
 
-uint128_t evaluate_reward_curve( const uint128_t& SCOREreward, const curve_id& curve = quadratic, const uint128_t& content_constant = CONTENT_CONSTANT_HF0 );
+uint128_t evaluate_reward_curve( 
+   const uint128_t& reward, 
+   const uint32_t cashouts_received, 
+   const curve_id& curve = convergent_semi_quadratic, 
+   const fc::microseconds cashout_decay = CONTENT_REWARD_DECAY_RATE,
+   const uint128_t& content_constant = CONTENT_CONSTANT 
+   );
 
-inline bool is_comment_payout_dust( const price& p, uint64_t TMEpayout )
+inline bool is_comment_payout_dust( const price& p, uint64_t reward_payout )
 {
-   return to_TSD( p, asset( TMEpayout, SYMBOL_COIN ) ) < MIN_PAYOUT_TSD;
+   return asset_to_USD( p, asset( reward_payout, SYMBOL_COIN ) ) < MIN_PAYOUT_USD;
 }
 
 } } } // node::chain::util
 
 FC_REFLECT( node::chain::util::comment_reward_context,
-   (SCOREreward)
-   (reward_weight)
-   (max_TSD)
-   (totalSCOREreward2)
-   (total_reward_fund_TME)
-   (current_TME_price)
+   (reward)
+   (max_reward)
+   (total_reward_squared)
+   (total_reward_fund)
+   (current_COIN_USD_price)
    (reward_curve)
    (content_constant)
-   )
+   );

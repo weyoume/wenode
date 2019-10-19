@@ -48,6 +48,13 @@ struct operation_validate_visitor
    void operator()( const T& v )const { v.validate(); }
 };
 
+struct operation_creator_visitor
+{
+   typedef void result_type;
+   template<typename T>
+   const account_name_type& operator()( const T& v )const { return v.get_creator_name(); }
+};
+
 struct operation_get_required_auth_visitor
 {
    typedef void result_type;
@@ -123,6 +130,11 @@ namespace node { namespace protocol {                                      \
 void operation_validate( const OperationType& op )                         \
 {                                                                          \
    op.visit( node::protocol::operation_validate_visitor() );               \
+}                                                                          \
+                                                                           \
+const account_name_type& operation_creator_name( const OperationType& op ) \
+{                                                                          \
+   return op.visit( node::protocol::operation_creator_visitor() );         \
 }                                                                          \
                                                                            \
 void operation_get_required_authorities( const OperationType& op,          \

@@ -114,7 +114,7 @@ namespace node { namespace app {
          boost::signals2::scoped_connection             _applied_block_connection;
 
          map<transaction_id_type,confirmation_callback>     _callbacks;
-         map<time_point_sec, vector<transaction_id_type> >  _callbacks_expirations;
+         map<time_point, vector<transaction_id_type> >  _callbacks_expirations;
 
          int32_t                                        _max_block_age = -1;
 

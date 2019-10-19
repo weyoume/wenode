@@ -93,8 +93,8 @@ def run_node_tests( debug_node ):
       vote_count = {}
       for acc_name in ret:
          acc = rpc.get_accounts( [ acc_name ] )
-         #print( acc_name + ',' + acc[0][ 'curationRewards' ] )
-         account_rewards[ acc_name ] = float( acc[0][ 'curationRewards' ].split( ' ' )[0] )
+         #print( acc_name + ',' + acc[0][ 'curation_rewards' ] )
+         account_rewards[ acc_name ] = float( acc[0][ 'curation_rewards' ].split( ' ' )[0] )
          vote_count[ acc_name ] = int( acc[0][ 'lifetime_vote_count' ] )
 
 
@@ -106,7 +106,7 @@ def run_node_tests( debug_node ):
 
       ret = rpc.get_discussions_by_cashout_time( '', '', str( 0xFFFFFFFF ) );
 
-      print( 'author, url, total_payout_value, abs_SCOREreward, num_active_votes' )
+      print( 'author, url, total_payout_value, abs_reward, num_active_votes' )
 
       for comment in ret:
          print( comment[ 'author' ] + ', ' + comment[ 'url' ] + ', ' + comment[ 'total_payout_value' ] + ', ' + comment[ 'cashout_time' ] )
@@ -114,7 +114,7 @@ def run_node_tests( debug_node ):
       '''
       print( "Printing account reward dump:" )
       sorted_rewards = sorted( account_rewards.items(), key=operator.itemgetter(1) )
-      print( "account, curation_TME" )
+      print( "account, curation_reward" )
       for rew in sorted_rewards:
          print( rew[0] + ', ' + str( rew[1] ) + ', ' + str( vote_count[ rew[0] ] ) )
 

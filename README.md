@@ -434,7 +434,6 @@ All make targets:
 		node
 		size_checker
 		get_dev_key
-		inflation_model
 		sign_digest
 		sign_transaction
 		test_block_log
