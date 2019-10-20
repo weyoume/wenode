@@ -1748,70 +1748,1389 @@ uint32_t database::get_slot_at_time(fc::time_point when)const
    return slot_number;
 }
 
+
+void database::update_network_votes()   // Todo witnesses, network officers, exec boards, business accs, gov addresses
+{
+   const auto& vidx = get_index< witness_vote_index >().indices().get< by_account_witness >();
+   auto itr = vidx.lower_bound( boost::make_tuple( a.id, witness_id_type() ) );
+   while( itr != vidx.end() && itr->account == a.id )
+   {
+      adjust_witness_vote( get(itr->witness), delta );
+      ++itr;
+   }
+}
+
+void database::adjust_witness_vote( const witness_object& witness, share_type delta )
+{
+   const witness_schedule_object& wso = get_witness_schedule_object();
+   modify( witness, [&]( witness_object& w )
+   {
+      auto delta_pos = w.voting_power.value * (wso.current_virtual_time - w.witness_virtual_last_update);
+      w.witness_virtual_position += delta_pos;
+
+      w.witness_virtual_last_update = wso.current_virtual_time;
+      w.voting_power += delta;
+      FC_ASSERT( w.voting_power <= get_dynamic_global_properties().total_voting_power, "Total witness votes may not exceed maximum voting power", ("w.voting_power", w.voting_power)("props",get_dynamic_global_properties().total_voting_power) );
+
+      w.witness_virtual_scheduled_time = w.witness_virtual_last_update + (VIRTUAL_SCHEDULE_LAP_LENGTH - w.witness_virtual_position)/(w.voting_power.value+1);
+      
+      /** witnesses with a low number of votes could overflow the time field and end up with a scheduled time in the past */
+      
+      if( w.witness_virtual_scheduled_time < wso.current_virtual_time ) {
+         w.witness_virtual_scheduled_time = fc::uint128::max_value();
+      }
+
+      if( delta > 0) {
+         w.vote_count++;
+      } 
+      else 
+      {
+         w.vote_count--;
+      }
+   });
+}
+
+void database::adjust_governance_subscription( const governance_account_object& gov_account, share_type delta )
+{
+   modify( gov_account, [&]( governance_account_object& gao )
+   {
+      gao.subscriber_power += delta;
+      if( delta > 0) {
+         gao.subscriber_count++;
+      } 
+      else 
+      {
+         gao.subscriber_count--;
+      }
+   });
+}
+
+void database::clear_witness_votes( const account_object& a )
+{
+   const auto& vidx = get_index< witness_vote_index >().indices().get<by_account_witness>();
+   auto itr = vidx.lower_bound( boost::make_tuple( a.id, witness_id_type() ) );
+   while( itr != vidx.end() && itr->account == a.id )
+   {
+      const auto& current = *itr;
+      ++itr;
+      remove(current);
+   }
+
+   modify( a, [&](account_object& acc )
+   {
+      acc.witnesses_voted_for = 0;
+   });
+}
+
+void database::process_unstake_assets()   // TODO: asset staking delay
+{
+   const auto& widx = get_index< account_balance_index >().indices().get< by_next_unstake_time >();
+   const auto& didx = get_index< unstake_asset_route_index >().indices().get< by_withdraw_route >();
+   
+   auto current = widx.begin();
+   const auto& cprops = get_dynamic_global_properties();
+
+   while( current != widx.end() && current->next_unstake_time <= head_block_time() )
+   {
+      const auto& from_account_balance = *current; ++current;
+      const auto& from_account = get_account( from_account_balance.owner );
+      const auto& symbol = from_account_balance.symbol;
+
+      share_type to_unstake;
+
+      if ( from_account_balance.to_unstake - from_account_balance.total_unstaked < from_account_balance.unstake_rate )
+         to_unstake = std::min( from_account_balance.staked_balance, from_account_balance.to_unstake % from_account_balance.unstake_rate).value;
+      else
+         to_unstake = std::min( from_account_balance.staked_balance, from_account_balance.unstake_rate ).value;
+
+      share_type total_restake = 0;
+      share_type total_withdrawn = 0;
+
+      asset unstake_asset = asset(to_unstake, symbol);
+
+      adjust_staked_balance(from_account, asset(unstake_asset, symbol));
+
+      for( auto itr = didx.upper_bound( boost::make_tuple( from_account_balance.owner, account_id_type() ) );
+           itr != didx.end() && itr->from_account == from_account_balance.owner; ++itr )
+      {
+         if( itr->auto_stake )
+         {
+            share_type to_restake = (( to_unstake * itr->percent ) / PERCENT_100 ).to_uint64();
+            total_restake += to_restake;
+
+            if( to_restake > 0 )
+            {
+               const auto& to_account = get_account(itr->to_account);
+               adjust_staked_balance(to_account, to_restake);
+            }
+         }
+      }
+
+      for( auto itr = didx.upper_bound( boost::make_tuple( from_account_balance.owner, account_id_type() ) );
+           itr != didx.end() && itr->from_account == from_account_balance.owner;
+           ++itr )
+      {
+         if( !itr->auto_stake )
+         {
+            const auto& to_account = get_account(itr->to_account);
+
+            share_type to_withdraw = (( to_unstake * itr->percent ) / PERCENT_100 ).to_uint64();
+            total_withdrawn += to_withdraw;
+            asset withdraw_asset = asset(to_withdraw, symbol);
+
+            if( to_withdraw > 0 )
+            {
+               adjust_liquid_balance(to_account, withdraw_asset);
+            }
+         }
+      }
+
+      modify( from_account_balance, [&]( account_balance_object& abo )
+      {
+         abo.total_unstaked += to_unstake;
+
+         if( abo.total_unstaked >= abo.to_unstake || abo.staked_balance == 0 )
+         {
+            abo.unstake_rate = 0;
+            abo.next_unstake_time = fc::time_point::maximum();
+         }
+         else
+         {
+            abo.next_unstake_time += fc::seconds( STAKE_WITHDRAW_INTERVAL_SECONDS );
+         }
+      });
+   }
+}
+
+void database::process_savings_withdraws()
+{
+  const auto& idx = get_index< savings_withdraw_index >().indices().get< by_complete_from_rid >();
+  auto itr = idx.begin();
+  while( itr != idx.end() ) {
+     if( itr->complete > head_block_time() )
+        break;
+     adjust_liquid_balance( get_account( itr->to ), itr->amount );
+
+     modify( get_account( itr->from ), [&]( account_object& a )
+     {
+        a.savings_withdraw_requests--;
+     });
+
+     push_virtual_operation( fill_transfer_from_savings_operation( itr->from, itr->to, itr->amount, itr->request_id, to_string( itr->memo) ) );
+
+     remove( *itr );
+     itr = idx.begin();
+  }
+}
+
 /**
- * Pays an account its activity reward shares from the reward pool.
+ * Calaulates the relative share of equity reward dividend distribution that an account should recieve
+ * based on its network contribution information.
  */
-asset database::claim_activity_reward( const account_object& account, const witness_object& witness)
+share_type get_equity_shares( const account_balance_object& balance)
+{
+   FC_ASSERT( balance.symbol == SYMBOL_EQUITY, "Equity rewards requires equity asset balance object." );
+   FC_ASSERT( balance.staked_balance >= BLOCKCHAIN_PRECISION, "Equity rewards requires minimum balance of 1 Equity asset." );
+   const account_object& account = get_account(balance.owner);
+   time_point now = head_block_time();
+   if( (account.witnesses_voted_for < MIN_EQUITY_WITNESSES) || 
+      (now > (account.last_activity_reward + fc::days(30)) )
+   {
+      return 0;  // Account does not recieve equity reward when witness votes are insufficient, or no activity in last 30 days.
+   }
+
+   share_type equity_shares = balance.staked_balance;  // Start with staked balance.
+
+   if( (balance.staked_balance >= 10 * BLOCKCHAIN_PRECISION) &&
+      (account.witnesses_voted_for >= EQUITY_BOOST_WITNESSES) &&
+      (account.recent_activity_claims >= EQUITY_BOOST_ACTVITY) ) // TODO: additional conditions for doubling equity reward 
+   {
+      equity_shares *= 2;    // Doubles equity reward when 10+ WYM balance, 50+ witness votes, and 15+ Activity rewards in last 30 days
+   }
+
+   if( account.membership == TOP) 
+   {
+      equity_shares = (equity_shares * EQUITY_BOOST_TOP_PERCENT) / PERCENT_100;
+   }
+}
+
+/**
+ * Allocates the equity dividend rewards to account holders with a minimum balance
+ * and recent actvity
+ */
+void database::process_equity_rewards()
 { try {
-   const account_balance_object& abo = get_account_balance(account.name, SYMBOL_EQUITY);
-   auto decay_rate = RECENT_REWARD_DECAY_RATE;
+   if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
+      return;
+
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
+   auto itr = balance_idx.lower_bound( SYMBOL_EQUITY );
    const reward_fund_object& reward_fund = get_reward_fund();
    const asset_dynamic_data_object& core_asset_dynamic_data = get_core_dynamic_data();
-   share_type activity_shares = BLOCKCHAIN_PRECISION;
-   if( abo.staked_balance >= 10 * BLOCKCHAIN_PRECISION) 
+
+   vector< pair < account_name_type, share_type > > balances;
+   share_type total_equity_shares = 0;
+
+   while( itr != balance_idx.end() && itr->staked_balance >= BLOCKCHAIN_PRECISION ) 
    {
-      activity_shares *= 2;
+      share_type equity_shares = get_equity_shares( *itr );
+
+      if(equity_shares > 0 )
+      {
+         total_equity_shares += equity_shares;
+         balances.push_back( std::make_pair( &(*itr), equity_shares ) ); // Add balance pointer and equity shares to vector
+      }
+      ++itr;
    }
 
-   if( account.membership == STANDARD_MEMBERSHIP) 
-   {
-      activity_shares = (activity_shares * ACTIVITY_BOOST_STANDARD_PERCENT) / PERCENT_100;
-   }
-   else if( account.membership == MID_MEMBERSHIP) 
-   {
-      activity_shares = (activity_shares * ACTIVITY_BOOST_MID_PERCENT) / PERCENT_100;
-   }
-   else if( account.membership == TOP_MEMBERSHIP) 
-   {
-      activity_shares = (activity_shares * ACTIVITY_BOOST_TOP_PERCENT) / PERCENT_100;
-   }
+   asset equity_reward_balance = reward_fund.equity_reward_balance;  // record the opening balance of the equity reward fund
 
-   // Decay recent claims of activity reward fund and add new shares of this claim.
-   modify( reward_fund, [&]( reward_fund_object& rfo )   
-   {
-      rfo.recent_activity_claims -= ( rfo.recent_activity_claims * ( head_block_time() - rfo.last_update ).to_seconds() ) / decay_rate.to_seconds();
-      rfo.last_update = head_block_time();
-      rfo.recent_activity_claims += activity_shares.value;
-   }); 
-
-   asset activity_reward = ( reward_fund.activity_reward_balance * activity_shares ) / reward_fund.recent_activity_claims;
+   FC_ASSERT( equity_reward_balance > 0, "Critical Error: Negative or zero equity reward fund balance.");
 
    modify( reward_fund, [&]( reward_fund_object& rfo )
    {
-      rfo.adjust_activity_reward_balance( -activity_reward );    // Deduct activity reward from reward fund.
+      rfo.adjust_equity_reward_balance( -equity_reward_balance );  // Empty the equity reward fund balance.
    });
 
-   adjust_pending_supply( -activity_reward );                    // Deduct activity reward from pending supply.
-   
-   // Update recent activity claims on account
-   modify( account, [&]( account_object& a ) 
+   modify( core_asset_dyn_data, [&](asset_dynamic_data_object& addo) 
    {
-      a.recent_activity_claims -= ( a.recent_activity_claims * ( head_block_time() - a.last_activity_reward ).to_seconds() ) / decay_rate.to_seconds();
-      a.last_activity_reward = head_block_time();                // Update activity reward time.
-      a.recent_activity_claims += BLOCKCHAIN_PRECISION;          // Increments rolling activity average by one claim.
+      addo.adjust_pending_supply( -equity_reward_balance );   // Deduct equity reward fund balance from pending supply.
    });
 
-   adjust_reward_balance( account, activity_reward );            // Add activity reward to reward balance of claiming account. 
-
-   uint128_t voting_power = get_voting_power( account.name ).value;
-
-   modify( witness, [&]( witness_object& w ) 
+   for( pair < account_name_type, share_type > b : balances )
    {
-      w.accumulated_activity_stake += voting_power;
-   });
-auto& mem_inv_idx = get_index<account_member_invite_index>().indices().get<by_expiration>();
-   while( !mem_inv_idx.empty() && mem_inv_idx.begin()->expiration <= head_time )
-   {
-      const account_member_invite_object& invite = *mem_inv_idx.begin();
-      remove( invite );   // Remove expired account member invites
+      asset equity_reward = (equity_reward_balance * b.second) / total_equity_shares; 
+      adjust_reward_balance(b.first, equity_reward);       // Pay equity reward to each account 
    }
+} FC_CAPTURE_AND_RETHROW() }
+
+/**
+ *  Overall the network has a MeCoin Issuance rate of one Billion per year
+ *   25% of issuance is directed to Content Creator rewards
+ *   20% of issuance is directed to Equity Holder rewards
+ *   20% of issuance is directed to Block producers (Witnesses + Miners)
+ *   10% of issuance is directed to Supernode Operator rewards
+ *   10% of issuance is directed to Staked MeCoin Holder rewards
+ *    5% of issuance is directed to The Community Enterprise fund
+ *  2.5% of issuance is directed to The Development reward pool
+ *  2.5% of issuance is directed to The Marketing reward pool
+ *  2.5% of issuance is directed to The Advocacy reward pool
+ *  2.5% of issuance is directed to The Activity reward pool
+ *  This method pays out Staked and liquid COIN every block to all network contributors
+ */
+void database::process_funds()
+{ try {
+   const auto& props = get_dynamic_global_properties();
+   const auto& wso = get_witness_schedule();
+   const auto& core_asset_dynamic_data = get_core_dynamic_data();
+   const auto& current_producer = get_witness( props.current_producer );
+   const auto& witness_account = get_account( props.current_producer );
+   const auto& witness_balance = get_account_balance( props.current_producer, SYMBOL_COIN );
+
+   asset block_reward = BLOCK_REWARD;
+
+   asset content_reward = (block_reward * CONTENT_REWARD_PERCENT ) / PERCENT_100;
+   asset equity_reward = (block_reward * EQUITY_REWARD_PERCENT ) / PERCENT_100;
+   asset producer_reward = (block_reward * PRODUCER_REWARD_PERCENT ) / PERCENT_100;
+   asset supernode_reward = (block_reward * SUPERNODE_REWARD_PERCENT ) / PERCENT_100;
+   asset power_reward = (block_reward * POWER_REWARD_PERCENT ) / PERCENT_100;
+   asset community_fund_reward = (block_reward * COMMUNITY_FUND_PERCENT ) / PERCENT_100;
+   asset development_reward = (block_reward * DEVELOPMENT_REWARD_PERCENT ) / PERCENT_100;
+   asset marketing_reward = (block_reward * MARKETING_REWARD_PERCENT ) / PERCENT_100;
+   asset advocacy_reward = (block_reward * ADVOCACY_REWARD_PERCENT ) / PERCENT_100;
+   asset activity_reward = (block_reward * ACTIVITY_REWARD_PERCENT ) / PERCENT_100;
+
+   asset producer_block_reward = (producer_reward * PRODUCER_BLOCK_PERCENT ) / PERCENT_100;
+   asset validation_reward = (producer_reward * PRODUCER_VALIDATOR_PERCENT ) / PERCENT_100;
+   asset txn_stake_reward = (producer_reward * PRODUCER_TXN_STAKE_PERCENT ) / PERCENT_100;
+   asset work_reward = (producer_reward * PRODUCER_WORK_PERCENT ) / PERCENT_100;
+   asset producer_activity_reward = (producer_reward * PRODUCER_ACTIVITY_PERCENT ) / PERCENT_100;
+
+   asset producer_pending = validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
+   asset pending_issuance = content_reward + equity_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
+
+   asset reward_checksum = content_reward + equity_reward + validation_reward + txn_stake_reward + work_reward + producer_activity_reward + producer_block_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
+   FC_ASSERT( reward_checksum == BLOCK_REWARD, "Block reward issuance checksum failed, allocation is invalid");
+   
+   const reward_fund_object& reward_fund = get_reward_fund();
+   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data(SYMBOL_COIN);
+
+   modify( reward_fund, [&]( reward_fund_object& rfo )
+   {
+      rfo.adjust_content_reward_balance(content_reward);
+      rfo.adjust_equity_reward_balance(equity_reward);
+      
+      rfo.adjust_validation_reward_balance(validation_reward);
+      rfo.adjust_txn_stake_reward_balance(txn_stake_reward);
+      rfo.adjust_work_reward_balance(work_reward);
+      rfo.adjust_producer_activity_reward_balance(producer_activity_reward);
+
+      rfo.adjust_supernode_reward_balance(supernode_reward);
+      rfo.adjust_power_reward_balance(power_reward);
+      rfo.adjust_community_fund_balance(community_fund_reward);
+      rfo.adjust_development_reward_balance(development_reward);
+      rfo.adjust_marketing_reward_balance(marketing_reward);
+      rfo.adjust_advocacy_reward_balance(advocacy_reward);
+      rfo.adjust_activity_reward_balance(activity_reward);
+   });
+
+   adjust_reward_balance( witness_account, producer_block_reward);
+   
+   modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
+   {
+      addo.adjust_pending_supply(pending_issuance + producer_pending);
+      addo.adjust_staked_supply(producer_block_reward / 2);
+      addo.adjust_liquid_supply(producer_block_reward / 2);
+   });
+
+   push_virtual_operation( producer_reward_operation( witness_account.name, producer_block_reward ) );
+   
+} FC_CAPTURE_AND_RETHROW() }
+
+
+void database::initialize_evaluators()
+{
+   _my->_evaluator_registry.register_evaluator< vote_evaluator                           >();
+   _my->_evaluator_registry.register_evaluator< comment_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< comment_options_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< transfer_evaluator                       >();
+   _my->_evaluator_registry.register_evaluator< stake_asset_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< unstake_asset_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< unstake_asset_route_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< account_create_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< account_update_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< witness_update_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< account_witness_vote_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< account_update_proxy_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< custom_evaluator                         >();
+   _my->_evaluator_registry.register_evaluator< custom_json_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< proof_of_work_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< limit_order_create_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< limit_order_cancel_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< call_order_update_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< challenge_authority_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< prove_authority_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< request_account_recovery_evaluator       >();
+   _my->_evaluator_registry.register_evaluator< recover_account_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< change_recovery_account_evaluator        >();
+   _my->_evaluator_registry.register_evaluator< escrow_transfer_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< escrow_approve_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< escrow_dispute_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< escrow_release_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< transfer_to_savings_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< transfer_from_savings_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< cancel_transfer_from_savings_evaluator   >();
+   _my->_evaluator_registry.register_evaluator< decline_voting_rights_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< reset_account_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< set_reset_account_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< claim_reward_balance_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< delegate_asset_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< asset_claim_fees_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< asset_claim_pool_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< asset_create_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< asset_update_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< asset_update_issuer_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< asset_update_bitasset_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< asset_update_feed_producers_evaluator    >();
+   _my->_evaluator_registry.register_evaluator< asset_publish_feed_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< asset_settle_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< asset_global_settle_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< asset_issue_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< asset_reserve_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< asset_fund_fee_pool_evaluator            >();
+}
+
+
+void database::set_custom_operation_interpreter( const std::string& id, std::shared_ptr< custom_operation_interpreter > registry )
+{
+   bool inserted = _custom_operation_interpreters.emplace( id, registry ).second;
+   // This assert triggering means we're mis-configured (multiple registrations of custom JSON evaluator for same ID)
+   FC_ASSERT( inserted );
+}
+
+std::shared_ptr< custom_operation_interpreter > database::get_custom_json_evaluator( const std::string& id )
+{
+   auto it = _custom_operation_interpreters.find( id );
+   if( it != _custom_operation_interpreters.end() )
+      return it->second;
+   return std::shared_ptr< custom_operation_interpreter >();
+}
+
+void database::initialize_indexes()
+{
+   add_core_index< dynamic_global_property_index           >(*this);
+   add_core_index< asset_index                             >(*this);
+   add_core_index< asset_dynamic_data_index                >(*this);
+   add_core_index< asset_bitasset_data_index               >(*this);
+   add_core_index< account_index                           >(*this);
+   add_core_index< account_permission_index                >(*this);
+   add_core_index< account_balance_index                   >(*this);
+   add_core_index< account_authority_index                 >(*this);
+   add_core_index< account_following_index                 >(*this);
+   add_core_index< connection_index                        >(*this);
+   add_core_index< connection_request_index                >(*this);
+   add_core_index< follow_index                            >(*this);
+   add_core_index< governance_account_index                >(*this);
+   add_core_index< governance_subscription_index           >(*this);
+   add_core_index< board_index                             >(*this);
+   add_core_index< board_member_index                      >(*this);
+   add_core_index< witness_index                           >(*this);
+   add_core_index< transaction_index                       >(*this);
+   add_core_index< block_summary_index                     >(*this);
+   add_core_index< witness_schedule_index                  >(*this);
+   add_core_index< comment_index                           >(*this);
+   add_core_index< comment_vote_index                      >(*this);
+   add_core_index< comment_view_index                      >(*this);
+   add_core_index< comment_share_index                     >(*this);
+   add_core_index< message_index                           >(*this);
+   add_core_index< blog_index                              >(*this);
+   add_core_index< feed_index                              >(*this);
+   add_core_index< witness_vote_index                      >(*this);
+   add_core_index< limit_order_index                       >(*this);
+   add_core_index< call_order_index                        >(*this);
+   add_core_index< force_settlement_index                  >(*this);
+   add_core_index< collateral_bid_index                    >(*this);
+   add_core_index< feed_history_index                      >(*this);
+   add_core_index< operation_index                         >(*this);
+   add_core_index< account_history_index                   >(*this);
+   add_core_index< hardfork_property_index                 >(*this);
+   add_core_index< unstake_asset_route_index               >(*this);
+   add_core_index< owner_authority_history_index           >(*this);
+   add_core_index< account_recovery_request_index          >(*this);
+   add_core_index< change_recovery_account_request_index   >(*this);
+   add_core_index< escrow_index                            >(*this);
+   add_core_index< savings_withdraw_index                  >(*this);
+   add_core_index< decline_voting_rights_request_index     >(*this);
+   add_core_index< comment_metrics_index                   >(*this);
+   add_core_index< reward_fund_index                       >(*this);
+   add_core_index< asset_delegation_index                  >(*this);
+   add_core_index< asset_delegation_expiration_index       >(*this);
+
+   _plugin_index_signal();
+}
+
+const std::string& database::get_json_schema()const
+{
+   return _json_schema;
+}
+
+
+void database::validate_transaction( const signed_transaction& trx )
+{
+   database::with_write_lock( [&]()
+   {
+      auto session = start_undo_session( true );
+      _apply_transaction( trx );
+      session.undo();
+   });
+}
+
+void database::set_flush_interval( uint32_t flush_blocks )
+{
+   _flush_blocks = flush_blocks;
+   _next_flush_block = 0;
+}
+
+//////////////////// private methods ////////////////////
+
+void database::apply_block( const signed_block& next_block, uint32_t skip )
+{ try {
+   //fc::time_point begin_time = fc::time_point::now();
+
+   auto block_num = next_block.block_num();
+   if( _checkpoints.size() && _checkpoints.rbegin()->second != block_id_type() )
+   {
+      auto itr = _checkpoints.find( block_num );
+      if( itr != _checkpoints.end() )
+         FC_ASSERT( next_block.id() == itr->second, "Block did not match checkpoint", ("checkpoint",*itr)("block_id",next_block.id()) );
+
+      if( _checkpoints.rbegin()->first >= block_num )
+         skip = skip_witness_signature
+              | skip_transaction_signatures
+              | skip_transaction_dupe_check
+              | skip_fork_db
+              | skip_block_size_check
+              | skip_tapos_check
+              | skip_authority_check
+              | skip_merkle_check //While blockchain is being downloaded, txs need to be validated against block headers
+              | skip_undo_history_check
+              | skip_witness_schedule_check
+              | skip_validate
+              | skip_validate_invariants
+              ;
+   }
+
+   detail::with_skip_flags( *this, skip, [&]()
+   {
+      _apply_block( next_block );
+   } );
+
+   /*try
+   {
+   /// check invariants
+   if( is_producing() || !( skip & skip_validate_invariants ) )
+      validate_invariants();
+   }
+   FC_CAPTURE_AND_RETHROW( (next_block) );*/
+
+   //fc::time_point end_time = fc::time_point::now();
+   //fc::microseconds dt = end_time - begin_time;
+   if( _flush_blocks != 0 )
+   {
+      if( _next_flush_block == 0 )
+      {
+         uint32_t lep = block_num + 1 + _flush_blocks * 9 / 10;
+         uint32_t rep = block_num + 1 + _flush_blocks;
+
+         // use time_point::now() as RNG source to pick block randomly between lep and rep
+         uint32_t span = rep - lep;
+         uint32_t x = lep;
+         if( span > 0 )
+         {
+            uint64_t now = uint64_t( fc::time_point::now().time_since_epoch().count() );
+            x += now % span;
+         }
+         _next_flush_block = x;
+         //ilog( "Next flush scheduled at block ${b}", ("b", x) );
+      }
+
+      if( _next_flush_block == block_num )
+      {
+         _next_flush_block = 0;
+         //ilog( "Flushing database shared memory at block ${b}", ("b", block_num) );
+         chainbase::database::flush();
+      }
+   }
+
+   show_free_memory( false );
+
+} FC_CAPTURE_AND_RETHROW( (next_block) ) }
+
+void database::show_free_memory( bool force )
+{
+   uint32_t free_gb = uint32_t( get_free_memory() / (1024*1024*1024) );
+   if( force || (free_gb < _last_free_gb_printed) || (free_gb > _last_free_gb_printed+1) )
+   {
+      ilog( "Free memory is now ${n}G", ("n", free_gb) );
+      _last_free_gb_printed = free_gb;
+   }
+
+   if( free_gb == 0 )
+   {
+      uint32_t free_mb = uint32_t( get_free_memory() / (1024*1024) );
+
+      if( free_mb <= 100 && head_block_num() % 10 == 0 )
+         elog( "Free memory is now ${n}M. Increase shared file size immediately!" , ("n", free_mb) );
+   }
+}
+
+void database::_apply_block( const signed_block& next_block )
+{ try {
+   notify_pre_apply_block( next_block );
+
+   uint32_t next_block_num = next_block.block_num();
+   //block_id_type next_block_id = next_block.id();
+
+   uint32_t skip = get_node_properties().skip_flags;
+
+   if( !( skip & skip_merkle_check ) )
+   {
+      auto merkle_root = next_block.calculate_merkle_root();
+
+      try
+      {
+         FC_ASSERT( next_block.transaction_merkle_root == merkle_root, "Merkle check failed", ("next_block.transaction_merkle_root",next_block.transaction_merkle_root)("calc",merkle_root)("next_block",next_block)("id",next_block.id()) );
+      }
+      catch( fc::assert_exception& e )
+      {
+         const auto& merkle_map = get_shared_db_merkle();
+         auto itr = merkle_map.find( next_block_num );
+
+         if( itr == merkle_map.end() || itr->second != merkle_root )
+            throw e;
+      }
+   }
+
+   const witness_object& signing_witness = validate_block_header(skip, next_block);
+
+   _current_block_num    = next_block_num;
+   _current_trx_in_block = 0;
+
+   const auto& gprops = get_dynamic_global_properties();
+   auto block_size = fc::raw::pack_size( next_block );
+
+   FC_ASSERT( block_size <= gprops.maximum_block_size, "Block Size is too Big", ("next_block_num",next_block_num)("block_size", block_size)("max",gprops.maximum_block_size) );
+   
+   if( block_size < MIN_BLOCK_SIZE )
+   {
+      elog( "Block size is too small",
+         ("next_block_num",next_block_num)("block_size", block_size)("min",MIN_BLOCK_SIZE)
+      );
+   }
+
+   /// modify current witness so transaction evaluators can know who included the transaction,
+   /// this is mostly for POW operations which must pay the current_producer
+   modify( gprops, [&]( dynamic_global_property_object& dgp ){
+      dgp.current_producer = next_block.witness;
+   });
+
+   /// parse witness version reporting
+   process_header_extensions( next_block );
+
+   const auto& witness = get_witness( next_block.witness );
+   const auto& hardfork_state = get_hardfork_property_object();
+   FC_ASSERT( witness.running_version >= hardfork_state.current_hardfork_version,
+      "Block produced by witness that is not running current hardfork",
+      ("witness",witness)("next_block.witness",next_block.witness)("hardfork_state", hardfork_state)
+   );
+   
+   for( const auto& trx : next_block.transactions )
+   {
+      /* We do not need to push the undo state for each transaction
+       * because they either all apply and are valid or the
+       * entire block fails to apply.  We only need an "undo" state
+       * for transactions when validating broadcast transactions or
+       * when building a block.
+       */
+      apply_transaction( trx, skip );
+      ++_current_trx_in_block;
+   }
+
+   update_global_dynamic_data(next_block);
+   update_signing_witness(signing_witness, next_block);
+
+   update_last_irreversible_block();
+
+   create_block_summary(next_block);
+   clear_expired_transactions();
+   clear_expired_orders();
+   clear_expired_delegations();
+   update_witness_schedule(*this);
+   update_comment_metrics();
+   update_median_liquidity();//
+   update_network_votes();//
+   
+   process_funds();
+
+   process_asset_staking();//
+   process_savings_withdraws();
+   process_recurring_transfers();//
+   process_equity_rewards();//
+   process_power_rewards();//
+   process_credit_updates();//
+   process_credit_buybacks();//
+   process_margin_updates();//
+   process_credit_interest();//
+   process_membership_updates();//
+   update_proof_of_work_target();//
+   process_txn_stake_rewards();//
+   process_validation_rewards();//
+   process_producer_activity_rewards();//
+   process_network_officer_rewards();//
+   process_supernode_rewards();//
+   process_community_enterprise_fund();//
+
+   process_comment_cashout();//
+   
+   account_recovery_processing();
+   expire_escrow_ratification();
+   process_decline_voting_rights();
+
+   process_hardforks();
+
+   // notify observers that the block has been applied
+   notify_applied_block( next_block );
+
+   notify_changed_objects();
+} FC_CAPTURE_LOG_AND_RETHROW( (next_block.block_num()) ) }
+
+void database::process_header_extensions( const signed_block& next_block )
+{
+   auto itr = next_block.extensions.begin();
+
+   while( itr != next_block.extensions.end() )
+   {
+      switch( itr->which() )
+      {
+         case 0: // void_t
+            break;
+         case 1: // version
+         {
+            auto reported_version = itr->get< version >();
+            const auto& signing_witness = get_witness( next_block.witness );
+            //idump( (next_block.witness)(signing_witness.running_version)(reported_version) );
+
+            if( reported_version != signing_witness.running_version )
+            {
+               modify( signing_witness, [&]( witness_object& wo )
+               {
+                  wo.running_version = reported_version;
+               });
+            }
+            break;
+         }
+         case 2: // hardfork_version vote
+         {
+            auto hfv = itr->get< hardfork_version_vote >();
+            const auto& signing_witness = get_witness( next_block.witness );
+            //idump( (next_block.witness)(signing_witness.running_version)(hfv) );
+
+            if( hfv.hf_version != signing_witness.hardfork_version_vote || hfv.hf_time != signing_witness.hardfork_time_vote )
+               modify( signing_witness, [&]( witness_object& wo )
+               {
+                  wo.hardfork_version_vote = hfv.hf_version;
+                  wo.hardfork_time_vote = hfv.hf_time;
+               });
+
+            break;
+         }
+         default:
+            FC_ASSERT( false, "Unknown extension in block header" );
+      }
+
+      ++itr;
+   }
+}
+
+void database::apply_transaction(const signed_transaction& trx, uint32_t skip)
+{
+   detail::with_skip_flags( *this, skip, [&]() { _apply_transaction(trx); });
+   notify_on_applied_transaction( trx );
+}
+
+void database::_apply_transaction(const signed_transaction& trx)
+{ try {
+   _current_trx_id = trx.id();
+   uint32_t skip = get_node_properties().skip_flags;
+
+   if( !(skip&skip_validate) )   /* issue #505 explains why this skip_flag is disabled */
+      trx.validate();
+
+   auto& trx_idx = get_index<transaction_index>();
+   const chain_id_type& chain_id = CHAIN_ID;
+   auto trx_id = trx.id();
+   // idump((trx_id)(skip&skip_transaction_dupe_check));
+   FC_ASSERT( (skip & skip_transaction_dupe_check) ||
+              trx_idx.indices().get<by_trx_id>().find(trx_id) == trx_idx.indices().get<by_trx_id>().end(),
+              "Duplicate transaction check failed", ("trx_ix", trx_id) );
+
+   if( !(skip & (skip_transaction_signatures | skip_authority_check) ) )
+   {
+      auto get_active  = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).active ); };
+      auto get_owner   = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).owner );  };
+      auto get_posting = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).posting );  };
+
+      try
+      {
+         trx.verify_authority( chain_id, get_active, get_owner, get_posting, MAX_SIG_CHECK_DEPTH );
+      }
+      catch( protocol::tx_missing_active_auth& e )
+      {
+         if( get_shared_db_merkle().find( head_block_num() + 1 ) == get_shared_db_merkle().end() )
+            throw e;
+      }
+   }
+
+   //Skip all manner of expiration and TaPoS checking if we're on block 1; It's impossible that the transaction is
+   //expired, and TaPoS makes no sense as no blocks exist.
+   if( BOOST_LIKELY(head_block_num() > 0) )
+   {
+      if( !(skip & skip_tapos_check) )
+      {
+         const auto& tapos_block_summary = get< block_summary_object >( trx.ref_block_num );
+         //Verify TaPoS block summary has correct ID prefix, and that this block's time is not past the expiration
+         ASSERT( trx.ref_block_prefix == tapos_block_summary.block_id._hash[1], transaction_tapos_exception,
+                    "", ("trx.ref_block_prefix", trx.ref_block_prefix)
+                    ("tapos_block_summary",tapos_block_summary.block_id._hash[1]));
+      }
+
+      fc::time_point now = head_block_time();
+
+      ASSERT( trx.expiration <= now + fc::seconds(MAX_TIME_UNTIL_EXPIRATION), transaction_expiration_exception,
+                  "", ("trx.expiration",trx.expiration)("now",now)("max_til_exp",MAX_TIME_UNTIL_EXPIRATION));
+      
+      ASSERT( now < trx.expiration, transaction_expiration_exception, "", ("now",now)("trx.exp",trx.expiration) );
+   }
+
+   //Insert transaction into unique transactions database.
+   if( !(skip & skip_transaction_dupe_check) )
+   {
+      create<transaction_object>([&](transaction_object& transaction) {
+         transaction.trx_id = trx_id;
+         transaction.expiration = trx.expiration;
+         fc::raw::pack( transaction.packed_trx, trx );
+      });
+   }
+
+   notify_on_pre_apply_transaction( trx );
+
+   //Finally process the operations
+   _current_op_in_trx = 0;
+   for( const auto& op : trx.operations )
+   { try {
+      apply_operation(op);
+      ++_current_op_in_trx;
+     } FC_CAPTURE_AND_RETHROW( (op) );
+   }
+   _current_trx_id = transaction_id_type();
+
+} FC_CAPTURE_AND_RETHROW( (trx) ) }
+
+void database::apply_operation(const operation& op)
+{
+   operation_notification note(op);
+   notify_pre_apply_operation( note );
+   _my->_evaluator_registry.get_evaluator( op ).apply( op );
+   notify_post_apply_operation( note );
+}
+
+const witness_object& database::validate_block_header( uint32_t skip, const signed_block& next_block )const
+{ try {
+   FC_ASSERT( head_block_id() == next_block.previous, "", ("head_block_id",head_block_id())("next.prev",next_block.previous) );
+   FC_ASSERT( head_block_time() < next_block.timestamp, "", ("head_block_time",head_block_time())("next",next_block.timestamp)("blocknum",next_block.block_num()) );
+   const witness_object& witness = get_witness( next_block.witness );
+
+   if( !(skip&skip_witness_signature) )
+      FC_ASSERT( next_block.validate_signee( witness.signing_key ) );
+
+   if( !(skip&skip_witness_schedule_check) )
+   {
+      uint32_t slot_num = get_slot_at_time( next_block.timestamp );
+      FC_ASSERT( slot_num > 0 );
+
+      string scheduled_witness = get_scheduled_witness( slot_num );
+
+      FC_ASSERT( witness.owner == scheduled_witness, "Witness produced block at wrong time",
+                 ("block witness",next_block.witness)("scheduled",scheduled_witness)("slot_num",slot_num) );
+   }
+
+   return witness;
+} FC_CAPTURE_AND_RETHROW() }
+
+void database::create_block_summary(const signed_block& next_block)
+{ try {
+   block_summary_id_type sid( next_block.block_num() & 0xffff );
+   modify( get< block_summary_object >( sid ), [&](block_summary_object& p) {
+         p.block_id = next_block.id();
+   });
+} FC_CAPTURE_AND_RETHROW() }
+
+void database::update_global_dynamic_data( const signed_block& b )
+{ try {
+   const dynamic_global_property_object& _dgp =
+      get_dynamic_global_properties();
+
+   uint32_t missed_blocks = 0;
+   if( head_block_time() != fc::time_point() )
+   {
+      missed_blocks = get_slot_at_time( b.timestamp );
+      assert( missed_blocks != 0 );
+      missed_blocks--;
+      for( uint32_t i = 0; i < missed_blocks; ++i )
+      {
+         const auto& witness_missed = get_witness( get_scheduled_witness( i + 1 ) );
+         if(  witness_missed.owner != b.witness )
+         {
+            modify( witness_missed, [&]( witness_object& w )
+            {
+               w.total_missed++;
+               if( head_block_num() - w.last_confirmed_block_num  > BLOCKS_PER_DAY )
+               {
+                  w.signing_key = public_key_type();
+                  push_virtual_operation( shutdown_witness_operation( w.owner ) );
+               }
+            } );
+         }
+      }
+   }
+
+   // dynamic global properties updating
+   modify( _dgp, [&]( dynamic_global_property_object& dgp )
+   {
+      // This is constant time assuming 100% participation. It is O(B) otherwise (B = Num blocks between update)
+      for( uint32_t i = 0; i < missed_blocks + 1; i++ )
+      {
+         dgp.participation_count -= dgp.recent_slots_filled.hi & 0x8000000000000000ULL ? 1 : 0;
+         dgp.recent_slots_filled = ( dgp.recent_slots_filled << 1 ) + ( i == 0 ? 1 : 0 );
+         dgp.participation_count += ( i == 0 ? 1 : 0 );
+      }
+
+      dgp.head_block_number = b.block_num();
+      dgp.head_block_id = b.id();
+      dgp.time = b.timestamp;
+      dgp.current_aslot += missed_blocks+1;
+   } );
+
+   if( !(get_node_properties().skip_flags & skip_undo_history_check) )
+   {
+      ASSERT( _dgp.head_block_number - _dgp.last_irreversible_block_num  < MAX_UNDO_HISTORY, undo_database_exception,
+                 "The database does not have enough undo history to support a blockchain with so many missed blocks. "
+                 "Please add a checkpoint if you would like to continue applying blocks beyond this point.",
+                 ("last_irreversible_block_num",_dgp.last_irreversible_block_num)("head", _dgp.head_block_number)
+                 ("max_undo",MAX_UNDO_HISTORY) );
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+void database::update_signing_witness(const witness_object& signing_witness, const signed_block& new_block)
+{ try {
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   uint64_t new_block_aslot = dpo.current_aslot + get_slot_at_time( new_block.timestamp );
+
+   modify( signing_witness, [&]( witness_object& _wit )
+   {
+      _wit.last_aslot = new_block_aslot;
+      _wit.last_confirmed_block_num = new_block.block_num();
+   } );
+} FC_CAPTURE_AND_RETHROW() }
+
+void database::update_last_irreversible_block()
+{ try {
+   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+
+   const witness_schedule_object& wso = get_witness_schedule_object();
+
+   vector< const witness_object* > wit_objs;
+   wit_objs.reserve( wso.num_scheduled_producers );
+   for( int i = 0; i < wso.num_scheduled_producers; i++ )
+      wit_objs.push_back( &get_witness( wso.current_shuffled_producers[i] ) );
+
+   static_assert( IRREVERSIBLE_THRESHOLD > 0, "irreversible threshold must be nonzero" );
+
+   // 1 1 1 2 2 2 2 2 2 2 -> 2     .7*10 = 7
+   // 1 1 1 1 1 1 1 2 2 2 -> 1
+   // 3 3 3 3 3 3 3 3 3 3 -> 3
+
+   size_t offset = ((PERCENT_100 - IRREVERSIBLE_THRESHOLD) * wit_objs.size() / PERCENT_100);
+
+   std::nth_element( wit_objs.begin(), wit_objs.begin() + offset, wit_objs.end(),
+      []( const witness_object* a, const witness_object* b )
+      {
+         return a->last_confirmed_block_num < b->last_confirmed_block_num;
+      } );
+
+   uint32_t new_last_irreversible_block_num = wit_objs[offset]->last_confirmed_block_num;
+
+   if( new_last_irreversible_block_num > dpo.last_irreversible_block_num )
+   {
+      modify( dpo, [&]( dynamic_global_property_object& _dpo )
+      {
+         _dpo.last_irreversible_block_num = new_last_irreversible_block_num;
+      } );
+   }
+   
+
+   commit( dpo.last_irreversible_block_num );
+
+   if( !( get_node_properties().skip_flags & skip_block_log ) )
+   {
+      // output to block log based on new last irreverisible block num
+      const auto& tmp_head = _block_log.head();
+      uint64_t log_head_num = 0;
+
+      if( tmp_head )
+         log_head_num = tmp_head->block_num();
+
+      if( log_head_num < dpo.last_irreversible_block_num )
+      {
+         while( log_head_num < dpo.last_irreversible_block_num )
+         {
+            shared_ptr< fork_item > block = _fork_db.fetch_block_on_main_branch_by_number( log_head_num+1 );
+            FC_ASSERT( block, "Current fork in the fork database does not contain the last_irreversible_block" );
+            _block_log.append( block->data );
+            log_head_num++;
+         }
+
+         _block_log.flush();
+      }
+   }
+
+   _fork_db.set_max_size( dpo.head_block_number - dpo.last_irreversible_block_num + 1 );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+asset database::calculate_issuer_fee( const asset_object& trade_asset, const asset& trade_amount )
+{
+   FC_ASSERT( trade_asset.symbol == trade_amount.symbol );
+
+   if( !trade_asset.charges_market_fees() )
+      return asset(0, trade_asset.symbol);
+   if( trade_asset.options.market_fee_percent == 0 )
+      return asset(0, trade_asset.symbol);
+
+   share_type value = (( trade_amount.amount * trade_asset.options.market_fee_percent ) / PERCENT_100  );
+   asset percent_fee = asset( value, trade_asset.symbol );
+
+   if( percent_fee.amount > trade_asset.options.max_market_fee )
+      percent_fee.amount = trade_asset.options.max_market_fee;
+
+   return percent_fee;
+}
+
+asset database::pay_issuer_fees( const asset_object& recv_asset, const asset& receives )
+{
+   asset issuer_fees = calculate_issuer_fee( recv_asset, receives );
+   FC_ASSERT( issuer_fees <= receives, "Market fee shouldn't be greater than receives");
+
+   //Don't dirty undo state if not actually collecting any fees
+   if( issuer_fees.amount > 0 )
+   {
+      const asset_dynamic_data_object& recv_dyn_data = get_dynamic_data(recv_asset.symbol);
+      modify( recv_dyn_data, [&]( asset_dynamic_data_object& addo )
+      {
+         addo.adjust_accumulated_fees( issuer_fees.amount );
+      });
+   }
+
+   return issuer_fees;
+}
+
+asset database::pay_issuer_fees(const account_object& seller, const asset_object& recv_asset, const asset& receives )
+{
+   const auto issuer_fees = calculate_issuer_fee( recv_asset, receives );
+   FC_ASSERT( issuer_fees <= receives, "Market fee shouldn't be greater than receives");
+   //Don't dirty undo state if not actually collecting any fees
+   if ( issuer_fees.amount > 0 ) 
+   {
+      asset reward = asset(0, recv_asset.symbol);
+
+      const auto reward_percent = recv_asset.options.market_fee_share_percent; 
+      if ( reward_percent > 0 ) // calculate and pay rewards
+      {
+         const account_object& registrar_account = get_account( seller.registrar );
+         const account_object& referrer_account = get_account( seller.referrer );
+         const account_permission_object& registrar_permissions = get_account_permissions(seller.registrar);
+         const account_permission_object& referrer_permissions = get_account_permissions(seller.referrer);
+
+         const auto reward_value = ( issuer_fees.amount * reward_percent) / PERCENT_100;
+         if ( reward_value > 0 && registrar_permissions.is_authorized_asset( recv_asset) )
+         {
+            asset reward = asset( reward_value, recv_asset.symbol);
+            FC_ASSERT( reward < issuer_fees, "Market reward should be less than issuer fees");
+            // cut referrer percent from reward
+            auto registrar_reward = reward;
+            if( seller.referrer != seller.registrar )
+            {
+               const auto referrer_rewards_value = ( reward.amount * seller.referrer_rewards_percentage ) / PERCENT_100;
+
+               if ( referrer_rewards_value > 0 && referrer_permissions.is_authorized_asset( recv_asset) )
+               {
+                  FC_ASSERT ( referrer_rewards_value <= reward.amount.value, "Referrer reward shouldn't be greater than total reward" );
+                  const asset referrer_reward = asset( referrer_rewards_value, recv_asset.symbol);
+                  registrar_reward -= referrer_reward;
+                  adjust_reward_balance(seller.referrer, referrer_reward);
+               }
+            }
+            adjust_reward_balance(seller.registrar, registrar_reward);
+         }
+      }
+
+      const asset_dynamic_data_object& recv_dyn_data = get_dynamic_data(recv_asset.symbol);
+      modify( recv_dyn_data, [&]( asset_dynamic_data_object& obj )
+      {
+         obj.adjust_accumulated_fees(issuer_fees.amount - reward.amount);
+      });
+   }
+
+   return issuer_fees;
+}
+
+// Pays the network fee by burning the core asset into accumulated network revenue.
+asset database::pay_network_fees( const asset& amount, const account_object& payer )
+{
+   FC_ASSERT(amount.symbol == SYMBOL_COIN);
+
+   const asset_dynamic_data_object& core_dyn_data = get_dynamic_data( SYMBOL_COIN );
+
+   modify( core_dyn_data, [&]( asset_dynamic_data_object& obj )
+   {
+      obj.burn_asset(-amount);
+   });
+
+   const dynamic_global_property_object& gprops = get_dynamic_global_properties();
+
+   modify( gprops, [&](dynamic_global_property_object& gpo ) 
+   {
+      gpo.accumulated_network_revenue += amount;
+   });
+}
+
+// Pays protocol membership fees .
+// member: The account that is paying to upgrade to a membership level
+// payment: The asset being received as payment
+// duration: The number of months being paid for
+// type: the level of membership purchased [standard,mid,top]
+// seller_int: The owner account of the interface that sold the membership
+asset database::pay_membership_fees( const account_object& member, const asset& payment, int16_t duration, const account_name_type& seller_int ) 
+{
+   FC_ASSERT( payment.symbol == SYMBOL_COIN, "Payment asset must be core asset");
+   const asset_bitasset_data_object& USD_bitasset = get_bitasset_data( SYMBOL_USD );
+   price USD_price = USD_bitasset.current_feed.settlement_price;
+
+
+
+   asset payment_USD_value = payment * USD_price;
+
+
+   asset total_fees = ( receives * TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset governance_account_share = ( total_fees * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
+   asset referral_share = ( total_fees * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
+
+   asset fee_share = total_fees - governance_account_share - referral_share; // subtracts referral and governance account fee shares before trading share percentages. 
+
+   asset maker_interface_share = ( fee_share * MAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset taker_interface_share = ( fee_share * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset network_fee = ( fee_share * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+
+   asset network_paid = pay_network_fees( network_fee, taker );
+   asset gov_paid = pay_governance_reward( governance_account_share, taker );
+   asset ref_paid = pay_referral_reward( referral_share, taker );
+   asset maker_paid = pay_interface_reward( maker_int, maker_interface_share );
+   asset taker_paid = pay_interface_reward( taker_int, taker_interface_share );
+
+   FC_ASSERT( network_paid + gov_paid + ref_paid + maker_paid + taker_paid == total_fees, "Trading fee components are not equal to sum");
+   return total_fees;
+}
+
+// Pays protocol trading fees on taker orders.
+// taker: The account that is the taker on the trade
+// recv_asset: The asset being received from the filling of the order
+// receives: The asset object being received from the trade
+// maker_int: The owner account of the interface of the maker of the trade
+// taker_int: The owner account of the interface of the taker of the trade
+asset database::pay_trading_fees( const account_object& taker, const asset_object& recv_asset, 
+   const asset& receives, const account_name_type& maker_int, const account_name_type& taker_int ) 
+{
+   FC_ASSERT( receives.symbol == recv_asset.symbol, "Asset symbol for receiving asset and asset object are not equal");
+
+   asset total_fees = ( receives * TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset governance_account_share = ( total_fees * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
+   asset referral_share = ( total_fees * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
+
+   asset fee_share = total_fees - governance_account_share - referral_share; // subtracts referral and governance account fee shares before trading share percentages. 
+
+   asset maker_interface_share = ( fee_share * MAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset taker_interface_share = ( fee_share * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset network_fee = ( fee_share * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+
+   asset network_paid = pay_network_fees( network_fee, taker );
+   asset gov_paid = pay_governance_reward( governance_account_share, taker );
+   asset ref_paid = pay_referral_reward( referral_share, taker );
+   asset maker_paid = pay_interface_reward( maker_int, maker_interface_share );
+   asset taker_paid = pay_interface_reward( taker_int, taker_interface_share );
+
+   FC_ASSERT( network_paid + gov_paid + ref_paid + maker_paid + taker_paid == total_fees, "Trading fee components are not equal to sum");
+   return total_fees;
+}
+
+void database::init_hardforks()
+{
+   _hardfork_times[ 0 ] = fc::time_point( GENESIS_TIME );
+   _hardfork_versions[ 0 ] = hardfork_version( 0, 0 );
+   // FC_ASSERT( HARDFORK_0_1 == 1, "Invalid hardfork configuration" );
+   // _hardfork_times[ HARDFORK_0_1 ] = fc::time_point( HARDFORK_0_1_TIME );
+   // _hardfork_versions[ HARDFORK_0_1 ] = HARDFORK_0_1_VERSION;
+
+   const auto& hardforks = get_hardfork_property_object();
+   FC_ASSERT( hardforks.last_hardfork <= NUM_HARDFORKS, "Chain knows of more hardforks than configuration", ("hardforks.last_hardfork",hardforks.last_hardfork)("NUM_HARDFORKS",NUM_HARDFORKS) );
+   FC_ASSERT( _hardfork_versions[ hardforks.last_hardfork ] <= BLOCKCHAIN_VERSION, "Blockchain version is older than last applied hardfork" );
+   FC_ASSERT( BLOCKCHAIN_HARDFORK_VERSION == _hardfork_versions[ NUM_HARDFORKS ] );
+}
+
+void database::process_hardforks()
+{
+   try
+   {
+      // If there are upcoming hardforks and the next one is later, do nothing
+      const auto& hardforks = get_hardfork_property_object();
+
+      while( _hardfork_versions[ hardforks.last_hardfork ] < hardforks.next_hardfork
+         && hardforks.next_hardfork_time <= head_block_time() )
+      {
+         if( hardforks.last_hardfork < NUM_HARDFORKS ) {
+            apply_hardfork( hardforks.last_hardfork + 1 );
+         }
+         else
+            throw unknown_hardfork_exception();
+      }
+   }
+   FC_CAPTURE_AND_RETHROW()
+}
+
+bool database::has_hardfork( uint32_t hardfork )const
+{
+   return get_hardfork_property_object().processed_hardforks.size() > hardfork;
+}
+
+void database::set_hardfork( uint32_t hardfork, bool apply_now )
+{
+   auto const& hardforks = get_hardfork_property_object();
+
+   for( uint32_t i = hardforks.last_hardfork + 1; i <= hardfork && i <= NUM_HARDFORKS; i++ )
+   {
+      modify( hardforks, [&]( hardfork_property_object& hpo )
+      {
+         hpo.next_hardfork = _hardfork_versions[i];
+         hpo.next_hardfork_time = head_block_time();
+      } );
+
+      if( apply_now )
+         apply_hardfork( i );
+   }
+}
+
+void database::apply_hardfork( uint32_t hardfork )
+{
+   if( _log_hardforks )
+      elog( "HARDFORK ${hf} at block ${b}", ("hf", hardfork)("b", head_block_num()) );
+
+   switch( hardfork )
+   {
+      case HARDFORK_0_1:
+         break;
+      case HARDFORK_0_2:
+         break;
+      case HARDFORK_0_3:
+         break;
+   }
+
+   modify( get_hardfork_property_object(), [&]( hardfork_property_object& hfp )
+   {
+      FC_ASSERT( hardfork == hfp.last_hardfork + 1, "Hardfork being applied out of order", ("hardfork",hardfork)("hfp.last_hardfork",hfp.last_hardfork) );
+      FC_ASSERT( hfp.processed_hardforks.size() == hardfork, "Hardfork being applied out of order" );
+      hfp.processed_hardforks.push_back( _hardfork_times[ hardfork ] );
+      hfp.last_hardfork = hardfork;
+      hfp.current_hardfork_version = _hardfork_versions[ hardfork ];
+      FC_ASSERT( hfp.processed_hardforks[ hfp.last_hardfork ] == _hardfork_times[ hfp.last_hardfork ], "Hardfork processing failed sanity check..." );
+   } );
+
+   push_virtual_operation( hardfork_operation( hardfork ), true );
+}
+
+/**
+ * Verifies all supply invariants check out
+ */
+void database::validate_invariants()const
+{ try {
+   const dynamic_global_property_object& gprops = get_dynamic_global_properties();
+   const auto& asset_idx = get_index<asset_dynamic_data_index>().indices().get<by_id>();
+   vector< asset > asset_checksum;
+   const asset_dynamic_data_object& final_asset = *asset_idx.end();
+   auto asset_count = final_asset.id;
+   asset_checksum.reserve(gprops.asset_count);
+
+   for( auto itr = asset_idx.begin(); itr != asset_idx.end(); ++itr ) // ASSERT ALL ASSET OBJECTS HAVE CORRECT SUPPLY ACCOUNTING;
+   {
+      asset total_supply_checksum = asset(0, itr-> symbol);
+
+      total_supply_checksum += itr->get_liquid_supply();
+      total_supply_checksum += itr->get_staked_supply();
+      total_supply_checksum += itr->get_savings_supply();
+      total_supply_checksum += itr->get_reward_supply();
+      total_supply_checksum += itr->get_pending_supply();
+
+      FC_ASSERT(itr->get_delegated_supply() == itr->get_receiving_supply(), "Asset Supply error: Delegated supply not equal to receiving supply", ("Asset", itr->symbol));
+      FC_ASSERT(total_supply_checksum == itr->get_total_supply(), "Asset Supply error: Supply values Sum not equal to total supply", ("Asset", itr->symbol));
+      asset_checksum.push_back(itr->get_total_supply()); // Build a vector to record all asset total supply values for verification
+   }
+
+   const auto& account_balance_idx = get_index<account_balance_index>().indices().get<by_name>();
+
+   for( auto itr = account_balance_idx.begin(); itr != account_balance_idx.end(); ++itr ) // ASSERT ALL ACCOUNT BALANCE OBJECTS HAVE CORRECT SUPPLY ACCOUNTING;
+   {
+      asset total_balance_checksum = asset(0, itr-> symbol);
+      uint64_t balance_asset_id = get_asset(itr->symbol).id._id;
+
+      total_balance_checksum += itr->get_liquid_balance();
+      total_balance_checksum += itr->get_staked_balance();
+      total_balance_checksum += itr->get_savings_balance();
+      total_balance_checksum += itr->get_reward_balance();
+
+      FC_ASSERT(total_balance_checksum == itr->get_total_balance(), "Account Balance error: Balance value sum not equal to total balance", ("Asset", itr->symbol)("Account", itr->owner.name));
+      asset_checksum[balance_asset_id] -= itr->get_total_balance(); //decrement the asset checksum by the total of all account balance objects
+   }
+
+   const auto& witness_idx = get_index< witness_index >().indices();
+
+   for( auto itr = witness_idx.begin(); itr != witness_idx.end(); ++itr )
+   {
+      FC_ASSERT( itr->voting_power <= gprops.total_voting_power, "", ("itr",*itr) );  // verify no witness has too many votes
+   }
+
+   const auto& limit_order_idx = get_index< limit_order_index >().indices();
+
+   for( auto itr = limit_order_idx.begin(); itr != limit_order_idx.end(); ++itr )
+   {
+      uint64_t order_asset_id = get_asset(itr->sell_price.base.symbol).id._id;
+      asset_checksum[order_asset_id] -= itr->sell_price.base; // Decrement the asset checksum by the total of all pending limit orders
+   }
+
+   const auto& call_order_idx = get_index< call_order_index >().indices();
+
+   for( auto itr = call_order_idx.begin(); itr != call_order_idx.end(); ++itr )
+   {
+      uint64_t order_asset_id = get_asset(itr->collateral.symbol).id._id;
+      asset_checksum[order_asset_id] -= itr->collateral; // Decrement the asset checksum by the total of all outstanding call orders
+   }
+
+   const auto& escrow_idx = get_index< escrow_index >().indices().get< by_id >();
+
+   for( auto itr = escrow_idx.begin(); itr != escrow_idx.end(); ++itr )
+   {
+      uint64_t escrow_asset_id = get_asset(itr->balance.symbol).id._id;
+      uint64_t pending_fee_id = get_asset(itr->pending_fee.symbol).id._id;
+      asset_checksum[escrow_asset_id] -= itr->balance; // Decrement the asset checksum by the total of all pending escrow transfer balances
+      asset_checksum[pending_fee_id] -= itr->pending_fee; // Decrement the asset checksum by the total of all pending escrow fees
+   }
+
+   const auto& savings_withdraw_idx = get_index< savings_withdraw_index >().indices().get< by_id >();
+
+   for( auto itr = savings_withdraw_idx.begin(); itr != savings_withdraw_idx.end(); ++itr )
+   {
+      uint64_t savings_asset_id = get_asset(itr->amount.symbol).id._id;
+      asset_checksum[savings_asset_id] -= itr->amount;
+   }
+   fc::uint128_t total_reward_curve;
+
+   const auto& comment_idx = get_index< comment_index >().indices();
+
+   for( auto itr = comment_idx.begin(); itr != comment_idx.end(); ++itr )
+   {
+      if( itr->net_reward > 0 )
+      {
+         auto delta = util::evaluate_reward_curve( itr->net_reward );
+         total_reward_curve += delta;
+      }
+   }
+
+   const reward_fund_object& reward_fund = get_reward_fund();
+
+   asset total_reward_balance = asset(0, SYMBOL_COIN);
+
+   total_reward_balance += reward_fund.content_reward_balance;
+   total_reward_balance += reward_fund.equity_reward_balance;
+   total_reward_balance += reward_fund.validation_reward_balance;
+   total_reward_balance += reward_fund.txn_stake_reward_balance;
+   total_reward_balance += reward_fund.work_reward_balance;
+   total_reward_balance += reward_fund.producer_activity_reward_balance;
+   total_reward_balance += reward_fund.supernode_reward_balance;
+   total_reward_balance += reward_fund.power_reward_balance;
+   total_reward_balance += reward_fund.community_fund_balance;
+   total_reward_balance += reward_fund.development_reward_balance;
+   total_reward_balance += reward_fund.marketing_reward_balance;
+   total_reward_balance += reward_fund.advocacy_reward_balance;
+   total_reward_balance += reward_fund.activity_reward_balance;
+
+   FC_ASSERT(total_reward_balance == reward_fund.total_pending_reward_balance, 
+      "Reward Fund Error: Balance sums not equal to total balance value");
+
+   asset_checksum[0] -= total_reward_balance;
+
+   for( auto itr = asset_idx.begin(); itr != asset_idx.end(); ++itr ) // ASSERT ALL ASSET CHECKSUMS ARE ZERO;
+   {
+      FC_ASSERT(asset_checksum[itr->id._id].amount == 0, 
+         "Asset Supply Invariant Error: Supply checksum not equal to zero.", ("Asset", itr->symbol));
+   }
+} FC_CAPTURE_LOG_AND_RETHROW( (head_block_num()) ) }
+
+
+} } //node::chain

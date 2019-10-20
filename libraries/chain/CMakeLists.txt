@@ -18,7 +18,7 @@ set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/har
 add_library( node_chain
 
              # As database takes the longest to compile, start it first
-             database.cpp
+             node_database.cpp
              fork_database.cpp
              witness_schedule.cpp
 
@@ -41,7 +41,7 @@ target_include_directories( node_chain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
 if(MSVC)
-  set_source_files_properties( database.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
+  set_source_files_properties( node_database.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
 endif(MSVC)
 
 INSTALL( TARGETS

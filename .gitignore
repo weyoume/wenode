@@ -10,7 +10,7 @@ moc_*
 *.moc
 .idea
 hardfork.hpp
-./history/
+/.history/
 
 lcov
 
