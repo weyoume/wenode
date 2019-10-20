@@ -38,13 +38,16 @@ namespace node { namespace chain {
 
 using boost::container::flat_set;
 
-struct reward_fund_context
-{
-   uint128_t   recent_content_claims = 0;
-   uint32_t    cashouts_received = 0;
-   asset       content_reward_balance = asset( 0, SYMBOL_COIN );
-   share_type  reward_distributed = 0;
-};
+/**
+ * TODO:
+ * Expires memberships, and renews recurring memberships when the 
+ * membership expiration time is reached.
+ */
+void database::process_membership_updates()
+{ try {
+
+
+} FC_CAPTURE_AND_RETHROW() }
 
 
 /**
@@ -182,13 +185,6 @@ void database::process_decline_voting_rights()
       const account_object& account = get_account(itr->account);
       share_type voting_power = get_voting_power(account);
 
-      // remove all current votes
-      std::array<share_type, MAX_PROXY_RECURSION_DEPTH+1> delta;
-      delta[0] = -voting_power;
-      for( int i = 0; i < MAX_PROXY_RECURSION_DEPTH; ++i )
-         delta[i+1] = -account.proxied_voting_power[i];
-      adjust_proxied_witness_votes( account, delta );
-
       clear_witness_votes( account );
 
       modify( get_account(itr->account), [&]( account_object& a )
@@ -200,6 +196,23 @@ void database::process_decline_voting_rights()
       remove( *itr );
       itr = request_idx.begin();
    }
+}
+
+void database::clear_witness_votes( const account_object& a )
+{
+   const auto& vidx = get_index< witness_vote_index >().indices().get<by_account_witness>();
+   auto itr = vidx.lower_bound( boost::make_tuple( a.id, witness_id_type() ) );
+   while( itr != vidx.end() && itr->account == a.id )
+   {
+      const auto& current = *itr;
+      ++itr;
+      remove(current);
+   }
+
+   modify( a, [&](account_object& acc )
+   {
+      acc.witnesses_voted_for = 0;
+   });
 }
 
 } } //node::chain

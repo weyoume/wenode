@@ -875,14 +875,18 @@ namespace node { namespace chain {
                member< limit_order_object, price, &limit_order_object::sell_price >,
                member< limit_order_object, limit_order_id_type, &limit_order_object::id >
             >,
-            composite_key_compare< std::greater< price >, std::less< limit_order_id_type > >
+            composite_key_compare< 
+               std::greater< price >, std::less< limit_order_id_type > 
+            >
          >,
          ordered_unique< tag< by_account >,
             composite_key< limit_order_object,
                member< limit_order_object, account_name_type, &limit_order_object::seller >,
                member< limit_order_object, shared_string, &limit_order_object::order_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, strcmp_less 
+            >
          >
       >,
       allocator< limit_order_object >
@@ -960,14 +964,6 @@ namespace node { namespace chain {
 
    struct by_owner;
    struct by_volume_weight;
-
-   typedef multi_index_container<
-      feed_history_object,
-      indexed_by<
-         ordered_unique< tag< by_id >, member< feed_history_object, feed_history_id_type, &feed_history_object::id > >
-      >,
-      allocator< feed_history_object >
-   > feed_history_index;
 
    struct by_withdraw_route;
    struct by_destination;

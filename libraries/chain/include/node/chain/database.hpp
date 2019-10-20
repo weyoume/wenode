@@ -3,7 +3,7 @@
  */
 #pragma once
 #include <node/chain/global_property_object.hpp>
-#include <node/chain/hardfork.hpp>
+//#include <node/chain/hardfork.hpp>
 #include <node/chain/node_property_object.hpp>
 #include <node/chain/fork_database.hpp>
 #include <node/chain/block_log.hpp>
@@ -71,6 +71,11 @@ namespace node { namespace chain {
    class database : public chainbase::database
    {
       public:
+
+         //=======================//
+         // === NODE DATABASE === //
+         //=======================//
+
          database();
          ~database();
 
@@ -138,16 +143,16 @@ namespace node { namespace chain {
           *  @return true if the block is in our fork DB or saved to disk as
           *  part of the official chain, otherwise return false
           */
-         bool                       is_known_block( const block_id_type& id )const;
-         bool                       is_known_transaction( const transaction_id_type& id )const;
+         bool                                   is_known_block( const block_id_type& id )const;
+         bool                                   is_known_transaction( const transaction_id_type& id )const;
          
-         uint32_t                   pow_difficulty()const;
-         block_id_type              find_block_id_for_num( uint32_t block_num )const;
-         block_id_type              get_block_id_for_num( uint32_t block_num )const;
-         optional<signed_block>     fetch_block_by_id( const block_id_type& id )const;
-         optional<signed_block>     fetch_block_by_number( uint32_t num )const;
-         const signed_transaction   get_recent_transaction( const transaction_id_type& trx_id )const;
-         std::vector<block_id_type> get_block_ids_on_fork(block_id_type head_of_fork) const;
+         uint32_t                               pow_difficulty()const;
+         block_id_type                          find_block_id_for_num( uint32_t block_num )const;
+         block_id_type                          get_block_id_for_num( uint32_t block_num )const;
+         optional<signed_block>                 fetch_block_by_id( const block_id_type& id )const;
+         optional<signed_block>                 fetch_block_by_number( uint32_t num )const;
+         const signed_transaction               get_recent_transaction( const transaction_id_type& trx_id )const;
+         std::vector<block_id_type>             get_block_ids_on_fork(block_id_type head_of_fork) const;
 
          chain_id_type                          get_chain_id()const;
          const dynamic_global_property_object&  get_dynamic_global_properties()const;
@@ -158,6 +163,8 @@ namespace node { namespace chain {
          const witness_schedule_object&         get_witness_schedule()const;
          const chain_properties&                chain_properties()const;
          const price&                           get_usd_price()const;
+         const reward_fund_object&              get_reward_fund() const;
+         const comment_metrics_object&          get_comment_metrics() const;
          
          const node_property_object&            get_node_properties()const;
          const feed_history_object&             get_feed_history()const;
@@ -294,8 +301,8 @@ namespace node { namespace chain {
          const credit_loan_object& get_loan( const account_name_type& owner, string& loan_id  )const;
          const credit_loan_object* find_loan( const account_name_type& owner, string& loan_id )const;
 
-         const escrow_object&   get_escrow(  const account_name_type& name, uint32_t escrow_id )const;
-         const escrow_object*   find_escrow( const account_name_type& name, uint32_t escrow_id )const;
+         const escrow_object& get_escrow(  const account_name_type& name, uint32_t escrow_id )const;
+         const escrow_object* find_escrow( const account_name_type& name, uint32_t escrow_id )const;
 
          const limit_order_object& get_limit_order(  const account_name_type& owner, uint32_t id )const;
          const limit_order_object* find_limit_order( const account_name_type& owner, uint32_t id )const;
@@ -310,24 +317,47 @@ namespace node { namespace chain {
          const savings_withdraw_object* find_savings_withdraw( const account_name_type& owner, uint32_t request_id )const;
 
          annotated_signed_transaction get_transaction( const transaction_id_type& id )const;
-
-         const reward_fund_object&              get_reward_fund() const;
-         const comment_metrics_object&          get_comment_metrics() const;
-
-         const asset&                           asset_to_USD( const asset& a) const;
-         const asset&                           USD_to_asset( const asset& a) const;
          
          const hardfork_property_object&        get_hardfork_property_object()const;
 
          const time_point                       calculate_discussion_payout_time( const comment_object& comment )const;
-         const reward_fund_object&              get_reward_fund()const;
 
+         node_property_object& node_properties();
+
+         uint32_t last_non_undoable_block_num() const;
+         //////////////////// db_init.cpp ////////////////////
+
+         void initialize_evaluators();
+         void set_custom_operation_interpreter( const std::string& id, std::shared_ptr< custom_operation_interpreter > registry );
+         std::shared_ptr< custom_operation_interpreter > get_custom_json_evaluator( const std::string& id );
+
+         /// Reset the object graph in-memory
+         void initialize_indexes();
+         void init_schema();
+         
          /**
-          *  Deducts fee from the account and the share supply
+          *  This method validates transactions without adding it to the pending state.
+          *  @throw if an error occurs
           */
-         void pay_fee( const account_object& a, asset fee );
+         void validate_transaction( const signed_transaction& trx );
 
-         void max_bandwidth_per_share()const;
+         /** when popping a block, the transactions that were removed get cached here so they
+          * can be reapplied at the proper time */
+         std::deque< signed_transaction >       _popped_tx;
+
+         bool has_hardfork( uint32_t hardfork )const;
+
+         /* For testing and debugging only. Given a hardfork
+            with id N, applies all hardforks with id <= N */
+         void set_hardfork( uint32_t hardfork, bool process_now = true );
+
+         
+
+         const std::string& get_json_schema() const;
+
+         void set_flush_interval( uint32_t flush_blocks );
+         void show_free_memory( bool force );
+         
 
          /**
           *  Calculate the percent of block production slots that were missed in the
@@ -411,17 +441,6 @@ namespace node { namespace chain {
           */
          fc::signal<void(const signed_transaction&)>     on_applied_transaction;
 
-         /**
-          *  Emitted After a block has been applied and committed.  The callback
-          *  should not yield and should execute quickly.
-          */
-         //fc::signal<void(const vector< graphene::db2::generic_id >&)> changed_objects;
-
-         /** this signal is emitted any time an object is removed and contains a
-          * pointer to the last value of every object that was removed.
-          */
-         //fc::signal<void(const vector<const object*>&)>  removed_objects;
-
          //////////////////// db_witness_schedule.cpp ////////////////////
 
          /**
@@ -460,12 +479,150 @@ namespace node { namespace chain {
           */
          uint32_t get_slot_at_time(fc::time_point when)const;
 
+         void update_network_votes();
+
+         void adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true );
+
+         void adjust_interface_users( const interface_object& interface, bool adjust = true );
+
+         /** clears all vote records for a particular account */
+         void clear_network_votes( const account_object& a );
+
+         void process_funds();
+         
+         void process_equity_rewards();
+
+         void process_power_rewards();
+         
+         void update_proof_of_work_target();
+         
+         void process_txn_stake_rewards();
+         
+         void process_validation_rewards();
+         
+         void process_producer_activity_rewards();
+
+         void process_network_officer_rewards();
+
+         void process_supernode_rewards();
+
+         void process_community_enterprise_fund();
+         
+         void update_enterprise( const community_enterprise_object& enterprise, 
+            const witness_schedule_object& witness_schedule, const dynamic_global_property_object& props );
+
+         share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
+
+         share_type get_power_shares( const account_balance_object& balance );
+
+         uint128_t get_supernode_shares( const supernode_object& supernode );
+
          void claim_proof_of_work_reward( const account_name_type& miner );
+
+         asset calculate_issuer_fee( const asset_object& trade_asset, const asset& trade_amount );
+
+         asset pay_issuer_fees( const asset_object& recv_asset, const asset& receives );
+
+         asset pay_issuer_fees( const account_object& seller, const asset_object& recv_asset, const asset& receives );
+
+         asset pay_network_fees( const account_object& payer, const asset& amount );
+
+         asset pay_network_fees( const asset& amount );
+
+         asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
+
+         asset pay_trading_fees( const account_object& taker, const asset& receives, const account_name_type& maker_int, 
+            const account_name_type& taker_int );
+
+         asset pay_advertising_delivery( const account_object& provider, const account_object& demand, 
+            const account_object& bidder, const account_object& delivery, flat_set< account_object& > audience, const asset& value );
+
+         asset pay_fee_share( const account_object& payee, const asset& amount );
+
+         asset pay_multi_fee_share( const flat_set < account_object& > payees, const asset& amount );
+
+         void validate_invariants()const;
+
+         
+         //==========================//
+         // === ACCOUNT DATABASE === //
+         //==========================//
+
+
+         void process_membership_updates();
 
          asset claim_activity_reward( const account_object& account, const witness_object& witness );
 
-         /** @return the USD value of content rewards created and deposited to_account, may return coin if there is no median feed */
+         void update_owner_authority( const account_object& account, const authority& owner_authority );
+
+         void account_recovery_processing();
+
+         void process_decline_voting_rights();
+
+         void clear_witness_votes( const account_object& a );
+
+
+
+         //==========================//
+         // === COMMENT DATABASE === //
+         //==========================//
+
+
+
+         void process_comment_cashout();
+
+         share_type distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
+         
+         share_type pay_voters( const comment_object& c, share_type& max_rewards );
+
+         share_type pay_viewers( const comment_object& c, share_type& max_rewards );
+
+         share_type pay_sharers( const comment_object& c, share_type& max_rewards );
+
+         share_type pay_commenters( const comment_object& c, share_type& max_rewards );
+
+         share_type pay_moderators( const comment_object& c, share_type& max_rewards );
+
+         share_type pay_storage( const comment_object& c, share_type& max_rewards );
+
+         share_type pay_content_rewards( share_type reward );
+
          void adjust_total_payout( const comment_object& a, const asset& USD, const asset& curator_USD_value, const asset& beneficiary_value );
+
+         void adjust_reward_shares( const comment_object& comment, fc::uint128_t old_reward_shares, fc::uint128_t new_reward_shares );
+
+         void add_comment_to_feeds( const account_name_type& sharer, const comment_id_type& comment_id );
+
+         void add_comment_to_board( const account_name_type& sharer, const board_object& board, const comment_id_type& comment_id );
+
+         void update_comment_metrics();
+
+
+         //========================//
+         // === ASSET DATABASE === //
+         //========================//
+
+         void process_asset_staking();
+
+         void process_recurring_transfers();
+
+         void process_savings_withdraws();
+
+         void expire_escrow_ratification();
+
+         void update_median_liquidity();
+         
+         void process_credit_buybacks();
+         
+         void process_credit_interest();
+
+         void update_expired_feeds();
+
+         void clear_expired_delegations();
+         
+         void update_core_exchange_rates();
+         
+         void update_maintenance_flag( bool new_maintenance_flag );
 
          void adjust_liquid_balance( const account_name_type& a, const asset& delta );
          void adjust_liquid_balance( const account_object& a, const asset& delta );
@@ -509,6 +666,7 @@ namespace node { namespace chain {
          share_type get_voting_power( const account_name_type& a )const;
          share_type get_voting_power( const account_object& a, const price& equity_price )const;
          share_type get_voting_power( const account_name_type& a, const price& equity_price )const;
+
          share_type get_proxied_voting_power( const account_object& a, const price& equity_price )const;
          share_type get_proxied_voting_power( const account_name_type& a, const price& equity_price )const;
 
@@ -517,42 +675,28 @@ namespace node { namespace chain {
 
          string to_pretty_string( const asset& a )const;
 
-         void globally_settle_asset( const asset_object& mia, const price& settlement_price );
-         void revive_bitasset( const asset_object& bitasset );
-         void cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad );
-         void cancel_bid(const collateral_bid_object& bid, bool create_virtual_op);
-         void execute_bid( const collateral_bid_object& bid, share_type debt_covered, share_type collateral_from_fund, const price_feed& current_feed );
-         void cancel_settle_order(const force_settlement_object& order, bool create_virtual_op );
 
-         void cancel_limit_order( const limit_order_object& order );
-         bool maybe_cull_small_order( const limit_order_object& order );
+         //==========================//
+         // === TRADING DATABASE === //
+         //==========================//
+
          
-         void close_margin_order( const margin_order_object& order );
-         bool maybe_cull_small_order( const margin_order_object& order );
 
          bool apply_order(const limit_order_object& new_order_object );
          bool apply_order(const margin_order_object& new_order_object );
 
          int match( const limit_order_object& taker, const limit_order_object& maker, const price& match_price );
-
          int match( const margin_order_object& taker, const margin_order_object& maker, const price& match_price );
-
          int match( const limit_order_object& taker, const margin_order_object& maker, const price& match_price );
-
          int match( const margin_order_object& taker, const limit_order_object& maker, const price& match_price );
-
          int match( const limit_order_object& order, const asset_liquidity_pool_object& pool, const price& match_price );
-
          int match( const margin_order_object& order, const asset_liquidity_pool_object& pool, const price& match_price );
-
          int match( const limit_order_object& bid, const call_order_object& ask, const price& match_price,
                      const price& feed_price, const uint16_t maintenance_collateral_ratio,
                      const optional<price>& maintenance_collateralization );
-
          int match( const margin_order_object& bid, const call_order_object& ask, const price& match_price,
                      const price& feed_price, const uint16_t maintenance_collateral_ratio,
                      const optional<price>& maintenance_collateralization );
-
          asset match( const call_order_object& call, const force_settlement_object& settle, const price& match_price, 
             asset max_settlement, const price& fill_price );
 
@@ -568,174 +712,69 @@ namespace node { namespace chain {
          bool fill_settle_order( const force_settlement_object& settle, const asset& pays, const asset& receives,
             const price& fill_price, const bool is_maker, const account_name_type& match_interface );
 
-         bool check_call_orders( const asset_object& mia, bool enable_black_swan, bool for_new_limit_order );
+         void liquid_fund( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool);
 
-         asset calculate_issuer_fee( const asset_object& trade_asset, const asset& trade_amount );
-         asset pay_issuer_fees( const asset_object& recv_asset, const asset& receives );
-         asset pay_issuer_fees( const account_object& seller, const asset_object& recv_asset, const asset& receives );
-
-         asset pay_network_fees( const account_object& payer, const asset& amount );
-         asset pay_network_fees( const asset& amount );
-
-         asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
-         asset pay_trading_fees( const account_object& taker, const asset& receives, const account_name_type& maker_int, 
-            const account_name_type& taker_int );
-         asset pay_advertising_delivery( const account_object& provider, const account_object& demand, 
-            const account_object& bidder, const account_object& delivery, flat_set< account_object& > audience, const asset& value );
-
-         asset pay_fee_share( const account_object& payee, const asset& amount );
-         asset pay_multi_fee_share( const flat_set < account_object& > payees, const asset& amount );
-
-         bool check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_bitasset_data_object* bitasset_ptr );
-
-         void        adjust_reward_shares( const comment_object& comment, fc::uint128_t old_reward_shares, fc::uint128_t new_reward_shares );
-         void        update_owner_authority( const account_object& account, const authority& owner_authority );
-
-         void adjust_moderator_votes( const account_name_type& moderator, const board_member_object& member, share_type delta );
-
-         void adjust_governance_subscription( const governance_account_object& gov_account, share_type delta );
-         void adjust_network_officer_votes( const network_officer_object& officer, share_type delta );
-         void adjust_executive_board_votes( const executive_board_object& executive, share_type delta );
-         void adjust_community_enterprise_votes( const community_enterprise_object& enterprise, share_type delta );
-         void adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true );
-         void adjust_interface_users( const interface_object& interface, bool adjust = true );
-
-         /** clears all vote records for a particular account */
-         void clear_network_votes( const account_object& a );
-
-         void process_unstake_assets();
-         share_type pay_voters( const comment_object& c, share_type& max_rewards );
-         share_type pay_viewers( const comment_object& c, share_type& max_rewards );
-         share_type pay_sharers( const comment_object& c, share_type& max_rewards );
-         share_type pay_commenters( const comment_object& c, share_type& max_rewards );
-         share_type pay_moderators( const comment_object& c, share_type& max_rewards );
-         share_type pay_storage( const comment_object& c, share_type& max_rewards );
-
-         share_type distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
-         void process_comment_cashout();
-         void process_funds();
-         
-         void process_conversions();
-         void process_savings_withdraws();
-         void account_recovery_processing();
-         void expire_escrow_ratification();
-         void process_decline_voting_rights();
-         void update_median_feed();
-         void update_median_liquidity();
-         void update_comment_metrics();
-         void process_asset_staking();
-         void process_recurring_transfers();
-         void process_equity_rewards();
-         void process_power_rewards();
-         void process_credit_updates();
-         void process_credit_buybacks();
-         void process_margin_updates();
-         void process_credit_interest();
-         void process_membership_updates();
-         void update_proof_of_work_target();
-         void process_txn_stake_rewards();
-         void process_validation_rewards();
-         void process_producer_activity_rewards();
-         void process_network_officer_rewards();
-         void process_supernode_rewards();
-         void process_community_enterprise_fund();
-         void update_network_votes();
-
-         void add_comment_to_feeds( const account_name_type& sharer, const comment_id_type& comment_id );
-         void add_comment_to_board( const account_name_type& sharer, const board_object& board, const comment_id_type& comment_id );
-         void update_enterprise( const community_enterprise_object& enterprise, const witness_schedule_object& witness_schedule, const dynamic_global_property_object& props );
-
-         asset get_content_reward()const;
-         asset get_producer_reward();
-         asset get_curation_reward()const;
-         asset get_pow_reward()const;
-         share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
-         share_type get_power_shares( const account_balance_object& balance );
-         uint128_t get_supernode_shares( const supernode_object& supernode );
-
-         void liquidate_credit_loan( const credit_loan_object& loan );
-         asset network_credit_acquisition( const asset& amount, bool execute );
-         share_type pay_content_rewards( share_type reward );
-
-         /**
-          * Helper method to return the current USD value of a given amount of
-          * an asset. Return 0 USD if there isn't a current_median_history
-          */
-         asset asset_to_USD( const asset& asset )const;
-         asset USD_to_asset( const asset& USD )const;
-
-         
-
-         node_property_object& node_properties();
-
-         uint32_t last_non_undoable_block_num() const;
-         //////////////////// db_init.cpp ////////////////////
-
-         void initialize_evaluators();
-         void set_custom_operation_interpreter( const std::string& id, std::shared_ptr< custom_operation_interpreter > registry );
-         std::shared_ptr< custom_operation_interpreter > get_custom_json_evaluator( const std::string& id );
-
-         /// Reset the object graph in-memory
-         void initialize_indexes();
-         void init_schema();
-         
-
-         /**
-          *  This method validates transactions without adding it to the pending state.
-          *  @throw if an error occurs
-          */
-         void validate_transaction( const signed_transaction& trx );
-
-         /** when popping a block, the transactions that were removed get cached here so they
-          * can be reapplied at the proper time */
-         std::deque< signed_transaction >       _popped_tx;
-
-         void liquid_exchange( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool, 
-            const account_object& int_account);
+         void liquid_withdraw( const asset& input, const asset_symbol_type& receive, 
+            const account_object& account, const asset_liquidity_pool_object& pool);
 
          asset liquid_exchange( const asset& input, const asset_symbol_type& receive, bool execute = true, bool apply_fees = true );
-
+         void liquid_exchange( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool, 
+            const account_object& int_account);
+         
+         asset liquid_acquire( const asset& receive, const asset_symbol_type& input, bool execute = true, bool apply_fees = true );
          void liquid_acquire( const asset& receive, const account_object& account, const asset_liquidity_pool_object& pool, 
             const account_object& int_account);
 
-         asset liquid_acquire( const asset& receive, const asset_symbol_type& input, bool execute = true, bool apply_fees = true );
-
-         void liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
-            const asset_liquidity_pool_object& pool, const account_object& int_account );
-            
          pair< asset, asset > liquid_limit_exchange( const asset& input, const price& limit_price, 
             const asset_liquidity_pool_object& pool, bool execute = true, bool apply_fees = true );
+         void liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
+            const asset_liquidity_pool_object& pool, const account_object& int_account );
 
-         void liquid_fund( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool);
-         void liquid_withdraw( const asset& input, const asset_symbol_type& receive, const account_object& account, const asset_liquidity_pool_object& pool);
-
-         void credit_borrow( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
-         void credit_repay( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
          void credit_lend( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
+
          void credit_withdraw( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
+
          bool credit_check( const asset& debt, const asset& collateral, const asset_credit_pool_object& credit_pool);
 
-         int  match( const limit_order_object& bid, const limit_order_object& ask, const price& trade_price );
+         bool margin_check( const asset& debt, const asset& position, const asset& collateral, const asset_credit_pool_object& credit_pool);
 
-         void retally_comment_children();
-         void retally_witness_votes();
-         void retally_witness_vote_counts( bool force = false );
+         void liquidate_credit_loan( const credit_loan_object& loan );
 
-         bool has_hardfork( uint32_t hardfork )const;
+         asset network_credit_acquisition( const asset& amount, bool execute );
 
-         /* For testing and debugging only. Given a hardfork
-            with id N, applies all hardforks with id <= N */
-         void set_hardfork( uint32_t hardfork, bool process_now = true );
+         bool check_call_orders( const asset_object& mia, bool enable_black_swan, bool for_new_limit_order );
 
-         void validate_invariants()const;
-         /**
-          * @}
-          */
+         bool check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_bitasset_data_object* bitasset_ptr );
 
-         const std::string& get_json_schema() const;
+         void globally_settle_asset( const asset_object& mia, const price& settlement_price );
 
-         void set_flush_interval( uint32_t flush_blocks );
-         void show_free_memory( bool force );
+         void revive_bitasset( const asset_object& bitasset );
+
+         void cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad );
+
+         void cancel_bid(const collateral_bid_object& bid, bool create_virtual_op);
+
+         void execute_bid( const collateral_bid_object& bid, share_type debt_covered, 
+            share_type collateral_from_fund, const price_feed& current_feed );
+
+         void cancel_settle_order(const force_settlement_object& order, bool create_virtual_op );
+
+         void cancel_limit_order( const limit_order_object& order );
+
+         bool maybe_cull_small_order( const limit_order_object& order );
+         
+         void close_margin_order( const margin_order_object& order );
+
+         bool maybe_cull_small_order( const margin_order_object& order );
+         
+         asset asset_to_USD( const asset& asset )const;
+
+         asset USD_to_asset( const asset& USD )const;
+
+         void process_credit_updates();
+
+         void process_margin_updates();
+
 
 #ifdef IS_TEST_NET
          bool liquidity_rewards_enabled = true;
@@ -743,7 +782,7 @@ namespace node { namespace chain {
          bool skip_transaction_delta_check = true;
 #endif
 
-   protected:
+      protected:
          //Mark pop_undo() as protected -- we do not want outside calling pop_undo(); it should call pop_block() instead
          //void pop_undo() { object_database::pop_undo(); }
          void notify_changed_objects();
@@ -768,12 +807,7 @@ namespace node { namespace chain {
          void update_transaction_stake(const witness_object& signing_witness, const uint128_t& transaction_stake);
          void update_last_irreversible_block();
          void clear_expired_transactions();
-         void clear_expired_orders();
-         
-         void clear_expired_delegations();
-         void update_core_exchange_rates();
-         void update_expired_feeds();
-         void update_maintenance_flag( bool new_maintenance_flag );
+         void clear_expired_operations();
          void update_withdraw_permissions();
          void clear_expired_htlcs();
 

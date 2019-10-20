@@ -45,7 +45,6 @@ enum object_type
    dynamic_global_property_object_type,
    transaction_object_type,
    operation_object_type,
-   block_stats_object_type,
    reward_fund_object_type,
    block_summary_object_type,
    hardfork_property_object_type,
@@ -134,11 +133,11 @@ enum object_type
    // Trading Objects
    
    limit_order_object_type,
+   margin_order_object_type,
    call_order_object_type,
    force_settlement_object_type,
    collateral_bid_object_type,
-   margin_order_object_type,
-
+   
    // Asset objects
 
    asset_object_type,
@@ -159,7 +158,6 @@ enum object_type
    witness_object_type,
    witness_schedule_object_type,
    witness_vote_object_type,
-   feed_history_object_type,
    block_validation_object_type
 
 };
@@ -173,7 +171,6 @@ enum object_type
 class dynamic_global_property_object;
 class transaction_object;
 class operation_object;
-class block_stats_object;
 class reward_fund_object;
 class block_summary_object;
 class hardfork_property_object;
@@ -262,10 +259,10 @@ class escrow_object;
 // Trading Objects
 
 class limit_order_object;
+class margin_order_object;
 class call_order_object;
 class force_settlement_object;
 class collateral_bid_object;
-class margin_order_object;
 
 // Asset objects
 
@@ -287,7 +284,6 @@ class credit_loan_object;
 class witness_object;
 class witness_schedule_object;
 class witness_vote_object;
-class feed_history_object;
 class block_validation_object;
 
 //=========================//
@@ -299,7 +295,6 @@ class block_validation_object;
 typedef oid< dynamic_global_property_object         > dynamic_global_property_id_type;
 typedef oid< transaction_object                     > transaction_id_type;
 typedef oid< operation_object                       > operation_id_type;
-typedef oid< block_stats_object                     > block_stats_id_type;
 typedef oid< reward_fund_object                     > reward_fund_id_type;
 typedef oid< block_summary_object                   > block_summary_id_type;
 typedef oid< hardfork_property_object               > hardfork_property_id_type;
@@ -388,10 +383,11 @@ typedef oid< escrow_object                          > escrow_id_type;
 // Trading Objects
 
 typedef oid< limit_order_object                     > limit_order_id_type;
+typedef oid< margin_order_object                    > margin_order_id_type;
 typedef oid< call_order_object                      > call_order_id_type;
 typedef oid< force_settlement_object                > force_settlement_id_type;
 typedef oid< collateral_bid_object                  > collateral_bid_id_type;
-typedef oid< margin_order_object                    > margin_order_id_type;
+
 
 // Asset objects
 
@@ -413,7 +409,6 @@ typedef oid< credit_loan_object                     > credit_loan_id_type;
 typedef oid< witness_object                         > witness_id_type;
 typedef oid< witness_schedule_object                > witness_schedule_id_type;
 typedef oid< witness_vote_object                    > witness_vote_id_type;
-typedef oid< feed_history_object                    > feed_history_id_type;
 typedef oid< block_validation_object                > block_validation_id_type;
 
 enum bandwidth_type
@@ -498,7 +493,6 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (dynamic_global_property_object_type)
          (transaction_object_type)
          (operation_object_type)
-         (block_stats_object_type)
          (reward_fund_object_type)
          (block_summary_object_type)
          (hardfork_property_object_type)
@@ -584,10 +578,11 @@ FC_REFLECT_ENUM( node::chain::object_type,
          // Trading Objects
 
          (limit_order_object_type)
+         (margin_order_object_type)
          (call_order_object_type)
          (force_settlement_object_type)
          (collateral_bid_object_type)
-         (margin_order_object_type)
+         
 
          // Asset objects
 
@@ -609,7 +604,7 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (witness_object_type)
          (witness_schedule_object_type)
          (witness_vote_object_type)
-         (feed_history_object_type)
+         
          (block_validation_object_type)
          );
 

@@ -425,12 +425,18 @@ namespace node { namespace chain {
     * Pf = Price (Final)
     * Br = Balance (Returned Asset)
     * Bi = Balance (Input Asset)
+    * Bs = Balance (Supply Liquidity Pool Asset)
+    * Sr = Supply Received
+    * Si = Supply Input
+    * 
     * 
     * R      = Br * ( 1 - ( Bi / ( I + Bi ) ) )    Amount Recieved for a given input
     * I      = Bi * ( 1 - ( R / Br ) ) - Bi        Input Required for a given return amount   
     * Pa     = ( Br * I ) / ( I * Bi + I^2 )       Average price of an exchange with a given input
     * Pf     = ( Br * Bi ) / ( Bi + I )^2          Final price after an exchange with a given input
     * I(max) = sqrt( ( Br * Bi ) / Pf ) - Bi       Maximum input to reach a given final price.
+    * Sr     = Bs * (sqrt( 1 + ( I / Bi ) ) - 1 )  Supply asset obtained for funding an input asset.
+    * R      = Br * ( 1 - ( 1 - ( Si / Bs ) )^2 )  Amount Received for withdrawing an input Supply asset.
     * 
     */
    class asset_liquidity_pool_object : public object< asset_liquidity_pool_object_type, asset_liquidity_pool_object >
@@ -452,6 +458,8 @@ namespace node { namespace chain {
 
          asset_symbol_type          symbol_b;                      // Ticker symbol string of the asset with the higher ID.
 
+         asset_symbol_type          symbol_liquid;                 // Ticker symbol of the pool's liquidity pool asset. 
+
          asset                      balance_a;                     // Balance of Asset A. Must be core asset if one asset is core.
 
          asset                      balance_b;                     // Balance of Asset B.
@@ -471,6 +479,8 @@ namespace node { namespace chain {
 
          price                       base_price( const asset_symbol_type& base )const   // Current price with specified asset as base
          {
+            FC_ASSERT( base == symbol_a || base == symbol_b,
+               "Invalid base asset price requested." );
             if( base == symbol_a )
             {
                return price( balance_a, balance_b);
@@ -483,6 +493,8 @@ namespace node { namespace chain {
 
          price                       base_hour_median_price( const asset_symbol_type& base )const   // hourly median price with specified asset as base
          {
+            FC_ASSERT( base == symbol_a || base == symbol_b,
+               "Invalid base asset price requested." );
             if( base == symbol_a )
             {
                return hour_median_price;
@@ -495,6 +507,8 @@ namespace node { namespace chain {
 
          price                       base_day_median_price( const asset_symbol_type& base )const   // daily median price with specified asset as base
          {
+            FC_ASSERT( base == symbol_a || base == symbol_b,
+               "Invalid base asset price requested." );
             if( base == symbol_a )
             {
                return day_median_price;
@@ -502,6 +516,20 @@ namespace node { namespace chain {
             else if( base == symbol_b )
             {
                return ~day_median_price;
+            }
+         }
+
+         asset                       asset_balance( const asset_symbol_type& symbol )const
+         {
+            FC_ASSERT( symbol == symbol_a || symbol == symbol_b,
+               "Invalid asset balance requested." );
+            if( symbol == symbol_a )
+            {
+               return balance_a;
+            }
+            else if( symbol == symbol_b )
+            {
+               return balance_b;
             }
          }
    };
@@ -671,7 +699,8 @@ namespace node { namespace chain {
          ordered_unique< tag<by_asset_pair>,
             composite_key< asset_liquidity_pool_object,
                member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_a >,
-               member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_b > >
+               member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_b > 
+            >
          >
       >, 
       allocator< asset_liquidity_pool_object >

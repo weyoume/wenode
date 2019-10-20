@@ -6117,7 +6117,7 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
       "Insufficient collateral balance in this asset to vest the amount requested in the loan. Please increase collateral.");
 
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount_to_borrow.symbol, false );
-   asset min_collateral = ( o.amount_to_borrow * props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 50% of debt value.
+   asset min_collateral = ( o.amount_to_borrow * props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 20% of debt value.
    share_type collateralization;
 
    asset_symbol_type symbol_a;
@@ -6150,7 +6150,7 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
 
    FC_ASSERT( o.collateral.amount >= min_collateral.amount, 
       "Collateral is insufficient to support a margin loan of this size. Please increase collateral.");
-   FC_ASSERT( _db.margin_check( o.amount_to_borrow, position, o.collateral, pool), 
+   FC_ASSERT( _db.margin_check( o.amount_to_borrow, position, o.collateral, pool ), 
       "Margin loan with provided collateral, position, and debt is not viable with current asset liquidity conditions. Please lower debt." );
    FC_ASSERT( pool.base_balance.amount >= o.amount_to_borrow.amount, 
       "Insufficient Available assets to borrow from credit pool. Please lower debt." );
@@ -6448,7 +6448,7 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    const asset_object& first_asset = _db.get_asset( o.first_amount.symbol );
    const asset_object& second_asset = _db.get_asset( o.second_amount.symbol );
 
-   FC_ASSERT( first_asset.asset_type != LIQUIDITY_POOL && second_asset.asset_type != LIQUIDITY_POOL , 
+   FC_ASSERT( first_asset.asset_type != LIQUIDITY_POOL_ASSET && second_asset.asset_type != LIQUIDITY_POOL_ASSET , 
       "Cannot make a liquidity pool asset with a liquidity pool asset as a component." );
 
    asset amount_a;
@@ -6478,8 +6478,7 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    {
       a.issuer = o.account;
       a.symbol = liquidity_asset_symbol;
-      a.asset_type = LIQUIDITY_POOL;
-      a.precision = BLOCKCHAIN_PRECISION;
+      a.asset_type = LIQUIDITY_POOL_ASSET;
    });
 
    _db.create<asset_dynamic_data_object>( [&]( asset_dynamic_data_object& a ) 
@@ -6503,11 +6502,14 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
       alpo.issuer = o.account;
       alpo.balance_a = amount_a;
       alpo.balance_b = amount_b;
-      a.hour_median_price = price(a.balance_a, a.balance_b);
-      a.day_median_price = price(a.balance_a, a.balance_b);
-      a.price_history.push_back( price(a.balance_a, a.balance_b) );
-      alpo.liquidity_asset = liquidity_asset_symbol;
-      alpo.liquidity_supply = max;
+      alpo.symbol_a = amount_a.symbol;
+      alpo.symbol_b = amount_b.symbol;
+
+      alpo.hour_median_price = price(alpo.balance_a, alpo.balance_b);
+      alpo.day_median_price = price(alpo.balance_a, alpo.balance_b);
+      alpo.price_history.push_back( price(alpo.balance_a, alpo.balance_b) );
+      alpo.symbol_liquid = liquidity_asset_symbol;
+      alpo.balance_liquid = max;
    });
 
    _db.adjust_liquid_balance( o.account, asset( max, liquidity_asset_symbol ));
@@ -6665,7 +6667,8 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
             a.loan_default_balance -= default_paid;
          });
       }
-      FC_ASSERT( liquid.amount >= o.amount.amount , "Insufficient liquid balance to collateralize the amount requested.");
+      FC_ASSERT( liquid.amount >= o.amount.amount, 
+         "Insufficient liquid balance to collateralize the amount requested.");
       _db.adjust_liquid_balance( o.account, -o.amount);
       _db.adjust_pending_supply( o.amount );
 
@@ -6692,8 +6695,10 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
          });
       }
 
-      FC_ASSERT( delta.amount != 0 , "Operation would not change collateral position in this asset.");
-      FC_ASSERT( liquid.amount >= delta.amount , "Insufficient liquid balance to increase collateral position to the amount requested.");
+      FC_ASSERT( delta.amount != 0 , 
+         "Operation would not change collateral position in this asset.");
+      FC_ASSERT( liquid.amount >= delta.amount , 
+         "Insufficient liquid balance to increase collateral position to the amount requested.");
 
       _db.adjust_liquid_balance( o.account, -delta );
       _db.adjust_pending_supply( delta );
@@ -6753,7 +6758,8 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       max_debt = max_debt * median_price;
    }
 
-   FC_ASSERT( o.collateral.amount >= min_collateral.amount , "Collateral is insufficient to support a loan of this size.");
+   FC_ASSERT( o.collateral.amount >= min_collateral.amount , 
+      "Collateral is insufficient to support a loan of this size.");
 
    const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_owner_id >();
    auto loan_itr = loan_idx.find( boost::make_tuple( account.name, o.loan_id ) ); 
@@ -6778,6 +6784,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
          clo.debt = o.amount;
          clo.interest = asset( 0, o.amount.symbol );
          clo.collateral = o.collateral;
+
          if( o.amount.symbol != o.collateral.symbol )
          {
             clo.loan_price = price( o.collateral, o.amount);
@@ -6789,7 +6796,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       });
 
       // Decrement from pledged collateral object balance.
-      _db.modify( collateral, [&]( credit_collateral_object& cco )   
+      _db.modify( collateral, [&]( credit_collateral_object& cco )
       {
          cco.collateral -= o.collateral;
       });
@@ -6812,18 +6819,22 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       asset old_debt = loan.debt;
       asset delta_debt = o.amount - old_debt; 
 
-      FC_ASSERT( delta_collateral.amount != 0 || delta_debt.amount != 0, "Operation would not change collateral or debt position in the loan.");
-      FC_ASSERT( collateral.collateral.amount >= delta_collateral.amount , "Insufficient collateral balance in this asset to vest the amount requested in the loan.");
-      FC_ASSERT( liquid.amount >= -delta_debt.amount , "Insufficient liquid balance in this asset to repay the amount requested.");
+      FC_ASSERT( delta_collateral.amount != 0 || delta_debt.amount != 0, 
+         "Operation would not change collateral or debt position in the loan.");
+      FC_ASSERT( collateral.collateral.amount >= delta_collateral.amount , 
+         "Insufficient collateral balance in this asset to vest the amount requested in the loan.");
+      FC_ASSERT( liquid.amount >= -delta_debt.amount , 
+         "Insufficient liquid balance in this asset to repay the amount requested.");
 
       share_type interest_rate = pool.interest_rate(props.credit_min_interest, props.credit_variable_interest);   // Calulate pool's interest rate
 
       share_type interest_accrued = ( loan.debt.amount * interest_rate * ( now - loan.last_updated ).to_seconds() ) / ( PERCENT_100 * fc::days(365).to_seconds() ) ;
       asset interest_asset = asset( interest_accrued, loan.debt.symbol );   // Accrue interest on debt balance
 
-      if( o.amount.amount == 0 || o.collateral.amount == 0 )   // closing out the loan, ensure both amount and collateral are zero if one is zero. 
+      if( o.amount.amount == 0 || o.collateral.amount == 0 )   // Closing out the loan, ensure both amount and collateral are zero if one is zero. 
       {
-         FC_ASSERT( o.amount.amount == 0 && o.collateral.amount == 0, "Both collateral and amount must be set to zero to close out loan.");
+         FC_ASSERT( o.amount.amount == 0 && o.collateral.amount == 0, 
+            "Both collateral and amount must be set to zero to close out loan.");
          asset closing_debt = old_debt + interest_asset;
 
          _db.adjust_liquid_balance( o.account, -closing_debt );    // Return debt to the pending supply of the credit pool 
