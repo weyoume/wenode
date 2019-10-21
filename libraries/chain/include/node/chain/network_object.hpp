@@ -87,6 +87,8 @@ namespace node { namespace chain {
          account_name_type              account;               // The name of the account voting for the officer.
 
          account_name_type              network_officer;       // The name of the network officer being voted for.
+
+         uint16_t                       vote_rank;
    };
 
 
@@ -135,6 +137,8 @@ namespace node { namespace chain {
          account_name_type              account;               // The name of the account that voting for the executive board.
 
          account_name_type              executive_board;       // The name of the executive board being voted for.
+
+         uint16_t                       vote_rank;
    };
 
 
@@ -223,7 +227,7 @@ namespace node { namespace chain {
 
          uint64_t                       monthly_active_users = 0;    // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
 
-         share_type                     recent_view_weight = 0;      // The rolling 7 day average of file data (x voting power) served to viewers. 
+         share_type                     recent_view_weight = 0;      // The rolling 7 day average of daily accumulated voting power of viewers. 
 
          time_point                     last_update_time;            // The time the file weight and active users was last decayed.
 
@@ -424,13 +428,15 @@ namespace node { namespace chain {
          ordered_unique< tag<by_account_officer>,
             composite_key< network_officer_vote_object,
                member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
+               member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >,
                member<network_officer_vote_object, account_name_type, &network_officer_vote_object::network_officer >
             >
          >,
          ordered_unique< tag<by_officer_account>,
             composite_key< network_officer_vote_object,
                member<network_officer_vote_object, account_name_type, &network_officer_vote_object::network_officer >,
-               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >
+               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
+               member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
             >
          >
       >,
@@ -487,13 +493,15 @@ namespace node { namespace chain {
          ordered_unique< tag<by_account_executive >,
             composite_key< executive_board_vote_object,
                member<executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
+               member<executive_board_vote_object, uint16_t, &executive_board_vote_object::vote_rank >,
                member<executive_board_vote_object, account_name_type, &executive_board_vote_object::executive_board >
             >
          >,
          ordered_unique< tag<by_executive_account >,
             composite_key< executive_board_vote_object,
                member<executive_board_vote_object, account_name_type, &executive_board_vote_object::executive_board >,
-               member<executive_board_vote_object, account_name_type, &executive_board_vote_object::account >
+               member<executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
+               member<executive_board_vote_object, uint16_t, &executive_board_vote_object::vote_rank >
             >
          >
       >,
@@ -550,6 +558,8 @@ namespace node { namespace chain {
    > governance_subscription_index;
 
    struct by_view_weight;
+   struct by_daily_active_users;
+   struct by_monthly_active_users;
 
    typedef multi_index_container <
       supernode_object,
@@ -583,8 +593,7 @@ namespace node { namespace chain {
       allocator< supernode_object >
    > supernode_index;
 
-   struct by_daily_active_users;
-   struct by_monthly_active_users;
+   
 
    typedef multi_index_container <
       interface_object,

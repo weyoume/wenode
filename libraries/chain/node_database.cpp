@@ -1697,126 +1697,720 @@ uint32_t database::get_slot_at_time(fc::time_point when)const
 }
 
 
-void database::update_network_votes()   // Todo witnesses, network officers, exec boards, business accs, gov addresses
+void database::update_network_votes()
 {
-   const auto& vidx = get_index< witness_vote_index >().indices().get< by_account_witness >();
-   auto itr = vidx.lower_bound( boost::make_tuple( a.id, witness_id_type() ) );
-   while( itr != vidx.end() && itr->account == a.id )
+   if( (head_block_num() % NETWORK_UPDATE_INTERVAL_BLOCKS) != 0 )    // Runs once every 10 minutes
+      return;
+
+   const witness_schedule_object& wso = get_witness_schedule();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   const auto& wit_idx = get_index< witness_index >().indices().get< by_voting_power >();
+   const auto& wit_vote_idx = get_index< witness_vote_index >().indices().get< by_witness_account >();
+   auto wit_itr = wit_idx.begin();
+   
+   while( wit_itr != wit_idx.end() )
    {
-      adjust_witness_vote( get(itr->witness), delta );
-      ++itr;
+      const witness_object& witness = *wit_itr;
+      auto wit_vote_itr = wit_vote_idx.lower_bound( witness.owner );
+      share_type voting_power = 0;
+      uint32_t vote_count = 0;
+
+      while( wit_vote_itr != wit_vote_idx.end() && wit_vote_itr->witness == witness.owner )
+      {
+         const witness_vote_object& vote = *wit_vote_itr;
+         const account_object& voter = get_account( vote.account );
+         share_type weight = get_voting_power( wit_vote_itr->account );
+         if( voter.proxied.size() )
+         {
+            weight += get_proxied_voting_power( voter, equity_price );
+         }
+         // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+         // Rank one gets half of voting power, rank two gets one quarter, etc. 
+         voting_power += ( weight.value >> vote.vote_rank );    
+         vote_count++;
+         ++wit_vote_itr;
+      }
+
+      modify( witness, [&]( witness_object& w )
+      {
+         w.voting_power = voting_power;
+         w.vote_count = vote_count;
+         auto delta_pos = w.voting_power.value * (wso.current_witness_virtual_time - w.witness_virtual_last_update);
+         w.witness_virtual_position += delta_pos;
+         w.witness_virtual_scheduled_time = w.witness_virtual_last_update + (VIRTUAL_SCHEDULE_LAP_LENGTH - w.witness_virtual_position)/(w.voting_power.value+1);
+         /** witnesses with a low number of votes could overflow the time field and end up with a scheduled time in the past */
+         if( w.witness_virtual_scheduled_time < wso.current_witness_virtual_time ) 
+         {
+            w.witness_virtual_scheduled_time = fc::uint128::max_value();
+         }
+         w.decay_weights( now, wso );
+         w.witness_virtual_last_update = wso.current_witness_virtual_time;
+      });
+      ++wit_itr;
    }
 
-   const witness_schedule_object& wso = get_witness_schedule_object();
-   modify( witness, [&]( witness_object& w )
+   const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
+   const auto& officer_vote_idx = get_index< network_officer_vote_index >().indices().get< by_officer_account >();
+   auto officer_itr = officer_idx.begin();
+   
+   while( officer_itr != officer_idx.end() )
    {
-      auto delta_pos = w.voting_power.value * (wso.current_virtual_time - w.witness_virtual_last_update);
-      w.witness_virtual_position += delta_pos;
+      const network_officer_object& officer = *officer_itr;
+      auto officer_vote_itr = officer_vote_idx.lower_bound( officer.account );
+      share_type voting_power = 0;
+      uint32_t vote_count = 0;
 
-      w.witness_virtual_last_update = wso.current_virtual_time;
-      w.voting_power += delta;
-      FC_ASSERT( w.voting_power <= get_dynamic_global_properties().total_voting_power, "Total witness votes may not exceed maximum voting power", ("w.voting_power", w.voting_power)("props",get_dynamic_global_properties().total_voting_power) );
-
-      w.witness_virtual_scheduled_time = w.witness_virtual_last_update + (VIRTUAL_SCHEDULE_LAP_LENGTH - w.witness_virtual_position)/(w.voting_power.value+1);
-      
-      /** witnesses with a low number of votes could overflow the time field and end up with a scheduled time in the past */
-      
-      if( w.witness_virtual_scheduled_time < wso.current_virtual_time ) {
-         w.witness_virtual_scheduled_time = fc::uint128::max_value();
-      }
-
-      if( delta > 0) {
-         w.vote_count++;
-      } 
-      else 
+      while( officer_vote_itr != officer_vote_idx.end() && officer_vote_itr->network_officer == officer.account )
       {
-         w.vote_count--;
+         const network_officer_vote_object& vote = *officer_vote_itr;
+         const account_object& voter = get_account( vote.account );
+         share_type weight = get_voting_power( officer_vote_itr->account );
+         if( voter.proxied.size() )
+         {
+            weight += get_proxied_voting_power( voter, equity_price );
+         }
+         // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+         // Rank one gets half of voting power, rank two gets one quarter, etc. 
+         voting_power += ( weight.value >> vote.vote_rank );
+         vote_count++;
+         ++officer_vote_itr;
       }
-   });
+
+      modify( officer, [&]( network_officer_object& n )
+      {
+         n.voting_power = voting_power;
+         n.vote_count = vote_count;
+      });
+      ++officer_itr;
+   }
+
+   const auto& exec_idx = get_index< executive_board_index >().indices().get< by_voting_power >();
+   const auto& exec_vote_idx = get_index< executive_board_vote_index >().indices().get< by_executive_account >();
+   auto exec_itr = exec_idx.begin();
+   
+   while( exec_itr != exec_idx.end() )
+   {
+      const executive_board_object& exec = *exec_itr;
+      auto exec_vote_itr = exec_vote_idx.lower_bound( exec.account );
+      share_type voting_power = 0;
+      uint32_t vote_count = 0;
+
+      while( exec_vote_itr != exec_vote_idx.end() && exec_vote_itr->executive_board == exec.account )
+      {
+         const executive_board_vote_object& vote = *exec_vote_itr;
+         const account_object& voter = get_account( vote.account );
+         share_type weight = get_voting_power( exec_vote_itr->account );
+         if( voter.proxied.size() )
+         {
+            weight += get_proxied_voting_power( voter, equity_price );
+         }
+         // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+         // Rank one gets half of voting power, rank two gets one quarter, etc. 
+         voting_power += ( weight.value >> vote.vote_rank );
+         vote_count++;
+         ++exec_vote_itr;
+      }
+
+      modify( exec, [&]( executive_board_object& e )
+      {
+         e.voting_power = voting_power;
+         e.vote_count = vote_count;
+      });
+      ++exec_itr;
+   }
+
+   const auto& gov_idx = get_index< governance_account_index >().indices().get< by_subscriber_power >();
+   const auto& gov_sub_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
+   auto gov_itr = gov_idx.begin();
+   
+   while( gov_itr != gov_idx.end() )
+   {
+      const governance_account_object& gov = *gov_itr;
+      auto gov_sub_itr = gov_sub_idx.lower_bound( gov.account );
+      share_type voting_power = 0;
+      uint32_t sub_count = 0;
+
+      while( gov_sub_itr != gov_sub_idx.end() && gov_sub_itr->governance_account == gov.account )
+      {
+         const governance_subscription_object& subscription = *gov_sub_itr;
+         const account_object& subscriber = get_account( subscription.account );
+         // Governance account subscriptions apply full voting power for each, voting power is non-rivalrous.
+         voting_power += get_voting_power( gov_sub_itr->account );   
+         if( subscriber.proxied.size() )
+         {
+            voting_power += get_proxied_voting_power( subscriber, equity_price );
+         }
+         sub_count++;
+         ++gov_sub_itr;
+      }
+
+      modify( gov, [&]( governance_account_object& g )
+      {
+         g.subscriber_power = voting_power;
+         g.subscriber_count = sub_count;
+      });
+      ++gov_itr;
+   }
 }
 
+/**
+ * Allocates equity asset dividends from each dividend reward pool,
+ * according to proportional balances.
+ */
+void database::process_power_rewards()
+{ try {
+   if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
+      return;
+
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
+   const reward_fund_object& rfo = get_reward_fund();
+   asset power_reward_balance = rfo.power_reward_balance;       // Record the opening balance of the power reward fund
+   auto balance_itr = balance_idx.lower_bound( SYMBOL_COIN );
+   flat_map < account_name_type, share_type > power_map;
+   share_type total_power_shares = 0;
+   asset distributed = asset( 0, SYMBOL_COIN );
+
+   while( balance_itr != balance_idx.end() && 
+      balance_itr->symbol == SYMBOL_COIN && 
+      balance_itr->staked_balance >= BLOCKCHAIN_PRECISION )
+   {
+      share_type power_shares = balance_itr->staked_balance;  // Get the staked balance for each stakeholder
+
+      if( power_shares > 0 )
+      {
+         total_power_shares += power_shares;
+         power_map[ balance_itr->owner] = power_shares;
+      }
+      ++balance_itr;
+   }
+
+   for( auto b : power_map )
+   {
+      asset power_reward = ( power_reward_balance * b.second ) / total_power_shares; 
+      adjust_staked_balance( b.first, power_reward );       // Pay equity dividend to each stakeholder account proportionally.
+      distributed += power_reward;
+   }
+
+   modify( rfo, [&]( reward_fund_object& r )
+   {
+      r.adjust_power_reward_balance( -distributed ); 
+      
+   });
+
+   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+      
+} FC_CAPTURE_AND_RETHROW() }
 
 
 /**
  * Calaulates the relative share of equity reward dividend distribution that an account should recieve
- * based on its network contribution information.
+ * based on its balances, and account activity.
  */
-share_type get_equity_shares( const account_balance_object& balance)
+share_type database::get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity )
 {
-   FC_ASSERT( balance.symbol == SYMBOL_EQUITY, "Equity rewards requires equity asset balance object." );
-   FC_ASSERT( balance.staked_balance >= BLOCKCHAIN_PRECISION, "Equity rewards requires minimum balance of 1 Equity asset." );
-   const account_object& account = get_account(balance.owner);
+   const account_object& account = get_account( balance.owner );
    time_point now = head_block_time();
-   if( (account.witnesses_voted_for < MIN_EQUITY_WITNESSES) || 
-      (now > (account.last_activity_reward + fc::days(30)) )
+   if( ( account.witnesses_voted_for < equity.options.min_witnesses ) || 
+      ( now > (account.last_activity_reward + equity.options.min_active_time ) ) )
    {
-      return 0;  // Account does not recieve equity reward when witness votes are insufficient, or no activity in last 30 days.
+      return 0;  // Account does not recieve equity reward when witness votes or last activity are insufficient.
    }
 
-   share_type equity_shares = balance.staked_balance;  // Start with staked balance.
+   share_type equity_shares = 0;
+   equity_shares += ( equity.options.liquid_dividend_percent * balance.liquid_balance ) / PERCENT_100;
+   equity_shares += ( equity.options.staked_dividend_percent * balance.staked_balance ) / PERCENT_100;
+   equity_shares += ( equity.options.savings_dividend_percent * balance.savings_balance ) / PERCENT_100; 
 
-   if( (balance.staked_balance >= 10 * BLOCKCHAIN_PRECISION) &&
-      (account.witnesses_voted_for >= EQUITY_BOOST_WITNESSES) &&
-      (account.recent_activity_claims >= EQUITY_BOOST_ACTVITY) ) // TODO: additional conditions for doubling equity reward 
+   if( (balance.staked_balance >= equity.options.boost_balance ) &&
+      (account.witnesses_voted_for >= equity.options.boost_witnesses ) &&
+      (account.recent_activity_claims >= equity.options.boost_activity ) )
    {
       equity_shares *= 2;    // Doubles equity reward when 10+ WYM balance, 50+ witness votes, and 15+ Activity rewards in last 30 days
    }
 
-   if( account.membership == TOP) 
+   if( account.membership == TOP_MEMBERSHIP ) 
    {
-      equity_shares = (equity_shares * EQUITY_BOOST_TOP_PERCENT) / PERCENT_100;
+      equity_shares = (equity_shares * equity.options.boost_top ) / PERCENT_100;
    }
+
+   return equity_shares;
 }
 
+
 /**
- * Allocates the equity dividend rewards to account holders with a minimum balance
- * and recent actvity
+ * Allocates equity asset dividends from each dividend reward pool,
+ * according to proportional balances.
  */
 void database::process_equity_rewards()
 { try {
    if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
       return;
-
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   const auto& equity_idx = get_index< asset_equity_data_index >().indices().get< by_symbol >();
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
-   auto itr = balance_idx.lower_bound( SYMBOL_EQUITY );
-   const reward_fund_object& reward_fund = get_reward_fund();
-   const asset_dynamic_data_object& core_asset_dynamic_data = get_core_dynamic_data();
+   auto equity_itr = equity_idx.begin();
 
-   vector< pair < account_name_type, share_type > > balances;
-   share_type total_equity_shares = 0;
-
-   while( itr != balance_idx.end() && itr->staked_balance >= BLOCKCHAIN_PRECISION ) 
+   while( equity_itr != equity_idx.end() )
    {
-      share_type equity_shares = get_equity_shares( *itr );
-
-      if(equity_shares > 0 )
+      const asset_equity_data_object& equity = *equity_itr;
+      
+      if( equity.dividend_pool.amount > 0 )
       {
-         total_equity_shares += equity_shares;
-         balances.push_back( std::make_pair( &(*itr), equity_shares ) ); // Add balance pointer and equity shares to vector
+         asset equity_reward_balance = equity.dividend_pool;  // Record the opening balance of the equity reward fund
+         auto balance_itr = balance_idx.lower_bound( equity.symbol );
+         flat_map < account_name_type, share_type > equity_map;
+         share_type total_equity_shares = 0;
+         asset distributed = asset( 0, equity.dividend_asset );
+
+         while( balance_itr != balance_idx.end() &&
+            balance_itr->symbol == equity.symbol ) 
+         {
+            share_type equity_shares = get_equity_shares( *balance_itr , equity );  // Get the equity shares for each stakeholder
+
+            if( equity_shares > 0 )
+            {
+               total_equity_shares += equity_shares;
+               equity_map[ balance_itr->owner] = equity_shares;
+            }
+            ++balance_itr;
+         }
+
+         for( auto b : equity_map )
+         {
+            asset equity_reward = ( equity_reward_balance * b.second ) / total_equity_shares; 
+            adjust_reward_balance( b.first, equity_reward );       // Pay equity dividend to each stakeholder account proportionally.
+            distributed += equity_reward;
+         }
+
+         modify( equity, [&]( asset_equity_data_object& e )
+         {
+            e.adjust_pool( -distributed ); 
+            e.last_dividend = now;        // Remove the distributed amount from the dividend pool.
+         });
+
+         adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
       }
-      ++itr;
-   }
-
-   asset equity_reward_balance = reward_fund.equity_reward_balance;  // record the opening balance of the equity reward fund
-
-   FC_ASSERT( equity_reward_balance > 0, "Critical Error: Negative or zero equity reward fund balance.");
-
-   modify( reward_fund, [&]( reward_fund_object& rfo )
-   {
-      rfo.adjust_equity_reward_balance( -equity_reward_balance );  // Empty the equity reward fund balance.
-   });
-
-   modify( core_asset_dyn_data, [&](asset_dynamic_data_object& addo) 
-   {
-      addo.adjust_pending_supply( -equity_reward_balance );   // Deduct equity reward fund balance from pending supply.
-   });
-
-   for( pair < account_name_type, share_type > b : balances )
-   {
-      asset equity_reward = (equity_reward_balance * b.second) / total_equity_shares; 
-      adjust_reward_balance(b.first, equity_reward);       // Pay equity reward to each account 
+      ++equity_itr;
    }
 } FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Updates the amount of proof of work required for a proof 
+ * to be valid, targets a mining time interval of 10 minutes.
+ * using a moving average of 7 days.
+ */
+void database::update_proof_of_work_target()
+{ try {
+   if( (head_block_num() % POW_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per week
+      return;
+
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const witness_schedule_object& wso = get_witness_schedule();
+   uint128_t recent_pow = wso.recent_pow;        // Amount of proofs of work, times block precision, decayed over 7 days
+   uint128_t target_pow = ( BLOCKCHAIN_PRECISION * wso.pow_decay_time.to_seconds() ) / wso.pow_target_time.to_seconds();
+   uint128_t new_difficulty = ( wso.pow_target_difficulty * target_pow ) / recent_pow;
+   time_point now = props.time;
+
+   modify( wso, [&]( witness_schedule_object& w )
+   {
+      w.pow_target_difficulty = new_difficulty;
+      w.decay_pow( now );
+   });
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+void database::claim_proof_of_work_reward( const account_name_type& miner )
+{ try {
+   const reward_fund_object& rfo = get_reward_fund();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   const witness_schedule_object& wso = get_witness_schedule();
+   asset pow_reward = rfo.work_reward_balance;
+   const witness_object& witness = get_witness( miner );
+
+   modify( witness, [&]( witness_object& w )
+   {
+      w.mining_power += BLOCKCHAIN_PRECISION;
+      w.mining_count ++;
+      w.last_pow_time = now;
+      w.decay_weights( now, wso );
+   });
+
+   modify( wso, [&]( witness_schedule_object& w )
+   {
+      w.recent_pow += BLOCKCHAIN_PRECISION;
+      w.decay_pow( now );
+   });
+
+   modify( rfo, [&]( reward_fund_object& r )
+   {
+      r.adjust_work_reward_balance( -pow_reward );
+   });
+
+   adjust_reward_balance( miner, pow_reward );
+   adjust_pending_supply( -pow_reward );
+
+} FC_CAPTURE_AND_RETHROW() }
+
+/**
+ * Distributes the transaction stake reward to all block producers
+ * according to the amount of stake weighted transactions included in 
+ * blocks. Each transaction included in a block adds the size of the transaction
+ * multipled 
+ */
+void database::process_txn_stake_rewards()
+{ try {
+   if( (head_block_num() % TXN_STAKE_BLOCK_INTERVAL) != 0 )    // Runs once per week
+      return;
+
+   const reward_fund_object& rfo = get_reward_fund();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   const witness_schedule_object& wso = get_witness_schedule();
+   asset txn_stake_reward = rfo.txn_stake_reward_balance;     // Record the opening balance of the transaction stake reward fund
+   const auto& witness_idx = get_index< witness_index >().indices().get< by_txn_stake_weight >();
+   auto witness_itr = witness_idx.begin();
+    
+   flat_map < account_name_type, share_type > stake_map;
+   share_type total_stake_shares = 0;
+   asset distributed = asset( 0, SYMBOL_COIN );
+
+   while( witness_itr != witness_idx.end() &&
+      witness_itr->recent_txn_stake_weight > BLOCKCHAIN_PRECISION ) 
+   {
+      share_type stake_shares = witness_itr->recent_txn_stake_weight;  // Get the recent txn stake for each witness
+
+      if( stake_shares > 0 )
+      {
+         total_stake_shares += stake_shares;
+         stake_map[ witness_itr->owner ] = stake_shares;
+      }
+      ++witness_itr;
+   }
+
+   for( auto b : stake_map )
+   {
+      asset stake_reward = ( txn_stake_reward * b.second ) / total_stake_shares; 
+      adjust_reward_balance( b.first, stake_reward );       // Pay transaction stake reward to each block producer proportionally.
+      distributed += stake_reward;
+   }
+
+   modify( rfo, [&]( reward_fund_object& r )
+   {
+      r.adjust_txn_stake_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+   });
+
+   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Distributes the block reward for validating blocks to witnesses
+ * and miners according to the stake weight of their commitment transactions
+ * upon the block becoming irreversible after majority of producers have created
+ * a block on top of it.
+ * This enables nodes to have a lower finality time in
+ * cases where producers a majority of producers commit to a newly 
+ * created block before it becomes irreversible.
+ * Nodes will treat the blocks that they commit to as irreversible when
+ * greater than two third of producers also commit to the same block.
+ */
+void database::process_validation_rewards()
+{ try {
+   const reward_fund_object& rfo = get_reward_fund();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   const witness_schedule_object& wso = get_witness_schedule();
+   asset validation_reward = rfo.validation_reward_balance;     // Record the opening balance of the validation reward fund
+   const auto& valid_idx = get_index< block_validation_index >().indices().get< by_height_stake >();
+   auto valid_itr = valid_idx.lower_bound( props.last_irreversible_block_num );
+    
+   flat_map < account_name_type, share_type > validation_map;
+   share_type total_validation_shares = 0;
+   asset distributed = asset( 0, SYMBOL_COIN );
+
+   while( valid_itr != valid_idx.end() &&
+      valid_itr->height == props.last_irreversible_block_num &&
+      valid_itr->stake.amount >= BLOCKCHAIN_PRECISION ) 
+   {
+      share_type validation_shares = valid_itr->stake;  // Get the validation stake on each commitment for each witness
+
+      if( validation_shares > 0 )
+      {
+         total_validation_shares += validation_shares;
+         validation_map[ valid_itr->producer ] = validation_shares;
+      }
+      ++valid_itr;
+   }
+
+   for( auto b : validation_map )
+   {
+      asset validation_reward = ( validation_reward * b.second ) / total_validation_shares; 
+      adjust_reward_balance( b.first, validation_reward );       // Pay transaction validation reward to each block producer proportionally.
+      distributed += validation_reward;
+   }
+
+   modify( rfo, [&]( reward_fund_object& r )
+   {
+      r.adjust_validation_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+   });
+
+   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/** 
+ * Rewards witnesses when they have the current highest accumulated 
+ * activity stake. Each time an account produces an activity reward transaction, 
+ * they implicitly nominate thier highest voted witness to receive a daily vote as their Prime Witness.
+ * Award is distributed every eight hours to the leader by activity stake.
+ * This incentivizes witnesses to campign to achieve prime witness designation with 
+ * high stake, active accounts, in a competitive manner against other block producers. 
+ */
+void database::process_producer_activity_rewards()
+{ try {
+   if( (head_block_num() % POA_BLOCK_INTERVAL ) != 0 )    // Runs once per 8 hours.
+      return;
+   
+   const reward_fund_object& rfo = get_reward_fund();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   const witness_schedule_object& wso = get_witness_schedule();
+   asset poa_reward = rfo.producer_activity_reward_balance;          // Record the opening balance of the witness activity reward fund.
+   const auto& witness_idx = get_index< witness_index >().indices().get< by_activity_stake >();
+   auto witness_itr = witness_idx.begin();
+
+   if( witness_itr != witness_idx.end() )
+   {
+      const witness_object& prime_witness = *witness_itr;
+
+      modify( prime_witness, [&]( witness_object& w )
+      {
+         w.accumulated_activity_stake = 0;     // Reset activity stake for top witness.
+      });
+
+      modify( rfo, [&]( reward_fund_object& r )
+      {
+         r.adjust_producer_activity_reward_balance( -poa_reward );     // Remove the distributed amount from the reward pool.
+      });
+
+      adjust_reward_balance( prime_witness.owner, poa_reward );   // Pay witness activity reward to the witness with the highest accumulated activity stake.
+      adjust_pending_supply( -poa_reward );        // Deduct distributed amount from pending supply.
+   }
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
+void database::process_supernode_rewards()
+{ try {
+   if( (head_block_num() % SUPERNODE_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
+      return;
+
+   const reward_fund_object& rfo = get_reward_fund();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   asset supernode_reward = rfo.supernode_reward_balance;     // Record the opening balance of the supernode reward fund
+
+   const auto& supernode_idx = get_index< supernode_index >().indices().get< by_view_weight >();
+   auto supernode_itr = supernode_idx.begin();
+    
+   flat_map < account_name_type, share_type > supernode_map;
+   share_type total_supernode_shares = 0;
+   asset distributed = asset( 0, SYMBOL_COIN );
+
+   while( supernode_itr != supernode_idx.end() ) 
+   {
+      share_type supernode_shares = supernode_itr->recent_view_weight;  // Get the supernode view weight for rewards
+
+      if( supernode_shares > 0 && supernode_itr->active && now > ( supernode_itr->last_activation_time + fc::days(1) ) )
+      {
+         total_supernode_shares += supernode_shares;
+         supernode_map[ supernode_itr->account ] = supernode_shares;
+      }
+      ++supernode_itr;
+   }
+
+   for( auto b : supernode_map )
+   {
+      asset supernode_reward_split = ( supernode_reward * b.second ) / total_supernode_shares; 
+      adjust_reward_balance( b.first, supernode_reward_split );       // Pay supernode reward proportionally with view weight.
+      distributed += supernode_reward_split;
+   }
+
+   modify( rfo, [&]( reward_fund_object& r )
+   {
+      r.adjust_supernode_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+   });
+
+   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+} FC_CAPTURE_AND_RETHROW() }
+
+void database::process_network_officer_rewards()
+{ try {
+   if( (head_block_num() % NETWORK_OFFICER_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
+      return;
+
+   const reward_fund_object& rfo = get_reward_fund();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+
+   // ========== Development Officers ========== //
+
+   asset development_reward = rfo.development_reward_balance;     // Record the opening balance of the development reward fund
+   const auto& development_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
+   auto development_itr = development_idx.lower_bound( DEVELOPMENT );
+    
+   flat_map < account_name_type, share_type > development_map;
+   share_type total_development_shares = 0;
+   asset distributed = asset( 0, SYMBOL_COIN );
+
+   while( development_itr != development_idx.end() && development_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
+   {
+      share_type development_shares = development_itr->voting_power;  // Get the development officer voting power
+
+      if( development_shares > 0 && development_itr->active )
+      {
+         total_development_shares += development_shares;
+         development_map[ development_itr->account ] = development_shares;
+      }
+      ++development_itr;
+   }
+
+   for( auto b : development_map )
+   {
+      asset development_reward_split = ( development_reward * b.second ) / total_development_shares; 
+      adjust_reward_balance( b.first, development_reward_split );       // Pay development reward proportionally with voting power.
+      distributed += development_reward_split;
+   }
+
+   modify( rfo, [&]( reward_fund_object& r )
+   {
+      r.adjust_development_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+   });
+
+   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+   // ========== Marketing Officers ========== //
+
+   asset marketing_reward = rfo.marketing_reward_balance;     // Record the opening balance of the marketing reward fund
+   const auto& marketing_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
+   auto marketing_itr = marketing_idx.lower_bound( MARKETING );
+    
+   flat_map < account_name_type, share_type > marketing_map;
+   share_type total_marketing_shares = 0;
+   asset distributed = asset( 0, SYMBOL_COIN );
+
+   while( marketing_itr != marketing_idx.end() && marketing_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
+   {
+      share_type marketing_shares = marketing_itr->voting_power;  // Get the marketing officer voting power
+
+      if( marketing_shares > 0 && marketing_itr->active )
+      {
+         total_marketing_shares += marketing_shares;
+         marketing_map[ marketing_itr->account ] = marketing_shares;
+      }
+      ++marketing_itr;
+   }
+
+   for( auto b : marketing_map )
+   {
+      asset marketing_reward_split = ( marketing_reward * b.second ) / total_marketing_shares; 
+      adjust_reward_balance( b.first, marketing_reward_split );       // Pay marketing reward proportionally with voting power.
+      distributed += marketing_reward_split;
+   }
+
+   modify( rfo, [&]( reward_fund_object& r )
+   {
+      r.adjust_marketing_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+   });
+
+   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+   // ========== Advocacy Officers ========== //
+
+   asset advocacy_reward = rfo.advocacy_reward_balance;     // Record the opening balance of the advocacy reward fund
+   const auto& advocacy_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
+   auto advocacy_itr = advocacy_idx.lower_bound( ADVOCACY );
+    
+   flat_map < account_name_type, share_type > advocacy_map;
+   share_type total_advocacy_shares = 0;
+   asset distributed = asset( 0, SYMBOL_COIN );
+
+   while( advocacy_itr != advocacy_idx.end() && advocacy_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
+   {
+      share_type advocacy_shares = advocacy_itr->voting_power;  // Get the advocacy officer voting power
+
+      if( advocacy_shares > 0 && advocacy_itr->active )
+      {
+         total_advocacy_shares += advocacy_shares;
+         advocacy_map[ advocacy_itr->account ] = advocacy_shares;
+      }
+      ++advocacy_itr;
+   }
+
+   for( auto b : advocacy_map )
+   {
+      asset advocacy_reward_split = ( advocacy_reward * b.second ) / total_advocacy_shares; 
+      adjust_reward_balance( b.first, advocacy_reward_split );       // Pay advocacy reward proportionally with voting power.
+      distributed += advocacy_reward_split;
+   }
+
+   modify( rfo, [&]( reward_fund_object& r )
+   {
+      r.adjust_advocacy_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+   });
+
+   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
+void database::process_executive_board_budgets()
+{ try {
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+void database::update_enterprise( const community_enterprise_object& enterprise, 
+   const witness_schedule_object& witness_schedule, const dynamic_global_property_object& props )
+{ try {
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
+void database::process_community_enterprise_fund()
+{ try {
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
+void database::adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true )
+{ try {
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
+void database::adjust_interface_users( const interface_object& interface, bool adjust = true )
+{ try {
+
+} FC_CAPTURE_AND_RETHROW() }
+
 
 /**
  *  Overall the network has a MeCoin Issuance rate of one Billion per year
@@ -1864,43 +2458,37 @@ void database::process_funds()
    asset pending_issuance = content_reward + equity_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
 
    asset reward_checksum = content_reward + equity_reward + validation_reward + txn_stake_reward + work_reward + producer_activity_reward + producer_block_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
-   FC_ASSERT( reward_checksum == BLOCK_REWARD, "Block reward issuance checksum failed, allocation is invalid");
+   FC_ASSERT( reward_checksum == BLOCK_REWARD, 
+      "Block reward issuance checksum failed, allocation is invalid");
    
    const reward_fund_object& reward_fund = get_reward_fund();
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data(SYMBOL_COIN);
    const asset_equity_data_object& equity = get_equity_data( SYMBOL_EQUITY );
 
    modify( reward_fund, [&]( reward_fund_object& rfo )
    {
       rfo.adjust_content_reward_balance(content_reward);
-      
-      rfo.adjust_validation_reward_balance(validation_reward);
-      rfo.adjust_txn_stake_reward_balance(txn_stake_reward);
-      rfo.adjust_work_reward_balance(work_reward);
-      rfo.adjust_producer_activity_reward_balance(producer_activity_reward);
-
-      rfo.adjust_supernode_reward_balance(supernode_reward);
-      rfo.adjust_power_reward_balance(power_reward);
-      rfo.adjust_community_fund_balance(community_fund_reward);
-      rfo.adjust_development_reward_balance(development_reward);
-      rfo.adjust_marketing_reward_balance(marketing_reward);
-      rfo.adjust_advocacy_reward_balance(advocacy_reward);
-      rfo.adjust_activity_reward_balance(activity_reward);
+      rfo.adjust_validation_reward_balance( validation_reward );
+      rfo.adjust_txn_stake_reward_balance( txn_stake_reward );
+      rfo.adjust_work_reward_balance( work_reward );
+      rfo.adjust_producer_activity_reward_balance( producer_activity_reward );
+      rfo.adjust_supernode_reward_balance( supernode_reward );
+      rfo.adjust_power_reward_balance( power_reward );
+      rfo.adjust_community_fund_balance( community_fund_reward );
+      rfo.adjust_development_reward_balance( development_reward );
+      rfo.adjust_marketing_reward_balance( marketing_reward );
+      rfo.adjust_advocacy_reward_balance( advocacy_reward );
+      rfo.adjust_activity_reward_balance( activity_reward );
    });
 
    modify( equity, [&](asset_equity_data_object& aedo) 
    {
-      addo.adjust_pool( equity_reward );
+      aedo.adjust_pool( equity_reward );
    });
 
    adjust_reward_balance( witness_account, producer_block_reward );
-   
-   modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
-   {
-      addo.adjust_pending_supply( pending_issuance + producer_pending );
-      addo.adjust_reward_supply(producer_block_reward);
-   });
 
+   adjust_pending_supply( pending_issuance + producer_pending );
+   
    push_virtual_operation( producer_reward_operation( witness_account.name, producer_block_reward ) );
    
 } FC_CAPTURE_AND_RETHROW() }
@@ -2403,26 +2991,27 @@ void database::_apply_block( const signed_block& next_block )
    update_witness_schedule(*this);
    update_comment_metrics();
    update_median_liquidity();//
-   update_network_votes();//
+   update_network_votes();
    
    process_funds();
 
    process_asset_staking();
    process_savings_withdraws();
    process_recurring_transfers();
-   process_equity_rewards();//
-   process_power_rewards();//
+   process_equity_rewards();
+   process_power_rewards();
    process_credit_updates();//
    process_credit_buybacks();//
    process_margin_updates();//
    process_credit_interest();//
    process_membership_updates();//
-   update_proof_of_work_target();//
-   process_txn_stake_rewards();//
-   process_validation_rewards();//
-   process_producer_activity_rewards();//
-   process_network_officer_rewards();//
-   process_supernode_rewards();//
+   update_proof_of_work_target();
+   process_txn_stake_rewards();
+   process_validation_rewards();
+   process_producer_activity_rewards();
+   process_network_officer_rewards();
+   process_executive_board_budgets();//new
+   process_supernode_rewards();
    process_community_enterprise_fund();//
 
    process_comment_cashout();//
@@ -2577,9 +3166,13 @@ void database::_apply_transaction(const signed_transaction& trx)
 
 void database::update_stake( const signed_transaction& trx)
 {
-   share_type voting_power = get_voting_power( trx.operations[0].get_creator_name() );
-   size_t size = fc::raw::pack_size(trx);
-   _current_trx_stake_weight += uint128_t( voting_power.value * size );
+   if(trx.operations.size() )
+   {
+      const operation& op = trx.operations[0];
+      share_type voting_power = get_voting_power( operation_creator_name(op) );
+      size_t size = fc::raw::pack_size(trx);
+      _current_trx_stake_weight += uint128_t( voting_power.value * size );
+   }
 }
 
 /**
@@ -2707,11 +3300,17 @@ void database::update_signing_witness(const witness_object& signing_witness, con
    } );
 } FC_CAPTURE_AND_RETHROW() }
 
+
+/**
+ * Updates the last irreversible and last committed block numbers and IDs,
+ * enabling nodes to add the block history to their block logs, when consensus finality 
+ * is achieved by block producers.
+ */
 void database::update_last_irreversible_block()
 { try {
    const dynamic_global_property_object& dpo = get_dynamic_global_properties();
 
-   const witness_schedule_object& wso = get_witness_schedule_object();
+   const witness_schedule_object& wso = witness_schedule_object();
 
    vector< const witness_object* > wit_objs;
    wit_objs.reserve( wso.num_scheduled_producers );
@@ -2734,29 +3333,54 @@ void database::update_last_irreversible_block()
 
    uint32_t new_last_irreversible_block_num = wit_objs[offset]->last_confirmed_block_num;
 
+   std::nth_element( wit_objs.begin(), wit_objs.begin() + offset, wit_objs.end(),
+      []( const witness_object* a, const witness_object* b )
+      {
+         return a->last_commit_height < b->last_commit_height;
+      });
+
+   uint32_t new_last_committed_block_num = wit_objs[offset]->last_commit_height;
+
    if( new_last_irreversible_block_num > dpo.last_irreversible_block_num )
    {
+      block_id_type irreversible_id = get_block_id_for_num( new_last_irreversible_block_num );
+
       modify( dpo, [&]( dynamic_global_property_object& _dpo )
       {
          _dpo.last_irreversible_block_num = new_last_irreversible_block_num;
-      } );
+         _dpo.last_irreversible_block_id = irreversible_id;
+      });
    }
-   
 
-   commit( dpo.last_irreversible_block_num );
-
-   if( !( get_node_properties().skip_flags & skip_block_log ) )
+   if( new_last_committed_block_num > dpo.last_committed_block_num )
    {
-      // output to block log based on new last irreverisible block num
+      block_id_type commit_id = get_block_id_for_num( new_last_committed_block_num );
+
+      modify( dpo, [&]( dynamic_global_property_object& _dpo )
+      {
+         _dpo.last_committed_block_num = new_last_committed_block_num;
+         _dpo.last_committed_block_id = commit_id;
+      });
+   }
+
+   // Take the highest of last committed and irreverisble blocks, and commit it to the local database.
+   uint32_t commit_height = std::max( dpo.last_committed_block_num, dpo.last_irreversible_block_num );   
+   
+   commit( commit_height );  // Node will not reverse blocks after they have been committed or produced on by two thirds of producers.
+
+   if( !( get_node_properties().skip_flags & skip_block_log ) )  // Output to block log based on new committed and last irreverisible block numbers.
+   {
       const auto& tmp_head = _block_log.head();
       uint64_t log_head_num = 0;
 
       if( tmp_head )
-         log_head_num = tmp_head->block_num();
-
-      if( log_head_num < dpo.last_irreversible_block_num )
       {
-         while( log_head_num < dpo.last_irreversible_block_num )
+         log_head_num = tmp_head->block_num();
+      }
+
+      if( log_head_num < commit_height )
+      {
+         while( log_head_num < commit_height )
          {
             shared_ptr< fork_item > block = _fork_db.fetch_block_on_main_branch_by_number( log_head_num+1 );
             FC_ASSERT( block, "Current fork in the fork database does not contain the last_irreversible_block" );
@@ -2768,7 +3392,8 @@ void database::update_last_irreversible_block()
       }
    }
 
-   _fork_db.set_max_size( dpo.head_block_number - dpo.last_irreversible_block_num + 1 );
+   _fork_db.set_max_size( dpo.head_block_number - commit_height + 1 );
+
 } FC_CAPTURE_AND_RETHROW() }
 
 

@@ -378,9 +378,11 @@ namespace node { namespace protocol {
 
       account_name_type               account;
 
+      uint16_t                        vote_rank;
+
       account_name_type               witness;
 
-      bool                            approve = true;   // True to create vote, false to remove vote.
+      bool                            approved = true;   // True to create vote, false to remove vote.
 
       void validate() const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -737,8 +739,6 @@ namespace node { namespace protocol {
 
       uint32_t                      vote_id;        // Recent comment id voted on in the last 24h.
 
-      account_name_type             prime_witness;  // Name of the user's highest voted witness.
-
       account_name_type             interface;      // Name of the interface account that was used to broadcast the transaction. 
 
       void validate()const;
@@ -790,6 +790,8 @@ namespace node { namespace protocol {
       account_name_type              account;               // The name of the account voting for the officer.
 
       account_name_type              network_officer;       // The name of the network officer being voted for.
+
+      uint16_t                       vote_rank;
 
       bool                           approved = true;       // True if approving, false if removing vote.
 
@@ -889,6 +891,8 @@ namespace node { namespace protocol {
       account_name_type              account;               // The name of the account voting for the board.
 
       account_name_type              executive_board;       // The name of the executive board being voted for.
+
+      uint16_t                       vote_rank;
 
       bool                           approved = true;       // True if approving, false if removing vote.
 
@@ -2635,6 +2639,8 @@ namespace node { namespace protocol {
 
       fc::microseconds    min_active_time = EQUITY_ACTIVITY_TIME;
 
+      share_type          min_balance = BLOCKCHAIN_PRECISION;
+
       uint16_t            min_witnesses = EQUITY_MIN_WITNESSES;
 
       uint16_t            boost_balance = EQUITY_BOOST_BALANCE;
@@ -3213,10 +3219,16 @@ namespace node { namespace protocol {
     * 2 - A supermajority of least Two Thirds Plus One (67) block producers have verified the block.
     * 3 - They will not produce future blocks that do not contain that block as an ancestor.
     * 4 - They stake a given value of core asset on their commitment.
+    * 
+    * In resolution of the Nothing At Stake problem of consensus, in which producers sign multiple
+    * commitments without validating blocks to ensure maximum reward, they are penalized for commiting to
+    * different blocks at the same height, or producing blocks which do not contain a committed block as an ancestor.
+    * 
     * If the producer signs duplicate commitments at the same height, or produces blocks that deviate from this
     * blocks history, the staked value is forfeited to any account that publishes a violation proof transaction.
     * 
-    * Producers cannot sign commitments for blocks that are already irreversible by production history depth. 
+    * Producers cannot sign commitments for blocks that are already irreversible by production history depth, 
+    * or have already been committed by more thna two thirds of producers. 
     * After a block becomes irreversible, the fastest Two Thirds Plus One (67) block producers that have committed
     * to the block are rewarded according to their staked amounts from the validation reward pool.
     * If more than 67 producers signed and published commitments transactions, all producers within the last
@@ -3226,15 +3238,15 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             producer;         // The name of the block producing account
+      account_name_type             producer;            // The name of the block producing account.
 
-      block_id_type                 block_id;         // The block id of the block being committed as irreversible to that producer. 
+      block_id_type                 block_id;            // The block id of the block being committed as irreversible to that producer. 
 
-      uint32_t                      block_height;     // The height of the block being committed to.
+      uint32_t                      block_height;        // The height of the block being committed to.
 
-      flat_set<transaction_id_type> verifications;    // The set of attesting transaction ids of verification transactions from currently active producers.
+      flat_set<transaction_id_type> verifications;       // The set of attesting transaction ids of verification transactions from currently active producers.
 
-      asset                         commitment_stake; // the value of staked balance that the producer stakes on this commitment. 
+      asset                         commitment_stake;    // the value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
 
       void validate()const;
       const account_name_type& get_creator_name() const { return producer; }

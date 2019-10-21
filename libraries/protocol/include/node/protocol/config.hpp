@@ -80,13 +80,15 @@
 #define IRREVERSIBLE_THRESHOLD           (67 * PERCENT_1)          // Blocks produced become irrervsible after approval by this percentage of active producers. 
 #define POW_TARGET_TIME                  fc::minutes(10)           // Aim for approximately one proof of work every 10 minutes to be produced. 
 #define POW_DECAY_TIME                   fc::days(7)               // Averaging time of one week for adjusting proof of work difficulty. 
+#define POW_UPDATE_BLOCK_INTERVAL        (1 * BLOCKS_PER_HOUR)    // Updates the mining dificulty once per hour.            
 #define POA_BLOCK_INTERVAL               (8 * BLOCKS_PER_HOUR)     // Distributes the proof of activity reward every 8 hours to the highest activity voted witness. 
-#define TXN_STAKE_INTERVAL_BLOCKS        (BLOCKS_PER_HOUR)         // Transaction stake rewards are distributed each hour.
+#define TXN_STAKE_BLOCK_INTERVAL         (1 * BLOCKS_PER_HOUR)     // Transaction stake rewards are distributed each hour.
 #define TXN_STAKE_DECAY_TIME             fc::days(7)               // Transaction stake is averaged over a rolling 7 day window. 
 #define NETWORK_OFFICER_BLOCK_INTERVAL   (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
+#define NETWORK_OFFICER_ACTIVE_SET       (50)
 #define SUPERNODE_BLOCK_INTERVAL         (BLOCKS_PER_DAY)          // Distributes supernode rewards once every day.
 #define SUPERNODE_DECAY_RATE             fc::days(7)               // Averages supernode file weight over 7 days. 
-#define ENTERPRISE_VOTE_PERCENT_REQUIRED (10* PERCENT_1)           // Enterprise proposals require 20% of network voting power to approve milestones. 
+#define ENTERPRISE_VOTE_PERCENT_REQUIRED (10* PERCENT_1)           // Enterprise proposals require 10% of network voting power to approve milestones. 
 #define ENTERPRISE_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
 
 #define CASHOUT_WINDOW                  fc::days(7)           // 7 days of accumulating votes and views before paying out a post's comment rewards.
@@ -234,8 +236,8 @@
 #define GOVERNANCE_SHARE_PERCENT         (10 * PERCENT_1) // Percentage of network revenue distributed to each account's governance addresses: 10%
 #define REFERRAL_SHARE_PERCENT           (10 * PERCENT_1) // Percentage of network revenue distributed to each account's referrers: 10%
 
-#define REWARD_LIQUID_PERCENT    (75 * PERCENT_1) // Percentage of content rewards that are liquid when claimed: 75%
-#define REWARD_STAKED_PERCENT    (25 * PERCENT_1) // Percentage of content rewards that are staked when claimed: 25%
+#define REWARD_LIQUID_PERCENT            (75 * PERCENT_1) // Percentage of content rewards that are liquid when claimed: 75%
+#define REWARD_STAKED_PERCENT            (25 * PERCENT_1) // Percentage of content rewards that are staked when claimed: 25%
 
 #define TRADING_FEE_PERCENT              (1 * PERCENT_10_OF_PERCENT_1) // Percentage Fee charged on taker trades, when a user matches an order: 0.1%
 #define NETWORK_TRADING_FEE_PERCENT      (50 * PERCENT_1) // Percentage of trading fee that is consumed as network revenue: 50% 
@@ -359,6 +361,8 @@
 #define CONNECTION_REQUEST_DURATION            fc::days(7)
 #define TRANSFER_REQUEST_DURATION              fc::days(7)
 #define RESET_ACCOUNT_DELAY                    fc::days(3)
+
+#define NETWORK_UPDATE_INTERVAL_BLOCKS         int64_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
 
 #define MEDIAN_LIQUIDITY_INTERVAL_BLOCKS       int64_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
 

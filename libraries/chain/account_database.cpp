@@ -56,11 +56,12 @@ void database::process_membership_updates()
 asset database::claim_activity_reward( const account_object& account, const witness_object& witness)
 { try {
    const account_balance_object& abo = get_account_balance(account.name, SYMBOL_EQUITY);
+   time_point now = head_block_time();
    auto decay_rate = RECENT_REWARD_DECAY_RATE;
    const reward_fund_object& reward_fund = get_reward_fund();
-   const asset_dynamic_data_object& core_asset_dynamic_data = get_core_dynamic_data();
+   price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    share_type activity_shares = BLOCKCHAIN_PRECISION;
-   if( abo.staked_balance >= 10 * BLOCKCHAIN_PRECISION) 
+   if( abo.staked_balance >= 10 * BLOCKCHAIN_PRECISION ) 
    {
       activity_shares *= 2;
    }
@@ -81,8 +82,8 @@ asset database::claim_activity_reward( const account_object& account, const witn
    // Decay recent claims of activity reward fund and add new shares of this claim.
    modify( reward_fund, [&]( reward_fund_object& rfo )   
    {
-      rfo.recent_activity_claims -= ( rfo.recent_activity_claims * ( head_block_time() - rfo.last_update ).to_seconds() ) / decay_rate.to_seconds();
-      rfo.last_update = head_block_time();
+      rfo.recent_activity_claims -= ( rfo.recent_activity_claims * ( now - rfo.last_update ).to_seconds() ) / decay_rate.to_seconds();
+      rfo.last_update = now;
       rfo.recent_activity_claims += activity_shares.value;
    }); 
 
@@ -98,14 +99,14 @@ asset database::claim_activity_reward( const account_object& account, const witn
    // Update recent activity claims on account
    modify( account, [&]( account_object& a ) 
    {
-      a.recent_activity_claims -= ( a.recent_activity_claims * ( head_block_time() - a.last_activity_reward ).to_seconds() ) / decay_rate.to_seconds();
-      a.last_activity_reward = head_block_time();                // Update activity reward time.
+      a.recent_activity_claims -= ( a.recent_activity_claims * ( now - a.last_activity_reward ).to_seconds() ) / decay_rate.to_seconds();
+      a.last_activity_reward = now;                // Update activity reward time.
       a.recent_activity_claims += BLOCKCHAIN_PRECISION;          // Increments rolling activity average by one claim.
    });
 
    adjust_reward_balance( account, activity_reward );            // Add activity reward to reward balance of claiming account. 
 
-   uint128_t voting_power = get_voting_power( account.name ).value;
+   uint128_t voting_power = get_voting_power( account.name, equity_price ).value + get_proxied_voting_power( account.name, equity_price ).value;
 
    modify( witness, [&]( witness_object& w ) 
    {
@@ -133,7 +134,74 @@ void database::update_owner_authority( const account_object& account, const auth
    {
       auth.owner = owner_authority;
       auth.last_owner_update = head_block_time();
+   });
+}
 
+
+void database::update_witness_votes( const account_object& account )
+{
+   const auto& vote_idx = get_index< witness_vote_index >().indices().get< by_account_rank >();
+   auto vote_itr = vote_idx.lower_bound( account.name );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   {
+      const witness_vote_object& vote = *vote_itr;
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( witness_vote_object& v )
+         {
+            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      new_vote_rank++;
+   }
+
+   modify( account, [&]( account_object& a )
+   {
+      a.witnesses_voted_for = ( new_vote_rank - 1 );
+   });
+}
+
+/**
+ * Aligns witness votes in a continuous order, and inputs a new vote
+ * at a specified vote number.
+ */
+void database::update_witness_votes( const account_object& account, const account_name_type& witness, uint16_t input_vote_rank )
+{
+   const auto& vote_idx = get_index< witness_vote_index >().indices().get< by_account_rank >();
+   auto vote_itr = vote_idx.lower_bound( account.name );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   {
+      const witness_vote_object& vote = *vote_itr;
+      if( vote.vote_rank == input_vote_rank )
+      {
+         new_vote_rank++;
+      }
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( witness_vote_object& v )
+         {
+            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      new_vote_rank++;
+   }
+
+   create< witness_vote_object >([&]( witness_vote_object& v )
+   {
+      v.account = account.name;
+      v.witness = witness;
+      v.vote_rank = input_vote_rank;
+   });
+
+   modify( account, [&]( account_object& a )
+   {
+      a.witnesses_voted_for = ( new_vote_rank - 1 );
    });
 }
 

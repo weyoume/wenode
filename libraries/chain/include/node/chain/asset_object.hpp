@@ -338,9 +338,7 @@ namespace node { namespace chain {
 
          asset                      dividend_pool = asset(0,SYMBOL_USD);  // Amount of assets pooled for distribution at the next interval
          
-         time_point                 last_updated;                         // Time that the asset was last updated
-
-         time_point                 next_dividend;                        // Time that the asset will distribute its next dividend from the pool
+         time_point                 last_dividend;                        // Time that the asset was last updated
 
          void adjust_pool(const asset& delta)
          {
@@ -637,7 +635,6 @@ namespace node { namespace chain {
    > asset_bitasset_data_index;
 
    struct by_dividend_asset;
-   struct by_next_dividend;
 
    typedef multi_index_container<
       asset_equity_data_object,
@@ -649,19 +646,12 @@ namespace node { namespace chain {
                member< asset_equity_data_object, asset_symbol_type, &asset_equity_data_object::dividend_asset >,
                member< asset_equity_data_object, asset_equity_data_id_type, &asset_equity_data_object::id >
             >
-         >,
-         ordered_unique< tag<by_next_dividend>, 
-            composite_key< asset_equity_data_object,
-               member< asset_equity_data_object, time_point, &asset_equity_data_object::next_dividend >,
-               member< asset_equity_data_object, asset_equity_data_id_type, &asset_equity_data_object::id >
-            >
-         >   
+         >  
       >,
       allocator< asset_equity_data_object >
    > asset_equity_data_index;
 
    struct by_buyback_asset;
-   struct by_next_buyback;
 
    typedef multi_index_container<
       asset_credit_data_object,
@@ -673,19 +663,7 @@ namespace node { namespace chain {
                member< asset_credit_data_object, asset_symbol_type, &asset_credit_data_object::buyback_asset >,
                member< asset_credit_data_object, asset_credit_data_id_type, &asset_credit_data_object::id >
             >
-         >,
-         ordered_unique< tag<by_next_buyback>, 
-            composite_key< asset_credit_data_object,
-               member< asset_credit_data_object, time_point, &asset_credit_data_object::next_buyback >,
-               member< asset_credit_data_object, asset_credit_data_id_type, &asset_credit_data_object::id >
-            >
-         >,
-         ordered_unique< tag<by_next_buyback>, 
-            composite_key< asset_credit_data_object,
-               member< asset_credit_data_object, time_point, &asset_credit_data_object::next_buyback >,
-               member< asset_credit_data_object, asset_credit_data_id_type, &asset_credit_data_object::id >
-            >
-         >   
+         >  
       >,
       allocator< asset_credit_data_object >
    > asset_credit_data_index;

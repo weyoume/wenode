@@ -388,7 +388,6 @@ typedef oid< call_order_object                      > call_order_id_type;
 typedef oid< force_settlement_object                > force_settlement_id_type;
 typedef oid< collateral_bid_object                  > collateral_bid_id_type;
 
-
 // Asset objects
 
 typedef oid< asset_object                           > asset_id_type;
@@ -583,7 +582,6 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (force_settlement_object_type)
          (collateral_bid_object_type)
          
-
          // Asset objects
 
          (asset_object_type)

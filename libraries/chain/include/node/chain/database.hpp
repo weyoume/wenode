@@ -504,6 +504,8 @@ namespace node { namespace chain {
 
          void process_network_officer_rewards();
 
+         void process_executive_board_budgets();
+
          void process_supernode_rewards();
 
          void process_community_enterprise_fund();
@@ -512,8 +514,6 @@ namespace node { namespace chain {
             const witness_schedule_object& witness_schedule, const dynamic_global_property_object& props );
 
          share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
-
-         share_type get_power_shares( const account_balance_object& balance );
 
          uint128_t get_supernode_shares( const supernode_object& supernode );
 
@@ -554,6 +554,9 @@ namespace node { namespace chain {
          asset claim_activity_reward( const account_object& account, const witness_object& witness );
 
          void update_owner_authority( const account_object& account, const authority& owner_authority );
+
+         void update_witness_votes(const account_object& account );
+         void update_witness_votes(const account_object& account, const account_name_type& witness, uint16_t vote_rank );
 
          void account_recovery_processing();
 

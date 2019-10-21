@@ -18,7 +18,7 @@
         {
             "name": "Linux",
             "includePath": [
-                "/home/haz/weyoume/**"
+                "/home/haz/weyoume/wenode/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

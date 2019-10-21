@@ -235,6 +235,21 @@ void database::expire_escrow_ratification()
    }
 }
 
+void database::update_median_liquidity() //todo
+{ try {
+
+} FC_CAPTURE_AND_RETHROW() }
+         
+void database::process_credit_buybacks() //todo
+{ try {
+
+} FC_CAPTURE_AND_RETHROW() }
+         
+void database::process_credit_interest() //todo
+{ try {
+
+} FC_CAPTURE_AND_RETHROW() }
+
 /**
 void database::update_median_feed() 
 { try {
@@ -919,11 +934,52 @@ share_type database::get_voting_power( const account_name_type& a, const price& 
    return voting_power;
 }
 
+share_type database::get_proxied_voting_power( const account_object& a, const price& equity_price )const
+{ try {
+   share_type voting_power = 0;
+   for( auto name : a.proxied )
+   {
+      voting_power += get_voting_power( name, equity_price );
+   }
+   return voting_power;
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+share_type database::get_proxied_voting_power( const account_name_type& a, const price& equity_price )const
+{ try {
+   return( get_account(a), equity_price);
+} FC_CAPTURE_AND_RETHROW() }
+
+
+share_type database::get_equity_voting_power( const account_object& a, const account_business_object& b )const
+{ try {
+   return get_equity_voting_power( a.name, b);
+} FC_CAPTURE_AND_RETHROW() }
+
+
+share_type database::get_equity_voting_power( const account_name_type& a, const account_business_object& b )const
+{ try {
+   share_type voting_power = 0;
+   for( auto symbol : b.equity_assets )
+   {
+      const asset_equity_data_object& equity = get_equity_data( symbol );
+      const account_balance_object* abo_ptr = find_account_balance( a, symbol );
+      if( abo_ptr != nullptr )
+      {
+         voting_power += abo_ptr->get_liquid_balance() * equity.options.liquid_voting_rights;
+         voting_power += abo_ptr->get_voting_power() * equity.options.staked_voting_rights;
+         voting_power += abo_ptr->get_savings_balance() * equity.options.savings_voting_rights;
+      }
+   }
+   return voting_power;
+} FC_CAPTURE_AND_RETHROW() }
+
+
 string database::to_pretty_string( const asset& a )const
 {
    return a.amount_to_pretty_string(a);
 }
-
 
 
 void database::update_expired_feeds()

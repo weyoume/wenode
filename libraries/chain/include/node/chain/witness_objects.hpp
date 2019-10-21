@@ -39,7 +39,6 @@ namespace node { namespace chain {
 
          template< typename Constructor, typename Allocator >
          witness_object( Constructor&& c, allocator< Allocator > a )
-            :url( a )
          {
             c( *this );
          }
@@ -80,9 +79,11 @@ namespace node { namespace chain {
 
          uint32_t                     mining_count = 0;                 // Accumulated number of proofs of work published.
 
-         time_point                   last_mining_update;               // Time that the account last published a proof of work. 
+         time_point                   last_mining_update;               // Time that the account last updated its mining power.
 
-         uint128_t                    recent_txn_stake_weight = 0;      // Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+         time_point                   last_pow_time;                    // Time that the miner last created a proof of work.
+
+         share_type                   recent_txn_stake_weight = 0;      // Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
 
          time_point                   last_txn_stake_weight_update;     // Time that the recent bandwith and txn stake were last updated.
 
@@ -137,6 +138,14 @@ namespace node { namespace chain {
          hardfork_version     hardfork_version_vote;
 
          time_point           hardfork_time_vote = GENESIS_TIME;
+
+         void                 witness_object::decay_weights( time_point now, const witness_schedule_object& wso )
+         {
+            mining_power -= ( ( mining_power * ( now - last_mining_update ).to_seconds() ) / wso.pow_decay_time.to_seconds() );
+            recent_txn_stake_weight -= ( recent_txn_stake_weight * ( now - last_txn_stake_weight_update ).to_seconds() ) / wso.txn_stake_decay_time.to_seconds();
+            last_mining_update = now;
+            last_txn_stake_weight_update = now;
+         }
    };
 
 
@@ -156,6 +165,8 @@ namespace node { namespace chain {
          account_name_type      witness;
 
          account_name_type      account;
+
+         uint16_t               vote_rank;   // the ordered rank to which the witness is supported, with 1 being the highest voted witness, and increasing for others.
    };
 
    class witness_schedule_object : public object< witness_schedule_object_type, witness_schedule_object >
@@ -171,11 +182,11 @@ namespace node { namespace chain {
 
          id_type                                                           id;
 
-         fc::uint128                                                       current_witness_virtual_time; // Tracks the time used for block producer additional selection
+         uint128_t                                                         current_witness_virtual_time;    // Tracks the time used for block producer additional selection
 
-         fc::uint128                                                       current_miner_virtual_time; // Tracks the time used for block producer additional selection
+         uint128_t                                                         current_miner_virtual_time;      // Tracks the time used for block producer additional selection
 
-         uint32_t                                                          next_shuffle_block_num = 1; //
+         uint32_t                                                          next_shuffle_block_num = 1;      //
 
          fc::array< account_name_type, TOTAL_PRODUCERS >             		current_shuffled_producers;
 
@@ -185,9 +196,9 @@ namespace node { namespace chain {
 
          uint8_t                                                           num_scheduled_producers = 1;
 
-         uint32_t                                                          pow_target_difficulty = -1; //
+         uint128_t                                                         pow_target_difficulty = -1;      //
 
-         uint64_t                                                          recent_pow;              // Rolling average amount of blocks (x prec) mined in the last 7 days.
+         uint128_t                                                         recent_pow;                      // Rolling average amount of blocks (x prec) mined in the last 7 days.
 
          time_point                                                        last_pow_update;
          
@@ -226,9 +237,29 @@ namespace node { namespace chain {
          {
             return std::find( top_miners.begin(), top_miners.end(), producer) != top_miners.end();
          }
+
+         void       witness_schedule_object::decay_pow( time_point now )
+         {
+            recent_pow -= ( ( recent_pow * ( now - last_pow_update ).to_seconds() ) / pow_decay_time.to_seconds() );
+            last_pow_update = now;
+         }
    };
 
-
+   /**
+    * Block Validation Objects are used by block producers to place a committment
+    * stake on recent blocks, before they become irreversible, in order to increase the 
+    * speed of achieving consensus finality on block history.
+    * Block producers earn an additional share of the block reward when they are in the first 
+    * two thirds of producers to commit to a block id at a given height.
+    * The reward is distributed to all producers upon the block becoming irreversible
+    * to all producers that have commitments at a given height.
+    * All producers that include commitments in the block that exceeds two thirds are included
+    * in reward distribution.
+    * All nodes will use the greater of the last irreversible block, or the last commited block when
+    * updating the state of their block logs. 
+    * This enables an optimal block finality time of two blocks, with rapid participation of
+    * producers to validate and commit to new blocks as they are produced.
+    */
    class block_validation_object : public object< block_validation_object_type, block_validation_object >
    {
       public:
@@ -307,7 +338,7 @@ namespace node { namespace chain {
 
          ordered_unique< tag< by_txn_stake_weight >,
             composite_key< witness_object,
-               member< witness_object, uint128_t, &witness_object::recent_txn_stake_weight >,
+               member< witness_object, share_type, &witness_object::recent_txn_stake_weight >,
                member< witness_object, witness_id_type, &witness_object::id >
             >,
             composite_key_compare< std::greater< uint128_t >, std::less< witness_id_type > >
@@ -331,6 +362,8 @@ namespace node { namespace chain {
    > witness_index;
 
    struct by_account_witness;
+   struct by_account_rank_witness;
+   struct by_account_rank;
    struct by_witness_account;
 
    typedef multi_index_container<
@@ -342,14 +375,42 @@ namespace node { namespace chain {
                member<witness_vote_object, account_name_type, &witness_vote_object::account >,
                member<witness_vote_object, account_name_type, &witness_vote_object::witness >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type > 
+            >
+         >,
+         ordered_unique< tag<by_account_rank_witness>,
+            composite_key< witness_vote_object,
+               member<witness_vote_object, account_name_type, &witness_vote_object::account >,
+               member<witness_vote_object, uint16_t, &witness_vote_object::vote_rank >,
+               member<witness_vote_object, account_name_type, &witness_vote_object::witness >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< uint16_t >, 
+               std::less< account_name_type > 
+            >
+         >,
+         ordered_unique< tag<by_account_rank>,
+            composite_key< witness_vote_object,
+               member<witness_vote_object, account_name_type, &witness_vote_object::account >,
+               member<witness_vote_object, uint16_t, &witness_vote_object::vote_rank >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< uint16_t >
+            >
          >,
          ordered_unique< tag<by_witness_account>,
             composite_key< witness_vote_object,
                member<witness_vote_object, account_name_type, &witness_vote_object::witness >,
                member<witness_vote_object, account_name_type, &witness_vote_object::account >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >
+            >
          >
       >,
       allocator< witness_vote_object >
@@ -381,35 +442,50 @@ namespace node { namespace chain {
                member<block_validation_object, account_name_type, &block_validation_object::producer >,
                member<block_validation_object, uint32_t, &block_validation_object::height >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< witness_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< witness_id_type > 
+            >
          >,
          ordered_unique< tag<by_height_stake>,
             composite_key< block_validation_object,
                member<block_validation_object, uint32_t, &block_validation_object::height >,
                member<block_validation_object, asset , &block_validation_object::stake >
             >,
-            composite_key_compare< std::greater< uint32_t >, std::greater< asset > >
+            composite_key_compare< 
+               std::greater< uint32_t >, 
+               std::greater< asset > 
+            >
          >,
          ordered_unique< tag<by_producer_block_id>,
             composite_key< block_validation_object,
                member<block_validation_object, account_name_type, &block_validation_object::producer >,
                member<block_validation_object, block_id_type, &block_validation_object::block_id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< block_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< block_id_type > 
+            >
          >,
          ordered_unique< tag<by_created>,
             composite_key< block_validation_object,
                member<block_validation_object, time_point, &block_validation_object::created >,
                member< block_validation_object, block_validation_id_type, &block_validation_object::id >
             >,
-            composite_key_compare< std::less< time_point >, std::less< block_validation_id_type > >
+            composite_key_compare< 
+               std::less< time_point >, 
+               std::less< block_validation_id_type > 
+            >
          >,
          ordered_unique< tag<by_commit_time>,
             composite_key< block_validation_object,
                member<block_validation_object, time_point, &block_validation_object::commit_time >,
                member< block_validation_object, block_validation_id_type, &block_validation_object::id >
             >,
-            composite_key_compare< std::less< time_point >, std::less< block_validation_id_type > >
+            composite_key_compare< 
+               std::less< time_point >, 
+               std::less< block_validation_id_type > 
+            >
          >
       >,
       allocator< block_validation_object >

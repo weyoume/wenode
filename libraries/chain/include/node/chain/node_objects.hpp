@@ -634,8 +634,6 @@ namespace node { namespace chain {
 
          asset                   content_reward_balance = asset( 0, SYMBOL_COIN );
 
-         asset                   equity_reward_balance = asset( 0, SYMBOL_COIN );
-
          asset                   validation_reward_balance = asset( 0, SYMBOL_COIN );
 
          asset                   txn_stake_reward_balance = asset( 0, SYMBOL_COIN );
@@ -682,13 +680,6 @@ namespace node { namespace chain {
          {
             assert(delta.symbol == SYMBOL_COIN);
             content_reward_balance += delta;
-            total_pending_reward_balance += delta;
-         }
-
-         void reward_fund_object::adjust_equity_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
-            equity_reward_balance += delta;
             total_pending_reward_balance += delta;
          }
 

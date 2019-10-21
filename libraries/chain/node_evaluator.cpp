@@ -314,6 +314,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       {
          wvo.network_officer = o.registrar;
          wvo.account = o.new_account_name;
+         wvo.vote_rank = 1;
       });
 
       _db.modify( new_account, [&]( account_object& a ) 
@@ -1021,49 +1022,68 @@ void account_witness_vote_evaluator::do_apply( const account_witness_vote_operat
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& voter = _db.get_account( o.account );
-   share_type voting_power = _db.get_voting_power( o.account );
+   const witness_object& witness = _db.get_witness( o.witness );
    FC_ASSERT( voter.proxy.size() == 0, 
       "A proxy is currently set, please clear the proxy before voting for a witness." );
 
-   if( o.approve )
+   if( o.approved )
    {
       FC_ASSERT( voter.can_vote, 
          "Account has declined its voting rights." );
+      FC_ASSERT( witness.active, 
+         "Witness is inactive, and not accepting approval votes at this time." );
    }
+   
+   const auto& account_rank_idx = _db.get_index< witness_vote_index >().indices().get< by_account_rank >();
+   const auto& account_witness_idx = _db.get_index< witness_vote_index >().indices().get< by_account_witness >();
+   auto rank_itr = account_rank_idx.find( boost::make_tuple( voter.name, o.vote_rank) );   // vote at rank number
+   auto witness_itr = account_witness_idx.find( boost::make_tuple( voter.name, witness.name ) );    // vote for specified witness
 
-   const auto& witness = _db.get_witness( o.witness );
-
-   const auto& by_account_witness_idx = _db.get_index< witness_vote_index >().indices().get< by_account_witness >();
-   auto itr = by_account_witness_idx.find( boost::make_tuple( voter.name, witness.name ) );
-
-   if( itr == by_account_witness_idx.end() ) {
-      FC_ASSERT( o.approve, 
-         "Vote doesn't exist, user must indicate a desire to approve witness." );
-
-      FC_ASSERT( voter.witnesses_voted_for < MAX_ACC_WITNESS_VOTES, 
-         "Account has voted for too many witnesses." );
-
-      _db.create<witness_vote_object>( [&]( witness_vote_object& v ) 
-      {
-         v.witness = witness.owner;
-         v.account = voter.name;
-      });
-      _db.modify( voter, [&]( account_object& a ) 
-      {
-         a.witnesses_voted_for++;
-      });
-   } 
-   else 
+   if( o.approved) // Adding or modifying vote
    {
-      FC_ASSERT( !o.approve, 
-         "Vote currently exists, user must indicate a desire to reject witness." );
-       
-      _db.modify( voter, [&]( account_object& a )
+      if( witness_itr == account_witness_idx.end() && rank_itr == account_rank_idx.end() ) // No vote for witness or rank
       {
-         a.witnesses_voted_for--;
-      });
-      _db.remove( *itr );
+         FC_ASSERT( voter.witnesses_voted_for < MAX_ACC_WITNESS_VOTES, 
+            "Account has voted for too many witnesses." );
+
+         _db.create<witness_vote_object>( [&]( witness_vote_object& v ) 
+         {
+            v.witness = witness.owner;
+            v.account = voter.name;
+            v.vote_rank = o.vote_rank;
+         });
+         
+         _db.update_witness_votes( voter );
+      }
+      else
+      {
+         if( witness_itr != account_witness_idx.end() && rank_itr != account_rank_idx.end() )
+         {
+            FC_ASSERT( witness_itr->witness != rank_itr->witness, 
+               "Vote at rank is already specified witness." );
+         }
+         
+         if( witness_itr != account_witness_idx.end() )
+         {
+            remove( *witness_itr );
+         }
+
+         _db.update_witness_votes( voter, vote.witness, o.vote_rank );   // Remove existing witness vote, and add at new rank. 
+      }
    }
+   else  // Removing existing vote
+   {
+      if( witness_itr != account_witness_idx.end() )
+      {
+         remove( *witness_itr );
+      }
+      else if( rank_itr != account_rank_idx.end() )
+      {
+         remove( *rank_itr );
+      }
+      _db.update_witness_votes( voter );
+   }
+
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 
@@ -1783,19 +1803,31 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    }
    time_point now = _db.head_block_time();
    const account_object& account = _db.get_account(o.account);
-   FC_ASSERT( account.witnesses_voted_for >= MIN_ACTIVITY_WITNESSES, "Account must have at least 10 witness votes to claim activity reward.");
+   FC_ASSERT( account.witnesses_voted_for >= MIN_ACTIVITY_WITNESSES, 
+      "Account must have at least 10 witness votes to claim activity reward.");
    const account_object& balance = _db.get_account_balance(o.account, SYMBOL_EQUITY);
-   FC_ASSERT( balance.staked_balance >= asset(1 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY), "Account must have at least one equity asset to claim activity reward");
+   FC_ASSERT( balance.staked_balance >= asset(1 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY), 
+      "Account must have at least one equity asset to claim activity reward");
    const comment_metrics_object& comment_metrics = _db.get_comment_metrics();
-   const account_object& witness = _db.get_witness(o.prime_witness);
+   
    const comment_object& comment = _db.get_comment(o.account, o.permlink);
-   const view_object& view = _db.get_comment_view(o.account, o.view_id);
-   const vote_object& vote = _db.get_comment_vote(o.account, o.vote_id);
-   FC_ASSERT(comment.net_votes >= comment_metrics.median_vote_count, "Referred recent Post should have at least the median number of votes for activity reward");
-   FC_ASSERT(now < acccount.last_activity_reward + fc::days(1) , "Can only claim activity reward once per 24 hours");
-   FC_ASSERT(now < comment.created + fc::days(1) , "Referred Recent Post should have been made in the last 24 hours");
-   FC_ASSERT(now < view.created + fc::days(1) , "Referred Recent View should have been made in the last 24 hours");
-   FC_ASSERT(now < vote.created + fc::days(1) , "Referred Recent Vote should have been made in the last 24 hours");
+   const comment_view_object& view = _db.get_comment_view(o.account, o.view_id);
+   const comment_vote_object& vote = _db.get_comment_vote(o.account, o.vote_id);
+   FC_ASSERT(comment.net_votes >= comment_metrics.median_vote_count, 
+      "Referred recent Post should have at least the median number of votes for activity reward");
+   FC_ASSERT(now < acccount.last_activity_reward + fc::days(1), 
+      "Can only claim activity reward once per 24 hours");
+   FC_ASSERT(now < comment.created + fc::days(1), 
+      "Referred Recent Post should have been made in the last 24 hours");
+   FC_ASSERT(now < view.created + fc::days(1), 
+      "Referred Recent View should have been made in the last 24 hours");
+   FC_ASSERT(now < vote.created + fc::days(1), 
+      "Referred Recent Vote should have been made in the last 24 hours");
+
+   const auto& vote_idx = _db.get_index< witness_vote_index >().indices().get< by_account_witness >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, 1 ) ); // Gets top voted witness of account.
+
+   const witness_object& witness = get_witness( vote_itr->witness );
 
    _db.claim_activity_reward( account, witness );
 
