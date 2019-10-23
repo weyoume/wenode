@@ -19,6 +19,11 @@ add_library( node_chain
 
              # As database takes the longest to compile, start it first
              node_database.cpp
+             account_database.cpp
+             asset_database.cpp
+             trading_database.cpp
+             comment_database.cpp
+
              fork_database.cpp
              witness_schedule.cpp
 

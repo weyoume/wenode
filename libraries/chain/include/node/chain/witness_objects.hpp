@@ -190,6 +190,8 @@ namespace node { namespace chain {
 
          fc::array< account_name_type, TOTAL_PRODUCERS >             		current_shuffled_producers;
 
+         uint128_t                                                         total_witness_voting_power;
+
          vector<account_name_type>                                         top_witnesses;
 
          vector<account_name_type>                                         top_miners;

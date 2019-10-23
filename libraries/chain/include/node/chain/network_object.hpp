@@ -107,6 +107,8 @@ namespace node { namespace chain {
 
          bool                           active = true;                        // True if the executive team is active, set false to deactivate.
 
+         bool                           board_approved = false;               // True when the board has reach sufficient voting support to receive budget.
+
          asset                          budget;                               // Total amount of Credit asset requested for team compensation and funding.
          
          shared_string                  details;                              // The executive team's details description. 
@@ -120,6 +122,10 @@ namespace node { namespace chain {
          uint32_t                       vote_count = 0;                       // The number of accounts that support the executive team.
 
          share_type                     voting_power = 0;                     // The amount of voting power that votes for the executive team. 
+
+         uint32_t                       witness_vote_count = 0;               // The number of accounts that support the executive team.
+
+         share_type                     witness_voting_power = 0;             // The amount of voting power that votes for the executive team.
    };
 
 
@@ -232,6 +238,14 @@ namespace node { namespace chain {
          time_point                     last_update_time;            // The time the file weight and active users was last decayed.
 
          time_point                     last_activation_time;        // The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
+
+         void                           decay_weights( const dynamic_global_property_object& props )
+         {
+            recent_view_weight -= ( ( recent_view_weight * ( props.time - last_update_time ).to_seconds() ) / props.supernode_decay_time.to_seconds() );
+            daily_active_users -= ( ( daily_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(1).to_seconds() );
+            monthly_active_users -= ( ( monthly_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(30).to_seconds() );
+            last_update_time = props.time;
+         }
    };
 
 
@@ -262,7 +276,14 @@ namespace node { namespace chain {
 
          uint64_t                       monthly_active_users = 0;     // The average number of accounts (X percent 100) that have signed a transaction from the interface in the prior 30 days.
 
-         time_point                     last_user_update;             // The time the user counts were last updated.
+         time_point                     last_update_time;             // The time the user counts were last updated.
+
+         void                           decay_weights( const dynamic_global_property_object& props )
+         {
+            daily_active_users -= ( ( daily_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(1).to_seconds() );
+            monthly_active_users -= ( ( monthly_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(30).to_seconds() );
+            last_update_time = props.time;
+         }
    };
 
 
@@ -315,7 +336,7 @@ namespace node { namespace chain {
 
          asset                          pending_budget = asset( 0, SYMBOL_COIN );   // Funds held in the proposal for release. 
 
-         asset                          total_distributed = asset( 0, SYMBOL_COIN ); // Total amount of funds distributed for the proposal. 
+         asset                          total_distributed = asset( 0, SYMBOL_COIN );// Total amount of funds distributed for the proposal. 
 
          uint16_t                       days_paid = 0;                              // Number of days that the proposal has been paid for. 
 
@@ -385,7 +406,9 @@ namespace node { namespace chain {
 
          int16_t                        milestone;            // Number of the milestone being approved for release.    
 
-         time_point                     created;              // The time the claim request was created.
+         time_point                     last_updated;         // The time the approval was created.
+
+         time_point                     created;              // The time the approval was created.
    };
 
    struct by_type_voting_power;
@@ -713,9 +736,9 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_enterprise_id >,
             composite_key< enterprise_approval_object,
-               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >,
                member< enterprise_approval_object, account_name_type, &enterprise_approval_object::creator >,
-               member< enterprise_approval_object, shared_string, &enterprise_approval_object::enterprise_id >
+               member< enterprise_approval_object, shared_string, &enterprise_approval_object::enterprise_id >,
+               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >
             >,
             composite_key_compare< std::less< account_name_type >, strcmp_less, std::less< account_name_type > >
          >

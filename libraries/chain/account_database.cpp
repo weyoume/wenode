@@ -39,13 +39,121 @@ namespace node { namespace chain {
 using boost::container::flat_set;
 
 /**
- * TODO:
  * Expires memberships, and renews recurring memberships when the 
  * membership expiration time is reached.
  */
 void database::process_membership_updates()
 { try {
+   
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   const auto& account_idx = get_index< account_index >().indices().get< by_membership_expiration >();
+   auto account_itr = account_idx.begin();
+   
+   while( account_itr != account_idx.end() && account_itr->membership_expiration >= now )
+   {
+      const account_object& member = *account_itr;
 
+      if( member.recurring_membership > 0 )
+      {
+         const account_object& int_account = get_account( member.membership_interface );
+         const interface_object& interface = get_interface( member.membership_interface );
+
+         asset liquid = get_liquid_balance( member.name, SYMBOL_COIN );
+         asset monthly_fee = asset(0, SYMBOL_USD );
+
+         switch( member.membership )
+         {
+            case NONE:
+            {
+               break; 
+            }
+            case STANDARD_MEMBERSHIP:
+            {
+               monthly_fee = props.membership_base_price;
+               break; 
+            }
+            case MID_MEMBERSHIP:
+            {
+               monthly_fee = props.membership_mid_price;
+               break; 
+            }
+            case TOP_MEMBERSHIP:
+            {
+               monthly_fee = props.membership_top_price;
+               break; 
+            }
+            default:
+            {
+               FC_ASSERT( false, "Membership type Invalid: ${m}.", ("m", member.membership ) ); 
+               break;
+            }
+         }
+
+         asset total_fees = monthly_fee * member.recurring_membership; 
+
+         if( liquid >= total_fees && total_fees.amount > 0)
+         {
+            pay_membership_fees( member, -total_fees, int_account );      // Pays splits to interface, premium partners, and network
+
+            modify( member, [&]( account_object& a )
+            {
+               a.membership_expiration = now + fc::days( 30 * a.recurring_membership );
+            });
+         }
+         else
+         {
+            modify( member, [&]( account_object& a )
+            {
+               a.membership = NONE;
+               a.membership_expiration = fc::time_point::maximum();
+               a.recurring_membership = 0;
+               a.membership_interface = NULL_ACCOUNT;
+            });
+         } 
+      }
+      else
+      {
+         modify( member, [&]( account_object& a )
+         {
+            a.membership = NONE;
+            a.membership_expiration = fc::time_point::maximum();
+            a.recurring_membership = 0;
+            a.membership_interface = NULL_ACCOUNT;
+         });
+      }
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Pays protocol membership fees, and splits to network contributors
+ * member: The account that is paying to upgrade to a membership level
+ * payment: The asset being received as payment
+ * interface: The owner account of the interface that sold the membership
+ */
+asset database::pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface )
+{ try {
+   FC_ASSERT( payment.symbol == SYMBOL_USD, 
+      "Payment asset must be denominated in USD asset.");
+
+   const reward_fund_object& reward_fund = get_reward_fund();
+   asset membership_fee = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price * payment;
+
+   asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
+   asset interface_fees = ( membership_fee * INTERFACE_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
+   asset partners_fees = ( membership_fee * PARTNERS_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
+
+   asset network_paid = pay_network_fees( member, network_fees );
+   asset interface_paid = pay_fee_share( interface, network_fees );
+
+   asset total_fees = network_paid + interface_paid + partners_fees;
+   adjust_liquid_balance( member.name, -total_fees );
+   
+   modify( reward_fund, [&]( reward_fund_object& rfo )
+   {
+      rfo.adjust_premium_partners_fund_balance( partners_fees );    // Adds funds to premium partners fund for distribution to premium creators
+   });
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -56,7 +164,9 @@ void database::process_membership_updates()
 asset database::claim_activity_reward( const account_object& account, const witness_object& witness)
 { try {
    const account_balance_object& abo = get_account_balance(account.name, SYMBOL_EQUITY);
-   time_point now = head_block_time();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const witness_schedule_object& wso = get_witness_schedule();
+   time_point now = props.time;
    auto decay_rate = RECENT_REWARD_DECAY_RATE;
    const reward_fund_object& reward_fund = get_reward_fund();
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
@@ -66,15 +176,15 @@ asset database::claim_activity_reward( const account_object& account, const witn
       activity_shares *= 2;
    }
 
-   if( account.membership == STANDARD_MEMBERSHIP) 
+   if( account.membership == STANDARD_MEMBERSHIP )
    {
       activity_shares = (activity_shares * ACTIVITY_BOOST_STANDARD_PERCENT) / PERCENT_100;
    }
-   else if( account.membership == MID_MEMBERSHIP) 
+   else if( account.membership == MID_MEMBERSHIP )
    {
       activity_shares = (activity_shares * ACTIVITY_BOOST_MID_PERCENT) / PERCENT_100;
    }
-   else if( account.membership == TOP_MEMBERSHIP) 
+   else if( account.membership == TOP_MEMBERSHIP )
    {
       activity_shares = (activity_shares * ACTIVITY_BOOST_TOP_PERCENT) / PERCENT_100;
    }
@@ -111,6 +221,7 @@ asset database::claim_activity_reward( const account_object& account, const witn
    modify( witness, [&]( witness_object& w ) 
    {
       w.accumulated_activity_stake += voting_power;
+      w.decay_weights( now, wso );
    });
 
    return activity_reward;

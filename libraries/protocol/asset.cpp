@@ -198,11 +198,11 @@ namespace node { namespace protocol {
          a.validate();
          b.validate();
 
-         if(a.base.amount == share_type(0) )
+         if( a.base.amount == share_type(0) )
          {
             return b;
          }
-         if(b.base.amount == share_type(0) )
+         if( b.base.amount == share_type(0) )
          {
             return a;
          }
@@ -218,8 +218,8 @@ namespace node { namespace protocol {
 
       price operator - ( const price& a, const price& b )
       { try {
-         FC_ASSERT( a.base.symbol == b.base.symbol, "Cannot add prices of different asset pairs");
-         FC_ASSERT( a.quote.symbol == b.quote.symbol, "Cannot add prices of different asset pairs");
+         FC_ASSERT( a.base.symbol == b.base.symbol, "Cannot subtract prices of different asset pairs");
+         FC_ASSERT( a.quote.symbol == b.quote.symbol, "Cannot substract prices of different asset pairs");
          a.validate();
          b.validate();
 
@@ -227,11 +227,11 @@ namespace node { namespace protocol {
          {
             return asset( 0, a.base.symbol ) / asset( 0, a.quote.symbol );   // Returns null price if prices are equal
          }
-         if(a.base.amount == share_type(0) )
+         if( a.base.amount == share_type(0) )
          {
             return b;
          }
-         if(b.base.amount == share_type(0) )
+         if( b.base.amount == share_type(0) )
          {
             return a;
          }

@@ -392,10 +392,12 @@ namespace node { namespace chain {
          asset                      buyback_pool = asset(0,SYMBOL_USD);   // Amount of assets pooled to buyback the asset at next interval
 
          price                      buyback_price = price(asset(1,SYMBOL_USD),asset(1,symbol));  // Price at which the credit asset is bought back
-         
-         time_point                 last_updated;                         // Time that the asset was last updated
 
-         time_point                 next_buyback;                         // Time that the asset will next buyback using the buyback pool
+         asset_symbol_type          symbol_a;                             // the asset with the lower id in the buyback price pair
+
+         asset_symbol_type          symbol_b;                             // the asset with the greater id in the buybackprice pair
+         
+         time_point                 last_buyback;                         // Time that the asset was last updated
 
          void adjust_pool(const asset& delta)
          {

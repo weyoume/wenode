@@ -146,7 +146,7 @@ namespace node { namespace chain {
          bool                                   is_known_block( const block_id_type& id )const;
          bool                                   is_known_transaction( const transaction_id_type& id )const;
          
-         uint32_t                               pow_difficulty()const;
+         uint128_t                              pow_difficulty()const;
          block_id_type                          find_block_id_for_num( uint32_t block_num )const;
          block_id_type                          get_block_id_for_num( uint32_t block_num )const;
          optional<signed_block>                 fetch_block_by_id( const block_id_type& id )const;
@@ -165,6 +165,9 @@ namespace node { namespace chain {
          const price&                           get_usd_price()const;
          const reward_fund_object&              get_reward_fund() const;
          const comment_metrics_object&          get_comment_metrics() const;
+
+         const asset& database::asset_to_USD( const asset& a) const;
+         const asset& database::USD_to_asset( const asset& a) const;
          
          const node_property_object&            get_node_properties()const;
          const feed_history_object&             get_feed_history()const;
@@ -247,11 +250,17 @@ namespace node { namespace chain {
          const community_enterprise_object& get_community_enterprise( const account_name_type& creator, const shared_string& enterprise_id )const;
          const community_enterprise_object* find_community_enterprise( const account_name_type& creator, const shared_string& enterprise_id )const;
 
+         const enterprise_approval_object& get_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const;
+         const enterprise_approval_object* find_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const;
+
          const board_object& get_board( const board_name_type& board )const;
          const board_object* find_board( const board_name_type& board )const;
 
          const board_member_object& get_board_member( const board_name_type& board )const;
          const board_member_object* find_board_member( const board_name_type& board )const;
+
+         const board_member_key_object& get_board_member_key( const account_name_type& member, const board_name_type& board )const;
+         const board_member_key_object* find_board_member_key( const account_name_type& member, const board_name_type& board )const;
 
          const governance_account_object& get_governance_account( const account_name_type& name )const;
          const governance_account_object* find_governance_account( const account_name_type& name )const;
@@ -481,12 +490,10 @@ namespace node { namespace chain {
 
          void update_network_votes();
 
-         void adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true );
-
          void adjust_interface_users( const interface_object& interface, bool adjust = true );
 
          /** clears all vote records for a particular account */
-         void clear_network_votes( const account_object& a );
+         void clear_network_votes( const account_object& a );   //
 
          void process_funds();
          
@@ -504,18 +511,21 @@ namespace node { namespace chain {
 
          void process_network_officer_rewards();
 
-         void process_executive_board_budgets();
-
          void process_supernode_rewards();
+
+         void adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true );
 
          void process_community_enterprise_fund();
          
          void update_enterprise( const community_enterprise_object& enterprise, 
-            const witness_schedule_object& witness_schedule, const dynamic_global_property_object& props );
+            const witness_schedule_object& wso, const dynamic_global_property_object& props );
+
+         void process_executive_board_budgets();
+
+         void update_executive_board( const executive_board_object& executive_board, 
+            const witness_schedule_object& wso, const dynamic_global_property_object& props );
 
          share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
-
-         uint128_t get_supernode_shares( const supernode_object& supernode );
 
          void claim_proof_of_work_reward( const account_name_type& miner );
 
@@ -529,27 +539,29 @@ namespace node { namespace chain {
 
          asset pay_network_fees( const asset& amount );
 
-         asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
-
          asset pay_trading_fees( const account_object& taker, const asset& receives, const account_name_type& maker_int, 
             const account_name_type& taker_int );
 
          asset pay_advertising_delivery( const account_object& provider, const account_object& demand, 
-            const account_object& bidder, const account_object& delivery, flat_set< account_object& > audience, const asset& value );
+            const account_object& bidder, const account_object& delivery, flat_set< const account_object* > audience, const asset& value );
 
          asset pay_fee_share( const account_object& payee, const asset& amount );
 
-         asset pay_multi_fee_share( const flat_set < account_object& > payees, const asset& amount );
+         asset pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount );
 
          void validate_invariants()const;
 
          
+
          //==========================//
          // === ACCOUNT DATABASE === //
          //==========================//
 
 
+
          void process_membership_updates();
+
+         asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
 
          asset claim_activity_reward( const account_object& account, const witness_object& witness );
 
@@ -557,6 +569,15 @@ namespace node { namespace chain {
 
          void update_witness_votes(const account_object& account );
          void update_witness_votes(const account_object& account, const account_name_type& witness, uint16_t vote_rank );
+
+         void update_network_votes(const account_object& account );
+         void update_network_votes(const account_object& account, const account_name_type& officer, uint16_t vote_rank );
+
+         void update_executive_votes(const account_object& account );
+         void update_executive_votes(const account_object& account, const account_name_type& executive, uint16_t vote_rank );
+
+         void update_enterprise_votes(const account_object& account );
+         void update_enterprise_votes(const account_object& account, const account_name_type& creator, const shared_string& enterprise_id, uint16_t vote_rank );
 
          void account_recovery_processing();
 
@@ -572,10 +593,6 @@ namespace node { namespace chain {
 
 
 
-         void process_comment_cashout();
-
-         share_type distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
-         
          share_type pay_voters( const comment_object& c, share_type& max_rewards );
 
          share_type pay_viewers( const comment_object& c, share_type& max_rewards );
@@ -590,9 +607,9 @@ namespace node { namespace chain {
 
          share_type pay_content_rewards( share_type reward );
 
-         void adjust_total_payout( const comment_object& a, const asset& USD, const asset& curator_USD_value, const asset& beneficiary_value );
+         share_type distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
 
-         void adjust_reward_shares( const comment_object& comment, fc::uint128_t old_reward_shares, fc::uint128_t new_reward_shares );
+         void process_comment_cashout();
 
          void add_comment_to_feeds( const account_name_type& sharer, const comment_id_type& comment_id );
 
@@ -600,10 +617,17 @@ namespace node { namespace chain {
 
          void update_comment_metrics();
 
+         void adjust_total_payout( const comment_object& a, const asset& USD, const asset& curator_USD_value, const asset& beneficiary_value );
+
+         void adjust_reward_shares( const comment_object& comment, fc::uint128_t old_reward_shares, fc::uint128_t new_reward_shares );
+
+
 
          //========================//
          // === ASSET DATABASE === //
          //========================//
+
+
 
          void process_asset_staking();
 
@@ -679,6 +703,7 @@ namespace node { namespace chain {
          string to_pretty_string( const asset& a )const;
 
 
+
          //==========================//
          // === TRADING DATABASE === //
          //==========================//
@@ -710,7 +735,7 @@ namespace node { namespace chain {
             const price& fill_price, const bool is_maker, const account_name_type& match_interface );
 
          bool fill_call_order( const call_order_object& order, const asset& pays, const asset& receives,
-            const price& fill_price, const bool is_maker );
+            const price& fill_price, const bool is_maker, const account_name_type& match_interface, bool global_settle );
          
          bool fill_settle_order( const force_settlement_object& settle, const asset& pays, const asset& receives,
             const price& fill_price, const bool is_maker, const account_name_type& match_interface );
@@ -740,6 +765,10 @@ namespace node { namespace chain {
          bool credit_check( const asset& debt, const asset& collateral, const asset_credit_pool_object& credit_pool);
 
          bool margin_check( const asset& debt, const asset& position, const asset& collateral, const asset_credit_pool_object& credit_pool);
+
+         void process_credit_updates();
+
+         void process_margin_updates();
 
          void liquidate_credit_loan( const credit_loan_object& loan );
 
@@ -773,10 +802,6 @@ namespace node { namespace chain {
          asset asset_to_USD( const asset& asset )const;
 
          asset USD_to_asset( const asset& USD )const;
-
-         void process_credit_updates();
-
-         void process_margin_updates();
 
 
 #ifdef IS_TEST_NET

@@ -199,10 +199,15 @@ void database::process_savings_withdraws()
 {
   const auto& idx = get_index< savings_withdraw_index >().indices().get< by_complete_from_rid >();
   auto itr = idx.begin();
-  while( itr != idx.end() ) {
-     if( itr->complete > head_block_time() )
+  time_point now = head_block_time();
+  while( itr != idx.end() ) 
+  {
+     if( itr->complete > now )
+     {
         break;
-     adjust_liquid_balance( get_account( itr->to ), itr->amount );
+     }
+        
+     adjust_liquid_balance( itr->to , itr->amount );
 
      modify( get_account( itr->from ), [&]( account_object& a )
      {
@@ -235,19 +240,196 @@ void database::expire_escrow_ratification()
    }
 }
 
-void database::update_median_liquidity() //todo
+void database::update_median_liquidity()
 { try {
+   if( (head_block_num() % MEDIAN_LIQUIDITY_INTERVAL_BLOCKS) != 0 )
+      return;
 
+   const auto& liq_idx = get_index< asset_liquidity_pool_index >().indices().get< by_asset_pair>();
+   auto liq_itr = liq_idx.begin();
+
+   size_t day_history_window = 1 + fc::days(1).to_seconds() / MEDIAN_LIQUIDITY_INTERVAL.to_seconds();
+   size_t hour_history_window = 1 + fc::hours(1).to_seconds() / MEDIAN_LIQUIDITY_INTERVAL.to_seconds();
+
+   while( liq_itr != liq_idx.end() )
+   {
+      const asset_liquidity_pool_object& pool = *liq_itr;
+      vector<price> day; 
+      vector<price> hour;
+      day.reserve( day_history_window );
+      hour.reserve( hour_history_window );
+
+      bip::deque< price, allocator< price > > price_history = pool.price_history;
+
+      modify( pool, [&]( asset_liquidity_pool_object& p )
+      {
+         p.price_history.push_back( pool.current_price() );
+         if( p.price_history.size() > day_history_window )
+         {
+            price_history.pop_front();  // Maintain one day worth of price history
+         }
+
+         for( auto i : p.price_history )
+         {
+            day.push_back( i );
+         }
+
+         size_t offset = day.size()/2;
+
+         std::nth_element( day.begin(), day.begin()+offset, day.end(),
+         []( price a, price b )
+         {
+            return a < b;
+         });
+
+         p.day_median_price = day[ offset ];    // Set day median price to the median of all prices in the last day, at 10 min intervals
+
+         auto hour_itr = p.price_history.rbegin();
+
+         while( hour_itr != p.price_history.rend() && hour.size() < hour_history_window )
+         {
+            hour.push_back( *hour_itr );
+            ++hour_itr;
+         }
+
+         size_t offset = hour.size()/2;
+
+         std::nth_element( hour.begin(), hour.begin()+offset, hour.end(),
+         []( price a, price b )
+         {
+            return a < b;
+         });
+
+         p.hour_median_price = hour[ offset ];   // Set hour median price to the median of all prices in the last hour, at 10 min intervals
+
+      });
+
+      ++liq_itr;
+   } 
 } FC_CAPTURE_AND_RETHROW() }
-         
-void database::process_credit_buybacks() //todo
-{ try {
 
+
+/**
+ * Executes buyback orders to repurchase credit assets using
+ * an asset's buyback pool of funds
+ * up to the asset's buyback price, or face value.
+ */         
+void database::process_credit_buybacks()
+{ try {
+   if( (head_block_num() % CREDIT_BUYBACK_INTERVAL_BLOCKS) != 0 )
+      return;
+
+   const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol>();
+   auto credit_itr = credit_idx.begin();
+
+   while( credit_itr != credit_idx.end() )
+   {
+      const asset_credit_data_object& credit = *credit_itr;
+      if( credit.buyback_pool.amount > 0 )
+      {
+         const asset_liquidity_pool_object& pool = get_liquidity_pool( credit.symbol_a, credit.symbol_b );
+         price buyback_price = credit.buyback_price;
+         price market_price = pool.base_hour_median_price( buyback_price.base.symbol );
+         if( market_price > buyback_price )
+         {
+            pair<asset, asset> buyback = liquid_limit_exchange( credit.buyback_pool, buyback_price, pool, true, true );
+            modify( credit, [&]( asset_credit_data_object& c )
+            {
+               c.adjust_pool( -buyback.first );    // buyback the credit asset from its liquidity pool, up to the buyback price, and deduct from the pool.
+            });
+            adjust_pending_supply( buyback.second );
+         }
+      }
+      ++credit_itr;
+   }
 } FC_CAPTURE_AND_RETHROW() }
-         
-void database::process_credit_interest() //todo
-{ try {
 
+/**
+ * Pays accrued interest to all balance holders of credit assets,
+ * according to the fixed and variable components of the assets
+ * interest options, and the current market price of the asset, 
+ * relative to its target buyback face value price.
+ * the interest rate increases when the the price of the credit asset falls,
+ * and decreases, when it is above buyback price.
+ */
+void database::process_credit_interest()
+{ try {
+    if( (head_block_num() % CREDIT_INTERVAL_BLOCKS) != 0 )
+      return;
+
+   time_point now = head_block_time();
+   const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol>();
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol>();
+   auto credit_itr = credit_idx.begin();
+
+   while( credit_itr != credit_idx.end() )
+   {
+      const asset_credit_data_object& credit = *credit_itr;
+      asset_symbol_type cs = credit.symbol;
+      const asset_dynamic_data_object& dyn_data = get_dynamic_data( cs );
+      price buyback = credit.buyback_price;
+      price market = get_liquidity_pool( credit.symbol_a , credit.symbol_b ).base_hour_median_price( buyback.base.symbol );
+      
+      asset unit = asset( BLOCKCHAIN_PRECISION, buyback.quote.symbol );
+      share_type range = credit.options.var_interest_range;
+      share_type pr = PERCENT_100;
+      share_type hpr = PERCENT_100 / 2;
+
+      share_type mar = (market * unit).amount;
+      share_type buy = (buy * unit).amount;
+
+      share_type liqf = credit.options.liquid_fixed_interest_rate;
+      share_type staf = credit.options.staked_fixed_interest_rate;
+      share_type savf = credit.options.savings_fixed_interest_rate;
+      share_type liqv = credit.options.liquid_variable_interest_rate;
+      share_type stav = credit.options.staked_variable_interest_rate;
+      share_type savv = credit.options.savings_variable_interest_rate;
+
+      share_type var_factor = ( ( -hpr * std::min( pr, std::max( -pr, pr * ( mar-buy ) / ( ( ( buy*range ) / pr ) ) ) ) ) / pr ) + hpr;
+
+      share_type liq_ir = liqv * var_factor + liqf;
+      share_type sta_ir = stav * var_factor + staf;
+      share_type sav_ir = savv * var_factor + savf;
+
+      // Applies interest rates that scale with the current market price / buyback price ratio, within a specified boundary range.
+
+      asset total_liquid_interest = asset(0, cs);
+      asset total_staked_interest = asset(0, cs);
+      asset total_savings_interest = asset(0, cs);
+
+      auto balance_itr = balance_idx.lower_bound( cs );
+      while( balance_itr != balance_idx.end() && balance_itr->symbol == cs )
+      {
+         const account_balance_object& balance = *balance_itr;
+
+         asset liquid_interest = asset( ( ( ( balance.liquid_balance * liq_ir * ( now - balance.last_interest_time ).to_seconds() ) / fc::days(365).to_seconds() ) ) / pr , cs );
+         asset staked_interest = asset( ( ( ( balance.staked_balance * sta_ir * ( now - balance.last_interest_time ).to_seconds() ) / fc::days(365).to_seconds() ) ) / pr , cs);
+         asset savings_interest = asset( ( ( ( balance.savings_balance * sav_ir * ( now - balance.last_interest_time ).to_seconds() ) / fc::days(365).to_seconds() ) ) / pr , cs);
+
+         total_liquid_interest += liquid_interest;
+         total_staked_interest += staked_interest;
+         total_savings_interest += savings_interest;
+
+         modify( balance, [&]( account_balance_object& b )
+         {
+            b.adjust_liquid_balance( liquid_interest ); 
+            b.adjust_staked_balance( staked_interest ); 
+            b.adjust_savings_balance( savings_interest ); 
+            b.last_interest_time = now;
+         });
+         
+         ++balance_itr;
+      }
+
+      modify( dyn_data, [&]( asset_dynamic_data_object& d )
+      {
+         d.adjust_liquid_supply( total_liquid_interest ); 
+         d.adjust_staked_supply( total_staked_interest ); 
+         d.adjust_savings_supply( total_savings_interest ); 
+      });
+
+      ++credit_itr;
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 /**
@@ -1011,7 +1193,7 @@ void database::update_expired_feeds()
       if( !bitasset.current_feed.settlement_price.is_null() && !( bitasset.current_feed == old_median_feed ) ) // `==` check is safe here
       {
          asset_ptr = find_asset(bitasset.symbol);
-         check_call_orders( *asset_ptr, true, false, &bitasset );
+         check_call_orders( *asset_ptr, true, false );
       }
       
       if( update_cer ) // update CER
@@ -1020,7 +1202,7 @@ void database::update_expired_feeds()
             asset_ptr = find_asset(bitasset.symbol);
          if( asset_ptr->options.core_exchange_rate != bitasset.current_feed.core_exchange_rate )
          {
-            modify( *asset_ptr, [&bitasset]( asset_object& ao )
+            modify( *asset_ptr, [&]( asset_object& ao )
             {
                ao.options.core_exchange_rate = bitasset.current_feed.core_exchange_rate;
             });

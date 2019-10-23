@@ -526,7 +526,7 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
 
    if( total_fees.amount > 0)
    {
-      _db.pay_membership_fees( account, -total_fees, int_account );      // Pays splits to interface, premium partners, and network
+      _db.pay_membership_fees( account, total_fees, int_account );      // Pays splits to interface, premium partners, and network
    }
 
    _db.modify( account, [&]( account_object& a )
@@ -1959,7 +1959,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
  /**
- * Creates or updates a executive board object for a team of developers and employees.
+ * Creates or updates an executive board object for a team of developers and employees.
  * Executive boards enable the issuance of network credit asset for operating a
  * multifaceted development and marketing team for the protocol.
  * Executive boards must:
@@ -1969,14 +1969,24 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
  * 4 - Operate an active governance account with at least 100 subscribers.
  * 5 - Have at least 3 members or officers that are top 50 network officers, 1 from each role.
  * 6 - Have at least one member or officer that is an active top 50 witness.
+ * 
+ * Executive boards receive their budget payments when:
+ * 1 - They are approved by at least 40 Accounts, with at least 20% of total voting power.
+ * 2 - They are approved by at least 10 Witnesses, with at least 20% of total witness voting power.
+ * 3 - The Current price of the credit asset is greater than $0.90 USD.
+ * 4 - They are in the top 5 voted executive boards. 
  * TODO: Pay executive board budget
  */
 void update_executive_board_evaluator::do_apply( const update_executive_board_operation& o )
 { try {
-   FC_ASSERT( o.url.size() + o.details.size() + o.json.size(), "Cannot update Executive Board because it does not contain content." );
-   FC_ASSERT( o.url.size() <= MAX_URL_LENGTH, "URL is too long" );
-   FC_ASSERT( o.details.size() <= MAX_STRING_LENGTH, "Details are too long" );
-   FC_ASSERT( o.budget.symbol == SYMBOL_CREDIT , "Executive Budget must be in the network credit asset." );
+   FC_ASSERT( o.url.size() + o.details.size() + o.json.size(), 
+      "Cannot update Executive Board because it does not contain content." );
+   FC_ASSERT( o.url.size() <= MAX_URL_LENGTH, 
+      "URL is too long" );
+   FC_ASSERT( o.details.size() <= MAX_STRING_LENGTH, 
+      "Details are too long" );
+   FC_ASSERT( o.budget.symbol == SYMBOL_CREDIT , 
+      "Executive Budget must be in the network credit asset." );
    if( o.json.size()) 
    {
       FC_ASSERT( fc::is_utf8( o.json ), "JSON Metadata must be UTF-8" );
@@ -1992,13 +2002,15 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
    
    const account_object& account = _db.get_account( o.account );
    const account_object& executive = _db.get_account( o.executive );
-   FC_ASSERT( o.executive == o.account || executive.is_executive( o.account ) );
+   const 
+   FC_ASSERT( o.executive == o.account || b.is_authorized_network( o.account ),
+      "Account is not authorized to update Executive Board." );
    const governance_account_object& gov_account = _db.get_governance_account( o.executive );
    const interface_object& interface = _db.get_interface( o.executive );
    const supernode_object& supernode = _db.get_supernode( o.executive );
    asset stake = _db.get_staked_balance( account.name, SYMBOL_COIN );
 
-   const  dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    FC_ASSERT( o.budget.amount <= props.max_exec_budget.amount, 
       "Executive board Budget is too high. Please reduce budget." );
    const witness_schedule_object& wso = _db.get_witness_schedule();
@@ -2006,9 +2018,9 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
      
    const executive_board_object* exec_ptr = _db.find_executive_board( o.executive );
 
-   FC_ASSERT( executive.officers.size(), "Executive Board requires at least one officer." );
+   FC_ASSERT( b.officers.size(), "Executive Board requires at least one officer." );
 
-   const executive_officer_set& officers = executive.officers;
+   const executive_officer_set& officers = b.officers;
    FC_ASSERT( officers.CHIEF_EXECUTIVE_OFFICER.size(),
       "Executive board requires chief executive officer.");
 
@@ -2115,7 +2127,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          }  
       }
 
-      for( auto name : b.members )
+      for( auto name : b.officers )
       {
          if( wso.is_top_witness( name ))
          {
@@ -2147,7 +2159,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          } 
       }
 
-      FC_ASSERT( wit_check && dev_check && mar_check && adv_check , 
+      FC_ASSERT( wit_check && dev_check && mar_check && adv_check, 
          "Executive Board must contain at least one witness, developer, marketer, and advocate.");
 
       _db.create< executive_board_object >( [&]( executive_board_object& ebo )
@@ -2186,19 +2198,24 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
    const account_object& account = _db.get_account( o.account );
    const executive_board_object& executive = _db.get_executive_board( o.executive_board );
    const auto& exec_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_executive >();
+   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    auto itr = exec_idx.find( boost::make_tuple( account.name, executive.name ) );
 
    if( itr == exec_idx.end() )    // Account is new voter
    { 
-      FC_ASSERT( o.approved, "Executive board vote doesn't exist, user must select to approve." );
-      FC_ASSERT( account.can_vote, "Account has revoked the ability to vote." );
-      FC_ASSERT( account.executive_board_votes < MAX_EXEC_VOTES, "Account has too many Executive board votes." );
+      FC_ASSERT( o.approved, 
+         "Executive board vote doesn't exist, user must select to approve." );
+      FC_ASSERT( account.can_vote, 
+         "Account has revoked the ability to vote." );
+      FC_ASSERT( account.executive_board_votes < MAX_EXEC_VOTES, 
+         "Account has too many Executive board votes." );
 
       _db.create<executive_board_vote_object>( [&]( executive_board_vote_object& ebo ) 
       {
          ebo.executive_board = executive.name;
          ebo.account = account.name;
-      });
+      });   // Todo: ranked voting
    
       _db.modify( account, [&]( account_object& a ) 
       {
@@ -2215,6 +2232,9 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
       });
       _db.remove( *itr );
    }
+
+   _db.update_executive_board( executive, wso, props );
+
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 
@@ -2757,7 +2777,7 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const witness_schedule_object& witness_schedule = get_witness_schedule();
    time_point now = props.time;
-   const enterprise_approval_object* approval_ptr = _db.find_enterprise_approval( account.name, creator.name, o.enterprise_id );
+   const enterprise_approval_object* approval_ptr = _db.find_enterprise_approval( creator.name, o.enterprise_id, account.name );
 
    if( approval_ptr != nullptr )      // Updating or removing existing approval
    { 
@@ -2770,6 +2790,7 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
          _db.modify( approval, [&]( enterprise_approval_object& emao )
          { 
             emao.milestone = o.milestone;
+            emao.last_updated = now;
          });
       }
       else

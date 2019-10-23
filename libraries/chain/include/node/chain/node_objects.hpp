@@ -222,6 +222,8 @@ namespace node { namespace chain {
 
          asset amount_to_receive()const { return debt; }
 
+         asset amount_for_sale()const { return collateral; }
+
          asset_symbol_type debt_type()const { return debt.symbol; }
 
          asset_symbol_type collateral_type()const { return collateral.symbol; }
@@ -365,9 +367,9 @@ namespace node { namespace chain {
 
          time_point                 last_updated;            // Time that the loan was last updated, and interest was accrued.
 
-         asset_symbol_type    debt_asset()const { return debt.symbol; } 
-         asset_symbol_type    collateral_asset()const { return collateral.symbol; } 
-         price                liquidation_spread()const { return loan_price - liquidation_price; }
+         asset_symbol_type          debt_asset()const { return debt.symbol; } 
+         asset_symbol_type          collateral_asset()const { return collateral.symbol; } 
+         price                      liquidation_spread()const { return loan_price - liquidation_price; }
 
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
@@ -421,7 +423,7 @@ namespace node { namespace chain {
 
          time_point                 expiration;                  // Expiration time of the order.
 
-         asset                      unrealized_value = asset(0, debt.symbol);            // Current profit or loss that the position is holding.
+         asset                      unrealized_value = asset(0, debt.symbol);   // Current profit or loss that the position is holding.
 
          share_type                 last_interest_rate = 0;      // The interest rate that was last applied to the order.
 
@@ -897,10 +899,11 @@ namespace node { namespace chain {
          ordered_non_unique< tag< by_expiration >, member< margin_order_object, time_point, &margin_order_object::expiration > >,
          ordered_unique< tag< by_price >,
             composite_key< margin_order_object,
+               const_mem_fun< margin_order_object, bool, &margin_order_object::filled>,
                member< margin_order_object, price, &margin_order_object::sell_price >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
-            composite_key_compare< std::greater< price >, std::less< margin_order_id_type > >
+            composite_key_compare< std::less< bool >, std::greater< price >, std::less< margin_order_id_type > >
          >,
          ordered_unique< tag< by_account >,
             composite_key< margin_order_object,
@@ -1303,14 +1306,6 @@ FC_REFLECT( node::chain::margin_order_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::margin_order_object, node::chain::margin_order_index );
-
-FC_REFLECT( node::chain::feed_history_object,
-         (id)
-         (current_median_history)
-         (price_history) 
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::feed_history_object, node::chain::feed_history_index );
 
 FC_REFLECT( node::chain::unstake_asset_route_object,
          (id)

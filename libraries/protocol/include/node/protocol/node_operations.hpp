@@ -1099,7 +1099,7 @@ namespace node { namespace protocol {
     * Approves a milestone claim from a community enterprise proposal.
     * This releases the funds that are in the pending budget to the proposal's beneficaries.
     * Community Enterprise proposals need to be approved by: 
-    *       - Approvals from at least 5 of the Top 50 witnesses, with a combined voting power of at least 10% of the total voting power.
+    *       - Approvals from at least 5 of the Top 50 witnesses, with a combined voting power of at least 10% of the total witness voting power.
     * AND
     *       - At least 20 total approvals, from accounts with a total combined voting power of at least 10% of total voting power. 
     */

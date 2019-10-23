@@ -77,19 +77,23 @@
 #define ANNUAL_COIN_ISSUANCE            asset( 1 * BILLION * BLOCKCHAIN_PRECISION, SYMBOL_COIN)     // 1 Billion MEC issued per year
 #define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                    // 25 MeCoin issued per block
 
-#define IRREVERSIBLE_THRESHOLD           (67 * PERCENT_1)          // Blocks produced become irrervsible after approval by this percentage of active producers. 
-#define POW_TARGET_TIME                  fc::minutes(10)           // Aim for approximately one proof of work every 10 minutes to be produced. 
-#define POW_DECAY_TIME                   fc::days(7)               // Averaging time of one week for adjusting proof of work difficulty. 
-#define POW_UPDATE_BLOCK_INTERVAL        (1 * BLOCKS_PER_HOUR)    // Updates the mining dificulty once per hour.            
-#define POA_BLOCK_INTERVAL               (8 * BLOCKS_PER_HOUR)     // Distributes the proof of activity reward every 8 hours to the highest activity voted witness. 
-#define TXN_STAKE_BLOCK_INTERVAL         (1 * BLOCKS_PER_HOUR)     // Transaction stake rewards are distributed each hour.
-#define TXN_STAKE_DECAY_TIME             fc::days(7)               // Transaction stake is averaged over a rolling 7 day window. 
-#define NETWORK_OFFICER_BLOCK_INTERVAL   (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
-#define NETWORK_OFFICER_ACTIVE_SET       (50)
-#define SUPERNODE_BLOCK_INTERVAL         (BLOCKS_PER_DAY)          // Distributes supernode rewards once every day.
-#define SUPERNODE_DECAY_RATE             fc::days(7)               // Averages supernode file weight over 7 days. 
-#define ENTERPRISE_VOTE_PERCENT_REQUIRED (10* PERCENT_1)           // Enterprise proposals require 10% of network voting power to approve milestones. 
-#define ENTERPRISE_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
+#define IRREVERSIBLE_THRESHOLD                (67 * PERCENT_1)          // Blocks produced become irrervsible after approval by this percentage of active producers. 
+#define POW_TARGET_TIME                       fc::minutes(10)           // Aim for approximately one proof of work every 10 minutes to be produced. 
+#define POW_DECAY_TIME                        fc::days(7)               // Averaging time of one week for adjusting proof of work difficulty. 
+#define POW_UPDATE_BLOCK_INTERVAL             (1 * BLOCKS_PER_HOUR)    // Updates the mining dificulty once per hour.            
+#define POA_BLOCK_INTERVAL                    (8 * BLOCKS_PER_HOUR)     // Distributes the proof of activity reward every 8 hours to the highest activity voted witness. 
+#define TXN_STAKE_BLOCK_INTERVAL              (1 * BLOCKS_PER_HOUR)     // Transaction stake rewards are distributed each hour.
+#define TXN_STAKE_DECAY_TIME                  fc::days(7)               // Transaction stake is averaged over a rolling 7 day window. 
+#define NETWORK_OFFICER_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
+#define NETWORK_OFFICER_ACTIVE_SET            (50)
+#define EXECUTIVE_BOARD_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
+#define EXECUTIVE_BOARD_ACTIVE_SET            (5)
+#define MIN_EXEC_CREDIT_PRICE                 price( asset( 9, SYMBOL_USD), asset( 10, SYMBOL_CREDIT))     // $0.90 minimum credit price to pay executive budgets
+#define SUPERNODE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)          // Distributes supernode rewards once every day.
+#define SUPERNODE_DECAY_RATE                  fc::days(7)               // Averages supernode file weight over 7 days. 
+#define ENTERPRISE_VOTE_PERCENT_REQUIRED      (10* PERCENT_1)           // Enterprise proposals require 10% of network voting power to approve milestones.
+#define ENTERPRISE_WIT_APPROVALS_REQUIRED     (5)                       // Enterprise proposals require 10% of network voting power to approve milestones.
+#define ENTERPRISE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
 
 #define CASHOUT_WINDOW                  fc::days(7)           // 7 days of accumulating votes and views before paying out a post's comment rewards.
 #define VOTE_CHANGE_LOCKOUT_PERIOD      fc::seconds(1)        // 1 second
@@ -246,8 +250,8 @@
 
 #define ADVERTISING_FEE_PERCENT            (50 * PERCENT_1) // Percentage of advertising spend that is charged as a fee when a provider claims ad delivery: 50%
 #define NETWORK_ADVERTISING_FEE_PERCENT    (50 * PERCENT_1) // Percentage of advertising fee that is consumed as network revenue: 50%
-#define DEMAND_ADVERTISING_FEE_PERCENT     (10 * PERCENT_1) // Percentage of advertising fee that is shared with the advertising purchaser's interface: 10%
-#define AUDIENCE_ADVERTISING_FEE_PERCENT   (10 * PERCENT_1) // Percentage of advertising fee that is shared with the audience of the delivery: 10%
+#define DEMAND_ADVERTISING_FEE_PERCENT     (15 * PERCENT_1) // Percentage of advertising fee that is shared with the advertising purchaser's interface: 15%
+#define AUDIENCE_ADVERTISING_FEE_PERCENT   (15 * PERCENT_1) // Percentage of advertising fee that is shared with the audience of the delivery: 15%
 #define BIDDER_ADVERTISING_FEE_PERCENT     (10 * PERCENT_1) // Percentage of advertising fee that is shared with the bidder account: 10%
 #define DELIVERY_ADVERTISING_FEE_PERCENT   (10 * PERCENT_1) // Percentage of advertising fee that is shared with the delivery account: 10%
 
@@ -330,7 +334,8 @@
 #define STAKED_DIVIDEND_PERCENT                (80 * PERCENT_1)      // percentage of equity dividends distributed to staked balances
 #define SAVINGS_DIVIDEND_PERCENT               (10 * PERCENT_1)      // percentage of equity dividends distirbuted to savings balances 
 
-#define CREDIT_ASSET_BUYBACK_INTERVAL          fc::days(7)           // Time period of buying back credit assets 
+#define CREDIT_BUYBACK_INTERVAL                fc::days(7)           // Time period of buying back credit assets 
+#define CREDIT_BUYBACK_INTERVAL_BLOCKS         int64_t( CREDIT_BUYBACK_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Time period of buying back credit assets 
 #define BUYBACK_SHARE_PERCENT                  (5 * PERCENT_1)       // Percentage of incoming assets added to the buyback pool
 #define LIQUID_FIXED_INTEREST_RATE             (1 * PERCENT_1)       // Fixed component of Interest rate of the asset for liquid balances.
 #define LIQUID_VARIABLE_INTEREST_RATE          (2 * PERCENT_1)       // Variable component of Interest rate of the asset for liquid balances.
@@ -365,6 +370,7 @@
 #define NETWORK_UPDATE_INTERVAL_BLOCKS         int64_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
 
 #define MEDIAN_LIQUIDITY_INTERVAL_BLOCKS       int64_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
+#define MEDIAN_LIQUIDITY_INTERVAL              fc::minutes(10)
 
 #define FEED_INTERVAL_BLOCKS            (BLOCKS_PER_HOUR)     // Updates feeds once per hour
 #define FEED_HISTORY_WINDOW             fc::hours(84)         // 3.5 days

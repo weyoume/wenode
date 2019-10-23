@@ -1156,7 +1156,7 @@ namespace node { namespace chain {
 
          shared_authority       new_owner_authority;
 
-         time_point             expires;
+         time_point             expiration;
    };
 
 

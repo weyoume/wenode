@@ -362,7 +362,6 @@ void database::init_genesis()
       rfo.last_update = now;
       rfo.content_constant = CONTENT_CONSTANT;
       rfo.content_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.equity_reward_balance = asset(0, SYMBOL_COIN);
       rfo.validation_reward_balance = asset(0, SYMBOL_COIN);
       rfo.txn_stake_reward_balance = asset(0, SYMBOL_COIN);
       rfo.work_reward_balance = asset(0, SYMBOL_COIN);
@@ -659,7 +658,7 @@ const chain_properties& database::chain_properties()const
    return get_witness_schedule().median_props;
 }
 
-uint32_t database::pow_difficulty()const
+uint128_t database::pow_difficulty()const
 {
    return get_witness_schedule().pow_target_difficulty;
 }
@@ -673,11 +672,6 @@ const node_property_object& database::get_node_properties() const
 {
    return _node_property_object;
 }
-
-const feed_history_object& database::get_feed_history()const
-{ try {
-   return get< feed_history_object >();
-} FC_CAPTURE_AND_RETHROW() }
 
 uint32_t database::last_non_undoable_block_num() const
 {
@@ -949,6 +943,16 @@ const community_enterprise_object* database::find_community_enterprise( const ac
    return find< community_enterprise_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id ) );
 }
 
+const enterprise_approval_object& database::get_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const
+{ try {
+   return get< enterprise_approval_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id, account ) );
+} FC_CAPTURE_AND_RETHROW( (creator)(enterprise_id)(account) ) }
+
+const enterprise_approval_object* database::find_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const
+{
+   return find< enterprise_approval_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id, account ) );
+}
+
 const board_object& database::get_board( const board_name_type& board )const
 { try {
 	return get< board_object, by_name >( board );
@@ -967,6 +971,16 @@ const board_member_object& database::get_board_member( const board_name_type& bo
 const board_member_object* database::find_board_member( const board_name_type& board )const
 {
    return find< board_member_object, by_name >( board );
+}
+
+const board_member_key_object& database::get_board_member_key( const account_name_type& member, const board_name_type& board )const
+{ try {
+	return get< board_member_key_object, by_member_board >( boost::make_tuple( member, board) );
+} FC_CAPTURE_AND_RETHROW( (board) ) }
+
+const board_member_key_object* database::find_board_member_key( const account_name_type& member, const board_name_type& board )const
+{
+   return find< board_member_key_object, by_member_board >( boost::make_tuple( member, board) );
 }
 
 const comment_object& database::get_comment( const account_name_type& author, const shared_string& permlink )const
@@ -1709,6 +1723,7 @@ void database::update_network_votes()
    const auto& wit_idx = get_index< witness_index >().indices().get< by_voting_power >();
    const auto& wit_vote_idx = get_index< witness_vote_index >().indices().get< by_witness_account >();
    auto wit_itr = wit_idx.begin();
+   uint128_t total_witness_voting_power = 0;
    
    while( wit_itr != wit_idx.end() )
    {
@@ -1748,8 +1763,14 @@ void database::update_network_votes()
          w.decay_weights( now, wso );
          w.witness_virtual_last_update = wso.current_witness_virtual_time;
       });
+      total_witness_voting_power += voting_power.value;
       ++wit_itr;
    }
+
+   modify( wso, [&]( witness_schedule_object& w )
+   {
+      w.total_witness_voting_power = total_witness_voting_power;
+   });
 
    const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
    const auto& officer_vote_idx = get_index< network_officer_vote_index >().indices().get< by_officer_account >();
@@ -1786,41 +1807,6 @@ void database::update_network_votes()
       ++officer_itr;
    }
 
-   const auto& exec_idx = get_index< executive_board_index >().indices().get< by_voting_power >();
-   const auto& exec_vote_idx = get_index< executive_board_vote_index >().indices().get< by_executive_account >();
-   auto exec_itr = exec_idx.begin();
-   
-   while( exec_itr != exec_idx.end() )
-   {
-      const executive_board_object& exec = *exec_itr;
-      auto exec_vote_itr = exec_vote_idx.lower_bound( exec.account );
-      share_type voting_power = 0;
-      uint32_t vote_count = 0;
-
-      while( exec_vote_itr != exec_vote_idx.end() && exec_vote_itr->executive_board == exec.account )
-      {
-         const executive_board_vote_object& vote = *exec_vote_itr;
-         const account_object& voter = get_account( vote.account );
-         share_type weight = get_voting_power( exec_vote_itr->account );
-         if( voter.proxied.size() )
-         {
-            weight += get_proxied_voting_power( voter, equity_price );
-         }
-         // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
-         // Rank one gets half of voting power, rank two gets one quarter, etc. 
-         voting_power += ( weight.value >> vote.vote_rank );
-         vote_count++;
-         ++exec_vote_itr;
-      }
-
-      modify( exec, [&]( executive_board_object& e )
-      {
-         e.voting_power = voting_power;
-         e.vote_count = vote_count;
-      });
-      ++exec_itr;
-   }
-
    const auto& gov_idx = get_index< governance_account_index >().indices().get< by_subscriber_power >();
    const auto& gov_sub_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
    auto gov_itr = gov_idx.begin();
@@ -1853,6 +1839,8 @@ void database::update_network_votes()
       });
       ++gov_itr;
    }
+
+   // TODO moderator voting, business account officer voting
 }
 
 /**
@@ -2257,6 +2245,12 @@ void database::process_supernode_rewards()
 
 } FC_CAPTURE_AND_RETHROW() }
 
+
+/**
+ * Pays the network officer rewards to the 50 highest voted
+ * developers, marketers and advocates on the network from
+ * the reward fund, once per day.
+ */
 void database::process_network_officer_rewards()
 { try {
    if( (head_block_num() % NETWORK_OFFICER_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
@@ -2377,30 +2371,299 @@ void database::process_network_officer_rewards()
 } FC_CAPTURE_AND_RETHROW() }
 
 
+/**
+ * Update an executive board's voting approval statisitics
+ * and update its approval if there are
+ * sufficient votes from witnesses and other accounts.
+ */
+void database::update_executive_board( const executive_board_object& executive_board, 
+   const witness_schedule_object& wso, const dynamic_global_property_object& props )
+{ try {
+   uint32_t vote_count = 0;
+   share_type voting_power = 0;
+   uint32_t witness_vote_count = 0;
+   share_type witness_voting_power = 0;
+   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
 
+   const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_executive_account >();
+   auto vote_itr = vote_idx.lower_bound( executive_board.account );
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->executive_board == executive_board.account )
+   {
+      const executive_board_vote_object& vote = *vote_itr;
+      const account_object& voter = get_account( vote.account );
+      bool is_witness = wso.is_top_witness( voter.name );
+      vote_count++;
+      share_type weight = 0;
+      weight += get_voting_power( vote.account, equity_price );
+      if( voter.proxied.size() )
+      {
+         weight += get_proxied_voting_power( voter, equity_price );
+      }
+      voting_power += ( weight.value >> vote.vote_rank );
+
+      if( is_witness )
+      {
+         witness_vote_count++;
+         const witness_object& witness = get_witness( voter.name );
+         witness_voting_power += ( witness.voting_power.value >> vote.vote_rank );
+      }
+   }
+
+   // Approve the executive board when a threshold of votes to support its budget.
+   bool approve_board = ( vote_count >= ENTERPRISE_WIT_APPROVALS_REQUIRED * 8 ) &&
+      ( witness_vote_count >= ENTERPRISE_WIT_APPROVALS_REQUIRED * 2 ) &&
+      ( voting_power >= ( props.total_voting_power * ENTERPRISE_VOTE_PERCENT_REQUIRED * 2 ) / PERCENT_100 ) &&
+      ( witness_voting_power >= ( wso.total_witness_voting_power * ENTERPRISE_VOTE_PERCENT_REQUIRED * 2 ) / PERCENT_100 );
+   
+   modify( executive_board, [&]( executive_board_object& e )
+   {
+      e.vote_count = vote_count;
+      e.voting_power = voting_power;
+      e.witness_vote_count = witness_vote_count;
+      e.witness_voting_power = witness_voting_power;
+      e.board_approved = approve_board;
+   });
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Pays the requested budgets fo the top 5 voted executive boards on the network, that have
+ * sufficient approval from accounts and witnesses once per day.
+ * Price of network credit asset must be greater than $0.90 USD to issue new units, or 
+ * executive budgets are suspended. 
+ * Network credit is a digital fiat currency that is issued to executive boards
+ * for expenses of managing a network development team. Its value is derived from
+ * buybacks from network revenue, up to a face value of $1.00 USD
+ * per credit, and interest payments for balance holders.
+ * Holding Credit assets are economically equivalent to holding bonds
+ * for debt lent to the network. 
+ */
 void database::process_executive_board_budgets()
 { try {
+   if( (head_block_num() % EXECUTIVE_BOARD_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
+      return;
 
+   const witness_schedule_object& wso = get_witness_schedule();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
+
+   const auto& exec_idx = get_index< executive_board_index >().indices().get< by_voting_power >();
+   auto exec_itr = exec_idx.begin();
+   uint16_t board_count = 0;
+
+   while( exec_itr != exec_idx.end() )   // update all executive board approvals and vote statistics. 
+   {
+      const executive_board_object& exec = *exec_itr;
+      update_executive_board( exec, wso, props );
+      ++exec_itr;
+   }
+
+   if( credit_usd_price > MIN_EXEC_CREDIT_PRICE )
+   {
+      auto exec_itr = exec_idx.begin(); // reset iterator;
+
+      while( exec_itr != exec_idx.end() && board_count < EXECUTIVE_BOARD_ACTIVE_SET )   // Pay the budget requests of the top 5 approved boards.
+      {
+         const executive_board_object& exec = *exec_itr;
+
+         if( exec.board_approved )
+         {
+            FC_ASSERT( exec.budget.symbol == SYMBOL_CREDIT , 
+               "Executive Budget must be in the network credit asset." );
+            adjust_liquid_balance( exec.account, exec.budget );     // Issues new supply of credit asset to pay executive board.
+            board_count++;
+         }
+         ++exec_itr;
+      }
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
-
+/**
+ * Update a community enterprise proposal's voting approval statisitics
+ * and increment the approved milestone if there are
+ * sufficient current approvals from witnesses and other accounts.
+ */
 void database::update_enterprise( const community_enterprise_object& enterprise, 
-   const witness_schedule_object& witness_schedule, const dynamic_global_property_object& props )
+   const witness_schedule_object& wso, const dynamic_global_property_object& props )
 { try {
+   uint32_t total_approvals = 0;
+   share_type total_voting_power = 0;
+   uint32_t total_witness_approvals = 0;
+   share_type total_witness_voting_power = 0;
+   uint32_t current_approvals = 0;
+   share_type current_voting_power = 0;
+   uint32_t current_witness_approvals = 0;
+   share_type current_witness_voting_power = 0;
+   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
 
+   const auto& approval_idx = get_index< enterprise_approval_index >().indices().get< by_enterprise_id >();
+   auto approval_itr = approval_idx.lower_bound( boost::make_tuple( enterprise.creator, enterprise.enterprise_id ) );
+
+   while( approval_itr != approval_idx.end() && 
+      approval_itr->creator == enterprise.creator && 
+      approval_itr->enterprise_id == enterprise.enterprise_id )
+   {
+      const enterprise_approval_object& approval = *approval_itr;
+      const account_object& voter = get_account( approval.account );
+      bool is_witness = wso.is_top_witness( voter.name );
+      total_approvals++;
+      total_voting_power += get_voting_power( approval.account, equity_price );
+      if( voter.proxied.size() )
+      {
+         total_voting_power += get_proxied_voting_power( voter, equity_price );
+      }
+
+      if( is_witness )
+      {
+         total_witness_approvals++;
+         const witness_object& witness = get_witness( voter.name );
+         total_witness_voting_power += witness.voting_power;
+      }
+
+      if( approval.milestone == enterprise.claimed_milestones ) // approval is current 
+      {
+         current_approvals++;
+         current_voting_power += get_voting_power( approval.account, equity_price );
+         if( voter.proxied.size() )
+         {
+            current_voting_power += get_proxied_voting_power( voter, equity_price );
+         }
+
+         if( is_witness )
+         {
+            current_witness_approvals++;
+            const witness_object& witness = get_witness( voter.name );
+            current_witness_voting_power += witness.voting_power;
+         }
+      }
+   }
+
+   // Approve the latest claimed milestone when a threshold of approvals support its release.
+   bool approve_milestone = ( current_approvals >= ENTERPRISE_WIT_APPROVALS_REQUIRED * 4 ) &&
+      ( current_witness_approvals >= ENTERPRISE_WIT_APPROVALS_REQUIRED ) &&
+      ( current_voting_power >= ( props.total_voting_power * ENTERPRISE_VOTE_PERCENT_REQUIRED ) / PERCENT_100 ) &&
+      ( current_witness_voting_power >= ( wso.total_witness_voting_power * ENTERPRISE_VOTE_PERCENT_REQUIRED ) / PERCENT_100 );
+   
+
+   modify( enterprise, [&]( community_enterprise_object& e )
+   {
+      e.total_approvals = total_approvals;
+      e.total_voting_power = total_voting_power;
+      e.total_witness_approvals = total_witness_approvals;
+      e.total_witness_voting_power = total_witness_voting_power;
+      e.current_approvals = current_approvals;
+      e.current_voting_power = current_voting_power;
+      e.current_witness_approvals = current_witness_approvals;
+      e.current_witness_voting_power = current_witness_voting_power;
+      if( approve_milestone )
+      {
+         e.approved_milestones = e.claimed_milestones;
+      }
+   });
 } FC_CAPTURE_AND_RETHROW() }
 
 
-
+/**
+ * Updates all community enterprise proposals, by checking 
+ * if they have sufficient approvals from accounts on the network
+ * and witnesses.
+ * Processes budget payments for all proposals that have milestone approvals.
+ */
 void database::process_community_enterprise_fund()
 { try {
+   if( (head_block_num() % ENTERPRISE_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
+      return;
 
+   const reward_fund_object& rfo = get_reward_fund();
+   const witness_schedule_object& wso = get_witness_schedule();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   const auto& enterprise_idx = get_index< community_enterprise_index >().indices().get< by_total_voting_power >();
+   auto enterprise_itr = enterprise_idx.begin();
+
+   while( enterprise_itr != enterprise_idx.end() ) 
+   {
+      update_enterprise( *enterprise_itr, wso, props );
+      ++enterprise_itr;
+   }
+
+   auto enterprise_itr = enterprise_idx.begin();
+
+   while( enterprise_itr != enterprise_idx.end() && 
+      rfo.community_fund_balance.amount > 0 )   // Enterprise objects in order of highest total voting power.
+   {
+      if( enterprise_itr->approved_milestones >= 0 )  // Processed when they have inital approval.
+      {
+         const community_enterprise_object& enterprise = *enterprise_itr;
+         asset available_budget = std::min( rfo.community_fund_balance, enterprise.daily_budget );
+
+         if( enterprise.duration > enterprise.days_paid )
+         {
+            modify( rfo, [&]( reward_fund_object& r )
+            {
+               r.adjust_community_fund_balance( available_budget );     // Remove the distributed amount from the reward pool.
+            });
+
+            modify( enterprise, [&]( community_enterprise_object& e )
+            {
+               e.adjust_pending_budget( available_budget );     // Pay daily budget to enterprise proposal
+               e.days_paid++;
+            });
+         }
+
+         uint16_t percent_released = 0;
+
+         for( auto i = 0; i <= enterprise.approved_milestones; i++ )
+         {
+            percent_released += enterprise.milestones[ i ].second;  // Accumulate all approved milestone percentages
+         }
+
+         asset release_limit = ( enterprise.total_budget() * percent_released ) / PERCENT_100;
+         asset to_release = std::min( enterprise.pending_budget, release_limit - enterprise.total_distributed );
+         
+         if( to_release.amount > 0)
+         {
+            asset distributed = asset( 0, SYMBOL_COIN );
+
+            for( auto b : enterprise.beneficiaries )
+            {
+               asset release_split = ( to_release * b.second ) / PERCENT_100; 
+               adjust_liquid_balance( b.first, release_split );       // Pay proposal beneficiaries according to percentage split.
+               distributed += release_split;
+            }
+
+            adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+            modify( enterprise, [&]( community_enterprise_object& e )
+            {
+               e.adjust_pending_budget( -distributed );
+               e.total_distributed += distributed;
+            });
+         }
+      }
+      ++enterprise_itr;
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 
 
 void database::adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true )
 { try {
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+
+   modify( supernode, [&]( supernode_object& s )
+   {
+      s.decay_weights( props );
+      s.recent_view_weight += delta;
+
+      if( adjust )
+      {
+         s.daily_active_users += PERCENT_100;
+         s.monthly_active_users += PERCENT_100;
+      }
+   });
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -2408,6 +2671,18 @@ void database::adjust_view_weight( const supernode_object& supernode, share_type
 
 void database::adjust_interface_users( const interface_object& interface, bool adjust = true )
 { try {
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+
+   modify( interface, [&]( interface_object& i )
+   {
+      i.decay_weights( props );
+
+      if( adjust )
+      {
+         i.daily_active_users += PERCENT_100;
+         i.monthly_active_users += PERCENT_100;
+      }
+   });
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -2428,31 +2703,29 @@ void database::adjust_interface_users( const interface_object& interface, bool a
  */
 void database::process_funds()
 { try {
-   const auto& props = get_dynamic_global_properties();
-   const auto& wso = get_witness_schedule();
-   const auto& core_asset_dynamic_data = get_core_dynamic_data();
-   const auto& current_producer = get_witness( props.current_producer );
-   const auto& witness_account = get_account( props.current_producer );
-   const auto& witness_balance = get_account_balance( props.current_producer, SYMBOL_COIN );
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const witness_schedule_object& wso = get_witness_schedule();
+   const witness_object& current_producer = get_witness( props.current_producer );
+   const account_object& witness_account = get_account( props.current_producer );
 
    asset block_reward = BLOCK_REWARD;
 
-   asset content_reward = (block_reward * CONTENT_REWARD_PERCENT ) / PERCENT_100;
-   asset equity_reward = (block_reward * EQUITY_REWARD_PERCENT ) / PERCENT_100;
-   asset producer_reward = (block_reward * PRODUCER_REWARD_PERCENT ) / PERCENT_100;
-   asset supernode_reward = (block_reward * SUPERNODE_REWARD_PERCENT ) / PERCENT_100;
-   asset power_reward = (block_reward * POWER_REWARD_PERCENT ) / PERCENT_100;
-   asset community_fund_reward = (block_reward * COMMUNITY_FUND_PERCENT ) / PERCENT_100;
-   asset development_reward = (block_reward * DEVELOPMENT_REWARD_PERCENT ) / PERCENT_100;
-   asset marketing_reward = (block_reward * MARKETING_REWARD_PERCENT ) / PERCENT_100;
-   asset advocacy_reward = (block_reward * ADVOCACY_REWARD_PERCENT ) / PERCENT_100;
-   asset activity_reward = (block_reward * ACTIVITY_REWARD_PERCENT ) / PERCENT_100;
+   asset content_reward            = ( block_reward * CONTENT_REWARD_PERCENT          ) / PERCENT_100;
+   asset equity_reward             = ( block_reward * EQUITY_REWARD_PERCENT           ) / PERCENT_100;
+   asset producer_reward           = ( block_reward * PRODUCER_REWARD_PERCENT         ) / PERCENT_100;
+   asset supernode_reward          = ( block_reward * SUPERNODE_REWARD_PERCENT        ) / PERCENT_100;
+   asset power_reward              = ( block_reward * POWER_REWARD_PERCENT            ) / PERCENT_100;
+   asset community_fund_reward     = ( block_reward * COMMUNITY_FUND_PERCENT          ) / PERCENT_100;
+   asset development_reward        = ( block_reward * DEVELOPMENT_REWARD_PERCENT      ) / PERCENT_100;
+   asset marketing_reward          = ( block_reward * MARKETING_REWARD_PERCENT        ) / PERCENT_100;
+   asset advocacy_reward           = ( block_reward * ADVOCACY_REWARD_PERCENT         ) / PERCENT_100;
+   asset activity_reward           = ( block_reward * ACTIVITY_REWARD_PERCENT         ) / PERCENT_100;
 
-   asset producer_block_reward = (producer_reward * PRODUCER_BLOCK_PERCENT ) / PERCENT_100;
-   asset validation_reward = (producer_reward * PRODUCER_VALIDATOR_PERCENT ) / PERCENT_100;
-   asset txn_stake_reward = (producer_reward * PRODUCER_TXN_STAKE_PERCENT ) / PERCENT_100;
-   asset work_reward = (producer_reward * PRODUCER_WORK_PERCENT ) / PERCENT_100;
-   asset producer_activity_reward = (producer_reward * PRODUCER_ACTIVITY_PERCENT ) / PERCENT_100;
+   asset producer_block_reward     = ( producer_reward * PRODUCER_BLOCK_PERCENT       ) / PERCENT_100;
+   asset validation_reward         = ( producer_reward * PRODUCER_VALIDATOR_PERCENT   ) / PERCENT_100;
+   asset txn_stake_reward          = ( producer_reward * PRODUCER_TXN_STAKE_PERCENT   ) / PERCENT_100;
+   asset work_reward               = ( producer_reward * PRODUCER_WORK_PERCENT        ) / PERCENT_100;
+   asset producer_activity_reward  = ( producer_reward * PRODUCER_ACTIVITY_PERCENT    ) / PERCENT_100;
 
    asset producer_pending = validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
    asset pending_issuance = content_reward + equity_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
@@ -2990,7 +3263,7 @@ void database::_apply_block( const signed_block& next_block )
    clear_expired_delegations();
    update_witness_schedule(*this);
    update_comment_metrics();
-   update_median_liquidity();//
+   update_median_liquidity();
    update_network_votes();
    
    process_funds();
@@ -3000,21 +3273,21 @@ void database::_apply_block( const signed_block& next_block )
    process_recurring_transfers();
    process_equity_rewards();
    process_power_rewards();
-   process_credit_updates();//
-   process_credit_buybacks();//
-   process_margin_updates();//
-   process_credit_interest();//
-   process_membership_updates();//
+   process_credit_updates();
+   process_credit_buybacks();
+   process_margin_updates();
+   process_credit_interest();
+   process_membership_updates();
    update_proof_of_work_target();
    process_txn_stake_rewards();
    process_validation_rewards();
    process_producer_activity_rewards();
    process_network_officer_rewards();
-   process_executive_board_budgets();//new
+   process_executive_board_budgets();
    process_supernode_rewards();
-   process_community_enterprise_fund();//
+   process_community_enterprise_fund();
 
-   process_comment_cashout();//
+   process_comment_cashout();
    
    account_recovery_processing();
    expire_escrow_ratification();
@@ -3398,7 +3671,7 @@ void database::update_last_irreversible_block()
 
 
 asset database::calculate_issuer_fee( const asset_object& trade_asset, const asset& trade_amount )
-{
+{ try {
    FC_ASSERT( trade_asset.symbol == trade_amount.symbol );
 
    if( !trade_asset.charges_market_fees() )
@@ -3413,10 +3686,10 @@ asset database::calculate_issuer_fee( const asset_object& trade_asset, const ass
       percent_fee.amount = trade_asset.options.max_market_fee;
 
    return percent_fee;
-}
+} FC_CAPTURE_AND_RETHROW() }
 
 asset database::pay_issuer_fees( const asset_object& recv_asset, const asset& receives )
-{
+{ try {
    asset issuer_fees = calculate_issuer_fee( recv_asset, receives );
    FC_ASSERT( issuer_fees <= receives, "Market fee shouldn't be greater than receives");
 
@@ -3431,13 +3704,14 @@ asset database::pay_issuer_fees( const asset_object& recv_asset, const asset& re
    }
 
    return issuer_fees;
-}
+} FC_CAPTURE_AND_RETHROW() }
 
 asset database::pay_issuer_fees(const account_object& seller, const asset_object& recv_asset, const asset& receives )
-{
+{ try {
    const auto issuer_fees = calculate_issuer_fee( recv_asset, receives );
-   FC_ASSERT( issuer_fees <= receives, "Market fee shouldn't be greater than receives");
-   //Don't dirty undo state if not actually collecting any fees
+   FC_ASSERT( issuer_fees <= receives, 
+      "Market fee shouldn't be greater than receives");
+   
    if ( issuer_fees.amount > 0 ) 
    {
       asset reward = asset(0, recv_asset.symbol);
@@ -3454,8 +3728,9 @@ asset database::pay_issuer_fees(const account_object& seller, const asset_object
          if ( reward_value > 0 && registrar_permissions.is_authorized_asset( recv_asset) )
          {
             asset reward = asset( reward_value, recv_asset.symbol);
-            FC_ASSERT( reward < issuer_fees, "Market reward should be less than issuer fees");
-            // cut referrer percent from reward
+            FC_ASSERT( reward < issuer_fees, 
+               "Market reward should be less than issuer fees");
+            
             auto registrar_reward = reward;
             if( seller.referrer != seller.registrar )
             {
@@ -3463,10 +3738,11 @@ asset database::pay_issuer_fees(const account_object& seller, const asset_object
 
                if ( referrer_rewards_value > 0 && referrer_permissions.is_authorized_asset( recv_asset) )
                {
-                  FC_ASSERT ( referrer_rewards_value <= reward.amount.value, "Referrer reward shouldn't be greater than total reward" );
+                  FC_ASSERT ( referrer_rewards_value <= reward.amount.value, 
+                     "Referrer reward shouldn't be greater than total reward" );
                   const asset referrer_reward = asset( referrer_rewards_value, recv_asset.symbol);
-                  registrar_reward -= referrer_reward;
-                  adjust_reward_balance(seller.referrer, referrer_reward);
+                  registrar_reward -= referrer_reward;    // cut referrer percent from reward
+                  adjust_reward_balance( seller.referrer, referrer_reward );
                }
             }
             adjust_reward_balance(seller.registrar, registrar_reward);
@@ -3481,95 +3757,244 @@ asset database::pay_issuer_fees(const account_object& seller, const asset_object
    }
 
    return issuer_fees;
-}
+} FC_CAPTURE_AND_RETHROW() }
 
-// Pays the network fee by burning the core asset into accumulated network revenue.
-asset database::pay_network_fees( const asset& amount, const account_object& payer )
-{
+
+/**
+ * Pays the network fee by burning the core asset into accumulated network revenue,
+ * or by burning network credit assets or force settling USD assets if their price
+ * falls below $1.00 USD.
+ */
+asset database::pay_network_fees( const asset& amount )
+{ try {
    FC_ASSERT(amount.symbol == SYMBOL_COIN);
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   asset total_fees = amount;
 
-   const asset_dynamic_data_object& core_dyn_data = get_dynamic_data( SYMBOL_COIN );
+   price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
+   price usd_settlement_price = get_bitasset_data( SYMBOL_USD ).settlement_price;
+   price usd_market_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).base_hour_median_price( usd_settlement_price.base.symbol );
 
-   modify( core_dyn_data, [&]( asset_dynamic_data_object& obj )
+   if( usd_market_price < usd_settlement_price )   // If the market price of USD is below settlement price
    {
-      obj.burn_asset(-amount);
-   });
+      asset usd_purchased = liquid_exchange( total_fees, SYMBOL_USD, true, false );   // Liquid Exchange into USD, without paying fees to avoid recursive fees. 
 
-   const dynamic_global_property_object& gprops = get_dynamic_global_properties();
-
-   modify( gprops, [&](dynamic_global_property_object& gpo ) 
+      create< force_settlement_object >([&]( force_settlement_object& fso ) 
+      {
+         fso.owner = NULL_ACCOUNT;
+         fso.balance = usd_purchased;    // Settle USD purchased at below settlement price, to increase total Coin burned.
+         fso.settlement_date = now + fc::minutes( 10 );
+      });
+   }
+   else if( credit_usd_price < price(asset(1,SYMBOL_USD)/asset(1,SYMBOL_CREDIT)) )   // If price of credit is below $1.00 USD
    {
-      gpo.accumulated_network_revenue += amount;
-   });
-}
+      asset credit_purchased = liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );   // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
 
-// Pays protocol membership fees .
-// member: The account that is paying to upgrade to a membership level
-// payment: The asset being received as payment
-// duration: The number of months being paid for
-// type: the level of membership purchased [standard,mid,top]
-// seller_int: The owner account of the interface that sold the membership
-asset database::pay_membership_fees( const account_object& member, const asset& payment, int16_t duration, const account_name_type& seller_int ) 
-{
-   FC_ASSERT( payment.symbol == SYMBOL_COIN, "Payment asset must be core asset");
-   const asset_bitasset_data_object& USD_bitasset = get_bitasset_data( SYMBOL_USD );
-   price USD_price = USD_bitasset.current_feed.settlement_price;
-
-
-
-   asset payment_USD_value = payment * USD_price;
+      modify( props, [&]( dynamic_global_property_object& gpo ) 
+      {
+         gpo.accumulated_network_revenue += total_fees;
+      });
+   }
+   else   // Remove Coin from Supply and increment network revenue. 
+   {
+      modify( props, [&]( dynamic_global_property_object& gpo ) 
+      {
+         gpo.accumulated_network_revenue += total_fees;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW() }
 
 
+/**
+ * Pays the network fee by burning the core asset into accumulated network revenue,
+ * or by burning network credit assets or force settling USD assets if their price
+ * falls below $1.00 USD. Splits revenue to registrar and referrer, and governance 
+ * accounts that the user subscribes to.
+ */
+asset database::pay_network_fees( const account_object& payer, const asset& amount )
+{ try {
+   FC_ASSERT(amount.symbol == SYMBOL_COIN);
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   asset total_fees = amount;
+
+   flat_set<const account_object*> governance_subscriptions;
+
+   const auto& gov_idx = get_index< governance_subscription_index >().indices().get< by_account_governance >();
+   auto gov_itr = gov_idx.lower_bound( payer.name );
+
+   while( gov_itr != gov_idx.end() && gov_itr->account == payer.name )
+   {
+      const governance_subscription_object& sub = *gov_itr;
+      const account_object* account_ptr = find_account( sub.governance_account );
+      governance_subscriptions.insert( account_ptr );
+      ++gov_itr;
+   }
+   const account_object& registrar = get_account( payer.registrar );
+   const account_object& referrer = get_account( payer.referrer );
+
+   asset gov_share = ( amount * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
+   asset registrar_share = ( amount * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
+   asset referrer_share = ( registrar_share * payer.referrer_rewards_percentage ) / PERCENT_100;
+   registrar_share -= referrer_share;
+
+   asset gov_paid = pay_multi_fee_share( governance_subscriptions, gov_share );
+   asset registrar_paid = pay_fee_share( registrar, registrar_share );
+   asset referrer_paid = pay_fee_share( referrer, referrer_share );
+
+   total_fees -= ( gov_paid + registrar_paid + referrer_paid );
+
+   price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
+   price usd_settlement_price = get_bitasset_data( SYMBOL_USD ).settlement_price;
+   price usd_market_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).base_hour_median_price( usd_settlement_price.base.symbol );
+
+   if( usd_market_price < usd_settlement_price )   // If the market price of USD is below settlement price
+   {
+      asset usd_purchased = liquid_exchange( total_fees, SYMBOL_USD, true, false );   // Liquid Exchange into USD, without paying fees to avoid recursive fees. 
+
+      create< force_settlement_object >([&]( force_settlement_object& fso ) 
+      {
+         fso.owner = NULL_ACCOUNT;
+         fso.balance = usd_purchased;    // Settle USD purchased at below settlement price, to increase total Coin burned.
+         fso.settlement_date = now + fc::minutes( 10 );
+      });
+   }
+   else if( credit_usd_price < price(asset(1,SYMBOL_USD)/asset(1,SYMBOL_CREDIT)) )   // If price of credit is below $1.00 USD
+   {
+      asset credit_purchased = liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );   // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
+
+      modify( props, [&]( dynamic_global_property_object& gpo ) 
+      {
+         gpo.accumulated_network_revenue += total_fees;
+      });
+   }
+   else   // Remove Coin from Supply and increment network revenue. 
+   {
+      modify( props, [&]( dynamic_global_property_object& gpo ) 
+      {
+         gpo.accumulated_network_revenue += total_fees;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/** 
+ * Pays protocol trading fees on taker orders.
+ * taker: The account that is the taker on the trade
+ * receives: The asset object being received from the trade
+ * maker_int: The owner account of the interface of the maker of the trade
+ * taker_int: The owner account of the interface of the taker of the trade
+ */
+asset database::pay_trading_fees( const account_object& taker, const asset& receives, const account_name_type& maker_int, const account_name_type& taker_int ) 
+{ try {
    asset total_fees = ( receives * TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset governance_account_share = ( total_fees * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
-   asset referral_share = ( total_fees * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
+   const account_object& m_interface = get_account(maker_int);
+   const account_object& t_interface = get_account(taker_int);
+   
+   asset maker_interface_share = ( total_fees * MAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset taker_interface_share = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset network_fee = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
 
-   asset fee_share = total_fees - governance_account_share - referral_share; // subtracts referral and governance account fee shares before trading share percentages. 
+   asset maker_paid = pay_fee_share( m_interface, maker_interface_share );
+   asset taker_paid = pay_fee_share( t_interface, taker_interface_share );
+   asset network_paid = pay_network_fees( taker, network_fee );
 
-   asset maker_interface_share = ( fee_share * MAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset taker_interface_share = ( fee_share * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset network_fee = ( fee_share * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset total_paid = network_paid + maker_paid + taker_paid;
+   return total_paid;
+} FC_CAPTURE_AND_RETHROW() }
 
-   asset network_paid = pay_network_fees( network_fee, taker );
-   asset gov_paid = pay_governance_reward( governance_account_share, taker );
-   asset ref_paid = pay_referral_reward( referral_share, taker );
-   asset maker_paid = pay_interface_reward( maker_int, maker_interface_share );
-   asset taker_paid = pay_interface_reward( taker_int, taker_interface_share );
 
-   FC_ASSERT( network_paid + gov_paid + ref_paid + maker_paid + taker_paid == total_fees, "Trading fee components are not equal to sum");
+/**
+ * Pays an advertising delivery operation to the provider
+ * and pays a fee split to the demand side interface, the delivery provider
+ * the bidder account, the audience members, and the network.
+ */
+asset database::pay_advertising_delivery( const account_object& provider, const account_object& demand, 
+   const account_object& bidder, const account_object& delivery, flat_set< const account_object* > audience, const asset& value )
+{ try {
+   asset total_fees = ( value * ADVERTISING_FEE_PERCENT ) / PERCENT_100;
+   
+   asset demand_share     = ( total_fees * DEMAND_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
+   asset audience_share   = ( total_fees * AUDIENCE_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
+   asset bidder_share     = ( total_fees * BIDDER_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
+   asset delivery_share   = ( total_fees * DELIVERY_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
+   asset network_fee      = ( total_fees * NETWORK_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
+
+   asset demand_paid = pay_fee_share( demand, demand_share );
+   asset audience_paid = pay_multi_fee_share( audience, audience_share );
+   asset bidder_paid = pay_fee_share( bidder, bidder_share );
+   asset delivery_paid = pay_fee_share( delivery, delivery_share );
+   asset network_paid = pay_network_fees( provider, network_fee );
+
+   asset fees_paid = network_paid + demand_paid + audience_paid + bidder_paid + delivery_paid;
+
+   adjust_liquid_balance( provider.name, value - fees_paid );
+
+   return value;
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Pays the fees to a network contibutor, and splits fees to the account's governance 
+ * account subscriptions, and registrar and referrer.
+ */
+asset database::pay_fee_share( const account_object& payee, const asset& amount )
+{ try {
+   asset total_fees = amount;
+
+   flat_set<const account_object*> governance_subscriptions;
+
+   const auto& gov_idx = get_index< governance_subscription_index >().indices().get< by_account_governance >();
+   auto gov_itr = gov_idx.lower_bound( payee.name );
+
+   while( gov_itr != gov_idx.end() && gov_itr->account == payee.name )
+   {
+      const governance_subscription_object& sub = *gov_itr;
+      const account_object* account_ptr = find_account( sub.governance_account );
+      governance_subscriptions.insert( account_ptr );
+      ++gov_itr;
+   }
+   const account_object& registrar = get_account( payee.registrar );
+   const account_object& referrer = get_account( payee.referrer );
+
+   asset gov_share = ( amount * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
+   asset registrar_share = ( amount * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
+   asset referrer_share = ( registrar_share * payee.referrer_rewards_percentage ) / PERCENT_100;
+   registrar_share -= referrer_share;
+
+   asset gov_paid = pay_multi_fee_share( governance_subscriptions, gov_share );
+   asset registrar_paid = pay_fee_share( registrar, registrar_share );
+   asset referrer_paid = pay_fee_share( referrer, referrer_share );
+
+   asset distribution = total_fees - ( gov_paid + registrar_paid + referrer_paid );
+
+   adjust_reward_balance( payee.name, distribution );
+
    return total_fees;
-}
 
-// Pays protocol trading fees on taker orders.
-// taker: The account that is the taker on the trade
-// recv_asset: The asset being received from the filling of the order
-// receives: The asset object being received from the trade
-// maker_int: The owner account of the interface of the maker of the trade
-// taker_int: The owner account of the interface of the taker of the trade
-asset database::pay_trading_fees( const account_object& taker, const asset_object& recv_asset, 
-   const asset& receives, const account_name_type& maker_int, const account_name_type& taker_int ) 
-{
-   FC_ASSERT( receives.symbol == recv_asset.symbol, "Asset symbol for receiving asset and asset object are not equal");
+} FC_CAPTURE_AND_RETHROW() }
 
-   asset total_fees = ( receives * TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset governance_account_share = ( total_fees * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
-   asset referral_share = ( total_fees * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
 
-   asset fee_share = total_fees - governance_account_share - referral_share; // subtracts referral and governance account fee shares before trading share percentages. 
+/**
+ * Pays fees to a set of network contibutors, and splits fees to the account's governance 
+ * account subscriptions, and registrar and referrer.
+ */
+asset database::pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount )
+{ try {
+   asset total_paid = asset( 0, amount.symbol );
+   asset fee_split = amount / payees.size();
 
-   asset maker_interface_share = ( fee_share * MAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset taker_interface_share = ( fee_share * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset network_fee = ( fee_share * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+   for( auto payee : payees )
+   {
+      total_paid += pay_fee_share( *payee, fee_split ); 
+   }
+   return total_paid;
 
-   asset network_paid = pay_network_fees( network_fee, taker );
-   asset gov_paid = pay_governance_reward( governance_account_share, taker );
-   asset ref_paid = pay_referral_reward( referral_share, taker );
-   asset maker_paid = pay_interface_reward( maker_int, maker_interface_share );
-   asset taker_paid = pay_interface_reward( taker_int, taker_interface_share );
+} FC_CAPTURE_AND_RETHROW() }
 
-   FC_ASSERT( network_paid + gov_paid + ref_paid + maker_paid + taker_paid == total_fees, "Trading fee components are not equal to sum");
-   return total_fees;
-}
+
+
 
 void database::init_hardforks()
 {
@@ -3917,7 +4342,6 @@ void database::validate_invariants()const
    asset total_reward_balance = asset(0, SYMBOL_COIN);
 
    total_reward_balance += reward_fund.content_reward_balance;
-   total_reward_balance += reward_fund.equity_reward_balance;
    total_reward_balance += reward_fund.validation_reward_balance;
    total_reward_balance += reward_fund.txn_stake_reward_balance;
    total_reward_balance += reward_fund.work_reward_balance;
