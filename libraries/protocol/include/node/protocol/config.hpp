@@ -91,9 +91,10 @@
 #define MIN_EXEC_CREDIT_PRICE                 price( asset( 9, SYMBOL_USD), asset( 10, SYMBOL_CREDIT))     // $0.90 minimum credit price to pay executive budgets
 #define SUPERNODE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)          // Distributes supernode rewards once every day.
 #define SUPERNODE_DECAY_RATE                  fc::days(7)               // Averages supernode file weight over 7 days. 
-#define ENTERPRISE_VOTE_PERCENT_REQUIRED      (10* PERCENT_1)           // Enterprise proposals require 10% of network voting power to approve milestones.
-#define ENTERPRISE_WIT_APPROVALS_REQUIRED     (5)                       // Enterprise proposals require 10% of network voting power to approve milestones.
-#define ENTERPRISE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
+#define VOTE_THRESHOLD_PERCENT                (10* PERCENT_1)           // Enterprise proposals require 10% of network voting power to approve milestones.
+#define VOTE_THRESHOLD_AMOUNT                 (5)                       // Enterprise proposals require 10% of network voting power to approve milestones.
+#define SET_UPDATE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
+#define ENTERPRISE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)
 
 #define CASHOUT_WINDOW                  fc::days(7)           // 7 days of accumulating votes and views before paying out a post's comment rewards.
 #define VOTE_CHANGE_LOCKOUT_PERIOD      fc::seconds(1)        // 1 second

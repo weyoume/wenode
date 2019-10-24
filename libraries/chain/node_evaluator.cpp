@@ -560,11 +560,12 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& account = _db.get_account( o.account );
+   const account_object& voter = _db.get_account( o.account );
    const account_object& executive = _db.get_account( o.executive );
    const account_object& business = _db.get_account( o.business_account );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );  
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
    FC_ASSERT( voting_power > 0, 
       "Account must hold a balance of voting power in the equity assets of the business account in order to vote for executives." );
@@ -585,40 +586,73 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
       
       default:
       {
-         FC_ASSERT( false, "Invalid executive officer role: ${r} found in business account: ${b}.", ("r", o.role)("b", business.account));
+         FC_ASSERT( false, "Invalid executive officer role: ${r} found in business account: ${b}.", ("r", o.role)("b", bus_acc.account));
       }
       break;
    }
 
-   const auto& vote_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_executive >();
-   auto vote_itr = vote_idx.find( boost::make_tuple( o.account, o.business_account, o.executive ) );
-
-   if( vote_itr != vote_idx.end() )        // Vote does not exist, creating new vote.
+   if( o.approved )
    {
-      FC_ASSERT( o.approved,
-         "Vote does not exist to remove. Set approved to true." );
+      FC_ASSERT( voter.can_vote, 
+         "Account has declined its voting rights." );
+      FC_ASSERT( officer.active, 
+         "Network Officer is inactive, and not accepting approval votes at this time." );
       FC_ASSERT( bus_acc.is_authorized_vote_executive( account.name ), 
          "Account: ${a} must be a member of business: ${b} before voting for an Executive.", ("a", o.account)("b", o.business_account));
       FC_ASSERT( bus_acc.is_officer( executive.name ), 
          "Account: ${a} must be an officer of business: ${b} before being voted as Executive.", ("a", o.executive)("b", o.business_account));
-      FC_ASSERT( account.can_vote, 
-         "Account has revoked its voting rights.");
-      
-      _db.create< account_executive_vote_object >( [&]( account_executive_vote_object& aevo )
-      {
-         aevo.account = o.account;
-         aevo.executive = o.executive;
-         aevo.business_account = o.business_account;
-         aevo.role = o.role;
-      });
    }
-   else     // Removing existing vote. 
+   
+   const auto& rank_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
+   const auto& executive_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_executive >();
+   auto rank_itr = rank_idx.find( boost::make_tuple( voter.name, o.business_account, o.role, o.vote_rank ) ); 
+   auto executive_itr = executive_idx.find( boost::make_tuple( voter.name, o.business_account, o.role, o.executive_account ) );
+
+   if( o.approved) // Adding or modifying vote
    {
-      FC_ASSERT( !o.approved, 
-         "Vote already exists. To remove vote, set approved to false." );
-      const account_executive_vote_object& vote = *vote_itr;
-      remove( vote );
+      if( executive_itr == executive_idx.end() && rank_itr == rank_idx.end() ) // No vote for witness or type rank, create new vote.
+      {
+         _db.create< account_executive_vote_object>( [&]( account_executive_vote_object& v )
+         {
+            v.account = voter.name;
+            v.vote_rank = o.vote_rank;
+            v.executive_account = o.executive_account;
+            v.role = o.role;
+         });
+         
+         _db.update_account_executive_votes( voter, bus_acc );
+      }
+      else
+      {
+         if( executive_itr != executive_idx.end() && rank_itr != rank_idx.end() )
+         {
+            FC_ASSERT( executive_itr->executive_account != rank_itr->executive_account, 
+               "Vote at for role at selected rank is already specified executive account." );
+         }
+         
+         if( executive_itr != executive_idx.end() )
+         {
+            remove( *executive_itr );
+         }
+
+         _db.update_account_executive_votes( voter, bus_acc, o.executive_account, o.role, o.vote_rank );
+      }
    }
+   else  // Removing existing vote
+   {
+      if( executive_itr != executive_idx.end() )
+      {
+         remove( *executive_itr );
+      }
+      else if( rank_itr != rank_idx.end() )
+      {
+         remove( *rank_itr );
+      }
+      _db.update_account_executive_votes( voter, bus_acc );
+   }
+
+   _db.update_business_account( bus_acc, props );   // updates the voting status of the business account to reflect all voting changes.
+
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
 
@@ -633,43 +667,77 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& account = _db.get_account( o.account );
+   const account_object& voter = _db.get_account( o.account );
    const account_object& officer = _db.get_account( o.officer );
    const account_object& business = _db.get_account( o.business_account );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
    FC_ASSERT( voting_power > 0, 
       "Account must hold a balance of voting power in the equity assets of the business account in order to vote for officers." );
 
-   const auto& vote_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_officer >();
-   auto vote_itr = vote_idx.find( boost::make_tuple( o.account, o.business_account, o.officer ) );
-
-   if( vote_itr != vote_idx.end() )   // Vote does not exist, creating new vote.
+   if( o.approved )
    {
-      FC_ASSERT( o.approved,
-         "Vote does not exist to remove. Set approved to true." );
+      FC_ASSERT( voter.can_vote, 
+         "Account has declined its voting rights." );
+      FC_ASSERT( officer.active, 
+         "Network Officer is inactive, and not accepting approval votes at this time." );
       FC_ASSERT( bus_acc.is_authorized_vote_officer( account.name ), 
          "Account: ${a} must be a member of business: ${b} before voting for an Officer.", ("a", o.account)("b", o.business_account));
       FC_ASSERT( bus_acc.is_member( officer.name ), 
-         "Account: ${a} must be an officer of business: ${b} before being voted as Officer.", ("a", o.officer)("b", o.business_account));
-      FC_ASSERT( account.can_vote, 
-         "Account has revoked its voting rights.");
-      
-      _db.create< account_officer_vote_object >( [&]( account_officer_vote_object& aovo )
-      {
-         aovo.account = o.account;
-         aovo.officer = o.officer;
-         aovo.business_account = o.business_account;
-      });
+         "Account: ${a} must be an officer of business: ${b} before being voted as Officer.", ("a", o.officer_account)("b", o.business_account));
    }
-   else     // Removing existing vote. 
+
+   const auto& rank_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
+   const auto& officer_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_officer >();
+   auto rank_itr = rank_idx.find( boost::make_tuple( voter.name, o.business_account, o.vote_rank ) ); 
+   auto officer_itr = officer_idx.find( boost::make_tuple( voter.name, o.business_account, o.officer_account ) );
+
+   if( o.approved)       // Adding or modifying vote
    {
-      FC_ASSERT( !o.approved, 
-         "Vote already exists. To remove vote, set approved to false." );
-      const account_officer_vote_object& vote = *vote_itr;
-      remove( vote );
+      if( officer_itr == officer_idx.end() && rank_itr == rank_idx.end() ) // No vote for witness or type rank, create new vote.
+      {
+         _db.create< account_officer_vote_object>( [&]( account_officer_vote_object& v )
+         {
+            v.account = voter.name;
+            v.vote_rank = o.vote_rank;
+            v.officer_account = o.officer_account;
+         });
+         
+         _db.update_account_officer_votes( voter, bus_acc );
+      }
+      else
+      {
+         if( officer_itr != officer_idx.end() && rank_itr != rank_idx.end() )
+         {
+            FC_ASSERT( officer_itr->officer_account != rank_itr->officer_account, 
+               "Vote at for role at selected rank is already specified officer account." );
+         }
+         
+         if( officer_itr != officer_idx.end() )
+         {
+            remove( *officer_itr );
+         }
+
+         _db.update_account_officer_votes( voter, bus_acc, o.officer_account, o.role, o.vote_rank );
+      }
    }
+   else  // Removing existing vote
+   {
+      if( officer_itr != officer_idx.end() )
+      {
+         remove( *officer_itr );
+      }
+      else if( rank_itr != rank_idx.end() )
+      {
+         remove( *rank_itr );
+      }
+      _db.update_account_officer_votes( voter, bus_acc );
+   }
+
+   _db.update_business_account( bus_acc, props );   // updates the voting status of the business account to reflect all voting changes.
+
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
 
@@ -1033,6 +1101,9 @@ void account_witness_vote_evaluator::do_apply( const account_witness_vote_operat
       FC_ASSERT( witness.active, 
          "Witness is inactive, and not accepting approval votes at this time." );
    }
+
+   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    
    const auto& account_rank_idx = _db.get_index< witness_vote_index >().indices().get< by_account_rank >();
    const auto& account_witness_idx = _db.get_index< witness_vote_index >().indices().get< by_account_witness >();
@@ -1083,6 +1154,8 @@ void account_witness_vote_evaluator::do_apply( const account_witness_vote_operat
       }
       _db.update_witness_votes( voter );
    }
+
+   _db.update_witness( witness, wso, props);    // update the voting state of the witness
 
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -1924,38 +1997,73 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
-   const account_object& officer = _db.get_network_officer( o.network_officer );
-   const auto& net_off_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_officer >();
-   auto itr = net_off_idx.find( boost::make_tuple( account.name, officer.name ) );
+   const account_object& voter = _db.get_account( o.account );
+   const account_object& officer_account = _db.get_network_officer( o.network_officer );
+   const network_officer_object officer = _db.get_network_officer( o.network_officer );
+   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
-   if( itr == net_off_idx.end() )    // Account is new voter
-   { 
-      FC_ASSERT( o.approved, "Network officer vote doesn't exist, user must select to approve the vote." );
-      FC_ASSERT( account.can_vote, "Account has revoked the ability to vote." );
-      FC_ASSERT( account.officer_votes < MAX_OFFICER_VOTES, "Account has voted for too many network officers." );
-
-      _db.create<network_officer_vote_object>( [&]( network_officer_vote_object& novo ) 
-      {
-         novo.network_officer = officer.name;
-         novo.account = account.name;
-      });
-   
-      _db.modify( account, [&]( account_object& a ) 
-      {
-         a.officer_votes++;
-      });
-   } 
-   else  // Account has already voted, and is removing vote
-   { 
-      FC_ASSERT( !o.approved, "Vote currently exists, user must select disapprove to remove vote." );
-       
-      _db.modify( account, [&]( account_object& a ) 
-      {
-         a.officer_votes--;
-      });
-      _db.remove( *itr );
+   if( o.approved )
+   {
+      FC_ASSERT( voter.can_vote, 
+         "Account has declined its voting rights." );
+      FC_ASSERT( officer.active, 
+         "Network Officer is inactive, and not accepting approval votes at this time." );
    }
+   
+   const auto& account_type_rank_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
+   const auto& account_officer_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_officer >();
+   auto type_rank_itr = account_rank_idx.find( boost::make_tuple( voter.name, officer.officer_type, o.vote_rank) );   // vote at type and rank number
+   auto account_officer_itr = account_officer_idx.find( boost::make_tuple( voter.name, officer.name ) );    // vote for specified witness
+
+   if( o.approved) // Adding or modifying vote
+   {
+      if( account_officer_itr == account_officer_idx.end() && type_rank_itr == type_rank_idx.end() ) // No vote for witness or type rank, create new vote.
+      {
+         FC_ASSERT( voter.officer_votes < MAX_OFFICER_VOTES, 
+            "Account has voted for too many network officers." );
+
+         _db.create< network_officer_vote_object>( [&]( network_officer_vote_object& v )
+         {
+            v.network_officer = officer.account;
+            v.officer_type = officer.officer_type;
+            v.account = voter.name;
+            v.vote_rank = o.vote_rank;
+         });
+         
+         _db.update_network_officer_votes( voter );
+      }
+      else
+      {
+         if( account_officer_itr != account_officer_idx.end() && type_rank_itr != type_rank_idx.end() )
+         {
+            FC_ASSERT( account_officer_itr->network_officer != type_rank_itr->network_officer, 
+               "Vote at rank is already specified network officer." );
+         }
+         
+         if( account_officer_itr != account_officer_idx.end() )
+         {
+            remove( *account_officer_itr );
+         }
+
+         _db.update_network_officer_votes( voter, vote.network_officer, officer.officer_type, o.vote_rank );   // Remove existing officer vote, and add at new rank. 
+      }
+   }
+   else  // Removing existing vote
+   {
+      if( account_officer_itr != account_officer_idx.end() )
+      {
+         remove( *account_officer_itr );
+      }
+      else if( type_rank_itr != type_rank_idx.end() )
+      {
+         remove( *type_rank_itr );
+      }
+      _db.update_network_officer_votes( voter );
+   }
+
+   _db.update_network_officer( officer, wso, props );
+
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
  /**
@@ -1975,7 +2083,6 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
  * 2 - They are approved by at least 10 Witnesses, with at least 20% of total witness voting power.
  * 3 - The Current price of the credit asset is greater than $0.90 USD.
  * 4 - They are in the top 5 voted executive boards. 
- * TODO: Pay executive board budget
  */
 void update_executive_board_evaluator::do_apply( const update_executive_board_operation& o )
 { try {
@@ -2195,42 +2302,68 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
+   const account_object& voter = _db.get_account( o.account );
    const executive_board_object& executive = _db.get_executive_board( o.executive_board );
-   const auto& exec_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_executive >();
+   const account_object& executive_account = _db.get_account( o.executive_board );
    const witness_schedule_object& wso = _db.get_witness_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   auto itr = exec_idx.find( boost::make_tuple( account.name, executive.name ) );
 
-   if( itr == exec_idx.end() )    // Account is new voter
-   { 
-      FC_ASSERT( o.approved, 
-         "Executive board vote doesn't exist, user must select to approve." );
-      FC_ASSERT( account.can_vote, 
-         "Account has revoked the ability to vote." );
-      FC_ASSERT( account.executive_board_votes < MAX_EXEC_VOTES, 
-         "Account has too many Executive board votes." );
-
-      _db.create<executive_board_vote_object>( [&]( executive_board_vote_object& ebo ) 
-      {
-         ebo.executive_board = executive.name;
-         ebo.account = account.name;
-      });   // Todo: ranked voting
+   if( o.approved )
+   {
+      FC_ASSERT( voter.can_vote, 
+         "Account has declined its voting rights." );
+      FC_ASSERT( executive.active, 
+         "Executive board is inactive, and not accepting approval votes at this time." );
+   }
    
-      _db.modify( account, [&]( account_object& a ) 
+   const auto& account_rank_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_rank >();
+   const auto& account_executive_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_executive >();
+   auto account_rank_itr = account_rank_idx.find( boost::make_tuple( voter.name, o.vote_rank ) );   // vote at rank number
+   auto account_executive_itr = account_executive_idx.find( boost::make_tuple( voter.name, executive.account ) );    // vote for specified executive board
+
+   if( o.approved )      // Adding or modifying vote
+   {
+      if( account_executive_itr == account_executive_idx.end() && account_rank_itr == account_rank_idx.end() ) // No vote for executive or rank, create new vote.
       {
-         a.executive_board_votes++;
-      });
-   } 
-   else  // Account is already subscribed and is unsubscribing
-   { 
-      FC_ASSERT( !o.approved, "Executive board vote currently exists, user must select to disapprove." );
-       
-      _db.modify( account, [&]( account_object& a ) 
+         FC_ASSERT( voter.executive_votes < MAX_EXEC_VOTES, 
+            "Account has voted for too many Executive Boards." );
+
+         _db.create< executive_board_object>( [&]( executive_board_object& v )
+         {
+            v.executive_board = executive.account;
+            v.account = voter.name;
+            v.vote_rank = o.vote_rank;
+         });
+         
+         _db.update_executive_board_votes( voter );
+      }
+      else
       {
-         a.executive_board_votes--;
-      });
-      _db.remove( *itr );
+         if( account_executive_itr != account_executive_idx.end() && account_rank_itr != account_rank_idx.end() )
+         {
+            FC_ASSERT( account_executive_itr->executive_board != account_rank_itr->executive_board, 
+               "Vote at rank is already specified Executive Board." );
+         }
+         
+         if( account_executive_itr != account_executive_idx.end() )
+         {
+            remove( *account_executive_itr );
+         }
+
+         _db.update_executive_board_votes( voter, vote.executive_board, o.vote_rank );   // Remove existing officer vote, and add at new rank. 
+      }
+   }
+   else       // Removing existing vote
+   {
+      if( account_executive_itr != account_executive_idx.end() )
+      {
+         remove( *account_executive_itr );
+      }
+      else if( account_rank_itr != account_rank_idx.end() )
+      {
+         remove( *account_rank_itr );
+      }
+      _db.update_executive_board_votes( voter );
    }
 
    _db.update_executive_board( executive, wso, props );
@@ -3890,6 +4023,7 @@ void board_create_evaluator::do_apply( const board_create_operation& o )
       bo.name = o.name;
       bo.founder = founder.name;
       bo.board_type = o.board_type;
+      bo.board_privacy = o.board_privacy;
       from_string( bo.json, o.json );
       from_string( bo.json_private, o.json_private );
       from_string( bo.details, o.details );
@@ -3930,15 +4064,28 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
    const board_member_object& board_member = _db.get_board_member( o.board );
    FC_ASSERT( board_member.is_administrator(account.name), "Only administrators of the board can update it.");
 
-   if( o.board_type == PUBLIC_BOARD || o.board_type == PUBLIC_GROUP || o.board_type == PUBLIC_EVENT )
+   if( o.board_privacy == OPEN_BOARD )
    {
-      FC_ASSERT( board.board_type != PRIVATE_GROUP &&  board.board_type != SECRET_GROUP && board.board_type != PRIVATE_EVENT && board.board_type != SECRET_EVENT, 
-         "Cannot lower the privacy setting of a board, only increase it. ");
+      FC_ASSERT( board.board_privacy != PUBLIC_BOARD || board.board_privacy != PRIVATE_BOARD || board.board_privacy != EXCLUSIVE_BOARD,
+         "Cannot lower the privacy setting of a board, only increase it." );
+   }
+
+   if( o.board_privacy == PUBLIC_BOARD )
+   {
+      FC_ASSERT( board.board_privacy != PRIVATE_BOARD || board.board_privacy != EXCLUSIVE_BOARD,
+         "Cannot lower the privacy setting of a board, only increase it." );
+   }
+
+   if( o.board_privacy == PRIVATE_BOARD )
+   {
+      FC_ASSERT( board.board_privacy != EXCLUSIVE_BOARD,
+         "Cannot lower the privacy setting of a board, only increase it." );
    }
 
    _db.modify(board, [&]( board_object& bo)
    {
       bo.board_type = o.board_type;
+      bo.board_privacy = o.board_privacy;
       from_string( bo.json, o.json );
       from_string( bo.json_private, o.json_private );
       from_string( bo.details, o.details );
@@ -3959,38 +4106,75 @@ void board_vote_mod_evaluator::do_apply( const board_vote_mod_operation& o )
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
-   share_type voting_power = _db.get_voting_power( o.account );
-   const account_object& moderator = _db.get_account( o.moderator );
+
+   const account_object& voter = _db.get_account( o.account );
+   const account_object& moderator_account = _db.get_account( o.moderator );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
-   const auto& vote_idx = _db.get_index< board_moderator_vote_index >().indices().get< by_account_board_moderator >();
-   auto vote_itr = vote_idx.find( boost::make_tuple( o.account, o.board, o.moderator ) );
+   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
-   if( vote_itr != vote_idx.end() )   // Vote does not exist, creating new vote.
+   if( o.added )
    {
-      FC_ASSERT( o.added,
-         "Vote does not exist to remove. Set approve to true." );
-      FC_ASSERT( board_member.is_member( account.name ), 
+      FC_ASSERT( voter.can_vote, 
+         "Account has declined its voting rights." );
+      FC_ASSERT( board_member.is_member( o.account ),
          "Account: ${a} must be a member before voting for a moderator of Board: ${b}.", ("a", o.account)("b", o.board));
-      FC_ASSERT( board_member.is_moderator( moderator.name ), 
+      FC_ASSERT( board_member.is_moderator( o.moderator ),
          "Account: ${a} must be a moderator of Board: ${b}.", ("a", o.moderator)("b", o.board));
-      FC_ASSERT( account.can_vote, "Account has revoked its voting rights.");
-      
-      _db.create< board_moderator_vote_object >( [&]( board_moderator_vote_object& bmvo )
-      {
-         bmvo.account = o.account;
-         bmvo.board = o.board;
-         bmvo.moderator = o.moderator;
-      });
    }
-   else     // Removing existing vote. 
+   
+   const auto& account_board_rank_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_board_rank >();
+   const auto& account_board_moderator_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_board_moderator >();
+   auto account_board_rank_itr = account_board_rank_idx.find( boost::make_tuple( o.account, o.board, o.vote_rank ) );   // vote at rank number
+   auto account_board_moderator_itr = account_board_moderator_idx.find( boost::make_tuple( o.account, o.board, o.moderator ) );    // vote for moderator in board
+
+   if( o.added )      // Adding or modifying vote
    {
-      FC_ASSERT( !o.added, 
-         "Vote already exists. To remove vote, set approve to false." );
-      const board_moderator_vote_object& vote = *vote_itr;
-      remove( vote );
+      if( account_board_moderator_itr == account_board_moderator_idx.end() && 
+         account_board_rank_itr == account_board_rank_idx.end() )       // No vote for executive or rank, create new vote.
+      {
+         _db.create< board_moderator_vote_object>( [&]( board_moderator_vote_object& v )
+         {
+            v.moderator = o.moderator;
+            v.account = o.account;
+            v.board = o.board;
+            v.vote_rank = o.vote_rank;
+         });
+         
+         _db.update_board_moderator_votes( voter, o.board );
+      }
+      else
+      {
+         if( account_board_moderator_itr != account_board_moderator_idx.end() && account_board_rank_itr != account_board_rank_idx.end() )
+         {
+            FC_ASSERT( account_board_moderator_itr->executive_board != account_board_rank_itr->executive_board, 
+               "Vote at rank is already for the specified moderator." );
+         }
+         
+         if( account_board_moderator_itr != account_board_moderator_idx.end() )
+         {
+            remove( *account_board_moderator_itr );
+         }
+
+         _db.update_board_moderator_votes( voter, o.board, o.moderator, o.vote_rank );   // Remove existing moderator vote, and add at new rank. 
+      }
    }
+   else       // Removing existing vote
+   {
+      if( account_board_moderator_itr != account_board_moderator_idx.end() )
+      {
+         remove( *account_board_moderator_itr );
+      }
+      else if( account_board_rank_itr != account_board_rank_idx.end() )
+      {
+         remove( *account_board_rank_itr );
+      }
+      _db.update_board_moderator_votes( voter, o.board );
+   }
+
+   _db.update_board_moderators( board_member );
+
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
 

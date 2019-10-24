@@ -1117,6 +1117,8 @@ namespace node { namespace protocol {
 
       string                    details;               // Description of completion of milestone, with supporting evidence.
 
+      uint16_t                  vote_rank;             // The rank of the approval for enterprise proposals
+
       bool                      approved = true;       // True to claim the milestone amount, false to remove approval. 
          
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1464,6 +1466,8 @@ namespace node { namespace protocol {
       board_name_type                board;             // Board of the member.
 
       account_name_type              moderator;         // Moderator account.
+
+      uint16_t                       vote_rank;
 
       bool                           approved = true;      // True when voting for the moderator, false when removing.
 

@@ -636,6 +636,8 @@ namespace node { namespace chain {
          account_name_type                       executive_account;     // Name of the executive account 
 
          executive_types                         role;                  // Role voted in favor of.
+
+         uint16_t                                vote_rank;             // The rank of the executive vote.
    };
 
    class account_officer_vote_object : public object< account_officer_vote_object_type, account_officer_vote_object >
@@ -655,7 +657,9 @@ namespace node { namespace chain {
          
          account_name_type                       business_account;    // Name of the referred business account.
 
-         account_name_type                       officer_account;     // Name of the officer account 
+         account_name_type                       officer_account;     // Name of the officer account.
+
+         uint16_t                                vote_rank;           // The rank of the officer vote.
    };
 
    class account_member_request_object : public object< account_member_request_object_type, account_member_request_object >
@@ -1298,9 +1302,14 @@ namespace node { namespace chain {
       allocator< account_business_object >
    > account_business_index;
 
+
+   struct by_business;
    struct by_account_business_executive;
    struct by_account_business_officer;
-   struct by_business_executive;
+   struct by_business_role_executive;
+   struct by_account_business_role_rank;
+   struct by_account_business_role_executive;
+   struct by_business_account_role_rank;
 
    typedef multi_index_container <
       account_executive_vote_object,
@@ -1308,64 +1317,99 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >,
             member< account_executive_vote_object, account_executive_vote_id_type, &account_executive_vote_object::id >
          >,
-         ordered_unique< tag< by_business_executive >,
+         ordered_unique< tag< by_business >,
             composite_key< account_executive_vote_object,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
+               member< account_executive_vote_object, account_executive_vote_id_type, &account_executive_vote_object::id >
+            >
+         >,
+         ordered_unique< tag< by_business_role_executive >,
+            composite_key< account_executive_vote_object,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
+               member< account_executive_vote_object, executive_types, &account_executive_vote_object::role >,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::executive_account >,
                member< account_executive_vote_object, account_executive_vote_id_type, &account_executive_vote_object::id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_name_type >,
-               std::less< account_executive_vote_id_type >
             >
          >,
          ordered_unique< tag< by_account_business_executive >,
             composite_key< account_executive_vote_object,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::account >,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::executive_account >,
+               member< account_executive_vote_object, account_executive_vote_id_type, &account_executive_vote_object::id >
+            >
+         >,
+         ordered_unique< tag< by_account_business_role_rank >,
+            composite_key< account_executive_vote_object,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::account >,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
+               member< account_executive_vote_object, executive_types, &account_executive_vote_object::role >,
+               member< account_executive_vote_object, uint16_t, &account_executive_vote_object::vote_rank >
+            >
+         >,
+         ordered_unique< tag< by_account_business_role_rank >,
+            composite_key< account_executive_vote_object,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::account >,
+               member< account_executive_vote_object, executive_types, &account_executive_vote_object::role >,
+               member< account_executive_vote_object, uint16_t, &account_executive_vote_object::vote_rank >
+            >
+         >,
+         ordered_unique< tag< by_account_business_role_executive >,
+            composite_key< account_executive_vote_object,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::account >,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
+               member< account_executive_vote_object, executive_types, &account_executive_vote_object::role >,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::executive_account >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_name_type >,
-               std::less< account_name_type >
             >
          >
       >,
       allocator< account_executive_vote_object >
    > account_executive_vote_index;
 
+   struct by_account_business_officer;
+   struct by_account_business_rank;
    struct by_business_officer;
-
+   struct by_business_account_rank;
+   
    typedef multi_index_container <
       account_officer_vote_object,
       indexed_by <
          ordered_unique< tag< by_id >,
             member< account_officer_vote_object, account_officer_vote_id_type, &account_officer_vote_object::id > 
          >,
-         ordered_unique< tag< by_business_officer >,
+         ordered_unique< tag< by_business >,
             composite_key< account_executive_vote_object,
-               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
-               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::officer_account >,
-               member< account_executive_vote_object, account_executive_vote_id_type, &account_executive_vote_object::id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_name_type >,
-               std::less< account_executive_vote_id_type >
+               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
+               member< account_officer_vote_object, account_officer_vote_id_type, &account_officer_vote_object::id >
+            >
+         >,
+         ordered_unique< tag< by_business_account_rank >,
+            composite_key< account_executive_vote_object,
+               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
+               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::account >,
+               member< account_officer_vote_object, uint16_t, &account_officer_vote_object::vote_rank >
             >
          >,
          ordered_unique< tag< by_account_business_officer >,
-            composite_key< account_officer_vote_object,
+            composite_key< account_executive_vote_object,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::account >,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::officer_account >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_name_type >,
-               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_business_officer >,
+            composite_key< account_executive_vote_object,
+               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
+               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::officer_account >,
+               member< account_officer_vote_object, account_officer_vote_id_type, &account_officer_vote_object::id >
+            >
+         >,
+         ordered_unique< tag< by_account_business_rank >,
+            composite_key< account_officer_vote_object,
+               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::account >,
+               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
+               member< account_officer_vote_object, uint16_t, &account_officer_vote_object::vote_rank >
             >
          >
       >,

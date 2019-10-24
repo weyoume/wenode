@@ -488,7 +488,17 @@ namespace node { namespace chain {
           */
          uint32_t get_slot_at_time(fc::time_point when)const;
 
-         void update_network_votes();
+         share_type update_witness( const witness_object& witness, const witness_schedule_object& wso, const dynamic_global_property_object& props );
+
+         void update_witness_set();
+
+         void update_board_moderators( const board_member_object& board );
+
+         void update_board_moderator_set();
+
+         void update_business_account( const account_business_object& business, const dynamic_global_property_object& props );
+
+         void update_business_account_set();
 
          void adjust_interface_users( const interface_object& interface, bool adjust = true );
 
@@ -509,6 +519,9 @@ namespace node { namespace chain {
          
          void process_producer_activity_rewards();
 
+         void update_network_officer( const network_officer_object& network_officer, 
+   const witness_schedule_object& wso, const dynamic_global_property_object& props );
+
          void process_network_officer_rewards();
 
          void process_supernode_rewards();
@@ -524,6 +537,11 @@ namespace node { namespace chain {
 
          void update_executive_board( const executive_board_object& executive_board, 
             const witness_schedule_object& wso, const dynamic_global_property_object& props );
+
+         void update_governance_account_set();
+
+         void update_governance_account( const governance_account_object& network_officer, 
+   const witness_schedule_object& wso, const dynamic_global_property_object& props );
 
          share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
 
@@ -570,14 +588,26 @@ namespace node { namespace chain {
          void update_witness_votes(const account_object& account );
          void update_witness_votes(const account_object& account, const account_name_type& witness, uint16_t vote_rank );
 
-         void update_network_votes(const account_object& account );
-         void update_network_votes(const account_object& account, const account_name_type& officer, uint16_t vote_rank );
+         void update_network_officer_votes(const account_object& account );
+         void update_network_officer_votes(const account_object& account, const account_name_type& officer, 
+            network_officer_types officer_type, uint16_t vote_rank );
 
-         void update_executive_votes(const account_object& account );
-         void update_executive_votes(const account_object& account, const account_name_type& executive, uint16_t vote_rank );
+         void update_executive_board_votes(const account_object& account );
+         void update_executive_board_votes(const account_object& account, const account_name_type& executive, uint16_t vote_rank );
+
+         void update_board_moderator_votes(const account_object& account, const board_name_type& board );
+         void update_board_moderator_votes(const account_object& account, const board_name_type& board, 
+            const account_name_type& moderator, uint16_t vote_rank );
 
          void update_enterprise_votes(const account_object& account );
          void update_enterprise_votes(const account_object& account, const account_name_type& creator, const shared_string& enterprise_id, uint16_t vote_rank );
+
+         void update_account_executive_votes( const account_object& account, const account_name_type& business );
+         void update_account_executive_votes( const account_object& account, const account_name_type& business, const account_object& executive,
+            executive_types role, uint16_t input_vote_rank );
+
+         void update_account_officer_votes( const account_object& account, const account_name_type& business );
+         void update_account_officer_votes( const account_object& account, const account_name_type& business, const account_object& officer, uint16_t input_vote_rank );
 
          void account_recovery_processing();
 

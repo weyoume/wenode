@@ -53,23 +53,29 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                // The name of the account that owns the network officer.
+         account_name_type              account;                     // The name of the account that owns the network officer.
 
-         bool                           active = true;          // True if the officer is active, set false to deactivate.
+         bool                           active = true;               // True if the officer is active, set false to deactivate.
 
-         network_officer_types          officer_type;           // The type of network officer that the account serves as. 
+         bool                           officer_approved = false;    // True when the network officer has received sufficient voting approval to earn funds.
 
-         shared_string                  details;                // The officer's details description. 
+         network_officer_types          officer_type;                // The type of network officer that the account serves as. 
 
-         shared_string                  url;                    // The officer's reference URL. 
+         shared_string                  details;                     // The officer's details description. 
 
-         shared_string                  json;                   // Json metadata of the officer. 
+         shared_string                  url;                         // The officer's reference URL. 
+
+         shared_string                  json;                        // Json metadata of the officer. 
          
-         time_point                     created;                // The time the officer was created.
+         time_point                     created;                     // The time the officer was created.
 
-         uint32_t                       vote_count = 0;         // The number of accounts that support the officer.
+         uint32_t                       vote_count = 0;              // The number of accounts that support the officer.
 
-         share_type                     voting_power = 0;       // The amount of voting power that votes for the officer.
+         share_type                     voting_power = 0;            // The amount of voting power that votes for the officer.
+
+         uint32_t                       witness_vote_count = 0;      // The number of accounts that support the officer.
+
+         share_type                     witness_voting_power = 0;    // The amount of voting power that votes for the officer.
    };
 
 
@@ -88,7 +94,9 @@ namespace node { namespace chain {
 
          account_name_type              network_officer;       // The name of the network officer being voted for.
 
-         uint16_t                       vote_rank;
+         network_officer_types          officer_type;          // the type of network officer that is being voted for.
+
+         uint16_t                       vote_rank;             // the ranking of the vote for the officer.
    };
 
 
@@ -144,7 +152,7 @@ namespace node { namespace chain {
 
          account_name_type              executive_board;       // The name of the executive board being voted for.
 
-         uint16_t                       vote_rank;
+         uint16_t                       vote_rank;             // The rank the rank of the vote for the executive board. 
    };
 
 
@@ -159,21 +167,27 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                // The name of the account that owns the governance account.
+         account_name_type              account;                        // The name of the account that owns the governance account.
 
-         bool                           active = true;          // True if the governance account is active, set false to deactivate.
+         bool                           active = true;                  // True if the governance account is active, set false to deactivate.
 
-         shared_string                  details;                // The governance account's details description. 
+         bool                           account_approved = false;       // True if the governance account is approved by the network.
 
-         shared_string                  url;                    // The governance account's reference URL. 
+         shared_string                  details;                        // The governance account's details description. 
 
-         shared_string                  json;                   // Json metadata of the governance account. 
+         shared_string                  url;                            // The governance account's reference URL. 
+
+         shared_string                  json;                           // Json metadata of the governance account. 
          
-         time_point                     created;                // The time the governance account was created.
+         time_point                     created;                        // The time the governance account was created.
 
-         uint32_t                       subscriber_count = 0;   // The number of accounts that subscribe to the governance account.
+         uint32_t                       subscriber_count = 0;           // The number of accounts that subscribe to the governance account.
 
-         share_type                     subscriber_power = 0;   // The amount of voting power the subscribes to the governance account.
+         share_type                     subscriber_power = 0;           // The amount of voting power the subscribes to the governance account.
+
+         uint32_t                       witness_subscriber_count = 0;   // The number of accounts that subscribe to the governance account.
+
+         share_type                     witness_subscriber_power = 0;   // The amount of voting power the subscribes to the governance account.
    };
 
 
@@ -191,6 +205,8 @@ namespace node { namespace chain {
          account_name_type              account;               // The name of the account that subscribes to the governance account.
 
          account_name_type              governance_account;    // The name of the governance account being subscribed to.
+
+         uint16_t                       vote_rank;             // The preference rank of subscription for fee splitting. 
    };
 
 
@@ -404,6 +420,8 @@ namespace node { namespace chain {
 
          shared_string                  enterprise_id;        // UUIDv4 referring to the proposal being claimed.
 
+         uint16_t                       vote_rank;            // The vote rank of the approval for enterprise
+
          int16_t                        milestone;            // Number of the milestone being approved for release.    
 
          time_point                     last_updated;         // The time the approval was created.
@@ -443,6 +461,7 @@ namespace node { namespace chain {
 
    struct by_account_officer;
    struct by_officer_account;
+   struct by_account_type_rank;
 
    typedef multi_index_container<
       network_officer_vote_object,
@@ -451,8 +470,15 @@ namespace node { namespace chain {
          ordered_unique< tag<by_account_officer>,
             composite_key< network_officer_vote_object,
                member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
-               member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >,
-               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::network_officer >
+               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::network_officer >,
+               member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
+            >
+         >,
+         ordered_unique< tag<by_account_type_rank>,
+            composite_key< network_officer_vote_object,
+               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
+               member<network_officer_vote_object, network_officer_types, &network_officer_vote_object::officer_type >,
+               member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
             >
          >,
          ordered_unique< tag<by_officer_account>,
@@ -508,6 +534,7 @@ namespace node { namespace chain {
 
    struct by_account_executive;
    struct by_executive_account;
+   struct by_account_rank;
 
    typedef multi_index_container<
       executive_board_vote_object,
@@ -516,8 +543,13 @@ namespace node { namespace chain {
          ordered_unique< tag<by_account_executive >,
             composite_key< executive_board_vote_object,
                member<executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
-               member<executive_board_vote_object, uint16_t, &executive_board_vote_object::vote_rank >,
                member<executive_board_vote_object, account_name_type, &executive_board_vote_object::executive_board >
+            >
+         >,
+         ordered_unique< tag<by_account_rank >,
+            composite_key< executive_board_vote_object,
+               member<executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
+               member<executive_board_vote_object, uint16_t, &executive_board_vote_object::vote_rank >
             >
          >,
          ordered_unique< tag<by_executive_account >,
@@ -721,6 +753,8 @@ namespace node { namespace chain {
       allocator< community_enterprise_object >
    > community_enterprise_index;
 
+   struct account_rank;
+
 
    typedef multi_index_container <
       enterprise_approval_object,
@@ -739,6 +773,13 @@ namespace node { namespace chain {
                member< enterprise_approval_object, account_name_type, &enterprise_approval_object::creator >,
                member< enterprise_approval_object, shared_string, &enterprise_approval_object::enterprise_id >,
                member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >
+            >,
+            composite_key_compare< std::less< account_name_type >, strcmp_less, std::less< account_name_type > >
+         >,
+         ordered_unique< tag< by_account_rank >,
+            composite_key< enterprise_approval_object, 
+               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >,
+               member< enterprise_approval_object, uint16_t, &enterprise_approval_object::vote_rank >
             >,
             composite_key_compare< std::less< account_name_type >, strcmp_less, std::less< account_name_type > >
          >

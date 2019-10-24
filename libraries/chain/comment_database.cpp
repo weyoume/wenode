@@ -443,6 +443,11 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
    return claimed_reward;
 } FC_CAPTURE_AND_RETHROW( (comment) ) }
 
+
+/**
+ * Distributes content rewards to content authors and curators
+ * when posts reach a cashout time.
+ */
 void database::process_comment_cashout()
 {
    const auto& gpo = get_dynamic_global_properties();
@@ -467,7 +472,6 @@ void database::process_comment_cashout()
 
    const auto& cidx = get_index< comment_index >().indices().get< by_cashout_time >();
    const auto& com_by_root = get_index< comment_index >().indices().get< by_root >();
-
    auto current = cidx.begin();
    
    while( current != cidx.end() && current->cashout_time <= now )
@@ -497,11 +501,12 @@ void database::process_comment_cashout()
    });
 }
 
+
 /**
  * Calculates a full suite of metrics for the votes, views, shares and comments
  * of all posts in the network in the prior 30 days. Used for determining sorting 
  * equalization, content rewards, activty reward eligibility and more.
- * Updates every hour
+ * Updates every hour.
  */
 void database::update_comment_metrics() 
 { try {
@@ -510,7 +515,7 @@ void database::update_comment_metrics()
 
    auto now = head_block_time();
    const dynamic_global_property_object& gpo = get_dynamic_global_properties();
-   const comment_metrics_object& cmo = get_comment_metrics();
+   const comment_metrics_object& comment_metrics = get_comment_metrics();
    
    // Initialize comment metrics
 
@@ -544,7 +549,7 @@ void database::update_comment_metrics()
    double vote_comment_ratio = 0;
 
    vector< const comment_object* > comments; 
-   comments.reserve( cmo.recent_post_count * 2 );
+   comments.reserve( comment_metrics.recent_post_count * 2 );
 
    const auto& cidx = get_index<comment_index>().indices().get< by_time >();
    auto current = cidx.lower_bound( true );                                   // Finds first root post in time index
@@ -578,9 +583,9 @@ void database::update_comment_metrics()
       average_comment_count = recent_comment_count / recent_post_count;
 
       // Power Ratios
-      vote_view_ratio = recent_view_power / recent_vote_power;
-      vote_share_ratio = recent_share_power / recent_vote_power;
-      vote_comment_ratio = recent_comment_power / recent_vote_power;
+      vote_view_ratio = recent_view_power / double( recent_vote_power.to_uint64 );
+      vote_share_ratio = recent_share_power / double( recent_vote_power.to_uint64 );
+      vote_comment_ratio = recent_comment_power / double( recent_vote_power.to_uint64 );
 
       // Median count values
       std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)

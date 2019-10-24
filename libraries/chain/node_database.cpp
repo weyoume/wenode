@@ -1711,59 +1711,20 @@ uint32_t database::get_slot_at_time(fc::time_point when)const
 }
 
 
-void database::update_network_votes()
-{
-   if( (head_block_num() % NETWORK_UPDATE_INTERVAL_BLOCKS) != 0 )    // Runs once every 10 minutes
+void database::update_witness_set()
+{ try {
+   if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
 
    const witness_schedule_object& wso = get_witness_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
-   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
    const auto& wit_idx = get_index< witness_index >().indices().get< by_voting_power >();
-   const auto& wit_vote_idx = get_index< witness_vote_index >().indices().get< by_witness_account >();
    auto wit_itr = wit_idx.begin();
    uint128_t total_witness_voting_power = 0;
    
    while( wit_itr != wit_idx.end() )
    {
-      const witness_object& witness = *wit_itr;
-      auto wit_vote_itr = wit_vote_idx.lower_bound( witness.owner );
-      share_type voting_power = 0;
-      uint32_t vote_count = 0;
-
-      while( wit_vote_itr != wit_vote_idx.end() && wit_vote_itr->witness == witness.owner )
-      {
-         const witness_vote_object& vote = *wit_vote_itr;
-         const account_object& voter = get_account( vote.account );
-         share_type weight = get_voting_power( wit_vote_itr->account );
-         if( voter.proxied.size() )
-         {
-            weight += get_proxied_voting_power( voter, equity_price );
-         }
-         // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
-         // Rank one gets half of voting power, rank two gets one quarter, etc. 
-         voting_power += ( weight.value >> vote.vote_rank );    
-         vote_count++;
-         ++wit_vote_itr;
-      }
-
-      modify( witness, [&]( witness_object& w )
-      {
-         w.voting_power = voting_power;
-         w.vote_count = vote_count;
-         auto delta_pos = w.voting_power.value * (wso.current_witness_virtual_time - w.witness_virtual_last_update);
-         w.witness_virtual_position += delta_pos;
-         w.witness_virtual_scheduled_time = w.witness_virtual_last_update + (VIRTUAL_SCHEDULE_LAP_LENGTH - w.witness_virtual_position)/(w.voting_power.value+1);
-         /** witnesses with a low number of votes could overflow the time field and end up with a scheduled time in the past */
-         if( w.witness_virtual_scheduled_time < wso.current_witness_virtual_time ) 
-         {
-            w.witness_virtual_scheduled_time = fc::uint128::max_value();
-         }
-         w.decay_weights( now, wso );
-         w.witness_virtual_last_update = wso.current_witness_virtual_time;
-      });
-      total_witness_voting_power += voting_power.value;
+      total_witness_voting_power += update_witness( *wit_itr, wso, props).value;
       ++wit_itr;
    }
 
@@ -1772,76 +1733,305 @@ void database::update_network_votes()
       w.total_witness_voting_power = total_witness_voting_power;
    });
 
-   const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
-   const auto& officer_vote_idx = get_index< network_officer_vote_index >().indices().get< by_officer_account >();
-   auto officer_itr = officer_idx.begin();
-   
-   while( officer_itr != officer_idx.end() )
-   {
-      const network_officer_object& officer = *officer_itr;
-      auto officer_vote_itr = officer_vote_idx.lower_bound( officer.account );
-      share_type voting_power = 0;
-      uint32_t vote_count = 0;
+} FC_CAPTURE_AND_RETHROW() }
 
-      while( officer_vote_itr != officer_vote_idx.end() && officer_vote_itr->network_officer == officer.account )
+
+/**
+ * Updates the voting power and vote count of a witness
+ * and returns the total voting power supporting the witness.
+ */
+share_type database::update_witness( const witness_object& witness, const witness_schedule_object& wso, 
+   const dynamic_global_property_object& props )
+{ try {
+   const auto& wit_vote_idx = get_index< witness_vote_index >().indices().get< by_witness_account >();
+   auto wit_vote_itr = wit_vote_idx.lower_bound( witness.owner );
+   price equity_price = props.current_median_equity_price;
+   time_point now = props.time;
+   share_type voting_power = 0;
+   uint32_t vote_count = 0;
+
+   while( wit_vote_itr != wit_vote_idx.end() && wit_vote_itr->witness == witness.owner )
+   {
+      const witness_vote_object& vote = *wit_vote_itr;
+      const account_object& voter = get_account( vote.account );
+      share_type weight = get_voting_power( wit_vote_itr->account, equity_price );
+      if( voter.proxied.size() )
       {
-         const network_officer_vote_object& vote = *officer_vote_itr;
-         const account_object& voter = get_account( vote.account );
-         share_type weight = get_voting_power( officer_vote_itr->account );
-         if( voter.proxied.size() )
-         {
-            weight += get_proxied_voting_power( voter, equity_price );
-         }
+         weight += get_proxied_voting_power( voter, equity_price );
+      }
+      // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+      voting_power += ( weight.value >> vote.vote_rank );    
+      vote_count++;
+      ++wit_vote_itr;
+   }
+
+   modify( witness, [&]( witness_object& w )
+   {
+      w.voting_power = voting_power;
+      w.vote_count = vote_count;
+      auto delta_pos = w.voting_power.value * (wso.current_witness_virtual_time - w.witness_virtual_last_update);
+      w.witness_virtual_position += delta_pos;
+      w.witness_virtual_scheduled_time = w.witness_virtual_last_update + (VIRTUAL_SCHEDULE_LAP_LENGTH - w.witness_virtual_position)/(w.voting_power.value+1);
+      /** witnesses with a low number of votes could overflow the time field and end up with a scheduled time in the past */
+      if( w.witness_virtual_scheduled_time < wso.current_witness_virtual_time ) 
+      {
+         w.witness_virtual_scheduled_time = fc::uint128::max_value();
+      }
+      w.decay_weights( now, wso );
+      w.witness_virtual_last_update = wso.current_witness_virtual_time;
+   });
+
+   return voting_power;
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Updates the voting power map of the moderators
+ * in a board, which determines the distribution of the
+ * moderation rewards for the board.
+ */
+void database::update_board_moderators( const board_member_object& board )
+{ try {
+   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   const auto& vote_idx = get_index< board_moderator_vote_index >().indices().get< by_board_moderator >();
+   flat_map<account_name_type, share_type> mod_weight;
+
+   auto vote_itr = vote_idx.lower_bound( board.name );
+
+   while( vote_itr != vote_idx.end() && vote_itr->board == board.name )
+   {
+      const board_moderator_vote_object& vote = *vote_itr;
+      const account_object& voter = get_account( vote.account );
+      share_type weight = get_voting_power( vote_itr->account );
+      if( voter.proxied.size() )
+      {
+         weight += get_proxied_voting_power( voter, equity_price );
+      }
+      // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+      mod_weight[ vote.moderator ] += ( weight.value >> vote.vote_rank );
+      ++vote_itr;
+   }
+   
+   modify( board, [&]( board_member_object& b )
+   {
+      b.mod_weight = mod_weight;
+   });
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Updates the voting power map of the moderators
+ * in a board, which determines the distribution of t
+ * moderation rewards for the board.
+ */
+void database::update_board_moderator_set()
+{ try {
+   if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
+      return;
+   
+   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   const auto& board_idx = get_index< board_member_index >().indices().get< by_name >();
+   auto board_itr = board_idx.begin();
+
+   while( board_itr != board_idx.end() )
+   {
+      update_board_moderators( *board_itr );
+      ++board_itr;
+   }
+
+} FC_CAPTURE_AND_RETHROW() }
+
+/**
+ * Updates the voting statistics, executive board, and officer set of a business
+ * account.
+ */
+void database::update_business_account( const account_business_object& business, const dynamic_global_property_object& props )
+{ try {
+   const auto& bus_officer_vote_idx = get_index< account_officer_vote_index >().indices().get< by_business_account_rank >();
+   const auto& bus_executive_vote_idx = get_index< account_executive_vote_index >().indices().get< by_business_role_executive >();
+
+   flat_map< account_name_type, share_type > officers;
+   flat_map< account_name_type, flat_map< executive_types, share_type > > exec_map;
+   vector< pair< account_name_type, pair< executive_types, share_type > > > role_rank;
+   role_rank.reserve( props.executive_types_amount * officers.size() );
+   flat_map< account_name_type, pair< executive_types, share_type > > executives;
+   executive_officer_set exec_set;
+
+   auto bus_officer_vote_itr = bus_officer_vote_idx.lower_bound( business.account );
+   share_type voting_power = 0;
+
+   while( bus_officer_vote_itr != bus_officer_vote_idx.end() && 
+      bus_officer_vote_itr->business_account == business.account )
+   {
+      const account_object& voter = get_account( bus_officer_vote_itr->account );
+      share_type weight = get_equity_voting_power( bus_officer_vote_itr->account, business );
+
+      while( bus_officer_vote_itr != bus_officer_vote_idx.end() && 
+         bus_officer_vote_itr->business_account == business.account &&
+         bus_officer_vote_itr->account == voter.name )
+      {
+         const account_officer_vote_object& vote = *bus_officer_vote_itr;
+         officers[ vote.officer_account ] += ( weight.value >> vote.vote_rank );
          // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
-         // Rank one gets half of voting power, rank two gets one quarter, etc. 
-         voting_power += ( weight.value >> vote.vote_rank );
-         vote_count++;
-         ++officer_vote_itr;
+         ++bus_officer_vote_itr;
       }
-
-      modify( officer, [&]( network_officer_object& n )
-      {
-         n.voting_power = voting_power;
-         n.vote_count = vote_count;
-      });
-      ++officer_itr;
    }
 
-   const auto& gov_idx = get_index< governance_account_index >().indices().get< by_subscriber_power >();
-   const auto& gov_sub_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
-   auto gov_itr = gov_idx.begin();
-   
-   while( gov_itr != gov_idx.end() )
+   // Remove officers from map that do not meet voting requirement
+   for( auto itr = officers.begin(); itr != officers.end(); )
    {
-      const governance_account_object& gov = *gov_itr;
-      auto gov_sub_itr = gov_sub_idx.lower_bound( gov.account );
-      share_type voting_power = 0;
-      uint32_t sub_count = 0;
-
-      while( gov_sub_itr != gov_sub_idx.end() && gov_sub_itr->governance_account == gov.account )
+      if( itr->second < business.officer_vote_threshold )
       {
-         const governance_subscription_object& subscription = *gov_sub_itr;
-         const account_object& subscriber = get_account( subscription.account );
-         // Governance account subscriptions apply full voting power for each, voting power is non-rivalrous.
-         voting_power += get_voting_power( gov_sub_itr->account );   
-         if( subscriber.proxied.size() )
-         {
-            voting_power += get_proxied_voting_power( subscriber, equity_price );
-         }
-         sub_count++;
-         ++gov_sub_itr;
+         itr = officers.erase( itr );   
       }
-
-      modify( gov, [&]( governance_account_object& g )
+      else
       {
-         g.subscriber_power = voting_power;
-         g.subscriber_count = sub_count;
-      });
-      ++gov_itr;
+         ++itr;
+      }
    }
 
-   // TODO moderator voting, business account officer voting
-}
+   flat_map< executive_types, share_type > role_map;
+   auto bus_executive_vote_itr = bus_executive_vote_idx.lower_bound( business.account );
+
+   while( bus_executive_vote_itr != bus_executive_vote_idx.end() && 
+      bus_executive_vote_itr->business_account == business.account )
+   {
+      const account_object& voter = get_account( bus_executive_vote_itr->account );
+      share_type weight = get_equity_voting_power( bus_executive_vote_itr->account, business );
+
+      while( bus_executive_vote_itr != bus_executive_vote_idx.end() && 
+         bus_executive_vote_itr->business_account == business.account &&
+         bus_executive_vote_itr->account == voter.name )
+      {
+         const account_executive_vote_object& vote = *bus_executive_vote_itr;
+
+         exec_map[ vote.executive_account ][ vote.role ] += ( weight.value >> vote.vote_rank );
+         // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+         ++bus_executive_vote_itr;
+      }
+   }
+      
+   for( auto exec_votes : exec_map )
+   {
+      for( auto role_votes : exec_votes.second )   // Copy all exec role votes into sorting vector
+      {
+         role_rank.push_back( std::make_pair( exec_votes.first, std::make_pair( role_votes.first, role_votes.second ) ) );
+      }
+   }
+   
+   std::sort( role_rank.begin(), role_rank.end(), [&](auto a, auto b)
+   {
+      return a.second.second < b.second.second;   // Ordered vector of all executives, for each role. 
+   });
+
+   auto role_rank_itr = role_rank.begin();
+
+   while( !exec_set.allocated && role_rank_itr != role_rank.end() )
+   {
+      pair< account_name_type, pair< executive_types, share_type > > rank = *role_rank_itr;
+      
+      account_name_type executive = rank.first;
+      executive_types role = rank.second.first;
+      share_type votes = rank.second.second;
+
+      switch( role )
+      {
+         case CHIEF_EXECUTIVE_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_EXECUTIVE_OFFICER = executive;
+         }
+         break;
+         case CHIEF_OPERATING_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_OPERATING_OFFICER = executive;
+         }
+         break;
+         case CHIEF_FINANCIAL_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_FINANCIAL_OFFICER = executive;
+         }
+         break;
+         case CHIEF_TECHNOLOGY_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_TECHNOLOGY_OFFICER = executive;
+         }
+         break;
+         case CHIEF_DEVELOPMENT_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_DEVELOPMENT_OFFICER = executive;
+         }
+         break;
+         case CHIEF_SECURITY_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_SECURITY_OFFICER = executive;
+         }
+         break;
+         case CHIEF_ADVOCACY_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_ADVOCACY_OFFICER = executive;
+         }
+         break;
+         case CHIEF_GOVERNANCE_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_GOVERNANCE_OFFICER = executive;
+         }
+         break;
+         case CHIEF_MARKETING_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_MARKETING_OFFICER = executive;
+         }
+         break;
+         case CHIEF_DESIGN_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_DESIGN_OFFICER = executive;
+         }
+         break;
+      }
+   }
+
+   modify( business, [&]( account_business_object& b )
+   {
+      b.officers = officers;
+      b.executives = executives;
+      b.executive_board = exec_set; 
+   });
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Updates the executive board votes and positions of officers
+ * in a business account.
+ */
+void database::update_business_account_set()
+{ try {
+   if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
+      return;
+
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const auto& business_idx = get_index< account_business_index >().indices().get< by_account >();
+   auto business_itr = business_idx.begin();
+
+   while( business_itr != business_idx.end() )
+   {
+      update_business_account( *business_itr, props );
+      ++business_itr;
+   }
+   
+} FC_CAPTURE_AND_RETHROW() }
+
 
 /**
  * Allocates equity asset dividends from each dividend reward pool,
@@ -2246,6 +2436,65 @@ void database::process_supernode_rewards()
 } FC_CAPTURE_AND_RETHROW() }
 
 
+
+/**
+ * Update an network officer;'s voting approval statisitics
+ * and updates its approval if there are
+ * sufficient votes from witnesses and other accounts.
+ */
+void database::update_network_officer( const network_officer_object& network_officer, 
+   const witness_schedule_object& wso, const dynamic_global_property_object& props )
+{ try {
+   uint32_t vote_count = 0;
+   share_type voting_power = 0;
+   uint32_t witness_vote_count = 0;
+   share_type witness_voting_power = 0;
+   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+
+   const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_officer_account >();
+   auto vote_itr = vote_idx.lower_bound( network_officer.account );
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->network_officer == network_officer.account )
+   {
+      const network_officer_vote_object& vote = *vote_itr;
+      const account_object& voter = get_account( vote.account );
+      bool is_witness = wso.is_top_witness( voter.name );
+      vote_count++;
+      share_type weight = 0;
+      weight += get_voting_power( vote.account, equity_price );
+      if( voter.proxied.size() )
+      {
+         weight += get_proxied_voting_power( voter, equity_price );
+      }
+      voting_power += ( weight.value >> vote.vote_rank );
+
+      if( is_witness )
+      {
+         witness_vote_count++;
+         const witness_object& witness = get_witness( voter.name );
+         witness_voting_power += ( witness.voting_power.value >> vote.vote_rank );
+      }
+      ++vote_itr;
+   }
+
+   // Approve the network officer when a threshold of voting power and vote amount supports it.
+   bool approve_officer = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
+      ( witness_vote_count >= VOTE_THRESHOLD_AMOUNT ) &&
+      ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( witness_voting_power >= ( wso.total_witness_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+   
+   modify( network_officer, [&]( network_officer_object& n )
+   {
+      n.vote_count = vote_count;
+      n.voting_power = voting_power;
+      n.witness_vote_count = witness_vote_count;
+      n.witness_voting_power = witness_voting_power;
+      n.officer_approved = approve_officer;
+   });
+} FC_CAPTURE_AND_RETHROW() }
+
+
 /**
  * Pays the network officer rewards to the 50 highest voted
  * developers, marketers and advocates on the network from
@@ -2258,23 +2507,33 @@ void database::process_network_officer_rewards()
 
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const witness_schedule_object& wso = get_witness_schedule();
+   const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
    time_point now = props.time;
+
+   auto officer_itr = officer_idx.begin();
+
+   while( officer_itr != officer_idx.end() ) 
+   {
+      update_network_officer( *officer_itr, wso, props );
+      ++officer_itr;
+   }
 
    // ========== Development Officers ========== //
 
    asset development_reward = rfo.development_reward_balance;     // Record the opening balance of the development reward fund
-   const auto& development_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
-   auto development_itr = development_idx.lower_bound( DEVELOPMENT );
+   auto development_itr = officer_idx.lower_bound( DEVELOPMENT );
+   auto development_end = officer_idx.upper_bound( DEVELOPMENT );
     
    flat_map < account_name_type, share_type > development_map;
    share_type total_development_shares = 0;
-   asset distributed = asset( 0, SYMBOL_COIN );
+   asset development_distributed = asset( 0, SYMBOL_COIN );
 
-   while( development_itr != development_idx.end() && development_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
+   while( development_itr != development_end && development_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
    {
       share_type development_shares = development_itr->voting_power;  // Get the development officer voting power
 
-      if( development_shares > 0 && development_itr->active )
+      if( development_shares > 0 && development_itr->active && development_itr->officer_approved )
       {
          total_development_shares += development_shares;
          development_map[ development_itr->account ] = development_shares;
@@ -2286,31 +2545,24 @@ void database::process_network_officer_rewards()
    {
       asset development_reward_split = ( development_reward * b.second ) / total_development_shares; 
       adjust_reward_balance( b.first, development_reward_split );       // Pay development reward proportionally with voting power.
-      distributed += development_reward_split;
+      development_distributed += development_reward_split;
    }
-
-   modify( rfo, [&]( reward_fund_object& r )
-   {
-      r.adjust_development_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
-   });
-
-   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
 
    // ========== Marketing Officers ========== //
 
    asset marketing_reward = rfo.marketing_reward_balance;     // Record the opening balance of the marketing reward fund
-   const auto& marketing_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
-   auto marketing_itr = marketing_idx.lower_bound( MARKETING );
+   auto marketing_itr = officer_idx.lower_bound( MARKETING );
+   auto marketing_end = officer_idx.upper_bound( MARKETING );
     
    flat_map < account_name_type, share_type > marketing_map;
    share_type total_marketing_shares = 0;
-   asset distributed = asset( 0, SYMBOL_COIN );
+   asset marketing_distributed = asset( 0, SYMBOL_COIN );
 
-   while( marketing_itr != marketing_idx.end() && marketing_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
+   while( marketing_itr != marketing_end && marketing_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
    {
       share_type marketing_shares = marketing_itr->voting_power;  // Get the marketing officer voting power
 
-      if( marketing_shares > 0 && marketing_itr->active )
+      if( marketing_shares > 0 && marketing_itr->active && marketing_itr->officer_approved )
       {
          total_marketing_shares += marketing_shares;
          marketing_map[ marketing_itr->account ] = marketing_shares;
@@ -2322,27 +2574,21 @@ void database::process_network_officer_rewards()
    {
       asset marketing_reward_split = ( marketing_reward * b.second ) / total_marketing_shares; 
       adjust_reward_balance( b.first, marketing_reward_split );       // Pay marketing reward proportionally with voting power.
-      distributed += marketing_reward_split;
+      marketing_distributed += marketing_reward_split;
    }
-
-   modify( rfo, [&]( reward_fund_object& r )
-   {
-      r.adjust_marketing_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
-   });
-
-   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
 
    // ========== Advocacy Officers ========== //
 
    asset advocacy_reward = rfo.advocacy_reward_balance;     // Record the opening balance of the advocacy reward fund
-   const auto& advocacy_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
-   auto advocacy_itr = advocacy_idx.lower_bound( ADVOCACY );
+
+   auto advocacy_itr = officer_idx.lower_bound( ADVOCACY );
+   auto advocacy_end = officer_idx.upper_bound( ADVOCACY );
     
    flat_map < account_name_type, share_type > advocacy_map;
    share_type total_advocacy_shares = 0;
-   asset distributed = asset( 0, SYMBOL_COIN );
+   asset advocacy_distributed = asset( 0, SYMBOL_COIN );
 
-   while( advocacy_itr != advocacy_idx.end() && advocacy_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
+   while( advocacy_itr != advocacy_end && advocacy_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
    {
       share_type advocacy_shares = advocacy_itr->voting_power;  // Get the advocacy officer voting power
 
@@ -2358,15 +2604,18 @@ void database::process_network_officer_rewards()
    {
       asset advocacy_reward_split = ( advocacy_reward * b.second ) / total_advocacy_shares; 
       adjust_reward_balance( b.first, advocacy_reward_split );       // Pay advocacy reward proportionally with voting power.
-      distributed += advocacy_reward_split;
+      advocacy_distributed += advocacy_reward_split;
    }
 
    modify( rfo, [&]( reward_fund_object& r )
    {
-      r.adjust_advocacy_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+      r.adjust_development_reward_balance( -development_distributed );   
+      r.adjust_marketing_reward_balance( -marketing_distributed );   
+      r.adjust_advocacy_reward_balance( -advocacy_distributed );  
    });
+   asset total_distributed = development_distributed + marketing_distributed + advocacy_distributed;
 
-   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+   adjust_pending_supply( -total_distributed );   // Deduct distributed amount from pending supply.
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -2409,13 +2658,14 @@ void database::update_executive_board( const executive_board_object& executive_b
          const witness_object& witness = get_witness( voter.name );
          witness_voting_power += ( witness.voting_power.value >> vote.vote_rank );
       }
+      ++vote_itr;
    }
 
    // Approve the executive board when a threshold of votes to support its budget.
-   bool approve_board = ( vote_count >= ENTERPRISE_WIT_APPROVALS_REQUIRED * 8 ) &&
-      ( witness_vote_count >= ENTERPRISE_WIT_APPROVALS_REQUIRED * 2 ) &&
-      ( voting_power >= ( props.total_voting_power * ENTERPRISE_VOTE_PERCENT_REQUIRED * 2 ) / PERCENT_100 ) &&
-      ( witness_voting_power >= ( wso.total_witness_voting_power * ENTERPRISE_VOTE_PERCENT_REQUIRED * 2 ) / PERCENT_100 );
+   bool approve_board = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 8 ) &&
+      ( witness_vote_count >= VOTE_THRESHOLD_AMOUNT * 2 ) &&
+      ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT * 2 ) / PERCENT_100 ) &&
+      ( witness_voting_power >= ( wso.total_witness_voting_power * VOTE_THRESHOLD_PERCENT * 2 ) / PERCENT_100 );
    
    modify( executive_board, [&]( executive_board_object& e )
    {
@@ -2480,6 +2730,84 @@ void database::process_executive_board_budgets()
    }
 } FC_CAPTURE_AND_RETHROW() }
 
+
+/**
+ * Update a governance account's voting approval statisitics
+ * and update its approval if there are
+ * sufficient votes from witnesses and other accounts.
+ */
+void database::update_governance_account( const governance_account_object& governance_account, 
+   const witness_schedule_object& wso, const dynamic_global_property_object& props )
+{ try {
+   uint32_t vote_count = 0;
+   share_type voting_power = 0;
+   uint32_t witness_vote_count = 0;
+   share_type witness_voting_power = 0;
+   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+
+   const auto& vote_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
+   auto vote_itr = vote_idx.lower_bound( governance_account.account );
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->governance_account == governance_account.account )
+   {
+      const governance_subscription_object& vote = *vote_itr;
+      const account_object& voter = get_account( vote.account );
+      bool is_witness = wso.is_top_witness( voter.name );
+      vote_count++;
+      share_type weight = 0;
+      weight += get_voting_power( vote.account, equity_price );
+      if( voter.proxied.size() )
+      {
+         weight += get_proxied_voting_power( voter, equity_price );
+      }
+      voting_power += ( weight.value >> vote.vote_rank );
+
+      if( is_witness )
+      {
+         witness_vote_count++;
+         const witness_object& witness = get_witness( voter.name );
+         witness_voting_power += ( witness.voting_power.value >> vote.vote_rank );
+      }
+      ++vote_itr;
+   }
+
+   // Approve the executive board when a threshold of votes to support its budget.
+   bool approve_account = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
+      ( witness_vote_count >= VOTE_THRESHOLD_AMOUNT ) &&
+      ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( witness_voting_power >= ( wso.total_witness_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+   
+   modify( governance_account, [&]( governance_account_object& g )
+   {
+      g.subscriber_count = vote_count;
+      g.subscriber_power = voting_power;
+      g.witness_subscriber_count = witness_vote_count;
+      g.witness_subscriber_power = witness_voting_power;
+      g.account_approved = approve_account;
+   });
+} FC_CAPTURE_AND_RETHROW() }
+
+
+void database::update_governance_account_set()
+{ try { 
+   if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL ) != 0 )    // Runs once per day
+      return;
+   
+   const witness_schedule_object& wso = get_witness_schedule();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const auto& gov_idx = get_index< governance_account_index >().indices().get< by_subscriber_power >();
+   auto gov_itr = gov_idx.begin();
+   
+   while( gov_itr != gov_idx.end() )
+   {
+      update_governance_account( *gov_itr, wso, props );
+      ++gov_itr;
+   }
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
 /**
  * Update a community enterprise proposal's voting approval statisitics
  * and increment the approved milestone if there are
@@ -2538,14 +2866,14 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
             current_witness_voting_power += witness.voting_power;
          }
       }
+      ++approval_itr;
    }
 
    // Approve the latest claimed milestone when a threshold of approvals support its release.
-   bool approve_milestone = ( current_approvals >= ENTERPRISE_WIT_APPROVALS_REQUIRED * 4 ) &&
-      ( current_witness_approvals >= ENTERPRISE_WIT_APPROVALS_REQUIRED ) &&
-      ( current_voting_power >= ( props.total_voting_power * ENTERPRISE_VOTE_PERCENT_REQUIRED ) / PERCENT_100 ) &&
-      ( current_witness_voting_power >= ( wso.total_witness_voting_power * ENTERPRISE_VOTE_PERCENT_REQUIRED ) / PERCENT_100 );
-   
+   bool approve_milestone = ( current_approvals >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
+      ( current_witness_approvals >= VOTE_THRESHOLD_AMOUNT ) &&
+      ( current_voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( current_witness_voting_power >= ( wso.total_witness_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
 
    modify( enterprise, [&]( community_enterprise_object& e )
    {
@@ -3262,9 +3590,14 @@ void database::_apply_block( const signed_block& next_block )
    clear_expired_operations();
    clear_expired_delegations();
    update_witness_schedule(*this);
+
+   update_witness_set();
+   update_governance_account_set();
+   update_board_moderator_set();
+   update_business_account_set();
    update_comment_metrics();
    update_median_liquidity();
-   update_network_votes();
+   update_proof_of_work_target();
    
    process_funds();
 
@@ -3278,7 +3611,6 @@ void database::_apply_block( const signed_block& next_block )
    process_margin_updates();
    process_credit_interest();
    process_membership_updates();
-   update_proof_of_work_target();
    process_txn_stake_rewards();
    process_validation_rewards();
    process_producer_activity_rewards();
@@ -3507,10 +3839,11 @@ void database::create_block_summary(const signed_block& next_block)
 
 void database::update_global_dynamic_data( const signed_block& b )
 { try {
-   const dynamic_global_property_object& _dgp =
-      get_dynamic_global_properties();
-
+   const dynamic_global_property_object& _dgp = get_dynamic_global_properties();
    uint32_t missed_blocks = 0;
+   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   price usd_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_USD).hour_median_price;
+
    if( head_block_time() != fc::time_point() )
    {
       missed_blocks = get_slot_at_time( b.timestamp );
@@ -3549,6 +3882,8 @@ void database::update_global_dynamic_data( const signed_block& b )
       dgp.head_block_id = b.id();
       dgp.time = b.timestamp;
       dgp.current_aslot += missed_blocks+1;
+      dgp.current_median_equity_price = equity_price;
+      dgp.current_median_usd_price = usd_price;
    } );
 
    if( !(get_node_properties().skip_flags & skip_undo_history_check) )

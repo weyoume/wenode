@@ -248,7 +248,10 @@ void database::update_owner_authority( const account_object& account, const auth
    });
 }
 
-
+/**
+ * Aligns witness votes in order of highest to lowest,
+ * with continual ordering.
+ */
 void database::update_witness_votes( const account_object& account )
 {
    const auto& vote_idx = get_index< witness_vote_index >().indices().get< by_account_rank >();
@@ -266,6 +269,7 @@ void database::update_witness_votes( const account_object& account )
             v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
          });
       }
+      ++vote_itr;
       new_vote_rank++;
    }
 
@@ -301,6 +305,7 @@ void database::update_witness_votes( const account_object& account, const accoun
          });
       }
       new_vote_rank++;
+      ++vote_itr;
    }
 
    create< witness_vote_object >([&]( witness_vote_object& v )
@@ -316,13 +321,467 @@ void database::update_witness_votes( const account_object& account, const accoun
    });
 }
 
+/**
+ * Aligns network_officer votes in a continuous order, and inputs a new vote
+ * at a specified vote number.
+ */
+void database::update_network_officer_votes( const account_object& account )
+{
+   const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
+   auto vote_itr = vote_idx.lower_bound( account.name );
+
+   flat_map< network_officer_types, uint16_t > vote_rank;
+   vote_rank[ DEVELOPMENT ] = 1;
+   vote_rank[ MARKETING ] = 1;
+   vote_rank[ ADVOCACY ] = 1;
+
+   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   {
+      const network_officer_vote_object& vote = *vote_itr;
+      if( vote.vote_rank != vote_rank[ vote.officer_type ] )
+      {
+         modify( vote, [&]( witness_vote_object& v )
+         {
+            v.vote_rank = vote_rank[ vote.officer_type ];   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      vote_rank[ vote.officer_type ]++;
+      ++vote_itr;
+   }
+
+   modify( account, [&]( account_object& a )
+   {
+      a.officer_votes = ( vote_rank[ DEVELOPMENT ] + vote_rank[ MARKETING ] + vote_rank[ ADVOCACY ] - 3 );
+   });
+}
+
+/**
+ * Aligns network_officer votes in a continuous order, and inputs a new vote
+ * at a specified vote number.
+ */
+void database::update_network_officer_votes( const account_object& account, const account_name_type& network_officer, 
+   network_officer_types officer_type, uint16_t input_vote_rank )
+{
+   const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
+   auto vote_itr = vote_idx.lower_bound( account.name );
+
+   flat_map< network_officer_types, uint16_t > vote_rank;
+   vote_rank[ DEVELOPMENT ] = 1;
+   vote_rank[ MARKETING ] = 1;
+   vote_rank[ ADVOCACY ] = 1;
+
+   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   {
+      const network_officer_vote_object& vote = *vote_itr;
+
+      if( vote.vote_rank == input_vote_rank && vote.officer_type == officer_type )
+      {
+         vote_rank[ vote.officer_type ]++;
+      }
+      if( vote.vote_rank != vote_rank[ vote.officer_type ] )
+      {
+         modify( vote, [&]( witness_vote_object& v )
+         {
+            v.vote_rank = vote_rank[ vote.officer_type ];   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      vote_rank[ vote.officer_type ]++;
+      ++vote_itr;
+   }
+
+   create< network_officer_vote_object >([&]( network_officer_vote_object& v )
+   {
+      v.account = account.name;
+      v.network_officer = network_officer;
+      v.officer_type = officer_type;
+      v.vote_rank = input_vote_rank;
+   });
+
+   modify( account, [&]( account_object& a )
+   {
+      a.officer_votes = ( vote_rank[ DEVELOPMENT ] + vote_rank[ MARKETING ] + vote_rank[ ADVOCACY ] - 3 );
+   });
+}
+
+
+/**
+ * Aligns executive board votes in order of highest to lowest,
+ * with continual ordering.
+ */
+void database::update_executive_board_votes( const account_object& account )
+{
+   const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_account_rank >();
+   auto vote_itr = vote_idx.lower_bound( account.name );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   {
+      const executive_board_vote_object& vote = *vote_itr;
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( executive_board_vote_object& v )
+         {
+            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      ++vote_itr;
+      new_vote_rank++;
+   }
+
+   modify( account, [&]( account_object& a )
+   {
+      a.executive_board_votes = ( new_vote_rank - 1 );
+   });
+}
+
+/**
+ * Aligns executive board votes in a continuous order, and inputs a new vote
+ * at a specified vote number.
+ */
+void database::update_executive_board_votes( const account_object& account, const account_name_type& executive, uint16_t input_vote_rank )
+{
+   const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_account_rank >();
+   auto vote_itr = vote_idx.lower_bound( account.name );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   {
+      const executive_board_vote_object& vote = *vote_itr;
+      if( vote.vote_rank == input_vote_rank )
+      {
+         new_vote_rank++;
+      }
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( executive_board_vote_object& v )
+         {
+            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      new_vote_rank++;
+      ++vote_itr;
+   }
+
+   create< executive_board_vote_object >([&]( executive_board_vote_object& v )
+   {
+      v.account = account.name;
+      v.executive_board = executive;
+      v.vote_rank = input_vote_rank;
+   });
+
+   modify( account, [&]( account_object& a )
+   {
+      a.executive_board_votes = ( new_vote_rank - 1 );
+   });
+}
+
+
+/**
+ * Aligns board moderator votes in order of highest to lowest,
+ * with continual ordering.
+ */
+void database::update_board_moderator_votes( const account_object& account, const board_name_type& board )
+{
+   const auto& vote_idx = get_index< board_moderator_vote_index >().indices().get< by_account_board_rank >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, board ) );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name &&
+      vote_itr->board == board )
+   {
+      const board_moderator_vote_object& vote = *vote_itr;
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( board_moderator_vote_object& v )
+         {
+            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      ++vote_itr;
+      new_vote_rank++;
+   }
+}
+
+/**
+ * Aligns board moderator votes in a continuous order, and inputs a new vote
+ * at a specified vote number.
+ */
+void database::update_board_moderator_votes( const account_object& account, const board_name_type& board, 
+   const account_name_type& moderator, uint16_t input_vote_rank )
+{
+   const auto& vote_idx = get_index< board_moderator_vote_index >().indices().get< by_account_board_rank >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, board ) );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name &&
+      vote_itr->board == board )
+   {
+      const board_moderator_vote_object& vote = *vote_itr;
+      if( vote.vote_rank == input_vote_rank )
+      {
+         new_vote_rank++;
+      }
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( board_moderator_vote_object& v )
+         {
+            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      new_vote_rank++;
+      ++vote_itr;
+   }
+
+   create< board_moderator_vote_object >([&]( board_moderator_vote_object& v )
+   {
+      v.account = account.name;
+      v.moderator = moderator;
+      v.board = board;
+      v.vote_rank = input_vote_rank;
+   });
+}
+
+
+/**
+ * Aligns enterprise approval votes in order of highest to lowest,
+ * with continual ordering.
+ */
+void database::update_enterprise_votes( const account_object& account )
+{
+   const auto& vote_idx = get_index< enterprise_approval_index >().indices().get< by_account_rank >();
+   auto vote_itr = vote_idx.lower_bound( account.name );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   {
+      const enterprise_approval_object& vote = *vote_itr;
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( enterprise_approval_object& v )
+         {
+            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      ++vote_itr;
+      new_vote_rank++;
+   }
+}
+
+/**
+ * Aligns enterprise approval votes in a continuous order, and inputs a new vote
+ * at a specified vote number.
+ */
+void database::update_enterprise_votes( const account_object& account, const account_name_type& creator, 
+const shared_string& enterprise_id, uint16_t input_vote_rank )
+{
+   const auto& vote_idx = get_index< enterprise_approval_index >().indices().get< by_account_rank >();
+   auto vote_itr = vote_idx.lower_bound( account.name );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   {
+      const enterprise_approval_object& vote = *vote_itr;
+      if( vote.vote_rank == input_vote_rank )
+      {
+         new_vote_rank++;
+      }
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( enterprise_approval_object& v )
+         {
+            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
+         });
+      }
+      new_vote_rank++;
+      ++vote_itr;
+   }
+
+   create< enterprise_approval_object >([&]( enterprise_approval_object& v )
+   {
+      v.account = account.name;
+      v.enterprise_id = enterprise_id;
+      v.creator = creator;
+      v.vote_rank = input_vote_rank;
+   });
+}
+
+
+/**
+ * Aligns business account executive votes in a continuous order.
+ */
+void database::update_account_executive_votes( const account_object& account, const account_name_type& business )
+{
+   const auto& vote_idx = get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
+
+   flat_map< executive_types, uint16_t >vote_rank;
+   vote_rank[ CHIEF_EXECUTIVE_OFFICER ] = 1;
+   vote_rank[ CHIEF_OPERATING_OFFICER ] = 1;
+   vote_rank[ CHIEF_FINANCIAL_OFFICER ] = 1;
+   vote_rank[ CHIEF_TECHNOLOGY_OFFICER ] = 1;
+   vote_rank[ CHIEF_DEVELOPMENT_OFFICER ] = 1;
+   vote_rank[ CHIEF_MARKETING_OFFICER ] = 1;
+   vote_rank[ CHIEF_ADVOCACY_OFFICER ] = 1;
+   vote_rank[ CHIEF_GOVERNANCE_OFFICER ] = 1;
+   vote_rank[ CHIEF_SECURITY_OFFICER ] = 1;
+   vote_rank[ CHIEF_DESIGN_OFFICER ] = 1;
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name &&
+      vote_itr->business_account == business )
+   {
+      const account_executive_vote_object& vote = *vote_itr;
+
+      if( vote.vote_rank != vote_rank[vote.role] )
+      {
+         modify( vote, [&]( account_executive_vote_object& v )
+         {
+            v.vote_rank = vote_rank[vote.role];
+         });
+      }
+      vote_rank[vote.role]++;
+      ++vote_itr;  
+   }
+}
+
+/**
+ * Aligns business account executive votes in a continuous order, and inputs a new vote
+ * at a specified vote number.
+ */
+void database::update_account_executive_votes( const account_object& account, const account_name_type& business, const account_object& executive,
+   executive_types role, uint16_t input_vote_rank )
+{
+   const auto& vote_idx = get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
+
+   flat_map< executive_types, uint16_t >vote_rank;
+   vote_rank[ CHIEF_EXECUTIVE_OFFICER ] = 1;
+   vote_rank[ CHIEF_OPERATING_OFFICER ] = 1;
+   vote_rank[ CHIEF_FINANCIAL_OFFICER ] = 1;
+   vote_rank[ CHIEF_TECHNOLOGY_OFFICER ] = 1;
+   vote_rank[ CHIEF_DEVELOPMENT_OFFICER ] = 1;
+   vote_rank[ CHIEF_MARKETING_OFFICER ] = 1;
+   vote_rank[ CHIEF_ADVOCACY_OFFICER ] = 1;
+   vote_rank[ CHIEF_GOVERNANCE_OFFICER ] = 1;
+   vote_rank[ CHIEF_SECURITY_OFFICER ] = 1;
+   vote_rank[ CHIEF_DESIGN_OFFICER ] = 1;
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name &&
+      vote_itr->business_account == business )
+   {
+      const account_executive_vote_object& vote = *vote_itr;
+
+      if( vote.vote_rank == input_vote_rank && vote.role == role )
+      {
+         vote_rank[vote.role]++;
+      }
+      if( vote.vote_rank != vote_rank[vote.role] )
+      {
+         modify( vote, [&]( account_executive_vote_object& v )
+         {
+            v.vote_rank = vote_rank[vote.role];
+         });
+      }
+      vote_rank[vote.role]++;
+      ++vote_itr;  
+   }
+
+   create< account_executive_vote_object >([&]( account_executive_vote_object& v )
+   {
+      v.account = account.name;
+      v.business_account = business;
+      v.executive_account = executive.name;
+      v.role = role;
+      v.vote_rank = input_vote_rank;
+   });
+}
+
+/**
+ * Aligns business account officer votes in a continuous order
+ */
+void database::update_account_officer_votes( const account_object& account, const account_name_type& business )
+{
+   const auto& vote_idx = get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name &&
+      vote_itr->business_account == business )
+   {
+      const account_officer_vote_object& vote = *vote_itr;
+
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( account_officer_vote_object& v )
+         {
+            v.vote_rank = new_vote_rank;
+         });
+      }
+      new_vote_rank++;
+      ++vote_itr;  
+   }
+}
+
+/**
+ * Aligns business account officer votes in a continuous order, and inputs a new vote
+ * at a specified vote number.
+ */
+void database::update_account_officer_votes( const account_object& account, const account_name_type& business, const account_object& officer, uint16_t input_vote_rank )
+{
+   const auto& vote_idx = get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
+
+   uint16_t new_vote_rank = 1;
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name &&
+      vote_itr->business_account == business )
+   {
+      const account_officer_vote_object& vote = *vote_itr;
+
+      if( vote.vote_rank == input_vote_rank )
+      {
+         new_vote_rank++;
+      }
+      if( vote.vote_rank != new_vote_rank )
+      {
+         modify( vote, [&]( account_officer_vote_object& v )
+         {
+            v.vote_rank = new_vote_rank;
+         });
+      }
+      new_vote_rank++;
+      ++vote_itr;  
+   }
+
+   create< account_officer_vote_object >([&]( account_officer_vote_object& v )
+   {
+      v.account = account.name;
+      v.business_account = business;
+      v.officer_account = officer.name;
+      v.vote_rank = input_vote_rank;
+   });
+}
+
+
 void database::account_recovery_processing()
 {
    // Clear expired recovery requests
    const auto& rec_req_idx = get_index< account_recovery_request_index >().indices().get< by_expiration >();
    auto rec_req = rec_req_idx.begin();
 
-   while( rec_req != rec_req_idx.end() && rec_req->expires <= head_block_time() )
+   while( rec_req != rec_req_idx.end() && rec_req->expiration <= head_block_time() )
    {
       remove( *rec_req );
       rec_req = rec_req_idx.begin();

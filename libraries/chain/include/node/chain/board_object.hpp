@@ -342,6 +342,8 @@ namespace node { namespace chain {
          board_name_type                board;           // Board that the moderator is being voted into.
 
          account_name_type              moderator;       // The name of the moderator being voted for.
+
+         uint16_t                       vote_rank;       // The rank of the vote for the board moderator
    };
 
    // TODO: Join and request expiration
@@ -508,8 +510,9 @@ namespace node { namespace chain {
    struct by_board;
    struct by_board_moderator;
    struct by_account;
-   struct by_moderator;
+   struct by_moderator_board;
    struct by_account_board_moderator;
+   struct by_account_board_rank;
 
    typedef multi_index_container<
       board_moderator_vote_object,
@@ -520,38 +523,35 @@ namespace node { namespace chain {
             composite_key< board_moderator_vote_object,
                member< board_moderator_vote_object, board_name_type, &board_moderator_vote_object::board >,
                member< board_moderator_vote_object, board_moderator_vote_id_type, &board_moderator_vote_object::id >
-            >,
-            composite_key_compare< std::less< board_name_type >, std::less< board_moderator_vote_id_type > >
+            >
          >,
-         ordered_unique< tag< by_board_moderator >,
-            composite_key< board_moderator_vote_object,
-               member< board_moderator_vote_object, board_name_type, &board_moderator_vote_object::board >,
-               member< board_moderator_vote_object, account_name_type, &board_moderator_vote_object::moderator >,
-               member< board_moderator_vote_object, board_moderator_vote_id_type, &board_moderator_vote_object::id >
-            >,
-            composite_key_compare< std::less< board_name_type >, std::less< account_name_type >, std::less< board_moderator_vote_id_type > >
-         >,
-         ordered_unique< tag< by_account >,
+         ordered_unique< tag< by_account_board_rank >,
             composite_key< board_moderator_vote_object,
                member< board_moderator_vote_object, account_name_type, &board_moderator_vote_object::account >,
-               member< board_moderator_vote_object, board_moderator_vote_id_type, &board_moderator_vote_object::id >
-            >,
-            composite_key_compare< std::less< account_name_type >, std::less< board_moderator_vote_id_type > >
-         >,
-         ordered_unique< tag< by_moderator >,
-            composite_key< board_moderator_vote_object,
-               member< board_moderator_vote_object, account_name_type, &board_moderator_vote_object::moderator >,
-               member< board_moderator_vote_object, board_moderator_vote_id_type, &board_moderator_vote_object::id >
-            >,
-            composite_key_compare< std::less< account_name_type >, std::less< board_moderator_vote_id_type > >
+               member< board_moderator_vote_object, board_name_type, &board_moderator_vote_object::board >,
+               member< board_moderator_vote_object, uint16_t, &board_moderator_vote_object::vote_rank >
+            >
          >,
          ordered_unique< tag< by_account_board_moderator >,
             composite_key< board_moderator_vote_object,
                member< board_moderator_vote_object, account_name_type, &board_moderator_vote_object::account >,
                member< board_moderator_vote_object, board_name_type, &board_moderator_vote_object::board >,
                member< board_moderator_vote_object, account_name_type, &board_moderator_vote_object::moderator >
-            >,
-            composite_key_compare< std::less< account_name_type >, std::less< board_name_type >, std::less< account_name_type > >
+            >
+         >,
+         ordered_unique< tag< by_board_moderator >,
+            composite_key< board_moderator_vote_object,
+               member< board_moderator_vote_object, board_name_type, &board_moderator_vote_object::board >,
+               member< board_moderator_vote_object, account_name_type, &board_moderator_vote_object::moderator >,
+               member< board_moderator_vote_object, board_moderator_vote_id_type, &board_moderator_vote_object::id >
+            >
+         >,
+         ordered_unique< tag< by_moderator_board >,
+            composite_key< board_moderator_vote_object,
+               member< board_moderator_vote_object, account_name_type, &board_moderator_vote_object::moderator >,
+               member< board_moderator_vote_object, board_name_type, &board_moderator_vote_object::board >,
+               member< board_moderator_vote_object, board_moderator_vote_id_type, &board_moderator_vote_object::id >
+            >
          >
       >,
       allocator< board_moderator_vote_object >

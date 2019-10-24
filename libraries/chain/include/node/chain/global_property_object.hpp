@@ -58,6 +58,10 @@ namespace node { namespace chain {
 
          asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                // The price for top level membership per month.
 
+         price                  current_median_equity_price;                              // The current price of Equity Asset in Coin asset.
+
+         price                  current_median_usd_price;                                 // The current price of the USd asst in the Coin asset.
+
          uint128_t              total_voting_power;                                       // Current outstanding supply of voting power in both equity and staked coin balances.
 
          uint128_t              total_pow = 0;                                            // The total POW accumulated
@@ -124,11 +128,13 @@ namespace node { namespace chain {
 
          fc::microseconds       supernode_decay_time = SUPERNODE_DECAY_TIME;              // Amount of time to average the supernode file weight over. 
 
-         uint16_t               enterprise_vote_percent_required = ENTERPRISE_VOTE_PERCENT_REQUIRED;   // Percentage of total voting power required to approve enterprise milestones. 
+         uint16_t               enterprise_vote_percent_required = VOTE_THRESHOLD_PERCENT;   // Percentage of total voting power required to approve enterprise milestones. 
 
          uint16_t               executive_types_amount = EXECUTIVE_TYPES_AMOUNT;          // Number of roles on a business account executive board.
 
          uint32_t               dynamic_flags = 0;
+
+         
 
          enum dynamic_flag_bits
          {
