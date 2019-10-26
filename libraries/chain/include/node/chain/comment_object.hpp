@@ -57,13 +57,15 @@ namespace node { namespace chain {
 
          post_types                     post_type;                    // The type of post that is being created, image, text, article, video etc. 
 
+         board_name_type                board;                        // The name of the board to which the post is uploaded to.
+
+         flat_set< shared_string >      tags;                         // Set of string tags for sorting the post by
+
          shared_string                  body;                         // String containing text for display when the post is opened.
 
          shared_string                  ipfs;                         // String containing a display image or video file as an IPFS file hash.
 
          shared_string                  magnet;                       // String containing a bittorrent magnet link to a file swarm.
-
-         board_name_type                board;                        // The name of the board to which the post is uploaded to.
 
          connection_types               privacy;                      // Type of privacy setting for encryption levels to connections.
 
@@ -73,19 +75,19 @@ namespace node { namespace chain {
 
          shared_string                  language;                     // String containing a two letter language code that the post is broadcast in.
 
-         account_name_type              interface;                    // Interface account name that the post was created with. 
+         id_type                        root_comment;                 // The root post that the comment is an ancestor of. 
 
          account_name_type              parent_author;                // Account that created the post this post is replying to, empty if root post. 
 
          shared_string                  parent_permlink;              // permlink of the post this post is replying to, empty if root post. 
 
-         flat_set< shared_string >      tags;                         // Set of string tags for sorting the post by
-
-         string                         json;                         // IPFS link to file containing - Json metadata of the Title, Link, and additional interface specific data relating to the post.
+         shared_string                  json;                         // IPFS link to file containing - Json metadata of the Title, Link, and additional interface specific data relating to the post.
 
          shared_string                  category;
 
          asset                          comment_price;                // The price paid to create a comment
+
+         flat_map<account_name_type, flat_map< asset_symbol_type, asset > >  payments_received;    // Map of all transfers received that referenced this comment. 
 
          time_point                     last_update;                  // The time the comment was last edited by the author
 
@@ -94,6 +96,8 @@ namespace node { namespace chain {
          time_point                     active;                       // The last time this post was replied to.
 
          time_point                     last_payout;                  // The last time that the post recieved a content reward payout
+
+         share_type                     author_reputation;            // Used to measure author lifetime rewards, relative to other accounts.
 
          uint16_t                       depth = 0;                    // used to track max nested depth
 
@@ -105,21 +109,15 @@ namespace node { namespace chain {
 
          uint32_t                       share_count = 0;              // The amount of shares on the post.
 
-         uint128_t                      net_reward = 0;               // Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
+         int128_t                       net_reward = 0;               // Net reward is the sum of all vote, view, share and comment power.
 
-         uint128_t                      vote_power = 0;               // Sum of weighted voting power from votes.
+         int128_t                       vote_power = 0;               // Sum of weighted voting power from votes.
 
-         uint128_t                      view_power = 0;               // Sum of weighted voting power from viewers.
+         int128_t                       view_power = 0;               // Sum of weighted voting power from viewers.
 
-         uint128_t                      share_power = 0;              // Sum of weighted voting power from shares.
+         int128_t                       share_power = 0;              // Sum of weighted voting power from shares.
 
-         uint128_t                      comment_power = 0;            // Sum of weighted voting power from comments.
-
-         uint128_t                      abs_reward;                   // The total abs(weight) of votes for the purpose of calculating cashout_time
-
-         uint128_t                      vote_reward;                  // Total positive reward from all votes. Used to calculate delta weights.
-
-         uint128_t                      children_abs_reward;          // this is used to calculate cashout time of a discussion.
+         int128_t                       comment_power = 0;            // Sum of weighted voting power from comments.
  
          time_point                     cashout_time;                 // 24 hours from the weighted average of vote time
 
@@ -145,11 +143,11 @@ namespace node { namespace chain {
 
          share_type                     percent_liquid = PERCENT_100;
 
-         id_type                        root_comment;
+         uint128_t                      reward = 0;         // The amount of reward_curve this comment is responsible for in its root post.
 
-         uint128_t                      weight = 0;         // Used to define the comment curation reward this vote receives.
+         uint128_t                      weight = 0;         // Used to define the comment curation reward this comment receives.
 
-         uint128_t                      reward = 0;         // The amount of reward_curve this vote is responsible for in its parent post.
+         uint128_t                      max_weight = 0;     // Used to define relative contribution of this comment to rewards.
 
          asset                          max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISON, SYMBOL_USD );       // USD value of the maximum payout this post will receive
 
@@ -180,6 +178,39 @@ namespace node { namespace chain {
          bool                           root = true;             // True if post is a root post. 
 
          bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;
+
+         bool                           comment_paid( account_name_type name )    // return true if user has paid comment price
+         {
+            if( comment_price.amount > 0 )
+            {
+               if( payments_received[ name ].size() )
+               {
+                  if( payments_received[ name ][ comment_price.symbol ].amount > 0 )
+                  {
+                     if( payments_received[ name ][ comment_price.symbol ] >= comment_price )
+                     {
+                        return true;    // comment price payment received.
+                     }
+                     else
+                     {
+                        return false; 
+                     } 
+                  }
+                  else
+                  {
+                     return false; 
+                  }
+               }
+               else
+               {
+                  return false; 
+               }
+            }
+            else
+            {
+               return true;     // No comment price, allow all comments.
+            }
+         }   
    };
 
    /**
@@ -261,7 +292,9 @@ namespace node { namespace chain {
 
          comment_id_type         comment;            // ID of the comment
 
-         uint128_t               weight = 0;         // Used to define the curation reward this vote receives. 0 if a negative vote or changed votes.
+         uint128_t               weight = 0;         // Used to define the curation reward this vote receives. Decays with time and additional votes.
+
+         uint128_t               max_weight = 0;     // Used to define relative contribution of this comment to rewards.
 
          uint128_t               reward = 0;         // The amount of reward_curve this vote is responsible for
 
@@ -300,7 +333,9 @@ namespace node { namespace chain {
 
          uint128_t               reward = 0;         // The amount of voting power this view contributed.
 
-         uint128_t               weight = 0;         // The curation reward weight of the view.
+         uint128_t               weight = 0;         // The curation reward weight of the view. Decays with time and additional views.
+
+         uint128_t               max_weight = 0;     // Used to define relative contribution of this view to rewards.
 
          time_point              created;            // Time the view was created
    };
@@ -323,15 +358,17 @@ namespace node { namespace chain {
 
          account_name_type       interface;          // Name of the interface account that was used to broadcast the transaction and view the post. 
 
-         uint128_t               reward = 0;         // The amount of voting power this view contributed.
+         uint128_t               reward = 0;         // The amount of voting power this share contributed.
 
-         uint128_t               weight = 0;         // The curation reward weight of the view.
+         uint128_t               weight = 0;         // The curation reward weight of the share.
+
+         uint128_t               max_weight = 0;     // Used to define relative contribution of this share to rewards.
 
          time_point              created;            // Time the share was created
    };
 
    /**
-    * Moderation Tag objects are used by moderators and governance addresses to apply
+    * Moderation Tag objects are used by board moderators and governance addresses to apply
     * tags detailing the type of content that they find on the network that is 
     * in opposition to the moderation policies of that moderator's board rules, 
     * or the governance addresses content standards.
@@ -399,7 +436,7 @@ namespace node { namespace chain {
 
          shared_string           json;                     // Encrypted Message metadata.
 
-         string                  uuid;                     // uuidv4 uniquely identifying the message for local storage.
+         shared_string           uuid;                     // uuidv4 uniquely identifying the message for local storage.
 
          time_point              created;                  // Time the message was sent.
 
@@ -425,29 +462,29 @@ namespace node { namespace chain {
 
          uint32_t                recent_post_count = 0;        // Number of root posts in the last 30 days, rolling average.
 
-         uint128_t               recent_vote_power = 0;
+         int128_t                recent_vote_power = 0;
 
-         uint128_t               recent_view_power = 0;
+         int128_t                recent_view_power = 0;
 
-         uint128_t               recent_share_power = 0;
+         int128_t                recent_share_power = 0;
 
-         uint128_t               recent_comment_power = 0;
+         int128_t                recent_comment_power = 0;
 
-         uint128_t               average_vote_power = 0;
+         int128_t                average_vote_power = 0;
 
-         uint128_t               average_view_power = 0;
+         int128_t                average_view_power = 0;
 
-         uint128_t               average_share_power = 0;
+         int128_t                average_share_power = 0;
 
-         uint128_t               average_comment_power = 0;
+         int128_t                average_comment_power = 0;
 
-         uint128_t               median_vote_power = 0;
+         int128_t                median_vote_power = 0;
 
-         uint128_t               median_view_power = 0;
+         int128_t                median_view_power = 0;
 
-         uint128_t               median_share_power = 0;
+         int128_t                median_share_power = 0;
 
-         uint128_t               median_comment_power = 0;
+         int128_t                median_comment_power = 0;
 
          uint32_t                recent_vote_count = 0;
 
@@ -777,6 +814,7 @@ namespace node { namespace chain {
    struct by_sender_recipient;
    struct by_account_inbox;
    struct by_account_outbox;
+   struct by_sender_uuid;
 
 
    typedef multi_index_container<
@@ -790,6 +828,13 @@ namespace node { namespace chain {
                member< message_object, message_id_type, &message_object::id >
             >,
             composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::less< message_id_type > >
+         >,
+         ordered_unique< tag< by_sender_uuid >,
+            composite_key< message_object,
+               member< message_object, account_name_type, &message_object::sender >,
+               member< message_object, shared_string, &message_object::uuid >
+            >,
+            composite_key_compare< std::less< account_name_type >, strcmp_less >
          >,
          ordered_unique< tag< by_account_inbox >,
             composite_key< message_object,
@@ -873,9 +918,6 @@ FC_REFLECT( node::chain::comment_object,
          (depth)
          (children)
          (net_reward)
-         (abs_reward)
-         (vote_reward)
-         (children_abs_reward)
          (cashout_time)
          (max_cashout_time)
          (total_vote_weight)

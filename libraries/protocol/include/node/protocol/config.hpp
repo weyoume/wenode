@@ -96,7 +96,7 @@
 #define SET_UPDATE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
 #define ENTERPRISE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)
 
-#define CASHOUT_WINDOW                  fc::days(7)           // 7 days of accumulating votes and views before paying out a post's comment rewards.
+
 #define VOTE_CHANGE_LOCKOUT_PERIOD      fc::seconds(1)        // 1 second
 #define UPVOTE_LOCKOUT_TIME             fc::hours(1)          // Can't vote on a post in the last 1 hour before payout.
 
@@ -158,6 +158,7 @@
 #define REVERSE_AUCTION_WINDOW_SECONDS  (60*10) /// 10 minutes
 #define MIN_VOTE_INTERVAL_SEC           1
 #define MIN_VIEW_INTERVAL_SEC           1
+#define MIN_SHARE_INTERVAL_SEC          1
 #define VOTE_DUST_THRESHOLD             (0)
 #define VOTE_CHANGE_LOCKOUT_PERIOD      (60*10) /// 10 minutes
 #define MIN_ACCOUNT_CREATION_FEE        (1 * BLOCKCHAIN_PRECISION)
@@ -225,7 +226,8 @@
 #define COMMENT_REWARD_PERCENT           (5 * PERCENT_1)
 #define STORAGE_REWARD_PERCENT           (5 * PERCENT_1)
 #define MODERATOR_REWARD_PERCENT         (5 * PERCENT_1)
-#define CONTENT_REWARD_DECAY_RATE        fc::days(30)
+#define CONTENT_REWARD_DECAY_RATE        fc::days(30)          // 30 days of content reward payouts for posts. 
+#define CONTENT_REWARD_INTERVAL          fc::days(1)           // 1 day between post content rewards.
 #define CONTENT_CONSTANT                 uint128_t(uint64_t(2000000000000ll))
 
 // Block Producer reward allocation percentages:

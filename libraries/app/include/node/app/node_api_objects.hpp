@@ -16,29 +16,6 @@ namespace node { namespace app {
 
 using namespace node::chain;
 
-/*struct limit_order
-{
-   limit_order( chain::limit_order_object& o ):
-      id( o.id ),
-      created( o.created ),
-      expiration( o.expiration ),
-      seller( o.seller ),
-      orderid( o.orderid ),
-      for_sale( o.for_sale ),
-      sell_price( o.sell_price )
-   {}
-
-   limit_order(){}
-
-   chain::limit_order_id_type id;
-   time_point             created;
-   time_point             expiration;
-   account_name_type          seller;
-   uint32_t                   orderid = 0;
-   share_type                 for_sale;
-   price                      sell_price;
-};*/
-
 typedef chain::change_recovery_account_request_object  change_recovery_account_request_api_obj;
 typedef chain::block_summary_object                    block_summary_api_obj;
 typedef chain::comment_vote_object                     comment_vote_api_obj;
@@ -72,9 +49,6 @@ struct comment_api_obj
       depth( o.depth ),
       children( o.children ),
       net_reward( o.net_reward ),
-      abs_reward( o.abs_reward ),
-      vote_reward( o.vote_reward ),
-      children_abs_reward( o.children_abs_reward ),
       cashout_time( o.cashout_time ),
       max_cashout_time( o.max_cashout_time ),
       total_vote_weight( o.total_vote_weight ),
@@ -100,50 +74,70 @@ struct comment_api_obj
 
    comment_api_obj(){}
 
-   comment_id_type   id;
-   string            category;
-   account_name_type parent_author;
-   string            parent_permlink;
-   account_name_type author;
-   string            permlink;
+   comment_id_type       id;
 
-   string            title;
-   string            body;
-   string            json;
-   time_point    last_update;
-   time_point    created;
-   time_point    active;
-   time_point    last_payout;
+   string                category;
 
-   uint8_t           depth = 0;
-   uint32_t          children = 0;
+   account_name_type     parent_author;
 
-   share_type        net_reward;
-   share_type        abs_reward;
-   share_type        vote_reward;
+   string                parent_permlink;
 
-   share_type        children_abs_reward;
-   time_point    cashout_time;
-   time_point    max_cashout_time;
-   uint64_t          total_vote_weight = 0;
-   uint64_t          total_view_weight = 0;
-   uint64_t          total_share_weight = 0;
-   uint64_t          total_comment_weight = 0;
+   account_name_type     author;
 
-   asset             total_payout_value;
-   asset             curator_payout_value;
+   string                permlink;
 
-   share_type        author_rewards;
+   string                title;
 
-   int32_t           net_votes = 0;
+   string                body;
 
-   comment_id_type   root_comment;
+   string                json;
 
-   asset             max_accepted_payout;
-   uint16_t          percent_liquid = 0;
-   bool              allow_replies = false;
-   bool              allow_votes = false;
-   bool              allow_curation_rewards = false;
+   time_point            last_update;
+
+   time_point            created;
+
+   time_point            active;
+
+   time_point            last_payout;
+
+   uint8_t               depth = 0;
+
+   uint32_t              children = 0;
+
+   share_type            net_reward;
+
+   time_point            cashout_time;
+
+   time_point            max_cashout_time;
+
+   uint64_t              total_vote_weight = 0;
+
+   uint64_t              total_view_weight = 0;
+
+   uint64_t              total_share_weight = 0;
+
+   uint64_t              total_comment_weight = 0;
+
+   asset                 total_payout_value;
+
+   asset                 curator_payout_value;
+
+   share_type            author_rewards;
+
+   int32_t               net_votes = 0;
+
+   comment_id_type       root_comment;
+
+   asset                 max_accepted_payout;
+
+   uint16_t              percent_liquid = 0;
+
+   bool                  allow_replies = false;
+
+   bool                  allow_votes = false;
+   
+   bool                  allow_curation_rewards = false;
+
    vector< beneficiary_route_type > beneficiaries;
 };
 
@@ -287,6 +281,31 @@ struct account_api_obj
    time_point    last_post;
    time_point    last_root_post;
 };
+
+
+struct limit_order
+{
+   limit_order( chain::limit_order_object& o ):
+      id( o.id ),
+      created( o.created ),
+      expiration( o.expiration ),
+      seller( o.seller ),
+      orderid( o.orderid ),
+      for_sale( o.for_sale ),
+      sell_price( o.sell_price )
+   {}
+
+   limit_order(){}
+
+   chain::limit_order_id_type id;
+   time_point             created;
+   time_point             expiration;
+   account_name_type          seller;
+   uint32_t                   orderid = 0;
+   share_type                 for_sale;
+   price                      sell_price;
+};
+
 
 struct owner_authority_history_api_obj
 {
@@ -479,9 +498,6 @@ FC_REFLECT( node::app::comment_api_obj,
          (depth)
          (children)
          (net_reward)
-         (abs_reward)
-         (vote_reward)
-         (children_abs_reward)
          (cashout_time)
          (max_cashout_time)
          (total_vote_weight)

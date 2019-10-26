@@ -520,7 +520,7 @@ namespace node { namespace chain {
          void process_producer_activity_rewards();
 
          void update_network_officer( const network_officer_object& network_officer, 
-   const witness_schedule_object& wso, const dynamic_global_property_object& props );
+            const witness_schedule_object& wso, const dynamic_global_property_object& props );
 
          void process_network_officer_rewards();
 
@@ -541,7 +541,7 @@ namespace node { namespace chain {
          void update_governance_account_set();
 
          void update_governance_account( const governance_account_object& network_officer, 
-   const witness_schedule_object& wso, const dynamic_global_property_object& props );
+            const witness_schedule_object& wso, const dynamic_global_property_object& props );
 
          share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
 

@@ -617,7 +617,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
 
       BOOST_TEST_MESSAGE( "Generating blocks..." );
 
-      generate_blocks( fc::time_point( db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW_SECONDS / 2 ), true );
+      generate_blocks( fc::time_point( db.head_block_time().sec_since_epoch() + CONTENT_REWARD_INTERVAL_SECONDS / 2 ), true );
 
       BOOST_TEST_MESSAGE( "Second round of votes." );
 
@@ -1732,7 +1732,6 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
 
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).cashout_time == fc::time_point::maximum() );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_reward.value == 0 );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_reward.value == 0 );
 
       vote.voter = "bob";
       vote.weight = PERCENT_100 * -1;
@@ -1747,7 +1746,6 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
 
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).cashout_time == fc::time_point::maximum() );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_reward.value == 0 );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_reward.value == 0 );
 
       vote.voter = "dave";
       vote.weight = 0;
@@ -1762,7 +1760,6 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
       db.push_transaction( tx, 0 );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).cashout_time == fc::time_point::maximum() );
       BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).net_reward.value == 0 );
-      BOOST_REQUIRE( db.get_comment( "alice", string( "test" ) ).abs_reward.value == 0 );
 
       comment.body = "test4";
 

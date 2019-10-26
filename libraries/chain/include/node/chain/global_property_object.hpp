@@ -100,6 +100,10 @@ namespace node { namespace chain {
 
          uint32_t               account_count = 0;                                        // The total number of accounts created. 
 
+         fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;
+
+         fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;        
+
          uint32_t               vote_reserve_rate = VOTE_RESERVE_RATE;                    // The number of votes regenerated per day.
 
          uint32_t               view_reserve_rate = VIEW_RESERVE_RATE;                    // The number of views regenerated per day.

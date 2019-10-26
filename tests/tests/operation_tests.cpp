@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       BOOST_REQUIRE( alice_comment.created == db.head_block_time() );
       BOOST_REQUIRE( alice_comment.net_reward.value == 0 );
       BOOST_REQUIRE( alice_comment.abs_reward.value == 0 );
-      BOOST_REQUIRE( alice_comment.cashout_time == fc::time_point( db.head_block_time() + fc::seconds( CASHOUT_WINDOW ) ) );
+      BOOST_REQUIRE( alice_comment.cashout_time == fc::time_point( db.head_block_time() + fc::seconds( CONTENT_REWARD_INTERVAL ) ) );
 
       #ifndef IS_LOW_MEM
          BOOST_REQUIRE( to_string( alice_comment.title ) == op.title );
@@ -496,7 +496,7 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       BOOST_REQUIRE( bob_comment.created == db.head_block_time() );
       BOOST_REQUIRE( bob_comment.net_reward.value == 0 );
       BOOST_REQUIRE( bob_comment.abs_reward.value == 0 );
-      BOOST_REQUIRE( bob_comment.cashout_time == bob_comment.created + CASHOUT_WINDOW );
+      BOOST_REQUIRE( bob_comment.cashout_time == bob_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( bob_comment.root_comment == alice_comment.id );
       validate_database();
 
@@ -523,7 +523,7 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       BOOST_REQUIRE( sam_comment.created == db.head_block_time() );
       BOOST_REQUIRE( sam_comment.net_reward.value == 0 );
       BOOST_REQUIRE( sam_comment.abs_reward.value == 0 );
-      BOOST_REQUIRE( sam_comment.cashout_time == sam_comment.created + CASHOUT_WINDOW );
+      BOOST_REQUIRE( sam_comment.cashout_time == sam_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( sam_comment.root_comment == alice_comment.id );
       validate_database();
 
@@ -562,7 +562,7 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       BOOST_REQUIRE( to_string( mod_sam_comment.parent_permlink ) == op.parent_permlink );
       BOOST_REQUIRE( mod_sam_comment.last_update == db.head_block_time() );
       BOOST_REQUIRE( mod_sam_comment.created == created );
-      BOOST_REQUIRE( mod_sam_comment.cashout_time == mod_sam_comment.created + CASHOUT_WINDOW );
+      BOOST_REQUIRE( mod_sam_comment.cashout_time == mod_sam_comment.created + CONTENT_REWARD_INTERVAL );
       validate_database();
 
       BOOST_TEST_MESSAGE( "--- Test failure posting withing 1 minute" );
@@ -700,7 +700,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          BOOST_REQUIRE( alice.voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) / max_vote_denom ) );
          BOOST_REQUIRE( alice.last_vote_time == db.head_block_time() );
          BOOST_REQUIRE( alice_comment.net_reward.value == alice.SCORE.amount.value * ( old_voting_power - alice.voting_power ) / PERCENT_100 );
-         BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CASHOUT_WINDOW );
+         BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
          BOOST_REQUIRE( itr->reward == alice.SCORE.amount.value * ( old_voting_power - alice.voting_power ) / PERCENT_100 );
          BOOST_REQUIRE( itr != vote_idx.end() );
          validate_database();
@@ -736,7 +736,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
 
          BOOST_REQUIRE( db.get_account( "alice" ).voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) * PERCENT_100 / ( 2 * max_vote_denom * PERCENT_100 ) ) );
          BOOST_REQUIRE( bob_comment.net_reward.value == alice.SCORE.amount.value * ( old_voting_power - db.get_account( "alice" ).voting_power ) / PERCENT_100 );
-         BOOST_REQUIRE( bob_comment.cashout_time == bob_comment.created + CASHOUT_WINDOW );
+         BOOST_REQUIRE( bob_comment.cashout_time == bob_comment.created + CONTENT_REWARD_INTERVAL );
          BOOST_REQUIRE( itr != vote_idx.end() );
          validate_database();
 
@@ -745,7 +745,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          old_voting_power = db.get_account( "bob" ).voting_power;
          auto old_abs_reward = db.get_comment( "alice", string( "foo" ) ).abs_reward.value;
 
-         generate_blocks( db.head_block_time() + fc::seconds( ( CASHOUT_WINDOW / 2 ) ), true );
+         generate_blocks( db.head_block_time() + fc::seconds( ( CONTENT_REWARD_INTERVAL / 2 ) ), true );
 
          const auto& new_bob = db.get_account( "bob" );
          const auto& new_alice_comment = db.get_comment( "alice", string( "foo" ) );
@@ -762,11 +762,11 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          db.push_transaction( tx, 0 );
 
          itr = vote_idx.find( std::make_tuple( new_alice_comment.id, new_bob.id ) );
-         uint128_t new_cashout_time = db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW;
+         uint128_t new_cashout_time = db.head_block_time().sec_since_epoch() + CONTENT_REWARD_INTERVAL;
 
          BOOST_REQUIRE( new_bob.voting_power == PERCENT_100 - ( ( PERCENT_100 + max_vote_denom - 1 ) / max_vote_denom ) );
          BOOST_REQUIRE( new_alice_comment.net_reward.value == old_abs_reward + new_bob.SCORE.amount.value * ( old_voting_power - new_bob.voting_power ) / PERCENT_100 );
-         BOOST_REQUIRE( new_alice_comment.cashout_time == new_alice_comment.created + CASHOUT_WINDOW );
+         BOOST_REQUIRE( new_alice_comment.cashout_time == new_alice_comment.created + CONTENT_REWARD_INTERVAL );
          BOOST_REQUIRE( itr != vote_idx.end() );
          validate_database();
 
@@ -788,14 +788,14 @@ BOOST_AUTO_TEST_CASE( vote_apply )
          db.push_transaction( tx, 0 );
 
          itr = vote_idx.find( std::make_tuple( new_bob_comment.id, new_sam.id ) );
-         new_cashout_time = db.head_block_time().sec_since_epoch() + CASHOUT_WINDOW;
+         new_cashout_time = db.head_block_time().sec_since_epoch() + CONTENT_REWARD_INTERVAL;
          auto sam_weight /*= ( ( uint128_t( new_sam.SCORE.amount.value ) ) / 400 + 1 ).to_uint64();*/
                          = ( ( uint128_t( new_sam.SCORE.amount.value ) * ( ( PERCENT_100 + max_vote_denom - 1 ) / ( 2 * max_vote_denom ) ) ) / PERCENT_100 ).to_uint64();
 
          BOOST_REQUIRE( new_sam.voting_power == PERCENT_100 - ( ( PERCENT_100 + max_vote_denom - 1 ) / ( 2 * max_vote_denom ) ) );
          BOOST_REQUIRE( new_bob_comment.net_reward.value == old_abs_reward - sam_weight );
          BOOST_REQUIRE( new_bob_comment.abs_reward.value == old_abs_reward + sam_weight );
-         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CASHOUT_WINDOW );
+         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CONTENT_REWARD_INTERVAL );
          BOOST_REQUIRE( itr != vote_idx.end() );
          validate_database();
 
@@ -829,7 +829,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
 
          auto new_reward = ( ( fc::uint128_t( db.get_account( "alice" ).SCORE.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
 
-         BOOST_REQUIRE( db.get_comment( "alice", string( "foo" ) ).cashout_time == db.get_comment( "alice", string( "foo" ) ).created + CASHOUT_WINDOW );
+         BOOST_REQUIRE( db.get_comment( "alice", string( "foo" ) ).cashout_time == db.get_comment( "alice", string( "foo" ) ).created + CONTENT_REWARD_INTERVAL );
 
          validate_database();
 
@@ -860,7 +860,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
 
          BOOST_REQUIRE( new_bob_comment.net_reward == old_net_reward - old_vote_reward + new_reward );
          BOOST_REQUIRE( new_bob_comment.abs_reward == old_abs_reward + new_reward );
-         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CASHOUT_WINDOW );
+         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CONTENT_REWARD_INTERVAL );
          BOOST_REQUIRE( alice_bob_vote->reward == new_reward );
          BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
          BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
@@ -890,7 +890,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
 
          BOOST_REQUIRE( new_bob_comment.net_reward == old_net_reward - old_vote_reward - new_reward );
          BOOST_REQUIRE( new_bob_comment.abs_reward == old_abs_reward + new_reward );
-         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CASHOUT_WINDOW );
+         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CONTENT_REWARD_INTERVAL );
          BOOST_REQUIRE( alice_bob_vote->reward == -1 * new_reward );
          BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
          BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
@@ -915,7 +915,7 @@ BOOST_AUTO_TEST_CASE( vote_apply )
 
          BOOST_REQUIRE( new_bob_comment.net_reward == old_net_reward - old_vote_reward );
          BOOST_REQUIRE( new_bob_comment.abs_reward == old_abs_reward );
-         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CASHOUT_WINDOW );
+         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CONTENT_REWARD_INTERVAL );
          BOOST_REQUIRE( alice_bob_vote->reward == 0 );
          BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
          BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
@@ -6092,7 +6092,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_apply )
       BOOST_REQUIRE( exp_obj != end );
       BOOST_REQUIRE( exp_obj->delegator == "sam" );
       BOOST_REQUIRE( exp_obj->SCORE == samSCORE );
-      BOOST_REQUIRE( exp_obj->expiration == db.head_block_time() + CASHOUT_WINDOW );
+      BOOST_REQUIRE( exp_obj->expiration == db.head_block_time() + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( db.get_account( "sam" ).SCOREDelegated == samSCORE );
       BOOST_REQUIRE( db.get_account( "dave" ).SCOREreceived == ASSET( "0.000000 VESTS" ) );
       delegation = db.find< asset_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );

@@ -1154,7 +1154,11 @@ namespace node { namespace protocol {
 
       account_name_type           interface;            // Name of the interface application that broadcasted the transaction. 
 
-      rating_types                rating;               // User nominated rating as to the maturity of the content, and display sensitivity. 
+      rating_types                rating;               // User nominated rating as to the maturity of the content, and display sensitivity.
+
+      asset                       comment_price;        // Price that is required to comment on the post. 
+
+      asset                       premium_price;        // Price that is required to unlock premium content.
 
       account_name_type           parent_author;        // Account that created the post this post is replying to, empty if root post. 
 

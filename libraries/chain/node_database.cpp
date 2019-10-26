@@ -2510,7 +2510,6 @@ void database::process_network_officer_rewards()
    const witness_schedule_object& wso = get_witness_schedule();
    const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
    time_point now = props.time;
-
    auto officer_itr = officer_idx.begin();
 
    while( officer_itr != officer_idx.end() ) 
@@ -2524,7 +2523,6 @@ void database::process_network_officer_rewards()
    asset development_reward = rfo.development_reward_balance;     // Record the opening balance of the development reward fund
    auto development_itr = officer_idx.lower_bound( DEVELOPMENT );
    auto development_end = officer_idx.upper_bound( DEVELOPMENT );
-    
    flat_map < account_name_type, share_type > development_map;
    share_type total_development_shares = 0;
    asset development_distributed = asset( 0, SYMBOL_COIN );
@@ -2553,7 +2551,6 @@ void database::process_network_officer_rewards()
    asset marketing_reward = rfo.marketing_reward_balance;     // Record the opening balance of the marketing reward fund
    auto marketing_itr = officer_idx.lower_bound( MARKETING );
    auto marketing_end = officer_idx.upper_bound( MARKETING );
-    
    flat_map < account_name_type, share_type > marketing_map;
    share_type total_marketing_shares = 0;
    asset marketing_distributed = asset( 0, SYMBOL_COIN );
@@ -2580,10 +2577,8 @@ void database::process_network_officer_rewards()
    // ========== Advocacy Officers ========== //
 
    asset advocacy_reward = rfo.advocacy_reward_balance;     // Record the opening balance of the advocacy reward fund
-
    auto advocacy_itr = officer_idx.lower_bound( ADVOCACY );
    auto advocacy_end = officer_idx.upper_bound( ADVOCACY );
-    
    flat_map < account_name_type, share_type > advocacy_map;
    share_type total_advocacy_shares = 0;
    asset advocacy_distributed = asset( 0, SYMBOL_COIN );
@@ -2592,7 +2587,7 @@ void database::process_network_officer_rewards()
    {
       share_type advocacy_shares = advocacy_itr->voting_power;  // Get the advocacy officer voting power
 
-      if( advocacy_shares > 0 && advocacy_itr->active )
+      if( advocacy_shares > 0 && advocacy_itr->active && advocacy_itr->officer_approved )
       {
          total_advocacy_shares += advocacy_shares;
          advocacy_map[ advocacy_itr->account ] = advocacy_shares;
@@ -2614,7 +2609,6 @@ void database::process_network_officer_rewards()
       r.adjust_advocacy_reward_balance( -advocacy_distributed );  
    });
    asset total_distributed = development_distributed + marketing_distributed + advocacy_distributed;
-
    adjust_pending_supply( -total_distributed );   // Deduct distributed amount from pending supply.
 
 } FC_CAPTURE_AND_RETHROW() }

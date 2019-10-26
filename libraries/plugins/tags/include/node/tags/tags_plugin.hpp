@@ -49,7 +49,11 @@ enum
    author_tag_stats_object_type = ( TAG_SPACE_ID << 8 ) + 3
 };
 
-namespace detail { class tags_plugin_impl; }
+namespace detail { 
+   class tags_plugin_impl; 
+   struct sort_options;
+   struct sort_set;
+   }
 
 
 /**
@@ -76,42 +80,146 @@ class tag_object : public object< tag_object_type, tag_object >
 
       id_type           id;
 
-      tag_name_type     tag;
-      time_point        created;
-      time_point        active;
-      time_point        cashout;
-      int64_t           net_reward = 0;
-      int32_t           net_votes   = 0;
-      int32_t           children    = 0;
-      double            hot         = 0;
-      double            trending    = 0;
-      share_type        promoted_balance = 0;
+      board_name_type   board;                        // the name of the board that the post was uploaded to. 
+
+      tag_name_type     tag;                          // Name of the tag that is used for this tag object.
+
+      sort_options      sort;                         // Sorting values for tracking post rankings across combinations of votes, views, shares and comments, in releation to time.
 
       account_id_type   author;
+
       comment_id_type   parent;
+
       comment_id_type   comment;
+
+      time_point        created;                      // Time the post was created. 
+
+      time_point        active;                       // Time that a new comment on the post was last created.
+
+      time_point        cashout;                      // Time of the next content reward cashout due for the post. 
+
+      connection_types  privacy;                      // Privacy level of the post
+
+      rating_types      rating;                       // Content severity rating from the author. 
+
+      string            language;                     // Two letter language string for the language of the content.
+
+      share_type        author_reputation;            // Reputation of the author, from 0 to BLOCKCHAIN_PRECISION.
+
+      uint32_t          children = 0;                 // The total number of children, grandchildren, posts with this as root comment.
+
+      int32_t           net_votes = 0;                // The amount of upvotes, minus downvotes on the post.
+
+      int32_t           view_count = 0;               // The amount of views on the post.
+
+      int32_t           share_count = 0;              // The amount of shares on the post.
+
+      int128_t          net_reward = 0;               // Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
+
+      int128_t          vote_power = 0;               // Sum of weighted voting power from votes.
+
+      int128_t          view_power = 0;               // Sum of weighted voting power from viewers.
+
+      int128_t          share_power = 0;              // Sum of weighted voting power from shares.
+
+      int128_t          comment_power = 0;            // Sum of weighted voting power from comments.
 
       bool is_post()const { return parent == comment_id_type(); }
 };
 
 typedef oid< tag_object > tag_id_type;
 
-
-struct by_cashout; /// all posts regardless of depth
-struct by_net_reward; /// all comments regardless of depth
+struct by_tag;
+struct by_cashout;                // all posts regardless of depth
+struct by_net_reward;             // all comments regardless of depth
+struct by_comment;
 struct by_parent_created;
 struct by_parent_active;
-struct by_parent_promoted;
-struct by_parent_net_reward; /// all top level posts by direct pending payout
-struct by_parent_net_votes; /// all top level posts by direct votes
-struct by_parent_trending;
-struct by_parent_children; /// all top level posts with the most discussion (replies at all levels)
-struct by_parent_hot;
-struct by_author_parent_created;  /// all blog posts by author with tag
+
+struct by_parent_net_reward;      // all top level posts by direct pending payout
+
+struct by_parent_net_votes;       
+struct by_parent_view_count;     
+struct by_parent_share_count;     
+struct by_parent_children;       
+
+struct by_parent_vote_power;   
+struct by_parent_view_power;      
+struct by_parent_share_power;    
+struct by_parent_comment_power;    
+
+struct by_author_parent_created;
 struct by_author_comment;
 struct by_reward_fund_net_reward;
-struct by_comment;
-struct by_tag;
+
+
+//========== Sorting Indexes ==========// 
+
+struct by_parent_quality_active;
+struct by_parent_quality_rapid;
+struct by_parent_quality_standard;
+struct by_parent_quality_top;
+struct by_parent_quality_elite;
+
+struct by_parent_votes_active;
+struct by_parent_votes_rapid;
+struct by_parent_votes_standard;
+struct by_parent_votes_top;
+struct by_parent_votes_elite;
+
+struct by_parent_views_active;
+struct by_parent_views_rapid;
+struct by_parent_views_standard;
+struct by_parent_views_top;
+struct by_parent_views_elite;
+
+struct by_parent_shares_active;
+struct by_parent_shares_rapid;
+struct by_parent_shares_standard;
+struct by_parent_shares_top;
+struct by_parent_shares_elite;
+
+struct by_parent_comments_active;
+struct by_parent_comments_rapid;
+struct by_parent_comments_standard;
+struct by_parent_comments_top;
+struct by_parent_comments_elite;
+
+struct by_parent_popular_active;
+struct by_parent_popular_rapid;
+struct by_parent_popular_standard;
+struct by_parent_popular_top;
+struct by_parent_popular_elite;
+
+struct by_parent_viral_active;
+struct by_parent_viral_rapid;
+struct by_parent_viral_standard;
+struct by_parent_viral_top;
+struct by_parent_viral_elite;
+
+struct by_parent_discussion_active;
+struct by_parent_discussion_rapid;
+struct by_parent_discussion_standard;
+struct by_parent_discussion_top;
+struct by_parent_discussion_elite;
+
+struct by_parent_prominent_active;
+struct by_parent_prominent_rapid;
+struct by_parent_prominent_standard;
+struct by_parent_prominent_top;
+struct by_parent_prominent_elite;
+
+struct by_parent_conversation_active;
+struct by_parent_conversation_rapid;
+struct by_parent_conversation_standard;
+struct by_parent_conversation_top;
+struct by_parent_conversation_elite;
+
+struct by_parent_discourse_active;
+struct by_parent_discourse_rapid;
+struct by_parent_discourse_standard;
+struct by_parent_discourse_top;
+struct by_parent_discourse_elite;
 
 
 typedef multi_index_container<
@@ -135,110 +243,696 @@ typedef multi_index_container<
       >,
       ordered_unique< tag< by_parent_created >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
                member< tag_object, time_point, &tag_object::created >,
-               member<tag_object, tag_id_type, &tag_object::id >
+               member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less< tag_name_type >, std::less<comment_id_type>, std::greater< time_point >, std::less< tag_id_type > >
+            composite_key_compare< std::less< board_name_type >, std::less< tag_name_type >, std::less<comment_id_type>, std::greater< time_point >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_parent_active >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
                member< tag_object, time_point, &tag_object::active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< time_point >, std::less< tag_id_type > >
-      >,
-      ordered_unique< tag< by_parent_promoted >,
-            composite_key< tag_object,
-               member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, share_type, &tag_object::promoted_balance >,
-               member< tag_object, tag_id_type, &tag_object::id >
-            >,
-            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< share_type >, std::less< tag_id_type > >
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< time_point >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_parent_net_reward >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, int64_t, &tag_object::net_reward >,
+               member< tag_object, uint128_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int64_t >, std::less< tag_id_type > >
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< uint128_t >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_parent_net_votes >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
                member< tag_object, int32_t, &tag_object::net_votes >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_view_count >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, int32_t, &tag_object::view_count >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_share_count >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, int32_t, &tag_object::share_count >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_parent_children >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
                member< tag_object, int32_t, &tag_object::children >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
-      >,
-      ordered_unique< tag< by_parent_hot >,
-            composite_key< tag_object,
-               member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::hot >,
-               member< tag_object, tag_id_type, &tag_object::id >
-            >,
-            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
-      ordered_unique< tag< by_parent_trending >,
-            composite_key< tag_object,
-               member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::trending >,
-               member< tag_object, tag_id_type, &tag_object::id >
-            >,
-            composite_key_compare< std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_cashout >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, time_point, &tag_object::cashout >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less< time_point >, std::less< tag_id_type > >
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less< time_point >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_net_reward >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, int64_t, &tag_object::net_reward >,
+               member< tag_object, uint128_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::greater< int64_t >, std::less< tag_id_type > >
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::greater< uint128_t >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_author_parent_created >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, account_id_type, &tag_object::author >,
                member< tag_object, time_point, &tag_object::created >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less<account_id_type>, std::greater< time_point >, std::less< tag_id_type > >
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<account_id_type>, std::greater< time_point >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_reward_fund_net_reward >,
             composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                const_mem_fun< tag_object, bool, &tag_object::is_post >,
                member< tag_object, int64_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less<tag_name_type>, std::less< bool >,std::greater< int64_t >, std::less< tag_id_type > >
-      >
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less< bool >,std::greater< int64_t >, std::less< tag_id_type > >
+      >,
+
+      // =========== Quality Indexes ========== //
+
+      ordered_unique< tag< by_parent_quality_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.quality.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_quality_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.quality.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_quality_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.quality.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_quality_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.quality.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_quality_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.quality.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Votes Indexes ========== //
+
+      ordered_unique< tag< by_parent_votes_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.votes.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_votes_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.votes.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_votes_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.votes.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_votes_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.votes.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_votes_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.votes.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Views Indexes ========== //
+
+      ordered_unique< tag< by_parent_views_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.views.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_views_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.views.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_views_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.views.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_views_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.views.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_views_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.views.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Shares Indexes ========== //
+
+      ordered_unique< tag< by_parent_shares_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.shares.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_shares_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.shares.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_shares_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.shares.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_shares_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.shares.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_shares_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.shares.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Comments Indexes ========== //
+
+      ordered_unique< tag< by_parent_comments_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.comments.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_comments_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.comments.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_comments_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.comments.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_comments_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.comments.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_comments_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.comments.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Popular Indexes ========== //
+
+      ordered_unique< tag< by_parent_popular_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.popular.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_popular_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.popular.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_popular_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.popular.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_popular_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.popular.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_popular_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.popular.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Viral Indexes ========== //
+
+      ordered_unique< tag< by_parent_viral_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.viral.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_viral_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.viral.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_viral_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.viral.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_viral_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.viral.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_viral_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.viral.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Discussion Indexes ========== //
+
+      ordered_unique< tag< by_parent_discussion_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discussion.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_discussion_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discussion.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_discussion_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discussion.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_discussion_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discussion.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_discussion_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discussion.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Prominent Indexes ========== //
+
+      ordered_unique< tag< by_parent_prominent_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.prominent.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_prominent_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.prominent.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_prominent_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.prominent.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_prominent_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.prominent.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_prominent_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.prominent.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Conversation Indexes ========== //
+
+      ordered_unique< tag< by_parent_conversation_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.conversation.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_conversation_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.conversation.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_conversation_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.conversation.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_conversation_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.conversation.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_conversation_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.conversation.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+
+      // =========== Discourse Indexes ========== //
+
+      ordered_unique< tag< by_parent_discourse_active >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discourse.active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_discourse_rapid >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discourse.rapid >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_discourse_standard >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discourse.standard >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_discourse_top >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discourse.top >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_discourse_elite >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, double, &tag_object::sort.discourse.elite >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
+      >,
+      
    >,
    allocator< tag_object >
 > tag_index;
@@ -384,7 +1078,7 @@ typedef multi_index_container<
 > peer_stats_index;
 
 /**
- *  This purpose of this object is to maintain stats about which tags an author uses, how frequnetly, and
+ *  This purpose of this object is to maintain stats about which tags an author uses, how frequently, and
  *  how many total earnings of all posts by author in tag.  It also allows us to answer the question of which
  *  authors earn the most in each tag category.  This helps users to discover the best bloggers to follow for
  *  particular tags.
@@ -457,7 +1151,11 @@ typedef chainbase::shared_multi_index_container<
 /**
  * Used to parse the metadata from the comment json field.
  */
-struct comment_metadata { set<string> tags; };
+struct comment_metadata 
+{ 
+   set<string> tags;
+   set<string> boards; 
+};
 
 /**
  *  This plugin will scan all changes to posts and/or their meta data and

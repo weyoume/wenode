@@ -94,10 +94,12 @@ namespace node { namespace chain {
          share_type                       posting_rewards = 0;                      // Rewards in core asset earned from author rewards.
 
          share_type                       curation_rewards = 0;                     // Rewards in core asset earned from voting, shares, views, and commenting
-
-         share_type                       total_rewards = 0;                        // Rewards in core asset earned from all reward sources.
    
          share_type                       moderation_rewards = 0;                   // Rewards in core asset from moderation rewards. 
+
+         share_type                       total_rewards = 0;                        // Rewards in core asset earned from all reward sources.
+
+         share_type                       author_reputation = 0;                    // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
 
          asset                            loan_default_balance = asset(0, SYMBOL_CREDIT);
 

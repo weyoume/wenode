@@ -137,6 +137,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    {
       FC_ASSERT( o.governance_account.size() && o.governance_account == registrar.name, 
          "Profile accounts must be registered by its nominated governance account.");
+      FC_ASSERT( governance_account.is_approved, 
+         "Governance Accounts must be approved by a threshold of network voting subscriptions and witnesses before creating profile accounts.");
    }
    else if( o.account_type == BUSINESS )    // Business account validation
    {
@@ -762,7 +764,7 @@ void account_member_request_evaluator::do_apply( const account_member_request_op
       "Account: ${a} is already a member of the business: ${b}.", ("a", o.account)("b", o.business_account)); 
    FC_ASSERT( bus_acc.is_authorised_request( account.name ), 
       "Account: ${a} is not authorised to request to join the business account: ${b}.", ("a", o.account)("b", o.business_account));
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    const auto& req_idx = _db.get_index< account_member_request_index >().indices().get< by_account_business >();
    auto itr = req_idx.find( std::make_tuple( o.account, o.business_account ) );
 
@@ -815,7 +817,7 @@ void account_member_invite_evaluator::do_apply( const account_member_invite_oper
    FC_ASSERT( bus_acc.is_authorized_invite( account.name ), 
       "Account: ${a} is not authorised to send Business account: ${b} membership invitations.", ("a", o.account)("b", o.business_account));
    
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    const auto& inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_member_business >();
    const auto& key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
    auto itr = inv_idx.find( std::make_tuple( o.member, o.business_account ) );
@@ -2968,15 +2970,20 @@ void comment_evaluator::do_apply( const comment_operation& o )
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   time_point now = _db.head_block_time();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   time_point now = props.time;
    const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
    auto itr = by_permlink_idx.find( boost::make_tuple( o.author, o.permlink ) );
-   const account_object& auth = _db.get_account( o.author ); 
-   const board_object& board = _db.get_board( o.board );   
-   const interface_object& interface = _db.get_interface( o.interface );   
+   const account_object& auth = _db.get_account( o.author );
+   const board_object& board = _db.get_board( o.board );
+   const interface_object& interface = _db.get_interface( o.interface );
    const board_member_object& board_member = _db.get_board_member(o.board);
+   uint128_t reward = 0;
+   uint128_t weight = 0;
+   uint128_t new_comment_power = auth.comment_power;
 
-   FC_ASSERT( !(auth.owner_challenged || auth.active_challenged ), "Operation cannot be processed because account is currently challenged." );
+   FC_ASSERT( !(auth.owner_challenged || auth.active_challenged ), 
+      "Operation cannot be processed because account is currently challenged." );
 
    comment_id_type id;
 
@@ -2984,7 +2991,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
    if( o.parent_author != ROOT_POST_PARENT )
    {
       parent = &_db.get_comment( o.parent_author, o.parent_permlink );
-      FC_ASSERT( parent->depth < MAX_COMMENT_DEPTH, "Comment is nested ${x} posts deep, maximum depth is ${y}.", ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
+      FC_ASSERT( parent->depth < MAX_COMMENT_DEPTH, 
+         "Comment is nested ${x} posts deep, maximum depth is ${y}.", ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
    }
 
    if( o.json.size() ) 
@@ -2996,23 +3004,96 @@ void comment_evaluator::do_apply( const comment_operation& o )
    {
       if( o.parent_author == ROOT_POST_PARENT )       // Post is a new root post
       {
-         FC_ASSERT( ( now - auth.last_root_post ) > MIN_ROOT_COMMENT_INTERVAL, "You may only post once every 60 seconds.", ("now",now)("last_root_post", auth.last_root_post) );
-         FC_ASSERT( board_member.is_authorized_author(o.author, board), "User ${u} is not authorized to post in the board ${b}.",("b", board.name)("u", auth.name));
+         FC_ASSERT( ( now - auth.last_root_post ) > MIN_ROOT_COMMENT_INTERVAL, 
+            "You may only post once every 60 seconds.", ("now",now)("last_root_post", auth.last_root_post) );
+         FC_ASSERT( board_member.is_authorized_author(o.author, board), 
+            "User ${u} is not authorized to post in the board ${b}.",("b", board.name)("u", auth.name));
       }    
       else         // Post is a new comment
       {
-         FC_ASSERT( _db.get( parent->root_comment ).allow_replies, "The parent comment has disabled replies." );
-         FC_ASSERT( ( now - auth.last_post) > MIN_REPLY_INTERVAL, "You may only comment once every 15 seconds.", ("now",now)("auth.last_post",auth.last_post) );
-         FC_ASSERT( board_member.is_authorized_interact(o.author, board), "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", auth.name));
+         const comment_object& root = _db.get( parent->root_comment );       // If root post, gets the posts own object.
+
+         FC_ASSERT( root.allow_replies, 
+            "The parent comment has disabled replies." );
+         FC_ASSERT( ( now - auth.last_post) > MIN_REPLY_INTERVAL, 
+            "You may only comment once every 15 seconds.", ("now",now)("auth.last_post",auth.last_post) );
+         FC_ASSERT( board_member.is_authorized_interact( o.author, board ), 
+            "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", auth.name));
+         FC_ASSERT( parent->comment_paid( o.author ), 
+            "User ${u} has not paid the required comment price: ${p} to reply to this post ${c}.",
+            ("c", parent->permlink)("u", auth.name)("p", parent->comment_price));
+
+         const reward_fund_object& reward_fund = _db.get_reward_fund();
+         auto curve = reward_fund.curation_reward_curve;
+         int64_t elapsed_seconds = ( now - auth.last_post ).to_seconds();
+         int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.comment_recharge_time.to_seconds();
+         int16_t current_power = std::min( int64_t( auth.comment_power + regenerated_power), int64_t(PERCENT_100) );
+         FC_ASSERT( current_power > 0, 
+            "Account currently does not have any commenting power." );
+         share_type voting_power = _db.get_voting_power( auth.name );
+         int16_t max_comment_denom = props.comment_reserve_rate * ( props.comment_recharge_time.count() / fc::days(1).count );  // Weights the viewing power with the network reserve ratio and recharge time
+         FC_ASSERT( max_comment_denom > 0 );
+         int16_t used_power = (current_power + max_comment_denom - 1) / max_comment_denom;
+         new_comment_power = current_power - used_power;
+         FC_ASSERT( used_power <= current_power, 
+            "Account does not have enough power to comment." );
+         
+         reward = ( voting_power * used_power) / PERCENT_100;
+         
+         uint128_t old_power = std::max( root.comment_power, uint128_t(0) );  // Record commentvalue before applying comment
+
+         _db.modify( root, [&]( comment_object& c )
+         {
+            c.net_reward += reward;
+            c.comment_power += reward;
+         });
+
+         uint128_t new_power = std::max( root.comment_power, uint128_t(0));   // record new net reward after applying comment
+         share_type max_comment_weight = 0;
+         bool curation_reward_eligible = reward > 0 && root.cashout_time != fc::time_point::maximum() && root.allow_curation_rewards;
+         uint16_t curation_reward_percent = reward_fund.curation_reward_percent;
+            
+         if( curation_reward_eligible )
+         {
+            uint128_t old_weight = util::evaluate_reward_curve( old_power, curve, reward_fund.content_constant );
+            uint128_t new_weight = util::evaluate_reward_curve( new_power, curve, reward_fund.content_constant );       
+            uint128_t max_comment_weight = new_weight - old_weight;   // Gets the difference in content reward weight before and after the comment occurs.
+
+            _db.modify( root, [&]( comment_object& c )
+            {
+               c.total_comment_weight += max_comment_weight;
+            });
+
+            uint128_t curation_auction_decay_time = props.curation_auction_decay_time.to_seconds();
+            uint128_t w = max_comment_weight;
+            uint128_t delta_t = std::min( uint128_t((cv.last_update - comment.created).to_seconds()), curation_auction_decay_time ); 
+
+            w *= delta_t;
+            w /= curation_auction_decay_time;                     // Discount weight linearly by time for early comments in the first 10 minutes.
+
+            double curation_decay = props.comment_curation_decay;      // Number of comments for half life of curation reward decay.
+            double comment_discount_rate = std::max(( double( comment.children ) / curation_decay), double(0));
+            double comment_discount = std::pow(0.5, comment_discount_rate );     // Raises 0.5 to a fractional power for each 100 comments added
+            double comment_discount_percent = comment_discount * double(PERCENT_100);
+            FC_ASSERT(comment_discount_percent >= 0, "Vote discount percent should not become negative");
+            w *= uint128_t(comment_discount_percent);
+            w /= PERCENT_100;      // Discount weight exponentially for each successive comment on the post, decaying by 50% per 100 comments.
+            weight = w;
+         } 
       }
 
       uint64_t post_bandwidth = auth.post_bandwidth;
 
-      _db.modify( auth, [&]( account_object& a ) {
+      _db.modify( auth, [&]( account_object& a ) 
+      {
          if( o.parent_author == ROOT_POST_PARENT )
          {
             a.last_root_post = now;
             a.post_bandwidth = uint32_t( post_bandwidth );
+         }
+         else
+         {
+            a.comment_power = new_comment_power;
          }
          a.last_post = now;
          a.post_count++;
@@ -3028,7 +3109,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.board = o.board;
          com.privacy = o.privacy;
          com.post_type = o.post_type;
-
+         com.author_reputation = auth.author_reputation;
+         com.comment_price = o.comment_price;
+         com.premium_price = o.premium_price;
          from_string( com.ipfs, o.ipfs );
          from_string( com.magnet, o.magnet );
          from_string( com.language, o.language );
@@ -3040,31 +3123,30 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.active = com.last_update;
          com.last_payout = fc::time_point::min();
          com.max_cashout_time = fc::time_point::maximum();
+         com.cashout_time = com.created + props.content_reward_interval;
 
-         if ( o.parent_author == ROOT_POST_PARENT )
+         if ( o.parent_author == ROOT_POST_PARENT )     // New Root post
          {
             com.parent_author = "";
             from_string( com.parent_permlink, o.parent_permlink );
             from_string( com.category, o.parent_permlink );
             com.root_comment = com.id;
          }
-         else
+         else       // New comment
          {
             com.parent_author = parent->author;
             com.parent_permlink = parent->permlink;
             com.depth = parent->depth + 1;
             com.category = parent->category;
             com.root_comment = parent->root_comment;
-            com.cashout_time = fc::time_point::maximum();
+            com.reward = reward;
+            com.weight = weight;
          }
-
-         com.cashout_time = com.created + CASHOUT_WINDOW;
-         
       });
 
       id = new_comment.id;
 
-      while( parent )                 // Increments the children counter on all ancestor comments, and bumps active time.
+      while( parent != nullptr )                 // Increments the children counter on all ancestor comments, and bumps active time.
       {
          _db.modify( *parent, [&]( comment_object& p )
          {
@@ -3122,7 +3204,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             
          }
          bo.last_post = now;
-      }
+      });
    }
    else // Post found, editing existing post. 
    {
@@ -3208,7 +3290,7 @@ struct comment_options_extension_visitor
    void operator()( const comment_payout_beneficiaries& cpb ) const
    {
       FC_ASSERT( _c.beneficiaries.size() == 0, "Comment already has beneficiaries specified." );
-      FC_ASSERT( _c.abs_reward == 0, "Comment must not have been voted on before specifying beneficiaries." );
+      FC_ASSERT( _c.net_reward == 0, "Comment must not have been voted on before specifying beneficiaries." );
 
       _db.modify( _c, [&]( comment_object& c )
       {
@@ -3240,7 +3322,7 @@ void comment_options_evaluator::do_apply( const comment_options_operation& o )
 
    if( !o.allow_curation_rewards || !o.allow_votes || o.max_accepted_payout < comment.max_accepted_payout )
    {
-      FC_ASSERT( comment.abs_reward == 0, 
+      FC_ASSERT( comment.net_reward == 0, 
          "One of the included comment options requires the comment to have no reward allocated to it." );
    }
    
@@ -3253,11 +3335,12 @@ void comment_options_evaluator::do_apply( const comment_options_operation& o )
    FC_ASSERT( comment.percent_liquid >= o.percent_liquid, 
       "A comment cannot accept a greater percent USD." );
 
-   _db.modify( comment, [&]( comment_object& c ) {
-       c.max_accepted_payout   = o.max_accepted_payout;
-       c.percent_liquid = o.percent_liquid;
-       c.allow_votes           = o.allow_votes;
-       c.allow_curation_rewards = o.allow_curation_rewards;
+   _db.modify( comment, [&]( comment_object& c ) 
+   {
+      c.max_accepted_payout = o.max_accepted_payout;
+      c.percent_liquid = o.percent_liquid;
+      c.allow_votes = o.allow_votes;
+      c.allow_curation_rewards = o.allow_curation_rewards;
    });
 
    for( auto& e : o.extensions )
@@ -3308,7 +3391,7 @@ void message_evaluator::do_apply( const message_operation& o )
    FC_ASSERT( con_itr != connection_idx.end(), 
       "Cannot send message: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
 
-   const auto& message_idx = _db.get_index< message_index >().indices().get< by_account_uuid >();
+   const auto& message_idx = _db.get_index< message_index >().indices().get< by_sender_uuid >();
    auto message_itr = message_idx.find( boost::make_tuple( sender.name, o.uuid) );
 
    if( message_itr == message_idx.end() )         // Message uuid does not exist, creating new message
@@ -3323,7 +3406,7 @@ void message_evaluator::do_apply( const message_operation& o )
          from_string( mo.uuid, o.uuid);
          mo.time = now;
          mo.last_updated = now;
-      }
+      });
    }
    else
    {
@@ -3349,48 +3432,54 @@ void vote_evaluator::do_apply( const vote_operation& o )
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    const account_object& voter = _db.get_account( o.voter );
    time_point now = _db.head_block_time();
-   const dynamic_global_property_object& dgpo = _db.get_dynamic_global_properties();
-   FC_ASSERT( !(voter.owner_challenged || voter.active_challenged ), "Operation cannot be processed because the account is currently challenged." );
-   FC_ASSERT( voter.can_vote, "Voter has declined their voting rights." );
-   FC_ASSERT( comment.allow_votes, "Votes are not allowed on the comment." );
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   FC_ASSERT( !(voter.owner_challenged || voter.active_challenged ), 
+      "Operation cannot be processed because the account is currently challenged." );
+   FC_ASSERT( voter.can_vote, 
+      "Voter has declined their voting rights." );
+   FC_ASSERT( comment.allow_votes, 
+      "Votes are not allowed on the comment." );
 
    const board_object& board = _db.get_board(comment.board);      
    const board_member_object& board_member = _db.get_board_member(board.name);       
-   FC_ASSERT( board_member.is_authorized_interact(voter.name, board), "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", voter.name));
-   const auto& reward_fund = _db.get_reward_fund();
+   FC_ASSERT( board_member.is_authorized_interact(voter.name, board), 
+      "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", voter.name));
+   const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
    
    const auto& comment_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
    auto itr = comment_vote_idx.find( std::make_tuple( comment.id, voter.id ) );
+
    int64_t elapsed_seconds = (now - voter.last_vote_time).to_seconds();
-   FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL_SEC, "Can only vote once every ${s} seconds.", ("s", MIN_VOTE_INTERVAL_SEC) );
-   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / dgpo.vote_recharge_time.to_seconds();
+   FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL_SEC, 
+      "Can only vote once every ${s} seconds.", ("s", MIN_VOTE_INTERVAL_SEC) );
+   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.vote_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(voter.voting_power + regenerated_power), int64_t(PERCENT_100) );
-   FC_ASSERT( current_power > 0, "Account currently does not have voting power." );
+   FC_ASSERT( current_power > 0, 
+      "Account currently does not have voting power." );
    int16_t abs_weight = abs(o.weight);
    int16_t used_power = (current_power * abs_weight) / PERCENT_100;
 
-   int16_t max_vote_denom = dgpo.vote_power_reserve_rate * (dgpo.vote_recharge_time.count() / fc::days(1).count);
+   int16_t max_vote_denom = props.vote_power_reserve_rate * (props.vote_recharge_time.count() / fc::days(1).count);
    FC_ASSERT( max_vote_denom > 0 );
    used_power = (used_power + max_vote_denom - 1) / max_vote_denom;
-   FC_ASSERT( used_power <= current_power, "Account does not have enough power to vote." );
+   FC_ASSERT( used_power <= current_power, 
+      "Account does not have enough power to vote." );
 
    uint128_t voting_power = _db.get_voting_power( voter ).value;    // Gets the user's voting power from their Equity and Staked coin balances
    uint128_t abs_reward = (voting_power * used_power) / PERCENT_100;
-   FC_ASSERT( abs_reward > VOTE_DUST_THRESHOLD || o.weight == 0, "Voting weight is too small, please accumulate more voting power." );
+   FC_ASSERT( abs_reward > VOTE_DUST_THRESHOLD || o.weight == 0, 
+      "Voting weight is too small, please accumulate more voting power." );
+   uint128_t reward = o.weight < 0 ? -abs_reward : abs_reward; // Determines the sign of abs_reward for upvote and downvote
 
-   const auto& root = _db.get( comment.root_comment );
+   const comment_object& root = _db.get( comment.root_comment );
 
    if( itr == comment_vote_idx.end() )   // New vote is being added to emtpy index
    {
-      FC_ASSERT( o.weight != 0, "Vote weight cannot be 0 for the first vote.");
-      FC_ASSERT( abs_reward > 0, "Cannot vote with 0 reward." );
-      uint128_t reward = o.weight < 0 ? -abs_reward : abs_reward; // Determines the sign of abs_reward for upvote and downvote
-
-      if( reward > 0 )
-      {
-         FC_ASSERT( now < comment.cashout_time - UPVOTE_LOCKOUT_TIME, "Cannot increase payout within last twelve hours before payout." );
-      }
+      FC_ASSERT( o.weight != 0, 
+         "Vote weight cannot be 0 for the first vote.");
+      FC_ASSERT( abs_reward > 0, 
+         "Cannot vote with 0 reward." );
 
       _db.modify( voter, [&]( account_object& a )
       {
@@ -3398,27 +3487,23 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.last_vote_time = now;
       });
 
-      uint128_t old_net_reward = std::max(comment.net_reward, uint128_t(0));
+      uint128_t old_power = std::max( comment.vote_power, uint128_t(0));
 
       _db.modify( comment, [&]( comment_object& c )
       {
          c.net_reward += reward;
-         c.abs_reward += abs_reward;
          c.vote_power += reward;
          if( reward > 0 )
-            c.vote_reward += reward;  // Vote reward only counts positive votes.
-         if( reward > 0 )
+         {
             c.net_votes++;
+         }   
          else
+         {
             c.net_votes--;
+         } 
       });
 
-      _db.modify( root, [&]( comment_object& c )
-      {
-         c.children_abs_reward += abs_reward;
-      });
-
-      uint128_t new_net_reward = std::max( comment.net_reward, uint128_t(0));
+      uint128_t new_power = std::max( comment.vote_power, uint128_t(0));
 
       /** this verifies uniqueness of voter
        *
@@ -3446,39 +3531,34 @@ void vote_evaluator::do_apply( const vote_operation& o )
          cv.vote_percent = o.weight;
          cv.last_update = now;
 
-         bool curation_reward_eligible = reward > 0 && (comment.last_payout == fc::time_point()) && comment.allow_curation_rewards;
-         uint16_t curation_reward_percent = reward_fund.curation_reward_percent;
-            
+         bool curation_reward_eligible = reward > 0 && comment.cashout_time != fc::time_point::maximum() && comment.allow_curation_rewards;
+         
          if( curation_reward_eligible )
          {
-            uint128_t old_weight = util::evaluate_reward_curve( old_net_reward, curve, reward_fund.content_constant ).to_uint64();
-            uint128_t new_weight = util::evaluate_reward_curve( new_net_reward, curve, reward_fund.content_constant ).to_uint64();
-            cv.weight = new_weight - old_weight;
-            
-            uint128_t max_vote_weight = cv.weight;
+            uint128_t old_weight = util::evaluate_reward_curve( old_power, curve, reward_fund.content_constant );
+            uint128_t new_weight = util::evaluate_reward_curve( new_power, curve, reward_fund.content_constant );
+            uint128_t max_vote_weight = new_weight - old_weight;
 
             _db.modify( comment, [&]( comment_object& c )
             {
                c.total_vote_weight += max_vote_weight;       // Increase reward weight for curation rewards by maximum
             });
 
-            uint128_t curation_auction_decay_time = dgpo.curation_auction_decay_time.to_seconds();
+            uint128_t curation_auction_decay_time = props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_vote_weight;
-            uint128_t delta_t = std::min( uint128_t((cv.last_update - comment.created).to_seconds()), curation_auction_decay_time ); 
+            uint128_t delta_t = std::min( uint128_t(( now - comment.created ).to_seconds()), curation_auction_decay_time ); 
 
             w *= delta_t;
-            w /= curation_auction_decay_time; // Discount weight linearly by time for early votes in the first 10 minutes
+            w /= curation_auction_decay_time;       // Discount weight linearly by time for early votes in the first 10 minutes
 
-            double curation_decay = dgpo.vote_curation_decay;
+            double curation_decay = props.vote_curation_decay;
             double vote_discount_rate = std::max(( double(comment.net_votes) / curation_decay), double(0));
             double vote_discount = std::pow(0.5, vote_discount_rate );     // Raises 0.5 to a fractional power for each 100 net_votes added
-            uint64_t vote_discount_percent =  (double)vote_discount * (double) PERCENT_100;
-
-            FC_ASSERT(vote_discount_percent >= 0, "Vote discount should not become negative");
-
-            w *= vote_discount_percent;
+            double vote_discount_percent = double(vote_discount) * double(PERCENT_100);
+            FC_ASSERT( vote_discount_percent >= 0, "Vote discount should not become negative");
+            w *= uint128_t(vote_discount_percent);
             w /= PERCENT_100; // Discount weight exponentially for each successive vote on the post, decaying by 50% per 100 votes.
-
+            cv.max_weight = max_vote_weight;
             cv.weight = w;
          }
          else
@@ -3495,15 +3575,16 @@ void vote_evaluator::do_apply( const vote_operation& o )
          }
          else 
          {
-            bo.vote_count++;
+            bo.vote_count--;
          }
-      }
+      });
    }
    else  // Vote is being altered from a previous vote
    {
-      FC_ASSERT( itr->num_changes < MAX_VOTE_CHANGES, "Voter has used the maximum number of vote changes on this comment." );
-      FC_ASSERT( itr->vote_percent != o.weight, "You have already voted in a similar way." );
-      uint128_t reward = o.weight < 0 ? -abs_reward : abs_reward;
+      FC_ASSERT( itr->num_changes < MAX_VOTE_CHANGES, 
+         "Voter has used the maximum number of vote changes on this comment." );
+      FC_ASSERT( itr->vote_percent != o.weight, 
+         "You have already voted in a similar way." );
 
       if( itr->reward < reward )
       {
@@ -3516,7 +3597,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.last_vote_time = now;                          // Update last vote time
       });
 
-      uint128_t old_reward = std::max(comment.net_reward, uint128_t(0));  // Record net reward before new vote is applied
+      uint128_t old_power = std::max(comment.vote_power, uint128_t(0));  // Record net reward before new vote is applied
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -3524,7 +3605,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          c.net_reward += reward;
          c.vote_power -= itr->reward;
          c.vote_power += reward;
-         c.abs_reward += abs_reward;
+         c.total_vote_weight -= itr->max_weight;     // deduct votes previous total weight contribution
 
          if( reward > 0 && itr->reward < 0 ) // Remove downvote and add upvote
             c.net_votes += 2;
@@ -3540,28 +3621,50 @@ void vote_evaluator::do_apply( const vote_operation& o )
             c.net_votes -= 2;
       });
 
-      _db.modify( root, [&]( comment_object& c )
-      {
-         c.children_abs_reward += abs_reward;
-      });
-
-      uint128_t new_reward = std::max( comment.net_reward, uint128_t(0));    // Record net reward after new vote is applied
-
-      new_reward = util::evaluate_reward_curve( new_reward ); // calculate reward_curve values for before and after the vote is applied
-      old_reward = util::evaluate_reward_curve( old_reward );
-
-      _db.modify( comment, [&]( comment_object& c )
-      {
-         c.total_vote_weight -= itr->weight;
-      });
+      uint128_t new_power = std::max( comment.vote_power, uint128_t(0));    // Record net reward after new vote is applied
 
       _db.modify( *itr, [&]( comment_vote_object& cv )
       {
          cv.reward = reward;
          cv.vote_percent = o.weight;
          cv.last_update = now;
-         cv.weight = 0;            // altered vote loses curation rewards.
          cv.num_changes += 1;
+
+         bool curation_reward_eligible = reward > 0 && comment.cashout_time != fc::time_point::maximum() && comment.allow_curation_rewards;
+         
+         if( curation_reward_eligible )
+         {
+            uint128_t old_weight = util::evaluate_reward_curve( old_power, curve, reward_fund.content_constant );
+            uint128_t new_weight = util::evaluate_reward_curve( new_power, curve, reward_fund.content_constant );
+            uint128_t max_vote_weight = new_weight - old_weight;
+
+            _db.modify( comment, [&]( comment_object& c )
+            {
+               c.total_vote_weight += max_vote_weight;       // Increase reward weight for curation rewards by maximum
+            });
+
+            uint128_t curation_auction_decay_time = props.curation_auction_decay_time.to_seconds();
+            uint128_t w = max_vote_weight;
+            uint128_t delta_t = std::min( uint128_t(( now - comment.created ).to_seconds()), curation_auction_decay_time ); 
+
+            w *= delta_t;
+            w /= curation_auction_decay_time;       // Discount weight linearly by time for early votes in the first 10 minutes
+
+            double curation_decay = props.vote_curation_decay;
+            double vote_discount_rate = std::max(( double(comment.net_votes) / curation_decay), double(0));
+            double vote_discount = std::pow(0.5, vote_discount_rate );     // Raises 0.5 to a fractional power for each 100 net_votes added
+            double vote_discount_percent = double(vote_discount) * double(PERCENT_100);
+            FC_ASSERT( vote_discount_percent >= 0, "Vote discount should not become negative");
+            w *= uint128_t(vote_discount_percent);
+            w /= PERCENT_100; // Discount weight exponentially for each successive vote on the post, decaying by 50% per 100 votes.
+            cv.max_weight = max_vote_weight;
+            cv.weight = w;
+         }
+         else
+         {
+            cv.weight = 0;
+            cv.max_weight = 0;
+         }
       });
    }
 } FC_CAPTURE_AND_RETHROW( (o)) }
@@ -3581,12 +3684,14 @@ void view_evaluator::do_apply( const view_operation& o )
    const account_object& viewer = _db.get_account( o.viewer );
    uint128_t voting_power = _db.get_voting_power( viewer ).value;         // Gets the user's voting power from their Equity and Staked coin balances to weight the view.
    FC_ASSERT( comment.allow_views, "Views are not allowed on the comment." );
-   FC_ASSERT( !(viewer.owner_challenged || viewer.active_challenged ), "Operation cannot be processed because the account is currently challenged." );
+   FC_ASSERT( !(viewer.owner_challenged || viewer.active_challenged ), 
+      "Operation cannot be processed because the account is currently challenged." );
    FC_ASSERT( viewer.can_vote, "Viewer has declined their voting rights." );
    const board_object& board = _db.get_board(comment.board);      
    const board_member_object& board_member = _db.get_board_member(board.name);       
-   FC_ASSERT( board_member.is_authorized_interact(viewer.name, board), "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", viewer.name));
-   const dynamic_global_property_object& dgpo = _db.get_dynamic_global_properties();
+   FC_ASSERT( board_member.is_authorized_interact(viewer.name, board), 
+      "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", viewer.name));
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
    
@@ -3601,13 +3706,13 @@ void view_evaluator::do_apply( const view_operation& o )
 
    FC_ASSERT( elapsed_seconds >= MIN_VIEW_INTERVAL_SEC, 
       "Can only view once every ${s} seconds.", ("s", MIN_VIEW_INTERVAL_SEC) );
-   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / dgpo.view_recharge_time.to_seconds();
+   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.view_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(viewer.viewing_power + regenerated_power), int64_t(PERCENT_100) );
 
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any viewing power." );
 
-   int16_t max_view_denom = dgpo.view_reserve_rate * (dgpo.view_recharge_time.count() / fc::days(1).count);    // Weights the viewing power with the network reserve ratio and recharge time
+   int16_t max_view_denom = props.view_reserve_rate * (props.view_recharge_time.count() / fc::days(1).count);    // Weights the viewing power with the network reserve ratio and recharge time
    FC_ASSERT( max_view_denom > 0 );
    int16_t used_power = (current_power + max_view_denom - 1) / max_view_denom;
    FC_ASSERT( used_power <= current_power, "Account does not have enough power to view." );
@@ -3618,21 +3723,28 @@ void view_evaluator::do_apply( const view_operation& o )
    if( itr == comment_view_idx.end() )   // New view is being added 
    {
       FC_ASSERT( reward > 0, "Cannot claim view with 0 reward." );
-      FC_ASSERT( o.viewed , "Viewed must be set to true to create new view, View does not exist to remove." );
+      FC_ASSERT( o.viewed, "Viewed must be set to true to create new view, View does not exist to remove." );
 
       const auto& supernode_view_idx = _db.get_index< comment_view_index >().indices().get< by_supernode_viewer >();
       const auto& interface_view_idx = _db.get_index< comment_view_index >().indices().get< by_interface_viewer >();
 
       auto supernode_view_itr = comment_view_idx.lower_bound( std::make_tuple( supernode.account, viewer.name ) );
       auto interface_view_itr = comment_view_idx.lower_bound( std::make_tuple( interface.account, viewer.name ) );
+      share_type vp = voting_power.to_int64();
 
-      if( supernode_view_itr != supernode_view_idx.end() && supernode_view_itr->created < (now + days(1) ) )
+      if( supernode_view_itr == supernode_view_idx.end() )   // No view exists
       {
-         share_type vp = voting_power.to_int64();
          _db.adjust_view_weight( supernode, vp );    // Adds voting power to the supernode view weight once per day per user. 
-         
       }
-      if( interface_view_itr != interface_view_idx.end() && interface_view_itr->created < (now + days(1) ) )
+      else if( ( supernode_view_itr->created + days(1) ) < now )     // Latest view is more than 1 day old
+      {
+         _db.adjust_view_weight( supernode, vp );    // Adds voting power to the supernode view weight once per day per user. 
+      }
+      if( interface_view_itr == interface_view_idx.end() )   // No view exists
+      {
+         _db.adjust_interface_users( interface );
+      }
+      else if( ( interface_view_itr->created + days(1) ) < now )    // Latest View is more than 1 day old
       {
          _db.adjust_interface_users( interface );
       }
@@ -3643,27 +3755,21 @@ void view_evaluator::do_apply( const view_operation& o )
          a.last_view_time = now;
       });
 
-      uint128_t old_net_reward = std::max(comment.net_reward, uint128_t(0));  // Record reward value before applying view transaction
+      uint128_t old_power = std::max(comment.view_power, uint128_t(0));  // Record reward value before applying view transaction
 
       _db.modify( comment, [&]( comment_object& c )
       {
          c.net_reward += reward;
-         c.abs_reward += reward;
          c.view_power += reward;
          c.view_count++;
       });
 
-      _db.modify( root, [&]( comment_object& c )
-      {
-         c.children_abs_reward += abs_reward;
-      });
+      uint128_t new_power = std::max( comment.view_power, uint128_t(0));   // record new net reward after viewing
 
       _db.modify( board, [&]( board_object& bo )
       {
          bo.view_count++;  
-      }
-
-      uint128_t new_net_reward = std::max( comment.net_reward, uint128_t(0));   // record new net reward after viewing
+      });
 
       share_type max_view_weight = 0;
 
@@ -3676,72 +3782,60 @@ void view_evaluator::do_apply( const view_operation& o )
          cv.reward = reward;
          cv.created = now;
 
-         bool curation_reward_eligible = reward > 0 && (comment.last_payout == fc::time_point()) && comment.allow_curation_rewards;
-
-         uint16_t curation_reward_percent = reward_fund.curation_reward_percent;
+         bool curation_reward_eligible = reward > 0 && comment.cashout != fc::time_point::maximum() && comment.allow_curation_rewards;
             
          if( curation_reward_eligible )
          {
-            uint128_t old_weight = util::evaluate_reward_curve( old_net_reward, curve, reward_fund.content_constant ).to_uint64();
-            uint128_t new_weight = util::evaluate_reward_curve( new_net_reward, curve, reward_fund.content_constant ).to_uint64();
-            cv.weight = new_weight - old_weight;  // Gets the difference in content reward weight before and after the view occurs.
-            
-            uint128_t max_view_weight = cv.weight;
+            uint128_t old_weight = util::evaluate_reward_curve( old_power, curve, reward_fund.content_constant );
+            uint128_t new_weight = util::evaluate_reward_curve( new_power, curve, reward_fund.content_constant );
+            uint128_t max_view_weight = new_weight - old_weight;  // Gets the difference in content reward weight before and after the view occurs.
 
             _db.modify( comment, [&]( comment_object& c )
             {
                c.total_view_weight += max_view_weight;
             });
 
-            uint128_t curation_auction_decay_time = dgpo.curation_auction_decay_time.to_seconds();
-
+            uint128_t curation_auction_decay_time = props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_view_weight;
-            uint128_t delta_t = std::min( uint128_t((cv.last_update - comment.created).to_seconds()), curation_auction_decay_time ); 
+            uint128_t delta_t = std::min( uint128_t(( now - comment.created).to_seconds()), curation_auction_decay_time ); 
 
             w *= delta_t;
             w /= curation_auction_decay_time;                     // Discount weight linearly by time for early views in the first 10 minutes.
 
-            double curation_decay = dgpo.view_curation_decay;      // Number of views for half life of curation reward decay.
-
+            double curation_decay = props.view_curation_decay;      // Number of views for half life of curation reward decay.
             double view_discount_rate = std::max(( double(comment.view_count) / curation_decay), double(0));
             double view_discount = std::pow(0.5, view_discount_rate );     // Raises 0.5 to a fractional power for each 1000 views added
-            uint64_t view_discount_percent =  (double) view_discount * (double) PERCENT_100;
-
+            uint64_t view_discount_percent = double(view_discount)*double(PERCENT_100);
             FC_ASSERT(view_discount_percent >= 0, "Vote discount should not become negative");
-
             w *= view_discount_percent;
             w /= PERCENT_100;      // Discount weight exponentially for each successive view on the post, decaying by 50% per 1000 views.
-
             cv.weight = w;
+            cv.max_weight = max_view_weight;
          }
          else
          {
             cv.weight = 0;
+            cv.max_weight = 0;
          }
       });
    }
    else  // View is being removed
    {
-      FC_ASSERT( !o.viewed, "Must select view = false to remove existing view" );
+      FC_ASSERT( !o.viewed, 
+         "Must select view = false to remove existing view" );
       
       _db.modify( comment, [&]( comment_object& c )
       {
          c.net_reward -= itr->reward;
          c.view_power -= itr->reward;
-         c.abs_reward -= itr->reward;
-         c.total_view_weight -= itr->weight;
-         c.net_votes -= 1;
-      });
-
-      _db.modify( root, [&]( comment_object& c )
-      {
-         c.children_abs_reward -= itr->reward;
+         c.total_view_weight -= itr->max_weight;
+         c.view_count--;
       });
 
       _db.modify( board, [&]( board_object& bo )
       {
          bo.view_count--;  
-      }
+      });
 
       _db.remove( *itr );
    }
@@ -3762,36 +3856,43 @@ void share_evaluator::do_apply( const share_operation& o )
    FC_ASSERT( comment.parent_author.size() == 0, "Only top level posts can be shared." );
    FC_ASSERT( comment.allow_shares, "shares are not allowed on the comment." );
    const account_object& sharer = _db.get_account( o.sharer );
-   FC_ASSERT( !(sharer.owner_challenged || sharer.active_challenged ), "Operation cannot be processed because the account is currently challenged." );
+   FC_ASSERT( !(sharer.owner_challenged || sharer.active_challenged ), 
+      "Operation cannot be processed because the account is currently challenged." );
    FC_ASSERT( sharer.can_vote, "sharer has declined their voting rights." );
    const board_object& board = _db.get_board(comment.board);      
    const board_member_object& board_member = _db.get_board_member(board.name);       
-   FC_ASSERT( board_member.is_authorized_interact(sharer.name, board), "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", sharer.name));
-   const dynamic_global_property_object& dgpo = _db.get_dynamic_global_properties();
+   FC_ASSERT( board_member.is_authorized_interact(sharer.name, board), 
+      "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", sharer.name));
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
-   time_point now = _db.head_block_time();
+   time_point now = props.time;
    
    const auto& comment_share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
    auto itr = comment_share_idx.find( std::make_tuple( comment.id, sharer.name ) );
    int64_t elapsed_seconds = (now - sharer.last_share_time).to_seconds();
-   FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL_SEC, "Can only share once every ${s} seconds.", ("s", MIN_SHARE_INTERVAL_SEC) );
-   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / dgpo.share_recharge_time.to_seconds();
+   FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL_SEC, 
+      "Can only share once every ${s} seconds.", ("s", MIN_SHARE_INTERVAL_SEC) );
+   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.share_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(sharer.sharing_power + regenerated_power), int64_t(PERCENT_100) );
-   FC_ASSERT( current_power > 0, "Account currently does not have any sharing power." );
+   FC_ASSERT( current_power > 0, 
+      "Account currently does not have any sharing power." );
 
-   int16_t max_share_denom = dgpo.share_reserve_rate * (dgpo.share_recharge_time.count() / fc::days(1).count);    // Weights the sharing power with the network reserve ratio and recharge time
+   int16_t max_share_denom = props.share_reserve_rate * (props.share_recharge_time.count() / fc::days(1).count);    // Weights the sharing power with the network reserve ratio and recharge time
    FC_ASSERT( max_share_denom > 0 );
    int16_t used_power = (current_power + max_share_denom - 1) / max_share_denom;
-   FC_ASSERT( used_power <= current_power, "Account does not have enough power to share." );
+   FC_ASSERT( used_power <= current_power,   
+      "Account does not have enough power to share." );
    uint128_t voting_power = _db.get_voting_power( sharer ).value;         // Gets the user's voting power from their Equity and Staked coin balances to weight the share.
    uint128_t reward = (voting_power * used_power) / PERCENT_100;
    const comment_object& root = _db.get( comment.root_comment );       // If root post, gets the posts own object.
 
    if( itr == comment_share_idx.end() )   // New vote is being added to emtpy index
    {
-      FC_ASSERT( reward > 0, "Cannot claim share with 0 reward." );
-      FC_ASSERT( o.shared , "Shared must be set to true to create new share, share does not exist to remove." );
+      FC_ASSERT( reward > 0, 
+         "Cannot claim share with 0 reward." );
+      FC_ASSERT( o.shared , 
+         "Shared must be set to true to create new share, share does not exist to remove." );
 
       _db.modify( sharer, [&]( account_object& a )
       {
@@ -3799,29 +3900,21 @@ void share_evaluator::do_apply( const share_operation& o )
          a.last_share_time = now;
       });
 
-      uint128_t old_net_reward = std::max(comment.net_reward, uint128_t(0));  // Record reward value before applying share transaction
+      uint128_t old_power = std::max(comment.share_power, uint128_t(0));  // Record reward value before applying share transaction
 
       _db.modify( comment, [&]( comment_object& c )
       {
          c.net_reward += reward;
-         c.abs_reward += reward;
          c.share_power += reward;
          c.share_count++;
-      });
-
-      _db.modify( root, [&]( comment_object& c )
-      {
-         c.children_abs_reward += abs_reward;
       });
 
       _db.modify( board, [&]( board_object& bo )
       {
          bo.share_count++;  
-      }
+      });
 
-      uint128_t new_net_reward = std::max( comment.net_reward, uint128_t(0));   // record new net reward after sharing
-
-      share_type max_share_weight = 0;
+      uint128_t new_power = std::max( comment.share_power, uint128_t(0));   // record new net reward after sharing
 
       // Create comment share object for tracking share.
       _db.create<comment_share_object>( [&]( comment_share_object& cs )    
@@ -3831,47 +3924,40 @@ void share_evaluator::do_apply( const share_operation& o )
          cs.reward = reward;
          cs.created = now;
 
-         bool curation_reward_eligible = reward > 0 && (comment.last_payout == fc::time_point()) && comment.allow_curation_rewards;
-
-         uint16_t curation_reward_percent = reward_fund.curation_reward_percent;
-            
+         bool curation_reward_eligible = reward > 0 && comment.cashout != fc::time_point::maximum() && comment.allow_curation_rewards;
+  
          if( curation_reward_eligible )
          {
-            uint128_t old_weight = util::evaluate_reward_curve( old_net_reward, curve, reward_fund.content_constant ).to_uint64();
-            uint128_t new_weight = util::evaluate_reward_curve( new_net_reward, curve, reward_fund.content_constant ).to_uint64();
-            cs.weight = new_weight - old_weight;  // Gets the difference in content reward weight before and after the share occurs.
-            
-            uint128_t max_share_weight = cs.weight;
+            uint128_t old_weight = util::evaluate_reward_curve( old_power, curve, reward_fund.content_constant );
+            uint128_t new_weight = util::evaluate_reward_curve( new_power, curve, reward_fund.content_constant );
+            uint128_t max_share_weight = new_weight - old_weight;  // Gets the difference in content reward weight before and after the share occurs.
 
             _db.modify( comment, [&]( comment_object& c )
             {
                c.total_share_weight += max_share_weight;
             });
 
-            uint128_t curation_auction_decay_time = dgpo.curation_auction_decay_time.to_seconds();
-
+            uint128_t curation_auction_decay_time = props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_share_weight;
-            uint128_t delta_t = std::min( uint128_t((cs.last_update - comment.created).to_seconds()), curation_auction_decay_time ); 
+            uint128_t delta_t = std::min( uint128_t(( now - comment.created).to_seconds()), curation_auction_decay_time ); 
 
             w *= delta_t;
             w /= curation_auction_decay_time;   // Discount weight linearly by time for early shares in the first 10 minutes.
 
-            double curation_decay = dgpo.share_curation_decay;      // Number of shares for half life of curation reward decay.
-
+            double curation_decay = props.share_curation_decay;      // Number of shares for half life of curation reward decay.
             double share_discount_rate = std::max(( double(comment.share_count) / curation_decay), double(0));
             double share_discount = std::pow(0.5, share_discount_rate );     // Raises 0.5 to a fractional power for each 1000 shares added
-            uint64_t share_discount_percent =  (double) share_discount * (double) PERCENT_100;
-
+            double share_discount_percent = double(share_discount) * double(PERCENT_100);
             FC_ASSERT(share_discount_percent >= 0, "Vote discount should not become negative");
-
-            w *= share_discount_percent;
+            w *= uint128_t(share_discount_percent);
             w /= PERCENT_100;      // Discount weight exponentially for each successive share on the post, decaying by 50% per 50 shares.
-
             cs.weight = w;
+            cs.max_weight = max_share_weight;
          }
          else
          {
             cs.weight = 0;
+            cs.max_weight = 0;
          }
       });
 
@@ -3890,7 +3976,9 @@ void share_evaluator::do_apply( const share_operation& o )
 
       auto blog_itr = blog_comment_idx.find( boost::make_tuple( comment.id, sharer.name ) );
 
-      FC_ASSERT( blog_itr == blog_comment_idx.end(), "Account has already shared this post" );
+      FC_ASSERT( blog_itr == blog_comment_idx.end(), 
+         "Account has already shared this post" );
+
       _db.create< blog_object >( [&]( blog_object& b )
       {
          b.account = sharer.name;
@@ -3899,37 +3987,38 @@ void share_evaluator::do_apply( const share_operation& o )
          b.blog_feed_id = next_blog_id;
       });
 
-      // Create feed object for sharer account's followers and connections. 
-      _db.add_comment_to_feeds( sharer.name, comment.id);
+      
+      _db.add_comment_to_feeds( sharer.name, comment.id ); // Create feed object for sharer account's followers and connections. 
    }
    else  // share is being removed
    {
-      FC_ASSERT( !o.shared, "Must select shared = false to remove existing share" );
+      FC_ASSERT( !o.shared, 
+         "Must select shared = false to remove existing share" );
       
       _db.modify( comment, [&]( comment_object& c )
       {
          c.net_reward -= itr->reward;
          c.share_power -= itr->reward;
-         c.abs_reward -= itr->reward;
-         c.total_share_weight -= itr->weight;
-         c.net_votes -= 1;
-      });
-
-      _db.modify( root, [&]( comment_object& c )
-      {
-         c.children_abs_reward -= itr->reward;
+         c.total_share_weight -= itr->max_weight;
+         c.share_count--;
       });
 
       _db.modify( board, [&]( board_object& bo )
       {
          bo.share_count--;  
-      }
+      });
 
       _db.remove( *itr );
    }
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
 
+/**
+ * Moderation tags enable interface providers to co-ordinate moderation efforts
+ * on-chain and provides a method for discretion to be provided
+ * to displaying content, based on the governance addresses subscribed to by the 
+ * viewing user.
+ */
 void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
 { try {
    FC_ASSERT( fc::is_utf8( o.details ), "Details must be UTF-8" );
@@ -3954,13 +4043,15 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       "Account must be a board moderator or governance account to create moderation tag." );
    FC_ASSERT( o.rating >= comment.rating,  
       "Moderation Tag rating ${n} should be equal to or greater than author's rating ${r}.", ("n", o.rating)("r", comment.rating) );
-   const auto& mod_idx = _db.get_index< moderator_tag_index >().indices().get< by_moderator_comment >();
+   const auto& mod_idx = _db.get_index< moderation_tag_index >().indices().get< by_moderator_comment >();
    auto itr = mod_idx.find( boost::make_tuple( o.moderator, comment.id ) );
    time_point now = _db.head_block_time();
 
    if( itr != mod_idx.end() )     // Creating new moderation tag.
    {
-      FC_ASSERT( o.applied, "Moderation tag does not exist, Applied should be set to true to create new moderation tag.");
+      FC_ASSERT( o.applied, 
+         "Moderation tag does not exist, Applied should be set to true to create new moderation tag.");
+
       _db.create< moderation_tag_object >( [&]( moderation_tag_object& mto )
       {
          mto.moderator = moderator.name;
@@ -3990,9 +4081,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       else    // deleting moderation tag
       {
          _db.remove( *itr );
-
       }
-      
    }
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
@@ -4013,10 +4102,12 @@ void board_create_evaluator::do_apply( const board_create_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& founder = _db.get_account( o.founder ); 
-   time_point now = _db.get_head_block_time();
-   FC_ASSERT( now > founder.last_board_created + MIN_BOARD_CREATE_INTERVAL, "Founders can only create one board per day." );
+   time_point now = _db.head_block_time();
+   FC_ASSERT( now > founder.last_board_created + MIN_BOARD_CREATE_INTERVAL, 
+      "Founders can only create one board per day." );
    const board_object* board_ptr = _db.find_board( o.name ); 
-   FC_ASSERT( board_ptr == nullptr, "Board with the name: ${n} already exists.", ("n", o.name) );
+   FC_ASSERT( board_ptr == nullptr, 
+      "Board with the name: ${n} already exists.", ("n", o.name) );
 
    _db.create< board_object >( [&]( board_object& bo )
    {
@@ -4035,7 +4126,7 @@ void board_create_evaluator::do_apply( const board_create_operation& o )
       bo.last_root_post = now;
    });
 
-   _db.create< board_member_object >( [&]( board_member_object& bmo )
+   const board_member_object& new_board_member = _db.create< board_member_object >( [&]( board_member_object& bmo )
    {
       bmo.name = o.name;
       bmo.founder = founder.name;
@@ -4044,6 +4135,17 @@ void board_create_evaluator::do_apply( const board_create_operation& o )
       bmo.moderators.insert(founder.name);
       bmo.administrators.insert(founder.name);
    });
+
+   _db.create< board_moderator_vote_object>( [&]( board_moderator_vote_object& v )
+   {
+      v.moderator = founder.name;
+      v.account = founder.name;
+      v.board = o.name;
+      v.vote_rank = 1;
+   });
+
+   _db.update_board_moderators( new_board_member );
+
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
 
@@ -4059,7 +4161,7 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
    }
    const board_object& board = _db.get_board( o.board ); 
    const account_object& account = _db.get_account( o.account );
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    FC_ASSERT( now > board.last_board_update + MIN_BOARD_UPDATE_INTERVAL, "Boards can only be updated once per 10 minutes." );
    const board_member_object& board_member = _db.get_board_member( o.board );
    FC_ASSERT( board_member.is_administrator(account.name), "Only administrators of the board can update it.");
@@ -4302,7 +4404,7 @@ void board_transfer_ownership_evaluator::do_apply( const board_transfer_ownershi
    const board_object& board = _db.get_board( o.board ); 
    const account_object& account = _db.get_account( o.account ); 
    const account_object& new_founder = _db.get_account( o.new_founder );
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    const board_member_object& board_member = _db.get_board_member( o.board );
    FC_ASSERT( board.founder == account.name), "Only the founder of the board can transfer ownership.");
    FC_ASSERT( board_member.founder == account.name), "Only the founder of the board can transfer ownership.");
@@ -4339,7 +4441,7 @@ void board_join_request_evaluator::do_apply( const board_join_request_operation&
       "Account: ${a} is already a member of the board: ${b}.", ("a", o.account)("b", o.board)); 
    FC_ASSERT( board_member.is_authorised_request( account.name ), 
       "Account: ${a} is not authorised to request to join the board: ${b}.", ("a", o.account)("b", o.board));
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    const auto& req_idx = _db.get_index< board_join_request_index >().indices().get< by_account_board >();
    auto itr = req_idx.find( std::make_tuple( o.account, o.board ) );
 
@@ -4382,7 +4484,7 @@ void board_join_invite_evaluator::do_apply( const board_join_invite_operation& o
    FC_ASSERT( board_member.is_authorized_invite( account.name, board ), 
       "Account: ${a} is not authorised to send board: ${b} join invitations.", ("a", o.account)("b", o.board));
    
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    const auto& key_idx = _db.get_index< board_member_key_index >().indices().get< by_member_board >();
    const auto& inv_idx = _db.get_index< board_join_invite_index >().indices().get< by_member_board >();
    auto inv_itr = inv_idx.find( std::make_tuple( o.member, o.board ) );
@@ -4659,7 +4761,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    const account_object& author = _db.get_account( o.author );
 
    const auto& creative_idx = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
@@ -4722,7 +4824,7 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
       const account_object& agent = _db.get_account( agent );
    }
 
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
 
    const auto& campaign_idx = _db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
    auto campaign_itr = campaign_idx.find( boost::make_tuple( author.name, o.campaign_id ) );
@@ -4819,7 +4921,7 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
       const account_object& agent = _db.get_account( agent );
    }
 
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
 
    const auto& inventory_idx = _db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
    auto inventory_itr = inventory_idx.find( boost::make_tuple( author.name, o.inventory_id ) );
@@ -4895,7 +4997,7 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
       const account_object& member = _db.get_account( account );
    }
 
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
 
    const auto& audience_idx = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
    auto audience_itr = audience_idx.find( boost::make_tuple( author.name, o.audience_id ) );
@@ -4963,7 +5065,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    const ad_campaign_object& campaign = _db.get_ad_campaign( account.name, o.campaign_id );
    const ad_inventory_object& inventory = _db.get_ad_inventory( provider.name, o.inventory_id );
 
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
 
    FC_ASSERT( now < o.expiration, 
       "Bid expiration time has to be in the future." );
@@ -5163,7 +5265,7 @@ void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
    FC_ASSERT( campaign.is_agent( bidder.name ), 
       "Bidder account is no longer an agent of the campaign, bid is invalid for delivery.");
 
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    asset_symbol_type bid_asset = bid.bid_price.symbol;
    asset_symbol_type delivery_asset = o.delivery_price.symbol;
 
@@ -5349,6 +5451,42 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
    }
 
    FC_ASSERT( _db.get_liquid_balance( from_account.name, o.amount.symbol ) >= o.amount, "Account does not have sufficient funds for transfer." );
+
+   vector<string> part; 
+   part.reserve(4);
+   auto path = o.memo;
+   boost::split( part, path, boost::is_any_of("/") );
+   if( part.size() > 1 && part[0].size() && part[0][0] == '@' )      // find memo reference to comment, add transfer to payments received.
+   {
+      auto acnt = part[0].substr(1);
+      auto perm = part[1];
+
+      auto comment_ptr = _db.find_comment( acnt, perm );
+      if( comment_ptr != nullptr )
+      {
+         const comment_object& comment = *comment_ptr;
+         
+         _db.modify( comment, [&]( comment_object& co )
+         {
+            if( co.payments_received[ o.from ].size() )
+            {
+               if( co.payments_received[ o.from ][ o.amount.symbol ].size() )
+               {
+                  co.payments_received[ o.from ][ o.amount.symbol ] += o.amount;
+               }
+               else
+               {
+                  co.payments_received[ o.from ][ o.amount.symbol ] = o.amount;
+               }
+            }
+            else
+            {
+               co.payments_received[ o.from ][ o.amount.symbol ] = o.amount;
+            }
+         });
+      }
+   }
+
    _db.adjust_liquid_balance( from_account.name, -o.amount );
    _db.adjust_liquid_balance( to_account.name, o.amount );
 } FC_CAPTURE_AND_RETHROW( (o)) }
@@ -5368,7 +5506,7 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
    const account_object& from_account = _db.get_account(o.from);
    const account_object& to_account = _db.get_account(o.to);
    const asset_object& asset = _db.get_asset(o.amount.symbol);
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions(o.to);
    FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), "Transfer is not authorized, due to recipient account's asset permisssions" );
    const account_permission_object& from_account_permissions = _db.get_account_permissions(o.from);
@@ -5422,7 +5560,7 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
    const account_object& from_account = _db.get_account(o.from);
    const account_object& to_account = _db.get_account(o.to);
    const asset_object& asset = _db.get_asset(o.amount.symbol);
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
 
    const account_permission_object& to_account_permissions = _db.get_account_permissions(o.to);
    FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), "Transfer is not authorized, due to recipient account's asset permisssions" );
@@ -5462,7 +5600,7 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
    const account_object& from_account = _db.get_account(o.from);
    const account_object& to_account = _db.get_account(o.to);
    const asset_object& asset = _db.get_asset(o.amount.symbol);
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
 
    const account_permission_object& to_account_permissions = _db.get_account_permissions(o.to);
    FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), "Transfer is not authorized, due to recipient account's asset permisssions" );
@@ -5526,7 +5664,7 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const asset_object& asset = _db.get_asset(o.amount.symbol);
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
 
    const account_permission_object& to_account_permissions = _db.get_account_permissions(o.to);
    FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), 
@@ -5593,7 +5731,7 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
    const account_object& to_account = _db.get_account( o.to );
    const transfer_recurring_request_object& request = _db.get_transfer_recurring_request( to_account.name, o.request_id );
    const asset_object& asset = _db.get_asset( request.amount.symbol );
-   time_point now = _db.get_head_block_time();
+   time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), "Transfer is not authorized, due to recipient account's asset permisssions" );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
@@ -6032,7 +6170,7 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
       {
          obj.delegator = o.delegator;
          obj.amount = delta;
-         obj.expiration = std::max( now + CASHOUT_WINDOW, delegation->min_delegation_time );
+         obj.expiration = std::max( now + CONTENT_REWARD_INTERVAL, delegation->min_delegation_time );
       });
 
       _db.adjust_delegated_balance( delegator_account, -delta); // decrease delegated balance of delegator account

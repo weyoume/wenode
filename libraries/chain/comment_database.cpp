@@ -338,7 +338,8 @@ void fill_comment_reward_context_local_state( util::comment_reward_context& ctx,
 share_type database::distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment )
 { try {
    share_type claimed_reward = 0;
-   time_point now = head_block_time();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
 
    if( comment.net_reward > 0 )
    {
@@ -404,14 +405,14 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
 
    modify( comment, [&]( comment_object& c )
    {
-      if( c.cashouts_received < ( CONTENT_REWARD_DECAY_RATE.to_seconds() / fc::days(1).to_seconds() ) )
+      if( c.cashouts_received < ( props.content_reward_decay_rate.to_seconds() / props.content_reward_interval.to_seconds() ) )
       {
          if( c.net_reward > 0 )   // A payout is only made for positive reward.
          {
             c.cashouts_received++;
             c.last_payout = now;
          }
-         c.cashout_time += fc::days(1);
+         c.cashout_time += props.content_reward_interval;
       }
       else
       {
@@ -450,8 +451,8 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
  */
 void database::process_comment_cashout()
 {
-   const auto& gpo = get_dynamic_global_properties();
-   time_point now = head_block_time();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
    util::comment_reward_context ctx;
    ctx.current_COIN_USD_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_USD).day_median_price;
    vector< share_type > reward_distributed;
@@ -520,18 +521,18 @@ void database::update_comment_metrics()
    // Initialize comment metrics
 
    uint32_t recent_post_count = 0;        
-   uint128_t recent_vote_power = 0;
-   uint128_t recent_view_power = 0;
-   uint128_t recent_share_power = 0;
-   uint128_t recent_comment_power = 0;
-   uint128_t average_vote_power = 0;
-   uint128_t average_view_power = 0;
-   uint128_t average_share_power = 0;
-   uint128_t average_comment_power = 0;
-   uint128_t median_vote_power = 0;
-   uint128_t median_view_power = 0;
-   uint128_t median_share_power = 0;
-   uint128_t median_comment_power = 0;
+   int128_t recent_vote_power = 0;
+   int128_t recent_view_power = 0;
+   int128_t recent_share_power = 0;
+   int128_t recent_comment_power = 0;
+   int128_t average_vote_power = 0;
+   int128_t average_view_power = 0;
+   int128_t average_share_power = 0;
+   int128_t average_comment_power = 0;
+   int128_t median_vote_power = 0;
+   int128_t median_view_power = 0;
+   int128_t median_share_power = 0;
+   int128_t median_comment_power = 0;
    uint32_t recent_vote_count = 0;
    uint32_t recent_view_count = 0;
    uint32_t recent_share_count = 0;
@@ -583,9 +584,9 @@ void database::update_comment_metrics()
       average_comment_count = recent_comment_count / recent_post_count;
 
       // Power Ratios
-      vote_view_ratio = recent_view_power / double( recent_vote_power.to_uint64 );
-      vote_share_ratio = recent_share_power / double( recent_vote_power.to_uint64 );
-      vote_comment_ratio = recent_comment_power / double( recent_vote_power.to_uint64 );
+      vote_view_ratio = double(recent_view_power) / double( recent_vote_power );
+      vote_share_ratio = double(recent_share_power) / double( recent_vote_power);
+      vote_comment_ratio = double(recent_comment_power) / double( recent_vote_power );
 
       // Median count values
       std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
