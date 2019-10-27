@@ -793,6 +793,16 @@ const account_following_object* database::find_account_following( const account_
    return find< account_following_object, by_account >( account );
 }
 
+const tag_following_object& database::get_tag_following( const tag_name_type& tag )const
+{ try {
+	return get< tag_following_object, by_tag >( tag );
+} FC_CAPTURE_AND_RETHROW( (account) ) }
+
+const tag_following_object* database::find_tag_following( const tag_name_type& tag )const
+{
+   return find< tag_following_object, by_tag >( tag );
+}
+
 const account_business_object& database::get_account_business( const account_name_type& account )const
 { try {
 	return get< account_business_object, by_account >( account );
@@ -3111,12 +3121,11 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< reset_account_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< set_reset_account_evaluator              >();
    _my->_evaluator_registry.register_evaluator< change_recovery_account_evaluator        >();
-   _my->_evaluator_registry.register_evaluator< challenge_authority_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< prove_authority_evaluator                >();
    _my->_evaluator_registry.register_evaluator< decline_voting_rights_evaluator          >();
    _my->_evaluator_registry.register_evaluator< connection_request_evaluator             >();
    _my->_evaluator_registry.register_evaluator< connection_accept_evaluator              >();
    _my->_evaluator_registry.register_evaluator< account_follow_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< tag_follow_evaluator                     >();
    _my->_evaluator_registry.register_evaluator< activity_reward_evaluator                >();
 
    // Network Evaluators
@@ -3286,9 +3295,9 @@ void database::initialize_indexes()
    add_core_index< account_following_index                 >(*this);
    add_core_index< account_balance_index                   >(*this);
    add_core_index< account_history_index                   >(*this);
+   add_core_index< tag_following_index                     >(*this);
    add_core_index< connection_index                        >(*this);
    add_core_index< connection_request_index                >(*this);
-   add_core_index< follow_index                            >(*this);
    add_core_index< owner_authority_history_index           >(*this);
    add_core_index< account_recovery_request_index          >(*this);
    add_core_index< change_recovery_account_request_index   >(*this);
@@ -4435,7 +4444,8 @@ void database::clear_expired_operations()
             continue;
          }
          
-         if( max_settlement_volume.symbol != current_asset ) {  // only calculate once per asset
+         if( max_settlement_volume.symbol != current_asset ) // only calculate once per asset
+         {  
             const asset_dynamic_data_object& dyn_data = get_dynamic_data( mia_object.symbol );
             max_settlement_volume = asset( mia_bitasset.max_force_settlement_volume(dyn_data.total_supply), mia_object.symbol );
          }
@@ -4492,7 +4502,8 @@ void database::clear_expired_operations()
          }
          if( mia_bitasset.force_settled_volume != settled.amount )
          {
-            modify(mia_bitasset, [settled](asset_bitasset_data_object& b) {
+            modify(mia_bitasset, [settled](asset_bitasset_data_object& b) 
+            {
                b.force_settled_volume = settled.amount;
             });
          }

@@ -66,11 +66,11 @@ namespace node { namespace protocol {
       FC_ASSERT( body.size() > 0, "Body is empty" );
       FC_ASSERT( fc::is_utf8( body ), "Body not formatted in UTF8" );
 
-      FC_ASSERT( o.title.size() + o.body.size() + o.json.size(), "Cannot update comment because it does not contain content." );
-      FC_ASSERT( o.body.size() < MAX_BODY_SIZE, "Comment rejected: Body size is too large",("Body.size", o.body.size() ) );
-      FC_ASSERT( o.media.size() < MAX_BODY_SIZE, "Comment rejected: Media size is too large",("Media.size", o.media.size() ) );
-      FC_ASSERT( o.json.size() < MAX_BODY_SIZE, "Comment rejected: Body size is too large",("JSON.size", o.json.size() ) );
-      FC_ASSERT( fc::is_utf8( o.json ), "Comment rejected: JSON is not valid UTF8");
+      FC_ASSERT( body.size() + json.size(), "Cannot update comment because it does not contain content." );
+      FC_ASSERT( body.size() < MAX_BODY_SIZE, "Comment rejected: Body size is too large",("Body.size", body.size() ) );
+      FC_ASSERT( media.size() < MAX_BODY_SIZE, "Comment rejected: Media size is too large",("Media.size", media.size() ) );
+      FC_ASSERT( json.size() < MAX_BODY_SIZE, "Comment rejected: Body size is too large",("JSON.size", json.size() ) );
+      FC_ASSERT( fc::is_utf8( json ), "Comment rejected: JSON is not valid UTF8");
 
       if( parent_author.size() )
          validate_account_name( parent_author );
@@ -127,18 +127,6 @@ namespace node { namespace protocol {
       validate_permlink( permlink );
       for( auto& e : extensions )
          e.visit( comment_options_extension_validate_visitor() );
-   }
-
-   void challenge_authority_operation::validate()const
-    {
-      validate_account_name( challenger );
-      validate_account_name( challenged );
-      FC_ASSERT( challenged != challenger, "cannot challenge yourself" );
-   }
-
-   void prove_authority_operation::validate()const
-   {
-      validate_account_name( challenged );
    }
 
    void vote_operation::validate() const

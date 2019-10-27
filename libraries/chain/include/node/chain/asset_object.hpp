@@ -50,7 +50,7 @@ namespace node { namespace chain {
 
          id_type                               id; 
 
-         asset_symbol_type                     symbol;                 // Ticker symbol string for this asset.
+         asset_symbol_type                     symbol;                 // Consensus enforced unique Ticker symbol string for this asset. 
 
          asset_types                           asset_type;             // The type of the asset.
          
@@ -338,7 +338,7 @@ namespace node { namespace chain {
 
          asset                      dividend_pool = asset(0,SYMBOL_USD);  // Amount of assets pooled for distribution at the next interval
          
-         time_point                 last_dividend;                        // Time that the asset was last updated
+         time_point                 last_dividend;                        // Time that the asset last distributed a dividend.
 
          void adjust_pool(const asset& delta)
          {

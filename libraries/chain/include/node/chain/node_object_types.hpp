@@ -28,6 +28,7 @@ using node::protocol::chain_id_type;
 using node::protocol::account_name_type;
 using node::protocol::asset_symbol_type;
 using node::protocol::board_name_type;
+using node::protocol::tag_name_type;
 using node::protocol::share_type;
 
 typedef bip::basic_string< char, std::char_traits< char >, allocator< char > > shared_string;
@@ -63,9 +64,9 @@ enum object_type
    account_following_object_type,
    account_balance_object_type,
    account_history_object_type,
+   tag_following_object_type,
    connection_object_type,
    connection_request_object_type,
-   follow_object_type,
    owner_authority_history_object_type,
    account_recovery_request_object_type,
    change_recovery_account_request_object_type,
@@ -189,9 +190,9 @@ class account_permission_object;
 class account_following_object;
 class account_balance_object;
 class account_history_object;
+class tag_following_object;
 class connection_object;
 class connection_request_object;
-class follow_object;
 class owner_authority_history_object;
 class account_recovery_request_object;
 class change_recovery_account_request_object;
@@ -313,9 +314,9 @@ typedef oid< account_permission_object              > account_permission_id_type
 typedef oid< account_following_object               > account_following_id_type;
 typedef oid< account_balance_object                 > account_balance_id_type;
 typedef oid< account_history_object                 > account_history_id_type;
+typedef oid< tag_following_object                   > tag_following_id_type;
 typedef oid< connection_object                      > connection_id_type;
 typedef oid< connection_request_object              > connection_request_id_type;
-typedef oid< follow_object                          > follow_id_type;
 typedef oid< owner_authority_history_object         > owner_authority_history_id_type;
 typedef oid< account_recovery_request_object        > account_recovery_request_id_type;
 typedef oid< change_recovery_account_request_object > change_recovery_account_request_id_type;
@@ -510,9 +511,9 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (account_following_object_type)
          (account_balance_object_type)
          (account_history_object_type)
+         (tag_following_object_type)
          (connection_object_type)
          (connection_request_object_type)
-         (follow_object_type)
          (owner_authority_history_object_type)
          (account_recovery_request_object_type)
          (change_recovery_account_request_object_type)

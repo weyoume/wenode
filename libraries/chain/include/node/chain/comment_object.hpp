@@ -57,17 +57,21 @@ namespace node { namespace chain {
 
          post_types                     post_type;                    // The type of post that is being created, image, text, article, video etc. 
 
-         board_name_type                board;                        // The name of the board to which the post is uploaded to.
+         bool                           privacy;                      // True if the post is encrypted. False if it is plaintext.
 
-         flat_set< shared_string >      tags;                         // Set of string tags for sorting the post by
+         public_key_type                public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
+
+         feed_types                     reach;                        // The reach of the post across followers, connections, friends and companions
+
+         board_name_type                board;                        // The name of the board to which the post is uploaded to. Null string if no board. 
+
+         flat_set< tag_name_type >      tags;                         // Set of string tags for sorting the post by.
 
          shared_string                  body;                         // String containing text for display when the post is opened.
 
          shared_string                  ipfs;                         // String containing a display image or video file as an IPFS file hash.
 
          shared_string                  magnet;                       // String containing a bittorrent magnet link to a file swarm.
-
-         connection_types               privacy;                      // Type of privacy setting for encryption levels to connections.
 
          account_name_type              interface;                    // Name of the interface account that was used to broadcast the transaction and view the post.
 
@@ -143,11 +147,11 @@ namespace node { namespace chain {
 
          share_type                     percent_liquid = PERCENT_100;
 
-         uint128_t                      reward = 0;         // The amount of reward_curve this comment is responsible for in its root post.
+         uint128_t                      reward = 0;                   // The amount of reward_curve this comment is responsible for in its root post.
 
-         uint128_t                      weight = 0;         // Used to define the comment curation reward this comment receives.
+         uint128_t                      weight = 0;                   // Used to define the comment curation reward this comment receives.
 
-         uint128_t                      max_weight = 0;     // Used to define relative contribution of this comment to rewards.
+         uint128_t                      max_weight = 0;               // Used to define relative contribution of this comment to rewards.
 
          asset                          max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISON, SYMBOL_USD );       // USD value of the maximum payout this post will receive
 
@@ -165,17 +169,19 @@ namespace node { namespace chain {
 
          uint32_t                       moderator_reward_percent = MODERATOR_REWARD_PERCENT;
 
-         bool                           allow_replies = true;      // allows a post to recieve replies
+         bool                           allow_replies = true;               // allows a post to recieve replies.
 
-         bool                           allow_votes = true;      // allows a post to receive votes
+         bool                           allow_votes = true;                 // allows a post to receive votes.
 
-         bool                           allow_views = true;      // allows a post to receive views
+         bool                           allow_views = true;                 // allows a post to receive views.
 
-         bool                           allow_shares = true;      // allows a post to receive shares
+         bool                           allow_shares = true;                // allows a post to receive shares.
 
-         bool                           allow_curation_rewards = true;      // Allows a post to distribute curation rewards
+         bool                           allow_curation_rewards = true;      // Allows a post to distribute curation rewards.
 
-         bool                           root = true;             // True if post is a root post. 
+         bool                           root = true;                        // True if post is a root post. 
+
+         bool                           deleted = false;                    // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
 
          bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;
 
@@ -215,7 +221,8 @@ namespace node { namespace chain {
 
    /**
     * Feed objects are used to hold the posts that have been posted or shared by the 
-    * accounts that a user follows or is connected with.
+    * accounts that a user follows or is connected with, the boards that they follow, or
+    * the tags that they follow. 
     */
    class feed_object : public object< feed_object_type, feed_object >
    {
@@ -230,25 +237,27 @@ namespace node { namespace chain {
 
          id_type                          id;
 
-         account_name_type                account;
+         account_name_type                account;               // Account that should see comment in their feed.
 
-         vector< account_name_type >      shared_by;
+         comment_id_type                  comment;               // ID of comment being shared
 
-         feed_types                       feed_type;
+         feed_types                       feed_type;             // Type of feed, follow, connection, board, tag etc. 
 
-         account_name_type                first_shared_by;
+         vector< account_name_type >      shared_by;             // Vector of all accounts that have shared the comment.
 
-         time_point                       first_shared_on;
+         vector< board_name_type >        boards;                // Vector of all boards that the comment has been shared with
 
-         comment_id_type                  comment;
+         vector< tag_name_type >          tags;                  // Vector of all tags that the comment has been shared with
 
-         uint32_t                         shares;
+         account_name_type                first_shared_by;       // First account that shared the comment with account. 
 
-         uint32_t                         account_feed_id = 0;
+         uint32_t                         shares;                // Number of accounts that have shared the comment with account.
+
+         time_point                       feed_time;             // Time that the comment was added or last shared with account. 
    };
 
    /**
-    * Blog objects hold posts that are shared or posted by a particular account
+    * Blog objects hold posts that are shared or posted by a particular account.
     */
    class blog_object : public object< blog_object_type, blog_object >
    {
@@ -445,7 +454,8 @@ namespace node { namespace chain {
 
 
    /**
-    *  This object gets updated once per hour, on the hour.
+    * This object gets updated once per hour, with current average and median statistics of all posts on the network.
+    * Used for tag object sorting equalization formulae and network monitoring.
     */
    class comment_metrics_object  : public object< comment_metrics_object_type, comment_metrics_object >
    {
@@ -462,61 +472,61 @@ namespace node { namespace chain {
 
          uint32_t                recent_post_count = 0;        // Number of root posts in the last 30 days, rolling average.
 
-         int128_t                recent_vote_power = 0;
+         int128_t                recent_vote_power = 0;        // Sum of vote power for all posts in last 30 days
 
-         int128_t                recent_view_power = 0;
+         int128_t                recent_view_power = 0;        // Sum of view power for all posts in last 30 days
 
-         int128_t                recent_share_power = 0;
+         int128_t                recent_share_power = 0;       // Sum of share power for all posts in last 30 days
 
-         int128_t                recent_comment_power = 0;
+         int128_t                recent_comment_power = 0;     // Sum of comment power for all posts in last 30 days
 
-         int128_t                average_vote_power = 0;
+         int128_t                average_vote_power = 0;       // Recent vote power / recent post count
 
-         int128_t                average_view_power = 0;
+         int128_t                average_view_power = 0;       // Recent view power / recent post count
 
-         int128_t                average_share_power = 0;
+         int128_t                average_share_power = 0;      // Recent share power / recent post count
 
-         int128_t                average_comment_power = 0;
+         int128_t                average_comment_power = 0;    // Recent comment power / recent post count
 
-         int128_t                median_vote_power = 0;
+         int128_t                median_vote_power = 0;        // Vote power of the post ranked for vote power at position recent_post_count / 2
 
-         int128_t                median_view_power = 0;
+         int128_t                median_view_power = 0;        // View power of the post ranked for view power at position recent_post_count / 2
 
-         int128_t                median_share_power = 0;
+         int128_t                median_share_power = 0;       // Share power of the post ranked for share power at position recent_post_count / 2
 
-         int128_t                median_comment_power = 0;
+         int128_t                median_comment_power = 0;     // Comment power of the post ranked for comment power at position recent_post_count / 2
 
-         uint32_t                recent_vote_count = 0;
+         uint32_t                recent_vote_count = 0;        // Sum of net_votes for all posts in last 30 days
 
-         uint32_t                recent_view_count = 0;
+         uint32_t                recent_view_count = 0;        // Sum of view_count for all posts in last 30 days
 
-         uint32_t                recent_share_count = 0;
+         uint32_t                recent_share_count = 0;       // Sum of share_count for all posts in last 30 days  
 
-         uint32_t                recent_comment_count = 0;
+         uint32_t                recent_comment_count = 0;     // Sum of children for all posts in last 30 days
 
-         uint32_t                average_vote_count = 0;
+         uint32_t                average_vote_count = 0;       // Recent vote count / recent post count
 
-         uint32_t                average_view_count = 0;
+         uint32_t                average_view_count = 0;       // Recent view count / recent post count
 
-         uint32_t                average_share_count = 0;
+         uint32_t                average_share_count = 0;      // Recent share count / recent post count
 
-         uint32_t                average_comment_count = 0;
+         uint32_t                average_comment_count = 0;    // Recent comment count / recent post count
 
-         uint32_t                median_vote_count = 0;
+         uint32_t                median_vote_count = 0;        // Vote count of the post ranked for vote count at position recent_post_count / 2
 
-         uint32_t                median_view_count = 0;
+         uint32_t                median_view_count = 0;        // View count of the post ranked for view count at position recent_post_count / 2
 
-         uint32_t                median_share_count = 0;
+         uint32_t                median_share_count = 0;       // Share count of the post ranked for share count at position recent_post_count / 2
 
-         uint32_t                median_comment_count = 0;
+         uint32_t                median_comment_count = 0;     // Comment count of the post ranked for comment count at position recent_post_count / 2
 
-         double                  vote_view_ratio = 0;
+         double                  vote_view_ratio = 0;          // recent view power / recent vote power ratio
 
-         double                  vote_share_ratio = 0;
+         double                  vote_share_ratio = 0;         // recent share power / recent vote power ratio
 
-         double                  vote_comment_ratio = 0;
+         double                  vote_comment_ratio = 0;       // recent comment power / recent vote power ration
 
-         time_point              last_update;
+         time_point              last_update;                  // Time of last metrics update
    };
 
 
@@ -648,42 +658,92 @@ namespace node { namespace chain {
       allocator< comment_share_object >
    > comment_share_index;
 
-   struct by_feed;
-   struct by_old_feed;
-   struct by_account;
+   struct by_new_account_type;
+   struct by_old_account_type;
+   struct by_new_account;
+   struct by_old_account;
+   struct by_account_comment_type;
    struct by_comment;
 
    typedef multi_index_container<
       feed_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< feed_object, feed_id_type, &feed_object::id > >,
-         ordered_unique< tag< by_feed >,
+         ordered_unique< tag< by_new_account_type >,
             composite_key< feed_object,
                member< feed_object, account_name_type, &feed_object::account >,
-               member< feed_object, uint32_t, &feed_object::account_feed_id >
-            >,
-            composite_key_compare< std::less< account_name_type >, std::greater< uint32_t > >
-         >,
-         ordered_unique< tag< by_old_feed >,
-            composite_key< feed_object,
-               member< feed_object, account_name_type, &feed_object::account >,
-               member< feed_object, uint32_t, &feed_object::account_feed_id >
-            >,
-            composite_key_compare< std::less< account_name_type >, std::less< uint32_t > >
-         >,
-         ordered_unique< tag< by_account >,
-            composite_key< feed_object,
-               member< feed_object, account_name_type, &feed_object::account >,
+               member< feed_object, feed_types, &feed_object::feed_type >,
+               member< feed_object, time_point, &feed_object::feed_time >,
                member< feed_object, feed_id_type, &feed_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< feed_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< feed_types >, 
+               std::greater< time_point >,   // Newest feeds first
+               std::less< feed_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_old_account_type >,
+            composite_key< feed_object,
+               member< feed_object, account_name_type, &feed_object::account >,
+               member< feed_object, feed_types, &feed_object::feed_type >,
+               member< feed_object, time_point, &feed_object::feed_time >,
+               member< feed_object, feed_id_type, &feed_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< feed_types >, 
+               std::less< time_point >,     // Oldest feeds first
+               std::less< feed_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_new_account >,
+            composite_key< feed_object,
+               member< feed_object, account_name_type, &feed_object::account >,
+               member< feed_object, time_point, &feed_object::feed_time >,
+               member< feed_object, feed_id_type, &feed_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< time_point >,     // Newest feeds first
+               std::less< feed_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_new_account >,
+            composite_key< feed_object,
+               member< feed_object, account_name_type, &feed_object::account >,
+               member< feed_object, time_point, &feed_object::feed_time >,
+               member< feed_object, feed_id_type, &feed_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< time_point >,     // Oldest feeds first
+               std::less< feed_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_account_comment_type >,
+            composite_key< feed_object,
+               member< feed_object, account_name_type, &feed_object::account >,
+               member< feed_object, comment_id_type, &feed_object::comment >,
+               member< feed_object, feed_types, &feed_object::feed_type >,
+               member< feed_object, feed_id_type, &feed_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< feed_types >, 
+               std::less< comment_id_type >, 
+               std::less< feed_id_type > 
+            >
          >,
          ordered_unique< tag< by_comment >,
             composite_key< feed_object,
                member< feed_object, comment_id_type, &feed_object::comment >,
-               member< feed_object, account_name_type, &feed_object::account >
+               member< feed_object, feed_id_type, &feed_object::id >
             >,
-            composite_key_compare< std::less< comment_id_type >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::less< feed_id_type > 
+            >
          >
       >,
       allocator< feed_object >

@@ -396,12 +396,6 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       {
          acc.companion_public_key = o.companion_public_key;
       }
-            
-      if( ( o.active || o.owner ) && acc.active_challenged )
-      {
-         acc.active_challenged = false;
-         acc.last_active_proved = now;
-      }
 
       acc.last_account_update = now;
 
@@ -1423,79 +1417,6 @@ void change_recovery_account_evaluator::do_apply( const change_recovery_account_
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 
-void challenge_authority_evaluator::do_apply( const challenge_authority_operation& o )
-{ try {
-   const account_name_type& signed_for = o.challenger;
-   if( o.signatory != signed_for )
-   {
-      const account_object& signatory = _db.get_account( o.signatory );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_executive( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const account_object& challenged = _db.get_account( o.challenged );
-   const account_object& challenger = _db.get_account( o.challenger );
-   time_point now = _db.head_block_time();
-
-   if( o.require_owner )
-   {
-      FC_ASSERT( challenged.reset_account == o.challenger, "Owner authority can only be challenged by its reset account." );
-      FC_ASSERT( _db.get_liquid_balance(challenger, SYMBOL_COIN) >= OWNER_CHALLENGE_FEE );
-      FC_ASSERT( !challenged.owner_challenged );
-      FC_ASSERT( now - challenged.last_owner_proved > OWNER_CHALLENGE_COOLDOWN );
-
-      _db.adjust_liquid_balance( challenger, - OWNER_CHALLENGE_FEE );
-      _db.ajust_staked_balance( o.challenged, OWNER_CHALLENGE_FEE );
-
-      _db.modify( challenged, [&]( account_object& a )
-      {
-         a.owner_challenged = true;
-      });
-  }
-  else
-  {
-      FC_ASSERT( _db.get_liquid_balance(challenger, SYMBOL_COIN) >= ACTIVE_CHALLENGE_FEE, "Account does not have sufficient funds to pay challenge fee." );
-      FC_ASSERT( !( challenged.owner_challenged || challenged.active_challenged ), "Account is already challenged." );
-      FC_ASSERT( now - challenged.last_active_proved > ACTIVE_CHALLENGE_COOLDOWN, "Account cannot be challenged because it was recently challenged." );
-
-      _db.adjust_liquid_balance( challenger, - ACTIVE_CHALLENGE_FEE );
-      _db.adjust_staked_balance( o.challenged, ACTIVE_CHALLENGE_FEE );
-
-      _db.modify( challenged, [&]( account_object& a )
-      {
-         a.active_challenged = true;
-      });
-  }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
-
-void prove_authority_evaluator::do_apply( const prove_authority_operation& o )
-{ try {
-   const account_name_type& signed_for = o.challenged;
-   if( o.signatory != signed_for )
-   {
-      const account_object& signatory = _db.get_account( o.signatory );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_executive( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   time_point now = _db.head_block_time();
-   const account_object& challenged = _db.get_account( o.challenged );
-   FC_ASSERT( challenged.owner_challenged || challenged.active_challenged, "Account is not challeneged. No need to prove authority." );
-
-   _db.modify( challenged, [&]( account_object& a )
-   {
-      a.active_challenged = false;
-      a.last_active_proved = now;
-      if( o.require_owner )
-      {
-         a.owner_challenged = false;
-         a.last_owner_proved = now;
-      }
-   });
-} FC_CAPTURE_AND_RETHROW( (o) ) }
-
-
 void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_operation& o )
 {
    FC_ASSERT(o.decline = true, 
@@ -1769,7 +1690,10 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 /**
- * TODO: Blog object removal on unfollow, feed object removal on unfollow, split ignore into seperate operation
+ * Enables an account to follow another account by adding it to
+ * the account's following object. 
+ * Additionally allows for filtering accounts from interfaces. 
+ * TODO: Feed object adding on follow, and removal on unfollow, 
  */
 void account_follow_evaluator::do_apply( const account_follow_operation& o )
 { try {
@@ -1781,89 +1705,173 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& follower = _db.get_account(o.follower);
-   const account_object& following = _db.get_account(o.following);
-   const account_following_object& follower_set = _db.find_account_following(o.follower);
-   const account_following_object& following_set = _db.find_account_following(o.following);
+   const account_object& follower = _db.get_account( o.follower );
+   const account_object& following = _db.get_account( o.following );
+   const account_following_object& follower_set = _db.find_account_following( o.follower );
+   const account_following_object& following_set = _db.find_account_following( o.following );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( o.follower != o.following, "Account cannot follow itself" );
-   FC_ASSERT( o.details.size() <= MAX_STRING_LENGTH, "Details are too long" );
+   FC_ASSERT( o.follower != o.following, 
+      "Account cannot follow itself" );
 
-   const auto& follow_idx = _db.get_index< follow_index >().indices().get< by_follower >();
-   auto follow_itr = follow_idx.find( boost::make_tuple( follower.name, following.name) );
-   auto mutual_itr = follow_idx.find( boost::make_tuple( following.name, follower.name) );
-   bool mutual = (mutual_itr == follow_idx.end());
-
-   if(follow_itr == follow_idx.end() )  // No existing follow, creating new follow
+   if( o.added )
    {
-      FC_ASSERT( o.followed == true), "Follow does not exist, user must select to follow.";
-      _db.create<follow_object>( [&]( follow_object& fo ) 
-      {
-         fo.follower = o.follower.name;
-         fo.following = o.following.name;
-         from_string( fo.details, o.details );
-         fo.created = now;
-      });
-
-      _db.modify( following, [&]( account_object& ao ) 
-      {
-         ao.follower_count++;
-      });
-      
-      _db.modify( follower_set, [&]( account_following_object& afo ) 
-      {
-         afo.following.insert(following.name);
-         if(mutual)
-         {
-            afo.mutual_followers.insert(following.name)
-         }
-      });
-      
-      _db.modify( following_set, [&]( account_following_object& afo ) 
-      {
-         afo.followers.insert(follower.name);
-         if(mutual)
-         {
-            afo.mutual_followers.insert(follower.name)
-         }
-      });
-   }
-   else    // Edit existing follow or unfollowing
-   {
-      if( o.followed )    // Editing exsiting follow
-      {
-         const follow_object& follow = *follow_itr;
-         _db.modify( follow, [&]( follow_object& fo ) 
-         {
-            from_string( fo.details, o.details );
-         });
-         
-      }
-      else    // Unfollowing
+      if( o.followed )    // Creating new follow relation
       {
          _db.modify( follower_set, [&]( account_following_object& afo ) 
          {
-            afo.following.erase(following.name);
-            afo.mutual_followers.erase(following.name);
+            afo.add_following( following.name );
+            afo.last_update = now;
          });
          
          _db.modify( following_set, [&]( account_following_object& afo ) 
          {
-            afo.followers.erase(follower.name);
-            afo.mutual_followers.erase(following.name);
+            afo.add_follower( follower.name );
+            afo.last_update = now;
          });
 
-         _db.modify( following, [&]( account_object& ao ) 
+         _db.modify( following, [&]( account_object& a ) 
          {
-            ao.follower_count--;
+            a.follower_count++;
+         }); 
+      }  
+      else    // Creating new filter relation
+      {
+         FC_ASSERT( !follower_set.is_following( following.name ),
+            "Cannot filter an account that you follow, unfollow first." );
+
+         _db.modify( follower_set, [&]( account_following_object& afo ) 
+         {
+            afo.add_filtered( following.name );
+            afo.last_update = now;
          });
-
-         _db.remove( *follow_itr );
-
       }
    }
+   else
+   {
+      if( o.followed )    // Unfollowing
+      {
+         FC_ASSERT( follower_set.is_following( following.name ),
+            "Cannot unfollow an account that you do not follow." );
+
+         _db.modify( follower_set, [&]( account_following_object& afo ) 
+         {
+            afo.remove_following( following.name );
+            afo.last_update = now;
+         });
+         
+         _db.modify( following_set, [&]( account_following_object& afo ) 
+         {
+            afo.remove_follower( follower.name );
+            afo.last_update = now;
+         });
+
+         _db.modify( following, [&]( account_object& a ) 
+         {
+            a.follower_count--;
+         });
+      }  
+      else        // Unfiltering
+      {
+         FC_ASSERT( follower_set.is_filtered( following.name ),
+            "Cannot unfilter an account that you do not filter." );
+
+         _db.modify( follower_set, [&]( account_following_object& afo ) 
+         {
+            afo.remove_filtered( following.name );
+            afo.last_update = now;
+         });
+      }
+   }
+
+   _db.update_follow_feeds( o.follower ); //todo
+   
 } FC_CAPTURE_AND_RETHROW( (o) ) }
+
+
+
+void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   if( o.signatory != signed_for )
+   {
+      const account_object& signatory = _db.get_account( o.signatory );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   const account_object& follower = _db.get_account( o.follower );
+   const account_following_object& follower_set = _db.find_account_following( o.follower );
+   const tag_following_object& tag_set_ptr = _db.find_tag_following( o.tag );
+   time_point now = _db.head_block_time();
+
+   if( tag_set_ptr != nullptr )    // Tag follow already exists
+   {
+      if( o.added )
+      {
+         if( o.followed )    // Creating new follow relation
+         {
+            _db.modify( follower_set, [&]( account_following_object& afo ) 
+            {
+               afo.add_following( o.tag );
+               afo.last_update = now;
+            });
+            
+            _db.modify( *tag_set_ptr, [&]( tag_following_object& tfo ) 
+            {
+               tfo.add_follower( follower.name );
+               tfo.last_update = now;
+            });
+
+         }  
+         else    // Creating new filter relation
+         {
+            FC_ASSERT( !follower_set.is_following( o.tag ),
+               "Cannot filter a tag that you follow, unfollow first." );
+
+            _db.modify( follower_set, [&]( account_following_object& afo ) 
+            {
+               afo.add_filtered( o.tag );
+               tfo.last_update = now;
+            });
+         }
+      }
+      else
+      {
+         if( o.followed )    // Unfollowing the tag
+         {
+            FC_ASSERT( follower_set.is_following( o.tag ),
+               "Cannot unfollow a tag that you do not follow." );
+
+            _db.modify( follower_set, [&]( account_following_object& afo ) 
+            {
+               afo.remove_following( o.tag );
+               tfo.last_update = now;
+            });
+            
+            _db.modify( *tag_set_ptr, [&]( tag_following_object& tfo ) 
+            {
+               afo.remove_follower( follower.name );
+               tfo.last_update = now;
+            });
+         }  
+         else        // Unfiltering
+         {
+            FC_ASSERT( follower_set.is_filtered( o.tag ),
+               "Cannot unfilter a tag that you do not filter." );
+
+            _db.modify( follower_set, [&]( account_following_object& afo ) 
+            {
+               afo.remove_filtered( o.tag );
+            });
+         }
+      }
+   }
+
+   _db.update_tag_feeds( o.follower ); // todo
+   
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
 
 
 void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
@@ -2957,8 +2965,9 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
 
 
 /**
- * Creates a new comment object, or edits an existing object with new details
- * comment must be created in a board that the user has the ability to access.
+ * Creates a new comment object, or edits an existing object with new details.
+ * Comments made within a board must be created in a board that the user has the 
+ * permission to author a post in. 
 */
 void comment_evaluator::do_apply( const comment_operation& o )
 { try {
@@ -2975,15 +2984,131 @@ void comment_evaluator::do_apply( const comment_operation& o )
    const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
    auto itr = by_permlink_idx.find( boost::make_tuple( o.author, o.permlink ) );
    const account_object& auth = _db.get_account( o.author );
-   const board_object& board = _db.get_board( o.board );
    const interface_object& interface = _db.get_interface( o.interface );
-   const board_member_object& board_member = _db.get_board_member(o.board);
+   const board_object* board_ptr = nullptr;
+
+   if( o.board )     // Board validity and permissioning checks
+   {
+      board_ptr = _db.find_board( o.board );
+
+      FC_ASSERT( board_ptr != nullptr, 
+         "Board Name: ${b} not found.", ("b", o.board ));
+      const board_object& board = *board_ptr;
+      feed_types board_feed_type = BOARD_FEED;
+      const board_member_object& board_member = _db.get_board_member( board.name );
+
+      if( comment.parent == ROOT_POST_PARENT )
+      {
+         FC_ASSERT( board_member.is_authorized_author(o.author, board), 
+            "User ${u} is not authorized to post in the board ${b}.",("b", board.name)("u", auth.name));
+      }
+      else
+      {
+         FC_ASSERT( board_member.is_authorized_interact( o.author, board ), 
+            "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", auth.name));
+      }
+      
+      switch( board.board_type )
+      {
+         case BOARD: 
+            break;
+         case GROUP:
+         {
+            board_feed_type = GROUP_FEED;
+         }
+         break;
+         case EVENT:
+         {
+            board_feed_type = EVENT_FEED;
+         }
+         break;
+         case STORE:
+         {
+            board_feed_type = STORE_FEED;
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, "Invalid board type.");
+         }
+      }
+      
+      switch( board.board_privacy )
+      {
+         case OPEN_BOARD:
+         case PUBLIC_BOARD:
+         {
+            FC_ASSERT( !o.privacy && o.public_key == public_key_type(), 
+               "Posts in Open and Public boards should not be encrypted." );
+         }
+         case PRIVATE_BOARD:
+         case EXCLUSIVE_BOARD:
+         {
+            FC_ASSERT( o.privacy && o.public_key == board.board_public_key, 
+               "Posts in Private and Exclusive Boards must be encrypted with the board public key.");
+            FC_ASSERT( o.reach == board_feed_type, 
+               "Posts in Private and Exclusive Boards should have reach limited to only board level subscribers.");
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, "Invalid Board Privacy type." );
+         }
+         break;
+      }
+   }
+
+   switch( o.reach )
+   {
+      case TAG_FEED:
+      case FOLLOW_FEED:
+      case MUTUAL_FEED:
+      {
+         FC_ASSERT( !o.privacy && o.public_key == public_key_type(), 
+            "Follow, Mutual and Tag level posts should not be encrypted." );
+      }
+      break;
+      case CONNECTION_FEED:
+      {
+         FC_ASSERT( o.privacy && o.public_key == account.connection_public_key, 
+            "Connection level posts must be encrypted with the account's Connection public key." );
+      }
+      break;
+      case FRIEND_FEED:
+      {
+         FC_ASSERT( o.privacy && o.public_key == account.friend_public_key, 
+            "Connection level posts must be encrypted with the account's Friend public key.");
+      }
+      break;
+      case COMPANION_FEED:
+      {
+         FC_ASSERT( o.privacy && o.public_key == account.companion_public_key, 
+            "Connection level posts must be encrypted with the account's Companion public key.");
+      }
+      break;
+      case BOARD_FEED:
+      case GROUP_FEED:
+      case EVENT_FEED:
+      case STORE_FEED:
+      {
+         FC_ASSERT( board_ptr != nullptr, 
+            "Board level posts must be made within a valid board.");
+         FC_ASSERT( o.privacy && o.public_key == board_ptr->board_public_key, 
+            "Board level posts must be encrypted with the board public key.");
+      }
+      break;
+      case NO_FEED:
+      break;
+      default:
+      {
+         FC_ASSERT( false, "Invalid Post Reach Type." );
+      }
+   }
+   
    uint128_t reward = 0;
    uint128_t weight = 0;
+   uint128_t max_weight = 0;
    uint128_t new_comment_power = auth.comment_power;
-
-   FC_ASSERT( !(auth.owner_challenged || auth.active_challenged ), 
-      "Operation cannot be processed because account is currently challenged." );
 
    comment_id_type id;
 
@@ -3006,8 +3131,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          FC_ASSERT( ( now - auth.last_root_post ) > MIN_ROOT_COMMENT_INTERVAL, 
             "You may only post once every 60 seconds.", ("now",now)("last_root_post", auth.last_root_post) );
-         FC_ASSERT( board_member.is_authorized_author(o.author, board), 
-            "User ${u} is not authorized to post in the board ${b}.",("b", board.name)("u", auth.name));
+         
       }    
       else         // Post is a new comment
       {
@@ -3017,8 +3141,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "The parent comment has disabled replies." );
          FC_ASSERT( ( now - auth.last_post) > MIN_REPLY_INTERVAL, 
             "You may only comment once every 15 seconds.", ("now",now)("auth.last_post",auth.last_post) );
-         FC_ASSERT( board_member.is_authorized_interact( o.author, board ), 
-            "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", auth.name));
+         
          FC_ASSERT( parent->comment_paid( o.author ), 
             "User ${u} has not paid the required comment price: ${p} to reply to this post ${c}.",
             ("c", parent->permlink)("u", auth.name)("p", parent->comment_price));
@@ -3049,7 +3172,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
          });
 
          uint128_t new_power = std::max( root.comment_power, uint128_t(0));   // record new net reward after applying comment
-         share_type max_comment_weight = 0;
          bool curation_reward_eligible = reward > 0 && root.cashout_time != fc::time_point::maximum() && root.allow_curation_rewards;
          uint16_t curation_reward_percent = reward_fund.curation_reward_percent;
             
@@ -3079,6 +3201,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             w *= uint128_t(comment_discount_percent);
             w /= PERCENT_100;      // Discount weight exponentially for each successive comment on the post, decaying by 50% per 100 comments.
             weight = w;
+            max_weight = max_comment_weight;
          } 
       }
 
@@ -3108,10 +3231,12 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.rating = o.rating;
          com.board = o.board;
          com.privacy = o.privacy;
+         com.reach = o.reach;
          com.post_type = o.post_type;
          com.author_reputation = auth.author_reputation;
          com.comment_price = o.comment_price;
          com.premium_price = o.premium_price;
+         from_string( com.public_key, o.public_key);
          from_string( com.ipfs, o.ipfs );
          from_string( com.magnet, o.magnet );
          from_string( com.language, o.language );
@@ -3141,6 +3266,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.root_comment = parent->root_comment;
             com.reward = reward;
             com.weight = weight;
+            com.max_weight = max_weight;
          }
       });
 
@@ -3163,7 +3289,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
             parent = nullptr;
          }
       }
-      // Creates blog object for author account
+
+      // Create blog object for author account
       const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_blog >();
       const auto& blog_comment_idx = _db.get_index< blog_index >().indices().get< by_comment >();
       auto next_blog_id = 0;
@@ -3176,7 +3303,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
       auto blog_itr = blog_comment_idx.find( boost::make_tuple( new_comment.id, auth.name ) );
 
-      FC_ASSERT( blog_itr == blog_comment_idx.end(), "Account has already created this post in blog" );
+      FC_ASSERT( blog_itr == blog_comment_idx.end(), 
+         "Account has already created this post in blog" );
       _db.create< blog_object >( [&]( blog_object& b )
       {
          b.account = auth.name;
@@ -3185,98 +3313,136 @@ void comment_evaluator::do_apply( const comment_operation& o )
          b.blog_feed_id = next_blog_id;
       });
 
-      // Create feed objects for author account's followers and connections. 
-      _db.add_comment_to_feeds( auth.name, new_comment.id);
+      // Create feed objects for author account's followers and connections, board followers, and tag followers. 
+      _db.add_comment_to_feeds( new_comment );
 
-      // Create feed objects for the members and subscribers of the board that the post is created in.
-      _db.add_comment_to_board( auth.name, board, new_comment.id);
-
-      _db.modify( board, [&]( board_object& bo )
+      if( board_ptr != nullptr )
       {
-         if ( o.parent_author == ROOT_POST_PARENT )
+         _db.modify( *board_ptr, [&]( board_object& bo )
          {
-            bo.post_count++;
-            bo.last_root_post = now;
-         }
-         else 
-         {
-            bo.comment_count++;
-            
-         }
-         bo.last_post = now;
-      });
+            if ( o.parent_author == ROOT_POST_PARENT )
+            {
+               bo.post_count++;
+               bo.last_root_post = now;
+            }
+            else 
+            {
+               bo.comment_count++;
+            }
+            bo.last_post = now;
+         });
+      }  
    }
-   else // Post found, editing existing post. 
+   else           // Post found, editing or deleting existing post. 
    {
       const comment_object& comment = *itr;
 
-      _db.modify( comment, [&]( comment_object& com )
+      if( !o.deleted )     // Editing post
       {
-         com.last_update = now;
-         com.active = now;
-         com.rating = o.rating;
-         com.board = o.board;
-         com.privacy = o.privacy;
+         feed_types old_reach = comment.reach;
 
-         strcmp_equal equal;
+         _db.modify( comment, [&]( comment_object& com )
+         {
+            com.last_update = now;
+            com.active = now;
+            com.rating = o.rating;
+            com.board = o.board;
+            com.privacy = o.privacy;
+            com.reach = o.reach;
 
-         if( !parent )
-         {
-            FC_ASSERT( com.parent_author == account_name_type(), "The parent of a comment cannot change." );
-            FC_ASSERT( equal( com.parent_permlink, o.parent_permlink ), "The permlink of a comment cannot change." );
-         }
-         else
-         {
-            FC_ASSERT( com.parent_author == o.parent_author, "The parent of a comment cannot change." );
-            FC_ASSERT( equal( com.parent_permlink, o.parent_permlink ), "The permlink of a comment cannot change." );
-         }       
-         if( o.json.size() && fc::is_utf8( o.json ) )
-         {
-            from_string( com.json, o.json );  
-         }
-         if( o.ipfs.size() ) 
-         {
-            from_string( com.ipfs, o.ipfs);
-         } 
-         if( o.magnet.size() ) 
-         {
-            from_string( com.magnet, o.magnet);
-         } 
-         if( o.language.size() ) 
-         {
-            from_string( com.language, o.language);
-         }
-         if( o.body.size() ) 
-         {
-            try 
+            strcmp_equal equal;
+
+            if( !parent )
             {
-               diff_match_patch<std::wstring> dmp;
-               auto patch = dmp.patch_fromText( utf8_to_wstring(o.body) );
-               if( patch.size() ) 
-               {
-                  auto result = dmp.patch_apply( patch, utf8_to_wstring( to_string( com.body ) ) );
-                  auto patched_body = wstring_to_utf8(result.first);
-                  if( !fc::is_utf8( patched_body ) ) 
+               FC_ASSERT( com.parent_author == account_name_type(), 
+                  "The parent of a comment cannot change." );
+               FC_ASSERT( equal( com.parent_permlink, o.parent_permlink ), 
+                  "The permlink of a comment cannot change." );
+            }
+            else
+            {
+               FC_ASSERT( com.parent_author == o.parent_author, "The parent of a comment cannot change." );
+               FC_ASSERT( equal( com.parent_permlink, o.parent_permlink ), "The permlink of a comment cannot change." );
+            }       
+            if( o.json.size() && fc::is_utf8( o.json ) )
+            {
+               from_string( com.json, o.json );  
+            }
+            if( o.ipfs.size() ) 
+            {
+               from_string( com.ipfs, o.ipfs);
+            } 
+            if( o.magnet.size() ) 
+            {
+               from_string( com.magnet, o.magnet);
+            } 
+            if( o.language.size() ) 
+            {
+               from_string( com.language, o.language);
+            }
+            if( o.public_key.size() ) 
+            {
+               from_string( com.public_key, o.public_key);
+            }
+            if( o.body.size() ) 
+            { try {
+                  diff_match_patch<std::wstring> dmp;
+                  auto patch = dmp.patch_fromText( utf8_to_wstring(o.body) );
+                  if( patch.size() ) 
                   {
-                     idump(("invalid utf8")(patched_body));
-                     from_string( com.body, fc::prune_invalid_utf8(patched_body) );
-                  } 
-                  else 
-                  { 
-                     from_string( com.body, patched_body ); 
+                     auto result = dmp.patch_apply( patch, utf8_to_wstring( to_string( com.body ) ) );
+                     auto patched_body = wstring_to_utf8(result.first);
+                     if( !fc::is_utf8( patched_body ) ) 
+                     {
+                        idump(("invalid utf8")(patched_body));
+                        from_string( com.body, fc::prune_invalid_utf8(patched_body) );
+                     } 
+                     else 
+                     { 
+                        from_string( com.body, patched_body ); 
+                     }
                   }
-               }
-               else 
-               { // replace
+                  else 
+                  { // replace
+                     from_string( com.body, o.body );
+                  }
+               } 
+               catch ( ... ) 
+               {
                   from_string( com.body, o.body );
                }
-            } 
-            catch ( ... ) 
-            {
-               from_string( com.body, o.body );
             }
-         }
-      });
+         });
+
+         if( comment.reach != old_reach )    // If reach has changed, recreate feed objects for author account's followers and connections.
+         {
+            _db.clear_comment_feeds( comment );
+            _db.add_comment_to_feeds( comment );
+         } 
+      } 
+      else
+      {
+         _db.modify( comment, [&]( comment_object& com )
+         {
+            com.deleted = true;               // deletes comment, nullifying all possible information.
+            com.last_update = fc::time_point::min();
+            com.active = fc::time_point::min();
+            com.rating = EXPLICIT;
+            com.board = board_name_type();
+            com.privacy = true;
+            com.reach = NO_FEED;
+   
+            from_string( com.json, string() );  
+            from_string( com.ipfs, string() );
+            from_string( com.magnet, string() );
+            from_string( com.language, string() );
+            from_string( com.public_key, string() );
+            from_string( com.body, string() );
+         });
+        
+         _db.clear_comment_feeds( comment );
+      }
+      
    } // end EDIT case
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -3316,8 +3482,6 @@ void comment_options_evaluator::do_apply( const comment_options_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& auth = _db.get_account( o.author );
-   FC_ASSERT( !(auth.owner_challenged || auth.active_challenged ), 
-      "Operation cannot be processed because account is currently challenged." );
    const auto& comment = _db.get_comment( o.author, o.permlink );
 
    if( !o.allow_curation_rewards || !o.allow_votes || o.max_accepted_payout < comment.max_accepted_payout )
@@ -3433,8 +3597,6 @@ void vote_evaluator::do_apply( const vote_operation& o )
    const account_object& voter = _db.get_account( o.voter );
    time_point now = _db.head_block_time();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   FC_ASSERT( !(voter.owner_challenged || voter.active_challenged ), 
-      "Operation cannot be processed because the account is currently challenged." );
    FC_ASSERT( voter.can_vote, 
       "Voter has declined their voting rights." );
    FC_ASSERT( comment.allow_votes, 
@@ -3684,8 +3846,6 @@ void view_evaluator::do_apply( const view_operation& o )
    const account_object& viewer = _db.get_account( o.viewer );
    uint128_t voting_power = _db.get_voting_power( viewer ).value;         // Gets the user's voting power from their Equity and Staked coin balances to weight the view.
    FC_ASSERT( comment.allow_views, "Views are not allowed on the comment." );
-   FC_ASSERT( !(viewer.owner_challenged || viewer.active_challenged ), 
-      "Operation cannot be processed because the account is currently challenged." );
    FC_ASSERT( viewer.can_vote, "Viewer has declined their voting rights." );
    const board_object& board = _db.get_board(comment.board);      
    const board_member_object& board_member = _db.get_board_member(board.name);       
@@ -3856,8 +4016,6 @@ void share_evaluator::do_apply( const share_operation& o )
    FC_ASSERT( comment.parent_author.size() == 0, "Only top level posts can be shared." );
    FC_ASSERT( comment.allow_shares, "shares are not allowed on the comment." );
    const account_object& sharer = _db.get_account( o.sharer );
-   FC_ASSERT( !(sharer.owner_challenged || sharer.active_challenged ), 
-      "Operation cannot be processed because the account is currently challenged." );
    FC_ASSERT( sharer.can_vote, "sharer has declined their voting rights." );
    const board_object& board = _db.get_board(comment.board);      
    const board_member_object& board_member = _db.get_board_member(board.name);       
@@ -3870,7 +4028,7 @@ void share_evaluator::do_apply( const share_operation& o )
    
    const auto& comment_share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
    auto itr = comment_share_idx.find( std::make_tuple( comment.id, sharer.name ) );
-   int64_t elapsed_seconds = (now - sharer.last_share_time).to_seconds();
+   int64_t elapsed_seconds = (now - sharer.last_feed_time).to_seconds();
    FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL_SEC, 
       "Can only share once every ${s} seconds.", ("s", MIN_SHARE_INTERVAL_SEC) );
    int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.share_recharge_time.to_seconds();
@@ -3897,7 +4055,7 @@ void share_evaluator::do_apply( const share_operation& o )
       _db.modify( sharer, [&]( account_object& a )
       {
          a.share_power = current_power - used_power;
-         a.last_share_time = now;
+         a.last_feed_time = now;
       });
 
       uint128_t old_power = std::max(comment.share_power, uint128_t(0));  // Record reward value before applying share transaction
@@ -4162,23 +4320,23 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
    const board_object& board = _db.get_board( o.board ); 
    const account_object& account = _db.get_account( o.account );
    time_point now = _db.head_block_time();
-   FC_ASSERT( now > board.last_board_update + MIN_BOARD_UPDATE_INTERVAL, "Boards can only be updated once per 10 minutes." );
+   FC_ASSERT( now > board.last_board_update + MIN_BOARD_UPDATE_INTERVAL, 
+      "Boards can only be updated once per 10 minutes." );
    const board_member_object& board_member = _db.get_board_member( o.board );
-   FC_ASSERT( board_member.is_administrator(account.name), "Only administrators of the board can update it.");
+   FC_ASSERT( board_member.is_administrator(account.name), 
+      "Only administrators of the board can update it.");
 
    if( o.board_privacy == OPEN_BOARD )
    {
       FC_ASSERT( board.board_privacy != PUBLIC_BOARD || board.board_privacy != PRIVATE_BOARD || board.board_privacy != EXCLUSIVE_BOARD,
          "Cannot lower the privacy setting of a board, only increase it." );
    }
-
-   if( o.board_privacy == PUBLIC_BOARD )
+   else if( o.board_privacy == PUBLIC_BOARD )
    {
       FC_ASSERT( board.board_privacy != PRIVATE_BOARD || board.board_privacy != EXCLUSIVE_BOARD,
          "Cannot lower the privacy setting of a board, only increase it." );
    }
-
-   if( o.board_privacy == PRIVATE_BOARD )
+   else if( o.board_privacy == PRIVATE_BOARD )
    {
       FC_ASSERT( board.board_privacy != EXCLUSIVE_BOARD,
          "Cannot lower the privacy setting of a board, only increase it." );
@@ -5420,6 +5578,11 @@ void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
 //=============================//
 
 
+
+/**
+ * Transfers an amount of a liquid asset balance from one account to another
+ * TODO: Asset white and blacklist checking, and flag checking
+ */
 void transfer_evaluator::do_apply( const transfer_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
@@ -5432,25 +5595,32 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
    }
    const account_object& from_account = _db.get_account(o.from);
    const account_object& to_account = _db.get_account(o.to);
-   const asset_object& asset = _db.get_asset(o.amount.symbol);
+  
+   asset liquid = _db.get_liquid_balance( from_account.name, o.amount.symbol );
+
+   FC_ASSERT( liquid >= o.amount, 
+      "Account does not have sufficient funds for transfer." );
+
    time_point now = _db.head_block_time();
+    const asset_object& asset = _db.get_asset(o.amount.symbol);
 
    const account_permission_object& to_account_permissions = _db.get_account_permissions(o.to);
-   FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), "Transfer is not authorized, due to recipient account's asset permisssions" );
+   FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), 
+      "Transfer is not authorized, due to recipient account's asset permisssions" );
 
    const account_permission_object& from_account_permissions = _db.get_account_permissions(o.from);
-   FC_ASSERT( from_account_permissions.is_authorized_asset( asset ), "Transfer is not authorized, due to sender account's asset permisssions" );
+   FC_ASSERT( from_account_permissions.is_authorized_asset( asset ), 
+      "Transfer is not authorized, due to sender account's asset permisssions" );
 
    if( from_account.active_challenged )
    {
       _db.modify( from_account, [&]( account_object& a )
       {
-         a.active_challenged = false;
-         a.last_active_proved = now;
+         a.last_transfer = now;
       });
    }
 
-   FC_ASSERT( _db.get_liquid_balance( from_account.name, o.amount.symbol ) >= o.amount, "Account does not have sufficient funds for transfer." );
+   
 
    vector<string> part; 
    part.reserve(4);
@@ -5489,6 +5659,7 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
 
    _db.adjust_liquid_balance( from_account.name, -o.amount );
    _db.adjust_liquid_balance( to_account.name, o.amount );
+
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
 

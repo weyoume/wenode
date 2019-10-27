@@ -31,12 +31,11 @@ namespace node { namespace protocol {
             reset_account_operation,
             set_reset_account_operation,
             change_recovery_account_operation,
-            challenge_authority_operation,
-            prove_authority_operation,
             decline_voting_rights_operation,
             connection_request_operation,
             connection_accept_operation,
             account_follow_operation,
+            tag_follow_operation,
             activity_reward_operation,
 
             // Network Operations

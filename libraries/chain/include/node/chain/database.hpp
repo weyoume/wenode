@@ -3,7 +3,7 @@
  */
 #pragma once
 #include <node/chain/global_property_object.hpp>
-//#include <node/chain/hardfork.hpp>
+#include <node/chain/hardfork.hpp>
 #include <node/chain/node_property_object.hpp>
 #include <node/chain/fork_database.hpp>
 #include <node/chain/block_log.hpp>
@@ -204,6 +204,9 @@ namespace node { namespace chain {
 
          const account_following_object& get_account_following( const account_name_type& account )const;
          const account_following_object* find_account_following( const account_name_type& account )const;
+
+         const tag_following_object& get_tag_following( const tag_name_type& tag )const;
+         const tag_following_object* find_tag_following( const tag_name_type& tag )const;
 
          const account_business_object& get_account_business( const account_name_type& account )const;
          const account_business_object* find_account_business( const account_name_type& account )const;
@@ -623,17 +626,17 @@ namespace node { namespace chain {
 
 
 
-         share_type pay_voters( const comment_object& c, share_type& max_rewards );
+         share_type pay_voters( const comment_object& c, const share_type& max_rewards );
 
-         share_type pay_viewers( const comment_object& c, share_type& max_rewards );
+         share_type pay_viewers( const comment_object& c, const share_type& max_rewards );
 
-         share_type pay_sharers( const comment_object& c, share_type& max_rewards );
+         share_type pay_sharers( const comment_object& c, const share_type& max_rewards );
 
-         share_type pay_commenters( const comment_object& c, share_type& max_rewards );
+         share_type pay_commenters( const comment_object& c, const share_type& max_rewards );
 
-         share_type pay_moderators( const comment_object& c, share_type& max_rewards );
+         share_type pay_moderators( const comment_object& c, const share_type& max_rewards );
 
-         share_type pay_storage( const comment_object& c, share_type& max_rewards );
+         share_type pay_storage( const comment_object& c, const share_type& max_rewards );
 
          share_type pay_content_rewards( share_type reward );
 
@@ -641,9 +644,17 @@ namespace node { namespace chain {
 
          void process_comment_cashout();
 
-         void add_comment_to_feeds( const account_name_type& sharer, const comment_id_type& comment_id );
+         void add_comment_to_feeds( const comment_object& comment );
 
-         void add_comment_to_board( const account_name_type& sharer, const board_object& board, const comment_id_type& comment_id );
+         void share_comment_to_feeds( const account_name_type& sharer, const feed_types& reach, const comment_object& comment );
+
+         void add_comment_to_board( const comment_object& comment );
+
+         void share_comment_to_board( const comment_object& comment );
+
+         void add_comment_to_tags( const comment_object& comment );
+
+         void clear_comment_feeds( const comment_object& comment );
 
          void update_comment_metrics();
 

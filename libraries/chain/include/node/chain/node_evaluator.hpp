@@ -28,12 +28,11 @@ DEFINE_EVALUATOR( recover_account )
 DEFINE_EVALUATOR( reset_account )
 DEFINE_EVALUATOR( set_reset_account )
 DEFINE_EVALUATOR( change_recovery_account )
-DEFINE_EVALUATOR( challenge_authority )
-DEFINE_EVALUATOR( prove_authority )
 DEFINE_EVALUATOR( decline_voting_rights )
 DEFINE_EVALUATOR( connection_request )
 DEFINE_EVALUATOR( connection_accept )
 DEFINE_EVALUATOR( account_follow )
+DEFINE_EVALUATOR( tag_follow )
 DEFINE_EVALUATOR( activity_reward )
 
 // Post and Comment Evaluators

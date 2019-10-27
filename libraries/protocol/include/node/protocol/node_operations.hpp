@@ -586,37 +586,6 @@ namespace node { namespace protocol {
    };
 
 
-   struct challenge_authority_operation : public base_operation
-   {
-      account_name_type                  signatory;
-
-      account_name_type                  challenger;
-
-      account_name_type                  challenged;
-
-      bool                               require_owner = false;
-
-      void validate()const;
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return challenger; }
-   };
-
-
-   struct prove_authority_operation : public base_operation
-   {
-      account_name_type                  signatory;
-
-      account_name_type                  challenged;
-
-      bool                               require_owner = false;
-
-      void validate()const;
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ if( !require_owner ) a.insert( signatory ); }
-      void get_required_owner_authorities( flat_set<account_name_type>& a )const{  if(  require_owner ) a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return challenged; }
-   };
-
-
    /**
     * Removes an account's ability to vote in perpetuity for the
     * purposes of ensuring that funds held in trust that are owned by third parties
@@ -709,7 +678,34 @@ namespace node { namespace protocol {
 
       account_name_type             interface;            // Name of the interface account that was used to broadcast the transaction. 
 
-      bool                          followed = true;      // Set true to follow, false to delete.
+      bool                          added = true;         // Set true to add to list, false to remove from list.
+
+      bool                          followed = true;      // Set true to follow, false to filter.
+
+      void validate()const;
+      void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return follower; }
+   };
+
+
+   /**
+    * Enables an account to follow a tag, 
+    * adding it to the accounts follow object, and displaying
+    * posts and shares from posts that use the tag in their feeds.
+    */
+   struct tag_follow_operation : public base_operation
+   {
+      account_name_type             signatory;
+
+      account_name_type             follower;              // Name of the account following the tag.
+
+      tag_name_type                 tag;                   // Tag being followed.
+
+      account_name_type             interface;             // Name of the interface account that was used to broadcast the transaction. 
+
+      bool                          added = true;         // Set true to add to list, false to remove from list.
+
+      bool                          followed = true;      // Set true to follow, false to filter.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1150,7 +1146,11 @@ namespace node { namespace protocol {
 
       board_name_type             board;                // The name of the board to which the post is uploaded to.
 
-      connection_types            privacy;              // Type of privacy setting for encryption levels to connections.
+      bool                        privacy;              // True if the post is encrypted. False if it is plaintext.
+
+      public_key_type             public_key;           // The public key used to encrypt the post, holders of the private key may decrypt.
+
+      feed_types                  reach;                // The extent to which the post will be distributed to account's followers and connections feeds. 
 
       account_name_type           interface;            // Name of the interface application that broadcasted the transaction. 
 
@@ -1365,10 +1365,8 @@ namespace node { namespace protocol {
     * Boards have 4 Types: Board, Group, Event, and Store
     * they have 4 Privacy options: Open, Public, Private, and Exclusive.
     * 
-    * Boards contain a collective public key for encrypting posts with
+    * Boards contain a collective public key for encrypting private posts with
     * and the private key is shared with newly added members when they join.
-    * 
-    * TODO: Private key sharing object
     */
    struct board_create_operation : public base_operation
    {
@@ -1609,7 +1607,7 @@ namespace node { namespace protocol {
 
    struct board_subscribe_operation : public base_operation
    {
-      account_name_type                  signatory;
+      account_name_type              signatory;
 
       account_name_type              account;             // Account that wants to subscribe to the board.
 
@@ -1619,15 +1617,20 @@ namespace node { namespace protocol {
 
       bool                           subscribed = true;   // true if subscribing, false if unsubscribing. 
 
+      bool                           filtered = false;    // True to filter, false to subscribe.
+
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
    };
 
 
+
    //================================//
    // === Advertising Operations === //
    //================================//
+
+
 
    struct ad_creative_operation : public base_operation 
    {
@@ -2549,9 +2552,13 @@ namespace node { namespace protocol {
     */
    struct asset_options 
    {
+      string                          display_symbol;                        // Non-consensus display name for interface reference.
+
       string                          description;                           // Data that describes the purpose of this asset.
 
-      string                          json;                                  // JSON metadata of this asset.
+      string                          json;                                  // Additional JSON metadata of this asset.
+
+      string                          url;                                   // Reference URL for the asset. 
       
       share_type                      max_supply = MAX_ASSET_SUPPLY;         // The maximum supply of this asset which may exist at any given time. 
 
@@ -3577,17 +3584,6 @@ FC_REFLECT( node::protocol::escrow_release_operation,
          (receiver)
          (escrow_id)
          (amount) 
-         );
-
-FC_REFLECT( node::protocol::challenge_authority_operation, 
-         (challenger)
-         (challenged)
-         (require_owner) 
-         );
-
-FC_REFLECT( node::protocol::prove_authority_operation, 
-         (challenged)
-         (require_owner) 
          );
 
 FC_REFLECT( node::protocol::request_account_recovery_operation, 

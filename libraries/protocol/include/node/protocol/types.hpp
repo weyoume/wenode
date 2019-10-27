@@ -72,6 +72,7 @@ namespace node {
       typedef fc::sha256                  chain_id_type;
       typedef fixed_string_16             account_name_type;
       typedef fixed_string_16             board_name_type;
+      typedef fixed_string_32             tag_name_type;
       typedef fixed_string_16             asset_symbol_type;
       typedef fc::ripemd160               block_id_type;
       typedef fc::ripemd160               checksum_type;
@@ -245,6 +246,7 @@ namespace node {
       // Types of feeds for subscribing to the posts of different sets of users. 
       enum feed_types 
       { 
+         NO_FEED,                // Posts that should not be distributed to any feeds. 
          FOLLOW_FEED,            // Feed from accounts that are followed.
          MUTUAL_FEED,            // Feed from accounts that are mutually followed. 
          CONNECTION_FEED,        // Feed from accounts that are connected. 
@@ -254,6 +256,7 @@ namespace node {
          GROUP_FEED,             // Feed from subscribed groups.
          EVENT_FEED,             // Feed from subscribed events.
          STORE_FEED,             // Feed from subscribed stores.
+         TAG_FEED                // Feed from followed tags. 
       };
 
       //Types of post ratings, indicating the maturity level of the content. 

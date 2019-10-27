@@ -98,7 +98,7 @@ class tag_object : public object< tag_object_type, tag_object >
 
       time_point        cashout;                      // Time of the next content reward cashout due for the post. 
 
-      connection_types  privacy;                      // Privacy level of the post
+      bool              privacy;                      // Privacy type of the post.
 
       rating_types      rating;                       // Content severity rating from the author. 
 

@@ -173,8 +173,6 @@ struct account_api_obj
       last_account_update( a.last_account_update ),
       created( a.created ),
       mined( a.mined ),
-      owner_challenged( a.owner_challenged ),
-      active_challenged( a.active_challenged ),
       last_owner_proved( a.last_owner_proved ),
       last_active_proved( a.last_active_proved ),
       recovery_account( a.recovery_account ),
@@ -246,8 +244,6 @@ struct account_api_obj
 
    time_point    created;
    bool              mined = false;
-   bool              owner_challenged = false;
-   bool              active_challenged = false;
    time_point    last_owner_proved;
    time_point    last_active_proved;
    account_name_type recovery_account;
@@ -530,8 +526,6 @@ FC_REFLECT( node::app::account_api_obj,
          (last_account_update)
          (created)
          (mined)
-         (owner_challenged)
-         (active_challenged)
          (last_owner_proved)
          (last_active_proved)
          (recovery_account)

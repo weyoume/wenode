@@ -149,10 +149,6 @@ namespace node { namespace chain {
 
          bool                             revenue_share = false;
 
-         bool                             owner_challenged = false;
-
-         bool                             active_challenged = false;
-
          bool                             can_vote = true;
    };
 
@@ -765,47 +761,47 @@ namespace node { namespace chain {
          flat_set<asset_symbol_type>              blacklisting_assets;           // List of assets that the account has been blacklisted against receieving transfers.
  
          bool is_authorized_asset( const asset_object& asset_obj)const           // Determines if an asset is authorized for transfer with an accounts permissions object. 
+         {
+            bool fast_check = !(asset_obj.options.flags & white_list);
+            fast_check &= !(whitelisted_assets.size);
+            fast_check &= !(blacklisted_assets.size);
+
+            if( fast_check )
+               return true; // The asset does not require transfer permission, and the account does not use an asset whitelist or blacklist
+
+            if( whitelisted_assets.size )
             {
-               bool fast_check = !(asset_obj.options.flags & white_list);
-               fast_check &= !(whitelisted_assets.size);
-               fast_check &= !(blacklisted_assets.size);
+               if( whitelisted_assets.find( asset_obj.symbol ) == whitelisted_assets.end() )
+                  return false; // The asset is not in the account's whitelist
+            }
 
-               if( fast_check )
-                  return true; // The asset does not require transfer permission, and the account does not use an asset whitelist or blacklist
+            if( blacklisted_assets.size )
+            {
+               if( blacklisted_assets.find( asset_obj.symbol ) != blacklisted_assets.end() )
+                  return false; // The asset is in the account's blacklist
+            }
 
-               if( whitelisted_assets.size )
+            if( blacklisting_assets.size )
+            {
+               if( blacklisting_assets.find( asset_obj.symbol ) != blacklisting_assets.end() ) 
                {
-                  if( whitelisted_assets.find( asset_obj.symbol ) == whitelisted_assets.end() )
-                     return false; // The asset is not in the account's whitelist
-               }
+                  return false; // The account is in the asset's blacklist
+               }   
+            }
 
-               if( blacklisted_assets.size )
-               {
-                  if( blacklisted_assets.find( asset_obj.symbol ) != blacklisted_assets.end() )
-                     return false; // The asset is in the account's blacklist
-               }
+            if( asset_obj.options.whitelist_authorities.size() == 0 ) 
+            {
+               return true; // The asset has an empty whitelist. 
+            }
+               
+            if( whitelisting_assets.size )
+            {
+               if( whitelisting_assets.find( asset_obj.symbol ) != whitelisting_assets.end() )
+                  return true; // The asset uses a whitelist, and this account is in the whitelist.
+            }
 
-               if( blacklisting_assets.size )
-               {
-                  if( blacklisting_assets.find( asset_obj.symbol ) != blacklisting_assets.end() ) 
-                  {
-                     return false; // The account is in the asset's blacklist
-                  }   
-               }
-
-               if( asset_obj.options.whitelist_authorities.size() == 0 ) 
-               {
-                  return true; // The asset has an empty whitelist. 
-               }
-                  
-               if( whitelisting_assets.size )
-               {
-                  if( whitelisting_assets.find( asset_obj.symbol ) != whitelisting_assets.end() )
-                     return true; // The asset uses a whitelist, and this account is in the whitelist.
-               }
-
-               return false; // Account uses a whitelist and the user is not in the whitelist. 
-            };
+            return false; // Account uses a whitelist and the user is not in the whitelist. 
+         };
    };
 
 
@@ -983,9 +979,228 @@ namespace node { namespace chain {
 
          flat_set< account_name_type >     companions;           // Accounts that are companions of this account. 
 
-         flat_set< board_name_type >       boards;               // Boards that the account subscribes to. 
+         flat_set< board_name_type >       followed_boards;      // Boards that the account subscribes to. 
 
-         time_point                        last_follow_update;   // Last time that the account changed its following sets.
+         flat_set< tag_name_type >         followed_tags;        // Tags that the account follows. 
+
+         flat_set< account_name_type >     filtered;             // Accounts that this account has filtered. Interfaces should not show posts by these users.
+
+         flat_set< board_name_type >       filtered_boards;      // Boards that this account has filtered. Posts will not display if they are in these boards.
+
+         flat_set< account_name_type >     filtered_tags;        // Tags that this account has filtered. Posts will not display if they have any of these tags. 
+
+         time_point                        last_update;          // Last time that the account changed its following sets.
+
+         bool                              is_follower( const account_name_type& account )
+         {
+            return std::find( followers.begin(), followers.end(), account ) != followers.end();
+         };
+
+         bool                              is_following( const account_name_type& account )
+         {
+            return std::find( following.begin(), following.end(), account ) != following.end();
+         };
+
+         bool                              is_following( const tag_name_type& tag )
+         {
+            return std::find( followed_tags.begin(), followed_tags.end(), tag ) != followed_tags.end();
+         };
+
+         bool                              is_following( const board_name_type& board )
+         {
+            return std::find( followed_boards.begin(), followed_boards.end(), board ) != followed_boards.end();
+         };
+
+         bool                              is_mutual( const account_name_type& account )
+         {
+            return std::find( mutual_followers.begin(), mutual_followers.end(), account ) != mutual_followers.end();
+         };
+
+         bool                              is_filtered( const account_name_type& account )
+         {
+            return std::find( filtered.begin(), filtered.end(), account ) != filtered.end();
+         };
+
+         bool                              is_filtered( const tag_name_type& tag )
+         {
+            return std::find( filtered_tags.begin(), filtered_tags.end(), tag ) != filtered_tags.end();
+         };
+
+         bool                              is_filtered( const board_name_type& board )
+         {
+            return std::find( filtered_boards.begin(), filtered_boards.end(), board ) != filtered_boards.end();
+         };
+
+         void                              add_follower( const account_name_type& account )
+         {
+            if( !is_follower( account ) )
+            {
+               followers.insert( account );
+            }
+            if( is_following( account ) )
+            {
+               mutual_followers.insert( account );
+            }
+         }
+
+         void                              remove_follower( const account_name_type& account )
+         {
+            if( is_follower( account ) )
+            {
+               if( is_mutual( account ) )
+               {
+                  mutual_followers.erase( account );
+               }
+               followers.erase( account );
+            }
+         }
+
+         void                              add_following( const account_name_type& account )
+         {
+            if( !is_following( account ) )
+            {
+               following.insert( account );
+            }
+            if( is_follower( account ) )
+            {
+               mutual_followers.insert( account );
+            }
+         }
+
+         void                              add_following( const tag_name_type& tag )
+         {
+            if( !is_following( tag ) )
+            {
+               followed_tags.insert( tag );
+            }
+         }
+
+         void                              add_following( const board_name_type& board )
+         {
+            if( !is_following( board ) )
+            {
+               followed_boards.insert( board );
+            }
+         }
+
+         void                              remove_following( const tag_name_type& tag )
+         {
+            if( is_following( tag ) )
+            {
+               followed_tags.erase( tag );
+            }
+         }
+
+         void                              remove_following( const board_name_type& board )
+         {
+            if( is_following( board ) )
+            {
+               followed_boards.erase( board );
+            }
+         }
+
+         void                              remove_following( const account_name_type& account )
+         {
+            if( is_following( account ) )
+            {
+               if( is_mutual( account ) )
+               {
+                  mutual_followers.erase( account );
+               }
+               following.erase( account );
+            }
+         }
+
+         void                              add_filtered( const account_name_type& account )
+         {
+            if( !is_filtered( account ) )
+            {
+               filtered.insert( account );
+            }
+         }
+
+         void                              remove_filtered( const account_name_type& account )
+         {
+            if( is_filtered( account ) )
+            {
+               filtered.erase( account );
+            }
+         }
+
+         void                              add_filtered( const tag_name_type& tag )
+         {
+            if( !is_filtered( tag ) )
+            {
+               filtered_tags.insert( tag );
+            }
+         }
+
+         void                              remove_filtered( const tag_name_type& tag )
+         {
+            if( is_filtered( tag ) )
+            {
+               filtered_tags.erase( tag );
+            }
+         }
+
+         void                              add_filtered( const const board_name_type& board )
+         {
+            if( !is_filtered( board ) )
+            {
+               filtered_boards.insert( board );
+            }
+         }
+
+         void                              remove_filtered( const board_name_type& board )
+         {
+            if( is_filtered( board ) )
+            {
+               filtered_boards.erase( board );
+            }
+         }
+
+   };
+
+
+   class tag_following_object : public object< tag_following_object_type, tag_following_object >
+   {
+      tag_following_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         tag_following_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                           id;
+
+         tag_name_type                     tag;                  // Name of the account.
+
+         flat_set< account_name_type >     followers;            // Accounts that follow this account. 
+
+         time_point                        last_update;          // Last time that the tag changed its following sets.
+
+         bool                              is_follower( const account_name_type& account )
+         {
+            return std::find( followers.begin(), followers.end(), account ) != followers.end();
+         };
+
+         void                              add_follower( const account_name_type& account )
+         {
+            if( !is_follower( account ) )
+            {
+               followers.insert( account );
+            }
+         }
+
+         void                              remove_follower( const account_name_type& account )
+         {
+            if( is_follower( account ) )
+            {
+               followers.erase( account );
+            }
+         }
    };
 
 
@@ -1056,27 +1271,6 @@ namespace node { namespace chain {
          }
    };
 
-   class follow_object : public object< follow_object_type, follow_object >
-   {
-      follow_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         follow_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
-         id_type                id;                 
-
-         account_name_type      follower;          // Account of the follower
-
-         account_name_type      following;         // Account that is being followed
-
-         shared_string          details;           // Details of the following.
-
-         time_point             created;           // Time the follow was created. 
-   };
 
    class asset_delegation_object : public object< asset_delegation_object_type, asset_delegation_object >
    {
@@ -1646,6 +1840,20 @@ namespace node { namespace chain {
       allocator< account_following_object >
    > account_following_index;
 
+   struct by_tag;
+
+   typedef multi_index_container <
+      tag_following_object,
+      indexed_by <
+         ordered_unique< tag< by_id >,
+            member< tag_following_object, tag_following_id_type, &tag_following_object::id > >,
+         ordered_unique< tag< by_tag >,
+            member< tag_following_object, tag_name_type, &tag_following_object::tag >,
+         >
+      >,
+      allocator< tag_following_object >
+   > tag_following_index;
+
    struct by_delegation;
 
    typedef multi_index_container <
@@ -1799,23 +2007,6 @@ namespace node { namespace chain {
       allocator< connection_object >
    > connection_index;
 
-   struct by_follower;
-
-   typedef multi_index_container<
-      follow_object,
-      indexed_by<
-         ordered_unique< tag<by_id>, member< follow_object, follow_id_type, &follow_object::id > >,
-         ordered_unique< tag<by_follower>,
-            composite_key< follow_object,
-               member<follow_object, account_name_type, &follow_object::follower >,
-               member<follow_object, account_name_type, &follow_object::following >
-            >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
-         >
-      >,
-      allocator< follow_object >
-   > follow_index;
-
 } }
 
 FC_REFLECT( node::chain::account_object,
@@ -1828,8 +2019,6 @@ FC_REFLECT( node::chain::account_object,
          (last_account_update)
          (created)
          (mined)
-         (owner_challenged)
-         (active_challenged)
          (last_owner_proved)
          (last_active_proved)
          (recovery_account)

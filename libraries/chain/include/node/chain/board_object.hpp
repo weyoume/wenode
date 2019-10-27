@@ -31,7 +31,7 @@ namespace node { namespace chain {
 
          board_types                        board_type;                         // Type of board, persona, profile or business.
 
-         board_privacy_types                board_privacy;                      // Type of board, persona, profile or business.
+         board_privacy_types                board_privacy;                      // Board privacy level, open, public, private, or exclusive
 
          public_key_type                    board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
@@ -98,43 +98,44 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                            id;
+         id_type                                    id;
 
-         board_name_type                    name;                        // Name of the board with permissions set.
+         board_name_type                            name;                        // Name of the board with permissions set.
 
-         account_name_type                  founder;                     // Name of the founding account of the board. Has full permisions.
+         account_name_type                          founder;                     // Name of the founding account of the board. Has full permissions.
 
-         flat_set < account_name_type >     subscribers;                 // List of accounts that subscribe to the posts made in the board.
+         board_privacy_types                        board_privacy;               // Privacy setting of board, determines transaction authorization. 
 
-         flat_set < account_name_type >     members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
+         board_types                                board_type;                  // Type of board, group, event, or store.
+
+         flat_set < account_name_type >             subscribers;                 // List of accounts that subscribe to the posts made in the board.
+
+         flat_set < account_name_type >             members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
  
-         flat_set < account_name_type >     moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
+         flat_set < account_name_type >             moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
 
-         flat_set < account_name_type >     administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
+         flat_set < account_name_type >             administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
 
-         flat_set < account_name_type >     blacklist;                   // Accounts that are not able to post in this board, or request to join.
+         flat_set < account_name_type >             blacklist;                   // Accounts that are not able to post in this board, or request to join.
 
-         flat_map < account_name_type, share_type > mod_weight;          // Map of all moderator voting weights for distributing rewards. 
+         flat_map < account_name_type, share_type > mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
 
-         share_type                         total_mod_weight = 0;        // Total of all moderator weights. 
+         share_type                                 total_mod_weight = 0;        // Total of all moderator weights. 
 
          
-         bool is_authorized_author( const account_name_type& account, const board_object& board )const  // Determines Permission to create a new root post in the board
+         bool is_authorized_author( const account_name_type& account )const  // Determines Permission to create a new root post in the board
          {
-            assert( name == board.name);
-
-            if( blacklist.size )
+            if( is_blacklisted( account) )
             {
-               if( blacklist.find( account ) != blacklist.end() )
-                  return false;       // The account is in the board's blacklist
+               return false;       // The account is in the board's blacklist
             }
-            if(board.board_privacy == OPEN_BOARD)
+            if( board_privacy == OPEN_BOARD )
             {
                return true;      // The board is open and public, all non-blacklisted accounts can post to it.
             }
             else
             {
-               if( members.find( account ) != members.end() )
+               if( is_member( account ) )
                {
                   return true;     // The account is in the membership list
                }
@@ -145,22 +146,19 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_authorized_interact( const account_name_type& account, const board_object& board )const  // Determines Permission to vote, view, comment or share posts in the board
+         bool is_authorized_interact( const account_name_type& account )const  // Determines Permission to vote, view, comment or share posts in the board
          {
-            assert( name == board.name);
-
-            if( blacklist.size )
+            if( is_blacklisted( account ) )
             {
-               if( blacklist.find( account ) != blacklist.end() )
-                  return false; // The account is in the board's blacklist
+               return false;       // The account is in the board's blacklist
             }
-            if( board.board_privacy == OPEN_BOARD || board.board_privacy == PUBLIC_BOARD )  // Open or Public, anyone can interact
+            if( board_privacy == OPEN_BOARD || board_privacy == PUBLIC_BOARD )  // Open or Public, anyone can interact
             {
                return true; // The board is open and public, all non-blacklisted accounts can interact with it.
             }
             else    // Private and Exclusive groups, members can interact.
             {
-               if( members.find( account ) != members.end() )
+               if( is_member( account ) )
                {
                   return true; // The account is in the membership list
                }
@@ -171,19 +169,13 @@ namespace node { namespace chain {
             }
          };
 
-
-         bool is_authorized_request( const account_name_type& account, const board_object& board )const // Determines Permission to request to join.
+         bool is_authorized_request( const account_name_type& account )const // Determines Permission to request to join.
          {
-            assert( name == board.name);
-
-            if( blacklist.size )
+            if( is_blacklisted( account ) )
             {
-               if( blacklist.find( account ) != blacklist.end() )
-               {
-                  return false; // The account is in the board's blacklist.
-               }   
+               return false;       // The account is in the board's blacklist
             }
-            if( board.board_privacy == EXCLUSIVE_BOARD ) // Exclusive groups do not allow join requests, invitation only. 
+            if( board_privacy == EXCLUSIVE_BOARD ) // Exclusive groups do not allow join requests, invitation only. 
             {
                return false; 
             }
@@ -193,20 +185,15 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_authorized_invite( const account_name_type& account, const board_object& board )const // Determines Permission to send invites, accept join requests
+         bool is_authorized_invite( const account_name_type& account )const // Determines Permission to send invites, accept join requests
          {
-            assert( name == board.name);
-
-            if( blacklist.size )
+            if( is_blacklisted( account ) )
             {
-               if( blacklist.find( account ) != blacklist.end() )
-               {
-                  return false; // The account is in the board's blacklist
-               }   
+               return false;       // The account is in the board's blacklist
             }
-            if( board.board_privacy == OPEN_BOARD || board.board_privacy == PUBLIC_BOARD ) // Public groups, members can invite and accept invites
+            if( board_privacy == OPEN_BOARD || board_privacy == PUBLIC_BOARD ) // Public groups, members can invite and accept invites
             {
-               if( members.find( account ) != members.end() )
+               if( is_member( account ) )
                {
                   return true; // The account is in the membership list
                }
@@ -215,9 +202,9 @@ namespace node { namespace chain {
                   return false; // The account is not in the membership list. 
                }  
             }
-            else if( board.board_privacy == PRIVATE_BOARD ) // Private groups, mods can invite and accept invites
+            else if( board_privacy == PRIVATE_BOARD ) // Private groups, mods can invite and accept invites
             {
-               if( moderators.find( account ) != moderators.end() )
+               if( is_moderator( account ) )
                {
                   return true; // The account is in the moderators list
                }
@@ -226,9 +213,9 @@ namespace node { namespace chain {
                   return false; // The account is not in the moderators list. 
                }
             }
-            else if( board.board_privacy == EXCLUSIVE_BOARD ) // Exclusive groups, admins can invite and accept invites
+            else if( board_privacy == EXCLUSIVE_BOARD ) // Exclusive groups, admins can invite and accept invites
             {
-               if( administrators.find( account ) != administrators.end() )
+               if( is_administrator( account ) )
                {
                   return true; // The account is in the administrators list
                }
@@ -239,20 +226,15 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_authorized_blacklist( const account_name_type& account, const board_object& board )const // Determines Permission to blacklist an account from the board. 
+         bool is_authorized_blacklist( const account_name_type& account )const // Determines Permission to blacklist an account from the board. 
          {
-            assert( name == board.name);
-
-            if( blacklist.size )
+            if( is_blacklisted( account ) )
             {
-               if( blacklist.find( account ) != blacklist.end() )
-               {
-                  return false; // The account is in the board's blacklist
-               }   
+               return false;       // The account is in the board's blacklist
             }
-            if( board.board_privacy == OPEN_BOARD || board.board_privacy == PUBLIC_BOARD ) // Public groups, moderators can blacklist
+            if( board_privacy == OPEN_BOARD || board_privacy == PUBLIC_BOARD ) // Public groups, moderators can blacklist
             {
-               if( moderators.find( account ) != moderators.end() )
+               if( is_moderator( account ) )
                {
                   return true; // The account is in the moderators list
                }
@@ -263,7 +245,7 @@ namespace node { namespace chain {
             }
             else // Private and Exclusive groups, admins can blacklist
             {
-               if( administrators.find( account ) != administrators.end() )
+               if( is_administrator( account ) )
                {
                   return true; // The account is in the administrators list
                }
@@ -276,51 +258,76 @@ namespace node { namespace chain {
 
          bool is_subscriber( const account_name_type& account )const  
          {
-            if( subscribers.find( account ) != subscribers.end() )
-            {
-               return true; // The account is in the moderators list
-            }
-            else 
-            {
-               return false; // The account is not in the moderators list
-            }
+            return std::find( subscribers.begin(), subscribers.end(), account ) != subscribers.end();
          };
 
          bool is_member( const account_name_type& account )const  
          {
-            if( members.find( account ) != members.end() )
-            {
-               return true; // The account is in the members list
-            }
-            else 
-            {
-               return false; // The account is not in the members list
-            }
+            return std::find( members.begin(), members.end(), account ) != members.end();
          };
       
          bool is_moderator( const account_name_type& account )const  
          {
-            if( moderators.find( account ) != moderators.end() )
-            {
-               return true; // The account is in the moderators list
-            }
-            else 
-            {
-               return false; // The account is not in the moderators list
-            }
+            return std::find( moderators.begin(), moderators.end(), account ) != moderators.end();
          };
 
          bool is_administrator( const account_name_type& account )const  
          {
-            if( administrators.find( account ) != administrators.end() )
-            {
-               return true;       // The account is in the admins list
-            }
-            else 
-            {
-               return false;     // The account is not in the admins list
-            }
+            return std::find( administrators.begin(), administrators.end(), account ) != administrators.end();
          };
+
+         bool is_blacklisted( const account_name_type& account )const  
+         {
+            return std::find( blacklist.begin(), blacklist.end(), account ) != blacklist.end();
+         };
+
+         void                              add_subscriber( const account_name_type& account )
+         {
+            if( !is_subscriber( account )  )
+            {
+               subscribers.insert( account );
+            }
+         }
+
+         void                              remove_subscriber( const account_name_type& account )
+         {
+            if( is_subscriber( account ) )
+            {
+               subscribers.erase( account );
+            }
+         }  
+
+         void                              add_member( const account_name_type& account )
+         {
+            if( !is_member( account )  )
+            {
+               members.insert( account );
+            }
+         }
+
+         void                              remove_member( const account_name_type& account )
+         {
+            if( is_member( account ) )
+            {
+               members.erase( account );
+            }
+         }
+
+         void                              add_moderator( const account_name_type& account )
+         {
+            if( !is_moderator( account )  )
+            {
+               moderators.insert( account );
+            }
+         }
+
+         void                              remove_moderator( const account_name_type& account )
+         {
+            if( is_moderator( account ) )
+            {
+               moderators.erase( account );
+            }
+         }
    };
 
 
