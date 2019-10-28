@@ -654,7 +654,7 @@ namespace node { namespace protocol {
 
       string                        encrypted_key;         // The private connection key of the user, encrypted with the public secure key of the requesting account.
 
-      bool                          connected = true;      // Set true to connect, false to delete.
+      bool                          connected = true;      // Set true to connect, false to delete connection.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1299,21 +1299,25 @@ namespace node { namespace protocol {
    /**
     * Shares a post to the account's feed, so that all accounts that
     * follow them can see the post. Increases the share count of the post
-    * and expands its visibility.
+    * and expands its visibility by adding it to feeds of new accounts.
     */
    struct share_operation : public base_operation
    {
-      account_name_type    signatory;
+      account_name_type          signatory;
 
-      account_name_type    sharer;           // Name of the viewing account.
+      account_name_type          sharer;           // Name of the viewing account.
 
-      account_name_type    author;           // Name of the account that created the post being shared. 
+      account_name_type          author;           // Name of the account that created the post being shared. 
 
-      string               permlink;         // Permlink to the post being shared.
+      string                     permlink;         // Permlink to the post being shared.
 
-      account_name_type    interface;        // Name of the interface account that was used to broadcast the transaction and share the post.
+      account_name_type          interface;        // Name of the interface account that was used to broadcast the transaction and share the post.
 
-      bool                 shared = true;    // True if sharing the post, false if removing share.
+      optional<board_name_type>  board;            // Optionally share the post with a new board.
+
+      optional<tag_name_type>    tag;              // Optionally share the post with a new tag. 
+
+      bool                       shared = true;    // True if sharing the post, false if removing share.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }

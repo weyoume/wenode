@@ -259,6 +259,14 @@ namespace node {
          TAG_FEED                // Feed from followed tags. 
       };
 
+      // Types of blogs for tracking what has been created or shared with an account, board, or tag. 
+      enum blog_types 
+      { 
+         ACCOUNT_BLOG,           // Blog within an account, includes authored posts and shared posts
+         BOARD_BLOG,             // Blog within a board, includes all posts within the board, plus shared with the board.
+         TAG_BLOG                // Blog within a tag, includes all posts that use the tag, plus shared with the tag.
+      };
+
       //Types of post ratings, indicating the maturity level of the content. 
       enum rating_types 
       {

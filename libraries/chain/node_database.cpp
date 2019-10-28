@@ -796,7 +796,7 @@ const account_following_object* database::find_account_following( const account_
 const tag_following_object& database::get_tag_following( const tag_name_type& tag )const
 { try {
 	return get< tag_following_object, by_tag >( tag );
-} FC_CAPTURE_AND_RETHROW( (account) ) }
+} FC_CAPTURE_AND_RETHROW( (tag) ) }
 
 const tag_following_object* database::find_tag_following( const tag_name_type& tag )const
 {
@@ -4582,7 +4582,7 @@ void database::apply_hardfork( uint32_t hardfork )
 }
 
 /**
- * Verifies all supply invariants check out
+ * Verifies all supply invariants
  */
 void database::validate_invariants()const
 { try {

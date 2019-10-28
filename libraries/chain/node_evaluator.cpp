@@ -1687,13 +1687,16 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          _db.remove( connection_obj );
       } 
    }
+
+   _db.update_account_in_feed( o.account, o.requesting_account );
+   _db.update_account_in_feed( o.requesting_account, o.account );
+
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 /**
  * Enables an account to follow another account by adding it to
  * the account's following object. 
- * Additionally allows for filtering accounts from interfaces. 
- * TODO: Feed object adding on follow, and removal on unfollow, 
+ * Additionally allows for filtering accounts from interfaces.
  */
 void account_follow_evaluator::do_apply( const account_follow_operation& o )
 { try {
@@ -1784,7 +1787,8 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
       }
    }
 
-   _db.update_follow_feeds( o.follower ); //todo
+   _db.update_account_in_feed( o.follower, o.following );
+   _db.update_account_in_feed( o.following, o.follower );
    
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -1868,7 +1872,7 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
       }
    }
 
-   _db.update_tag_feeds( o.follower ); // todo
+   _db.update_tag_in_feed( o.follower, o.tag );
    
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -3004,7 +3008,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       }
       else
       {
-         FC_ASSERT( board_member.is_authorized_interact( o.author, board ), 
+         FC_ASSERT( board_member.is_authorized_interact( o.author ), 
             "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", auth.name));
       }
       
@@ -3290,30 +3294,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          }
       }
 
-      // Create blog object for author account
-      const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_blog >();
-      const auto& blog_comment_idx = _db.get_index< blog_index >().indices().get< by_comment >();
-      auto next_blog_id = 0;
-      auto last_blog = blog_idx.lower_bound( auth.name );
-
-      if( last_blog != blog_idx.end() && last_blog->account == auth.name )
-      {
-         next_blog_id = last_blog->blog_feed_id + 1;
-      }
-
-      auto blog_itr = blog_comment_idx.find( boost::make_tuple( new_comment.id, auth.name ) );
-
-      FC_ASSERT( blog_itr == blog_comment_idx.end(), 
-         "Account has already created this post in blog" );
-      _db.create< blog_object >( [&]( blog_object& b )
-      {
-         b.account = auth.name;
-         b.comment = new_comment.id;
-         b.shared_on = now;
-         b.blog_feed_id = next_blog_id;
-      });
-
-      // Create feed objects for author account's followers and connections, board followers, and tag followers. 
+      // Create feed and blog objects for author account's followers and connections, board followers, and tag followers. 
       _db.add_comment_to_feeds( new_comment );
 
       if( board_ptr != nullptr )
@@ -3361,8 +3342,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
             }
             else
             {
-               FC_ASSERT( com.parent_author == o.parent_author, "The parent of a comment cannot change." );
-               FC_ASSERT( equal( com.parent_permlink, o.parent_permlink ), "The permlink of a comment cannot change." );
+               FC_ASSERT( com.parent_author == o.parent_author, 
+                  "The parent of a comment cannot change." );
+               FC_ASSERT( equal( com.parent_permlink, o.parent_permlink ), 
+                  "The permlink of a comment cannot change." );
             }       
             if( o.json.size() && fc::is_utf8( o.json ) )
             {
@@ -3442,7 +3425,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
         
          _db.clear_comment_feeds( comment );
       }
-      
    } // end EDIT case
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -3602,10 +3584,15 @@ void vote_evaluator::do_apply( const vote_operation& o )
    FC_ASSERT( comment.allow_votes, 
       "Votes are not allowed on the comment." );
 
-   const board_object& board = _db.get_board(comment.board);      
-   const board_member_object& board_member = _db.get_board_member(board.name);       
-   FC_ASSERT( board_member.is_authorized_interact(voter.name, board), 
-      "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", voter.name));
+   const board_object* board_ptr = nullptr; 
+   if( comment.board )
+   {
+      board_ptr = _db.find_board( comment.board );      
+      const board_member_object& board_member = _db.get_board_member( comment.board );       
+      FC_ASSERT( board_member.is_authorized_interact( voter.name ), 
+         "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", voter.name));
+   }
+
    const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
    
@@ -3729,17 +3716,20 @@ void vote_evaluator::do_apply( const vote_operation& o )
          }
       });
 
-      _db.modify( board, [&]( board_object& bo )
+      if( board_ptr != nullptr )
       {
-         if( reward > 0 )
+         _db.modify( *board_ptr, [&]( board_object& bo )
          {
-            bo.vote_count++;
-         }
-         else 
-         {
-            bo.vote_count--;
-         }
-      });
+            if( reward > 0 )
+            {
+               bo.vote_count++;
+            }
+            else 
+            {
+               bo.vote_count--;
+            }
+         });
+      }
    }
    else  // Vote is being altered from a previous vote
    {
@@ -3847,10 +3837,14 @@ void view_evaluator::do_apply( const view_operation& o )
    uint128_t voting_power = _db.get_voting_power( viewer ).value;         // Gets the user's voting power from their Equity and Staked coin balances to weight the view.
    FC_ASSERT( comment.allow_views, "Views are not allowed on the comment." );
    FC_ASSERT( viewer.can_vote, "Viewer has declined their voting rights." );
-   const board_object& board = _db.get_board(comment.board);      
-   const board_member_object& board_member = _db.get_board_member(board.name);       
-   FC_ASSERT( board_member.is_authorized_interact(viewer.name, board), 
-      "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", viewer.name));
+   const board_object* board_ptr = nullptr; 
+   if( comment.board )
+   {
+      board_ptr = _db.find_board( comment.board );      
+      const board_member_object& board_member = _db.get_board_member( comment.board );       
+      FC_ASSERT( board_member.is_authorized_interact( viewer.name ), 
+         "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", viewer.name));
+   }
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
@@ -3926,10 +3920,13 @@ void view_evaluator::do_apply( const view_operation& o )
 
       uint128_t new_power = std::max( comment.view_power, uint128_t(0));   // record new net reward after viewing
 
-      _db.modify( board, [&]( board_object& bo )
+      if( board_ptr != nullptr )
       {
-         bo.view_count++;  
-      });
+         _db.modify( *board_ptr, [&]( board_object& bo )
+         {
+            bo.view_count++;
+         });
+      }
 
       share_type max_view_weight = 0;
 
@@ -3957,7 +3954,7 @@ void view_evaluator::do_apply( const view_operation& o )
 
             uint128_t curation_auction_decay_time = props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_view_weight;
-            uint128_t delta_t = std::min( uint128_t(( now - comment.created).to_seconds()), curation_auction_decay_time ); 
+            uint128_t delta_t = std::min( uint128_t(( now - comment.created).to_seconds()), curation_auction_decay_time );
 
             w *= delta_t;
             w /= curation_auction_decay_time;                     // Discount weight linearly by time for early views in the first 10 minutes.
@@ -3966,7 +3963,7 @@ void view_evaluator::do_apply( const view_operation& o )
             double view_discount_rate = std::max(( double(comment.view_count) / curation_decay), double(0));
             double view_discount = std::pow(0.5, view_discount_rate );     // Raises 0.5 to a fractional power for each 1000 views added
             uint64_t view_discount_percent = double(view_discount)*double(PERCENT_100);
-            FC_ASSERT(view_discount_percent >= 0, "Vote discount should not become negative");
+            FC_ASSERT(view_discount_percent >= 0, "View discount should not become negative");
             w *= view_discount_percent;
             w /= PERCENT_100;      // Discount weight exponentially for each successive view on the post, decaying by 50% per 1000 views.
             cv.weight = w;
@@ -4013,14 +4010,21 @@ void share_evaluator::do_apply( const share_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
-   FC_ASSERT( comment.parent_author.size() == 0, "Only top level posts can be shared." );
-   FC_ASSERT( comment.allow_shares, "shares are not allowed on the comment." );
+   FC_ASSERT( comment.parent_author.size() == 0, 
+      "Only top level posts can be shared." );
+   FC_ASSERT( comment.allow_shares, 
+      "shares are not allowed on the comment." );
    const account_object& sharer = _db.get_account( o.sharer );
-   FC_ASSERT( sharer.can_vote, "sharer has declined their voting rights." );
-   const board_object& board = _db.get_board(comment.board);      
-   const board_member_object& board_member = _db.get_board_member(board.name);       
-   FC_ASSERT( board_member.is_authorized_interact(sharer.name, board), 
-      "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", sharer.name));
+   FC_ASSERT( sharer.can_vote,  
+      "sharer has declined their voting rights." );
+   const board_object* board_ptr = nullptr; 
+   if( comment.board )
+   {
+      board_ptr = _db.find_board( comment.board );      
+      const board_member_object& board_member = _db.get_board_member( comment.board );       
+      FC_ASSERT( board_member.is_authorized_interact( sharer.name ), 
+         "User ${u} is not authorized to interact with posts in the board ${b}.",("b", board.name)("u", sharer.name));
+   }
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
@@ -4028,6 +4032,10 @@ void share_evaluator::do_apply( const share_operation& o )
    
    const auto& comment_share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
    auto itr = comment_share_idx.find( std::make_tuple( comment.id, sharer.name ) );
+
+   const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_comment_account >();
+   const blog_itr = blog_idx.find( boost::make_tuple( comment.id, sharer.name ) );
+
    int64_t elapsed_seconds = (now - sharer.last_feed_time).to_seconds();
    FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL_SEC, 
       "Can only share once every ${s} seconds.", ("s", MIN_SHARE_INTERVAL_SEC) );
@@ -4045,7 +4053,7 @@ void share_evaluator::do_apply( const share_operation& o )
    uint128_t reward = (voting_power * used_power) / PERCENT_100;
    const comment_object& root = _db.get( comment.root_comment );       // If root post, gets the posts own object.
 
-   if( itr == comment_share_idx.end() )   // New vote is being added to emtpy index
+   if( itr == comment_share_idx.end() )   // New share is being added to emtpy index
    {
       FC_ASSERT( reward > 0, 
          "Cannot claim share with 0 reward." );
@@ -4067,10 +4075,13 @@ void share_evaluator::do_apply( const share_operation& o )
          c.share_count++;
       });
 
-      _db.modify( board, [&]( board_object& bo )
+      if( board_ptr != nullptr )
       {
-         bo.share_count++;  
-      });
+         _db.modify( *board_ptr, [&]( board_object& bo )
+         {
+            bo.share_count++;
+         });
+      }
 
       uint128_t new_power = std::max( comment.share_power, uint128_t(0));   // record new net reward after sharing
 
@@ -4106,7 +4117,7 @@ void share_evaluator::do_apply( const share_operation& o )
             double share_discount_rate = std::max(( double(comment.share_count) / curation_decay), double(0));
             double share_discount = std::pow(0.5, share_discount_rate );     // Raises 0.5 to a fractional power for each 1000 shares added
             double share_discount_percent = double(share_discount) * double(PERCENT_100);
-            FC_ASSERT(share_discount_percent >= 0, "Vote discount should not become negative");
+            FC_ASSERT(share_discount_percent >= 0, "Share discount should not become negative");
             w *= uint128_t(share_discount_percent);
             w /= PERCENT_100;      // Discount weight exponentially for each successive share on the post, decaying by 50% per 50 shares.
             cs.weight = w;
@@ -4118,35 +4129,26 @@ void share_evaluator::do_apply( const share_operation& o )
             cs.max_weight = 0;
          }
       });
+      
+      // Create blog and feed objects for sharer account's followers and connections. 
+      _db.share_comment_to_feeds( sharer.name, comment ); 
 
-      // Create blog object for sharer account
 
-      const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_blog >();
-      const auto& blog_comment_idx = _db.get_index< blog_index >().indices().get< by_comment >();
-
-      auto next_blog_id = 0;
-      auto last_blog = blog_idx.lower_bound( o.account );
-
-      if( last_blog != blog_idx.end() && last_blog->account == o.account )
+      if( o.board.is_valid() )
       {
-         next_blog_id = last_blog->blog_feed_id + 1;
+         const board_member_object& board_member = _db.get_board_member( o.board );       
+         FC_ASSERT( board_member.is_authorized_interact( sharer.name ), 
+            "User ${u} is not authorized to interact with posts in the board ${b}.",
+            ("b", board.name)("u", sharer.name));
+
+         _db.share_comment_to_board( sharer.name, *o.board, comment );
       }
 
-      auto blog_itr = blog_comment_idx.find( boost::make_tuple( comment.id, sharer.name ) );
-
-      FC_ASSERT( blog_itr == blog_comment_idx.end(), 
-         "Account has already shared this post" );
-
-      _db.create< blog_object >( [&]( blog_object& b )
+      if( o.tag.is_valid() )
       {
-         b.account = sharer.name;
-         b.comment = comment.id;
-         b.shared_on = now;
-         b.blog_feed_id = next_blog_id;
-      });
-
+         _db.share_comment_to_board( sharer.name, *o.tag, comment );
+      }
       
-      _db.add_comment_to_feeds( sharer.name, comment.id ); // Create feed object for sharer account's followers and connections. 
    }
    else  // share is being removed
    {
@@ -4161,10 +4163,16 @@ void share_evaluator::do_apply( const share_operation& o )
          c.share_count--;
       });
 
-      _db.modify( board, [&]( board_object& bo )
+      if( board_ptr != nullptr )
       {
-         bo.share_count--;  
-      });
+         _db.modify( *board_ptr, [&]( board_object& bo )
+         {
+            bo.share_count--;
+         });
+      }
+
+      // Remove all blog and feed objects that the account has created for the original share operation. 
+      _db.remove_shared_comment( sharer.name, comment );  // TODO
 
       _db.remove( *itr );
    }
@@ -4194,11 +4202,36 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
    const account_object& moderator = _db.get_account( o.moderator );
    const account_object& author = _db.get_account( o.author );
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
-   const board_object& board = _db.get_board( comment.board );
-   const board_member_object& board_member = _db.get_board_member( board.name );
    const governance_account_object* gov_ptr = _db.find_governance_account( o.moderator );
-   FC_ASSERT( board_member.is_moderator( o.moderator ) || gov_ptr != nullptr , 
-      "Account must be a board moderator or governance account to create moderation tag." );
+   const board_object* board_ptr = _db.find_board( comment.board );
+
+   if( board_ptr != nullptr || gov_ptr != nullptr )
+   {
+      const board_member_object* board_member_ptr = _db.find_board_member( comment.board );
+      FC_ASSERT( board_member_ptr != nullptr || gov_ptr != nullptr, 
+         "Account must be a board moderator or governance account to create moderation tag." );
+
+      if( board_member_ptr == nullptr )     // no board, must be governance account
+      {
+         FC_ASSERT( gov_ptr != nullptr, 
+            "Account must be a governance account to create moderation tag." );
+         FC_ASSERT( gov_ptr->account == o.moderator, 
+            "Account must be a governance account to create moderation tag." );
+      }
+      else if( gov_ptr == nullptr )         // not governance account, must be moderator
+      {
+         FC_ASSERT( board_member_ptr != nullptr, 
+            "Account must be a board moderator to create moderation tag." );
+         FC_ASSERT( board_member_ptr->is_moderator( o.moderator ), 
+            "Account must be a board moderator to create moderation tag." );
+      }
+      else
+      {
+         FC_ASSERT( board_member_ptr->is_moderator( o.moderator ) || gov_ptr->account == o.moderator, 
+            "Account must be a board moderator or governance account to create moderation tag." );
+      } 
+   }
+  
    FC_ASSERT( o.rating >= comment.rating,  
       "Moderation Tag rating ${n} should be equal to or greater than author's rating ${r}.", ("n", o.rating)("r", comment.rating) );
    const auto& mod_idx = _db.get_index< moderation_tag_index >().indices().get< by_moderator_comment >();
@@ -4847,43 +4880,78 @@ void board_subscribe_evaluator::do_apply( const board_subscribe_operation& o )
    const account_following_object& account_following = _db.get_account_following( o.account );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
+   time_point now = _db.head_block_time();
 
-   if(o.subscribed)   // Adding subscription 
+   if( o.subscribed )   // Adding subscription 
    {
-      FC_ASSERT( board_member.is_authorized_interact(account.name, board), 
+      FC_ASSERT( board_member.is_authorized_interact( account.name ), 
          "Account: ${a} is not authorized to subscribe to the board ${b}. Become a member first.",("a", account.name)("b", o.board));
-      FC_ASSERT( !board_member.is_subscriber(account.name), 
+      FC_ASSERT( !board_member.is_subscriber( account.name ), 
          "Account: ${a} is already subscribed to the board ${b}.",("a", account.name)("b", o.board));
    }
    else     // Removing subscription
    {
-      FC_ASSERT( board_member.is_subscriber(account.name), 
+      FC_ASSERT( board_member.is_subscriber( account.name ), 
          "Account: ${a} is not subscribed to the board ${b}.",("a", account.name)("b", o.board));
    }
 
-   _db.modify(board_member, [&]( board_member_object& bmo)
+   if( o.added )
    {
-      if(o.subscribed)
+      if( o.subscribed )     // Add subscriber
       {
-         bmo.subscribers.insert(member.name);
-      }
-      else
-      {
-         bmo.subscribers.erase(member.name);
-      }
-   });
+         _db.modify( board_member, [&]( board_member_object& bmo )
+         {
+            bmo.add_subscriber( account.name );
+            bmo.last_update = now; 
+         });
 
-   _db.modify(account_following, [&]( account_following_object& afo)
+         _db.modify( account_following, [&]( account_following_object& afo )
+         {
+            afo.add_following( board.name );
+            afo.last_update = now; 
+         });
+
+         _db.add_board_to_feed( account.name, board.name );
+      }
+      else        // Add filter
+      {
+         _db.modify( account_following, [&]( account_following_object& afo )
+         {
+            afo.add_filtered( board.name );
+            afo.last_update = now; 
+         });
+      }
+   }
+   else
    {
-      if(o.subscribed)
+      if( o.subscribed )     // Remove subscriber
       {
-         afo.boards.insert(board.name);
+         _db.modify( board_member, [&]( board_member_object& bmo )
+         {
+            bmo.remove_subscriber( account.name );
+            bmo.last_update = now; 
+         });
+
+         _db.modify( account_following, [&]( account_following_object& afo )
+         {
+            afo.remove_following( board.name );
+            afo.last_update = now; 
+         });
+
+         _db.remove_board_from_feed( account.name, board.name );
       }
-      else
+      else        // Remove filter
       {
-         afo.boards.erase(board.name);
+         _db.modify( account_following, [&]( account_following_object& afo )
+         {
+            afo.remove_filtered( board.name );
+            afo.last_update = now; 
+         });
       }
-   });
+   }
+   // Add new feed objects or remove old feed objects for board in account's feed.
+   _db.update_board_in_feed( o.account, o.board );
+
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
 

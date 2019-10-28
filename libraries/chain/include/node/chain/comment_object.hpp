@@ -222,7 +222,7 @@ namespace node { namespace chain {
    /**
     * Feed objects are used to hold the posts that have been posted or shared by the 
     * accounts that a user follows or is connected with, the boards that they follow, or
-    * the tags that they follow. 
+    * the tags that they follow. Operates like inbox.
     */
    class feed_object : public object< feed_object_type, feed_object >
    {
@@ -235,29 +235,30 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                          id;
+         id_type                                      id;
 
-         account_name_type                account;               // Account that should see comment in their feed.
+         account_name_type                           account;               // Account that should see comment in their feed.
 
-         comment_id_type                  comment;               // ID of comment being shared
+         comment_id_type                             comment;               // ID of comment being shared
 
-         feed_types                       feed_type;             // Type of feed, follow, connection, board, tag etc. 
+         feed_types                                  feed_type;             // Type of feed, follow, connection, board, tag etc. 
 
-         vector< account_name_type >      shared_by;             // Vector of all accounts that have shared the comment.
+         flat_map< account_name_type, time_point >   shared_by;             // Map of the times that accounts that have shared the comment.
 
-         vector< board_name_type >        boards;                // Vector of all boards that the comment has been shared with
+         flat_map< board_name_type, flat_map< account_name_type, time_point > >   boards;  // Map of all boards that the comment has been shared with
 
-         vector< tag_name_type >          tags;                  // Vector of all tags that the comment has been shared with
+         flat_map< tag_name_type, flat_map< account_name_type, time_point > >     tags;    // Map of all tags that the comment has been shared with.
 
-         account_name_type                first_shared_by;       // First account that shared the comment with account. 
+         account_name_type                           first_shared_by;       // First account that shared the comment with account. 
 
-         uint32_t                         shares;                // Number of accounts that have shared the comment with account.
+         uint32_t                                    shares;                // Number of accounts that have shared the comment with account.
 
-         time_point                       feed_time;             // Time that the comment was added or last shared with account. 
+         time_point                                  feed_time;             // Time that the comment was added or last shared with account. 
    };
 
    /**
-    * Blog objects hold posts that are shared or posted by a particular account.
+    * Blog objects hold posts that are shared or posted by a particular account or to a tag, or a board.
+    * Operates like outbox. 
     */
    class blog_object : public object< blog_object_type, blog_object >
    {
@@ -272,13 +273,23 @@ namespace node { namespace chain {
 
          id_type                   id;
 
-         account_name_type         account;
+         account_name_type         account;              // Blog or sharing account for account type blogs, null for other types
 
-         comment_id_type           comment;
+         board_name_type           board;                // Board posted or shared to for board type blogs
 
-         time_point                shared_on;
+         tag_name_type             tag;                  // Tag posted or shared to for tag type blogs.            
 
-         uint32_t                  blog_feed_id = 0;
+         comment_id_type           comment;              // Comment ID
+
+         flat_map< account_name_type, time_point >   shared_by;     // Map of the times that accounts that have shared the comment in the blog.
+
+         blog_types                blog_type;
+
+         account_name_type         first_shared_by;       // First account that shared the comment with the account, board or tag. 
+
+         uint32_t                  shares;                // Number of accounts that have shared the comment with account, board or tag.
+
+         time_point                blog_time;
    };
 
 
@@ -749,38 +760,145 @@ namespace node { namespace chain {
       allocator< feed_object >
    > feed_index;
 
-   struct by_blog;
-   struct by_old_blog;
+   struct by_new_account_blog;
+   struct by_old_account_blog;
+   struct by_new_board_blog;
+   struct by_old_board_blog;
+   struct by_new_tag_blog;
+   struct by_old_tag_blog;
+
+
+   struct by_comment_account;
+   struct by_comment_board;
+   struct by_comment_tag;
 
    typedef multi_index_container<
       blog_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< blog_object, blog_id_type, &blog_object::id > >,
-         ordered_unique< tag< by_blog >,
+         ordered_unique< tag< by_new_account_blog >,
             composite_key< blog_object,
                member< blog_object, account_name_type, &blog_object::account >,
-               member< blog_object, uint32_t, &blog_object::blog_feed_id >
+               member< blog_object, time_point, &blog_object::blog_time >,
+               member< blog_object, blog_id_type, &blog_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< uint32_t > >
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< time_point >, 
+               std::less< blog_id_type >
+            >
          >,
-         ordered_unique< tag< by_old_blog >,
+         ordered_unique< tag< by_old_account_blog >,
             composite_key< blog_object,
                member< blog_object, account_name_type, &blog_object::account >,
-               member< blog_object, uint32_t, &blog_object::blog_feed_id >
+               member< blog_object, time_point, &blog_object::blog_time >,
+               member< blog_object, blog_id_type, &blog_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< uint32_t > >
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< time_point >,
+               std::less< blog_id_type >
+            >
+         >,
+         ordered_unique< tag< by_new_board_blog >,
+            composite_key< blog_object,
+               member< blog_object, board_name_type, &blog_object::board >,
+               member< blog_object, time_point, &blog_object::blog_time >,
+               member< blog_object, blog_id_type, &blog_object::id >
+            >,
+            composite_key_compare< 
+               std::less< board_name_type >, 
+               std::greater< time_point >, 
+               std::less< blog_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_old_board_blog >,
+            composite_key< blog_object,
+               member< blog_object, board_name_type, &blog_object::board >,
+               member< blog_object, time_point, &blog_object::blog_time >,
+               member< blog_object, blog_id_type, &blog_object::id >
+            >,
+            composite_key_compare< 
+               std::less< board_name_type >, 
+               std::less< time_point >, 
+               std::less< blog_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_new_tag_blog >,
+            composite_key< blog_object,
+               member< blog_object, tag_name_type, &blog_object::tag >,
+               member< blog_object, time_point, &blog_object::blog_time >,
+               member< blog_object, blog_id_type, &blog_object::id >
+            >,
+            composite_key_compare< 
+               std::less< tag_name_type >, 
+               std::greater< time_point >, 
+               std::less< blog_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_old_tag_blog >,
+            composite_key< blog_object,
+               member< blog_object, tag_name_type, &blog_object::tag >,
+               member< blog_object, time_point, &blog_object::blog_time >,
+               member< blog_object, blog_id_type, &blog_object::id >
+            >,
+            composite_key_compare< 
+               std::less< tag_name_type >, 
+               std::less< time_point >, 
+               std::less< blog_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_comment_account >,
+            composite_key< blog_object,
+               member< blog_object, comment_id_type, &blog_object::comment >,
+               member< blog_object, account_name_type, &blog_object::account >,
+               member< blog_object, blog_id_type, &blog_object::id >
+            >,
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::less< account_name_type >,
+               std::less< blog_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_comment_board >,
+            composite_key< blog_object,
+               member< blog_object, comment_id_type, &blog_object::comment >,
+               member< blog_object, board_name_type, &blog_object::board >,
+               member< blog_object, blog_id_type, &blog_object::id >
+            >,
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::less< board_name_type >,
+               std::less< blog_id_type >  
+            >
+         >,
+         ordered_unique< tag< by_comment_tag >,
+            composite_key< blog_object,
+               member< blog_object, comment_id_type, &blog_object::comment >,
+               member< blog_object, tag_name_type, &blog_object::tag >,
+               member< blog_object, blog_id_type, &blog_object::id >
+            >,
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::less< tag_name_type >,
+               std::less< blog_id_type >  
+            >
          >,
          ordered_unique< tag< by_comment >,
             composite_key< blog_object,
                member< blog_object, comment_id_type, &blog_object::comment >,
-               member< blog_object, account_name_type, &blog_object::account >
+               member< blog_object, blog_id_type, &blog_object::id >
             >,
-            composite_key_compare< std::less< comment_id_type >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< comment_id_type >,
+               std::less< blog_id_type >  
+            >
          >
       >,
       allocator< blog_object >
    > blog_index;
 
+   struct by_root_author;
    struct by_cashout_time; // cashout_time
    struct by_permlink; // author, perm
    struct by_root;
@@ -803,6 +921,14 @@ namespace node { namespace chain {
       indexed_by<
          // CONSENSUS INDICIES - used by evaluators
          ordered_unique< tag< by_id >, member< comment_object, comment_id_type, &comment_object::id > >,
+         ordered_unique< tag< by_root_author >,
+            composite_key< comment_object,
+               member< comment_object, bool, &comment_object::root >,
+               member< comment_object, account_name_type, &comment_object::author >,
+               member< comment_object, comment_id_type, &comment_object::id >
+            >,
+            composite_key_compare< std::less< bool >, std::less< account_name_type >, std::less< comment_id_type > >
+         >,
          ordered_unique< tag< by_cashout_time >,
             composite_key< comment_object,
                member< comment_object, time_point, &comment_object::cashout_time>,

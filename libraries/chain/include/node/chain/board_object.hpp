@@ -39,6 +39,8 @@ namespace node { namespace chain {
 
          shared_string                      json_private;                       // Private ciphertext json information about the board.
 
+         comment_id_type                    pinned_comment;                     // Post pinned to the top of the board's page. 
+
          uint32_t                           subscriber_count = 0;               // number of accounts that are subscribed to the board
 
          uint32_t                           post_count = 0;                     // number of posts created in the board
@@ -122,6 +124,8 @@ namespace node { namespace chain {
 
          share_type                                 total_mod_weight = 0;        // Total of all moderator weights. 
 
+         time_point                                 last_update;                 // Time that the board was last updated.
+
          
          bool is_authorized_author( const account_name_type& account )const  // Determines Permission to create a new root post in the board
          {
@@ -150,21 +154,21 @@ namespace node { namespace chain {
          {
             if( is_blacklisted( account ) )
             {
-               return false;       // The account is in the board's blacklist
+               return false;          // The account is in the board's blacklist
             }
             if( board_privacy == OPEN_BOARD || board_privacy == PUBLIC_BOARD )  // Open or Public, anyone can interact
             {
-               return true; // The board is open and public, all non-blacklisted accounts can interact with it.
+               return true;             // The board is open and public, all non-blacklisted accounts can interact with it.
             }
-            else    // Private and Exclusive groups, members can interact.
+            else                        // Private and Exclusive groups, members can interact.
             {
                if( is_member( account ) )
                {
-                  return true; // The account is in the membership list
+                  return true;         // The account is in the membership list
                }
                else
                {
-                  return false; // The account is not in the membership list. 
+                  return false;        // The account is not in the membership list. 
                } 
             }
          };
@@ -173,9 +177,9 @@ namespace node { namespace chain {
          {
             if( is_blacklisted( account ) )
             {
-               return false;       // The account is in the board's blacklist
+               return false;             // The account is in the board's blacklist
             }
-            if( board_privacy == EXCLUSIVE_BOARD ) // Exclusive groups do not allow join requests, invitation only. 
+            if( board_privacy == EXCLUSIVE_BOARD )          // Exclusive groups do not allow join requests, invitation only. 
             {
                return false; 
             }

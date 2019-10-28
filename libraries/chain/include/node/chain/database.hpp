@@ -3,7 +3,7 @@
  */
 #pragma once
 #include <node/chain/global_property_object.hpp>
-#include <node/chain/hardfork.hpp>
+//#include <node/chain/hardfork.hpp>
 #include <node/chain/node_property_object.hpp>
 #include <node/chain/fork_database.hpp>
 #include <node/chain/block_log.hpp>
@@ -166,8 +166,8 @@ namespace node { namespace chain {
          const reward_fund_object&              get_reward_fund() const;
          const comment_metrics_object&          get_comment_metrics() const;
 
-         const asset& database::asset_to_USD( const asset& a) const;
-         const asset& database::USD_to_asset( const asset& a) const;
+         const asset&                           asset_to_USD( const asset& a) const;
+         const asset&                           USD_to_asset( const asset& a) const;
          
          const node_property_object&            get_node_properties()const;
          const feed_history_object&             get_feed_history()const;
@@ -644,19 +644,27 @@ namespace node { namespace chain {
 
          void process_comment_cashout();
 
+         void update_comment_metrics();
+
          void add_comment_to_feeds( const comment_object& comment );
 
          void share_comment_to_feeds( const account_name_type& sharer, const feed_types& reach, const comment_object& comment );
 
-         void add_comment_to_board( const comment_object& comment );
+         void share_comment_to_board( const account_name_type& sharer, 
+            const board_name_type& board, const comment_object& comment );
 
-         void share_comment_to_board( const comment_object& comment );
-
-         void add_comment_to_tags( const comment_object& comment );
+         void share_comment_to_tag( const account_name_type& sharer, 
+            const tag_name_type& tag, const comment_object& comment );
 
          void clear_comment_feeds( const comment_object& comment );
 
-         void update_comment_metrics();
+         void remove_shared_comment( const account_name_type& sharer, const comment_object& comment );
+
+         void update_account_in_feed( const account_name_type& account, const account_name_type& followed );
+
+         void update_tag_in_feed( const account_name_type& account, const tag_name_type& tag );
+
+         void update_board_in_feed( const account_name_type& account, const board_name_type& board );
 
          void adjust_total_payout( const comment_object& a, const asset& USD, const asset& curator_USD_value, const asset& beneficiary_value );
 
@@ -840,10 +848,6 @@ namespace node { namespace chain {
 
          bool maybe_cull_small_order( const margin_order_object& order );
          
-         asset asset_to_USD( const asset& asset )const;
-
-         asset USD_to_asset( const asset& USD )const;
-
 
 #ifdef IS_TEST_NET
          bool liquidity_rewards_enabled = true;

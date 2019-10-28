@@ -55,6 +55,8 @@ namespace node { namespace chain {
 
          shared_string                    json_private;                          // Private ciphertext json information.
 
+         comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
+
          account_name_type                proxy;                                 // Account that votes on behalf of this account
 
          flat_set< account_name_type>     proxied;                               // Accounts that have set this account to be their proxy voter.
@@ -987,46 +989,61 @@ namespace node { namespace chain {
 
          flat_set< board_name_type >       filtered_boards;      // Boards that this account has filtered. Posts will not display if they are in these boards.
 
-         flat_set< account_name_type >     filtered_tags;        // Tags that this account has filtered. Posts will not display if they have any of these tags. 
+         flat_set< tag_name_type >         filtered_tags;        // Tags that this account has filtered. Posts will not display if they have any of these tags. 
 
          time_point                        last_update;          // Last time that the account changed its following sets.
 
-         bool                              is_follower( const account_name_type& account )
+         bool                              is_connection( const account_name_type& account )const
+         {
+            return std::find( connections.begin(), connections.end(), account ) != connections.end();
+         };
+
+         bool                              is_friend( const account_name_type& account )const
+         {
+            return std::find( friends.begin(), friends.end(), account ) != friends.end();
+         };
+
+         bool                              is_companion( const account_name_type& account )const
+         {
+            return std::find( companions.begin(), companions.end(), account ) != companions.end();
+         };
+
+         bool                              is_follower( const account_name_type& account )const
          {
             return std::find( followers.begin(), followers.end(), account ) != followers.end();
          };
 
-         bool                              is_following( const account_name_type& account )
+         bool                              is_following( const account_name_type& account )const
          {
             return std::find( following.begin(), following.end(), account ) != following.end();
          };
 
-         bool                              is_following( const tag_name_type& tag )
+         bool                              is_following( const tag_name_type& tag )const
          {
             return std::find( followed_tags.begin(), followed_tags.end(), tag ) != followed_tags.end();
          };
 
-         bool                              is_following( const board_name_type& board )
+         bool                              is_following( const board_name_type& board )const
          {
             return std::find( followed_boards.begin(), followed_boards.end(), board ) != followed_boards.end();
          };
 
-         bool                              is_mutual( const account_name_type& account )
+         bool                              is_mutual( const account_name_type& account )const
          {
             return std::find( mutual_followers.begin(), mutual_followers.end(), account ) != mutual_followers.end();
          };
 
-         bool                              is_filtered( const account_name_type& account )
+         bool                              is_filtered( const account_name_type& account )const
          {
             return std::find( filtered.begin(), filtered.end(), account ) != filtered.end();
          };
 
-         bool                              is_filtered( const tag_name_type& tag )
+         bool                              is_filtered( const tag_name_type& tag )const
          {
             return std::find( filtered_tags.begin(), filtered_tags.end(), tag ) != filtered_tags.end();
          };
 
-         bool                              is_filtered( const board_name_type& board )
+         bool                              is_filtered( const board_name_type& board )const
          {
             return std::find( filtered_boards.begin(), filtered_boards.end(), board ) != filtered_boards.end();
          };
