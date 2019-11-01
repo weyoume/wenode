@@ -375,6 +375,8 @@
 #define MEDIAN_LIQUIDITY_INTERVAL_BLOCKS       int64_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
 #define MEDIAN_LIQUIDITY_INTERVAL              fc::minutes(10)
 
+#define REP_UPDATE_BLOCK_INTERVAL              ( BLOCKS_PER_DAY )
+
 #define FEED_INTERVAL_BLOCKS            (BLOCKS_PER_HOUR)     // Updates feeds once per hour
 #define FEED_HISTORY_WINDOW             fc::hours(84)         // 3.5 days
 #define MAX_FEED_AGE                    fc::days(30)          // 30 days

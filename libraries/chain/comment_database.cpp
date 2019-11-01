@@ -406,6 +406,16 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
          {
             a.posting_rewards += author_tokens;
          });
+
+         const board_object* board_ptr = find_board( comment.board );
+
+         if( board_ptr != nullptr )
+         {
+            modify( *board_ptr, [&]( board_object& b )
+            {
+               b.total_content_rewards += asset( claimed_reward, SYMBOL_COIN );
+            });
+         }
       }
    }
 
@@ -1352,12 +1362,13 @@ void database::clear_comment_feeds( const comment_object& comment )
    const comment_id_type& comment_id = comment.id;
    const auto& feed_idx = get_index< feed_index >().indices().get< by_comment >();
    auto feed_itr = feed_idx.lower_bound( comment_id );
-   auto feed_end = feed_idx.upper_bound( comment_id );
 
-   while( feed_itr != feed_end )
+   while( feed_itr != feed_idx.end() && feed_itr->comment == comment_id )
    {
-      remove( *feed_itr );
-      feed_itr = feed_idx.lower_bound( comment_id );
+      const feed_object& feed = *feed_itr;
+      feed_id_type feed_id = feed.id; 
+      remove( feed );
+      feed_itr = feed_idx.lower_bound( boost::make_tuple( comment_id, feed_id ) );
    }
 
    const auto& blog_idx = get_index< blog_index >().indices().get< by_comment >();
@@ -1366,15 +1377,17 @@ void database::clear_comment_feeds( const comment_object& comment )
 
    while( blog_itr != blog_end )
    {
-      remove( *blog_itr );
-      blog_itr = blog_idx.lower_bound( comment_id );
+      const blog_object& blog = *blog_itr;
+      blog_id_type blog_id = blog.id; 
+      remove( blog );
+      blog_itr = blog_idx.lower_bound( boost::make_tuple( comment_id, blog_id ) );
    }
 } FC_CAPTURE_AND_RETHROW() }
 
 
 
 /**
- * TODO: Removes a comment from all account, tag, and board feeds, and blogs that an account shared it to. 
+ * Removes a comment from all account, tag, and board feeds, and blogs that an account shared it to. 
  */
 void database::remove_shared_comment( const account_name_type& sharer, const comment_object& comment )
 { try {
@@ -1382,22 +1395,92 @@ void database::remove_shared_comment( const account_name_type& sharer, const com
    const comment_id_type& comment_id = comment.id;
    const auto& feed_idx = get_index< feed_index >().indices().get< by_comment >();
    auto feed_itr = feed_idx.lower_bound( comment_id );
-   auto feed_end = feed_idx.upper_bound( comment_id );
 
-   while( feed_itr != feed_end )
+   while( feed_itr != feed_idx.end() && feed_itr->comment == comment_id )
    {
-      remove( *feed_itr );
-      feed_itr = feed_idx.lower_bound( comment_id );
+      const feed_object& feed = *feed_itr;
+      flat_map< account_name_type, time_point > shared_by = feed.shared_by;
+      if( shared_by[ sharer ] != time_point() )
+      {
+         if( feed.shared_by.size() == 1 )     // Remove if Account was only sharer
+         {
+            feed_id_type feed_id = feed.id; 
+            remove( feed );
+            feed_itr = feed_idx.lower_bound( boost::make_tuple( comment_id, feed_id ) );
+            continue;
+         }
+         else     // Remove sharer from stats and decrement shares 
+         {
+            modify( feed, [&]( feed_object& f )
+            {
+               for( auto tag : f.tags )
+               {
+                  f.tags[ tag.first ].erase( sharer );
+               }
+               for( auto board : f.boards )
+               {
+                  f.boards[ board.first ].erase( sharer );
+               }
+               f.shared_by.erase( sharer );
+               vector< pair< account_name_type, time_point > > shared_by_copy;
+               for( auto time : f.shared_by )
+               {
+                  shared_by_copy.push_back( time );
+               }
+               std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+               [&]( auto a, auto b)
+               {
+                  return a.second < b.second;
+               });
+
+               f.feed_time = shared_by_copy[0].second;  // Feed time is the new latest time after removing account. 
+               f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first; // Earliest time is new first sharer
+               f.shares--;
+            });
+         }
+      }
+      ++feed_itr;
    }
 
    const auto& blog_idx = get_index< blog_index >().indices().get< by_comment >();
    auto blog_itr = blog_idx.lower_bound( comment_id );
-   auto blog_end = blog_idx.upper_bound( comment_id );
 
-   while( blog_itr != blog_end )
+   while( blog_itr != blog_idx.end() && blog_itr->comment == comment_id )
    {
-      remove( *blog_itr );
-      blog_itr = blog_idx.lower_bound( comment_id );
+      const blog_object& blog = *blog_itr;
+      flat_map< account_name_type, time_point > shared_by = blog.shared_by;
+      if( shared_by[ sharer ] != time_point() )
+      {
+         if( blog.shared_by.size() == 1 )     // Remove if Account was only sharer
+         {
+            blog_id_type blog_id = blog.id; 
+            remove( blog );
+            blog_itr = blog_idx.lower_bound( boost::make_tuple( comment_id, blog_id ) );
+            continue;
+         }
+         else     // Remove sharer from stats and decrement shares 
+         {
+            modify( blog, [&]( blog_object& f )
+            {
+               f.shared_by.erase( sharer );
+               vector< pair < account_name_type, time_point > > shared_by_copy;
+               for( auto time : f.shared_by )
+               {
+                  shared_by_copy.push_back( time );
+               }
+               std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+               [&]( auto a, auto b)
+               {
+                  return a.second < b.second;
+               });
+
+               f.blog_time = shared_by_copy[0].second;  // blog time is the new latest time after removing account. 
+               f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first; // Earliest time is new first sharer
+               f.shares--;
+            }); 
+         }
+      }
+      ++blog_itr;
    }
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -1463,20 +1546,19 @@ void database::update_account_in_feed( const account_name_type& account, const a
                   modify( feed, [&]( feed_object& f )
                   {
                      f.shared_by.erase( followed );
-                     vector< time_point > shared_by_copy;
+                     vector< pair < account_name_type, time_point > > shared_by_copy;
                      for( auto time : f.shared_by )
                      {
-                        shared_by_copy.push_back( time.second );
+                        shared_by_copy.push_back( time );
                      }
-                     std::nth_element( shared_by_copy.begin(), 
-                        shared_by_copy.begin()+size_t(1), 
-                        shared_by_copy.end(), 
-                     [&]( time_point a, time_point b)
+                     std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+                     [&]( auto a, auto b)
                      {
-                        return a < b;
+                        return a.second < b.second;
                      });
 
-                     f.feed_time = shared_by_copy[0];  // Feed time is the new latest time after removing account. 
+                     f.feed_time = shared_by_copy[0].second;  // Feed time is the new latest time after removing account. 
+                     f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first;
                      f.shares--;
                   });
                }  
@@ -1523,20 +1605,19 @@ void database::update_account_in_feed( const account_name_type& account, const a
                   modify( feed, [&]( feed_object& f )
                   {
                      f.shared_by.erase( followed );
-                     vector< time_point > shared_by_copy;
+                     vector< pair < account_name_type, time_point > > shared_by_copy;
                      for( auto time : f.shared_by )
                      {
-                        shared_by_copy.push_back( time.second );
+                        shared_by_copy.push_back( time );
                      }
-                     std::nth_element( shared_by_copy.begin(), 
-                        shared_by_copy.begin()+size_t(1), 
-                        shared_by_copy.end(), 
-                     [&]( time_point a, time_point b)
+                     std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+                     [&]( auto a, auto b)
                      {
-                        return a < b;
+                        return a.second < b.second;
                      });
 
-                     f.feed_time = shared_by_copy[0];  // Feed time is the new latest time after removing account. 
+                     f.feed_time = shared_by_copy[0].second;  // Feed time is the new latest time after removing account. 
+                     f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first;
                      f.shares--;
                   });
                }  
@@ -1583,20 +1664,19 @@ void database::update_account_in_feed( const account_name_type& account, const a
                   modify( feed, [&]( feed_object& f )
                   {
                      f.shared_by.erase( followed );
-                     vector< time_point > shared_by_copy;
+                     vector< pair < account_name_type, time_point > > shared_by_copy;
                      for( auto time : f.shared_by )
                      {
-                        shared_by_copy.push_back( time.second );
+                        shared_by_copy.push_back( time );
                      }
-                     std::nth_element( shared_by_copy.begin(), 
-                        shared_by_copy.begin()+size_t(1), 
-                        shared_by_copy.end(), 
-                     [&]( time_point a, time_point b)
+                     std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+                     [&]( auto a, auto b)
                      {
-                        return a < b;
+                        return a.second < b.second;
                      });
 
-                     f.feed_time = shared_by_copy[0];  // Feed time is the new latest time after removing account. 
+                     f.feed_time = shared_by_copy[0].second;  // Feed time is the new latest time after removing account. 
+                     f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first;
                      f.shares--;
                   });
                }  
@@ -1643,20 +1723,19 @@ void database::update_account_in_feed( const account_name_type& account, const a
                   modify( feed, [&]( feed_object& f )
                   {
                      f.shared_by.erase( followed );
-                     vector< time_point > shared_by_copy;
+                     vector< pair < account_name_type, time_point > > shared_by_copy;
                      for( auto time : f.shared_by )
                      {
-                        shared_by_copy.push_back( time.second );
+                        shared_by_copy.push_back( time );
                      }
-                     std::nth_element( shared_by_copy.begin(), 
-                        shared_by_copy.begin()+size_t(1), 
-                        shared_by_copy.end(), 
-                     [&]( time_point a, time_point b)
+                     std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+                     [&]( auto a, auto b)
                      {
-                        return a < b;
+                        return a.second < b.second;
                      });
 
-                     f.feed_time = shared_by_copy[0];  // Feed time is the new latest time after removing account. 
+                     f.feed_time = shared_by_copy[0].second;  // Feed time is the new latest time after removing account. 
+                     f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first;
                      f.shares--;
                   });
                }  
@@ -1703,20 +1782,19 @@ void database::update_account_in_feed( const account_name_type& account, const a
                   modify( feed, [&]( feed_object& f )
                   {
                      f.shared_by.erase( followed );
-                     vector< time_point > shared_by_copy;
+                     vector< pair < account_name_type, time_point > > shared_by_copy;
                      for( auto time : f.shared_by )
                      {
-                        shared_by_copy.push_back( time.second );
+                        shared_by_copy.push_back( time );
                      }
-                     std::nth_element( shared_by_copy.begin(), 
-                        shared_by_copy.begin()+size_t(1), 
-                        shared_by_copy.end(), 
-                     [&]( time_point a, time_point b)
+                     std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+                     [&]( auto a, auto b)
                      {
-                        return a < b;
+                        return a.second < b.second;
                      });
 
-                     f.feed_time = shared_by_copy[0];  // Feed time is the new latest time after removing account. 
+                     f.feed_time = shared_by_copy[0].second;  // Feed time is the new latest time after removing account. 
+                     f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first;
                      f.shares--;
                   });
                }  
@@ -1819,20 +1897,19 @@ void database::update_board_in_feed( const account_name_type& account, const boa
                   f.shared_by.erase( board_value.first );   // Remove all shares from this board
                }
                f.boards.erase( board );
-               vector< time_point > shared_by_copy;
+               vector< pair < account_name_type, time_point > > shared_by_copy;
                for( auto time : f.shared_by )
                {
-                  shared_by_copy.push_back( time.second );
+                  shared_by_copy.push_back( time );
                }
-               std::nth_element( shared_by_copy.begin(), 
-                  shared_by_copy.begin()+size_t(1), 
-                  shared_by_copy.end(), 
-               [&]( time_point a, time_point b)
+               std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+               [&]( auto a, auto b)
                {
-                  return a < b;
+                  return a.second < b.second;
                });
 
-               f.feed_time = shared_by_copy[0];  // Feed time is the new latest time after removing shares in this board. 
+               f.feed_time = shared_by_copy[0].second;  // Feed time is the new latest time after removing account. 
+               f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first;
                f.shares--;
             });
          }  
@@ -1905,20 +1982,19 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
                   f.shared_by.erase( tag_value.first );   // Remove all shares from this tag
                }
                f.tags.erase( tag );
-               vector< time_point > shared_by_copy;
+               vector< pair < account_name_type, time_point > > shared_by_copy;
                for( auto time : f.shared_by )
                {
-                  shared_by_copy.push_back( time.second );
+                  shared_by_copy.push_back( time );
                }
-               std::nth_element( shared_by_copy.begin(), 
-                  shared_by_copy.begin()+size_t(1), 
-                  shared_by_copy.end(), 
-               [&]( time_point a, time_point b)
+               std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
+               [&]( auto a, auto b)
                {
-                  return a < b;
+                  return a.second < b.second;
                });
 
-               f.feed_time = shared_by_copy[0];  // Feed time is the new latest time after removing shares in this tag. 
+               f.feed_time = shared_by_copy[0].second;  // Feed time is the new latest time after removing account. 
+               f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first;
                f.shares--;
             });
          }  

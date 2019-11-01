@@ -544,7 +544,7 @@ namespace node { namespace protocol {
 
       account_name_type         reset_account;
 
-      int64_t                   days = 7;
+      int16_t                   days = 7;
 
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }

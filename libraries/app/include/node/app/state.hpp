@@ -35,7 +35,6 @@ namespace node { namespace app {
       vector< string > maturing;    /// about to be paid out
       vector< string > best;        /// total lifetime payout
       vector< string > hot;         /// total lifetime payout
-      vector< string > promoted;    /// pending lifetime payout
    };
 
    struct tag_index
@@ -49,7 +48,32 @@ namespace node { namespace app {
       uint64_t       weight = 0;
       int64_t        reward = 0;
       int16_t        percent = 0;
-      share_type     reputation = 0;
+      time_point     time;
+   };
+
+   struct view_state
+   {
+      string         viewer;
+      uint64_t       weight = 0;
+      int64_t        reward = 0;
+      time_point     time;
+   };
+
+   struct share_state
+   {
+      string         sharer;
+      uint64_t       weight = 0;
+      int64_t        reward = 0;
+      time_point     time;
+   };
+
+   struct moderation_state
+   {
+      string         moderator;
+      vector< tag_name_type >    tags;             // Set of string tags for sorting the post by
+      string         rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
+      string         details;          // Explaination as to what rule the post is in contravention of and why it was tagged.
+      bool           filter;           // True if the post should be filtered by the board or governance address subscribers.
       time_point     time;
    };
 
@@ -62,22 +86,20 @@ namespace node { namespace app {
       time_point     time;
    };
 
-   struct  discussion : public comment_api_obj {
+   struct discussion : public comment_api_obj 
+   {
       discussion( const comment_object& o ):comment_api_obj(o){}
       discussion(){}
 
-      string                      url; /// /category/@rootauthor/root_permlink#author/permlink
+      string                      url;                            // /category/@rootauthor/root_permlink#author/permlink
       string                      root_title;
-      asset                       pending_payout_value; ///< USD
-      asset                       total_pending_payout_value; ///< USD including replies
       vector<vote_state>          active_votes;
-      vector<string>              replies; ///< author/slug mapping
-      share_type                  author_reputation = 0;
-      asset                       promoted = asset(0, SYMBOL_USD);
+      vector<view_state>          active_views;
+      vector<share_state>         active_shares;
+      vector<moderation_state>    active_mod_tags;
+
+      vector<string>              replies;                        // author/slug mapping
       uint32_t                    body_length = 0;
-      vector<account_name_type>   reblogged_by;
-      optional<account_name_type> first_reblogged_by;
-      optional<time_point>        first_reblogged_on;
    };
 
    struct extended_account : public account_api_obj
@@ -85,13 +107,30 @@ namespace node { namespace app {
       extended_account(){}
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
 
-      share_type                              reputation = 0;
       map<uint64_t,applied_operation>         transfer_history; /// transfer to/from
       map<uint64_t,applied_operation>         market_history; /// limit order / cancel / fill
       map<uint64_t,applied_operation>         post_history;
       map<uint64_t,applied_operation>         vote_history;
       map<uint64_t,applied_operation>         other_history;
-      set<string>                             witness_votes;
+
+      map<string, account_balance_api_obj >   balances;
+      account_following_api_obj               following; 
+      account_business_api_obj                business; 
+      key_state                               keychain;
+
+      map<account_name_type, connection_api_obj>      connections;
+      map<account_name_type, connection_api_obj>      friends;
+      map<account_name_type, connection_api_obj>      companions;
+
+      map<account_name_type, uint16_t>                                    witness_votes;
+      map<string, map< account_name_type, uint16_t > >                    network_officer_votes;
+      map<account_name_type, uint16_t >                                   executive_board_votes;
+
+      map<account_name_type, map< string, pair< account_name_type, uint16_t > > >   account_executive_votes;
+      map<account_name_type, map< account_name_type, uint16_t > >        account_officer_votes;
+      map<board_name_type, map<account_name_type, uint16_t > >           board_moderator_votes;
+      map<account_name_type, map< string, uint16_t > >                   enterprise_approvals;
+
       vector<pair<string,uint32_t>>            tags_usage;
       vector<pair<account_name_type,uint32_t>> guest_bloggers;
 
@@ -102,6 +141,38 @@ namespace node { namespace app {
       optional<vector<string>>                recent_replies; /// blog posts for this user
       optional<vector<string>>                recommended; /// posts recommened for this user
    };
+
+
+   struct extended_board : public board_api_obj
+   {
+      extended_board(){}
+      extended_board( const board_object& b, const database& db ):board_api_obj( b, db ){}
+
+      vector<account_name_type>             subscribers;                 // List of accounts that subscribe to the posts made in the board.
+      vector<account_name_type>             members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
+      vector<account_name_type>             moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
+      vector<account_name_type>             administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
+      vector<account_name_type>             blacklist;                   // Accounts that are not able to post in this board, or request to join.
+      map<account_name_type,int64_t>        mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
+      int64_t                               total_mod_weight = 0;        // Total of all moderator weights. 
+   };
+
+   struct message_state
+   {
+      vector< message_api_obj >                                inbox;
+      vector< message_api_obj >                                outbox;
+      map< account_name_type, vector< message_api_obj > >       conversations;
+   }
+
+
+   struct key_state
+   {
+      map<account_name_type, string>                           board_keys;
+      map<account_name_type, string>                           business_keys;
+      map<account_name_type, string>                           connection_keys;
+      map<account_name_type, string>                           friend_keys;
+      map<account_name_type, string>                           companion_keys;
+   }
 
 
 

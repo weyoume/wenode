@@ -75,6 +75,32 @@ enum withdraw_route_type
    all
 };
 
+enum sort_time
+{
+   NO_TIME          = 'none',
+   ACTIVE_TIME      = 'active',
+   RAPID_TIME       = 'rapid',
+   STANDARD_TIME    = 'standard',
+   TOP_TIME         = 'top',
+   ELITE_TIME       = 'elite'
+}
+
+enum sort_type
+{
+   NO_SORT             = 'none',
+   VOTES_SORT          = 'votes',
+   VIEWS_SORT          = 'views',
+   SHARES_SORT         = 'shares',
+   COMMENTS_SORT       = 'comments',
+   QUALITY_SORT        = 'quality',
+   POPULAR_SORT        = 'popular',
+   VIRAL_SORT          = 'viral',
+   DISCUSSION_SORT     = 'discussion',
+   PROMINENT_SORT      = 'prominent',
+   CONVERSATION_SORT   = 'conversation',
+   DISCOURSE_SORT      = 'discourse'
+}
+
 class database_api_impl;
 
 /**
@@ -82,20 +108,39 @@ class database_api_impl;
  */
 struct discussion_query {
    void validate()const{
-      FC_ASSERT( filter_tags.find(tag) == filter_tags.end() );
+      FC_ASSERT( filter_authors.find( account ) == filter_authors.end() );
+      FC_ASSERT( filter_boards.find( board ) == filter_boards.end() );
+      FC_ASSERT( filter_tags.find( tag ) == filter_tags.end() );
       FC_ASSERT( limit <= 100 );
    }
 
-   string           tag;
-   uint32_t         limit = 0;
-   set<string>      filter_tags;
-   set<string>      select_authors; ///< list of authors to include, posts not by this author are filtered
-   set<string>      select_tags; ///< list of tags to include, posts without these tags are filtered
-   uint32_t         truncate_body = 0; ///< the number of bytes of the post body to return, 0 for all
-   optional<string> start_author;
-   optional<string> start_permlink;
-   optional<string> parent_author;
-   optional<string> parent_permlink;
+   string                  account;               // Name of the account being fetched for feed or blog queries.
+   string                  board;                 // Name of the board being queried.
+   string                  tag;                   // Name of the tag being querired. 
+
+   string                  sort_type;             // Sorting index type.
+   string                  sort_time;             // Time preference of the sorting type.
+   
+   string                  feed_type;             // Type of feed being queried.
+   string                  blog_type;             // Type of blog being queried.
+
+   uint32_t                limit = 0;
+
+   set<string>             select_boards;         // list of boards to include
+   set<string>             filter_boards;         // list of boards to filter, posts made in these boards are filtered
+   
+   set<string>             select_tags;           // list of tags to include
+   set<string>             filter_tags;           // list of tags to filter, posts with these tags are filtered
+
+   set<string>             select_authors;        // list of authors to include
+   set<string>             filter_authors;        // list of authors to filter, posts by these authors are filtered
+
+   optional<string>        start_author;
+   optional<string>        start_permlink;
+   optional<string>        parent_author;
+   optional<string>        parent_permlink;
+
+   uint32_t                truncate_body = 0;     // the number of bytes of the post body to return, 0 for all
 };
 
 /**
@@ -190,7 +235,13 @@ class database_api
       // Accounts //
       //////////////
 
-      vector< extended_account > get_accounts( vector< string > names ) const;
+      vector< account_api_obj > get_accounts( vector< string > names ) const;
+
+      vector< account_concise_api_obj > get_concise_accounts( vector< string > names ) const;
+
+      vector< extended_account > get_full_accounts( vector< string > names ) const;
+
+      message_box
 
       /**
        *  @return all accounts that referr to the key or account id in their owner or active authorities.
@@ -234,6 +285,13 @@ class database_api
 
       vector< asset_delegation_api_obj > get_asset_delegations( string account, string from, uint32_t limit = 100 )const;
       vector< asset_delegation_expiration_api_obj > get_expiring_asset_delegations( string account, time_point from, uint32_t limit = 100 )const;
+
+
+      ////////////
+      // Boards //
+      ////////////
+
+      vector<extended_board> get_boards( vector< string > boards ) const;
 
       ///////////////
       // Witnesses //
@@ -340,17 +398,17 @@ class database_api
       vector<discussion> get_discussions_by_payout(const discussion_query& query )const;
       vector<discussion> get_post_discussions_by_payout( const discussion_query& query )const;
       vector<discussion> get_comment_discussions_by_payout( const discussion_query& query )const;
-      vector<discussion> get_discussions_by_trending( const discussion_query& query )const;
+      vector<discussion> get_discussions_by_index( const discussion_query& query )const;
       vector<discussion> get_discussions_by_created( const discussion_query& query )const;
       vector<discussion> get_discussions_by_active( const discussion_query& query )const;
       vector<discussion> get_discussions_by_cashout( const discussion_query& query )const;
       vector<discussion> get_discussions_by_votes( const discussion_query& query )const;
+      vector<discussion> get_discussions_by_views( const discussion_query& query )const;
+      vector<discussion> get_discussions_by_shares( const discussion_query& query )const;
       vector<discussion> get_discussions_by_children( const discussion_query& query )const;
-      vector<discussion> get_discussions_by_hot( const discussion_query& query )const;
       vector<discussion> get_discussions_by_feed( const discussion_query& query )const;
       vector<discussion> get_discussions_by_blog( const discussion_query& query )const;
       vector<discussion> get_discussions_by_comments( const discussion_query& query )const;
-      vector<discussion> get_discussions_by_promoted( const discussion_query& query )const;
 
       ///@}
 
@@ -417,9 +475,11 @@ class database_api
 
       template<typename Index, typename StartItr>
       vector<discussion> get_discussions( const discussion_query& q,
+                                          const string& board,
                                           const string& tag,
                                           comment_id_type parent,
-                                          const Index& idx, StartItr itr,
+                                          const Index& idx, 
+                                          StartItr itr,
                                           uint32_t truncate_body = 0,
                                           const std::function< bool( const comment_api_obj& ) >& filter = &database_api::filter_default,
                                           const std::function< bool( const comment_api_obj& ) >& exit   = &database_api::exit_default,

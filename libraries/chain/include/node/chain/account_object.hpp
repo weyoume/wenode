@@ -51,10 +51,6 @@ namespace node { namespace chain {
 
          public_key_type                  companion_public_key;                  // Key used for encrypting posts for companion level visibility.
 
-         shared_string                    json;                                  // Public plaintext json information.
-
-         shared_string                    json_private;                          // Private ciphertext json information.
-
          comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
 
          account_name_type                proxy;                                 // Account that votes on behalf of this account
@@ -69,25 +65,29 @@ namespace node { namespace chain {
 
          account_name_type                reset_account = NULL_ACCOUNT;          // Account that has the ability to reset owner authority after specified days of inactivity.
 
-         fc::microseconds                 reset_account_delay = fc::days(7);
-
          account_name_type                membership_interface = NULL_ACCOUNT;   // Account of the last interface to sell a membership to the account.
 
-         uint16_t                         referrer_rewards_percentage = 50 * PERCENT_1; // The percentage of registrar rewards that are directed to the referrer.
+         uint16_t                         reset_account_delay_days = 7;
          
-         executive_officer_set            officers;                             // Set of officer account names and members and roles in a business account.
+         uint16_t                         referrer_rewards_percentage = 50 * PERCENT_1; // The percentage of registrar rewards that are directed to the referrer.
          
          uint32_t                         comment_count = 0;
 
          uint32_t                         follower_count = 0;
 
+         uint32_t                         following_count = 0;
+
          uint32_t                         lifetime_vote_count = 0;
 
          uint32_t                         post_count = 0;
 
-         uint16_t                         voting_power = PERCENT_100;             // current voting power of this account, falls after every vote, recovers over time.
+         uint16_t                         voting_power = PERCENT_100;                 // current voting power of this account, falls after every vote, recovers over time.
 
-         uint16_t                         viewing_power = PERCENT_100;             // current viewing power of this account, falls after every view, recovers over time.
+         uint16_t                         viewing_power = PERCENT_100;                // current viewing power of this account, falls after every view, recovers over time.
+
+         uint16_t                         sharing_power = PERCENT_100;                // current viewing power of this account, falls after every view, recovers over time.
+
+         uint16_t                         commenting_power = PERCENT_100;             // current viewing power of this account, falls after every view, recovers over time.
 
          uint8_t                          savings_withdraw_requests = 0;
 
@@ -107,15 +107,13 @@ namespace node { namespace chain {
 
          share_type                       recent_activity_claims = 0;
 
-         uint16_t                         witnesses_voted_for = 0;
+         uint16_t                         witness_vote_count = 0;
 
-         uint16_t                         officer_votes = 0;                         // Number of network officers that the account has voted for.
+         uint16_t                         officer_vote_count = 0;                         // Number of network officers that the account has voted for.
 
-         uint16_t                         executive_board_votes = 0;                 // Number of Executive boards that the account has voted for.
+         uint16_t                         executive_board_vote_count = 0;                 // Number of Executive boards that the account has voted for.
 
          uint16_t                         governance_subscriptions = 0;              // Number of governance accounts that the account subscribes to.
-
-         uint32_t                         post_bandwidth = 0;
 
          uint16_t                         recurring_membership = 0;                  // Amount of months membership should be automatically renewed for on expiration
 
@@ -129,15 +127,13 @@ namespace node { namespace chain {
 
          time_point                       last_view_time;                            // Time that the account last viewed a post.
 
+         time_point                       last_share_time;                           // Time that the account last shared a post.
+
          time_point                       last_post;                                 // Time that the user most recently created a comment 
 
          time_point                       last_root_post;                            // Time that the account last created a post.
 
-         time_point                       last_transfer;                             // Time that the account last sent a transfer or created a trading txn. 
-
-         time_point                       last_owner_proved; 
-
-         time_point                       last_active_proved;
+         time_point                       last_transfer_time;                        // Time that the account last sent a transfer or created a trading txn. 
 
          time_point                       last_activity_reward;
 
@@ -975,7 +971,7 @@ namespace node { namespace chain {
 
          flat_set< account_name_type >     mutual_followers;     // Accounts that are both following and followers of this account.
 
-         flat_set< account_name_type >     connections;          // Account that are connections of this account.
+         flat_set< account_name_type >     connections;          // Accounts that are connections of this account.
 
          flat_set< account_name_type >     friends;              // Accounts that are friends of this account.
 
@@ -1404,6 +1400,7 @@ namespace node { namespace chain {
    struct by_post_count;
    struct by_vote_count;
    struct by_follower_count;
+   struct by_following_count;
    struct by_subscribers;
    struct by_subscriber_power;
    struct by_membership_expiration;
@@ -1457,6 +1454,16 @@ namespace node { namespace chain {
          ordered_unique< tag< by_follower_count >,
             composite_key< account_object,
                member< account_object, uint32_t, &account_object::follower_count >,
+               member< account_object, account_id_type, &account_object::id >
+            >,
+            composite_key_compare< 
+               std::greater< uint32_t >, 
+               std::less< account_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_following_count >,
+            composite_key< account_object,
+               member< account_object, uint32_t, &account_object::following_count >,
                member< account_object, account_id_type, &account_object::id >
             >,
             composite_key_compare< 
@@ -2006,19 +2013,21 @@ namespace node { namespace chain {
             >,
             composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::greater< connection_types > >
          >,
-         ordered_non_unique< tag<by_account_a>,
+         ordered_unique< tag<by_account_a>,
             composite_key< connection_object,
                member<connection_object, account_name_type, &connection_object::account_a >,
-               member<connection_object, connection_types, &connection_object::connection_type >
+               member<connection_object, connection_types, &connection_object::connection_type >,
+               member< connection_object, connection_id_type, &connection_object::id > 
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< connection_types > >
+            composite_key_compare< std::less< account_name_type >, std::greater< connection_types >, std::less<connection_id_type > >
          >,
-         ordered_non_unique< tag<by_account_b>,
+         ordered_unique< tag<by_account_b>,
             composite_key< connection_object,
                member<connection_object, account_name_type, &connection_object::account_b >,
-               member<connection_object, connection_types, &connection_object::connection_type >
+               member<connection_object, connection_types, &connection_object::connection_type >,
+               member< connection_object, connection_id_type, &connection_object::id > 
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< connection_types > >
+            composite_key_compare< std::less< account_name_type >, std::greater< connection_types >, std::less<connection_id_type > >
          >
       >,
       allocator< connection_object >
@@ -2036,8 +2045,6 @@ FC_REFLECT( node::chain::account_object,
          (last_account_update)
          (created)
          (mined)
-         (last_owner_proved)
-         (last_active_proved)
          (recovery_account)
          (last_account_recovery)
          (reset_account)
@@ -2051,10 +2058,9 @@ FC_REFLECT( node::chain::account_object,
          (curation_rewards)
          (posting_rewards)
          (proxied_voting_power)
-         (witnesses_voted_for)
+         (witness_vote_count)
          (last_post)
          (last_root_post)
-         (post_bandwidth)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_object, node::chain::account_index );

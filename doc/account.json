@@ -35,8 +35,6 @@
   "last_account_update": "1970-01-01T00:00:00",
   "created": "1970-01-01T00:00:00",
   "mined": true,
-  "last_owner_proved": "1970-01-01T00:00:00",
-  "last_active_proved": "1970-01-01T00:00:00",
   "recovery_account": "",
   "last_account_recovery": "1970-01-01T00:00:00",
   "reset_account": "null",
@@ -56,7 +54,7 @@
     0,
     0
   ],
-  "witnesses_voted_for": 0,
+  "witness_vote_count": 0,
   "average_bandwidth": 271000000,
   "lifetime_bandwidth": 271000000,
   "last_bandwidth_update": "2018-09-25T01:16:42",

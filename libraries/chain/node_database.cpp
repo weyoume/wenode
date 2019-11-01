@@ -167,8 +167,6 @@ void database::init_genesis()
       a.last_post = now;
       a.last_root_post = now;
       a.last_transfer = now;
-      a.last_owner_proved = now;
-      a.last_active_proved = now;
       a.last_activity_reward = now;
       a.last_account_recovery = now;
       a.membership = TOP_MEMBERSHIP;
@@ -2103,7 +2101,7 @@ share_type database::get_equity_shares( const account_balance_object& balance, c
 {
    const account_object& account = get_account( balance.owner );
    time_point now = head_block_time();
-   if( ( account.witnesses_voted_for < equity.options.min_witnesses ) || 
+   if( ( account.witness_vote_count < equity.options.min_witnesses ) || 
       ( now > (account.last_activity_reward + equity.options.min_active_time ) ) )
    {
       return 0;  // Account does not recieve equity reward when witness votes or last activity are insufficient.
@@ -2115,7 +2113,7 @@ share_type database::get_equity_shares( const account_balance_object& balance, c
    equity_shares += ( equity.options.savings_dividend_percent * balance.savings_balance ) / PERCENT_100; 
 
    if( (balance.staked_balance >= equity.options.boost_balance ) &&
-      (account.witnesses_voted_for >= equity.options.boost_witnesses ) &&
+      (account.witness_vote_count >= equity.options.boost_witnesses ) &&
       (account.recent_activity_claims >= equity.options.boost_activity ) )
    {
       equity_shares *= 2;    // Doubles equity reward when 10+ WYM balance, 50+ witness votes, and 15+ Activity rewards in last 30 days
@@ -3601,6 +3599,7 @@ void database::_apply_block( const signed_block& next_block )
    update_comment_metrics();
    update_median_liquidity();
    update_proof_of_work_target();
+   update_account_reputations();
    
    process_funds();
 

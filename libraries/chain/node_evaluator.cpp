@@ -188,7 +188,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       {
          a.reset_account = o.governance_account;
          a.recovery_account = o.governance_account;
-         a.reset_account_delay = fc::days(7);
+         a.reset_account_delay_days = 7;
       }
 
       from_string( acc.json, o.json );
@@ -206,9 +206,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       acc.last_vote_time = now;
       acc.last_post = now;
       acc.last_root_post = now;
-      acc.last_transfer = now;
-      acc.last_owner_proved = now;
-      acc.last_active_proved = now;
+      acc.last_transfer_time = now;
       acc.last_activity_reward = now;
       acc.last_account_recovery = now;
       acc.membership_expiration = time_point::min();
@@ -294,7 +292,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
 
       _db.modify( new_account, [&]( account_object& a ) 
       {
-         a.officer_votes++;
+         a.officer_vote_count++;
       });
    }
    if( find_executive_board( o.registrar ) != nullptr )
@@ -307,7 +305,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
 
       _db.modify( new_account, [&]( account_object& a ) 
       {
-         a.officer_votes++;
+         a.officer_vote_count++;
       });
    }
    if( find_witness( o.registrar ) != nullptr )
@@ -321,7 +319,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
 
       _db.modify( new_account, [&]( account_object& a ) 
       {
-         a.officer_votes++;
+         a.officer_vote_count++;
       });
    }
    
@@ -1110,7 +1108,7 @@ void account_witness_vote_evaluator::do_apply( const account_witness_vote_operat
    {
       if( witness_itr == account_witness_idx.end() && rank_itr == account_rank_idx.end() ) // No vote for witness or rank
       {
-         FC_ASSERT( voter.witnesses_voted_for < MAX_ACC_WITNESS_VOTES, 
+         FC_ASSERT( voter.witness_vote_count < MAX_ACC_WITNESS_VOTES, 
             "Account has voted for too many witnesses." );
 
          _db.create<witness_vote_object>( [&]( witness_vote_object& v ) 
@@ -1337,13 +1335,14 @@ void reset_account_evaluator::do_apply( const reset_account_operation& o )
    }
    const account_object& account = _db.get_account( o.account_to_reset );
    const account_object& reset_account = _db.get_account( o.reset_account );
+   fc::microseconds delay = fc::days(account.reset_account_delay_days);
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( ( now - account.last_post ) > account.reset_account_delay, "Account must be inactive to be reset." );
-   FC_ASSERT( ( now - account.last_root_post ) > account.reset_account_delay, "Account must be inactive to be reset." );
-   FC_ASSERT( ( now - account.last_vote_time ) > account.reset_account_delay, "Account must be inactive to be reset." );
-   FC_ASSERT( ( now - account.last_active_proved ) > account.reset_account_delay, "Account must be inactive to be reset." );
-   FC_ASSERT( ( now - account.last_owner_proved ) > account.reset_account_delay, "Account must be inactive to be reset." );
+   FC_ASSERT( ( now - account.last_post ) > delay, "Account must be inactive to be reset." );
+   FC_ASSERT( ( now - account.last_root_post ) > delay, "Account must be inactive to be reset." );
+   FC_ASSERT( ( now - account.last_vote_time ) > delay, "Account must be inactive to be reset." );
+   FC_ASSERT( ( now - account.last_view_time ) > delay, "Account must be inactive to be reset." );
+   FC_ASSERT( ( now - account.last_vote_time ) > delay, "Account must be inactive to be reset." );
 
    FC_ASSERT( account.reset_account == o.reset_account, "Reset account does not match reset account on account." );
 
@@ -1364,14 +1363,17 @@ void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o
    const account_object& account = _db.get_account( o.account );
    const account_object& reset_account = _db.get_account( o.reset_account );
 
-   FC_ASSERT( account.reset_account == o.current_reset_account, "Current reset account does not match reset account on account." );
-   FC_ASSERT( account.reset_account != o.reset_account, "Reset account must change." );
-   FC_ASSERT( o.reset_account_delay >= 3, "Reset account delay must be at least 3 days." );
+   FC_ASSERT( account.reset_account == o.current_reset_account, 
+      "Current reset account does not match reset account on account." );
+   FC_ASSERT( account.reset_account != o.reset_account, 
+      "Reset account must change." );
+   FC_ASSERT( o.days >= 3, 
+      "Reset account delay must be at least 3 days." );
 
    _db.modify( account, [&]( account_object& a )
    {
       a.reset_account = o.reset_account;
-      a.reset_account_delay = fc::days(o.days);
+      a.reset_account_delay_days = o.days;
    });
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
@@ -1736,6 +1738,11 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          _db.modify( following, [&]( account_object& a ) 
          {
             a.follower_count++;
+         });
+
+         _db.modify( follower, [&]( account_object& a ) 
+         {
+            a.following_count++;
          }); 
       }  
       else    // Creating new filter relation
@@ -1772,6 +1779,11 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          _db.modify( following, [&]( account_object& a ) 
          {
             a.follower_count--;
+         });
+
+         _db.modify( follower, [&]( account_object& a ) 
+         {
+            a.following_count--;
          });
       }  
       else        // Unfiltering
@@ -1890,7 +1902,7 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    }
    time_point now = _db.head_block_time();
    const account_object& account = _db.get_account(o.account);
-   FC_ASSERT( account.witnesses_voted_for >= MIN_ACTIVITY_WITNESSES, 
+   FC_ASSERT( account.witness_vote_count >= MIN_ACTIVITY_WITNESSES, 
       "Account must have at least 10 witness votes to claim activity reward.");
    const account_object& balance = _db.get_account_balance(o.account, SYMBOL_EQUITY);
    FC_ASSERT( balance.staked_balance >= asset(1 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY), 
@@ -2034,7 +2046,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
    {
       if( account_officer_itr == account_officer_idx.end() && type_rank_itr == type_rank_idx.end() ) // No vote for witness or type rank, create new vote.
       {
-         FC_ASSERT( voter.officer_votes < MAX_OFFICER_VOTES, 
+         FC_ASSERT( voter.officer_vote_count < MAX_OFFICER_VOTES, 
             "Account has voted for too many network officers." );
 
          _db.create< network_officer_vote_object>( [&]( network_officer_vote_object& v )
@@ -3112,7 +3124,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
    uint128_t reward = 0;
    uint128_t weight = 0;
    uint128_t max_weight = 0;
-   uint128_t new_comment_power = auth.comment_power;
+   uint128_t new_commenting_power = auth.commenting_power;
 
    comment_id_type id;
 
@@ -3154,14 +3166,14 @@ void comment_evaluator::do_apply( const comment_operation& o )
          auto curve = reward_fund.curation_reward_curve;
          int64_t elapsed_seconds = ( now - auth.last_post ).to_seconds();
          int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.comment_recharge_time.to_seconds();
-         int16_t current_power = std::min( int64_t( auth.comment_power + regenerated_power), int64_t(PERCENT_100) );
+         int16_t current_power = std::min( int64_t( auth.commenting_power + regenerated_power), int64_t(PERCENT_100) );
          FC_ASSERT( current_power > 0, 
             "Account currently does not have any commenting power." );
          share_type voting_power = _db.get_voting_power( auth.name );
          int16_t max_comment_denom = props.comment_reserve_rate * ( props.comment_recharge_time.count() / fc::days(1).count );  // Weights the viewing power with the network reserve ratio and recharge time
          FC_ASSERT( max_comment_denom > 0 );
          int16_t used_power = (current_power + max_comment_denom - 1) / max_comment_denom;
-         new_comment_power = current_power - used_power;
+         new_commenting_power = current_power - used_power;
          FC_ASSERT( used_power <= current_power, 
             "Account does not have enough power to comment." );
          
@@ -3209,18 +3221,15 @@ void comment_evaluator::do_apply( const comment_operation& o )
          } 
       }
 
-      uint64_t post_bandwidth = auth.post_bandwidth;
-
       _db.modify( auth, [&]( account_object& a ) 
       {
          if( o.parent_author == ROOT_POST_PARENT )
          {
             a.last_root_post = now;
-            a.post_bandwidth = uint32_t( post_bandwidth );
          }
          else
          {
-            a.comment_power = new_comment_power;
+            a.commenting_power = new_commenting_power;
          }
          a.last_post = now;
          a.post_count++;
@@ -3861,7 +3870,7 @@ void view_evaluator::do_apply( const view_operation& o )
    FC_ASSERT( elapsed_seconds >= MIN_VIEW_INTERVAL_SEC, 
       "Can only view once every ${s} seconds.", ("s", MIN_VIEW_INTERVAL_SEC) );
    int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.view_recharge_time.to_seconds();
-   int16_t current_power = std::min( int64_t(viewer.viewing_power + regenerated_power), int64_t(PERCENT_100) );
+   int16_t current_power = std::min( int64_t( viewer.viewing_power + regenerated_power ), int64_t(PERCENT_100) );
 
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any viewing power." );
@@ -4062,8 +4071,8 @@ void share_evaluator::do_apply( const share_operation& o )
 
       _db.modify( sharer, [&]( account_object& a )
       {
-         a.share_power = current_power - used_power;
-         a.last_feed_time = now;
+         a.sharing_power = current_power - used_power;
+         a.last_share_time = now;
       });
 
       uint128_t old_power = std::max(comment.share_power, uint128_t(0));  // Record reward value before applying share transaction
@@ -4180,7 +4189,7 @@ void share_evaluator::do_apply( const share_operation& o )
 
 
 /**
- * Moderation tags enable interface providers to co-ordinate moderation efforts
+ * Moderation tags enable interface providers to coordinate moderation efforts
  * on-chain and provides a method for discretion to be provided
  * to displaying content, based on the governance addresses subscribed to by the 
  * viewing user.
@@ -5680,16 +5689,11 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
    FC_ASSERT( from_account_permissions.is_authorized_asset( asset ), 
       "Transfer is not authorized, due to sender account's asset permisssions" );
 
-   if( from_account.active_challenged )
+   _db.modify( from_account, [&]( account_object& a )
    {
-      _db.modify( from_account, [&]( account_object& a )
-      {
-         a.last_transfer = now;
-      });
-   }
-
+      a.last_transfer_time = now;
+   });
    
-
    vector<string> part; 
    part.reserve(4);
    auto path = o.memo;
@@ -8794,9 +8798,11 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
          acc.created = now;
          acc.last_account_update = now;
          acc.last_vote_time = now;
+         acc.last_view_time = now;
+         acc.last_share_time = now;
          acc.last_post = now;
          acc.last_root_post = now;
-         acc.last_transfer = now;
+         acc.last_transfer_time = now;
          acc.last_owner_proved = now;
          acc.last_active_proved = now;
          acc.last_activity_reward = now;

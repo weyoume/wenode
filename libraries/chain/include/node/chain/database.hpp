@@ -582,6 +582,8 @@ namespace node { namespace chain {
 
          void process_membership_updates();
 
+         void update_account_reputations();
+
          asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
 
          asset claim_activity_reward( const account_object& account, const witness_object& witness );

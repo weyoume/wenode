@@ -93,6 +93,8 @@ namespace node { namespace chain {
 
          flat_map<account_name_type, flat_map< asset_symbol_type, asset > >  payments_received;    // Map of all transfers received that referenced this comment. 
 
+         bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;
+         
          time_point                     last_update;                  // The time the comment was last edited by the author
 
          time_point                     created;                      // Time that the comment was created.
@@ -153,7 +155,7 @@ namespace node { namespace chain {
 
          uint128_t                      max_weight = 0;               // Used to define relative contribution of this comment to rewards.
 
-         asset                          max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISON, SYMBOL_USD );       // USD value of the maximum payout this post will receive
+         asset                          max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );       // USD value of the maximum payout this post will receive
 
          uint32_t                       author_reward_percent = AUTHOR_REWARD_PERCENT;
 
@@ -182,8 +184,6 @@ namespace node { namespace chain {
          bool                           root = true;                        // True if post is a root post. 
 
          bool                           deleted = false;                    // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
-
-         bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;
 
          bool                           comment_paid( account_name_type name )    // return true if user has paid comment price
          {
@@ -283,13 +283,13 @@ namespace node { namespace chain {
 
          flat_map< account_name_type, time_point >   shared_by;     // Map of the times that accounts that have shared the comment in the blog.
 
-         blog_types                blog_type;
+         blog_types                blog_type;             // Account, Board, or Tag blog
 
          account_name_type         first_shared_by;       // First account that shared the comment with the account, board or tag. 
 
          uint32_t                  shares;                // Number of accounts that have shared the comment with account, board or tag.
 
-         time_point                blog_time;
+         time_point                blog_time;             // Latest time that the comment was shared on the account, board or tag
    };
 
 
@@ -412,7 +412,7 @@ namespace node { namespace chain {
 
          board_name_type                board;            // The name of the board to which the post is uploaded to.
 
-         flat_set< shared_string >      tags;             // Set of string tags for sorting the post by
+         flat_set< tag_name_type >      tags;             // Set of string tags for sorting the post by
 
          rating_types                   rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
 
@@ -766,8 +766,6 @@ namespace node { namespace chain {
    struct by_old_board_blog;
    struct by_new_tag_blog;
    struct by_old_tag_blog;
-
-
    struct by_comment_account;
    struct by_comment_board;
    struct by_comment_tag;

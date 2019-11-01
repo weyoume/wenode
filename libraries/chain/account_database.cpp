@@ -44,7 +44,6 @@ using boost::container::flat_set;
  */
 void database::process_membership_updates()
 { try {
-   
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
    const auto& account_idx = get_index< account_index >().indices().get< by_membership_expiration >();
@@ -155,6 +154,63 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
       rfo.adjust_premium_partners_fund_balance( partners_fees );    // Adds funds to premium partners fund for distribution to premium creators
    });
 
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
+/**
+ * Updates Account reputation values depending on the account's total rewards,
+ * and the total rewards of its followers, divided by the number of accounts each account follows. 
+ */
+void database::update_account_reputations()
+{ try {
+   if( (head_block_num() % REP_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
+      return;
+   
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+
+   const auto& account_idx = get_index< account_index >().indices().get< by_total_rewards >();
+   auto account_itr = account_idx.begin();
+   flat_map< account_name_type, pair< share_type, uint32_t > > reward_map;
+   vector< pair< account_name_type, share_type > > reward_vector; 
+   reward_vector.reserve( account_idx.size() );
+
+   while( account_itr != account_idx.end() && account_itr->total_rewards >= 0 )
+   {
+      reward_map[ account_itr->name ] = std::make_pair( account_itr->total_rewards, account_itr->following_count);
+      ++account_itr;
+   }
+
+   for( auto account : reward_map )
+   {
+      const account_following_object& account_following = get_account_following( account.first );
+      for( auto follower : account_following.followers )
+      {
+         reward_map[ account.first ].first += ( reward_map[ follower ].first / reward_map[ follower ].second );
+      }
+   }
+
+   for( auto account : reward_map )
+   {
+      reward_vector.push_back( std::make_pair( account.first, account.second.first ));
+   }
+
+   std::sort( reward_vector.begin(), reward_vector.end(), [&](share_type a, share_type b)
+   {
+      return a < b;
+   });
+
+   share_type user_count = reward_vector.size();
+
+   for( auto i = 0; i < user_count; i++ )
+   {
+      const account_object& user = get_account( reward_vector[ i ].first );
+      modify( user, [&]( account_object& a )
+      {
+         a.author_reputation = ( BLOCKCHAIN_PRECISION * ( user_count - i ) ) / user_count;
+      });
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -275,7 +331,7 @@ void database::update_witness_votes( const account_object& account )
 
    modify( account, [&]( account_object& a )
    {
-      a.witnesses_voted_for = ( new_vote_rank - 1 );
+      a.witness_vote_count = ( new_vote_rank - 1 );
    });
 }
 
@@ -317,7 +373,7 @@ void database::update_witness_votes( const account_object& account, const accoun
 
    modify( account, [&]( account_object& a )
    {
-      a.witnesses_voted_for = ( new_vote_rank - 1 );
+      a.witness_vote_count = ( new_vote_rank - 1 );
    });
 }
 
@@ -351,7 +407,7 @@ void database::update_network_officer_votes( const account_object& account )
 
    modify( account, [&]( account_object& a )
    {
-      a.officer_votes = ( vote_rank[ DEVELOPMENT ] + vote_rank[ MARKETING ] + vote_rank[ ADVOCACY ] - 3 );
+      a.officer_vote_count = ( vote_rank[ DEVELOPMENT ] + vote_rank[ MARKETING ] + vote_rank[ ADVOCACY ] - 3 );
    });
 }
 
@@ -399,7 +455,7 @@ void database::update_network_officer_votes( const account_object& account, cons
 
    modify( account, [&]( account_object& a )
    {
-      a.officer_votes = ( vote_rank[ DEVELOPMENT ] + vote_rank[ MARKETING ] + vote_rank[ ADVOCACY ] - 3 );
+      a.officer_vote_count = ( vote_rank[ DEVELOPMENT ] + vote_rank[ MARKETING ] + vote_rank[ ADVOCACY ] - 3 );
    });
 }
 
@@ -431,7 +487,7 @@ void database::update_executive_board_votes( const account_object& account )
 
    modify( account, [&]( account_object& a )
    {
-      a.executive_board_votes = ( new_vote_rank - 1 );
+      a.executive_board_vote_count = ( new_vote_rank - 1 );
    });
 }
 
@@ -849,7 +905,7 @@ void database::clear_witness_votes( const account_object& a )
 
    modify( a, [&](account_object& acc )
    {
-      acc.witnesses_voted_for = 0;
+      acc.witness_vote_count = 0;
    });
 }
 

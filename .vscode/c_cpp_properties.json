@@ -24,8 +24,7 @@
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "${default}",
-            "compileCommands": "/home/haz/bitshares-core/compile_commands.json"
+            "intelliSenseMode": "${default}"
         }
     ],
     "version": 4
