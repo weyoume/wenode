@@ -26,9 +26,7 @@ using namespace node::protocol;
 class tags_plugin_impl
 {
    public:
-      tags_plugin_impl(tags_plugin& _plugin)
-         : _self( _plugin )
-      { }
+      tags_plugin_impl(tags_plugin& _plugin): _self( _plugin ){}
       virtual ~tags_plugin_impl();
 
       node::chain::database& database()
@@ -46,64 +44,6 @@ tags_plugin_impl::~tags_plugin_impl()
    return;
 }
 
-
-/**
- * Contains the time preference options for a sorting type
- */
-struct sort_set
-{
-   sort_set( const double& active = 0, const double& rapid = 0, const double& standard = 0, const double& top = 0, const double& elite = 0 ) :
-      active(active),rapid(rapid),standard(standard),top(top),elite(elite){}
-
-   double active = 0;    // Ranking for Active sort, highest time preference with high active time bonus
-
-   double rapid = 0;     // Ranking for Rapid sort, high time preference
-
-   double standard = 0;  // Ranking for Standard sort, regular time preference
-
-   double top = 0;       // Ranking for Top sort, low time preference
-
-   double elite = 0;     // Ranking for Elite sort, lowest time preference with high reputation and equalization bonus
-};
-
-
-/**
- * Contains a full suite of rankings for sorting a tag 
- * according to a variety of combainations
- * of votes, views, comments and shares, with
- * multiple time preference options.
- */
-struct sort_options
-{
-   sort_options( const sort_set& quality = sort_set(), const sort_set& votes = sort_set(), const sort_set& views = sort_set(), 
-      const sort_set& shares = sort_set(), const sort_set& comments = sort_set(), const sort_set& popular = sort_set(), 
-      const sort_set& viral = sort_set(), const sort_set& discussion = sort_set(), const sort_set& prominent = sort_set(),
-      const sort_set& conversation = sort_set(), const sort_set& discourse = sort_set() ) :
-      quality(quality),votes(votes),views(views),shares(shares),comments(comments),popular(popular),
-      viral(viral),discussion(discussion),prominent(prominent),conversation(conversation),discourse(discourse){}
-
-   sort_set quality;
-
-   sort_set votes;
-
-   sort_set views;
-
-   sort_set shares;
-
-   sort_set comments;
-
-   sort_set popular;
-
-   sort_set viral;
-
-   sort_set discussion;
-
-   sort_set prominent;
-
-   sort_set conversation;
-
-   sort_set discourse;
-};
 
 struct operation_visitor
 {
@@ -243,8 +183,8 @@ struct operation_visitor
             obj.share_power       = comment.share_power;
             obj.comment_power     = comment.comment_power;
             obj.sort              = sort;
-      });
-      add_stats( current, stats );
+         });
+         add_stats( current, stats );
       } 
       else 
       {

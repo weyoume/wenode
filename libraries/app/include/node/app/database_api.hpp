@@ -124,6 +124,9 @@ struct discussion_query {
    string                  feed_type;             // Type of feed being queried.
    string                  blog_type;             // Type of blog being queried.
 
+   bool                    include_private;       // True to include private encrypted posts.
+   string                  max_rating;            // Highest content rating to include in posts queried.
+
    uint32_t                limit = 0;
 
    set<string>             select_boards;         // list of boards to include
@@ -134,6 +137,9 @@ struct discussion_query {
 
    set<string>             select_authors;        // list of authors to include
    set<string>             filter_authors;        // list of authors to filter, posts by these authors are filtered
+
+   set<string>             select_languages;      // list of languages to include
+   set<string>             filter_languages;      // list of languages to filter, posts made in these boards are filtered
 
    optional<string>        start_author;
    optional<string>        start_permlink;
@@ -241,7 +247,9 @@ class database_api
 
       vector< extended_account > get_full_accounts( vector< string > names ) const;
 
-      message_box
+      vector< message_state > get_messages( vector< string > names ) const;
+
+      vector< balance_state > get_balances( vector< string > names ) const;
 
       /**
        *  @return all accounts that referr to the key or account id in their owner or active authorities.
@@ -273,6 +281,12 @@ class database_api
       vector< owner_authority_history_api_obj > get_owner_history( string account )const;
 
       optional< account_recovery_request_api_obj > get_recovery_request( string account ) const;
+
+      ////////////
+      // Assets //
+      ////////////
+
+      vector<extended_asset> get_assets( vector<string> assets )const;
 
       optional< escrow_api_obj > get_escrow( string from, uint32_t escrow_id )const;
 
@@ -320,13 +334,15 @@ class database_api
        */
       vector< witness_api_obj > get_witnesses_by_vote( string from, uint32_t limit )const;
 
+      vector< witness_api_obj > get_witnesses_by_mining( string from, uint32_t limit )const;
+
       /**
        * @brief Get names and IDs for registered witnesses
        * @param lower_bound_name Lower bound of the first name to return
        * @param limit Maximum number of results to return -- must not exceed 1000
        * @return Map of witness names to corresponding IDs
        */
-      set<account_name_type> lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const;
+      set<account_name_type> lookup_witness_accounts( const string& lower_bound_name, uint32_t limit )const;
 
       /**
        * @brief Get the total number of witnesses registered with the blockchain
@@ -338,18 +354,14 @@ class database_api
       ////////////
 
       /**
-       * @breif Gets the current order book for the specified market
+       * @brief Gets the current order book for the specified market
        * @param limit Maximum number of orders for each side of the spread to return -- Must not exceed 1000
        */
       order_book get_order_book( uint32_t limit = 1000 )const;
-      vector<extended_limit_order> get_open_orders( string owner )const;
 
-      /**
-       * @breif Gets the current liquidity reward queue.
-       * @param start_account The account to start the list from, or "" to get the head of the queue
-       * @param limit Maxmimum number of accounts to return -- Must not exceed 1000
-       */
-      vector< liquidity_balance > get_liquidity_queue( string start_account, uint32_t limit = 1000 )const;
+      vector< order_state > get_open_orders( vector< string > names )const;
+
+
 
       ////////////////////////////
       // Authority / validation //
@@ -386,6 +398,13 @@ class database_api
        *  if permlink is "" then it will return all votes for author
        */
       vector<vote_state> get_active_votes( string author, string permlink )const;
+
+      vector<view_state> get_active_views( string author, string permlink )const;
+
+      vector<share_state> get_active_shares( string author, string permlink )const;
+
+      vector<moderation_state> get_active_mod_tags( string author, string permlink )const;
+
       vector<account_vote> get_account_votes( string voter )const;
 
 

@@ -10,15 +10,6 @@ namespace node { namespace app {
    using std::string;
    using std::vector;
 
-   struct extended_limit_order : public limit_order_api_obj
-   {
-      extended_limit_order(){}
-      extended_limit_order( const limit_order_object& o ):limit_order_api_obj(o){}
-
-      double real_price  = 0;
-      bool   rewarded    = false;
-   };
-
    struct discussion_index
    {
       string           category;    /// category by which everything is filtered
@@ -69,12 +60,12 @@ namespace node { namespace app {
 
    struct moderation_state
    {
-      string         moderator;
-      vector< tag_name_type >    tags;             // Set of string tags for sorting the post by
-      string         rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
-      string         details;          // Explaination as to what rule the post is in contravention of and why it was tagged.
-      bool           filter;           // True if the post should be filtered by the board or governance address subscribers.
-      time_point     time;
+      string                     moderator;
+      vector< tag_name_type >    tags;             // Set of additional string tags for sorting the post by
+      string                     rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
+      string                     details;          // Explanation as to what rule the post is in contravention of and why it was tagged.
+      bool                       filter;           // True if the post should be filtered by the board or governance address subscribers.
+      time_point                 time;
    };
 
    struct account_vote
@@ -84,6 +75,15 @@ namespace node { namespace app {
       int64_t        reward = 0;
       int16_t        percent = 0;
       time_point     time;
+   };
+
+   struct order_state
+   {
+      vector< limit_order_api_obj> limit_orders;
+      vector< margin_order_api_obj> margin_orders;
+      vector< call_order_api_obj> call_orders;
+      vector< credit_loan_api_obj> loan_orders;
+      vector< credit_collateral_api_obj> collateral;
    };
 
    struct discussion : public comment_api_obj 
@@ -97,7 +97,6 @@ namespace node { namespace app {
       vector<view_state>          active_views;
       vector<share_state>         active_shares;
       vector<moderation_state>    active_mod_tags;
-
       vector<string>              replies;                        // author/slug mapping
       uint32_t                    body_length = 0;
    };
@@ -107,8 +106,8 @@ namespace node { namespace app {
       extended_account(){}
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
 
-      map<uint64_t,applied_operation>         transfer_history; /// transfer to/from
-      map<uint64_t,applied_operation>         market_history; /// limit order / cancel / fill
+      map<uint64_t,applied_operation>         transfer_history;        // transfer to/from
+      map<uint64_t,applied_operation>         market_history;          // limit order / cancel / fill
       map<uint64_t,applied_operation>         post_history;
       map<uint64_t,applied_operation>         vote_history;
       map<uint64_t,applied_operation>         other_history;
@@ -116,7 +115,8 @@ namespace node { namespace app {
       map<string, account_balance_api_obj >   balances;
       account_following_api_obj               following; 
       account_business_api_obj                business; 
-      key_state                               keychain;
+      key_state                               keychain; // todo
+      message_state                           messages;
 
       map<account_name_type, connection_api_obj>      connections;
       map<account_name_type, connection_api_obj>      friends;
@@ -157,11 +157,42 @@ namespace node { namespace app {
       int64_t                               total_mod_weight = 0;        // Total of all moderator weights. 
    };
 
+
+   struct extended_asset : public asset_api_obj
+   {
+      extended_asset(){}
+      extended_asset( const asset_object& a, const database& db ):asset_api_obj( a, db ){}
+
+      int64_t                                  total_supply;              // The total outstanding supply of the asset
+      int64_t                                  liquid_supply;             // The current liquid supply of the asset
+      int64_t                                  staked_supply;             // The current staked supply of the asset
+      int64_t                                  reward_supply;             // The current reward supply of the asset
+      int64_t                                  savings_supply;            // The current savings supply of the asset
+      int64_t                                  delegated_supply;          // The current delegated supply of the asset
+      int64_t                                  receiving_supply;          // The current receiving supply supply of the asset, should equal delegated
+      int64_t                                  pending_supply;            // The current supply contained in reward funds and active order objects
+      int64_t                                  confidential_supply;       // total confidential asset supply
+      int64_t                                  accumulated_fees;          // Amount of Fees that have accumulated to be paid to the asset issuer. Denominated in this asset.
+      int64_t                                  fee_pool;                  // Amount of core asset available to pay fees. Denominated in the core asset.
+
+      optional<bitasset_data_api_obj>          bitasset;
+      optional<equity_data_api_obj>            equity; 
+      optional<credit_data_api_obj>            credit;
+      optional<credit_pool_api_obj>            credit_pool;
+      map< string, liquidity_pool_api_obj >    liquidity_pools;
+
+   }
+
    struct message_state
    {
       vector< message_api_obj >                                inbox;
       vector< message_api_obj >                                outbox;
-      map< account_name_type, vector< message_api_obj > >       conversations;
+      map< account_name_type, vector< message_api_obj > >      conversations;
+   };
+
+   struct balance_state
+   {
+      map<string, account_balance_api_obj >                    balances;
    }
 
 
@@ -172,11 +203,12 @@ namespace node { namespace app {
       map<account_name_type, string>                           connection_keys;
       map<account_name_type, string>                           friend_keys;
       map<account_name_type, string>                           companion_keys;
-   }
+   };
 
 
 
-   struct candle_stick {
+   struct candle_stick 
+   {
       time_point      open_time;
       uint32_t        period = 0;
       double          high = 0;
@@ -187,7 +219,8 @@ namespace node { namespace app {
       double          sell_asset_volume = 0;
    };
 
-   struct order_history_item {
+   struct order_history_item 
+   {
       time_point     time;
       string         type; // buy or sell
       asset          buy_asset_quantity;
@@ -195,7 +228,8 @@ namespace node { namespace app {
       double         real_price = 0;
    };
 
-   struct market {
+   struct market 
+   {
       vector<extended_limit_order> bids;
       vector<extended_limit_order> asks;
       vector<order_history_item>   history;
@@ -209,7 +243,8 @@ namespace node { namespace app {
    /**
     *  This struct is designed
     */
-   struct state {
+   struct state 
+   {
         string                            current_route;
 
         dynamic_global_property_api_obj   props;

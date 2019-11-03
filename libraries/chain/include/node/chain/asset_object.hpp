@@ -266,10 +266,6 @@ namespace node { namespace chain {
 
          share_type                                    force_settled_volume;                    // This is the volume of this asset which has been force-settled this maintanence interval
          
-         share_type                                    max_force_settlement_volume(share_type current_supply)const;    // Calculate the maximum force settlement volume per maintenance interval, given the current share supply
-
-         bool                                          has_settlement()const { return !settlement_price.is_null(); }   // True if there has been a black swan
-
          /**
           *  In the event of a black swan, the swan price is saved in the settlement price, and all margin positions
           *  are settled at the same price with the seized collateral being moved into the settlement fund. From this
@@ -284,6 +280,10 @@ namespace node { namespace chain {
          bool                                          asset_cer_updated = false;       // Track whether core_exchange_rate in corresponding asset_object has updated
 
          bool                                          feed_cer_updated = false;// Track whether core exchange rate in current feed has updated
+
+         share_type                                    max_force_settlement_volume(share_type current_supply)const;    // Calculate the maximum force settlement volume per maintenance interval, given the current share supply
+
+         bool                                          has_settlement()const { return !settlement_price.is_null(); }   // True if there has been a black swan
 
          bool need_to_update_cer() const
          {
@@ -620,6 +620,7 @@ namespace node { namespace chain {
       asset_bitasset_data_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< asset_bitasset_data_object, asset_bitasset_data_id_type, &asset_bitasset_data_object::id > >,
+         ordered_unique< tag<by_symbol>, member< asset_bitasset_data_object, asset_symbol_type, &asset_bitasset_data_object::symbol > >,
          ordered_non_unique< tag<by_short_backing_asset>, 
             member< asset_bitasset_data_object, asset_symbol_type, &asset_bitasset_data_object::backing_asset > 
          >,
@@ -671,6 +672,8 @@ namespace node { namespace chain {
    > asset_credit_data_index;
 
    struct by_asset_pair;
+   struct by_symbol_a;
+   struct by_symbol_b;
 
    typedef multi_index_container<
       asset_liquidity_pool_object,
@@ -680,6 +683,18 @@ namespace node { namespace chain {
             composite_key< asset_liquidity_pool_object,
                member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_a >,
                member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_b > 
+            >
+         >,
+         ordered_unique< tag<by_symbol_a>,
+            composite_key< asset_liquidity_pool_object,
+               member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_a >,
+               member< asset_liquidity_pool_object, asset_liquidity_pool_id_type, &asset_liquidity_pool_object::id > 
+            >
+         >,
+         ordered_unique< tag<by_symbol_b>,
+            composite_key< asset_liquidity_pool_object,
+               member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_b >,
+               member< asset_liquidity_pool_object, asset_liquidity_pool_id_type, &asset_liquidity_pool_object::id > 
             >
          >
       >, 

@@ -9,36 +9,10 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <numeric>
 
-
 namespace node { namespace chain {
 
    using node::protocol::asset;
    using node::protocol::price;
-   using node::protocol::asset_symbol_type;
-
-   struct strcmp_less
-   {
-      bool operator()( const shared_string& a, const shared_string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      bool operator()( const shared_string& a, const string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      bool operator()( const string& a, const shared_string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      private:
-         inline bool less( const char* a, const char* b )const
-         {
-            return std::strcmp( a, b ) < 0;
-         }
-   };
 
    class transfer_request_object : public object< transfer_request_object_type, transfer_request_object >
    {
@@ -182,6 +156,8 @@ namespace node { namespace chain {
          asset_symbol_type    sell_asset()const    { return sell_price.base.symbol; }
 
          asset_symbol_type    receive_asset()const { return sell_price.quote.symbol; }
+
+         double               real_price()const { return sell_price.to_real(); }
    };
 
    /**
@@ -212,6 +188,8 @@ namespace node { namespace chain {
          optional<uint16_t>      target_collateral_ratio;     // maximum CR to maintain when selling collateral on margin call
 
          account_name_type       interface;                   // The interface account that created the order
+
+         double                  real_price()const { return call_price.to_real(); }
 
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
@@ -319,7 +297,7 @@ namespace node { namespace chain {
 
          id_type                    id;
 
-         account_name_type          owner;         // Collateral owners account name
+         account_name_type          owner;         // Collateral owners account name.
 
          asset_symbol_type          symbol;        // Asset symbol being collateralized. 
 
@@ -477,6 +455,8 @@ namespace node { namespace chain {
          asset_symbol_type    sell_asset()const    { return sell_price.base.symbol; }
 
          asset_symbol_type    receive_asset()const { return sell_price.quote.symbol; }
+
+         double               real_price()const { return sell_price.to_real(); }
    };
 
 
@@ -1177,13 +1157,19 @@ namespace node { namespace chain {
                member< credit_collateral_object, account_name_type, &credit_collateral_object::owner>,
                member< credit_collateral_object, asset_symbol_type, &credit_collateral_object::symbol>
             >
+         >,
+         ordered_unique< tag<by_owner>,
+            composite_key< credit_collateral_object,
+               member< credit_collateral_object, account_name_type, &credit_collateral_object::owner>,
+               member< credit_collateral_object, credit_collateral_id_type, &credit_collateral_object::id >
+            >
          >
       >,
       allocator < credit_collateral_object >
    > credit_collateral_index;
 
-
    struct by_loan_id;
+   struct by_owner;
    struct by_owner_price;
    struct by_owner_debt;
    struct by_owner_collateral;
@@ -1197,12 +1183,25 @@ namespace node { namespace chain {
       indexed_by<
          ordered_unique< tag<by_id>,
             member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id > >,
+         ordered_unique< tag<by_owner>,
+            composite_key< credit_loan_object,
+               member< credit_loan_object, account_name_type, &credit_loan_object::owner>,
+               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less<credit_loan_id_type> 
+            >
+         >,
          ordered_unique< tag<by_loan_id>,
             composite_key< credit_loan_object,
                member< credit_loan_object, account_name_type, &credit_loan_object::owner>,
                member< credit_loan_object, shared_string, &credit_loan_object::loan_id>
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >,
          ordered_unique< tag<by_owner_price>,
             composite_key< credit_loan_object,
@@ -1210,7 +1209,11 @@ namespace node { namespace chain {
                member< credit_loan_object, price, &credit_loan_object::loan_price>,
                member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
             >,
-            composite_key_compare< std::less<account_name_type>, std::less<price>, std::less<credit_loan_id_type> >
+            composite_key_compare< 
+               std::less<account_name_type>, 
+               std::less<price>, 
+               std::less<credit_loan_id_type> 
+            >
          >,
          ordered_unique< tag<by_owner_debt>,
             composite_key< credit_loan_object,
@@ -1218,7 +1221,11 @@ namespace node { namespace chain {
                const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::debt_asset >,
                member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
             >,
-            composite_key_compare< std::less<account_name_type>, std::less<asset_symbol_type>, std::less<credit_loan_id_type> >
+            composite_key_compare< 
+               std::less<account_name_type>, 
+               std::less<asset_symbol_type>, 
+               std::less<credit_loan_id_type> 
+            >
          >,
          ordered_unique< tag<by_owner_collateral>,
             composite_key< credit_loan_object,
@@ -1226,7 +1233,11 @@ namespace node { namespace chain {
                const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::collateral_asset >,
                member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
             >,
-            composite_key_compare< std::less<account_name_type>, std::less<asset_symbol_type>, std::less<credit_loan_id_type> >
+            composite_key_compare< 
+               std::less<account_name_type>, 
+               std::less<asset_symbol_type>, 
+               std::less<credit_loan_id_type> 
+            >
          >,
          ordered_unique< tag<by_liquidation_spread>,
             composite_key< credit_loan_object,
@@ -1235,21 +1246,32 @@ namespace node { namespace chain {
                const_mem_fun< credit_loan_object, price, &credit_loan_object::liquidation_spread>,
                member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
             >,
-            composite_key_compare< std::less<asset_symbol_type>, std::less<asset_symbol_type>, std::less<price>, std::less<credit_loan_id_type> >
+            composite_key_compare< 
+               std::less<asset_symbol_type>, 
+               std::less<asset_symbol_type>, 
+               std::less<price>, 
+               std::less<credit_loan_id_type> 
+            >
          >,
          ordered_unique< tag<by_last_updated>,
             composite_key< credit_loan_object,
                member< credit_loan_object, time_point, &credit_loan_object::last_updated>,
                member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
             >,
-            composite_key_compare< std::greater<time_point>, std::less<credit_loan_id_type> >
+            composite_key_compare< 
+               std::greater<time_point>, 
+               std::less<credit_loan_id_type> 
+            >
          >,
          ordered_unique< tag<by_debt>,
             composite_key< credit_loan_object,
                const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::debt_asset>,
                member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
             >,
-            composite_key_compare< std::less<asset_symbol_type>, std::less<credit_loan_id_type> >
+            composite_key_compare< 
+               std::less<asset_symbol_type>, 
+               std::less<credit_loan_id_type> 
+               >
          >,
          ordered_unique< tag<by_collateral>,
             composite_key< credit_loan_object,
@@ -1434,5 +1456,4 @@ FC_REFLECT( node::chain::credit_loan_object,
          (last_updated)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::credit_loan_object, node::chain::credit_loan_index );   
-
+CHAINBASE_SET_INDEX_TYPE( node::chain::credit_loan_object, node::chain::credit_loan_index );

@@ -16,7 +16,6 @@ namespace node { namespace app {
 
 using namespace node::chain;
 
-typedef chain::account_balance_object                  account_balance_api_obj;
 typedef chain::change_recovery_account_request_object  change_recovery_account_request_api_obj;
 typedef chain::block_summary_object                    block_summary_api_obj;
 typedef chain::comment_vote_object                     comment_vote_api_obj;
@@ -24,7 +23,6 @@ typedef chain::comment_view_object                     comment_view_api_obj;
 typedef chain::comment_share_object                    comment_share_api_obj;
 typedef chain::comment_share_object                    comment_share_api_obj;
 typedef chain::escrow_object                           escrow_api_obj;
-typedef chain::limit_order_object                      limit_order_api_obj;
 typedef chain::unstake_asset_route_object              unstake_asset_route_api_obj;
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
 typedef chain::witness_vote_object                     witness_vote_api_obj;
@@ -45,10 +43,6 @@ struct comment_api_obj
       public_key( to_string( o.public_key ) ),
       reach( to_string( o.reach ) ),
       board( o.board ),
-      for( auto tag: o.tags )
-      {
-         tags.push_back( tag );
-      }
       body( to_string( o.body ) ),
       ipfs( to_string( o.ipfs ) ),
       magnet( to_string( o.magnet ) ),
@@ -61,17 +55,6 @@ struct comment_api_obj
       json( to_string( o.json ) ),    
       category( to_string( o.category ) ),
       comment_price( o.comment_price ),
-      
-      for( auto pr: o.payments_received )
-      {
-         payments_received.push_back( std::make_pair(pr.first, pr.second.second) );
-      }
-      
-      for( auto& route : o.beneficiaries )
-      {
-         beneficiaries.push_back( route );
-      }
-      
       last_update( o.last_update ),
       created( o.created ),
       active( o.active ),
@@ -116,6 +99,20 @@ struct comment_api_obj
       allow_curation_rewards( o.allow_curation_rewards ),
       root( o.root ),
       deleted( o.deleted ),
+      {
+         for( auto tag: o.tags )
+         {
+            tags.push_back( tag );
+         }
+         for( auto pr: o.payments_received )
+         {
+            payments_received.push_back( std::make_pair(pr.first, pr.second.second) );
+         }
+         for( auto& route : o.beneficiaries )
+         {
+            beneficiaries.push_back( route );
+         }
+      },
       
    comment_api_obj(){}
 
@@ -211,7 +208,7 @@ struct tag_api_obj
 
 struct account_api_obj
 {
-   account_api_obj( const chain::account_object& a, const chain::database& db ) :
+   account_api_obj( const chain::account_object& a, const chain::database& db ):
       id( a.id ),
       name( a.name ),
       details( to_string( a.details ) ),
@@ -226,10 +223,6 @@ struct account_api_obj
       companion_public_key( to_string( a.companion_public_key ) ),
       pinned_comment( a.pinned_comment ),
       proxy( a.proxy ),
-      for( auto name : a.proxied )
-      {
-         proxied.push_back( name );
-      }
       registrar( a.registrar ),
       referrer( a.referrer ),
       recovery_account( a.recovery_account ),
@@ -303,6 +296,10 @@ struct account_api_obj
             last_market_bandwidth_update = market_bandwidth->last_bandwidth_update;
          }
       }
+      for( auto name : a.proxied )
+      {
+         proxied.push_back( name );
+      }
    }
 
    account_api_obj(){}
@@ -339,6 +336,8 @@ struct account_api_obj
    uint32_t                         post_count = 0;
    uint16_t                         voting_power = PERCENT_100;               // current voting power of this account, falls after every vote, recovers over time.
    uint16_t                         viewing_power = PERCENT_100;              // current viewing power of this account, falls after every view, recovers over time.
+   uint16_t                         sharing_power = PERCENT_100;              // current sharing power of this account, falls after every share, recovers over time.
+   uint16_t                         commenting_power = PERCENT_100;           // current commenting power of this account, falls after every comment, recovers over time.
    uint8_t                          savings_withdraw_requests = 0;
    uint16_t                         withdraw_routes = 0;
    share_type                       posting_rewards = 0;                      // Rewards in core asset earned from author rewards.
@@ -374,7 +373,7 @@ struct account_api_obj
 
 struct account_concise_api_obj
 {
-   account_concise_api_obj( const chain::account_object& a, const chain::database& db ) :
+   account_concise_api_obj( const chain::account_object& a, const chain::database& db ):
       id( a.id ),
       name( a.name ),
       details( to_string( a.details ) ),
@@ -409,118 +408,171 @@ struct account_concise_api_obj
    string                           friend_public_key;                     // Key used for encrypting posts for friend level visibility.
    string                           companion_public_key;                  // Key used for encrypting posts for companion level visibility.
    comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
-   uint32_t                         follower_count = 0;
-   uint32_t                         following_count = 0;
-   share_type                       total_rewards = 0;                        // Rewards in core asset earned from all reward sources.
-   share_type                       author_reputation = 0;                    // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
-   time_point                       created;                                   // Time that the account was created.
+   uint32_t                         follower_count;                        // Number of account followers.
+   uint32_t                         following_count;                       // Number of accounts that the account follows. 
+   share_type                       total_rewards    ;                     // Rewards in core asset earned from all reward sources.
+   share_type                       author_reputation = 0;                 // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+   time_point                       created;                               // Time that the account was created.
 };
+
+
+struct account_balance_api_obj
+{
+   account_balance_api_obj( const chain::account_balance_object& b, const chain::database& db ):
+      id( b.id ),
+      owner( b.owner ),
+      symbol( b.symbol ),
+      liquid_balance( b.liquid_balance ),
+      staked_balance( b.staked_balance ),
+      reward_balance( b.reward_balance ),
+      savings_balance( b.savings_balance ),
+      delegated_balance( b.delegated_balance ),
+      receiving_balance( b.receiving_balance ),
+      total_balance( b.total_balance ),
+      stake_rate( b.stake_rate ),
+      next_stake_time( b.next_stake_time ),
+      to_stake( b.to_stake ),
+      total_staked( b.total_staked ),
+      unstake_rate( b.unstake_rate ),
+      next_unstake_time( b.next_unstake_time ),
+      to_unstake( b.to_unstake ),
+      total_unstaked( b.total_unstaked ),
+      last_interest_time( b.last_interest_time ),
+      maintenance_flag( b.maintenance_flag ),
+
+   account_balance_api_obj(){}
+
+   account_balance_id_type        id;
+   account_name_type              owner;
+   asset_symbol_type              symbol;
+   int64_t                        liquid_balance;             // Balance that can be freely transferred.
+   int64_t                        staked_balance;             // Balance that cannot be transferred, and is vested in the account for a period of time.
+   int64_t                        reward_balance;             // Balance that is newly issued from the network.
+   int64_t                        savings_balance;            // Balance that cannot be transferred, and must be withdrawn after a delay period. 
+   int64_t                        delegated_balance;          // Balance that is delegated to other accounts for voting power.
+   int64_t                        receiving_balance;          // Balance that has been delegated to the account by other delegators. 
+   int64_t                        total_balance;              // The total of all balances
+   int64_t                        stake_rate;                 // Amount of liquid balance that is being staked from the liquid balance to the staked balance.  
+   time_point                     next_stake_time;            // time at which the stake rate will be transferred from liquid to staked. 
+   int64_t                        to_stake;                   // total amount to stake over the staking period. 
+   int64_t                        total_staked;               // total amount that has been staked so far. 
+   int64_t                        unstake_rate;               // Amount of staked balance that is being unstaked from the staked balance to the liquid balance.  
+   time_point                     next_unstake_time;          // time at which the unstake rate will be transferred from staked to liquid. 
+   int64_t                        to_unstake;                 // total amount to unstake over the withdrawal period. 
+   int64_t                        total_unstaked;             // total amount that has been unstaked so far. 
+   time_point                     last_interest_time;         // Last time that interest was compounded.
+   bool                           maintenance_flag;           // Whether need to process this balance object in maintenance interval
+}
 
 
 struct account_business_api_obj
 {
-   account_business_api_obj( const chain::account_business_object& a, const chain::database& db ) :
+   account_business_api_obj( const chain::account_business_object& a, const chain::database& db ):
       id( a.id ),
       account( a.account ),
       business_type( to_string( a.business_type ) ),
       executive_board( a.executive_board ),
-      for( auto name : a.executives )
-      {
-         executives.push_back( std::make_pair( name.first, std::make_pair( name.second.first, name.second.second ) ) );
-      }
-      for( auto name : a.officers )
-      {
-         officers.push_back( std::make_pair(name.first, name.second.first ) );
-      }
-      for( auto name : a.members )
-      {
-         members.push_back( name );
-      }
       officer_vote_threshold( a.officer_vote_threshold ),
-      for( auto symbol : a.equity_assets )
       {
-         equity_assets.push_back( symbol );
-      }
-      for( auto symbol : a.credit_assets )
-      {
-         credit_assets.push_back( symbol );
-      }
-      for( auto symbol : a.equity_revenue_shares )
-      {
-         equity_revenue_shares.push_back( std::make_pair( symbol.first, symbol.second );
-      }
-      for( auto symbol : a.credit_revenue_shares )
-      {
-         credit_revenue_shares.push_back( std::make_pair( symbol.first, symbol.second ) );
+         for( auto name : a.executives )
+         {
+            executives.push_back( std::make_pair( name.first, std::make_pair( to_string( name.second.first ), name.second.second ) ) );
+         }
+         for( auto name : a.officers )
+         {
+            officers.push_back( std::make_pair( name.first, name.second.first ) );
+         }
+         for( auto name : a.members )
+         {
+            members.push_back( name );
+         }
+         for( auto symbol : a.equity_assets )
+         {
+            equity_assets.push_back( symbol );
+         }
+         for( auto symbol : a.credit_assets )
+         {
+            credit_assets.push_back( symbol );
+         }
+         for( auto symbol : a.equity_revenue_shares )
+         {
+            equity_revenue_shares.push_back( std::make_pair( symbol.first, symbol.second ) );
+         }
+         for( auto symbol : a.credit_revenue_shares )
+         {
+            credit_revenue_shares.push_back( std::make_pair( symbol.first, symbol.second ) );
+         }
       }
 
    account_business_api_obj(){}
 
-   account_business_id_type                   id;
-   account_name_type                          account;                    // Username of the business account, lowercase letters only.
-   business_types                             business_type;              // Type of business account, controls authorizations for transactions of different types.
-   executive_officer_set                      executive_board;            // Set of highest voted executive accounts for each role.
-   vector<pair<account_name_type,pair<executive_types,share_type>>>   executives;   // Set of all executive names.    
-   vector<pair<account_name_type,share_type>> officers;                   // Set of all officers in the business, and their supporting voting power.
-   vector<account_name_type>                  members;                    // Set of all members of the business.
-   share_type                                 officer_vote_threshold;     // Amount of voting power required for an officer to be active. 
-   vector<asset_symbol_type>                  equity_assets;              // Set of equity assets that offer dividends and voting power over the business account's structure
-   vector<asset_symbol_type>                  credit_assets;              // Set of credit assets that offer interest and buybacks from the business account
-   vector<pair<asset_symbol_type,uint16_t>>   equity_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
-   vector<pair<asset_symbol_type,uint16_t>>   credit_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
-}
+   account_business_id_type                                        id;
+   account_name_type                                               account;                    // Username of the business account, lowercase letters only.
+   string                                                          business_type;              // Type of business account, controls authorizations for transactions of different types.
+   executive_officer_set                                           executive_board;            // Set of highest voted executive accounts for each role.
+   vector< pair< account_name_type, pair< string, int64_t > > >    executives;                 // Set of all executive names.    
+   vector< pair< account_name_type, int64_t>>                      officers;                   // Set of all officers in the business, and their supporting voting power.
+   vector< account_name_type >                                     members;                    // Set of all members of the business.
+   int64_t                                                         officer_vote_threshold;     // Amount of voting power required for an officer to be active. 
+   vector<asset_symbol_type >                                      equity_assets;              // Set of equity assets that offer dividends and voting power over the business account's structure
+   vector<asset_symbol_type >                                      credit_assets;              // Set of credit assets that offer interest and buybacks from the business account
+   vector< pair < asset_symbol_type,uint16_t > >                   equity_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+   vector< pair < asset_symbol_type,uint16_t > >                   credit_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+};
 
 
 struct account_following_api_obj
 {
-   account_following_api_obj( const chain::account_following_object& a, const chain::database& db ) :
+   account_following_api_obj( const chain::account_following_object& a, const chain::database& db ):
       id( a.id ),
       account( a.account ),
-      for( auto name : a.followers )
-      {
-         followers.push_back( name );
-      }
-      for( auto name : a.following )
-      {
-         following.push_back( name );
-      }
-      for( auto name : a.mutual_followers )
-      {
-         mutual_followers.push_back( name );
-      }
-      for( auto name : a.connections )
-      {
-         connections.push_back( name );
-      }
-      for( auto name : a.friends )
-      {
-         friends.push_back( name );
-      }
-      for( auto name : a.companions )
-      {
-         companions.push_back( name );
-      }
-      for( auto board : a.followed_boards )
-      {
-         followed_boards.push_back( board );
-      }
-      for( auto tag : a.followed_tags )
-      {
-         followed_tags.push_back( tags );
-      }
-      for( auto name : a.filtered )
-      {
-         filtered.push_back( name );
-      }
-      for( auto name : a.filtered_boards )
-      {
-         filtered_boards.push_back( name );
-      }
-      for( auto name : a.filtered_tags )
-      {
-         filtered_tags.push_back( name );
-      }
       last_update( a.last_update ),
+      { 
+         for( auto name : a.followers )
+         {
+            followers.push_back( name );
+         }
+         for( auto name : a.following )
+         {
+            following.push_back( name );
+         }
+         for( auto name : a.mutual_followers )
+         {
+            mutual_followers.push_back( name );
+         }
+         for( auto name : a.connections )
+         {
+            connections.push_back( name );
+         }
+         for( auto name : a.friends )
+         {
+            friends.push_back( name );
+         }
+         for( auto name : a.companions )
+         {
+            companions.push_back( name );
+         }
+         for( auto board : a.followed_boards )
+         {
+            followed_boards.push_back( board );
+         }
+         for( auto tag : a.followed_tags )
+         {
+            followed_tags.push_back( tags );
+         }
+         for( auto name : a.filtered )
+         {
+            filtered.push_back( name );
+         }
+         for( auto name : a.filtered_boards )
+         {
+            filtered_boards.push_back( name );
+         }
+         for( auto name : a.filtered_tags )
+         {
+            filtered_tags.push_back( name );
+         }
+      }
 
    account_following_api_obj(){}
 
@@ -538,11 +590,11 @@ struct account_following_api_obj
    vector< board_name_type >       filtered_boards;      // Boards that this account has filtered. Posts will not display if they are in these boards.
    vector< tag_name_type >         filtered_tags;        // Tags that this account has filtered. Posts will not display if they have any of these tags. 
    time_point                      last_update;          // Last time that the account changed its following sets.
-}
+};
 
 struct message_api_obj
 {
-   message_api_obj( const chain::message_api_obj& m, const chain::database& db ) :
+   message_api_obj( const chain::message_object& m, const chain::database& db ):
       id( m.id ),
       sender( m.sender ),
       recipient( m.recipient ),
@@ -566,7 +618,7 @@ struct message_api_obj
    string                  uuid;                     // uuidv4 uniquely identifying the message for local storage.
    time_point              created;                  // Time the message was sent.
    time_point              last_updated;             // Time the message was last changed, used to reload encrypted message storage.
-}
+};
 
 
 struct connection_api_obj
@@ -587,7 +639,7 @@ struct connection_api_obj
 
    connection_api_obj(){}
 
-   id_type                id;                 
+   connection_id_type                id;                 
    account_name_type      account_a;                // Account with the lower ID.
    string                 encrypted_key_a;          // A's private connection key, encrypted with the public secure key of account B.
    account_name_type      account_b;                // Account with the greater ID.
@@ -599,7 +651,7 @@ struct connection_api_obj
    time_point             last_message_time_a;      // Time since the account A last sent a message
    time_point             last_message_time_b;      // Time since the account B last sent a message
    time_point             created;                  // Time the connection was created. 
-}
+};
 
 
 struct board_api_obj
@@ -628,14 +680,14 @@ struct board_api_obj
 
       board_api_obj(){}
 
-   board_id_type                            id;
+   board_id_type                      id;
    board_name_type                    name;                               // Name of the board, lowercase letters, numbers and hyphens only.
    account_name_type                  founder;                            // The account that created the board, able to add and remove administrators.
-   board_types                        board_type;                         // Type of board, persona, profile or business.
-   board_privacy_types                board_privacy;                      // Board privacy level, open, public, private, or exclusive
-   public_key_type                    board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
-   shared_string                      json;                               // Public plaintext json information about the board, its topic and rules.
-   shared_string                      json_private;                       // Private ciphertext json information about the board.
+   string                             board_type;                         // Type of board, persona, profile or business.
+   string                             board_privacy;                      // Board privacy level, open, public, private, or exclusive
+   string                             board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
+   string                             json;                               // Public plaintext json information about the board, its topic and rules.
+   string                             json_private;                       // Private ciphertext json information about the board.
    comment_id_type                    pinned_comment;                     // Post pinned to the top of the board's page. 
    uint32_t                           subscriber_count = 0;               // number of accounts that are subscribed to the board
    uint32_t                           post_count = 0;                     // number of posts created in the board
@@ -648,7 +700,7 @@ struct board_api_obj
    time_point                         last_board_update;                  // Time that the board's details were last updated.
    time_point                         last_post;                          // Time that the user most recently created a comment.
    time_point                         last_root_post;                     // Time that the board last created a post. 
-}
+};
 
 
 struct moderation_tag_api_obj
@@ -658,15 +710,17 @@ struct moderation_tag_api_obj
       moderator( m.moderator ),
       comment( m.comment ),
       board( m.board ),
-      for( auto tag : m.tags )
-      {
-         tags.push_back( tag );
-      }
       rating( to_string( m.rating ) ),
       details( to_string( m.details ) ),
       filter( m.filter ),
       last_update( m.last_update ),
       created( m.created ),
+      {
+         for( auto tag : m.tags )
+         {
+            tags.push_back( tag );
+         }
+      }
 
    moderation_tag_api_obj(){}
 
@@ -680,31 +734,423 @@ struct moderation_tag_api_obj
    bool                           filter;           // True if the post should be filtered by the board or governance address subscribers. 
    time_point                     last_update;      // Time the comment tag was last edited by the author.
    time_point                     created;          // Time that the comment tag was created.
+};
+
+struct asset_api_obj
+{
+   asset_api_obj( const chain::asset_object& a, const chain::database& db ):
+      id( a.id ),
+      symbol( a.symbol ),
+      asset_type( to_string( a.asset_type ) ),
+      issuer( a.issuer ),
+      created( a.created ),
+      display_symbol( to_string( a.options.display_symbol) ),
+      description( to_string( a.options.description) ),
+      json( to_string( a.options.json ) ),
+      url( to_string( a.options.url ) ),
+      max_supply( a.options.max_supply ),
+      stake_intervals( a.options.stake_intervals ),
+      unstake_intervals( a.options.unstake_intervals ),
+      market_fee_percent( a.options.market_fee_percent ),
+      market_fee_share_percent( a.options.market_fee_share_percent ),
+      issuer_permissions( a.options.issuer_permissions ),
+      flags( a.options.flags ),
+      core_exchange_rate( a.options.core_exchange_rate ),
+      {
+         for( auto auth : a.options.whitelist_authorities )
+         {
+            whitelist_authorities.push_back( auth );
+         }
+         for( auto auth : a.options.blacklist_authorities )
+         {
+            blacklist_authorities.push_back( auth );
+         }
+         for( auto market : a.options.whitelist_markets )
+         {
+            whitelist_markets.push_back( auth );
+         }
+         for( auto market : a.options.blacklist_markets )
+         {
+            blacklist_markets.push_back( auth );
+         }
+      }
+
+   asset_api_obj(){}
+
+   asset_id_type                   id; 
+   asset_symbol_type               symbol;                                // Consensus enforced unique Ticker symbol string for this asset. 
+   string                          asset_type;                            // The type of the asset.
+   account_name_type               issuer;                                // name of the account which issued this asset.
+   time_point                      created;                               // Time that the asset was created. 
+   string                          display_symbol;                        // Non-consensus display name for interface reference.
+   string                          description;                           // Data that describes the purpose of this asset.
+   string                          json;                                  // Additional JSON metadata of this asset.
+   string                          url;                                   // Reference URL for the asset. 
+   int64_t                         max_supply;                            // The maximum supply of this asset which may exist at any given time. 
+   uint8_t                         stake_intervals;                       // Weeks required to stake the asset.
+   uint8_t                         unstake_intervals;                     // Weeks require to unstake the asset.
+   uint16_t                        market_fee_percent;                    // Percentage of the total traded will be paid to the issuer of the asset.
+   uint16_t                        market_fee_share_percent;              // Percentage of the market fee that will be shared with the account's referrers.
+   int64_t                         max_market_fee;                        // Market fee charged on a trade is capped to this value.
+   uint32_t                        issuer_permissions;                    // The flags which the issuer has permission to update.
+   uint32_t                        flags;                                 // The currently active flags on this permission.
+   price                           core_exchange_rate;                    // Exchange rate between asset and core for fee pool exchange
+   vector<account_name_type>       whitelist_authorities;                 // Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
+   vector<account_name_type>       blacklist_authorities;                 // Accounts which cannot transfer or recieve this asset.
+   vector<asset_symbol_type>       whitelist_markets;                     // The assets that this asset may be traded against in the market
+   vector<asset_symbol_type>       blacklist_markets;                     // The assets that this asset may not be traded against in the market, must not overlap whitelist
+};
+
+
+struct bitasset_data_api_obj
+{
+   bitasset_data_api_obj( const chain::asset_bitasset_data_object& b, const chain::database& db ):
+      id( b.id ),
+      symbol( b.symbol ),
+      issuer( b.issuer ),
+      backing_asset( b.backing_asset ),
+      current_feed( b.current_feed ),
+      current_feed_publication_time( current_feed_publication_time ),
+      force_settled_volume( b.force_settled_volume ),
+      settlement_price( b.settlement_price ),
+      settlement_fund( b.settlement_fund ),
+      asset_cer_updated( b.asset_cer_updated ),
+      feed_cer_updated( b.asset_cer_updated ),
+      feed_lifetime( b.options.feed_lifetime ),
+      minimum_feeds( b.options.minimum_feeds ),
+      force_settlement_delay( b.options.force_settlement_delay ),
+      force_settlement_offset_percent( b.options.force_settlement_offset_percent ),
+      maximum_force_settlement_volume( b.options.maximum_force_settlement_volume ),
+      {
+         for( auto feed: b.feeds )
+         {
+            feeds[ feed.first ] = feed.second;
+         }
+      }
+   
+   bitasset_data_api_obj(){}
+
+   asset_bitasset_data_id_type                             id;
+   asset_symbol_type                                       symbol;                                  // The symbol of the bitasset that this object belongs to
+   account_name_type                                       issuer;                                  // The account name of the issuer 
+   asset_symbol_type                                       backing_asset;             // The collateral backing asset of the bitasset
+   map<account_name_type, pair<time_point,price_feed>>     feeds;                       // Feeds published for this asset. 
+   price_feed                                              current_feed;                            // Currently active price feed, median of values from the currently active feeds.
+   time_point                                              current_feed_publication_time;           // Publication time of the oldest feed which was factored into current_feed.
+   price                                                   current_maintenance_collateralization;   // Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
+   int64_t                                                 force_settled_volume;                    // This is the volume of this asset which has been force-settled this maintanence interval
+   price                                                   settlement_price;      // Price at which force settlements of a black swanned asset will occur
+   int64_t                                                 settlement_fund;       // Amount of collateral which is available for force settlement
+   bool                                                    asset_cer_updated;       // Track whether core_exchange_rate in corresponding asset_object has updated
+   bool                                                    feed_cer_updated;// Track whether core exchange rate in current feed has updated
+   fc::microseconds                                        feed_lifetime;                            // Time before a price feed expires
+   uint8_t                                                 minimum_feeds;                                              // Minimum number of unexpired feeds required to extract a median feed from
+   fc::microseconds                                        force_settlement_delay;                // This is the delay between the time a long requests settlement and the chain evaluates the settlement
+   uint16_t                                                force_settlement_offset_percent;      // The percentage to adjust the feed price in the short's favor in the event of a forced settlement
+   uint16_t                                                maximum_force_settlement_volume;  // the percentage of current supply which may be force settled within each maintenance interval.
+};
+
+
+struct equity_data_api_obj
+{
+   equity_data_api_obj( const chain::asset_equity_data_object& e, const chain::database& db ):
+      id( e.id ),
+      dividend_asset( e.dividend_asset ),
+      dividend_pool( e.dividend_pool ),
+      last_dividend( e.last_dividend ),
+      dividend_share_percent( e.options.dividend_share_percent ),
+      liquid_dividend_percent( e.options.liquid_dividend_percent ),
+      staked_dividend_percent( e.options.staked_dividend_percent ),
+      savings_dividend_percent( e.options.savings_dividend_percent ),
+      liquid_voting_rights( e.options.liquid_voting_rights ),
+      staked_voting_rights( e.options.staked_voting_rights ),
+      savings_voting_rights( e.options.savings_voting_rights ),
+      min_active_time( e.options.min_active_time ),
+      min_balance( e.options.min_balance ),
+      min_witnesses( e.options.min_witnesses ),
+      boost_balance( e.options.boost_balance ),
+      boost_activity( e.options.boost_activity ),
+      boost_witnesses( e.options.boost_witnesses ),
+      boost_top( e.options.boost_top ),
+
+   equity_data_api_obj(){}
+
+   asset_equity_data_id_type                    id;
+   asset_symbol_type                            dividend_asset;                // The asset used to distribute dividends to asset holders
+   asset                                        dividend_pool;                 // Amount of assets pooled for distribution at the next interval
+   time_point                                   last_dividend;                 // Time that the asset last distributed a dividend.
+   uint16_t                                     dividend_share_percent;        // Percentage of incoming assets added to the dividends pool
+   uint16_t                                     liquid_dividend_percent;       // percentage of equity dividends distributed to liquid balances
+   uint16_t                                     staked_dividend_percent;       // percentage of equity dividends distributed to staked balances
+   uint16_t                                     savings_dividend_percent;      // percentage of equity dividends distributed to savings balances
+   uint16_t                                     liquid_voting_rights;          // Amount of votes per asset conveyed to liquid holders of the asset
+   uint16_t                                     staked_voting_rights;          // Amount of votes per asset conveyed to staked holders of the asset
+   uint16_t                                     savings_voting_rights;         // Amount of votes per asset conveyed to savings holders of the asset
+   fc::microseconds                             min_active_time;
+   int64_t                                      min_balance;
+   uint16_t                                     min_witnesses;
+   uint16_t                                     boost_balance;
+   uint16_t                                     boost_activity;
+   uint16_t                                     boost_witnesses;
+   uint16_t                                     boost_top;
+};
+
+
+struct credit_data_api_obj
+{
+   credit_data_api_obj( const asset_credit_data_object& c, const database& db ):
+      id( c.id ),
+      buyback_asset( c.buyback_asset ),
+      buyback_pool( c.buyback_pool ),
+      buyback_price( c.buyback_price ),
+      symbol_a( c.symbol_a ),
+      symbol_b( c.symbol_b ),
+      last_buyback( c.last_buyback ),
+      buyback_share_percent( c.options.buyback_share_percent ),
+      liquid_fixed_interest_rate( c.options.liquid_fixed_interest_rate ),
+      liquid_variable_interest_rate( c.options.liquid_variable_interest_rate ),
+      staked_fixed_interest_rate( c.options.staked_fixed_interest_rate ),
+      staked_variable_interest_rate( c.options.staked_variable_interest_rate ),
+      savings_fixed_interest_rate( c.options.savings_fixed_interest_rate ),
+      savings_variable_interest_rate( c.options.savings_variable_interest_rate ),
+      var_interest_range( c.options.var_interest_range ),
+
+   credit_data_api_obj(){}
+
+   asset_credit_data_id_type  id;
+   asset_symbol_type          buyback_asset;                             // Symbol used to buyback credit assets
+   asset                      buyback_pool;                              // Amount of assets pooled to buyback the asset at next interval
+   price                      buyback_price;                             // Price at which the credit asset is bought back
+   asset_symbol_type          symbol_a;                                  // the asset with the lower id in the buyback price pair
+   asset_symbol_type          symbol_b;                                  // the asset with the greater id in the buyback price pair
+   time_point                 last_buyback;                              // Time that the asset was last updated
+   uint32_t                   buyback_share_percent;                     // Percentage of incoming assets added to the buyback pool
+   uint32_t                   liquid_fixed_interest_rate;                // Fixed component of Interest rate of the asset for liquid balances.
+   uint32_t                   liquid_variable_interest_rate;             // Variable component of Interest rate of the asset for liquid balances.
+   uint32_t                   staked_fixed_interest_rate;                // Fixed component of Interest rate of the asset for staked balances.
+   uint32_t                   staked_variable_interest_rate;             // Variable component of Interest rate of the asset for staked balances.
+   uint32_t                   savings_fixed_interest_rate;               // Fixed component of Interest rate of the asset for savings balances.
+   uint32_t                   savings_variable_interest_rate;            // Variable component of Interest rate of the asset for savings balances.
+   uint32_t                   var_interest_range;                        // The percentage range from the buyback price over which to apply the variable interest rate.
+};
+
+struct liquidity_pool_api_obj
+{
+   liquidity_pool_api_obj( const chain::asset_liquidity_pool_object& p, const database& db ):
+      id( p.id ),
+      issuer( p.issuer ),
+      symbol_a( p.symbol_a ),
+      symbol_b( p.symbol_b ),
+      symbol_liquid( p.symbol_liquid ),
+      balance_a( p.balance_a ),
+      balance_b( p.balance_b ),
+      balance_liquid( p.balance_liquid ),
+      hour_median_price( p.hour_median_price ),
+      day_median_price( p.day_median_price ),
+      {
+         bip::deque< price, allocator< price > > feeds = p.price_history;
+         for( auto feed : feeds )
+         {
+            price_history.push_back( feed );
+         }
+      }
+
+   liquidity_pool_api_obj(){}
+
+   asset_liquidity_pool_id_type           id; 
+   account_name_type                      issuer;                        // Name of the account which created the liquidity pool.
+   asset_symbol_type                      symbol_a;                      // Ticker symbol string of the asset with the lower ID. Must be core asset if one asset is core.
+   asset_symbol_type                      symbol_b;                      // Ticker symbol string of the asset with the higher ID.
+   asset_symbol_type                      symbol_liquid;                 // Ticker symbol of the pool's liquidity pool asset. 
+   asset                                  balance_a;                     // Balance of Asset A. Must be core asset if one asset is core.
+   asset                                  balance_b;                     // Balance of Asset B.
+   asset                                  balance_liquid;                // Outstanding supply of the liquidity asset for the asset pair.
+   price                                  hour_median_price;             // The median price over the past hour, at 10 minute intervals. Used for collateral calculations. 
+   price                                  day_median_price;              // The median price over the last day, at 10 minute intervals.
+   vector< price >                        price_history;                 // Tracks the last 24 hours of median price, one per 10 minutes.
+};
+
+
+
+struct credit_pool_api_obj
+{
+   credit_pool_api_obj( const chain::asset_credit_pool_object& p, const database& db ):
+      id( p.id ),
+      issuer( p.issuer ),
+      base_symbol( p.base_symbol ),
+      credit_symbol( p.credit_symbol ),
+      base_balance( p.base_balance ),
+      borrowed_balance( p.borrowed_balance ),
+      credit_balance( p.credit_balance ),
+      last_interest_rate( p.last_interest_rate ),
+      last_price( p.last_price ),
+
+   credit_pool_api_obj(){}
+
+   asset_credit_pool_id_type         id; 
+   account_name_type                 issuer;                 // Name of the account which created the credit pool.
+   asset_symbol_type                 base_symbol;            // Ticker symbol string of the base asset being lent and borrowed.
+   asset_symbol_type                 credit_symbol;          // Ticker symbol string of the credit asset for use as collateral to borrow the base asset.
+   asset                             base_balance;           // Balance of the base asset that is available for loans and redemptions. 
+   asset                             borrowed_balance;       // Total amount of base asset currently lent to borrowers, accumulates compounding interest payments. 
+   asset                             credit_balance;         // Balance of the credit asset redeemable for an increasing amount of base asset.
+   int64_t                           last_interest_rate;     // The most recently calculated interest rate when last compounded. 
+   price                             last_price;             // The last price that assets were lent or withdrawn at. 
 }
 
-struct limit_order
+struct limit_order_api_obj
 {
-   limit_order( chain::limit_order_object& o ):
+   limit_order_api_obj( chain::limit_order_object& o, database& db ):
       id( o.id ),
       created( o.created ),
       expiration( o.expiration ),
       seller( o.seller ),
       order_id( to_string( o.order_id ) ),
       for_sale( o.for_sale ),
-      sell_price( o.sell_price )
-   {}
+      sell_price( o.sell_price ),
+      interface( o.interface ),
+      real_price( o.real_price() ),
 
-   limit_order(){}
+   limit_order_api_obj(){}
 
-   limit_order_id_type            id;
-   time_point                     created;
-   time_point                     expiration;
-   account_name_type              seller;
-   string                         order_id;
-   share_type                     for_sale;
-   price                          sell_price;
+   limit_order_id_type    id;
+   time_point             created;           // Time that the order was created.
+   time_point             expiration;        // Expiration time of the order.
+   account_name_type      seller;            // Selling account name of the trading order.
+   shared_string          order_id;          // UUIDv4 of the order for each account.
+   share_type             for_sale;          // asset symbol is sell_price.base.symbol
+   price                  sell_price;        // Base price is the asset being sold.
+   account_name_type      interface;         // The interface account that created the order
+   double                 real_price;
 };
 
+
+struct margin_order_api_obj
+{
+   margin_order_api_obj( chain::margin_order_object& o, database& db ):
+      id( o.id ),
+      owner( o.owner ),
+      order_id( to_string( o.order_id ) ),
+      sell_price( o.sell_price ),
+      collateral( o.collateral ),
+      debt( o.debt ),
+      debt_balance( o.debt_balance ),
+      interest( o.interest ),
+      position( o.position ),
+      position_filled( o.position_filled ),
+      collateralization( o.collateralization ),
+      interface( o.interface ),
+      created( o.created ),
+      expiration( o.expiration ),
+      unrealized_value( o.unrealized_value ),
+      last_interest_rate( o.last_interest_rate ),
+      liquidating( o.liquidating ),
+      stop_loss_price( o.stop_loss_price ),
+      take_profit_price( o.take_profit_price ),
+      limit_stop_loss_price( o.limit_stop_loss_price ),
+      limit_take_profit_price( o.limit_take_profit_price ),
+      real_price( o.real_price() ),
+      
+   margin_order_api_obj(){}
+
+   margin_order_id_type       id;
+   account_name_type          owner;                       // Margin order owners account name
+   string                     order_id;                    // UUIDv4 Unique Identifier of the order for each account.
+   price                      sell_price;                  // limit exchange price of the borrowed asset being sold for the position asset.
+   asset                      collateral;                  // Collateral asset used to back the loan value; Returned to credit collateral object when position is closed. 
+   asset                      debt;                        // Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed. 
+   asset                      debt_balance;                // Debt asset that is held by the order when selling debt, or liquidating position.
+   asset                      interest;                    // Amount of interest accrued on the borrowed asset into the debt value.
+   asset                      position;                    // Minimum amount of asset to receive as margin position.
+   asset                      position_filled;             // Amount of asset currently held within the order that has filled.                     
+   int64_t                    collateralization;           // Percentage ratio of ( Collateral + position_filled + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
+   account_name_type          interface;                   // The interface account that created the order.
+   time_point                 created;                     // Time that the order was created.
+   time_point                 last_updated;                // Time that interest was last compounded on the margin order, and collateralization was last updated. 
+   time_point                 expiration;                  // Expiration time of the order.
+   asset                      unrealized_value;            // Current profit or loss that the position is holding.
+   int64_t                    last_interest_rate;          // The interest rate that was last applied to the order.
+   bool                       liquidating;                 // Set to true to place the margin order back into the orderbook and liquidate the position at sell price.
+   price                      stop_loss_price;             // Price at which the position will be force liquidated if it falls into a net loss.
+   price                      take_profit_price;           // Price at which the position will be force liquidated if it rises into a net profit.
+   price                      limit_stop_loss_price;       // Price at which the position will be limit liquidated if it falls into a net loss.
+   price                      limit_take_profit_price;     // Price at which the position will be limit liquidated if it rises into a net profit.
+   double                     real_price;
+};
+
+struct call_order_api_obj
+{
+   call_order_api_obj( chain::call_order_object& o, database& db ):
+      id( o.id ),
+      borrower( o.borrower ),
+      collateral( o.collateral ),
+      debt( o.debt ),
+      call_price( o.call_price ),
+      target_collateral_ratio( o.target_collateral_ratio ),
+      interface( o.interface ),
+      real_price( o.real_price() ),
+
+   call_order_api_obj(){}
+
+   call_order_id_type      id;
+   account_name_type       borrower;
+   asset                   collateral;                  // call_price.base.symbol, access via get_collateral
+   asset                   debt;                        // call_price.quote.symbol, access via get_debt
+   price                   call_price;                  // Collateral / Debt
+   uint16_t                target_collateral_ratio;     // maximum CR to maintain when selling collateral on margin call
+   account_name_type       interface;                   // The interface account that created the order
+   double                  real_price;
+};
+
+struct credit_loan_api_obj
+{
+   credit_loan_api_obj( chain::credit_loan_object& o, database& db ):
+      id( o.id ),
+      owner( o.owner ),
+      loan_id( to_string( o.loan_id ) ),
+      debt( o.debt ),
+      interest( o.interest ),
+      collateral( o.collateral ),
+      loan_price( o.loan_price ),
+      liquidation_price( o.liquidation_price ),
+      symbol_a( o.symbol_a ),
+      symbol_b( o.symbol_b ),
+      last_interest_rate( o.last_interest_rate ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+   
+   credit_loan_api_obj(){}
+
+   credit_loan_id_type        id;
+   account_name_type          owner;                   // Collateral owner's account name
+   string                     loan_id;                 // UUIDV4 for the loan to uniquely identify it for reference. 
+   asset                      debt;                    // Amount of an asset borrowed. Limit of 75% of collateral value. Increases with interest charged.
+   asset                      interest;                // Total Amount of interest accrued on the loan. 
+   asset                      collateral;              // Amount of an asset to use as collateral for the loan. 
+   price                      loan_price;              // Collateral / Debt. Must be higher than liquidation price to remain solvent. 
+   price                      liquidation_price;       // Collateral / max_debt value. Rises when collateral/debt market price falls.
+   asset_symbol_type          symbol_a;                // The symbol of asset A in the debt / collateral exchange pair.
+   asset_symbol_type          symbol_b;                // The symbol of asset B in the debt / collateral exchange pair.
+   int64_t                    last_interest_rate;      // Updates the interest rate of the loan hourly. 
+   time_point                 created;                 // Time that the loan was taken out.
+   time_point                 last_updated;            // Time that the loan was last updated, and interest was accrued.
+};
+
+struct credit_collateral_api_obj
+{
+   credit_collateral_api_obj( chain::credit_loan_object& o, database& db ):
+      id( o.id ),
+      owner( o.owner ),
+      symbol( o.symbol ),
+      collateral( o.collateral ),
+
+   credit_collateral_api_obj(){}
+
+   credit_collateral_id_type                    id;
+   account_name_type                            owner;         // Collateral owners account name.
+   asset_symbol_type                            symbol;        // Asset symbol being collateralized. 
+   asset                                        collateral;    // Asset balance that is being locked in for loan backing for loan or margin orders.  
+};
 
 struct owner_authority_history_api_obj
 {
@@ -712,8 +1158,8 @@ struct owner_authority_history_api_obj
       id( o.id ),
       account( o.account ),
       previous_owner_authority( authority( o.previous_owner_authority ) ),
-      last_valid_time( o.last_valid_time )
-   {}
+      last_valid_time( o.last_valid_time ),
+   
 
    owner_authority_history_api_obj() {}
 

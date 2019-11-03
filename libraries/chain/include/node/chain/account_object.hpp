@@ -85,9 +85,9 @@ namespace node { namespace chain {
 
          uint16_t                         viewing_power = PERCENT_100;                // current viewing power of this account, falls after every view, recovers over time.
 
-         uint16_t                         sharing_power = PERCENT_100;                // current viewing power of this account, falls after every view, recovers over time.
+         uint16_t                         sharing_power = PERCENT_100;                // current sharing power of this account, falls after every share, recovers over time.
 
-         uint16_t                         commenting_power = PERCENT_100;             // current viewing power of this account, falls after every view, recovers over time.
+         uint16_t                         commenting_power = PERCENT_100;             // current commenting power of this account, falls after every comment, recovers over time.
 
          uint8_t                          savings_withdraw_requests = 0;
 

@@ -166,7 +166,7 @@ void database::init_genesis()
       a.last_vote_time = now;
       a.last_post = now;
       a.last_root_post = now;
-      a.last_transfer = now;
+      a.last_transfer_time = now;
       a.last_activity_reward = now;
       a.last_account_recovery = now;
       a.membership = TOP_MEMBERSHIP;
@@ -3363,7 +3363,7 @@ void database::initialize_indexes()
    // Trading Indexes
 
    add_core_index< limit_order_index                       >(*this);
-   add_core_index< margin_order_index                       >(*this);
+   add_core_index< margin_order_index                      >(*this);
    add_core_index< call_order_index                        >(*this);
    add_core_index< force_settlement_index                  >(*this);
    add_core_index< collateral_bid_index                    >(*this);

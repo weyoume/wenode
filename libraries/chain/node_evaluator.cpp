@@ -7379,7 +7379,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
    FC_ASSERT( o.collateral.amount >= min_collateral.amount , 
       "Collateral is insufficient to support a loan of this size.");
 
-   const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_owner_id >();
+   const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_loan_id >();
    auto loan_itr = loan_idx.find( boost::make_tuple( account.name, o.loan_id ) ); 
 
    if( loan_itr == loan_idx.end() )    // Credit loan object with this ID does not exist.

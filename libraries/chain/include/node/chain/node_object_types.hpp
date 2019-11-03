@@ -35,6 +35,30 @@ typedef bip::basic_string< char, std::char_traits< char >, allocator< char > > s
 inline std::string to_string( const shared_string& str ) { return std::string( str.begin(), str.end() ); }
 inline void from_string( shared_string& out, const string& in ){ out.assign( in.begin(), in.end() ); }
 
+struct strcmp_less
+{
+   bool operator()( const shared_string& a, const shared_string& b )const
+   {
+      return less( a.c_str(), b.c_str() );
+   }
+
+   bool operator()( const shared_string& a, const string& b )const
+   {
+      return less( a.c_str(), b.c_str() );
+   }
+
+   bool operator()( const string& a, const shared_string& b )const
+   {
+      return less( a.c_str(), b.c_str() );
+   }
+
+   private:
+      inline bool less( const char* a, const char* b )const
+      {
+         return std::strcmp( a, b ) < 0;
+      }
+}
+
 typedef bip::vector< char, allocator< char > > buffer_type;
 
 struct by_id;
@@ -603,7 +627,6 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (witness_object_type)
          (witness_schedule_object_type)
          (witness_vote_object_type)
-         
          (block_validation_object_type)
          );
 
