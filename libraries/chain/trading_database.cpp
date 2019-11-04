@@ -456,9 +456,23 @@ int database::match( const limit_order_object& taker, const limit_order_object& 
    FC_ASSERT( taker.sell_price.base.symbol  == maker.sell_price.quote.symbol );
    FC_ASSERT( taker.amount_for_sale().amount > 0 && maker.amount_for_sale().amount > 0 );
 
-   auto taker_for_sale = taker.amount_for_sale();
-   auto maker_for_sale = maker.amount_for_sale();
-
+   asset taker_for_sale = taker.amount_for_sale();
+   asset maker_for_sale = maker.amount_for_sale();
+   const asset_object& taker_asset = get_asset( taker_for_sale.symbol );
+   const asset_object& maker_asset = get_asset( maker_for_sale.symbol );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( taker_asset.id < maker_asset.id )
+   {
+      symbol_a = taker_asset.symbol;
+      symbol_b = maker_asset.symbol;
+   }
+   else
+   {
+      symbol_a = maker_asset.symbol;
+      symbol_b = taker_asset.symbol;
+   }
+   
    asset taker_pays, taker_receives, maker_pays, maker_receives;
 
    bool cull_taker = false;
@@ -483,10 +497,41 @@ int database::match( const limit_order_object& taker, const limit_order_object& 
    taker_pays = maker_receives;
 
    int result = 0;
-   result |= fill_limit_order( taker, taker_pays, taker_receives, cull_taker, match_price, false, maker.interface );     // the first param is taker
-   result |= fill_limit_order( maker, maker_pays, maker_receives, true, match_price, true, taker.interface ) << 1;       // the second param is maker
+
+   result |= fill_limit_order(      
+      taker,      // The first order matched is taker
+      taker_pays, 
+      taker_receives, 
+      cull_taker, 
+      match_price, 
+      false, 
+      maker.interface 
+   );
+
+   result |= fill_limit_order( 
+      maker,       // The second order is maker
+      maker_pays, 
+      maker_receives, 
+      true, 
+      match_price, 
+      true, 
+      taker.interface 
+   ) << 1;      
    FC_ASSERT( result != 0 );
-   push_virtual_operation( fill_order_operation( taker.seller, to_string(taker.order_id), taker_pays, maker.seller, to_string(maker.order_id), maker_pays ) );
+
+   push_virtual_operation(    // Record matched trading details for market history API.
+      fill_order_operation( 
+         taker.seller, 
+         to_string(taker.order_id), 
+         taker_pays, 
+         maker.seller, 
+         to_string(maker.order_id), 
+         maker_pays, 
+         symbol_a, 
+         symbol_b
+      )
+   );
+
    return result;
 }
 
@@ -502,8 +547,22 @@ int database::match( const margin_order_object& taker, const margin_order_object
    FC_ASSERT( taker.sell_price.base.symbol  == maker.sell_price.quote.symbol );
    FC_ASSERT( taker.amount_for_sale().amount > 0 && maker.amount_for_sale().amount > 0 );
 
-   auto taker_for_sale = taker.amount_for_sale();
-   auto maker_for_sale = maker.amount_for_sale();
+   asset taker_for_sale = taker.amount_for_sale();
+   asset maker_for_sale = maker.amount_for_sale();
+   const asset_object& taker_asset = get_asset( taker_for_sale.symbol );
+   const asset_object& maker_asset = get_asset( maker_for_sale.symbol );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( taker_asset.id < maker_asset.id )
+   {
+      symbol_a = taker_asset.symbol;
+      symbol_b = maker_asset.symbol;
+   }
+   else
+   {
+      symbol_a = maker_asset.symbol;
+      symbol_b = taker_asset.symbol;
+   }
 
    asset taker_pays, taker_receives, maker_pays, maker_receives;
 
@@ -529,10 +588,39 @@ int database::match( const margin_order_object& taker, const margin_order_object
    taker_pays = maker_receives;
 
    int result = 0;
-   result |= fill_margin_order( taker, taker_pays, taker_receives, cull_taker, match_price, false, maker.interface );     // the first param is taker
-   result |= fill_margin_order( maker, maker_pays, maker_receives, true, match_price, true, taker.interface ) << 1;       // the second param is maker
+   result |= fill_margin_order(      
+      taker,      // The first order matched is taker
+      taker_pays, 
+      taker_receives, 
+      cull_taker, 
+      match_price, 
+      false, 
+      maker.interface 
+   );
+
+   result |= fill_margin_order( 
+      maker,       // The second order is maker
+      maker_pays, 
+      maker_receives, 
+      true, 
+      match_price, 
+      true, 
+      taker.interface 
+   ) << 1;      
    FC_ASSERT( result != 0 );
-   push_virtual_operation( fill_order_operation( taker.owner, to_string(taker.order_id), taker_pays, maker.owner, to_string(maker.order_id), maker_pays ) );
+
+   push_virtual_operation(    // Record matched trading details for market history API.
+      fill_order_operation( 
+         taker.owner, 
+         to_string(taker.order_id), 
+         taker_pays, 
+         maker.owner, 
+         to_string(maker.order_id), 
+         maker_pays, 
+         symbol_a, 
+         symbol_b
+      )
+   );
    return result;
 }
 
@@ -548,8 +636,22 @@ int database::match( const limit_order_object& taker, const margin_order_object&
    FC_ASSERT( taker.sell_price.base.symbol  == maker.sell_price.quote.symbol );
    FC_ASSERT( taker.amount_for_sale().amount > 0 && maker.amount_for_sale().amount > 0 );
 
-   auto taker_for_sale = taker.amount_for_sale();
-   auto maker_for_sale = maker.amount_for_sale();
+   asset taker_for_sale = taker.amount_for_sale();
+   asset maker_for_sale = maker.amount_for_sale();
+   const asset_object& taker_asset = get_asset( taker_for_sale.symbol );
+   const asset_object& maker_asset = get_asset( maker_for_sale.symbol );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( taker_asset.id < maker_asset.id )
+   {
+      symbol_a = taker_asset.symbol;
+      symbol_b = maker_asset.symbol;
+   }
+   else
+   {
+      symbol_a = maker_asset.symbol;
+      symbol_b = taker_asset.symbol;
+   }
 
    asset taker_pays, taker_receives, maker_pays, maker_receives;
 
@@ -575,10 +677,39 @@ int database::match( const limit_order_object& taker, const margin_order_object&
    taker_pays = maker_receives;
 
    int result = 0;
-   result |= fill_limit_order( taker, taker_pays, taker_receives, cull_taker, match_price, false, maker.interface );     // the first param is taker
-   result |= fill_margin_order( maker, maker_pays, maker_receives, true, match_price, true, taker.interface ) << 1;       // the second param is maker
+   result |= fill_limit_order(      
+      taker,      // The first order matched is taker
+      taker_pays, 
+      taker_receives, 
+      cull_taker, 
+      match_price, 
+      false, 
+      maker.interface 
+   );
+
+   result |= fill_margin_order( 
+      maker,       // The second order is maker
+      maker_pays, 
+      maker_receives, 
+      true, 
+      match_price, 
+      true, 
+      taker.interface 
+   ) << 1;      
    FC_ASSERT( result != 0 );
-   push_virtual_operation( fill_order_operation( taker.seller, to_string(taker.order_id), taker_pays, maker.owner, to_string(maker.order_id), maker_pays ) );
+
+   push_virtual_operation(    // Record matched trading details for market history API.
+      fill_order_operation( 
+         taker.seller, 
+         to_string(taker.order_id), 
+         taker_pays, 
+         maker.owner, 
+         to_string(maker.order_id), 
+         maker_pays, 
+         symbol_a, 
+         symbol_b
+      )
+   );
    return result;
 }
 
@@ -594,8 +725,22 @@ int database::match( const margin_order_object& taker, const limit_order_object&
    FC_ASSERT( taker.sell_price.base.symbol  == maker.sell_price.quote.symbol );
    FC_ASSERT( taker.amount_for_sale().amount > 0 && maker.amount_for_sale().amount > 0 );
 
-   auto taker_for_sale = taker.amount_for_sale();
-   auto maker_for_sale = maker.amount_for_sale();
+   asset taker_for_sale = taker.amount_for_sale();
+   asset maker_for_sale = maker.amount_for_sale();
+   const asset_object& taker_asset = get_asset( taker_for_sale.symbol );
+   const asset_object& maker_asset = get_asset( maker_for_sale.symbol );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( taker_asset.id < maker_asset.id )
+   {
+      symbol_a = taker_asset.symbol;
+      symbol_b = maker_asset.symbol;
+   }
+   else
+   {
+      symbol_a = maker_asset.symbol;
+      symbol_b = taker_asset.symbol;
+   }
 
    asset taker_pays, taker_receives, maker_pays, maker_receives;
 
@@ -621,10 +766,39 @@ int database::match( const margin_order_object& taker, const limit_order_object&
    taker_pays = maker_receives;
 
    int result = 0;
-   result |= fill_margin_order( taker, taker_pays, taker_receives, cull_taker, match_price, false, maker.interface );         // the first param is taker
-   result |= fill_limit_order( maker, maker_pays, maker_receives, true, match_price, true, taker.interface ) << 1;            // the second param is maker
+   result |= fill_margin_order(      
+      taker,      // The first order matched is taker
+      taker_pays, 
+      taker_receives, 
+      cull_taker, 
+      match_price, 
+      false, 
+      maker.interface 
+   );
+
+   result |= fill_limit_order( 
+      maker,       // The second order is maker
+      maker_pays, 
+      maker_receives, 
+      true, 
+      match_price, 
+      true, 
+      taker.interface 
+   ) << 1;      
    FC_ASSERT( result != 0 );
-   push_virtual_operation( fill_order_operation( taker.owner, to_string(taker.order_id), taker_pays, maker.seller, to_string(maker.order_id), maker_pays ) );
+
+   push_virtual_operation(    // Record matched trading details for market history API.
+      fill_order_operation( 
+         taker.owner, 
+         to_string(taker.order_id), 
+         taker_pays, 
+         maker.seller, 
+         to_string(maker.order_id), 
+         maker_pays, 
+         symbol_a, 
+         symbol_b
+      )
+   );
    return result;
 }
 

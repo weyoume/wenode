@@ -359,16 +359,64 @@ namespace node {
          friend bool operator == ( const extended_private_key_type& p1, const extended_private_key_type& p2);
          friend bool operator != ( const extended_private_key_type& p1, const extended_private_key_type& p2);
       };
+
+      /**
+       * An Encrypted Keypair enables the effective sharing 
+       * of private information with an account, 
+       * by enclosing a communication private key, 
+       * corresponding to a specified public key, 
+       * encrypted with a known secure public key of that account, 
+       * with which it can decrypt the private key.
+       */
+      struct encrypted_keypair_type
+      {
+         encrypted_keypair_type();
+         encrypted_keypair_type( const std::string& secure, const std::string& public, const std::string& encrypted ):
+            secure_key( secure ), public_key( public ), encrypted_private_key( encrypted ){}
+
+         encrypted_keypair_type( const fc::ecc::public_key& secure, const fc::ecc::public_key& public, const std::string& encrypted ):
+            secure_key( secure ), public_key( public ), encrypted_private_key( encrypted ){}
+
+         public_key_type   secure_key = public_key_type();               // The public key used to encrypt the encrypted key.
+         public_key_type   public_key = public_key_type();               // the public key of the private encrypted key.
+         shared_string     encrypted_private_key = shared_string();    // the encrypted private key of the public key.
+         
+         bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         {
+            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) == std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
+         }
+         bool operator < ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         {
+            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) < std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
+         }
+         bool operator > ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         {
+            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) > std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
+         }
+         bool operator != ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         {
+            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) != std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
+         }
+         bool operator <= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         {
+            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) <= std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
+         }
+         bool operator >= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         {
+            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) >= std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
+         }
+      };
+
 } };  // node::protocol
 
 namespace fc
 {
-    void to_variant( const node::protocol::public_key_type& var,  fc::variant& vo );
-    void from_variant( const fc::variant& var,  node::protocol::public_key_type& vo );
-    void to_variant( const node::protocol::extended_public_key_type& var, fc::variant& vo );
-    void from_variant( const fc::variant& var, node::protocol::extended_public_key_type& vo );
-    void to_variant( const node::protocol::extended_private_key_type& var, fc::variant& vo );
-    void from_variant( const fc::variant& var, node::protocol::extended_private_key_type& vo );
+   void to_variant( const node::protocol::public_key_type& var,  fc::variant& vo );
+   void from_variant( const fc::variant& var,  node::protocol::public_key_type& vo );
+   void to_variant( const node::protocol::extended_public_key_type& var, fc::variant& vo );
+   void from_variant( const fc::variant& var, node::protocol::extended_public_key_type& vo );
+   void to_variant( const node::protocol::extended_private_key_type& var, fc::variant& vo );
+   void from_variant( const fc::variant& var, node::protocol::extended_private_key_type& vo );
 };
 
 FC_REFLECT( node::protocol::public_key_type, (key_data) );
@@ -377,6 +425,7 @@ FC_REFLECT( node::protocol::extended_public_key_type, (key_data) );
 FC_REFLECT( node::protocol::extended_public_key_type::binary_key, (check)(data) );
 FC_REFLECT( node::protocol::extended_private_key_type, (key_data) );
 FC_REFLECT( node::protocol::extended_private_key_type::binary_key, (check)(data) );
+FC_REFLECT( node::protocol::encrypted_keypair_type, (secure_key)(public_key)(encrypted_private_key) );
 
 FC_REFLECT_TYPENAME( node::protocol::share_type );
 

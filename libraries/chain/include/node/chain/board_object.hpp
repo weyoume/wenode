@@ -425,7 +425,7 @@ namespace node { namespace chain {
 
          board_name_type            board;                  // Board that the key enables access to.
 
-         shared_string              encrypted_board_key;    // Copy of the board's private key, encrypted with the member's secure public key.
+         encrypted_keypair_type     encrypted_board_key;    // Copy of the board's private key, encrypted with the member's secure public key.
    };
 
    struct by_name;

@@ -21,6 +21,7 @@ using boost::multi_index_container;
 using chainbase::object;
 using chainbase::oid;
 using chainbase::allocator;
+using chainbase::strcmp_less;
 
 using node::protocol::block_id_type;
 using node::protocol::transaction_id_type;
@@ -34,30 +35,6 @@ using node::protocol::share_type;
 typedef bip::basic_string< char, std::char_traits< char >, allocator< char > > shared_string;
 inline std::string to_string( const shared_string& str ) { return std::string( str.begin(), str.end() ); }
 inline void from_string( shared_string& out, const string& in ){ out.assign( in.begin(), in.end() ); }
-
-struct strcmp_less
-{
-   bool operator()( const shared_string& a, const shared_string& b )const
-   {
-      return less( a.c_str(), b.c_str() );
-   }
-
-   bool operator()( const shared_string& a, const string& b )const
-   {
-      return less( a.c_str(), b.c_str() );
-   }
-
-   bool operator()( const string& a, const shared_string& b )const
-   {
-      return less( a.c_str(), b.c_str() );
-   }
-
-   private:
-      inline bool less( const char* a, const char* b )const
-      {
-         return std::strcmp( a, b ) < 0;
-      }
-}
 
 typedef bip::vector< char, allocator< char > > buffer_type;
 

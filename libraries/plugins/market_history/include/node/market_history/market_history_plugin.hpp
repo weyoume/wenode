@@ -31,7 +31,7 @@ using node::app::application;
 
 enum market_history_object_types
 {
-   bucket_object_type        = ( MARKET_HISTORY_SPACE_ID << 8 ),
+   market_duration_object_type        = ( MARKET_HISTORY_SPACE_ID << 8 ),
    order_history_object_type = ( MARKET_HISTORY_SPACE_ID << 8 ) + 1
 };
 
@@ -53,43 +53,96 @@ class market_history_plugin : public node::app::plugin
       virtual void plugin_initialize( const boost::program_options::variables_map& options ) override;
       virtual void plugin_startup() override;
 
-      flat_set< uint32_t > get_tracked_buckets() const;
-      uint32_t get_max_history_per_bucket() const;
+      flat_set< uint32_t > get_tracked_durations() const;
+      uint32_t get_max_history_per_duration() const;
 
    private:
       friend class detail::market_history_plugin_impl;
       std::unique_ptr< detail::market_history_plugin_impl > _my;
 };
 
-struct bucket_object : public object< bucket_object_type, bucket_object >
+
+/**
+ * Operates to create a candlestick of the trading price history of an asset pair. 
+ * Variable duration of candlestick.
+ */
+struct market_duration_object : public object< market_duration_object_type, market_duration_object >
 {
    template< typename Constructor, typename Allocator >
-   bucket_object( Constructor&& c, allocator< Allocator > a )
+   market_duration_object( Constructor&& c, allocator< Allocator > a )
    {
       c( *this );
    }
 
    id_type              id;
 
-   fc::time_point       open;
-   uint32_t             seconds = 0;
-   share_type           high_TME;
-   share_type           high_USD;
-   share_type           low_TME;
-   share_type           low_USD;
-   share_type           open_TME;
-   share_type           open_USD;
-   share_type           close_TME;
-   share_type           close_USD;
-   share_type           TME_volume;
-   share_type           USD_volume;
+   fc::time_point       open_time;
 
-   price high()const { return asset( high_USD, SYMBOL_USD ) / asset( high_TME, SYMBOL_COIN ); }
-   price low()const { return asset( low_USD, SYMBOL_USD ) / asset( low_TME, SYMBOL_COIN ); }
+   uint32_t             seconds = 0;
+
+   asset_symbol_type    symbol_a;          // Asset with the lower ID. Base of prices.
+
+   asset_symbol_type    symbol_b;          // Asset with the greater ID. Quote of prices.
+
+   price                open_price;        // The price of the first closed order in the time duration.
+
+   price                high_price;        // The price of the highest closed order in the time duration.
+
+   price                low_price;         // The price of the lowest closed order in the time duration.
+
+   price                close_price;       // The price of the last closed order in the time duration.
+   
+   asset                volume_a;          // The exchanged amount of asset A.
+
+   asset                volume_b;          // The exchanged amount of asset B.
+
+   price open_price_real( asset_symbol_type base )const 
+   {
+      if( base == symbol_a )
+      {
+         return open_price.to_real(); 
+      }
+      else
+      {
+         return ~open_price.to_real();
+      }
+   }
+   price high_price_real( asset_symbol_type base )const 
+   {
+      if( base == symbol_a )
+      {
+         return high_price.to_real(); 
+      }
+      else
+      {
+         return ~high_price.to_real();
+      }
+   }
+   price low_price_real( asset_symbol_type base )const 
+   {
+      if( base == symbol_a )
+      {
+         return low_price.to_real(); 
+      }
+      else
+      {
+         return ~low_price.to_real();
+      }
+   }
+   price close_price_real( asset_symbol_type base )const 
+   {
+      if( base == symbol_a )
+      {
+         return close_price.to_real(); 
+      }
+      else
+      {
+         return ~close_price.to_real();
+      }
+   }
 };
 
-typedef oid< bucket_object > bucket_id_type;
-
+typedef oid< market_duration_object > market_duration_id_type;
 
 struct order_history_object : public object< order_history_object_type, order_history_object >
 {
@@ -99,53 +152,119 @@ struct order_history_object : public object< order_history_object_type, order_hi
       c( *this );
    }
 
-   id_type                          id;
+   id_type                              id;
 
-   fc::time_point                   time;
-   protocol::fill_order_operation   op;
+   fc::time_point                       time;
+
+   protocol::fill_order_operation       op;
 };
 
 typedef oid< order_history_object > order_history_id_type;
 
 
-struct by_bucket;
+struct by_duration;
+struct by_old_asset_pair;
+struct by_new_asset_pair;
+
 typedef multi_index_container<
-   bucket_object,
+   market_duration_object,
    indexed_by<
-      ordered_unique< tag< by_id >, member< bucket_object, bucket_id_type, &bucket_object::id > >,
-      ordered_unique< tag< by_bucket >,
-         composite_key< bucket_object,
-            member< bucket_object, uint32_t, &bucket_object::seconds >,
-            member< bucket_object, fc::time_point, &bucket_object::open >
+      ordered_unique< tag< by_id >, member< market_duration_object, market_duration_id_type, &market_duration_object::id > >,
+      ordered_unique< tag< by_old_asset_pair >,
+         composite_key< market_duration_object,
+            member< market_duration_object, asset_symbol_type, &market_duration_object::symbol_a >,
+            member< market_duration_object, asset_symbol_type, &market_duration_object::symbol_b >,
+            member< market_duration_object, uint32_t, &market_duration_object::seconds >,
+            member< market_duration_object, time_point, &market_duration_object::open_time >
+         >,
+         composite_key_compare< 
+            std::less< asset_symbol_type >, 
+            std::less< asset_symbol_type >, 
+            std::less< uint32_t >, 
+            std::less< fc::time_point > 
+         >
+      >,
+      ordered_unique< tag< by_new_asset_pair >,
+         composite_key< market_duration_object,
+            member< market_duration_object, asset_symbol_type, &market_duration_object::symbol_a >,
+            member< market_duration_object, asset_symbol_type, &market_duration_object::symbol_b >,
+            member< market_duration_object, uint32_t, &market_duration_object::seconds >,
+            member< market_duration_object, time_point, &market_duration_object::open_time >
+         >,
+         composite_key_compare< 
+            std::less< asset_symbol_type >, 
+            std::less< asset_symbol_type >, 
+            std::less< uint32_t >, 
+            std::greater< fc::time_point > 
+         >
+      >,
+      ordered_unique< tag< by_duration >,
+         composite_key< market_duration_object,
+            member< market_duration_object, uint32_t, &market_duration_object::seconds >,
+            member< market_duration_object, time_point, &market_duration_object::open >
          >,
          composite_key_compare< std::less< uint32_t >, std::less< fc::time_point > >
       >
    >,
-   allocator< bucket_object >
-> bucket_index;
+   allocator< market_duration_object >
+> market_duration_index;
 
 struct by_time;
+
 typedef multi_index_container<
    order_history_object,
    indexed_by<
       ordered_unique< tag< by_id >, member< order_history_object, order_history_id_type, &order_history_object::id > >,
-      ordered_non_unique< tag< by_time >, member< order_history_object, time_point, &order_history_object::time > >
+      ordered_non_unique< tag< by_time >, member< order_history_object, time_point, &order_history_object::time > >,
+      ordered_unique< tag< by_old_asset_pair >,
+         composite_key< order_history_object,
+            member< order_history_object, asset_symbol_type, &order_history_object::op.symbol_a >,
+            member< order_history_object, asset_symbol_type, &order_history_object::op.symbol_b >,
+            member< order_history_object, time_point, &order_history_object::time >,
+            member< order_history_object, order_history_id_type, &order_history_object::id >
+         >,
+         composite_key_compare< 
+            std::less< asset_symbol_type >,
+            std::less< asset_symbol_type >,
+            std::less< uint32_t >,
+            std::less< fc::time_point >
+         >
+      >,
+      ordered_unique< tag< by_new_asset_pair >,
+         composite_key< order_history_object,
+            member< order_history_object, asset_symbol_type, &order_history_object::op.symbol_a >,
+            member< order_history_object, asset_symbol_type, &order_history_object::op.symbol_b >,
+            member< order_history_object, time_point, &order_history_object::time >,
+            member< order_history_object, order_history_id_type, &order_history_object::id >
+         >,
+         composite_key_compare< 
+            std::less< asset_symbol_type >, 
+            std::less< asset_symbol_type >, 
+            std::less< uint32_t >, 
+            std::greater< fc::time_point > 
+         >
+      >
    >,
    allocator< order_history_object >
 > order_history_index;
 
 } } // node::market_history
 
-FC_REFLECT( node::market_history::bucket_object,
-                     (id)
-                     (open)(seconds)
-                     (high_TME)(high_USD)
-                     (low_TME)(low_USD)
-                     (open_TME)(open_USD)
-                     (close_TME)(close_USD)
-                     (TME_volume)(USD_volume) );
+FC_REFLECT( node::market_history::market_duration_object,
+         (id)
+         (open_time)
+         (symbol_a)
+         (symbol_b)
+         (seconds)
+         (open_price)
+         (high_price)
+         (low_price)
+         (close_price)
+         (volume_a)
+         (volume_b) 
+         );
                      
-CHAINBASE_SET_INDEX_TYPE( node::market_history::bucket_object, node::market_history::bucket_index );
+CHAINBASE_SET_INDEX_TYPE( node::market_history::market_duration_object, node::market_history::market_duration_index );
 
 FC_REFLECT( node::market_history::order_history_object,
                      (id)

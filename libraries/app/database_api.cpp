@@ -25,7 +25,6 @@ namespace node { namespace app {
 
 class database_api_impl;
 
-
 class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 {
    public:
@@ -33,7 +32,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       ~database_api_impl();
 
       // Subscriptions
-      void set_block_applied_callback( std::function<void(const variant& block_id)> cb );
+      void set_block_applied_callback( std::function<void( const variant& block_id )> cb );
 
       // Blocks and transactions
       optional<block_header> get_block_header(uint32_t block_num)const;
@@ -53,6 +52,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector< account_concise_api_obj > get_concise_accounts( vector< string > names )const;
       vector< balance_state > get_balances( vector< string > names )const;
       vector< message_state > get_messages( vector< string > names )const;
+      vector< key_state > get_keychains( vector< string > names) const;
 
       vector<account_id_type> get_account_references( account_id_type account_id )const;
       vector<optional<account_api_obj>> lookup_account_names(const vector<string>& account_names)const;
@@ -62,7 +62,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // Boards
 
       vector< extended_board > get_boards( vector<string> boards )const;
-
 
       // Assets
 
@@ -75,8 +74,15 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       uint64_t get_witness_count()const;
 
       // Market
-      order_book get_order_book( uint32_t limit )const;
       vector< order_state > get_open_orders( vector< string > names )const;
+
+      // signal handlers
+      void on_applied_block( const chain::signed_block& b );
+      std::function<void(const variant&)>      _block_applied_callback;
+      node::chain::database&                          _db;
+      std::shared_ptr< node::follow::follow_api >     _follow_api;
+      boost::signals2::scoped_connection       _block_applied_connection;
+      bool _disable_get_block = false;
 
       // Authority / validation
       std::string get_transaction_hex(const signed_transaction& trx)const;
@@ -85,23 +91,13 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       bool verify_authority( const signed_transaction& trx )const;
       bool verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
 
-      // signal handlers
-      void on_applied_block( const chain::signed_block& b );
-
-      std::function<void(const fc::variant&)> _block_applied_callback;
-
-      node::chain::database&                _db;
-      std::shared_ptr< node::follow::follow_api > _follow_api;
-
-      boost::signals2::scoped_connection       _block_applied_connection;
-
-      bool _disable_get_block = false;
+      
 };
 
 applied_operation::applied_operation() {}
 
-applied_operation::applied_operation( const operation_object& op_obj )
- : trx_id( op_obj.trx_id ),
+applied_operation::applied_operation( const operation_object& op_obj ): 
+   trx_id( op_obj.trx_id ),
    block( op_obj.block ),
    trx_in_block( op_obj.trx_in_block ),
    op_in_trx( op_obj.op_in_trx ),
@@ -371,6 +367,8 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& account_idx  = _db.get_index< account_index >().indices().get< by_name >();
    const auto& balance_idx = _db.get_index< account_balance_index >().indices().get< by_owner >();
    const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
+   const auto& bus_key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
+   const auto& board_key_idx = _db.get_index< board_member_key_index >().indices().get< by_member_board >();
    const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
    const auto& connection_a_idx = _db.get_index< connection_index >().indices().get< by_account_a >();
    const auto& connection_b_idx = _db.get_index< connection_index >().indices().get< by_account_b >();
@@ -413,8 +411,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             results.back().business = account_business_api_obj( *business_itr );
          }
 
-         const auto& connection_a_idx = _db.get_index< connection_index >().indices().get< by_account_a >();
-         const auto& connection_b_idx = _db.get_index< connection_index >().indices().get< by_account_b >();
          auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, CONNECTION ) );
          auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, CONNECTION ) );
          while( connection_a_itr != connection_a_idx.end() && 
@@ -422,6 +418,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_a_itr->connection_type == CONNECTION )
          {
             results.back().connections[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr, _db  );
+            results.back().keychain.connection_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
             ++connection_a_itr;
          }
          while( connection_b_itr != connection_b_idx.end() && 
@@ -429,6 +426,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_b_itr->connection_type == CONNECTION )
          {
             results.back().connections[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr, _db  );
+            results.back().keychain.connection_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
             ++connection_b_itr;
          }
 
@@ -439,6 +437,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_a_itr->connection_type == FRIEND )
          {
             results.back().friends[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr, _db  );
+            results.back().keychain.friend_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
             ++connection_a_itr;
          }
          while( connection_b_itr != connection_b_idx.end() && 
@@ -446,6 +445,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_b_itr->connection_type == FRIEND )
          {
             results.back().friends[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr, _db  );
+            results.back().keychain.friend_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
             ++connection_b_itr;
          }
 
@@ -456,6 +456,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_a_itr->connection_type == COMPANION )
          {
             results.back().companions[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr, _db );
+            results.back().keychain.companion_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
             ++connection_a_itr;
          }
          while( connection_b_itr != connection_b_idx.end() && 
@@ -463,7 +464,24 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_b_itr->connection_type == COMPANION )
          {
             results.back().companions[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr, _db );
+            results.back().keychain.companion_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
             ++connection_b_itr;
+         }
+
+         auto board_key_itr = board_key_idx.lower_bound( name );
+         while( board_key_itr != board_key_idx.end() && 
+            board_key_itr->member == name )
+         {
+            results.back().keychain.board_keys[ board_key_itr->board ] = board_key_itr->encrypted_board_key;
+            ++board_key_itr;
+         }
+
+         auto bus_key_itr = bus_key_idx.lower_bound( name );
+         while( bus_key_itr != bus_key_idx.end() && 
+            bus_key_itr->member == name )
+         {
+            results.back().keychain.business_keys[ bus_key_itr->business_account ] = bus_key_itr->encrypted_business_key;
+            ++business_itr;
          }
 
          auto inbox_itr = inbox_idx.lower_bound( name );
@@ -558,7 +576,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          }
       }
    }
-
    return results;
 }
 
@@ -701,10 +718,101 @@ vector< message_state > database_api_impl::get_messages( vector< string > names 
       mstate.inbox = inbox;
       mstate.outbox = outbox;
       mstate.conversations = conversations;
-      
       results.push_back( mstate );
    }
 
+   return results;
+}
+
+vector< key_state > database_api::get_keychains( vector< string > names )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_keychains( names );
+   });
+}
+
+vector< key_state > database_api_impl::get_keychains( vector< string > names )const
+{
+   const auto& connection_a_idx = _db.get_index< connection_index >().indices().get< by_account_a >();
+   const auto& connection_b_idx = _db.get_index< connection_index >().indices().get< by_account_b >();
+   const auto& board_idx = _db.get_index< board_member_key_index >().indices().get< by_member_board >();
+   const auto& business_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
+
+   vector<key_state> results;
+
+   for( auto name : names )
+   {
+      key_state kstate;
+
+      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, CONNECTION ) );
+      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, CONNECTION ) );
+      while( connection_a_itr != connection_a_idx.end() && 
+         connection_a_itr->account_a == name &&
+         connection_a_itr->connection_type == CONNECTION )
+      {
+         kstate.connection_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
+         ++connection_a_itr;
+      }
+      while( connection_b_itr != connection_b_idx.end() && 
+         connection_b_itr->account_b == name &&
+         connection_b_itr->connection_type == CONNECTION )
+      {
+         kstate.connection_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
+         ++connection_b_itr;
+      }
+
+      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, FRIEND ) );
+      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, FRIEND ) );
+      while( connection_a_itr != connection_a_idx.end() && 
+         connection_a_itr->account_a == name &&
+         connection_a_itr->connection_type == FRIEND )
+      {
+         kstate.friend_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
+         ++connection_a_itr;
+      }
+      while( connection_b_itr != connection_b_idx.end() && 
+         connection_b_itr->account_b == name &&
+         connection_b_itr->connection_type == FRIEND )
+      {
+         kstate.friend_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
+         ++connection_b_itr;
+      }
+
+      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, COMPANION ) );
+      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, COMPANION ) );
+      while( connection_a_itr != connection_a_idx.end() && 
+         connection_a_itr->account_a == name &&
+         connection_a_itr->connection_type == COMPANION )
+      {
+         kstate.companion_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
+         ++connection_a_itr;
+      }
+      while( connection_b_itr != connection_b_idx.end() && 
+         connection_b_itr->account_b == name &&
+         connection_b_itr->connection_type == COMPANION )
+      {
+         kstate.companion_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
+         ++connection_b_itr;
+      }
+
+      auto board_itr = board_idx.lower_bound( name );
+      while( board_itr != board_idx.end() && 
+         board_itr->member == name )
+      {
+         kstate.board_keys[ board_itr->board ] = to_string( board_itr->encrypted_board_key );
+         ++board_itr;
+      }
+
+      auto business_itr = business_idx.lower_bound( name );
+      while( business_itr != business_idx.end() && 
+         business_itr->member == name )
+      {
+         kstate.business_keys[ business_itr->business_account ] = business_itr->encrypted_business_key;
+         ++business_itr;
+      }
+      results.push_back( kstate );
+   }
    return results;
 }
 
@@ -1293,114 +1401,6 @@ vector< order_state > database_api_impl::get_open_orders( vector<string> names )
          ++collateral_itr;
       }
    }
-   return result;
-}
-
-
-order_book database_api::get_order_book( uint32_t limit, asset_symbol_type base, asset_symbol_type quote )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_order_book( limit, base, quote );
-   });
-}
-
-
-order_book database_api_impl::get_order_book( uint32_t limit, asset_symbol_type base, asset_symbol_type quote )const
-{
-   FC_ASSERT( limit <= 1000 );
-   order_book result;
-
-   auto max_sell = price::max( base, quote );
-   auto max_buy = price::max( quote, base );
-
-   const auto& limit_price_idx = _db.get_index<limit_order_index>().indices().get<by_price>();
-   const auto& margin_price_idx = _db.get_index<margin_order_index>().indices().get<by_price>();
-
-   auto limit_sell_itr = limit_price_idx.lower_bound(max_sell);
-   auto limit_buy_itr = limit_price_idx.lower_bound(max_buy);
-   auto limit_end = limit_price_idx.end();
-
-   auto margin_sell_itr = margin_price_idx.lower_bound(max_sell);
-   auto margin_buy_itr = margin_price_idx.lower_bound(max_buy);
-   auto margin_end = margin_price_idx.end();
-
-//   idump((max_sell)(max_buy));
-//   if( sell_itr != end ) idump((*sell_itr));
-//   if( buy_itr != end ) idump((*buy_itr));
-
-   while( ( ( limit_sell_itr != limit_end &&
-       limit_sell_itr->sell_price.base.symbol == base ) ||
-       ( margin_sell_itr != margin_end &&
-       margin_sell_itr->sell_price.base.symbol == base ) ) && 
-       result.bids.size() < limit )
-   {
-      if( limit_sell_itr->sell_price >= margin_sell_itr->sell_price && limit_sell_itr->sell_price.base.symbol == base )
-      {
-         order cur;
-         auto itr = limit_sell_itr;
-         cur.order_price = itr->sell_price;
-         cur.real_price = (cur.order_price).to_real();
-         cur.sell_asset = itr->for_sale;
-         cur.buy_asset = ( asset( itr->for_sale, base ) * cur.order_price ).amount;
-         cur.created = itr->created;
-         result.bids.push_back( cur );
-         ++limit_sell_itr;
-      }
-      else if( margin_sell_itr->sell_price >= limit_sell_itr->sell_price && margin_sell_itr->sell_price.base.symbol == base )
-      {
-         order cur;
-         auto itr = margin_sell_itr;
-         cur.order_price = itr->sell_price;
-         cur.real_price = (cur.order_price).to_real();
-         cur.sell_asset = itr->for_sale;
-         cur.buy_asset = ( asset( itr->for_sale, base ) * cur.order_price ).amount;
-         cur.created = itr->created;
-         result.bids.push_back( cur );
-         ++margin_sell_itr;
-      }
-      else
-      {
-         break;
-      } 
-   }
-   while( ( ( limit_buy_itr != limit_end && 
-      limit_buy_itr->sell_price.base.symbol == quote ) || 
-      ( margin_buy_itr != margin_end && 
-      margin_buy_itr->sell_price.base.symbol == quote ) ) && 
-      result.asks.size() < limit )
-   {
-      if( limit_buy_itr->sell_price >= margin_buy_itr->sell_price && limit_buy_itr->sell_price.base.symbol == quote  )
-      {
-         order cur;
-         auto itr = limit_buy_itr;
-         cur.order_price = itr->sell_price;
-         cur.real_price  = (~cur.order_price).to_real();
-         cur.sell_asset = itr->for_sale;
-         cur.buy_asset = ( asset( itr->for_sale, quote ) * cur.order_price ).amount;
-         cur.created = itr->created;
-         result.asks.push_back( cur );
-         ++limit_buy_itr;
-      }
-      else if( margin_buy_itr->sell_price >= limit_buy_itr->sell_price && margin_buy_itr->sell_price.base.symbol == quote )
-      {
-         order cur;
-         auto itr = margin_buy_itr;
-         cur.order_price = itr->sell_price;
-         cur.real_price  = (~cur.order_price).to_real();
-         cur.sell_asset = itr->for_sale;
-         cur.buy_asset = ( asset( itr->for_sale, quote ) * cur.order_price ).amount;
-         cur.created = itr->created;
-         result.asks.push_back( cur );
-         ++margin_buy_itr;
-      }
-      else
-      {
-         break;
-      }  
-   }
-
-
    return result;
 }
 

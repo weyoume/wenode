@@ -31,33 +31,12 @@ using namespace node::chain;
 using namespace node::protocol;
 using namespace std;
 
-struct order
-{
-   price                order_price;
-   double               real_price;
-   asset                buy_asset;
-   asset                sell_asset;
-   fc::time_point       created;
-};
-
-struct order_book
-{
-   vector< order >      asks;
-   vector< order >      bids;
-};
-
 struct api_context;
 
 struct scheduled_hardfork
 {
    hardfork_version     hf_version;
    fc::time_point       live_time;
-};
-
-struct liquidity_balance
-{
-   string               account;
-   fc::uint128_t        weight;
 };
 
 struct withdraw_route
@@ -251,6 +230,8 @@ class database_api
 
       vector< balance_state > get_balances( vector< string > names ) const;
 
+      vector< key_state > get_keychains( vector< string > names) const;
+
       /**
        *  @return all accounts that referr to the key or account id in their owner or active authorities.
        */
@@ -353,14 +334,7 @@ class database_api
       // Market //
       ////////////
 
-      /**
-       * @brief Gets the current order book for the specified market
-       * @param limit Maximum number of orders for each side of the spread to return -- Must not exceed 1000
-       */
-      order_book get_order_book( uint32_t limit = 1000 )const;
-
       vector< order_state > get_open_orders( vector< string > names )const;
-
 
 
       ////////////////////////////
@@ -514,12 +488,10 @@ class database_api
 
 } }
 
-FC_REFLECT( node::app::order, (order_price)(real_price)(buy_asset)(sell_asset)(created) );
-FC_REFLECT( node::app::order_book, (asks)(bids) );
-FC_REFLECT( node::app::scheduled_hardfork, (hf_version)(live_time) );
-FC_REFLECT( node::app::liquidity_balance, (account)(weight) );
-FC_REFLECT( node::app::withdraw_route, (from_account)(to_account)(percent)(auto_stake) );
 
+
+FC_REFLECT( node::app::scheduled_hardfork, (hf_version)(live_time) );
+FC_REFLECT( node::app::withdraw_route, (from_account)(to_account)(percent)(auto_stake) );
 FC_REFLECT( node::app::discussion_query, (tag)(filter_tags)(select_tags)(select_authors)(truncate_body)(start_author)(start_permlink)(parent_author)(parent_permlink)(limit) );
 
 FC_REFLECT_ENUM( node::app::withdraw_route_type, (incoming)(outgoing)(all) );

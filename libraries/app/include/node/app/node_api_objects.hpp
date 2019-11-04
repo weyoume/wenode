@@ -143,47 +143,47 @@ struct comment_api_obj
    time_point                     created;                      // Time that the comment was created.
    time_point                     active;                       // The last time this post was replied to.
    time_point                     last_payout;                  // The last time that the post recieved a content reward payout
-   share_type                     author_reputation;            // Used to measure author lifetime rewards, relative to other accounts.
-   uint16_t                       depth = 0;                    // used to track max nested depth
-   uint32_t                       children = 0;                 // The total number of children, grandchildren, posts with this as root comment.
-   int32_t                        net_votes = 0;                // The amount of upvotes, minus downvotes on the post.
-   uint32_t                       view_count = 0;               // The amount of views on the post.
-   uint32_t                       share_count = 0;              // The amount of shares on the post.
-   int128_t                       net_reward = 0;               // Net reward is the sum of all vote, view, share and comment power.
-   int128_t                       vote_power = 0;               // Sum of weighted voting power from votes.
-   int128_t                       view_power = 0;               // Sum of weighted voting power from viewers.
-   int128_t                       share_power = 0;              // Sum of weighted voting power from shares.
-   int128_t                       comment_power = 0;            // Sum of weighted voting power from comments.
+   int64_t                        author_reputation;            // Used to measure author lifetime rewards, relative to other accounts.
+   uint16_t                       depth;                    // used to track max nested depth
+   uint32_t                       children;                 // The total number of children, grandchildren, posts with this as root comment.
+   int32_t                        net_votes;                // The amount of upvotes, minus downvotes on the post.
+   uint32_t                       view_count;               // The amount of views on the post.
+   uint32_t                       share_count;              // The amount of shares on the post.
+   int128_t                       net_reward;               // Net reward is the sum of all vote, view, share and comment power.
+   int128_t                       vote_power;               // Sum of weighted voting power from votes.
+   int128_t                       view_power;               // Sum of weighted voting power from viewers.
+   int128_t                       share_power;              // Sum of weighted voting power from shares.
+   int128_t                       comment_power;            // Sum of weighted voting power from comments.
    time_point                     cashout_time;                 // 24 hours from the weighted average of vote time
-   uint32_t                       cashouts_received = 0;        // Number of times that the comment has received content rewards
+   uint32_t                       cashouts_received;        // Number of times that the comment has received content rewards
    time_point                     max_cashout_time;
-   uint128_t                      total_vote_weight = 0;        // the total weight of votes, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_view_weight = 0;        // the total weight of views, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_share_weight = 0;       // the total weight of shares, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_comment_weight = 0;     // the total weight of comments, used to calculate pro-rata share of curation payouts
-   asset                          total_payout_value = asset(0, SYMBOL_USD); // The total payout this comment has received over time, measured in USD */
-   asset                          curator_payout_value = asset(0, SYMBOL_USD);
-   asset                          beneficiary_payout_value = asset( 0, SYMBOL_USD );
-   share_type                     author_rewards = 0;
-   share_type                     percent_liquid = PERCENT_100;
-   uint128_t                      reward = 0;                   // The amount of reward_curve this comment is responsible for in its root post.
-   uint128_t                      weight = 0;                   // Used to define the comment curation reward this comment receives.
-   uint128_t                      max_weight = 0;               // Used to define relative contribution of this comment to rewards.
-   asset                          max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );       // USD value of the maximum payout this post will receive
-   uint32_t                       author_reward_percent = AUTHOR_REWARD_PERCENT;
-   uint32_t                       vote_reward_percent = VOTE_REWARD_PERCENT;
-   uint32_t                       view_reward_percent = VIEW_REWARD_PERCENT;
-   uint32_t                       share_reward_percent = SHARE_REWARD_PERCENT;
-   uint32_t                       comment_reward_percent = COMMENT_REWARD_PERCENT;
-   uint32_t                       storage_reward_percent = STORAGE_REWARD_PERCENT;
-   uint32_t                       moderator_reward_percent = MODERATOR_REWARD_PERCENT;
-   bool                           allow_replies = true;               // allows a post to recieve replies.
-   bool                           allow_votes = true;                 // allows a post to receive votes.
-   bool                           allow_views = true;                 // allows a post to receive views.
-   bool                           allow_shares = true;                // allows a post to receive shares.
-   bool                           allow_curation_rewards = true;      // Allows a post to distribute curation rewards.
-   bool                           root = true;                        // True if post is a root post. 
-   bool                           deleted = false;                    // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
+   uint128_t                      total_vote_weight;        // the total weight of votes, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_view_weight;        // the total weight of views, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_share_weight;       // the total weight of shares, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_comment_weight;     // the total weight of comments, used to calculate pro-rata share of curation payouts
+   asset                          total_payout_value; // The total payout this comment has received over time, measured in USD */
+   asset                          curator_payout_value;
+   asset                          beneficiary_payout_value;
+   int64_t                        author_rewards;
+   int64_t                        percent_liquid;
+   uint128_t                      reward;                   // The amount of reward_curve this comment is responsible for in its root post.
+   uint128_t                      weight;                   // Used to define the comment curation reward this comment receives.
+   uint128_t                      max_weight;               // Used to define relative contribution of this comment to rewards.
+   asset                          max_accepted_payout;       // USD value of the maximum payout this post will receive
+   uint32_t                       author_reward_percent;
+   uint32_t                       vote_reward_percent;
+   uint32_t                       view_reward_percent;
+   uint32_t                       share_reward_percent;
+   uint32_t                       comment_reward_percent;
+   uint32_t                       storage_reward_percent;
+   uint32_t                       moderator_reward_percent;
+   bool                           allow_replies;               // allows a post to recieve replies.
+   bool                           allow_votes;                 // allows a post to receive votes.
+   bool                           allow_views;                 // allows a post to receive views.
+   bool                           allow_shares;                // allows a post to receive shares.
+   bool                           allow_curation_rewards;      // Allows a post to distribute curation rewards.
+   bool                           root;                        // True if post is a root post. 
+   bool                           deleted;                    // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
 };
 
 struct tag_api_obj
@@ -200,10 +200,10 @@ struct tag_api_obj
 
    string               tag;
    asset                total_payouts;
-   int32_t              net_votes = 0;
-   uint32_t             top_posts = 0;
-   uint32_t             comments = 0;
-   fc::uint128          trending = 0;
+   int32_t              net_votes;
+   uint32_t             top_posts;
+   uint32_t             comments;
+   fc::uint128          trending;
 };
 
 struct account_api_obj
@@ -324,34 +324,34 @@ struct account_api_obj
    vector< account_name_type>       proxied;                               // Accounts that have set this account to be their proxy voter.
    account_name_type                registrar;                             // The name of the account that created the account;
    account_name_type                referrer;                              // The name of the account that originally referred the account to be created;
-   account_name_type                recovery_account = NULL_ACCOUNT;       // Account that can request recovery using a recent owner key if compromised.  
-   account_name_type                reset_account = NULL_ACCOUNT;          // Account that has the ability to reset owner authority after specified days of inactivity.
-   account_name_type                membership_interface = NULL_ACCOUNT;   // Account of the last interface to sell a membership to the account.
-   uint16_t                         reset_account_delay_days = 7;
-   uint16_t                         referrer_rewards_percentage = 50 * PERCENT_1; // The percentage of registrar rewards that are directed to the referrer.
-   uint32_t                         comment_count = 0;
-   uint32_t                         follower_count = 0;
-   uint32_t                         following_count = 0;
-   uint32_t                         lifetime_vote_count = 0;
-   uint32_t                         post_count = 0;
-   uint16_t                         voting_power = PERCENT_100;               // current voting power of this account, falls after every vote, recovers over time.
-   uint16_t                         viewing_power = PERCENT_100;              // current viewing power of this account, falls after every view, recovers over time.
-   uint16_t                         sharing_power = PERCENT_100;              // current sharing power of this account, falls after every share, recovers over time.
-   uint16_t                         commenting_power = PERCENT_100;           // current commenting power of this account, falls after every comment, recovers over time.
-   uint8_t                          savings_withdraw_requests = 0;
-   uint16_t                         withdraw_routes = 0;
-   share_type                       posting_rewards = 0;                      // Rewards in core asset earned from author rewards.
-   share_type                       curation_rewards = 0;                     // Rewards in core asset earned from voting, shares, views, and commenting
-   share_type                       moderation_rewards = 0;                   // Rewards in core asset from moderation rewards. 
-   share_type                       total_rewards = 0;                        // Rewards in core asset earned from all reward sources.
-   share_type                       author_reputation = 0;                    // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
-   asset                            loan_default_balance = asset(0, SYMBOL_CREDIT);
-   share_type                       recent_activity_claims = 0;
-   uint16_t                         witness_vote_count = 0;
-   uint16_t                         officer_vote_count = 0;                         // Number of network officers that the account has voted for.
-   uint16_t                         executive_board_vote_count = 0;                 // Number of Executive boards that the account has voted for.
-   uint16_t                         governance_subscriptions = 0;              // Number of governance accounts that the account subscribes to.   
-   uint16_t                         recurring_membership = 0;                  // Amount of months membership should be automatically renewed for on expiration
+   account_name_type                recovery_account;       // Account that can request recovery using a recent owner key if compromised.  
+   account_name_type                reset_account;          // Account that has the ability to reset owner authority after specified days of inactivity.
+   account_name_type                membership_interface;   // Account of the last interface to sell a membership to the account.
+   uint16_t                         reset_account_delay_days;
+   uint16_t                         referrer_rewards_percentage; // The percentage of registrar rewards that are directed to the referrer.
+   uint32_t                         comment_count;
+   uint32_t                         follower_count;
+   uint32_t                         following_count;
+   uint32_t                         lifetime_vote_count;
+   uint32_t                         post_count;
+   uint16_t                         voting_power;               // current voting power of this account, falls after every vote, recovers over time.
+   uint16_t                         viewing_power;              // current viewing power of this account, falls after every view, recovers over time.
+   uint16_t                         sharing_power;              // current sharing power of this account, falls after every share, recovers over time.
+   uint16_t                         commenting_power;           // current commenting power of this account, falls after every comment, recovers over time.
+   uint8_t                          savings_withdraw_requests;
+   uint16_t                         withdraw_routes;
+   int64_t                          posting_rewards;                      // Rewards in core asset earned from author rewards.
+   int64_t                          curation_rewards;                     // Rewards in core asset earned from voting, shares, views, and commenting
+   int64_t                          moderation_rewards;                   // Rewards in core asset from moderation rewards. 
+   int64_t                          total_rewards;                        // Rewards in core asset earned from all reward sources.
+   int64_t                          author_reputation;                    // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+   asset                            loan_default_balance;
+   int64_t                          recent_activity_claims;
+   uint16_t                         witness_vote_count;
+   uint16_t                         officer_vote_count;                         // Number of network officers that the account has voted for.
+   uint16_t                         executive_board_vote_count;                 // Number of Executive boards that the account has voted for.
+   uint16_t                         governance_subscriptions;              // Number of governance accounts that the account subscribes to.   
+   uint16_t                         recurring_membership;                  // Amount of months membership should be automatically renewed for on expiration
    time_point                       created;                                   // Time that the account was created.
    time_point                       membership_expiration;                     // Time that the account has its current membership subscription until.
    time_point                       last_account_update;                       // Time that the account's details were last updated.
@@ -365,9 +365,9 @@ struct account_api_obj
    time_point                       last_account_recovery;
    time_point                       last_board_created;
    time_point                       last_asset_created;
-   bool                             mined = true;
-   bool                             revenue_share = false;
-   bool                             can_vote = true;
+   bool                             mined;
+   bool                             revenue_share;
+   bool                             can_vote;
 };
 
 
@@ -410,8 +410,8 @@ struct account_concise_api_obj
    comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
    uint32_t                         follower_count;                        // Number of account followers.
    uint32_t                         following_count;                       // Number of accounts that the account follows. 
-   share_type                       total_rewards    ;                     // Rewards in core asset earned from all reward sources.
-   share_type                       author_reputation = 0;                 // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+   int64_t                          total_rewards;                         // Rewards in core asset earned from all reward sources.
+   int64_t                          author_reputation;                     // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
    time_point                       created;                               // Time that the account was created.
 };
 
@@ -639,18 +639,18 @@ struct connection_api_obj
 
    connection_api_obj(){}
 
-   connection_id_type                id;                 
-   account_name_type      account_a;                // Account with the lower ID.
-   string                 encrypted_key_a;          // A's private connection key, encrypted with the public secure key of account B.
-   account_name_type      account_b;                // Account with the greater ID.
-   string                 encrypted_key_b;          // B's private connection key, encrypted with the public secure key of account A.
-   string                 connection_type;          // The connection level shared in this object
-   string                 connection_id;            // Unique uuidv4 for the connection, for local storage of decryption key.
-   uint32_t               connection_strength = 0;  // Number of total messages sent between connections
-   uint32_t               consecutive_days = 0;     // Number of consecutive days that the connected accounts have both sent a message.
-   time_point             last_message_time_a;      // Time since the account A last sent a message
-   time_point             last_message_time_b;      // Time since the account B last sent a message
-   time_point             created;                  // Time the connection was created. 
+   connection_id_type           id;                 
+   account_name_type            account_a;                // Account with the lower ID.
+   encrypted_keypair_type       encrypted_key_a;          // A's private connection key, encrypted with the public secure key of account B.
+   account_name_type            account_b;                // Account with the greater ID.
+   encrypted_keypair_type       encrypted_key_b;          // B's private connection key, encrypted with the public secure key of account A.
+   string                       connection_type;          // The connection level shared in this object
+   string                       connection_id;            // Unique uuidv4 for the connection, for local storage of decryption key.
+   uint32_t                     connection_strength;  // Number of total messages sent between connections
+   uint32_t                     consecutive_days;     // Number of consecutive days that the connected accounts have both sent a message.
+   time_point                   last_message_time_a;      // Time since the account A last sent a message
+   time_point                   last_message_time_b;      // Time since the account B last sent a message
+   time_point                   created;                  // Time the connection was created. 
 };
 
 
@@ -689,12 +689,12 @@ struct board_api_obj
    string                             json;                               // Public plaintext json information about the board, its topic and rules.
    string                             json_private;                       // Private ciphertext json information about the board.
    comment_id_type                    pinned_comment;                     // Post pinned to the top of the board's page. 
-   uint32_t                           subscriber_count = 0;               // number of accounts that are subscribed to the board
-   uint32_t                           post_count = 0;                     // number of posts created in the board
-   uint32_t                           comment_count = 0;                  // number of comments on posts in the board
-   uint32_t                           vote_count = 0;                     // accumulated number of votes received by all posts in the board
-   uint32_t                           view_count = 0;                     // accumulated number of views on posts in the board 
-   uint32_t                           share_count = 0;                    // accumulated number of shares on posts in the board 
+   uint32_t                           subscriber_count;               // number of accounts that are subscribed to the board
+   uint32_t                           post_count;                     // number of posts created in the board
+   uint32_t                           comment_count;                  // number of comments on posts in the board
+   uint32_t                           vote_count;                     // accumulated number of votes received by all posts in the board
+   uint32_t                           view_count;                     // accumulated number of views on posts in the board 
+   uint32_t                           share_count;                    // accumulated number of shares on posts in the board 
    asset                              total_content_rewards = asset(0, SYMBOL_COIN);   // total amount of rewards earned by posts in the board
    time_point                         created;                            // Time that the board was created.
    time_point                         last_board_update;                  // Time that the board's details were last updated.
@@ -1018,7 +1018,7 @@ struct limit_order_api_obj
    time_point             expiration;        // Expiration time of the order.
    account_name_type      seller;            // Selling account name of the trading order.
    shared_string          order_id;          // UUIDv4 of the order for each account.
-   share_type             for_sale;          // asset symbol is sell_price.base.symbol
+   int64_t                for_sale;          // asset symbol is sell_price.base.symbol
    price                  sell_price;        // Base price is the asset being sold.
    account_name_type      interface;         // The interface account that created the order
    double                 real_price;
@@ -1249,7 +1249,7 @@ struct witness_api_obj
    chain_properties     props;
    price                USD_exchange_rate;
    time_point           last_USD_exchange_update;
-   share_type           votes;
+   int64_t              votes;
    fc::uint128          virtual_last_update;
    fc::uint128          virtual_position;
    fc::uint128          virtual_scheduled_time;

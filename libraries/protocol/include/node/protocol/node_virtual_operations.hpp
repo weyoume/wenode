@@ -66,8 +66,23 @@ namespace node { namespace protocol {
    struct fill_order_operation : public virtual_operation
    {
       fill_order_operation(){}
-      fill_order_operation( const account_name_type& c_o, const string& c_id, const asset& c_p, const account_name_type& o_o, const string& o_id, const asset& o_p )
-      :current_owner(c_o), current_orderid(c_id), current_pays(c_p), open_owner(o_o), open_orderid(o_id), open_pays(o_p) {}
+      fill_order_operation( 
+         const account_name_type& c_o, 
+         const string& c_id, 
+         const asset& c_p, 
+         const account_name_type& o_o, 
+         const string& o_id, 
+         const asset& o_p,
+         const asset_symbol_type& sym_a,
+         const asset_symbol_type& sym_b ):
+         current_owner(c_o),
+         current_orderid(c_id),
+         current_pays(c_p),
+         open_owner(o_o),
+         open_orderid(o_id),
+         open_pays(o_p),
+         symbol_a(sym_a),
+         symbol_b(sym_b){}
 
       account_name_type      current_owner;
       string                 current_orderid;
@@ -75,6 +90,8 @@ namespace node { namespace protocol {
       account_name_type      open_owner;
       string                 open_orderid;
       asset                  open_pays;
+      asset_symbol_type      symbol_a;
+      asset_symbol_type      symbol_b;
    };
 
    struct asset_settle_cancel_operation : public virtual_operation
@@ -125,10 +142,10 @@ namespace node { namespace protocol {
    struct return_asset_delegation_operation : public virtual_operation
    {
       return_asset_delegation_operation() {}
-      return_asset_delegation_operation( const account_name_type& a, const asset& v ) : account( a ), asset( v ) {}
+      return_asset_delegation_operation( const account_name_type& a, const asset& v ) : account( a ), amount( v ) {}
 
       account_name_type account;
-      asset             asset;
+      asset             amount;
    };
 
    struct comment_benefactor_reward_operation : public virtual_operation

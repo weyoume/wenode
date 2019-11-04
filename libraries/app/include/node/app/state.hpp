@@ -115,7 +115,7 @@ namespace node { namespace app {
       map<string, account_balance_api_obj >   balances;
       account_following_api_obj               following; 
       account_business_api_obj                business; 
-      key_state                               keychain; // todo
+      key_state                               keychain;
       message_state                           messages;
 
       map<account_name_type, connection_api_obj>      connections;
@@ -198,34 +198,11 @@ namespace node { namespace app {
 
    struct key_state
    {
-      map<account_name_type, string>                           board_keys;
-      map<account_name_type, string>                           business_keys;
-      map<account_name_type, string>                           connection_keys;
-      map<account_name_type, string>                           friend_keys;
-      map<account_name_type, string>                           companion_keys;
-   };
-
-
-
-   struct candle_stick 
-   {
-      time_point      open_time;
-      uint32_t        period = 0;
-      double          high = 0;
-      double          low = 0;
-      double          open = 0;
-      double          close = 0;
-      double          buy_asset_volume = 0;
-      double          sell_asset_volume = 0;
-   };
-
-   struct order_history_item 
-   {
-      time_point     time;
-      string         type; // buy or sell
-      asset          buy_asset_quantity;
-      asset          sell_asset_quantity;
-      double         real_price = 0;
+      map< account_name_type, encrypted_keypair_type >       connection_keys;
+      map< account_name_type, encrypted_keypair_type >       friend_keys;
+      map< account_name_type, encrypted_keypair_type >       companion_keys;
+      map< board_name_type, encrypted_keypair_type >         board_keys;
+      map< account_name_type, encrypted_keypair_type >       business_keys;
    };
 
    struct market 
@@ -245,34 +222,34 @@ namespace node { namespace app {
     */
    struct state 
    {
-        string                            current_route;
+      string                            current_route;
 
-        dynamic_global_property_api_obj   props;
+      dynamic_global_property_api_obj   props;
 
-        app::tag_index                    tag_idx;
+      app::tag_index                    tag_idx;
 
-        /**
-         * "" is the global discussion index
-         */
-        map<string, discussion_index>     discussion_idx;
+      /**
+      * "" is the global discussion index
+      */
+      map<string, discussion_index>     discussion_idx;
 
-        map< string, tag_api_obj >        tags;
+      map< string, tag_api_obj >        tags;
 
-        /**
-         *  map from account/slug to full nested discussion
-         */
-        map< string, discussion >         content;
-        map< string, extended_account >   accounts;
+      /**
+      *  map from account/slug to full nested discussion
+      */
+      map< string, discussion >         content;
+      map< string, extended_account >   accounts;
 
-        /**
-         * The list of miners who are queued to produce work
-         */
-        vector< account_name_type >       pow_queue;
-        map< string, witness_api_obj >    witnesses;
-        witness_schedule_api_obj          witness_schedule;
-        price                             feed_price;
-        string                            error;
-        optional< market >                market_data;
+      /**
+      * The list of miners who are queued to produce work
+      */
+      vector< account_name_type >       pow_queue;
+      map< string, witness_api_obj >    witnesses;
+      witness_schedule_api_obj          witness_schedule;
+      price                             feed_price;
+      string                            error;
+      optional< market >                market_data;
    };
 
 } }

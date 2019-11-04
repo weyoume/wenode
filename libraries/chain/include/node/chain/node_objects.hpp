@@ -10,7 +10,7 @@
 #include <numeric>
 
 namespace node { namespace chain {
-
+   
    using node::protocol::asset;
    using node::protocol::price;
 

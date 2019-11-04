@@ -13,30 +13,6 @@ namespace node { namespace chain {
 
    using protocol::beneficiary_route_type;
 
-   struct strcmp_less
-   {
-      bool operator()( const shared_string& a, const shared_string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      bool operator()( const shared_string& a, const string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      bool operator()( const string& a, const shared_string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      private:
-         inline bool less( const char* a, const char* b )const
-         {
-            return std::strcmp( a, b ) < 0;
-         }
-   };
-
    class comment_object : public object < comment_object_type, comment_object >
    {
       comment_object() = delete;

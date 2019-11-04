@@ -833,7 +833,7 @@ void account_member_invite_evaluator::do_apply( const account_member_invite_oper
          amko.account = account.name;
          amko.member = member.name;
          amko.business_account = o.business_account;
-         from_string( amko.message, o.encrypted_business_key );
+         amko.encrypted_business_key = encrypted_keypair_type( member.secure_public_key, bus_acc.business_public_key, o.encrypted_business_key );
       });
    }
    else     // Invite exists and is being deleted.
@@ -889,7 +889,7 @@ void account_accept_request_evaluator::do_apply( const account_accept_request_op
          amko.account = account.name;
          amko.member = member.name;
          amko.business_account = o.business_account;
-         from_string( amko.message, o.encrypted_business_key );    // Create private key for new member.
+         amko.encrypted_business_key = encrypted_keypair_type( member.secure_public_key, bus_acc.business_public_key, o.encrypted_business_key );
       });
    }
    _db.remove( *itr );
@@ -1540,12 +1540,35 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
    time_point now = _db.head_block_time();
    FC_ASSERT( o.account != o.requesting_account, "Account cannot connect with itself" );
    FC_ASSERT( o.connection_id.size() <= MAX_STRING_LENGTH, "Connection ID is too long" );
-   FC_ASSERT( o.encrypted_key.size() <= MAX_STRING_LENGTH, "URL is too long" );
+   FC_ASSERT( o.encrypted_key.size() <= MAX_STRING_LENGTH, "Encrypted Key is too long" );
+
+   public_key_type public_key;
+
+   switch( o.connection_type )
+   {
+      case CONNECTION:
+      {
+         public_key = account.connection_public_key;
+      }
+      break;
+      case FRIEND:
+      {
+         public_key = account.friend_public_key;
+      }
+      break;
+      case COMPANION:
+      {
+         public_key = account.companion_public_key;
+      }
+      break;
+      default:
+      FC_ASSERT( false, "Invalid connection type.");
+   }
 
    const account_name_type& account_a_name;
    const account_name_type& account_b_name;
 
-   if(account.id < req_account.id)  // Connection objects are sorted with lowest ID is account A. 
+   if( account.id < req_account.id )  // Connection objects are sorted with lowest ID is account A. 
    {
       account_a_name = account.name;
       account_b_name = req_account.name;
@@ -1580,16 +1603,20 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          co.account_a = account_a_name;
          co.account_b = account_b_name;
 
-         if(account_a_name == account.name) // We're account A
+         if( account_a_name == account.name )      // We're account A
          {
-            from_string( co.encrypted_key_a, o.encrypted_key );
+            co.encrypted_key_a = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
          } 
-         else // We're account B
+         else        // We're account B
          {
-            from_string( co.encrypted_key_b, o.encrypted_key );
+            co.encrypted_key_b = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
          }
+
          co.connection_type = o.connection_type;
          from_string( co.connection_id, o.connection_id );
+         co.last_message_time_a = now;
+         co.last_message_time_b = now;
+         co.last_update_time = now;
          co.created = now;
       });
 
@@ -1637,16 +1664,13 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
       {
          _db.modify( connection_obj, [&]( connection_object& co ) 
          {
-            co.account_a = account_a_name;
-            co.account_b = account_b_name;
-
-            if(account_a_name == account.name)    // We're account A
+            if( account_a_name == account.name )    // We're account A
             {
-               co.encrypted_key_a = o.encrypted_key;
+               co.encrypted_key_a = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
             } 
             else     // We're account B
             {
-               co.encrypted_key_b = o.encrypted_key;
+               co.encrypted_key_b = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
             }
          }); 
       }
@@ -2760,7 +2784,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
       const asset_object& asset = _db.get_asset( inv_asset );
    }
 
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = props.time;
    const account_object& account = _db.get_account( o.creator );
    const community_enterprise_object* ent_ptr = _db.find_community_enterprise( account.name, o.enterprise_id );
@@ -4691,7 +4715,8 @@ void board_join_invite_evaluator::do_apply( const board_join_invite_operation& o
 
    if( inv_itr == inv_idx.end())    // Invite does not exist yet
    {
-      FC_ASSERT( o.invited, "Board invite request does not exist, invited should be set to true." );
+      FC_ASSERT( o.invited, 
+         "Board invite request does not exist, invited should be set to true." );
       _db.create< board_join_invite_object >( [&]( board_join_invite_object& bjio )
       {
          bjio.account = account.name;
@@ -4705,7 +4730,7 @@ void board_join_invite_evaluator::do_apply( const board_join_invite_operation& o
          bmko.account = account.name;
          bmko.member = member.name;
          bmko.board = o.board;
-         from_string( bmko.encrypted_board_key, o.encrypted_board_key );
+         bmko.encrypted_board_key = encrypted_keypair_type( member.secure_public_key, board.board_public_key, o.encrypted_board_key );
       });
    }
    else     // Invite exists and is being deleted.
@@ -4755,7 +4780,7 @@ void board_join_accept_evaluator::do_apply( const board_join_accept_operation& o
          bmko.account = account.name;
          bmko.member = member.name;
          bmko.board = o.board;
-         from_string( bmko.encrypted_board_key, o.encrypted_board_key );
+         bmko.encrypted_board_key = encrypted_keypair_type( member.secure_public_key, board.board_public_key, o.encrypted_board_key );
       });
    }
    _db.remove( *req_itr );

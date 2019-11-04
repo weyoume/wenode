@@ -4,9 +4,7 @@
 #include <node/chain/index.hpp>
 #include <node/chain/operation_notification.hpp>
 
-namespace node { namespace market_history {
-
-namespace detail {
+namespace node { namespace market_history { namespace detail {
 
 using node::protocol::fill_order_operation;
 
@@ -24,8 +22,8 @@ class market_history_plugin_impl
       void update_market_histories( const operation_notification& o );
 
       market_history_plugin& _self;
-      flat_set<uint32_t>     _tracked_buckets = flat_set<uint32_t>  { 15, 60, 300, 3600, 86400 };
-      int32_t                _maximum_history_per_bucket_size = 1000;
+      flat_set<uint32_t>     _tracked_durations = flat_set<uint32_t>  { 60, 300, 3600, 86400, 604800 }; // 1 min, 5 min, 60 min, 24h, 7d candles
+      int32_t                _maximum_history_per_duration_size = 20000;
 };
 
 void market_history_plugin_impl::update_market_histories( const operation_notification& o )
@@ -35,7 +33,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
       fill_order_operation op = o.op.get< fill_order_operation >();
 
       auto& db = _self.database();
-      const auto& bucket_idx = db.get_index< bucket_index >().indices().get< by_bucket >();
+      const auto& duration_idx = db.get_index< market_duration_index >().indices().get< by_asset_pair >();
 
       db.create< order_history_object >( [&]( order_history_object& ho )
       {
@@ -43,102 +41,85 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
          ho.op = op;
       });
 
-      if( !_maximum_history_per_bucket_size ) return;
-      if( !_tracked_buckets.size() ) return;
+      if( !_maximum_history_per_duration_size ) return;
+      if( !_tracked_durations.size() ) return;
 
-      for( auto bucket : _tracked_buckets )
+      for( auto duration : _tracked_durations )
       {
-         auto cutoff = db.head_block_time() - fc::seconds( bucket * _maximum_history_per_bucket_size );
+         auto cutoff = db.head_block_time() - fc::seconds( duration * _maximum_history_per_duration_size );
 
-         auto open = fc::time_point( ( db.head_block_time().time_since_epoch() / bucket ) * bucket );
-         auto seconds = bucket;
+         time_point open = fc::time_point( ( db.head_block_time().time_since_epoch() / duration ) * duration ); // round down to opening time point
 
-         auto itr = bucket_idx.find( boost::make_tuple( seconds, open ) );
-         if( itr == bucket_idx.end() )
+         auto itr = duration_idx.find( boost::make_tuple( op.symbol_a, op.symbol_b, duration, open ) );
+         if( itr == duration_idx.end() )
          {
-            db.create< bucket_object >( [&]( bucket_object& b )
+            db.create< market_duration_object >( [&]( market_duration_object& mdo )
             {
                b.open = open;
-               b.seconds = bucket;
+               b.seconds = duration;
 
-               if( op.open_pays.symbol == SYMBOL_COIN )
+               if( op.open_pays.symbol == op.symbol_a )
                {
-                  b.high_TME = op.open_pays.amount;
-                  b.high_USD = op.current_pays.amount;
-                  b.low_TME = op.open_pays.amount;
-                  b.low_USD = op.current_pays.amount;
-                  b.open_TME = op.open_pays.amount;
-                  b.open_USD = op.current_pays.amount;
-                  b.close_TME = op.open_pays.amount;
-                  b.close_USD = op.current_pays.amount;
-                  b.TME_volume = op.open_pays.amount;
-                  b.USD_volume = op.current_pays.amount;
+                  mdo.open_price = price( op.open_pays, op.current_pays);
+                  mdo.high_price = price( op.open_pays, op.current_pays);
+                  mdo.low_price = price( op.open_pays, op.current_pays);
+                  mdo.close_price = price( op.open_pays, op.current_pays);
+                  mdo.volume_a = op.open_pays;
+                  mdo.volume_b = op.current_pays;
                }
                else
                {
-                  b.high_TME = op.current_pays.amount;
-                  b.high_USD = op.open_pays.amount;
-                  b.low_TME = op.current_pays.amount;
-                  b.low_USD = op.open_pays.amount;
-                  b.open_TME = op.current_pays.amount;
-                  b.open_USD = op.open_pays.amount;
-                  b.close_TME = op.current_pays.amount;
-                  b.close_USD = op.open_pays.amount;
-                  b.TME_volume = op.current_pays.amount;
-                  b.USD_volume = op.open_pays.amount;
+                  mdo.open_price = price( op.current_pays, op.open_pays);
+                  mdo.high_price = price( op.current_pays, op.open_pays);
+                  mdo.low_price = price( op.current_pays, op.open_pays);
+                  mdo.close_price = price( op.current_pays, op.open_pays);
+                  mdo.volume_a = op.current_pays;
+                  mdo.volume_b = op.open_pays;
                }
             });
          }
          else
          {
-            db.modify( *itr, [&]( bucket_object& b )
+            db.modify( *itr, [&]( market_duration_object& mdo )
             {
-               if( op.open_pays.symbol == SYMBOL_COIN )
+               if( op.open_pays.symbol == op.symbol_a )
                {
-                  b.TME_volume += op.open_pays.amount;
-                  b.USD_volume += op.current_pays.amount;
-                  b.close_TME = op.open_pays.amount;
-                  b.close_USD = op.current_pays.amount;
+                  mdo.close_price = price( op.open_pays, op.current_pays);
+                  mdo.volume_a += op.open_pays;
+                  mdo.volume_b += op.current_pays;
 
-                  if( b.high() < price( op.current_pays, op.open_pays ) )
+                  if( mdo.high_price < price( op.open_pays, op.current_pays) )
                   {
-                     b.high_TME = op.open_pays.amount;
-                     b.high_USD = op.current_pays.amount;
+                     mdo.high_price = price( op.open_pays, op.current_pays);
                   }
-
-                  if( b.low() > price( op.current_pays, op.open_pays ) )
+                  if( mdo.low_price > price( op.open_pays, op.current_pays) )
                   {
-                     b.low_TME = op.open_pays.amount;
-                     b.low_USD = op.current_pays.amount;
+                     mdo.low_price = price( op.open_pays, op.current_pays);
                   }
                }
                else
                {
-                  b.TME_volume += op.current_pays.amount;
-                  b.USD_volume += op.open_pays.amount;
-                  b.close_TME = op.current_pays.amount;
-                  b.close_USD = op.open_pays.amount;
+                  mdo.close_price = price( op.current_pays, op.open_pays);
+                  mdo.volume_a += op.current_pays;
+                  mdo.volume_b += op.open_pays;
 
-                  if( b.high() < price( op.open_pays, op.current_pays ) )
+                  if( mdo.high_price < price( op.current_pays, op.open_pays) )
                   {
-                     b.high_TME = op.current_pays.amount;
-                     b.high_USD = op.open_pays.amount;
+                     mdo.high_price = price( op.current_pays, op.open_pays);
                   }
-
-                  if( b.low() > price( op.open_pays, op.current_pays ) )
+                  if( mdo.low_price > price( op.current_pays, op.open_pays) )
                   {
-                     b.low_TME = op.current_pays.amount;
-                     b.low_USD = op.open_pays.amount;
+                     mdo.low_price = price( op.current_pays, op.open_pays);
                   }
                }
             });
 
-            if( _maximum_history_per_bucket_size > 0 )
+            if( _maximum_history_per_duration_size > 0 )
             {
                open = fc::time_point();
-               itr = bucket_idx.lower_bound( boost::make_tuple( seconds, open ) );
+               itr = duration_idx.lower_bound( boost::make_tuple( op.symbol_a, op.symbol_b, duration, open ) );
 
-               while( itr->seconds == seconds && itr->open < cutoff )
+               while( itr->seconds == duration && itr->open < cutoff )
                {
                   auto old_itr = itr;
                   ++itr;
@@ -162,10 +143,10 @@ void market_history_plugin::plugin_set_program_options(
 )
 {
    cli.add_options()
-         ("market-history-bucket-size", boost::program_options::value<string>()->default_value("[15,60,300,3600,86400]"),
-           "Track market history by grouping orders into buckets of equal size measured in seconds specified as a JSON array of numbers")
-         ("market-history-buckets-per-size", boost::program_options::value<uint32_t>()->default_value(5760),
-           "How far back in time to track history for each bucket size, measured in the number of buckets (default: 5760)")
+         ("market-history-duration-size", boost::program_options::value<string>()->default_value("[60,300,3600,86400,604800]"),
+           "Track market history by grouping orders into durations of equal size measured in seconds specified as a JSON array of numbers")
+         ("market-history-durations-per-size", boost::program_options::value<uint32_t>()->default_value(20000),
+           "How far back in time to track history for each duration size, measured in the number of durations (default: 20000)")
          ;
    cfg.add(cli);
 }
@@ -178,19 +159,19 @@ void market_history_plugin::plugin_initialize( const boost::program_options::var
       chain::database& db = database();
 
       db.post_apply_operation.connect( [&]( const operation_notification& o ){ _my->update_market_histories( o ); } );
-      add_plugin_index< bucket_index        >(db);
-      add_plugin_index< order_history_index >(db);
+      add_plugin_index< market_duration_index      >(db);
+      add_plugin_index< order_history_index        >(db);
 
-      if( options.count("bucket-size" ) )
+      if( options.count("duration-size" ) )
       {
-         std::string buckets = options["bucket-size"].as< string >();
-         _my->_tracked_buckets = fc::json::from_string( buckets ).as< flat_set< uint32_t > >();
+         std::string durations = options["duration-size"].as< string >();
+         _my->_tracked_durations = fc::json::from_string( durations ).as< flat_set< uint32_t > >();
       }
       if( options.count("history-per-size" ) )
-         _my->_maximum_history_per_bucket_size = options["history-per-size"].as< uint32_t >();
+         _my->_maximum_history_per_duration_size = options["history-per-size"].as< uint32_t >();
 
-      wlog( "bucket-size ${b}", ("b", _my->_tracked_buckets) );
-      wlog( "history-per-size ${h}", ("h", _my->_maximum_history_per_bucket_size) );
+      wlog( "duration-size ${b}", ("b", _my->_tracked_durations) );
+      wlog( "history-per-size ${h}", ("h", _my->_maximum_history_per_duration_size) );
 
       ilog( "market_history: plugin_initialize() end" );
    } FC_CAPTURE_AND_RETHROW()
@@ -205,14 +186,14 @@ void market_history_plugin::plugin_startup()
    ilog( "market_history plugin: plugin_startup() end" );
 }
 
-flat_set< uint32_t > market_history_plugin::get_tracked_buckets() const
+flat_set< uint32_t > market_history_plugin::get_tracked_durations() const
 {
-   return _my->_tracked_buckets;
+   return _my->_tracked_durations;
 }
 
-uint32_t market_history_plugin::get_max_history_per_bucket() const
+uint32_t market_history_plugin::get_max_history_per_duration() const
 {
-   return _my->_maximum_history_per_bucket_size;
+   return _my->_maximum_history_per_duration_size;
 }
 
 } } // node::market_history

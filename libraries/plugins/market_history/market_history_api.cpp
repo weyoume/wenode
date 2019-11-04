@@ -13,115 +13,278 @@ class market_history_api_impl
       market_history_api_impl( node::app::application& _app )
          :app( _app ) {}
 
-      market_ticker get_ticker() const;
-      market_volume get_volume() const;
-      order_book get_order_book( uint32_t limit ) const;
-      vector< market_trade > get_trade_history( time_point start, time_point end, uint32_t limit ) const;
-      vector< market_trade > get_recent_trades( uint32_t limit ) const;
-      vector< bucket_object > get_market_history( uint32_t bucket_seconds, time_point start, time_point end ) const;
-      flat_set< uint32_t > get_market_history_buckets() const;
+      market_ticker get_ticker( string buy_symbol, string sell_symbol ) const;
+      market_volume get_volume( string buy_symbol, string sell_symbol ) const;
+      order_book get_order_book( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      vector< market_trade > get_trade_history( string buy_symbol, string sell_symbol, time_point start, time_point end, uint32_t limit ) const;
+      vector< market_trade > get_recent_trades( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      vector< market_duration_object > get_market_history( string buy_symbol, string sell_symbol, uint32_t seconds, time_point start, time_point end ) const;
+      flat_set< uint32_t > get_market_history_durations() const;
 
       node::app::application& app;
 };
 
-market_ticker market_history_api_impl::get_ticker() const
+market_ticker market_history_api_impl::get_ticker( string buy_symbol, string sell_symbol ) const
 {
    market_ticker result;
 
    auto db = app.chain_database();
-   const auto& bucket_idx = db->get_index< bucket_index >().indices().get< by_bucket >();
-   auto itr = bucket_idx.lower_bound( boost::make_tuple( 86400, db->head_block_time() - 86400 ) );
-
-   if( itr != bucket_idx.end() )
+   const asset_object& buy_asset = db.get_asset( asset_symbol_type( buy_symbol ) );
+   const asset_object& sell_asset = db.get_asset( asset_symbol_type( sell_symbol ) );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( buy_asset.id < sell_asset.id )
    {
-      auto open = ( asset( itr->open_USD, SYMBOL_USD ) / asset( itr->open_TME, SYMBOL_COIN ) ).to_real();
-      result.latest = ( asset( itr->close_USD, SYMBOL_USD ) / asset( itr->close_TME, SYMBOL_COIN ) ).to_real();
-      result.percent_change = ( ( result.latest - open ) / open ) * 100;
+      symbol_a = buy_asset.symbol;
+      symbol_b = sell_asset.symbol;
    }
    else
    {
-      result.latest = 0;
-      result.percent_change = 0;
+      symbol_b = buy_asset.symbol;
+      symbol_a = sell_asset.symbol;
    }
 
-   auto orders = get_order_book( 1 );
-   if( orders.bids.size() )
-      result.highest_bid = orders.bids[0].price;
-   if( orders.asks.size() )
-      result.lowest_ask = orders.asks[0].price;
+   const auto& duration_idx = db->get_index< market_duration_index >().indices().get< by_asset_pair >();
+   auto current_itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 60, db->head_block_time() ) );
 
-   auto volume = get_volume();
-   result.TME_volume = volume.TME_volume;
-   result.USD_volume = volume.USD_volume;
+   auto hour_itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 60, ( db->head_block_time() - fc::hours(1) ) ) );
+   auto day_itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 3600, ( db->head_block_time() - fc::days(1) ) ) );
+   auto week_itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 3600, ( db->head_block_time() - fc::days(7) ) ) );
+   auto month_itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 3600, ( db->head_block_time() - fc::days(30) ) ) );
+
+   if( current_itr != duration_idx.end() )
+   {
+      price current_price = current_itr->close_price_real( asset_symbol_type( sell_symbol ) );
+      result.last_price = current_price;
+   }
+   else
+   {
+      result.last_price = 0;
+   }
+
+   if( hour_itr != duration_idx.end() )
+   {
+      double hour_price = hour_itr->close_price_real( asset_symbol_type( sell_symbol ) );
+      result.hour_percent_change = ( ( result.last_price - hour_price ) / hour_price ) * 100;
+   }
+   else
+   {
+      result.hour_percent_change = 0;
+   }
+
+   if( day_itr != duration_idx.end() )
+   {
+      double day_price = day_itr->last_price.to_real();
+      result.day_percent_change = ( ( result.last_price - day_price ) / day_price ) * 100;
+   }
+   else
+   {
+      result.day_percent_change = 0;
+   }
+
+   if( week_itr != duration_idx.end() )
+   {
+      double week_price = week_itr->close_price_real( asset_symbol_type( sell_symbol ) );
+      result.week_percent_change = ( ( result.last_price - week_price ) / week_price ) * 100;
+   }
+   else
+   {
+      result.week_percent_change = 0;
+   }
+
+   if( month_itr != duration_idx.end() )
+   {
+      double month_price = month_itr->close_price_real( asset_symbol_type( sell_symbol ) );
+      result.month_percent_change = ( ( result.last_price - month_price ) / month_price ) * 100;
+   }
+   else
+   {
+      result.month_percent_change = 0;
+   }
+   
+   order_book orders = get_order_book( buy_symbol, sell_symbol, 1 );    // Get top orders for bid and ask
+   if( orders.bids.size() )
+   {
+      result.highest_bid = orders.bids[0].price;
+   }
+      
+   if( orders.asks.size() )
+   {
+      result.lowest_ask = orders.asks[0].price;
+   }
+      
+   auto volume = get_volume( buy_symbol, sell_symbol );
+   result.buy_volume = volume.buy_volume;
+   result.sell_volume = volume.sell_volume;
 
    return result;
 }
 
-market_volume market_history_api_impl::get_volume() const
+market_volume market_history_api_impl::get_volume( string buy_symbol, string sell_symbol ) const
 {
    auto db = app.chain_database();
-   const auto& bucket_idx = db->get_index< bucket_index >().indices().get< by_bucket >();
-   auto itr = bucket_idx.lower_bound( boost::make_tuple( 0, db->head_block_time() - 86400 ) );
+   const asset_object& buy_asset = db->get_asset( asset_symbol_type( buy_symbol ) );
+   const asset_object& sell_asset = db->get_asset( asset_symbol_type( sell_symbol ) );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( buy_asset.id < sell_asset.id )
+   {
+      symbol_a = buy_asset.symbol;
+      symbol_b = sell_asset.symbol;
+   }
+   else
+   {
+      symbol_b = buy_asset.symbol;
+      symbol_a = sell_asset.symbol;
+   }
+   const auto& duration_idx = db->get_index< market_duration_index >().indices().get< by_asset_pair >();
+   auto itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 60, ( db->head_block_time() - fc::days(1) ) ) );
    market_volume result;
 
-   if( itr == bucket_idx.end() )
+   if( itr == duration_idx.end() )
+   {
       return result;
-
-   uint32_t bucket_size = itr->seconds;
+   }
+      
+   uint32_t duration_secs = itr->seconds;
    do
    {
-      result.TME_volume.amount += itr->TME_volume;
-      result.USD_volume.amount += itr->USD_volume;
+      if( symbol_a == asset_symbol_type(buy_symbol) )
+      {
+         result.buy_volume += itr->volume_a;
+         result.sell_volume += itr->volume_b;
+      }
+      else
+      {
+         result.buy_volume += itr->volume_b;
+         result.sell_volume += itr->volume_a;
+      }
 
       ++itr;
-   } while( itr != bucket_idx.end() && itr->seconds == bucket_size );
+   } while( itr != duration_idx.end() && itr->seconds == duration_secs );
 
    return result;
 }
 
-order_book market_history_api_impl::get_order_book( uint32_t limit ) const
+order_book market_history_api_impl::get_order_book( string buy_symbol, string sell_symbol,  uint32_t limit ) const
 {
-   FC_ASSERT( limit <= 500 );
-
-   const auto& order_idx = app.chain_database()->get_index< node::chain::limit_order_index >().indices().get< node::chain::by_price >();
-   auto itr = order_idx.lower_bound( price::max( SYMBOL_USD, SYMBOL_COIN ) );
+   FC_ASSERT( limit <= 1000, "Maximum orderbook API limit is 1000 orders per side." );
+   auto db = app.chain_database();
 
    order_book result;
 
-   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_USD && result.bids.size() < limit )
+   auto max_sell = price::max( asset_symbol_type( sell_symbol ), asset_symbol_type( buy_symbol ) );
+   auto max_buy = price::max( asset_symbol_type( buy_symbol ), asset_symbol_type( sell_symbol ) );
+
+   const auto& limit_price_idx = db->get_index<limit_order_index>().indices().get<by_price>();
+   const auto& margin_price_idx = db->get_index<margin_order_index>().indices().get<by_price>();
+
+   auto limit_sell_itr = limit_price_idx.lower_bound( max_sell );
+   auto limit_buy_itr = limit_price_idx.lower_bound( max_buy );
+   auto limit_end = limit_price_idx.end();
+
+   auto margin_sell_itr = margin_price_idx.lower_bound (max_sell );
+   auto margin_buy_itr = margin_price_idx.lower_bound( max_buy );
+   auto margin_end = margin_price_idx.end();
+
+   while( ( ( limit_sell_itr != limit_end &&
+      limit_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) ) ||
+      ( margin_sell_itr != margin_end &&
+      margin_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) ) ) && 
+      result.bids.size() < limit )
    {
-      order cur;
-      cur.price = itr->sell_price.base.to_real() / itr->sell_price.quote.to_real();
-      cur.TME = ( asset( itr->for_sale, SYMBOL_USD ) * itr->sell_price ).amount;
-      cur.USD = itr->for_sale;
-      result.bids.push_back( cur );
-      ++itr;
+      if( limit_sell_itr->sell_price >= margin_sell_itr->sell_price && limit_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) )
+      {
+         order cur;
+         auto itr = limit_sell_itr;
+         cur.order_price = itr->sell_price;
+         cur.real_price = cur.order_price.to_real();
+         cur.sell_asset = itr->amount_for_sale();
+         cur.buy_asset = itr->amount_to_receive();
+         cur.created = itr->created;
+         result.bids.push_back( cur );
+         ++limit_sell_itr;
+      }
+      else if( margin_sell_itr->sell_price >= limit_sell_itr->sell_price && margin_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) )
+      {
+         order cur;
+         auto itr = margin_sell_itr;
+         cur.order_price = itr->sell_price;
+         cur.real_price = cur.order_price.to_real();
+         cur.sell_asset = itr->amount_for_sale();
+         cur.buy_asset = itr->amount_to_receive();
+         cur.created = itr->created;
+         result.bids.push_back( cur );
+         ++margin_sell_itr;
+      }
+      else
+      {
+         break;
+      } 
    }
-
-   itr = order_idx.lower_bound( price::max( SYMBOL_COIN, SYMBOL_USD ) );
-
-   while( itr != order_idx.end() && itr->sell_price.base.symbol == SYMBOL_COIN && result.asks.size() < limit )
+   while( ( ( limit_buy_itr != limit_end && 
+      limit_buy_itr->sell_price.base.symbol == asset_symbol_type( buy_symbol ) ) || 
+      ( margin_buy_itr != margin_end && 
+      margin_buy_itr->sell_price.base.symbol == asset_symbol_type( buy_symbol ) ) ) && 
+      result.asks.size() < limit )
    {
-      order cur;
-      cur.price = itr->sell_price.quote.to_real() / itr->sell_price.base.to_real();
-      cur.TME = itr->for_sale;
-      cur.USD = ( asset( itr->for_sale, SYMBOL_COIN ) * itr->sell_price ).amount;
-      result.asks.push_back( cur );
-      ++itr;
+      if( limit_buy_itr->sell_price >= margin_buy_itr->sell_price && limit_buy_itr->sell_price.base.symbol == asset_symbol_type( buy_symbol )  )
+      {
+         order cur;
+         auto itr = limit_buy_itr;
+         cur.order_price = ~(itr->sell_price);
+         cur.real_price = cur.order_price.to_real();
+         cur.sell_asset = itr->amount_for_sale();
+         cur.buy_asset = itr->amount_to_receive();
+         cur.created = itr->created;
+         result.asks.push_back( cur );
+         ++limit_buy_itr;
+      }
+      else if( margin_buy_itr->sell_price >= limit_buy_itr->sell_price && margin_buy_itr->sell_price.base.symbol == asset_symbol_type( buy_symbol ) )
+      {
+         order cur;
+         auto itr = margin_buy_itr;
+         cur.order_price = ~(itr->sell_price);
+         cur.real_price = cur.order_price.to_real();
+         cur.sell_asset = itr->amount_for_sale();
+         cur.buy_asset = itr->amount_to_receive();
+         cur.created = itr->created;
+         result.asks.push_back( cur );
+         ++margin_buy_itr;
+      }
+      else
+      {
+         break;
+      }  
    }
-
    return result;
 }
 
-std::vector< market_trade > market_history_api_impl::get_trade_history( time_point start, time_point end, uint32_t limit ) const
+std::vector< market_trade > market_history_api_impl::get_trade_history( string buy_symbol, string sell_symbol, time_point start, time_point end, uint32_t limit ) const
 {
    FC_ASSERT( limit <= 1000 );
-   const auto& bucket_idx = app.chain_database()->get_index< order_history_index >().indices().get< by_time >();
-   auto itr = bucket_idx.lower_bound( start );
+   auto db = app.chain_database();
+   const asset_object& buy_asset = db->get_asset( asset_symbol_type( buy_symbol ) );
+   const asset_object& sell_asset = db->get_asset( asset_symbol_type( sell_symbol ) );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( buy_asset.id < sell_asset.id )
+   {
+      symbol_a = buy_asset.symbol;
+      symbol_b = sell_asset.symbol;
+   }
+   else
+   {
+      symbol_b = buy_asset.symbol;
+      symbol_a = sell_asset.symbol;
+   }
+
+   const auto& order_idx = db->get_index< order_history_index >().indices().get< by_old_asset_pair >();
+   auto itr = order_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, start ) );
 
    std::vector< market_trade > result;
 
-   while( itr != bucket_idx.end() && itr->time <= end && result.size() < limit )
+   while( itr != order_idx.end() && itr->time <= end && result.size() < limit )
    {
       market_trade trade;
       trade.date = itr->time;
@@ -134,11 +297,27 @@ std::vector< market_trade > market_history_api_impl::get_trade_history( time_poi
    return result;
 }
 
-vector< market_trade > market_history_api_impl::get_recent_trades( uint32_t limit = 1000 ) const
+vector< market_trade > market_history_api_impl::get_recent_trades( string buy_symbol, string sell_symbol, uint32_t limit = 1000 ) const
 {
    FC_ASSERT( limit <= 1000 );
-   const auto& order_idx = app.chain_database()->get_index< order_history_index >().indices().get< by_time >();
-   auto itr = order_idx.rbegin();
+   auto db = app.chain_database();
+   const asset_object& buy_asset = db->get_asset( asset_symbol_type( buy_symbol ) );
+   const asset_object& sell_asset = db->get_asset( asset_symbol_type( sell_symbol ) );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( buy_asset.id < sell_asset.id )
+   {
+      symbol_a = buy_asset.symbol;
+      symbol_b = sell_asset.symbol;
+   }
+   else
+   {
+      symbol_b = buy_asset.symbol;
+      symbol_a = sell_asset.symbol;
+   }
+
+   const auto& order_idx = db->get_index< order_history_index >().indices().get< by_new_asset_pair >();
+   auto itr = order_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b ) );
 
    vector< market_trade > result;
 
@@ -155,16 +334,50 @@ vector< market_trade > market_history_api_impl::get_recent_trades( uint32_t limi
    return result;
 }
 
-std::vector< bucket_object > market_history_api_impl::get_market_history( uint32_t bucket_seconds, time_point start, time_point end ) const
+std::vector< candle_stick > market_history_api_impl::get_market_history( string buy_symbol, string sell_symbol, uint32_t seconds, time_point start, time_point end ) const
 {
-   const auto& bucket_idx = app.chain_database()->get_index< bucket_index >().indices().get< by_bucket >();
-   auto itr = bucket_idx.lower_bound( boost::make_tuple( bucket_seconds, start ) );
-
-   std::vector< bucket_object > result;
-
-   while( itr != bucket_idx.end() && itr->seconds == bucket_seconds && itr->open < end )
+   auto db = app.chain_database();
+   const asset_object& buy_asset = db->get_asset( asset_symbol_type( buy_symbol ) );
+   const asset_object& sell_asset = db->get_asset( asset_symbol_type( sell_symbol ) );
+   asset_symbol_type symbol_a;
+   asset_symbol_type symbol_b;
+   if( buy_asset.id < sell_asset.id )
    {
-      result.push_back( *itr );
+      symbol_a = buy_asset.symbol;
+      symbol_b = sell_asset.symbol;
+   }
+   else
+   {
+      symbol_b = buy_asset.symbol;
+      symbol_a = sell_asset.symbol;
+   }
+
+   const auto& duration_idx = db->get_index< market_duration_index >().indices().get< by_old_asset_pair >();
+   auto itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, seconds, start ) );
+
+   std::vector< candle_stick > result;
+
+   while( itr != duration_idx.end() && itr->seconds == seconds && itr->open_time < end )
+   {
+      candle_stick candle;
+      candle.open_time = itr->open_time;
+      candle.period = itr->seconds;
+      candle.open = itr->open_price_real( asset_symbol_type( sell_symbol ) );
+      candle.high = itr->high_price_real( asset_symbol_type( sell_symbol ) );
+      candle.low = itr->low_price_real( asset_symbol_type( sell_symbol ) );
+      candle.close = itr->close_price_real( asset_symbol_type( sell_symbol ) );
+      if( symbol_a == asset_symbol_type( buy_symbol ) )
+      {
+         candle.buy_volume = itr->volume_a;
+         candle.sell_volume = itr->volume_b;
+      }
+      else
+      {
+         candle.buy_volume = itr->volume_b;
+         candle.sell_volume = itr->volume_a;
+      }
+
+      result.push_back( candle );
 
       ++itr;
    }
@@ -172,10 +385,10 @@ std::vector< bucket_object > market_history_api_impl::get_market_history( uint32
    return result;
 }
 
-flat_set< uint32_t > market_history_api_impl::get_market_history_buckets() const
+flat_set< uint32_t > market_history_api_impl::get_market_history_durations() const
 {
-   auto buckets = app.get_plugin< market_history_plugin >( MARKET_HISTORY_PLUGIN_NAME )->get_tracked_buckets();
-   return buckets;
+   auto durations = app.get_plugin< market_history_plugin >( MARKET_HISTORY_PLUGIN_NAME )->get_tracked_durations();
+   return durations;
 }
 
 } // detail
@@ -195,7 +408,7 @@ market_ticker market_history_api::get_ticker() const
    });
 }
 
-market_volume market_history_api::get_volume() const
+market_volume market_history_api::get_volume( string buy_symbol, string sell_symbol ) const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
@@ -203,7 +416,7 @@ market_volume market_history_api::get_volume() const
    });
 }
 
-order_book market_history_api::get_order_book( uint32_t limit ) const
+order_book market_history_api::get_order_book( string buy_symbol, string sell_symbol, uint32_t limit ) const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
@@ -211,7 +424,7 @@ order_book market_history_api::get_order_book( uint32_t limit ) const
    });
 }
 
-std::vector< market_trade > market_history_api::get_trade_history( time_point start, time_point end, uint32_t limit ) const
+std::vector< market_trade > market_history_api::get_trade_history( string buy_symbol, string sell_symbol, time_point start, time_point end, uint32_t limit ) const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
@@ -219,7 +432,7 @@ std::vector< market_trade > market_history_api::get_trade_history( time_point st
    });
 }
 
-std::vector< market_trade > market_history_api::get_recent_trades( uint32_t limit ) const
+std::vector< market_trade > market_history_api::get_recent_trades( string buy_symbol, string sell_symbol, uint32_t limit ) const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
@@ -227,19 +440,19 @@ std::vector< market_trade > market_history_api::get_recent_trades( uint32_t limi
    });
 }
 
-std::vector< bucket_object > market_history_api::get_market_history( uint32_t bucket_seconds, time_point start, time_point end ) const
+std::vector< candle_stick > market_history_api::get_market_history( string buy_symbol, string sell_symbol, uint32_t seconds, time_point start, time_point end ) const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
-      return my->get_market_history( bucket_seconds, start, end );
+      return my->get_market_history( seconds, start, end );
    });
 }
 
-flat_set< uint32_t > market_history_api::get_market_history_buckets() const
+flat_set< uint32_t > market_history_api::get_market_history_durations() const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
-      return my->get_market_history_buckets();
+      return my->get_market_history_durations();
    });
 }
 

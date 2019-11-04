@@ -14,30 +14,6 @@
 
 namespace node { namespace chain {
 
-   struct strcmp_less
-   {
-      bool operator()( const shared_string& a, const shared_string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      bool operator()( const shared_string& a, const string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      bool operator()( const string& a, const shared_string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      private:
-         inline bool less( const char* a, const char* b )const
-         {
-            return std::strcmp( a, b ) < 0;
-         }
-   };
-
    class ad_creative_object : public object< ad_creative_object_type, ad_creative_object >
    {
       ad_creative_object() = delete;

@@ -203,6 +203,8 @@ namespace node { namespace chain {
 
          business_types                          business_type;              // Type of business account, controls authorizations for transactions of different types.
 
+         public_key_type                         business_public_key;        // Public key of the business account for internal message encryption. 
+
          executive_officer_set                   executive_board;            // Set of highest voted executive accounts for each role.
 
          flat_map<account_name_type, pair< executive_types, share_type > >   executives;   // Set of all executive names.    
@@ -723,7 +725,7 @@ namespace node { namespace chain {
          
          account_name_type                       business_account;           // Name of the business account that the key is for.
 
-         shared_string                           encrypted_business_key;     // Copy of the business account's private communications key, encrypted with the member's secure key . 
+         encrypted_keypair_type                  encrypted_business_key;     // Copy of the business account's private communications key, encrypted with the member's secure key . 
    };
 
 
@@ -1254,31 +1256,33 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                id;                 
+         id_type                      id;                 
 
-         account_name_type      account_a;                // Account with the lower ID.
+         account_name_type            account_a;                // Account with the lower ID.
 
-         shared_string          encrypted_key_a;          // A's private connection key, encrypted with the public secure key of account B.
+         encrypted_keypair_type       encrypted_key_a;          // A's private connection key, encrypted with the public secure key of account B.
 
-         account_name_type      account_b;                // Account with the greater ID.
+         account_name_type            account_b;                // Account with the greater ID.
 
-         shared_string          encrypted_key_b;          // B's private connection key, encrypted with the public secure key of account A.
+         encrypted_keypair_type       encrypted_key_b;          // B's private connection key, encrypted with the public secure key of account A.
 
-         connection_types       connection_type;          // The connection level shared in this object
+         connection_types             connection_type;          // The connection level shared in this object
 
-         shared_string          connection_id;            // Unique uuidv4 for the connection, for local storage of decryption key.
+         shared_string                connection_id;            // Unique uuidv4 for the connection, for local storage of decryption key.
 
-         uint32_t               connection_strength = 0;  // Number of total messages sent between connections
+         uint32_t                     connection_strength = 0;  // Number of total messages sent between connections
 
-         uint32_t               consecutive_days = 0;     // Number of consecutive days that the connected accounts have both sent a message.
+         uint32_t                     consecutive_days = 0;     // Number of consecutive days that the connected accounts have both sent a message.
 
-         time_point             last_message_time_a;      // Time since the account A last sent a message
+         time_point                   last_message_time_a;      // Time since the account A last sent a message.
 
-         time_point             last_message_time_b;      // Time since the account B last sent a message
+         time_point                   last_message_time_b;      // Time since the account B last sent a message.
 
-         time_point             created;                  // Time the connection was created. 
+         time_point                   last_update_time;         // Time the connection keys were last updated. 
 
-         time_point             last_message_time()const
+         time_point                   created;                  // Time the connection was created. 
+
+         time_point                   last_message_time()const
          {
             return std::min( last_message_time_a, last_message_time_b );
          }
@@ -1703,10 +1707,17 @@ namespace node { namespace chain {
       account_member_key_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id > 
+            member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id >
          >,
-         ordered_unique< tag< by_account >,
-            member< account_member_key_object, account_name_type, &account_member_key_object::account > 
+         ordered_unique< tag< by_member_business >,
+            member< account_member_key_object, account_name_type, &account_member_key_object::member >,
+            member< account_member_key_object, account_name_type, &account_member_key_object::business_account >,
+            member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id >
+         >,
+         ordered_unique< tag< by_business_member >,
+            member< account_member_key_object, account_name_type, &account_member_key_object::business_account >,
+            member< account_member_key_object, account_name_type, &account_member_key_object::member >,
+            member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id >
          >
       >,
       allocator< account_member_key_object >

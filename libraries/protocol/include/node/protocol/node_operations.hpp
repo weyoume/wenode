@@ -1521,17 +1521,17 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;              // Account sending the invitation.
+      account_name_type              account;                      // Account sending the invitation.
 
-      account_name_type              member;               // New board member account being invited.
+      account_name_type              member;                       // New board member account being invited.
 
-      board_name_type                board;                // Board that is the member is being invited to.
+      board_name_type                board;                        // Board that is the member is being invited to.
 
-      string                         message;              // Message attatched to the request, encrypted with the member's secure public key.
+      string                         message;                      // Message attatched to the request, encrypted with the member's secure public key.
 
-      string                         board_key;            // The Board Private Key, encrypted with the member's secure public key.
+      string                         encrypted_board_key;          // The Board Private Key, encrypted with the member's secure public key.
 
-      bool                           invited = true;       // Set true to request, false to cancel request.
+      bool                           invited = true;               // Set true to request, false to cancel request.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1543,15 +1543,15 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;            // A Moderator of the board.
+      account_name_type              account;                    // A Moderator of the board.
 
-      account_name_type              member;             // Account to accept into the board.
+      account_name_type              member;                     // Account to accept into the board.
 
-      board_name_type                board;              // Board that is being joined.
+      board_name_type                board;                      // Board that is being joined.
 
-      string                         board_key;          // The Board Private Key, encrypted with the member's secure public key.
+      string                         encrypted_board_key;        // The Board Private Key, encrypted with the member's secure public key.
 
-      bool                           accepted = true;    // True to accept request, false to reject request.
+      bool                           accepted = true;            // True to accept request, false to reject request.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
