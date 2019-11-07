@@ -24,15 +24,21 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type              id;
+         id_type                     id;
 
-         transaction_id_type  trx_id;
-         uint32_t             block = 0;
-         uint32_t             trx_in_block = 0;
-         uint16_t             op_in_trx = 0;
-         uint64_t             virtual_op = 0;
-         time_point           timestamp;
-         buffer_type          serialized_op;
+         transaction_id_type         trx_id;
+
+         uint32_t                    block = 0;
+
+         uint32_t                    trx_in_block = 0;
+
+         uint16_t                    op_in_trx = 0;
+
+         uint64_t                    virtual_op = 0;
+
+         time_point                  timestamp;
+
+         buffer_type                 serialized_op;
    };
 
    struct by_location;
@@ -72,11 +78,13 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type           id;
+         id_type                     id;
 
-         account_name_type account;
-         uint32_t          sequence = 0;
-         operation_id_type op;
+         account_name_type           account;
+
+         uint32_t                    sequence = 0;
+
+         operation_id_type           op;
    };
 
    struct by_account;
@@ -94,10 +102,27 @@ namespace node { namespace chain {
       >,
       allocator< account_history_object >
    > account_history_index;
-} }
 
-FC_REFLECT( node::chain::operation_object, (id)(trx_id)(block)(trx_in_block)(op_in_trx)(virtual_op)(timestamp)(serialized_op) )
-CHAINBASE_SET_INDEX_TYPE( node::chain::operation_object, node::chain::operation_index )
+} }    // node::chain 
 
-FC_REFLECT( node::chain::account_history_object, (id)(account)(sequence)(op) )
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_history_object, node::chain::account_history_index )
+FC_REFLECT( node::chain::operation_object, 
+         (id)
+         (trx_id)
+         (block)
+         (trx_in_block)
+         (op_in_trx)
+         (virtual_op)
+         (timestamp)
+         (serialized_op) 
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::operation_object, node::chain::operation_index );
+
+FC_REFLECT( node::chain::account_history_object, 
+         (id)
+         (account)
+         (sequence)
+         (op) 
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_history_object, node::chain::account_history_index );

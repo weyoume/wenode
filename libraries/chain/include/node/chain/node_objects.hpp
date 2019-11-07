@@ -163,8 +163,7 @@ namespace node { namespace chain {
    /**
     * @class call_order_object
     * @brief tracks debt and call price information
-    * There should only be one call_order_object per asset pair per account and
-    * they will all have the same call price.
+    * There should only be one call_order_object per asset pair per account.
     */
    class call_order_object : public object< call_order_object_type, call_order_object >
    {
@@ -1069,6 +1068,7 @@ namespace node { namespace chain {
    > reward_fund_index;
 
    struct by_collateral;
+   struct by_debt;
    struct by_account;
    struct by_price;
 
@@ -1083,6 +1083,14 @@ namespace node { namespace chain {
                member< call_order_object, call_order_id_type, &call_order_object::id>
             >,
             composite_key_compare< std::less<price>, std::less<call_order_id_type> >
+         >,
+         ordered_unique< tag<by_debt>,
+            composite_key< call_order_object,
+               const_mem_fun< call_order_object, asset_symbol_type, &call_order_object::debt_type>,
+               const_mem_fun< call_order_object, price, &call_order_object::collateralization >,
+               member< call_order_object, call_order_id_type, &call_order_object::id>
+            >,
+            composite_key_compare< std::less<asset_symbol_type>, std::less<call_order_id_type> >
          >,
          ordered_unique< tag<by_account>,
             composite_key< call_order_object,

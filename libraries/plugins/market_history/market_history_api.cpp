@@ -18,7 +18,9 @@ class market_history_api_impl
       order_book get_order_book( string buy_symbol, string sell_symbol, uint32_t limit ) const;
       vector< market_trade > get_trade_history( string buy_symbol, string sell_symbol, time_point start, time_point end, uint32_t limit ) const;
       vector< market_trade > get_recent_trades( string buy_symbol, string sell_symbol, uint32_t limit ) const;
-      vector< market_duration_object > get_market_history( string buy_symbol, string sell_symbol, uint32_t seconds, time_point start, time_point end ) const;
+      vector< market_duration_object > get_market_history( string buy_symbol, string sell_symbol, 
+         uint32_t seconds, time_point start, time_point end ) const;
+
       flat_set< uint32_t > get_market_history_durations() const;
 
       node::app::application& app;

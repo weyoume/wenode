@@ -324,11 +324,11 @@ struct account_api_obj
    vector< account_name_type>       proxied;                               // Accounts that have set this account to be their proxy voter.
    account_name_type                registrar;                             // The name of the account that created the account;
    account_name_type                referrer;                              // The name of the account that originally referred the account to be created;
-   account_name_type                recovery_account;       // Account that can request recovery using a recent owner key if compromised.  
-   account_name_type                reset_account;          // Account that has the ability to reset owner authority after specified days of inactivity.
-   account_name_type                membership_interface;   // Account of the last interface to sell a membership to the account.
+   account_name_type                recovery_account;                      // Account that can request recovery using a recent owner key if compromised.  
+   account_name_type                reset_account;                         // Account that has the ability to reset owner authority after specified days of inactivity.
+   account_name_type                membership_interface;                  // Account of the last interface to sell a membership to the account.
    uint16_t                         reset_account_delay_days;
-   uint16_t                         referrer_rewards_percentage; // The percentage of registrar rewards that are directed to the referrer.
+   uint16_t                         referrer_rewards_percentage;           // The percentage of registrar rewards that are directed to the referrer.
    uint32_t                         comment_count;
    uint32_t                         follower_count;
    uint32_t                         following_count;
@@ -646,11 +646,186 @@ struct connection_api_obj
    encrypted_keypair_type       encrypted_key_b;          // B's private connection key, encrypted with the public secure key of account A.
    string                       connection_type;          // The connection level shared in this object
    string                       connection_id;            // Unique uuidv4 for the connection, for local storage of decryption key.
-   uint32_t                     connection_strength;  // Number of total messages sent between connections
-   uint32_t                     consecutive_days;     // Number of consecutive days that the connected accounts have both sent a message.
+   uint32_t                     connection_strength;      // Number of total messages sent between connections
+   uint32_t                     consecutive_days;         // Number of consecutive days that the connected accounts have both sent a message.
    time_point                   last_message_time_a;      // Time since the account A last sent a message
    time_point                   last_message_time_b;      // Time since the account B last sent a message
    time_point                   created;                  // Time the connection was created. 
+};
+
+
+struct connection_request_api_obj
+{
+   connection_request_api_obj( const chain::connection_request_object& c, const chain::database& db ):
+      id( c.id ),
+      account( c.account ),
+      requested_account( c.requested_account ),
+      connection_type( to_string( c.connection_type ) ),
+      message( to_string( c.message ) ),
+      expiration( c.expiration ),
+
+   connection_request_api_obj(){}
+
+   connection_request_id_type              id;                 
+   account_name_type                       account;               // Account that created the request
+   account_name_type                       requested_account;  
+   string                                  connection_type;
+   string                                  message;
+   time_point                              expiration;   
+};
+
+struct account_request_api_obj
+{
+   account_request_api_obj( const chain::account_member_request_object& o, const chain::database& db ):
+      id( o.id ),
+      account( o.account ),
+      business_account( o.business_account ),
+      message( to_string( o.message ) ),
+      expiration( o.expiration ),
+
+   account_request_api_obj(){}
+
+   account_member_request_id_type          id;                 
+   account_name_type                       account;        
+   account_name_type                       business_account;  
+   string                                  message;
+   time_point                              expiration;   
+};
+
+struct account_invite_api_obj
+{
+   account_invite_api_obj( const chain::account_member_invite_object& o, const chain::database& db ):
+      id( o.id ),
+      account( o.account ),
+      business_account( o.business_account ),
+      member( o.member ),
+      message( to_string( o.message ) ),
+      expiration( o.expiration ),
+
+   account_invite_api_obj(){}
+
+   account_member_request_id_type          id;                 
+   account_name_type                       account;             
+   account_name_type                       business_account; 
+   account_name_type                       member;      
+   string                                  message;
+   time_point                              expiration;   
+};
+
+struct board_request_api_obj
+{
+   board_request_api_obj( const chain::board_join_request_object& o, const chain::database& db ):
+      id( o.id ),
+      account( o.account ),
+      board( o.board),
+      message( to_string( o.message ) ),
+      expiration( o.expiration ),
+
+   connection_request_api_obj(){}
+
+   board_join_request_id_type              id;                 
+   account_name_type                       account;        
+   board_name_type                         board;  
+   string                                  message;
+   time_point                              expiration;   
+};
+
+struct board_invite_api_obj
+{
+   board_invite_api_obj( const chain::board_join_invite_object& o, const chain::database& db ):
+      id( o.id ),
+      account( o.account ),
+      board( o.board ),
+      member( o.member ),
+      message( to_string( o.message ) ),
+      expiration( o.expiration ),
+
+   connection_request_api_obj(){}
+
+   account_member_request_id_type          id;                 
+   account_name_type                       account;             
+   board_name_type                         board; 
+   account_name_type                       member;      
+   string                                  message;
+   time_point                              expiration;   
+};
+
+struct transfer_request_api_obj
+{
+   transfer_request_api_obj( const chain::transfer_request_object& o, const chain::database& db ):
+      id( o.id ),
+      to( o.to ),
+      from( o.from ),
+      amount( o.amount ),
+      request_id( to_string( o.request_id ) ),
+      memo( to_string( o.memo ) ),
+      expiration( o.expiration ),
+
+   transfer_request_api_obj(){}
+
+   transfer_request_id_type               id;
+   account_name_type                      to;             // Account requesting the transfer.
+   account_name_type                      from;           // Account that is being requested to accept the transfer.
+   asset                                  amount;         // The amount of asset to transfer.
+   string                                 request_id;     // uuidv4 of the request transaction.
+   string                                 memo;           // The memo is plain-text, encryption on the memo is advised. 
+   time_point                             expiration;     // time that the request expires. 
+};
+
+struct transfer_recurring_api_obj
+{
+   transfer_recurring_api_obj( const chain::transfer_recurring_object& o, const chain::database& db ):
+      id( o.id ),
+      from( o.from ),
+      to( o.to ),
+      amount( o.amount ),
+      transfer_id( to_string( o.transfer_id ) ),
+      memo( to_string( o.memo ) ),
+      begin( o.begin ),
+      end( o.end ),
+      interval( o.interval ),
+      next_transfer( o.next_transfer ),
+
+   transfer_recurring_api_obj(){}
+
+   transfer_recurring_id_type        id;
+   account_name_type                 from;              // Sending account to transfer asset from.
+   account_name_type                 to;                // Recieving account to transfer asset to.
+   asset                             amount;            // The amount of asset to transfer for each payment interval.
+   string                            transfer_id;       // uuidv4 of the request transaction.
+   string                            memo;              // The memo is plain-text, encryption on the memo is advised.
+   time_point                        begin;             // Starting time of the first payment.
+   time_point                        end;               // Ending time of the recurring payment. 
+   fc::microseconds                  interval;          // Microseconds between each transfer event.
+   time_point                        next_transfer;     // Time of the next transfer.   
+};
+
+struct transfer_recurring_request_api_obj
+{
+   transfer_recurring_api_obj( const chain::transfer_recurring_request_object& o, const chain::database& db ):
+      id( o.id ),
+      from( o.from ),
+      to( o.to ),
+      amount( o.amount ),
+      request_id( to_string( o.request_id ) ),
+      memo( to_string( o.memo ) ),
+      begin( o.begin ),
+      end( o.end ),
+      interval( o.interval ),
+      expiration( o.next_transfer ),
+
+   transfer_recurring_api_obj(){}
+
+   transfer_recurring_id_type        id;
+   account_name_type                 from;              // Sending account to transfer asset from.
+   account_name_type                 to;                // Recieving account to transfer asset to.
+   asset                             amount;            // The amount of asset to transfer for each payment interval.
+   string                            request_id;        // uuidv4 of the request transaction.
+   string                            memo;              // The memo is plain-text, encryption on the memo is advised.
+   time_point                        begin;             // Starting time of the first payment.
+   time_point                        end;               // Ending time of the recurring payment. 
+   fc::microseconds                  interval;          // Microseconds between each transfer event.
+   time_point                        expiration;        // time that the request expires.
 };
 
 

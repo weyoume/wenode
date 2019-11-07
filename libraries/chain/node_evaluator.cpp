@@ -1457,12 +1457,14 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
    time_point now = _db.head_block_time();
 
    const auto& req_idx = _db.get_index< connection_request_index >().indices().get< by_account_req >();
-   auto req_itr = req_idx.find( boost::make_tuple( account.id, req_account.id ) );
+   const auto& acc_idx = _db.get_index< connection_request_index >().indices().get< by_req_account >();
+   auto req_itr = req_idx.find( boost::make_tuple( account.name, req_account.name ) );
+   auto acc_itr = acc_idx.find( boost::make_tuple( account.name, req_account.name ) );
 
    const account_name_type& account_a_name;
    const account_name_type& account_b_name;
 
-   if(account.id < req_account.id)  // Connection objects are sorted with lowest ID is account A. 
+   if( account.id < req_account.id )  // Connection objects are sorted with lowest ID is account A. 
    {
       account_a_name = account.name;
       account_b_name = req_account.name;
@@ -1476,40 +1478,46 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
    const auto& connection_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
    auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name ) );
 
-   if( req_itr == req_idx.end() ) // New connection request 
+   if( req_itr == req_idx.end() && acc_itr == acc_idx.end() ) // New connection request 
    {
-      FC_ASSERT( o.requested, "Request doesn't exist, user must select to request connection with the account." );
-      if(con_itr == con_idx.end() )  // No existing connection object
+      FC_ASSERT( o.requested, 
+         "Request doesn't exist, user must select to request connection with the account." );
+      if( con_itr == con_idx.end() )  // No existing connection object.
       { 
-         FC_ASSERT( o.connection_type == CONNECTION, "First connection request must be of standard Connection type before elevation to higher levels." );
+         FC_ASSERT( o.connection_type == CONNECTION, 
+            "First connection request must be of standard Connection type before elevation to higher levels." );
 
          _db.create<connection_request_object>( [&]( connection_request_object& cro ) 
          {
-            cro.requested_account = req_account.id;
-            cro.account = account.id;
+            cro.requested_account = req_account.name;
+            cro.account = account.name;
             cro.connection_type = o.connection_type;
             from_string( cro.message, o.message );
             cro.expire = now + CONNECTION_REQUEST_DURATION;
          });
       }
-      else // Connection object found, requesting type change
+      else // Connection object found, requesting type change.
       {
          const connection_object& connection_obj = *con_itr;
-         FC_ASSERT( o.connection_type != connection_obj.connection_type, "Connection of this type already exists, should request a type increase." );
+         FC_ASSERT( o.connection_type != connection_obj.connection_type, 
+            "Connection of this type already exists, should request a type increase." );
          if( o.connection_type == FRIEND ) 
          {
-            FC_ASSERT( now > CONNECTION_REQUEST_DURATION + connection_obj.created, "Friend Connection must wait one week from first connection." );
+            FC_ASSERT( now > CONNECTION_REQUEST_DURATION + connection_obj.created, 
+               "Friend Connection must wait one week from first connection." );
          }
          else if( o.connection_type == COMPANION ) 
          {
-            FC_ASSERT( connection_obj.connection_type == FRIEND, "Companion connection must follow a friend connection." );
-            FC_ASSERT( now > CONNECTION_REQUEST_DURATION + connection_obj.created, "Companion Connection must wait one week from Friend connection." );
+            FC_ASSERT( connection_obj.connection_type == FRIEND, 
+               "Companion connection must follow a friend connection." );
+            FC_ASSERT( now > CONNECTION_REQUEST_DURATION + connection_obj.created, 
+               "Companion Connection must wait one week from Friend connection." );
          }
 
          _db.create<connection_request_object>( [&]( connection_request_object& cro ) 
          {
-            cro.requested_account = req_account.id;
-            cro.account = account.id;
+            cro.requested_account = req_account.name;
+            cro.account = account.name;
             cro.connection_type = o.connection_type;
             from_string( cro.message, o.message );
             cro.expire = now + CONNECTION_REQUEST_DURATION;
@@ -1583,7 +1591,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
    auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, o.connection_type ) );
 
    const auto& req_idx = _db.get_index< connection_request_index >().indices().get< by_account_req >();
-   auto req_itr = req_idx.find( boost::make_tuple( req_account.id, account.id ) );
+   auto req_itr = req_idx.find( boost::make_tuple( req_account, account ) );
 
    const account_following_object& a_following_set = _db.get_account_following( account_a_name );
    const account_following_object& b_following_set = _db.get_account_following( account_b_name );

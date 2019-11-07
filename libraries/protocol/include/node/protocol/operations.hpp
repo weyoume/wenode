@@ -6,7 +6,8 @@
 
 namespace node { namespace protocol {
 
-   /** NOTE: do not change the order of any operations prior to the virtual operations
+   /** 
+    * NOTE: do not change the order of any operations prior to the virtual operations
     * or it will trigger a hardfork.
     */
    typedef static_variant<

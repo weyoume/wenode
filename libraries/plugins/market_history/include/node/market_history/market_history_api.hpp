@@ -74,17 +74,7 @@ struct candle_stick
    asset           sell_volume;
 };
 
-struct full_market 
-{
-   market_ticker                           ticker;
-   order_book                              book;
-   vector<limit_order_api_obj>             limit_bids;
-   vector<limit_order_api_obj>             limit_asks;
-   vector<margin_order_api_obj>            margin_bids;
-   vector<margin_order_api_obj>            margin_asks;
-   vector<market_trade>                    order_history;
-   vector<candle_stick>                    price_graph;
-};
+
 
 class market_history_api
 {
@@ -144,7 +134,8 @@ class market_history_api
        * @param end The end time to get market history
        * @return A list of market history durations.
        */
-      std::vector< candle_stick > get_market_history( string buy_symbol, string sell_symbol, uint32_t seconds, time_point start, time_point end ) const;
+      std::vector< candle_stick > get_market_history( string buy_symbol, string sell_symbol, uint32_t seconds,
+         time_point start, time_point end ) const;
 
       /**
        * @brief Returns the duration seconds being tracked by the plugin.

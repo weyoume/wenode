@@ -1232,9 +1232,9 @@ namespace node { namespace chain {
 
          id_type                id;                 
 
-         account_id_type        account;            // Account that created the request
+         account_name_type      account;            // Account that created the request
 
-         account_id_type        requested_account;  
+         account_name_type      requested_account;  
 
          connection_types       connection_type;
 
@@ -1641,6 +1641,7 @@ namespace node { namespace chain {
    > account_officer_vote_index;
 
    struct by_account_business;
+   struct by_business_account;
    struct by_member_business;
    struct by_expiration;
 
@@ -1657,15 +1658,21 @@ namespace node { namespace chain {
             composite_key< account_member_request_object,
                member< account_member_request_object, account_name_type, &account_member_request_object::account >,
                member< account_member_request_object, account_name_type, &account_member_request_object::business_account >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_business_account >,
+            composite_key< account_member_request_object,
+               member< account_member_request_object, account_name_type, &account_member_request_object::business_account >,
+               member< account_member_request_object, account_name_type, &account_member_request_object::account >
             >
          >
       >,
       allocator< account_member_request_object >
    > account_member_request_index;
+
+   struct by_member;
+   struct by_business;
+   struct by_account;
 
 
    typedef multi_index_container <
@@ -1681,27 +1688,37 @@ namespace node { namespace chain {
             composite_key< account_member_invite_object,
                member< account_member_invite_object, account_name_type, &account_member_invite_object::account >,
                member< account_member_invite_object, account_name_type, &account_member_invite_object::business_account >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_name_type >
             >
          >,
          ordered_unique< tag< by_member_business >,
             composite_key< account_member_invite_object,
                member< account_member_invite_object, account_name_type, &account_member_invite_object::member >,
                member< account_member_invite_object, account_name_type, &account_member_invite_object::business_account >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_account >,
+            composite_key< account_member_invite_object,
+               member< account_member_invite_object, account_name_type, &account_member_invite_object::account >,
+               member< account_member_invite_object, account_member_invite_id_type, &account_member_invite_object::id >
+            >
+         >,
+         ordered_unique< tag< by_member >,
+            composite_key< account_member_invite_object,
+               member< account_member_invite_object, account_name_type, &account_member_invite_object::member >,
+               member< account_member_invite_object, account_member_invite_id_type, &account_member_invite_object::id >
+            >
+         >,
+         ordered_unique< tag< by_business >,
+            composite_key< account_member_invite_object,
+               member< account_member_invite_object, account_name_type, &account_member_invite_object::business_account >,
+               member< account_member_invite_object, account_member_invite_id_type, &account_member_invite_object::id >
             >
          >
       >,
       allocator< account_member_invite_object >
    > account_member_invite_index;
 
-
+   struct by_business_member;
 
    typedef multi_index_container <
       account_member_key_object,
@@ -1985,6 +2002,7 @@ namespace node { namespace chain {
    > change_recovery_account_request_index;
 
    struct by_account_req;
+   struct by_req_account;
 
    typedef multi_index_container<
       connection_request_object,
@@ -1992,10 +2010,15 @@ namespace node { namespace chain {
          ordered_unique< tag<by_id>, member< connection_request_object, connection_request_id_type, &connection_request_object::id > >,
          ordered_unique< tag<by_account_req>,
             composite_key< connection_request_object,
-               member<connection_request_object, account_id_type, &connection_request_object::account >,
-               member<connection_request_object, account_id_type, &connection_request_object::requested_account >
-            >,
-            composite_key_compare< std::less< account_id_type >, std::less< account_id_type > >
+               member<connection_request_object, account_name_type, &connection_request_object::account >,
+               member<connection_request_object, account_name_type, &connection_request_object::requested_account >
+            >
+         >,
+         ordered_unique< tag<by_req_account>,
+            composite_key< connection_request_object,
+               member<connection_request_object, account_name_type, &connection_request_object::requested_account >,
+               member<connection_request_object, account_name_type, &connection_request_object::account >
+            >
          >,
          ordered_unique< tag< by_expiration >,
             composite_key< connection_request_object,

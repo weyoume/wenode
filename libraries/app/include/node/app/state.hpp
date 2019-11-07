@@ -79,12 +79,108 @@ namespace node { namespace app {
 
    struct order_state
    {
-      vector< limit_order_api_obj> limit_orders;
-      vector< margin_order_api_obj> margin_orders;
-      vector< call_order_api_obj> call_orders;
-      vector< credit_loan_api_obj> loan_orders;
-      vector< credit_collateral_api_obj> collateral;
+      vector< limit_order_api_obj>          limit_orders;
+      vector< margin_order_api_obj>         margin_orders;
+      vector< call_order_api_obj>           call_orders;
+      vector< credit_loan_api_obj>          loan_orders;
+      vector< credit_collateral_api_obj>    collateral;
    };
+
+   struct operation_state
+   {
+      map< uint64_t, applied_operation >    account_history;
+      map< uint64_t, applied_operation >    connection_history;
+      map< uint64_t, applied_operation >    follow_history;
+      map< uint64_t, applied_operation >    activity_history;
+      map< uint64_t, applied_operation >    post_history;
+      map< uint64_t, applied_operation >    message_history;
+      map< uint64_t, applied_operation >    vote_history;
+      map< uint64_t, applied_operation >    view_history;
+      map< uint64_t, applied_operation >    share_history;
+      map< uint64_t, applied_operation >    moderation_history;
+      map< uint64_t, applied_operation >    board_history;
+      map< uint64_t, applied_operation >    ad_history;
+      map< uint64_t, applied_operation >    transfer_history;
+      map< uint64_t, applied_operation >    balance_history;
+      map< uint64_t, applied_operation >    escrow_history;
+      map< uint64_t, applied_operation >    trading_history;
+      map< uint64_t, applied_operation >    liquidity_history;
+      map< uint64_t, applied_operation >    credit_history;
+      map< uint64_t, applied_operation >    asset_history;
+      map< uint64_t, applied_operation >    network_history;
+      map< uint64_t, applied_operation >    other_history;
+   };
+
+   struct transfer_state
+   {
+      map< account_name_type, transfer_request_api_obj >                   incoming_requests;
+      map< account_name_type, transfer_request_api_obj >                   outgoing_requests;
+      map< account_name_type, transfer_recurring_api_obj >                 incoming_recurring_transfers;
+      map< account_name_type, transfer_recurring_api_obj >                 outgoing_recurring_transfers;
+      map< account_name_type, transfer_recurring_request_api_obj >         incoming_recurring_transfer_requests;
+      map< account_name_type, transfer_recurring_request_api_obj >         outgoing_recurring_transfer_requests;
+   };
+
+   struct board_state
+   {
+      map< board_name_type, board_request_api_obj >                        pending_requests;
+      map< board_name_type, board_invite_api_obj >                         incoming_invites;
+      map< board_name_type, board_invite_api_obj >                         outgoing_invites;
+      map< board_name_type, int64_t >                                      incoming_moderator_votes;
+      map< board_name_type, map<account_name_type, uint16_t > >            outgoing_moderator_votes;
+      vector< board_name_type>                                             founded_boards;
+      vector< board_name_type>                                             admin_boards;
+      vector< board_name_type>                                             moderator_boards;
+      vector< board_name_type>                                             member_boards;
+   };
+
+   struct connection_state
+   {
+      map< account_name_type, connection_api_obj >                         connections;
+      map< account_name_type, connection_api_obj >                         friends;
+      map< account_name_type, connection_api_obj >                         companions;
+      map< account_name_type, connection_request_api_obj >                 incoming_requests;
+      map< account_name_type, connection_request_api_obj >                 outgoing_requests;
+   };
+
+   struct business_account_state
+   {
+      account_business_api_obj                                             business;
+      vector< account_name_type >                                          member_businesses;
+      vector< account_name_type >                                          officer_businesses;
+      vector< account_name_type >                                          executive_businesses;
+      map< account_name_type, account_request_api_obj >                    incoming_requests;
+      map< account_name_type, account_invite_api_obj >                     incoming_invites;
+      map< account_name_type, account_request_api_obj >                    outgoing_requests;
+      map< account_name_type, account_invite_api_obj >                     outgoing_invites;
+   };
+
+   struct network_state     // TODO: Network API objects
+   {
+      witness_api_obj                                                      witness;
+      network_officer_api_obj                                              network_officer;
+      executive_board_api_obj                                              executive_board;
+      interface_api_obj                                                    interface;
+      supernode_api_obj                                                    supernode;
+      governace_account_api_obj                                            governance_account;
+      vector<enterprise_api_obj>                                           enterprise_proposals;
+
+      map< account_name_type, uint16_t >                                   witness_votes;
+      map< string, map< account_name_type, uint16_t > >                    network_officer_votes;
+      map< account_name_type, uint16_t >                                   executive_board_votes;
+      map< account_name_type, map< string, pair< account_name_type, uint16_t > > >   account_executive_votes;
+      map< account_name_type, map< account_name_type, uint16_t > >         account_officer_votes;
+      map< account_name_type, map< string, uint16_t > >                    enterprise_approvals;
+   };
+
+   struct ad_state          // TODO: Ad API objects
+   {
+      vector< ad_creative_api_obj >                                       creatives; 
+      vector< ad_campaign_api_obj >                                       campaigns;
+      vector< ad_inventory_api_obj >                                      inventory;
+      vector< ad_audience_api_obj >                                       audiences;
+      vector< ad_bid_api_obj >                                            bids;
+   }
 
    struct discussion : public comment_api_obj 
    {
@@ -106,40 +202,20 @@ namespace node { namespace app {
       extended_account(){}
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
 
-      map<uint64_t,applied_operation>         transfer_history;        // transfer to/from
-      map<uint64_t,applied_operation>         market_history;          // limit order / cancel / fill
-      map<uint64_t,applied_operation>         post_history;
-      map<uint64_t,applied_operation>         vote_history;
-      map<uint64_t,applied_operation>         other_history;
-
-      map<string, account_balance_api_obj >   balances;
-      account_following_api_obj               following; 
-      account_business_api_obj                business; 
-      key_state                               keychain;
-      message_state                           messages;
-
-      map<account_name_type, connection_api_obj>      connections;
-      map<account_name_type, connection_api_obj>      friends;
-      map<account_name_type, connection_api_obj>      companions;
-
-      map<account_name_type, uint16_t>                                    witness_votes;
-      map<string, map< account_name_type, uint16_t > >                    network_officer_votes;
-      map<account_name_type, uint16_t >                                   executive_board_votes;
-
-      map<account_name_type, map< string, pair< account_name_type, uint16_t > > >   account_executive_votes;
-      map<account_name_type, map< account_name_type, uint16_t > >        account_officer_votes;
-      map<board_name_type, map<account_name_type, uint16_t > >           board_moderator_votes;
-      map<account_name_type, map< string, uint16_t > >                   enterprise_approvals;
-
-      vector<pair<string,uint32_t>>            tags_usage;
-      vector<pair<account_name_type,uint32_t>> guest_bloggers;
-
-      optional<map<uint32_t,extended_limit_order>> open_orders;
-      optional<vector<string>>                comments; /// permlinks for this user
-      optional<vector<string>>                blog; /// blog posts for this user
-      optional<vector<string>>                feed; /// feed posts for this user
-      optional<vector<string>>                recent_replies; /// blog posts for this user
-      optional<vector<string>>                recommended; /// posts recommened for this user
+      account_following_api_obj                                            following;
+      connection_state                                                     connections;
+      map< string, account_balance_api_obj >                               balances;
+      business_account_state                                               business;
+      key_state                                                            keychain;
+      message_state                                                        messages;
+      transfer_state                                                       transfers;
+      board_state                                                          boards;
+      network_state                                                        network;
+      ad_state                                                             active_ads; 
+      vector<pair<string,uint32_t>>                                        active_tags;
+      vector<pair<account_name_type,uint32_t>>                             top_shared;
+      account_permissions_api_obj                                          permissions;  // TODO: permissions API object
+      operation_state                                                      operations;
    };
 
 
@@ -148,13 +224,15 @@ namespace node { namespace app {
       extended_board(){}
       extended_board( const board_object& b, const database& db ):board_api_obj( b, db ){}
 
-      vector<account_name_type>             subscribers;                 // List of accounts that subscribe to the posts made in the board.
-      vector<account_name_type>             members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
-      vector<account_name_type>             moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
-      vector<account_name_type>             administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
-      vector<account_name_type>             blacklist;                   // Accounts that are not able to post in this board, or request to join.
-      map<account_name_type,int64_t>        mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
-      int64_t                               total_mod_weight = 0;        // Total of all moderator weights. 
+      vector<account_name_type>                       subscribers;                 // List of accounts that subscribe to the posts made in the board.
+      vector<account_name_type>                       members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
+      vector<account_name_type>                       moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
+      vector<account_name_type>                       administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
+      vector<account_name_type>                       blacklist;                   // Accounts that are not able to post in this board, or request to join.
+      map<account_name_type,int64_t>                  mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
+      int64_t                                         total_mod_weight = 0;        // Total of all moderator weights. 
+      map<account_name_type, board_request_api_obj>   requests;
+      map<account_name_type, board_invite_api_obj>    invites;
    };
 
 
@@ -190,12 +268,6 @@ namespace node { namespace app {
       map< account_name_type, vector< message_api_obj > >      conversations;
    };
 
-   struct balance_state
-   {
-      map<string, account_balance_api_obj >                    balances;
-   }
-
-
    struct key_state
    {
       map< account_name_type, encrypted_keypair_type >       connection_keys;
@@ -205,17 +277,35 @@ namespace node { namespace app {
       map< account_name_type, encrypted_keypair_type >       business_keys;
    };
 
-   struct market 
+   struct market_limit_orders
    {
-      vector<extended_limit_order> bids;
-      vector<extended_limit_order> asks;
-      vector<order_history_item>   history;
-      vector<int>                  available_candlesticks;
-      vector<int>                  available_zoom;
-      int                          current_candlestick = 0;
-      int                          current_zoom = 0;
-      vector<candle_stick>         price_history;
+      vector<limit_order_api_obj>             limit_bids;
+      vector<limit_order_api_obj>             limit_asks;
    };
+
+   struct market_margin_orders
+   {
+      vector<margin_order_api_obj>            margin_bids;
+      vector<margin_order_api_obj>            margin_asks;
+   };
+
+   struct market_call_orders
+   {
+      vector<call_order_api_obj>              calls;
+      price                                   settlement_price;
+   }
+
+   struct market_credit_loans
+   {
+      credit_loan_api_obj                     loan_bids;
+      credit_loan_api_obj                     loan_asks;
+   }
+
+   struct market_credit_pools
+   {
+      credit_pool_api_obj                     buy_pool;
+      credit_pool_api_obj                     sell_pool;
+   }
 
    /**
     *  This struct is designed

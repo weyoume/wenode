@@ -334,7 +334,23 @@ class database_api
       // Market //
       ////////////
 
+
+      /**
+       * Retrieves all of the open limit, margin, loan, and call orders from a list of accounts.
+       */
       vector< order_state > get_open_orders( vector< string > names )const;
+
+      market_limit_orders get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+
+      market_margin_orders get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+
+      market_call_orders get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+
+      market_credit_loans get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+
+      vector<credit_pool_api_obj> get_credit_pools( vector<string> assets ) const;
+
+      vector<liquidity_pool_api_obj> get_liquidity_pools( string buy_symbol, string sell_symbol ) const;
 
 
       ////////////////////////////

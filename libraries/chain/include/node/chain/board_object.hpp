@@ -569,6 +569,7 @@ namespace node { namespace chain {
    > board_moderator_vote_index;
 
    struct by_account_board;
+   struct by_board_account;
    struct by_expiration;
 
    typedef multi_index_container<
@@ -580,8 +581,14 @@ namespace node { namespace chain {
             member< board_join_request_object, time_point, &board_join_request_object::expiration > >,
          ordered_unique< tag< by_account_board >,
             composite_key< board_join_request_object,
-               member< board_join_request_object, account_name_type, &board_join_request_object::account >, 
-               member< board_join_request_object, board_name_type, &board_join_request_object::board > 
+               member< board_join_request_object, account_name_type, &board_join_request_object::account >,
+               member< board_join_request_object, board_name_type, &board_join_request_object::board >
+            >
+         >,
+         ordered_unique< tag< by_board_account >,
+            composite_key< board_join_request_object,
+               member< board_join_request_object, board_name_type, &board_join_request_object::board >,
+               member< board_join_request_object, account_name_type, &board_join_request_object::account >
             >
          > 
       >,
@@ -589,6 +596,9 @@ namespace node { namespace chain {
    > board_join_request_index;
 
    struct by_member_board;
+   struct by_board;
+   struct by_account;
+   struct by_member;
 
    typedef multi_index_container<
       board_join_invite_object,
@@ -602,7 +612,25 @@ namespace node { namespace chain {
                member< board_join_invite_object, account_name_type, &board_join_invite_object::member >, 
                member< board_join_invite_object, board_name_type, &board_join_invite_object::board > 
             >
-         > 
+         >,
+         ordered_unique< tag< by_board >,
+            composite_key< board_join_invite_object,
+               member< board_join_invite_object, board_name_type, &board_join_invite_object::board >,
+               member< board_join_invite_object, board_join_invite_id_type, &board_join_invite_object::id >
+            >
+         >,
+         ordered_unique< tag< by_account >,
+            composite_key< board_join_invite_object,
+               member< board_join_invite_object, account_name_type, &board_join_invite_object::account >,
+               member< board_join_invite_object, board_join_invite_id_type, &board_join_invite_object::id >
+            >
+         >,
+         ordered_unique< tag< by_member >,
+            composite_key< board_join_invite_object,
+               member< board_join_invite_object, account_name_type, &board_join_invite_object::member >,
+               member< board_join_invite_object, board_join_invite_id_type, &board_join_invite_object::id >
+            >
+         >
       >,
       allocator< board_join_invite_object >
    > board_join_invite_index;
