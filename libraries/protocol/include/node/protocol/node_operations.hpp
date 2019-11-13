@@ -3074,9 +3074,10 @@ namespace node { namespace protocol {
 
 
    /**
-    * Witnesses must vote on how to set certain chain properties to ensure a smooth
-    * and well functioning network. Any time @owner is in the active set of witnesses these
-    * properties will be used to control the blockchain configuration.
+    * Witnesses and miners vote on how to set certain chain properties to ensure a smooth
+    * and well functioning network, and can be responsive to changing network conditions.
+    * The active set of witnesses will be used to control the blockchain configuration by
+    * selecting the median value of all properties listed. 
     */
    struct chain_properties
    {

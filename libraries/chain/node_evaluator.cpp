@@ -5341,7 +5341,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    FC_ASSERT( campaign.active, 
    "Campaign must be set to active to create a bid.");
    FC_ASSERT( now > campaign.begin, 
-      "Campaign has not begun yet, please wait until the beginning time to create bids.");
+      "Campaign has not begun yet, please wait until the beginning time to create bids." );
    FC_ASSERT( now < campaign.end, 
       "Campaign has expired.");
    
@@ -5356,11 +5356,14 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 
    asset_symbol_type budget_asset = campaign.budget.symbol;
    asset_symbol_type inventory_asset = inventory.min_price.symbol;
-   FC_ASSERT( budget_asset == inventory_asset, "Campaign's budget asset must match the inventory minimum price asset." );
+
+   FC_ASSERT( budget_asset == inventory_asset, 
+      "Campaign's budget asset must match the inventory minimum price asset." );
 
    asset new_total_bids = campaign.total_bids + o.bid_price * o.requested;
    FC_ASSERT( campaign.budget * AD_RESERVE_RATIO >=  new_total_bids, 
-      "Total Bids must not exceed ${r} times the budget of the campaign, increase the budget balance of the campaign.", ("r", AD_RESERVE_RATIO) );
+      "Total Bids must not exceed ${r} times the budget of the campaign, increase the budget balance of the campaign.", 
+      ("r", AD_RESERVE_RATIO) );
 
    FC_ASSERT( campaign.is_agent( bidder.name ), 
       "Bidder must be a designated agent of the campaign to create a bid on its behalf.");
@@ -5428,7 +5431,9 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 
    if( bid_itr == bid_idx.end() )    // Ad bid does not exist, creating new bid.
    {
-      FC_ASSERT( o.active, "Bid does not exist, set active to true." );
+      FC_ASSERT( o.active, 
+         "Bid does not exist, set active to true." );
+
       _db.create< ad_bid_object >( [&]( ad_bid_object& abo )
       {
          abo.bidder = bidder.name;
@@ -5439,6 +5444,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
          abo.provider = provider.name;
          from_string( abo.inventory_id, o.inventory_id );
          from_string( abo.audience_id, audience_id );
+         abo.metric = inventory.metric;
          abo.bid_price = o.bid_price;
          abo.requested = o.requested;
          abo.remaining = o.requested;
@@ -5459,12 +5465,14 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       uint32_t prev_remaining = bid.remaining;
       asset prev_price = bid.bid_price;
 
-      if(o.active)    // Bid exists and is being edited.
+      if( o.active )    // Bid exists and is being edited.
       {
          uint32_t delta_req = o.requested - prev_requested;
          asset delta_price = o.bid_price - prev_price;
          uint32_t new_remaining = prev_remaining + delta_req;
-         FC_ASSERT( new_remaining >= 0, "New inventory requested remaining must be equal to or greater than zero.");
+
+         FC_ASSERT( new_remaining >= 0, 
+            "New inventory requested remaining must be equal to or greater than zero.");
          
          asset delta_total_bids = prev_remaining * delta_price + delta_req * o.bid_price;
 

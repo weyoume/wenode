@@ -155,15 +155,15 @@ namespace node { namespace app {
       map< account_name_type, account_invite_api_obj >                     outgoing_invites;
    };
 
-   struct network_state     // TODO: Network API objects
+   struct network_state
    {
       witness_api_obj                                                      witness;
       network_officer_api_obj                                              network_officer;
       executive_board_api_obj                                              executive_board;
       interface_api_obj                                                    interface;
       supernode_api_obj                                                    supernode;
-      governace_account_api_obj                                            governance_account;
-      vector<enterprise_api_obj>                                           enterprise_proposals;
+      governance_account_api_obj                                           governance_account;
+      vector<community_enterprise_api_obj>                                 enterprise_proposals;
 
       map< account_name_type, uint16_t >                                   witness_votes;
       map< string, map< account_name_type, uint16_t > >                    network_officer_votes;
@@ -173,27 +173,18 @@ namespace node { namespace app {
       map< account_name_type, map< string, uint16_t > >                    enterprise_approvals;
    };
 
-   struct ad_state          // TODO: Ad API objects
-   {
-      vector< ad_creative_api_obj >                                       creatives; 
-      vector< ad_campaign_api_obj >                                       campaigns;
-      vector< ad_inventory_api_obj >                                      inventory;
-      vector< ad_audience_api_obj >                                       audiences;
-      vector< ad_bid_api_obj >                                            bids;
-   }
-
    struct discussion : public comment_api_obj 
    {
       discussion( const comment_object& o ):comment_api_obj(o){}
       discussion(){}
 
-      string                      url;                            // /category/@rootauthor/root_permlink#author/permlink
+      string                      url;                      // /category/@rootauthor/root_permlink#author/permlink
       string                      root_title;
       vector<vote_state>          active_votes;
       vector<view_state>          active_views;
       vector<share_state>         active_shares;
       vector<moderation_state>    active_mod_tags;
-      vector<string>              replies;                        // author/slug mapping
+      vector<string>              replies;                    // author/slug mapping
       uint32_t                    body_length = 0;
    };
 
@@ -224,15 +215,15 @@ namespace node { namespace app {
       extended_board(){}
       extended_board( const board_object& b, const database& db ):board_api_obj( b, db ){}
 
-      vector<account_name_type>                       subscribers;                 // List of accounts that subscribe to the posts made in the board.
-      vector<account_name_type>                       members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
-      vector<account_name_type>                       moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
-      vector<account_name_type>                       administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
-      vector<account_name_type>                       blacklist;                   // Accounts that are not able to post in this board, or request to join.
-      map<account_name_type,int64_t>                  mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
-      int64_t                                         total_mod_weight = 0;        // Total of all moderator weights. 
-      map<account_name_type, board_request_api_obj>   requests;
-      map<account_name_type, board_invite_api_obj>    invites;
+      vector< account_name_type >                       subscribers;                 // List of accounts that subscribe to the posts made in the board.
+      vector< account_name_type >                       members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
+      vector< account_name_type >                       moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
+      vector< account_name_type >                       administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
+      vector< account_name_type >                       blacklist;                   // Accounts that are not able to post in this board, or request to join.
+      map< account_name_type,int64_t >                  mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
+      int64_t                                           total_mod_weight = 0;        // Total of all moderator weights. 
+      map< account_name_type, board_request_api_obj >   requests;
+      map <account_name_type, board_invite_api_obj >    invites;
    };
 
 
@@ -293,19 +284,42 @@ namespace node { namespace app {
    {
       vector<call_order_api_obj>              calls;
       price                                   settlement_price;
-   }
+   };
 
    struct market_credit_loans
    {
       credit_loan_api_obj                     loan_bids;
       credit_loan_api_obj                     loan_asks;
-   }
+   };
 
    struct market_credit_pools
    {
       credit_pool_api_obj                     buy_pool;
       credit_pool_api_obj                     sell_pool;
-   }
+   };
+
+   struct account_ad_state
+   {
+      vector< ad_creative_api_obj >           creatives;
+      vector< ad_campaign_api_obj >           campaigns;
+      vector< ad_audience_api_obj >           audiences;
+      vector< ad_inventory_api_obj >          inventories;
+      vector< ad_bid_api_obj >                created_bids;
+      vector< ad_bid_api_obj >                account_bids;
+      vector< ad_bid_api_obj >                creative_bids;
+      vector< ad_bid_state >                  incoming_bids;
+   };
+
+   struct ad_bid_state : public ad_bid_api_obj
+   {
+      ad_bid_state(){}
+      ad_bid_state( const ad_bid_object& a, const database& db ):ad_bid_api_obj( a, db ){}
+
+      ad_creative_api_obj                     creative;
+      ad_campaign_api_obj                     campaign;
+      ad_inventory_api_obj                    inventory;
+      ad_audience_api_obj                     audience;
+   };
 
    /**
     *  This struct is designed

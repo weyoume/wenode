@@ -43,10 +43,15 @@ typedef protocol::fixed_string_32 tag_name_type;
 // to define as they see fit.
 enum
 {
-   tag_object_type              = ( TAG_SPACE_ID << 8 ),
-   tag_stats_object_type        = ( TAG_SPACE_ID << 8 ) + 1,
-   peer_stats_object_type       = ( TAG_SPACE_ID << 8 ) + 2,
-   author_tag_stats_object_type = ( TAG_SPACE_ID << 8 ) + 3
+   tag_object_type                            = ( TAG_SPACE_ID << 8 ),
+   tag_stats_object_type                      = ( TAG_SPACE_ID << 8 ) + 1,
+   account_curation_metrics_object_type       = ( TAG_SPACE_ID << 8 ) + 2,
+   account_adjacency_object_type              = ( TAG_SPACE_ID << 8 ) + 3,
+   board_adjacency_object_type                = ( TAG_SPACE_ID << 8 ) + 4,
+   tag_adjacency_object_type                  = ( TAG_SPACE_ID << 8 ) + 5,
+   account_recommendations_object_type        = ( TAG_SPACE_ID << 8 ) + 6,
+   peer_stats_object_type                     = ( TAG_SPACE_ID << 8 ) + 7,
+   author_tag_stats_object_type               = ( TAG_SPACE_ID << 8 ) + 8
 };
 
 namespace detail { 
@@ -138,53 +143,53 @@ class tag_object : public object< tag_object_type, tag_object >
 
       tag_object() {}
 
-      id_type           id;
+      id_type                    id;
 
-      board_name_type   board;                        // the name of the board that the post was uploaded to. 
+      board_name_type            board;                        // the name of the board that the post was uploaded to. 
 
-      tag_name_type     tag;                          // Name of the tag that is used for this tag object.
+      tag_name_type              tag;                          // Name of the tag that is used for this tag object.
 
-      sort_options      sort;                         // Sorting values for tracking post rankings across combinations of votes, views, shares and comments, in releation to time.
+      detail::sort_options       sort;                         // Sorting values for tracking post rankings across combinations of votes, views, shares and comments, in releation to time.
 
-      account_id_type   author;
+      account_id_type            author;
 
-      comment_id_type   parent;
+      comment_id_type            parent;
 
-      comment_id_type   comment;
+      comment_id_type            comment;
 
-      time_point        created;                      // Time the post was created. 
+      time_point                 created;                      // Time the post was created. 
 
-      time_point        active;                       // Time that a new comment on the post was last created.
+      time_point                 active;                       // Time that a new comment on the post was last created.
 
-      time_point        cashout;                      // Time of the next content reward cashout due for the post. 
+      time_point                 cashout;                      // Time of the next content reward cashout due for the post. 
 
-      bool              privacy;                      // Privacy type of the post.
+      bool                       privacy;                      // Privacy type of the post.
 
-      rating_types      rating;                       // Content severity rating from the author. 
+      rating_types               rating;                       // Content severity rating from the author. 
 
-      string            language;                     // Two letter language string for the language of the content.
+      string                     language;                     // Two letter language string for the language of the content.
 
-      share_type        author_reputation;            // Reputation of the author, from 0 to BLOCKCHAIN_PRECISION.
+      share_type                 author_reputation;            // Reputation of the author, from 0 to BLOCKCHAIN_PRECISION.
 
-      uint32_t          children = 0;                 // The total number of children, grandchildren, posts with this as root comment.
+      uint32_t                   children = 0;                 // The total number of children, grandchildren, posts with this as root comment.
 
-      int32_t           net_votes = 0;                // The amount of upvotes, minus downvotes on the post.
+      int32_t                    net_votes = 0;                // The amount of upvotes, minus downvotes on the post.
 
-      int32_t           view_count = 0;               // The amount of views on the post.
+      int32_t                    view_count = 0;               // The amount of views on the post.
 
-      int32_t           share_count = 0;              // The amount of shares on the post.
+      int32_t                    share_count = 0;              // The amount of shares on the post.
 
-      int128_t          net_reward = 0;               // Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
+      int128_t                   net_reward = 0;               // Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
 
-      int128_t          vote_power = 0;               // Sum of weighted voting power from votes.
+      int128_t                   vote_power = 0;               // Sum of weighted voting power from votes.
 
-      int128_t          view_power = 0;               // Sum of weighted voting power from viewers.
+      int128_t                   view_power = 0;               // Sum of weighted voting power from viewers.
 
-      int128_t          share_power = 0;              // Sum of weighted voting power from shares.
+      int128_t                   share_power = 0;              // Sum of weighted voting power from shares.
 
-      int128_t          comment_power = 0;            // Sum of weighted voting power from comments.
+      int128_t                   comment_power = 0;            // Sum of weighted voting power from comments.
 
-      bool is_post()const { return parent == comment_id_type(); }
+      bool                       is_post()const { return parent == comment_id_type(); }
 };
 
 typedef oid< tag_object > tag_id_type;
@@ -210,6 +215,10 @@ struct by_parent_comment_power;
 
 struct by_author_parent_created;
 struct by_author_comment;
+struct by_author_net_votes;
+struct by_author_view_count;
+struct by_author_share_count;
+struct by_author_children;
 struct by_reward_fund_net_reward;
 
 
@@ -398,6 +407,46 @@ typedef multi_index_container<
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<account_id_type>, std::greater< time_point >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_author_net_votes >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, account_id_type, &tag_object::author >,
+               member< tag_object, int32_t, &tag_object::net_votes >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<account_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_author_view_count >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, account_id_type, &tag_object::author >,
+               member< tag_object, int32_t, &tag_object::view_count >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<account_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_author_share_count >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, account_id_type, &tag_object::author >,
+               member< tag_object, int32_t, &tag_object::share_count >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<account_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_author_children >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, account_id_type, &tag_object::author >,
+               member< tag_object, int32_t, &tag_object::children >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<account_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_reward_fund_net_reward >,
             composite_key< tag_object,
@@ -1062,6 +1111,307 @@ typedef multi_index_container<
 
 
 /**
+ * Measures an account's accumulated votes, views and shares according to specified authors, boards, and tags.
+ * Used for generating and sorting post recommendations.
+ */
+class account_curation_metrics_object : public object< account_curation_metrics_object_type, account_curation_metrics_object >
+{
+   public:
+      template< typename Constructor, typename Allocator >
+      account_curation_metrics_object( Constructor&& c, allocator< Allocator > a )
+      {
+         c( *this );
+      }
+
+      account_curation_metrics_object() {}
+
+      id_type                                      id;
+
+      account_name_type                            account;
+
+      flat_map< account_name_type, uint32_t >      author_votes;
+
+      flat_map< board_name_type, uint32_t >        board_votes;
+
+      flat_map< tag_name_type, uint32_t >          tag_votes;
+
+      flat_map< account_name_type, uint32_t >      author_views;
+
+      flat_map< board_name_type, uint32_t >        board_views;
+
+      flat_map< tag_name_type, uint32_t >          tag_views;
+
+      flat_map< account_name_type, uint32_t >      author_shares;
+
+      flat_map< board_name_type, uint32_t >        board_shares;
+
+      flat_map< tag_name_type, uint32_t >          tag_shares;
+};
+
+typedef oid< account_curation_metrics_object > account_curation_metrics_id_type;
+
+struct by_account;
+
+typedef multi_index_container<
+   account_curation_metrics_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< account_curation_metrics_object, account_curation_metrics_id_type, &account_curation_metrics_object::id > >,
+      ordered_unique< tag< by_account >, member< account_curation_metrics_object, account_name_type, &account_curation_metrics_object::account > >,
+   >,
+   allocator< account_curation_metrics_object >
+> account_curation_metrics_index;
+
+
+/**
+ * Measures an account's common followers, followed account, 
+ * board, and tags and connections with all other accounts.
+ */
+class account_adjacency_object : public object< account_adjacency_object_type, account_adjacency_object >
+{
+   public:
+      template< typename Constructor, typename Allocator >
+      account_adjacency_object( Constructor&& c, allocator< Allocator > a )
+      {
+         c( *this );
+      }
+
+      account_adjacency_object() {}
+
+      id_type                                      id;
+
+      account_name_type                            account_a;
+
+      account_name_type                            account_b;
+
+      share_type                                   adjacency;
+
+      time_point                                   last_updated;
+};
+
+typedef oid< account_adjacency_object > account_adjacency_id_type;
+
+struct by_account_a_adjacent;
+struct by_account_b_adjacent;
+struct by_account_pair;
+
+typedef multi_index_container<
+   account_adjacency_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< account_adjacency_object, account_adjacency_id_type, &account_adjacency_object::id > >,
+      ordered_unique< tag< by_account_pair >,
+         composite_key< account_adjacency_object,
+            member< account_adjacency_object, account_name_type, &account_adjacency_object::account_a >,
+            member< account_adjacency_object, account_name_type, &account_adjacency_object::account_b >
+         >
+      >,
+      ordered_unique< tag< by_account_a_adjacent >,
+         composite_key< account_adjacency_object,
+            member< account_adjacency_object, account_name_type, &account_adjacency_object::account_a >,
+            member< account_adjacency_object, share_type, &account_adjacency_object::adjacency >,
+            member< account_adjacency_object, account_adjacency_id_type, &account_adjacency_object::id >
+         >,
+         composite_key_compare< 
+            std::less< account_name_type >, 
+            std::greater< share_type >, 
+            std::less< account_adjacency_id_type > 
+         >
+      >,
+      ordered_unique< tag< by_account_b_adjacent >,
+         composite_key< account_adjacency_object,
+            member< account_adjacency_object, account_name_type, &account_adjacency_object::account_b >,
+            member< account_adjacency_object, share_type, &account_adjacency_object::adjacency >,
+            member< account_adjacency_object, account_adjacency_id_type, &account_adjacency_object::id >
+         >,
+         composite_key_compare< 
+            std::less< account_name_type >, 
+            std::greater< share_type >, 
+            std::less< account_adjacency_id_type > 
+         >
+      >
+   >,
+   allocator< account_adjacency_object >
+> account_adjacency_index;
+
+
+/**
+ * Measures a board's common subscribers and members with all other boards.
+ */
+class board_adjacency_object : public object< board_adjacency_object_type, board_adjacency_object >
+{
+   public:
+      template< typename Constructor, typename Allocator >
+      board_adjacency_object( Constructor&& c, allocator< Allocator > a )
+      {
+         c( *this );
+      }
+
+      board_adjacency_object() {}
+
+      id_type                                      id;
+
+      board_name_type                              board_a;
+
+      board_name_type                              board_b;
+
+      share_type                                   adjacency;
+
+      time_point                                   last_updated;
+};
+
+typedef oid< board_adjacency_object > board_adjacency_id_type;
+
+struct by_board_a_adjacent;
+struct by_board_b_adjacent;
+struct by_board_pair;
+
+typedef multi_index_container<
+   board_adjacency_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< board_adjacency_object, board_adjacency_id_type, &board_adjacency_object::id > >,
+      ordered_unique< tag< by_board_pair >,
+         composite_key< board_adjacency_object,
+            member< board_adjacency_object, board_name_type, &board_adjacency_object::board_a >,
+            member< board_adjacency_object, board_name_type, &board_adjacency_object::board_b >
+         >
+      >,
+      ordered_unique< tag< by_board_a_adjacent >,
+         composite_key< board_adjacency_object,
+            member< board_adjacency_object, board_name_type, &board_adjacency_object::board_a >,
+            member< board_adjacency_object, share_type, &board_adjacency_object::adjacency >,
+            member< board_adjacency_object, board_adjacency_id_type, &board_adjacency_object::id >
+         >,
+         composite_key_compare< 
+            std::less< board_name_type >, 
+            std::greater< share_type >, 
+            std::less< board_adjacency_id_type > 
+         >
+      >,
+      ordered_unique< tag< by_board_b_adjacent >,
+         composite_key< board_adjacency_object,
+            member< board_adjacency_object, board_name_type, &board_adjacency_object::board_b >,
+            member< board_adjacency_object, share_type, &board_adjacency_object::adjacency >,
+            member< board_adjacency_object, board_adjacency_id_type, &board_adjacency_object::id >
+         >,
+         composite_key_compare< 
+            std::less< board_name_type >, 
+            std::greater< share_type >, 
+            std::less< board_adjacency_id_type > 
+         >
+      >
+   >,
+   allocator< board_adjacency_object >
+> board_adjacency_index;
+
+
+/**
+ * Measures a tag's common followers with all other tags.
+ */
+class tag_adjacency_object : public object< tag_adjacency_object_type, tag_adjacency_object >
+{
+   public:
+      template< typename Constructor, typename Allocator >
+      tag_adjacency_object( Constructor&& c, allocator< Allocator > a )
+      {
+         c( *this );
+      }
+
+      tag_adjacency_object() {}
+
+      id_type                                      id;
+
+      tag_name_type                                tag_a;
+
+      tag_name_type                                tag_b;
+
+      share_type                                   adjacency;
+
+      time_point                                   last_updated;
+};
+
+typedef oid< tag_adjacency_object > tag_adjacency_id_type;
+
+struct by_tag_a_adjacent;
+struct by_tag_b_adjacent;
+struct by_tag_pair;
+
+typedef multi_index_container<
+   tag_adjacency_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_adjacency_object, tag_adjacency_id_type, &tag_adjacency_object::id > >,
+      ordered_unique< tag< by_tag_pair >,
+         composite_key< tag_adjacency_object,
+            member< tag_adjacency_object, tag_name_type, &tag_adjacency_object::tag_a >,
+            member< tag_adjacency_object, tag_name_type, &tag_adjacency_object::tag_b >
+         >
+      >,
+      ordered_unique< tag< by_tag_a_adjacent >,
+         composite_key< tag_adjacency_object,
+            member< tag_adjacency_object, tag_name_type, &tag_adjacency_object::tag_a >,
+            member< tag_adjacency_object, share_type, &tag_adjacency_object::adjacency >,
+            member< tag_adjacency_object, tag_adjacency_id_type, &tag_adjacency_object::id >
+         >,
+         composite_key_compare< 
+            std::less< tag_name_type >, 
+            std::greater< share_type >, 
+            std::less< tag_adjacency_id_type > 
+         >
+      >,
+      ordered_unique< tag< by_tag_b_adjacent >,
+         composite_key< tag_adjacency_object,
+            member< tag_adjacency_object, tag_name_type, &tag_adjacency_object::tag_b >,
+            member< tag_adjacency_object, share_type, &tag_adjacency_object::adjacency >,
+            member< tag_adjacency_object, tag_adjacency_id_type, &tag_adjacency_object::id >
+         >,
+         composite_key_compare< 
+            std::less< tag_name_type >, 
+            std::greater< share_type >, 
+            std::less< tag_adjacency_id_type > 
+         >
+      >
+   >,
+   allocator< tag_adjacency_object >
+> tag_adjacency_index;
+
+
+/**
+ * Records an account's recommended posts list, according to the authors, 
+ * boards, tags that the account has interacted with.
+ */
+class account_recommendations_object : public object< account_recommendations_object_type, account_recommendations_object >
+{
+   public:
+      template< typename Constructor, typename Allocator >
+      account_recommendations_object( Constructor&& c, allocator< Allocator > a )
+      {
+         c( *this );
+      }
+
+      account_recommendations_object() {}
+
+      id_type                                      id;
+
+      account_name_type                            account;
+
+      flat_set< comment_id_type >                  recommended_posts;
+
+      time_point                                   last_updated;
+};
+
+typedef oid< account_recommendations_object > account_recommendations_id_type;
+
+struct by_account;
+
+typedef multi_index_container<
+   account_recommendations_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< account_recommendations_object, account_recommendations_id_type, &account_recommendations_object::id > >,
+      ordered_unique< tag< by_account >, member< account_recommendations_object, account_name_type, &account_recommendations_object::account > >,
+   >,
+   allocator< account_recommendations_object >
+> account_recommendations_index;
+
+
+/**
  *  The purpose of this object is to track the relationship between accounts based upon how a user votes. Every time
  *  a user votes on a post, the relationship between voter and author increases direct reward.
  */
@@ -1158,6 +1508,7 @@ class author_tag_stats_object : public object< author_tag_stats_object_type, aut
       asset           total_rewards = asset( 0, SYMBOL_USD );
       uint32_t        total_posts = 0;
 };
+
 typedef oid< author_tag_stats_object > author_tag_stats_id_type;
 
 struct by_author_tag_posts;
@@ -1268,6 +1619,10 @@ CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_index )
 FC_REFLECT( node::tags::tag_stats_object,
    (id)(tag)(total_payout)(net_votes)(top_posts)(comments)(total_trending) );
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_stats_object, node::tags::tag_stats_index )
+
+FC_REFLECT( node::tags::account_curation_metrics_object,
+   (id)(voter)(peer)(direct_positive_votes)(direct_votes)(indirect_positive_votes)(indirect_votes)(rank) );
+CHAINBASE_SET_INDEX_TYPE( node::tags::account_curation_metrics_object, node::tags::account_curation_metrics_index )
 
 FC_REFLECT( node::tags::peer_stats_object,
    (id)(voter)(peer)(direct_positive_votes)(direct_votes)(indirect_positive_votes)(indirect_votes)(rank) );

@@ -207,21 +207,25 @@ namespace node { namespace chain {
 
          account_name_type                bidder;            // Account that created the ad budget, or an agent of the campaign.
 
-         shared_string                    bid_id;            // Bid uuidv4 for referring to the bid and updating it or cancelling it..
+         shared_string                    bid_id;            // Bid uuidv4 for referring to the bid and updating it or cancelling it.
 
-         account_name_type                account;           // Account that created the campaign that this bid is directed towards.  
+         shared_string                    audience_id;       // Desired audience for display acceptance. Audience must include only members of the inventory audience.
 
-         shared_string                    creative_id;       // Desired creative for display. 
+         account_name_type                account;           // Account that created the campaign that this bid is directed towards. 
 
          shared_string                    campaign_id;       // Ad campaign uuidv4 to utilise for the bid.
+
+         account_name_type                author;            // Account that created the creative that is being bidded on.
+
+         shared_string                    creative_id;       // Desired creative for display.
 
          account_name_type                provider;          // Account offering inventory supply.
 
          shared_string                    inventory_id;      // Inventory uuidv4 offering to bid on.
 
-         shared_string                    audience_id;       // Desired audience for display acceptance. Audience must include only members of the inventory audience.
-
          asset                            bid_price;         // Price offered per metric. Asset symbol must be the same as the inventory price.
+
+         metric_types                     metric;            // Type of expense metric used.
 
          uint32_t                         requested;         // Maximum total metrics requested.
 
@@ -232,16 +236,28 @@ namespace node { namespace chain {
          time_point                       last_updated;      // Time audiences's details were last updated or inventory was delivered.
 
          time_point                       expiration;        // Time audience was created.
-
    };
 
    struct by_creative_id;
+   struct by_latest;
 
    typedef multi_index_container<
       ad_creative_object,
       indexed_by<
          ordered_unique< tag< by_id >,
             member< ad_creative_object, ad_creative_id_type, &ad_creative_object::id > >,
+         ordered_unique< tag< by_latest >,
+            composite_key< ad_creative_object,
+               member< ad_creative_object, account_name_type, &ad_creative_object::author>,
+               member< ad_creative_object, time_point, &ad_creative_object::last_updated>,
+               member< ad_creative_object, ad_creative_id_type, &ad_creative_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< time_point >, 
+               std::less< ad_creative_id_type > 
+            >
+         >,
          ordered_unique< tag< by_creative_id >,
             composite_key< ad_creative_object,
                member< ad_creative_object, account_name_type, &ad_creative_object::author>,
@@ -254,18 +270,34 @@ namespace node { namespace chain {
    > ad_creative_index;
 
    struct by_campaign_id;
+   struct by_expiration;
 
    typedef multi_index_container<
       ad_campaign_object,
       indexed_by<
          ordered_unique< tag< by_id >,
             member< ad_campaign_object, ad_campaign_id_type, &ad_campaign_object::id > >,
+         ordered_unique< tag< by_latest >,
+            composite_key< ad_campaign_object,
+               member< ad_campaign_object, account_name_type, &ad_campaign_object::account >,
+               member< ad_campaign_object, time_point, &ad_campaign_object::last_updated >,
+               member< ad_campaign_object, ad_campaign_id_type, &ad_campaign_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< time_point >, 
+               std::less< ad_campaign_id_type >
+            >
+         >,
          ordered_unique< tag< by_campaign_id >,
             composite_key< ad_campaign_object,
                member< ad_campaign_object, account_name_type, &ad_campaign_object::account >,
                member< ad_campaign_object, shared_string, &ad_campaign_object::campaign_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less
+            >
          > 
       >,
       allocator< ad_campaign_object >
@@ -279,6 +311,18 @@ namespace node { namespace chain {
       indexed_by<
          ordered_unique< tag< by_id >,
             member< ad_inventory_object, ad_inventory_id_type, &ad_inventory_object::id > >,
+         ordered_unique< tag< by_latest >,
+            composite_key< ad_inventory_object,
+               member< ad_inventory_object, account_name_type, &ad_inventory_object::provider >,
+               member< ad_inventory_object, time_point, &ad_inventory_object::last_updated >,
+               member< ad_inventory_object, ad_inventory_id_type, &ad_inventory_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< time_point >, 
+               std::less< ad_inventory_id_type >
+            >
+         >,
          ordered_unique< tag< by_inventory_id >,
             composite_key< ad_inventory_object,
                member< ad_inventory_object, account_name_type, &ad_inventory_object::provider >,
@@ -305,6 +349,18 @@ namespace node { namespace chain {
       indexed_by<
          ordered_unique< tag< by_id >,
             member< ad_audience_object, ad_audience_id_type, &ad_audience_object::id > >,
+         ordered_unique< tag< by_latest >,
+            composite_key< ad_audience_object,
+               member< ad_audience_object, account_name_type, &ad_audience_object::account >,
+               member< ad_audience_object, time_point, &ad_audience_object::last_updated >,
+               member< ad_audience_object, ad_audience_id_type, &ad_audience_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< time_point >, 
+               std::less< ad_audience_id_type > 
+            >
+         >,
          ordered_unique< tag< by_audience_id >,
             composite_key< ad_audience_object,
                member< ad_audience_object, account_name_type, &ad_audience_object::account >,
@@ -316,12 +372,15 @@ namespace node { namespace chain {
       allocator< ad_audience_object >
    > ad_audience_index;
 
-   struct by_expiration;
+   
    struct by_bidder_inventory;
    struct by_bidder_campaign;
    struct by_provider_inventory;
+   struct by_provider_metric_price;
 
    struct by_bidder_updated;
+   struct by_account_updated;
+   struct by_author_updated;
    struct by_provider_updated;
    struct by_bid_id;
 
@@ -336,7 +395,10 @@ namespace node { namespace chain {
                member< ad_bid_object, account_name_type, &ad_bid_object::bidder >,
                member< ad_bid_object, shared_string, &ad_bid_object::bid_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less  >
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less
+            >
          >,
          ordered_unique< tag< by_bidder_campaign >,
             composite_key< ad_bid_object,
@@ -345,7 +407,12 @@ namespace node { namespace chain {
                member< ad_bid_object, asset, &ad_bid_object::bid_price >,
                member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less, std::greater< asset >, std::less< ad_bid_id_type >  >
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less,
+               std::greater< asset >,
+               std::less< ad_bid_id_type >
+            >
          >,
          ordered_unique< tag< by_provider_inventory >,
             composite_key< ad_bid_object,
@@ -354,7 +421,26 @@ namespace node { namespace chain {
                member< ad_bid_object, asset, &ad_bid_object::bid_price >,
                member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less, std::greater< asset >, std::less< ad_bid_id_type >  >
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less,
+               std::greater< asset >,
+               std::less< ad_bid_id_type >
+            >
+         >,
+         ordered_unique< tag< by_provider_metric_price >,
+            composite_key< ad_bid_object,
+               member< ad_bid_object, account_name_type, &ad_bid_object::provider >,
+               member< ad_bid_object, metric_types, &ad_bid_object::metric >,
+               member< ad_bid_object, asset, &ad_bid_object::bid_price >,
+               member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< metric_types >,
+               std::greater< asset >,
+               std::less< ad_bid_id_type >
+            >
          >,
          ordered_unique< tag< by_bidder_updated >,
             composite_key< ad_bid_object,
@@ -362,7 +448,35 @@ namespace node { namespace chain {
                member< ad_bid_object, time_point, &ad_bid_object::last_updated >,
                member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< ad_bid_id_type > >
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::greater< time_point >,
+               std::less< ad_bid_id_type >
+            >
+         >,
+         ordered_unique< tag< by_account_updated >,
+            composite_key< ad_bid_object,
+               member< ad_bid_object, account_name_type, &ad_bid_object::account >,
+               member< ad_bid_object, time_point, &ad_bid_object::last_updated >,
+               member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< time_point >,
+               std::less< ad_bid_id_type >
+            >
+         >,
+         ordered_unique< tag< by_author_updated >,
+            composite_key< ad_bid_object,
+               member< ad_bid_object, account_name_type, &ad_bid_object::author >,
+               member< ad_bid_object, time_point, &ad_bid_object::last_updated >,
+               member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< time_point >,
+               std::less< ad_bid_id_type >
+            >
          >,
          ordered_unique< tag< by_provider_updated >,
             composite_key< ad_bid_object,
@@ -370,7 +484,11 @@ namespace node { namespace chain {
                member< ad_bid_object, time_point, &ad_bid_object::last_updated >,
                member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< ad_bid_id_type > >
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::greater< time_point >,
+               std::less< ad_bid_id_type >
+            >
          >  
       >,
       allocator< ad_bid_object >

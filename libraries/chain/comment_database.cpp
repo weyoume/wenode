@@ -1387,7 +1387,7 @@ void database::clear_comment_feeds( const comment_object& comment )
 
 
 /**
- * Removes a comment from all account, tag, and board feeds, and blogs that an account shared it to. 
+ * Removes a comment from all account, tag, and board feeds, and blogs that an account shared it to.
  */
 void database::remove_shared_comment( const account_name_type& sharer, const comment_object& comment )
 { try {
@@ -1474,8 +1474,8 @@ void database::remove_shared_comment( const account_name_type& sharer, const com
                   return a.second < b.second;
                });
 
-               f.blog_time = shared_by_copy[0].second;  // blog time is the new latest time after removing account. 
-               f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first; // Earliest time is new first sharer
+               f.blog_time = shared_by_copy[0].second;       // blog time is the new latest time after removing account. 
+               f.first_shared_by = shared_by_copy[ shared_by_copy.size()-1 ].first;      // Earliest time is new first sharer.
                f.shares--;
             }); 
          }

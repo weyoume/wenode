@@ -126,6 +126,33 @@ namespace node { namespace chain {
 
          time_point                                 last_update;                 // Time that the board was last updated.
 
+         /**
+          * Adjacency value determines how similar two accounts are by comparing the 
+          * accounts, boards and tags that they have in common with eachother. 
+          * this value is used for the determination of post recommendations.
+          */
+         share_type                                 adjacency_value( const board_member_object& m )const
+         {
+            vector<account_name_type> common_subscribers;
+            common_subscribers.reserve( subscribers.length() );
+            std::set_intersection( m.subscribers.begin(), m.subscribers.end(), subscribers.begin(), subscribers.end(), common_subscribers.begin());
+
+            vector<account_name_type> common_members;
+            common_members.reserve( members.length() );
+            std::set_intersection( m.members.begin(), m.members.end(), members.begin(), members.end(), common_members.begin());
+
+            vector<account_name_type> common_moderators;
+            common_moderators.reserve( moderators.length() );
+            std::set_intersection( m.moderators.begin(), m.moderators.end(), moderators.begin(), moderators.end(), common_moderators.begin());
+
+            vector<account_name_type> common_administrators;
+            common_administrators.reserve( administrators.length() );
+            std::set_intersection( m.administrators.begin(), m.administrators.end(), administrators.begin(), administrators.end(), common_administrators.begin());
+
+            share_type result = common_subscribers.size() + 3*common_members.size() + 5*common_moderators.size() + 10*common_administrators.size();
+            return result;
+         };
+
          
          bool is_authorized_author( const account_name_type& account )const  // Determines Permission to create a new root post in the board
          {
@@ -489,6 +516,7 @@ namespace node { namespace chain {
       allocator< board_object >
    > board_index;
 
+   struct by_name;
 
    typedef multi_index_container<
       board_member_object,

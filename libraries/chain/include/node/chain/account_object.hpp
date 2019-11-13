@@ -991,6 +991,51 @@ namespace node { namespace chain {
 
          time_point                        last_update;          // Last time that the account changed its following sets.
 
+         /**
+          * Adjacency value determines how similar two accounts are by comparing the 
+          * accounts, boards and tags that they have in common with eachother. 
+          * this value is used for the determination of post recommendations.
+          */
+         share_type                        adjacency_value( const account_following_object& f )const
+         {
+            vector<account_name_type> common_followers;
+            common_followers.reserve( followers.length() );
+            std::set_intersection( f.followers.begin(), f.followers.end(), followers.begin(), followers.end(), common_followers.begin());
+
+            vector<account_name_type> common_following;
+            common_following.reserve( following.length() );
+            std::set_intersection( f.following.begin(), f.following.end(), following.begin(), following.end(), common_following.begin());
+
+            vector<account_name_type> common_mutual_followers;
+            common_mutual_followers.reserve( mutual_followers.length() );
+            std::set_intersection( f.mutual_followers.begin(), f.mutual_followers.end(), mutual_followers.begin(), mutual_followers.end(), common_mutual_followers.begin());
+
+            vector<account_name_type> common_connections;
+            common_connections.reserve( connections.length() );
+            std::set_intersection( f.connections.begin(), f.connections.end(), connections.begin(), connections.end(), common_connections.begin());
+
+            vector<account_name_type> common_friends;
+            common_friends.reserve( friends.length() );
+            std::set_intersection( f.friends.begin(), f.friends.end(), friends.begin(), friends.end(), common_friends.begin());
+
+            vector<account_name_type> common_companions;
+            common_companions.reserve( companions.length() );
+            std::set_intersection( f.companions.begin(), f.companions.end(), companions.begin(), companions.end(), common_companions.begin());
+
+            vector<account_name_type> common_followed_boards;
+            common_followed_boards.reserve( followed_boards.length() );
+            std::set_intersection( f.followed_boards.begin(), f.followed_boards.end(), followed_boards.begin(), followed_boards.end(), common_followed_boards.begin());
+
+            vector<account_name_type> common_followed_tags;
+            common_followed_tags.reserve( followed_tags.length() );
+            std::set_intersection( f.followed_tags.begin(), f.followed_tags.end(), followed_tags.begin(), followed_tags.end(), common_followed_tags.begin());
+
+            share_type result = common_followers.size() + common_following.size() + 2*common_mutual_followers.size() + 3*common_connections.size() +
+            5*common_friends.size() + 10*common_companions.size() + common_followed_boards.size() + common_followed_tags.size();
+            return result;
+         };
+
+
          bool                              is_connection( const account_name_type& account )const
          {
             return std::find( connections.begin(), connections.end(), account ) != connections.end();
@@ -1195,6 +1240,15 @@ namespace node { namespace chain {
          flat_set< account_name_type >     followers;            // Accounts that follow this account. 
 
          time_point                        last_update;          // Last time that the tag changed its following sets.
+
+         share_type                        adjacency_value( const tag_following_object& t )const
+         {
+            vector<account_name_type> common_followers;
+            common_followers.reserve( followers.length() );
+            std::set_intersection( t.followers.begin(), t.followers.end(), followers.begin(), followers.end(), common_followers.begin());
+            share_type result = common_followers.size();
+            return result;
+         };
 
          bool                              is_follower( const account_name_type& account )
          {

@@ -462,7 +462,7 @@ struct account_balance_api_obj
    int64_t                        total_unstaked;             // total amount that has been unstaked so far. 
    time_point                     last_interest_time;         // Last time that interest was compounded.
    bool                           maintenance_flag;           // Whether need to process this balance object in maintenance interval
-}
+};
 
 
 struct account_business_api_obj
@@ -583,9 +583,9 @@ struct account_following_api_obj
    vector< account_name_type >     mutual_followers;     // Accounts that are both following and followers of this account.
    vector< account_name_type >     connections;          // Accounts that are connections of this account.
    vector< account_name_type >     friends;              // Accounts that are friends of this account.
-   vector< account_name_type >     companions;           // Accounts that are companions of this account. 
-   vector< board_name_type >       followed_boards;      // Boards that the account subscribes to. 
-   vector< tag_name_type >         followed_tags;        // Tags that the account follows. 
+   vector< account_name_type >     companions;           // Accounts that are companions of this account.
+   vector< board_name_type >       followed_boards;      // Boards that the account subscribes to.
+   vector< tag_name_type >         followed_tags;        // Tags that the account follows.
    vector< account_name_type >     filtered;             // Accounts that this account has filtered. Interfaces should not show posts by these users.
    vector< board_name_type >       filtered_boards;      // Boards that this account has filtered. Posts will not display if they are in these boards.
    vector< tag_name_type >         filtered_tags;        // Tags that this account has filtered. Posts will not display if they have any of these tags. 
@@ -1192,7 +1192,7 @@ struct limit_order_api_obj
    time_point             created;           // Time that the order was created.
    time_point             expiration;        // Expiration time of the order.
    account_name_type      seller;            // Selling account name of the trading order.
-   shared_string          order_id;          // UUIDv4 of the order for each account.
+   string                 order_id;          // UUIDv4 of the order for each account.
    int64_t                for_sale;          // asset symbol is sell_price.base.symbol
    price                  sell_price;        // Base price is the asset being sold.
    account_name_type      interface;         // The interface account that created the order
@@ -1391,20 +1391,36 @@ struct witness_api_obj
    witness_api_obj( const chain::witness_object& w ) :
       id( w.id ),
       owner( w.owner ),
-      created( w.created ),
+      active( w.active ),
+      schedule( to_string( w.schedule ) ),
+      last_confirmed_block_num( w.last_confirmed_block_num ),
+      details( to_string( w.details ) ),
       url( to_string( w.url ) ),
+      json( to_string( w.json ) ),
+      location( w.location ),
+      signing_key( w.signing_key ),
+      created( w.created ),
+      last_commit_height( w.last_commit_height ),
+      last_commit_id( w.last_commit_id ),
+      total_blocks( w.total_blocks ),
+      voting_power( w.voting_power ),
+      vote_count( w.vote_count ),
+      mining_power( w.mining_power ),
+      mining_count( w.mining_count ),
+      last_mining_update( w.last_mining_update ),
+      last_pow_time( w.last_pow_time ),
+      recent_txn_stake_weight( w.recent_txn_stake_weight ),
+      last_txn_stake_weight_update( w.last_txn_stake_weight_update ),
+      accumulated_activity_stake( w.accumulated_activity_stake ),
       total_missed( w.total_missed ),
       last_aslot( w.last_aslot ),
-      last_confirmed_block_num( w.last_confirmed_block_num ),
-      pow_worker( w.pow_worker ),
-      signing_key( w.signing_key ),
       props( w.props ),
-      USD_exchange_rate( w.USD_exchange_rate ),
-      last_USD_exchange_update( w.last_USD_exchange_update ),
-      votes( w.votes ),
-      virtual_last_update( w.virtual_last_update ),
-      virtual_position( w.virtual_position ),
-      virtual_scheduled_time( w.virtual_scheduled_time ),
+      witness_virtual_last_update( w.witness_virtual_last_update ),
+      witness_virtual_position( w.witness_virtual_position ),
+      witness_virtual_scheduled_time( w.witness_virtual_scheduled_time ),
+      miner_virtual_last_update( w.miner_virtual_last_update ),
+      miner_virtual_position( w.miner_virtual_position ),
+      miner_virtual_scheduled_time( w.miner_virtual_scheduled_time ),
       last_work( w.last_work ),
       running_version( w.running_version ),
       hardfork_version_vote( w.hardfork_version_vote ),
@@ -1412,26 +1428,478 @@ struct witness_api_obj
 
    witness_api_obj() {}
 
-   witness_id_type      id;
-   account_name_type    owner;
-   time_point           created;
-   string               url;
-   uint32_t             total_missed = 0;
-   uint64_t             last_aslot = 0;
-   uint64_t             last_confirmed_block_num = 0;
-   uint64_t             pow_worker = 0;
-   public_key_type      signing_key;
-   chain_properties     props;
-   price                USD_exchange_rate;
-   time_point           last_USD_exchange_update;
-   int64_t              votes;
-   fc::uint128          virtual_last_update;
-   fc::uint128          virtual_position;
-   fc::uint128          virtual_scheduled_time;
-   digest_type          last_work;
-   version              running_version;
-   hardfork_version     hardfork_version_vote;
-   time_point           hardfork_time_vote;
+   witness_id_type              id;
+   account_name_type            owner;                            // The name of the account that has authority over this witness.
+   bool                         active;                           // True if the witness is actively seeking to produce blocks, set false to deactivate the witness and remove from production.
+   string                       schedule;                         // How the witness was scheduled the last time it was scheduled.
+   uint64_t                     last_confirmed_block_num;         // Number of the last block that was successfully produced by this witness. 
+   string                       details;                          // Witness or miner's details, explaining who they are, machine specs, capabilties.
+   string                       url;                              // The witnesses or miners URL explaining their details.
+   string                       json;                             // The witnesses or miners json metadata.
+   fc::array<uint16_t, 2>       location;                         // Longitude / Latitude Co-ordinates of the witness or miner's approximate geo-location.
+   public_key_type              signing_key;                      // The key used to sign blocks on behalf of this witness or miner.
+   time_point                   created;                          // The time the witness was created.
+   uint32_t                     last_commit_height;               // Block height that has been most recently committed by the producer
+   block_id_type                last_commit_id;                   // Block ID of the height that was most recently committed by the producer. 
+   uint32_t                     total_blocks;                     // Accumulated number of blocks produced.
+   int64_t                      voting_power;                     // The total weighted voting power that supports the witness. 
+   uint32_t                     vote_count;                       // The number of accounts that have voted for the witness.
+   int64_t                      mining_power;                     // The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
+   uint32_t                     mining_count;                     // Accumulated number of proofs of work published.
+   time_point                   last_mining_update;               // Time that the account last updated its mining power.
+   time_point                   last_pow_time;                    // Time that the miner last created a proof of work.
+   int64_t                      recent_txn_stake_weight;          // Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+   time_point                   last_txn_stake_weight_update;     // Time that the recent bandwith and txn stake were last updated.
+   uint128_t                    accumulated_activity_stake;       // Recent amount of activity reward stake for the prime witness. 
+   uint32_t                     total_missed;                     // Number of blocks missed recently.
+   uint64_t                     last_aslot;                       // Last absolute slot that the witness was assigned to produce a block.
+   chain_properties             props;                            // The chain properties object that the witness currently proposes for global network variables
+   uint128_t                    witness_virtual_last_update;
+   uint128_t                    witness_virtual_position;
+   uint128_t                    witness_virtual_scheduled_time;
+   uint128_t                    miner_virtual_last_update;
+   uint128_t                    miner_virtual_position;
+   uint128_t                    miner_virtual_scheduled_time;
+   digest_type                  last_work;
+   version                      running_version;                  // This field represents the WeYouMe blockchain version the witness is running.
+   hardfork_version             hardfork_version_vote;
+   time_point                   hardfork_time_vote;
+};
+
+
+struct network_officer_api_obj
+{
+   network_officer_api_obj( const chain::network_officer_object& o, database& db ):
+      id( o.id ),
+      account( o.account ),
+      active( o.active ),
+      officer_approved( o.officer_approved ),
+      officer_type( to_string( o.officer_type ) ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      json( to_string( o.json ) ),
+      created( o.created ),
+      vote_count( o.vote_count ),
+      voting_power( o.voting_power ),
+      witness_vote_count( o.witness_vote_count ),
+      witness_voting_power( o.witness_voting_power ),
+      
+   network_officer_api_obj(){}
+
+   network_officer_id_type        id;
+   account_name_type              account;                 // The name of the account that owns the network officer.
+   bool                           active;                  // True if the officer is active, set false to deactivate.
+   bool                           officer_approved;        // True when the network officer has received sufficient voting approval to earn funds.
+   string                         officer_type;            // The type of network officer that the account serves as. 
+   string                         details;                 // The officer's details description. 
+   string                         url;                     // The officer's reference URL. 
+   string                         json;                    // Json metadata of the officer. 
+   time_point                     created;                 // The time the officer was created.
+   uint32_t                       vote_count;              // The number of accounts that support the officer.
+   int64_t                        voting_power;            // The amount of voting power that votes for the officer.
+   uint32_t                       witness_vote_count;      // The number of accounts that support the officer.
+   int64_t                        witness_voting_power;    // The amount of voting power that votes for the officer.
+};
+
+
+struct executive_board_api_obj
+{
+   executive_board_api_obj( const chain::executive_board_object& o, database& db ):
+      id( o.id ),
+      account( o.account ),
+      active( o.active ),
+      board_approved( o.board_approved ),
+      budget( o.budget ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      json( to_string( o.json ) ),
+      created( o.created ),
+      vote_count( o.vote_count ),
+      voting_power( o.voting_power ),
+      witness_vote_count( o.witness_vote_count ),
+      witness_voting_power( o.witness_voting_power ),
+
+   executive_board_api_obj(){}
+
+   executive_board_id_type        id;
+   account_name_type              account;                    // The name of the governance account that created the executive team.
+   bool                           active;                     // True if the executive team is active, set false to deactivate.
+   bool                           board_approved;             // True when the board has reach sufficient voting support to receive budget.
+   asset                          budget;                     // Total amount of Credit asset requested for team compensation and funding.
+   string                         details;                    // The executive team's details description. 
+   string                         url;                        // The executive team's reference URL. 
+   string                         json;                       // Json metadata of the executive team. 
+   time_point                     created;                    // The time the executive team was created.
+   uint32_t                       vote_count;                 // The number of accounts that support the executive team.
+   int64_t                        voting_power;               // The amount of voting power that votes for the executive team. 
+   uint32_t                       witness_vote_count;         // The number of accounts that support the executive team.
+   int64_t                        witness_voting_power;       // The amount of voting power that votes for the executive team.
+};
+
+
+struct governance_account_api_obj
+{
+   governance_account_api_obj( const chain::governance_account_object& o, database& db ):
+      id( o.id ),
+      account( o.account ),
+      active( o.active ),
+      account_approved( o.account_approved ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      json( to_string( o.json ) ),
+      created( o.created ),
+      subscriber_count( o.subscriber_count ),
+      subscriber_power( o.subscriber_power ),
+      witness_subscriber_count( o.witness_subscriber_count ),
+      witness_subscriber_power( o.witness_subscriber_power ),
+
+   governance_account_api_obj(){}
+
+   governance_account_id_type     id;
+   account_name_type              account;                    // The name of the governance account that created the governance account.
+   bool                           active;                     // True if the governance account is active, set false to deactivate.
+   bool                           account_approved;           // True when the board has reach sufficient voting support to receive budget.
+   string                         details;                    // The governance account's details description. 
+   string                         url;                        // The governance account's reference URL. 
+   string                         json;                       // Json metadata of the governance account. 
+   time_point                     created;                    // The time the governance account was created.
+   uint32_t                       subscriber_count;           // The number of accounts that support the governance account.
+   int64_t                        subscriber_power;           // The amount of voting power that votes for the governance account. 
+   uint32_t                       witness_subscriber_count;   // The number of accounts that support the governance account.
+   int64_t                        witness_subscriber_power;   // The amount of voting power that votes for the governance account.
+};
+
+
+struct supernode_api_obj
+{
+   supernode_api_obj( const chain::supernode_object& o, database& db ):
+      id( o.id ),
+      account( o.account ),
+      active( o.active ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      node_api_endpoint( to_string( o.node_api_endpoint ) ),
+      notification_api_endpoint( to_string( o.notification_api_endpoint ) ),
+      auth_api_endpoint( to_string( o.auth_api_endpoint ) ),
+      ipfs_endpoint( to_string( o.ipfs_endpoint ) ),
+      bittorrent_endpoint( to_string( o.bittorrent_endpoint ) ),
+      json( to_string( o.json ) ),
+      created( o.created ),
+      storage_rewards( o.storage_rewards ),
+      daily_active_users( o.daily_active_users / PERCENT_100 ),
+      monthly_active_users( o.monthly_active_users / PERCENT_100 ),
+      recent_view_weight( o.recent_view_weight ),
+      last_update_time( o.last_update_time ),
+      last_activation_time( o.last_activation_time ),
+   
+   supernode_api_obj(){}
+
+   supernode_id_type       id;
+   account_name_type       account;                     // The name of the account that owns the supernode.
+   bool                    active;                      // True if the supernode is active, set false to deactivate.
+   string                  details;                     // The supernode's details description. 
+   string                  url;                         // The supernode's reference URL. 
+   string                  node_api_endpoint;           // The Full Archive node public API endpoint of the supernode.
+   string                  notification_api_endpoint;   // The Notification API endpoint of the Supernode. 
+   string                  auth_api_endpoint;           // The Transaction signing authentication API endpoint of the supernode.
+   string                  ipfs_endpoint;               // The IPFS file storage API endpoint of the supernode.
+   string                  bittorrent_endpoint;         // The Bittorrent Seed Box endpoint URL of the Supernode. 
+   string                  json;                        // Json metadata of the supernode, including additonal outside of consensus APIs and services. 
+   time_point              created;                     // The time the supernode was created.
+   int64_t                 storage_rewards;             // Amount of core asset earned from storage.
+   uint64_t                daily_active_users;          // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
+   uint64_t                monthly_active_users;        // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
+   int64_t                 recent_view_weight;          // The rolling 7 day average of daily accumulated voting power of viewers. 
+   time_point              last_update_time;            // The time the file weight and active users was last decayed.
+   time_point              last_activation_time;        // The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
+};
+
+
+struct interface_api_obj
+{
+   interface_api_obj( const chain::interface_object& o, database& db ):
+      id( o.id ),
+      account( o.account ),
+      active( o.active ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      json( to_string( o.json ) ),
+      created( o.created ),
+      daily_active_users( o.daily_active_users / PERCENT_100 ),
+      monthly_active_users( o.monthly_active_users / PERCENT_100 ),
+      last_update_time( o.last_update_time ),
+   
+   interface_api_obj(){}
+
+   interface_id_type       id;
+   account_name_type       account;                     // The name of the account that owns the interface.
+   bool                    active;                      // True if the interface is active, set false to deactivate.
+   string                  details;                     // The interface's details description. 
+   string                  url;                         // The interface's reference URL. 
+   string                  json;                        // Json metadata of the interface, including additonal outside of consensus APIs and services. 
+   time_point              created;                     // The time the interface was created.
+   uint64_t                daily_active_users;          // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
+   uint64_t                monthly_active_users;        // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
+   time_point              last_update_time;            // The time the file weight and active users was last decayed.
+};
+
+
+struct community_enterprise_api_obj
+{
+   community_enterprise_api_obj( const chain::community_enterprise_object& o, const database& db ):
+      id( o.id ),
+      creator( o.creator ),
+      enterprise_id( o.enterprise_id ),
+      active( o.active ),
+      proposal_type( to_string( o.proposal_type ) ),
+      approved_milestones( o.approved_milestones ),
+      claimed_milestones( o.claimed_milestones ),
+      investment( o.investment ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      json( to_string( o.json ) ),
+      begin( o.begin ),
+      end( o.end ),
+      expiration( o.expiration ),
+      daily_budget( o.daily_budget ),
+      duration( o.duration ),
+      pending_budget( o.pending_budget ),
+      total_distributed( o.total_distributed ),
+      days_paid( o.days_paid ),
+      total_approvals( o.total_approvals ),
+      total_voting_power( o.total_voting_power ),
+      total_witness_approvals( o.total_witness_approvals ),
+      total_witness_voting_power( o.total_witness_voting_power ),
+      current_approvals( o.current_approvals ),
+      current_voting_power( o.current_voting_power ),
+      current_witness_approvals( o.current_witness_approvals ),
+      current_witness_voting_power( o.current_witness_voting_power ),
+      created( o.created ),
+      {
+         for( auto beneificiary : o.beneficiaries )
+         {
+            beneficiaries[ beneficiary.first ] = beneficiary.second;
+         }
+         for( auto milestone : o.milestones )
+         {
+            milestones.push_back( std::make_pair( to_string( milestone.first ), milestone.second ) ),
+         }
+         for( auto milestone : o.milestone_history )
+         {
+            milestone_history.push_back( to_string( milestone ) ),
+         }
+      }
+
+   community_enterprise_api_obj(){}
+
+   community_enterprise_id_type       id;
+   account_name_type                  creator;                                    // The name of the governance account that created the community enterprise proposal.
+   string                             enterprise_id;                              // UUIDv4 for referring to the proposal.
+   bool                               active;                                     // True if the project is active, set false to deactivate.
+   string                             proposal_type;                              // The type of proposal, determines release schedule.
+   map< account_name_type, uint16_t > beneficiaries;                              // Map of account names and percentages of budget value.
+   vector< pair < string, uint16_t > > milestones;                                // Ordered vector of milestone descriptions and percentages of budget value.
+   vector< string >                   milestone_history;                          // Ordered vector of the details of every claimed milestone.
+   int16_t                            approved_milestones;                        // Number of the last approved milestone by the community.
+   int16_t                            claimed_milestones;                         // Number of milestones claimed for release.  
+   fc::optional < asset_symbol_type > investment;                                 // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+   string                             details;                                    // The proposals's details description. 
+   string                             url;                                        // The proposals's reference URL. 
+   string                             json;                                       // Json metadata of the proposal. 
+   time_point                         begin;                                      // Enterprise proposal start time. If the proposal is not approved by the start time, it is rejected. 
+   time_point                         end;                                        // Enterprise proposal end time. Determined by start plus remaining interval number of days.
+   time_point                         expiration;                                 // Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
+   asset                              daily_budget;                               // Daily amount of Core asset requested for project compensation and funding.
+   uint16_t                           duration;                                   // Number of days that the proposal lasts for. 
+   asset                              pending_budget;                             // Funds held in the proposal for release. 
+   asset                              total_distributed;                          // Total amount of funds distributed for the proposal. 
+   uint16_t                           days_paid;                                  // Number of days that the proposal has been paid for. 
+   uint32_t                           total_approvals;                            // The overall number of accounts that support the enterprise proposal.
+   int64_t                            total_voting_power;                         // The oveall amount of voting power that supports the enterprise proposal.
+   uint32_t                           total_witness_approvals;                    // The overall number of top 50 witnesses that support the enterprise proposal.
+   int64_t                            total_witness_voting_power;                 // The overall amount of witness voting power that supports the enterprise proposal.
+   uint32_t                           current_approvals;                          // The number of accounts that support the latest claimed milestone.
+   int64_t                            current_voting_power;                       // The amount of voting power that supports the latest claimed milestone.
+   uint32_t                           current_witness_approvals;                  // The number of top 50 witnesses that support the latest claimed milestone.
+   int64_t                            current_witness_voting_power;               // The amount of witness voting power that supports the latest claimed milestone.
+   time_point                         created;                                    // The time the proposal was created.
+};
+
+struct ad_creative_api_obj
+{
+   ad_creative_api_obj( const chain::ad_creative_object& o, const database& db ):
+      id( o.id ),
+      account( o.account ),
+      creative_id( to_string( o.creative_id ) ),
+      format_type( to_string( o.format_type ) ),
+      author( o.author ),
+      objective( to_string( o.objective ) ),
+      creative( to_string( o.creative ) ),
+      json( to_string( o.json ) ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+      active( o.active ),
+
+   ad_creative_api_obj(){}
+
+   ad_creative_id_type         id;
+   account_name_type           account;           // Name of the account creating the creative.
+   string                      creative_id;       // The uuidv4 of the creative for reference
+   string                      format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
+   account_name_type           author;            // Name of the account that created the objective.
+   string                      objective;         // The name of the object being advertised, the link and CTA destination of the creative.
+   string                      creative;          // IPFS link to the Media to be displayed, image or video.
+   string                      json;              // Public plaintext json information about the board, its topic and rules.
+   time_point                  created;           // Time creative was made.
+   time_point                  last_updated;      // Time creative's details were last updated.
+   bool                        active;            // True when the creative is active for use in campaigns, false to deactivate.
+};
+
+struct ad_campaign_api_obj
+{
+   ad_campaign_api_obj( const chain::ad_campaign_object& o, const database& db ):
+      id( o.id ),
+      account( o.account ),
+      campaign_id( to_string( campaign_id ) ),
+      budget( o.budget ),
+      total_bids( o.total_bids ),
+      begin( o.begin ),
+      end( o.end ),
+      json( to_string( o.json ) ),
+      interface( o.interface ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+      active( o.active ),
+      {
+         for( auto agent : o.agents )
+         {
+            agents.push_back( agent );
+         }
+      }
+
+   ad_campaign_api_obj(){}
+
+   ad_campaign_id_type              id;
+   account_name_type                account;           // Account creating the ad campaign.
+   string                           campaign_id;       // uuidv4 to refer to the campaign.
+   asset                            budget;            // Total expenditure of the campaign.
+   asset                            total_bids;        // Total amount of expenditure in active bids. Cannot exceed AD_RESERVE_RATIO times the campaign budget.
+   time_point                       begin;             // Beginning time of the campaign. Bids cannot be created before this time.
+   time_point                       end;               // Ending time of the campaign. Remaining campaign budget will be refunded after this time.
+   string                           json;              // json metadata for the campaign.
+   vector<account_name_type>        agents;            // Set of Accounts authorized to create bids for the campaign.
+   account_name_type                interface;         // Interface that facilitated the purchase of the advertising campaign.
+   time_point                       created;           // Time campaign was created.
+   time_point                       last_updated;      // Time campaigns's details were last updated or inventory was delivered.
+   bool                             active;            // True when active for bidding and delivery, false to deactivate.
+};
+
+struct ad_inventory_api_obj
+{
+   ad_inventory_api_obj( const chain::ad_inventory_object& o, const database& db ):
+      id( o.id ),
+      provider( o.provider ),
+      inventory_id( to_string( o.inventory_id ) ),
+      metric( to_string( o.metric ) ),
+      audience_id( to_string( o.audience_id ) ),
+      min_price( o.min_price ),
+      inventory( o.inventory ),
+      remaining( o.remaining ),
+      json( to_string( o.json ) ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+      expiration( o.expiration ),
+      active( o.active ),
+      {
+         for( auto agent : o.agents )
+         {
+            agents.push_back( agent );
+         }
+      },
+   
+   ad_inventory_api_obj(){}
+
+   ad_inventory_id_type             id;
+   account_name_type                provider;          // Account creating the ad inventory.
+   string                           inventory_id;      // uuidv4 to refer to the inventory.
+   string                           metric;            // Type of expense metric used.
+   string                           audience_id;       // ad audience_id, containing a set of usernames of viewing accounts in their userbase.
+   asset                            min_price;         // Minimum bidding price per metric.
+   uint32_t                         inventory;         // Total metrics available.
+   uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
+   string                           json;              // json metadata for the inventory.
+   vector<account_name_type>        agents;            // Set of Accounts authorized to create delivery transactions for the inventory.
+   time_point                       created;           // Time inventory was created.
+   time_point                       last_updated;      // Time inventorys's details were last updated or inventory was delivered.
+   time_point                       expiration;        // Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
+   bool                             active;            // True when active for bidding and delivery, false to deactivate.
+};
+
+struct ad_audience_api_obj
+{
+   ad_audience_api_obj( const chain::ad_audience_object& o, const database& db ):
+      id( o.id ),
+      account( o.account ),
+      audience_id( to_string( o.audience_id ) ),
+      json( to_string( o.json ) ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+      active( o.active ),
+      {
+         for( auto aud : o.audience )
+         {
+            audience.push_back( aud );
+         }
+      },
+
+   ad_audience_api_obj(){}
+
+   ad_audience_id_type              id;
+   account_name_type                account;           // Account creating the ad audience.
+   string                           audience_id;       // uuidv4 to refer to the audience.
+   string                           json;              // json metadata for the audience.
+   vector< account_name_type >      audience;          // List of usernames within the audience for campaigns and inventory.
+   time_point                       created;           // Time audience was created.
+   time_point                       last_updated;      // Time audiences's details were last updated.
+   bool                             active;            // True when active for bidding and delivery, false to deactivate.
+};
+
+struct ad_bid_api_obj
+{
+   ad_bid_api_obj( const chain::ad_bid_object& o, const database& db ):
+      id( o.id ),
+      bidder( o.bidder ),
+      bid_id( to_string( o.bid_id ) ),
+      account( o.account ),
+      creative_id( to_string( o.creative_id ) ),
+      campaign_id( to_string( o.campaign_id ) ),
+      provider( o.provider ),
+      inventory_id( to_string( o.inventory_id ) ),
+      audience_id( to_string( o.audience_id ) ),
+      bid_price( o.bid_price ),
+      requested( o.requested ),
+      remaining( o.remaining ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+      expiration( o.expiration ),
+
+   ad_bid_api_obj(){}
+
+   ad_bid_id_type                   id;
+   account_name_type                bidder;            // Account that created the ad budget, or an agent of the campaign.
+   string                           bid_id;            // Bid uuidv4 for referring to the bid and updating it or cancelling it.
+   account_name_type                account;           // Account that created the campaign that this bid is directed towards.  
+   string                           creative_id;       // Desired creative for display. 
+   string                           campaign_id;       // Ad campaign uuidv4 to utilise for the bid.
+   account_name_type                provider;          // Account offering inventory supply.
+   string                           inventory_id;      // Inventory uuidv4 offering to bid on.
+   string                           audience_id;       // Desired audience for display acceptance. Audience must include only members of the inventory audience.
+   asset                            bid_price;         // Price offered per metric. Asset symbol must be the same as the inventory price.
+   uint32_t                         requested;         // Maximum total metrics requested.
+   uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
+   time_point                       created;           // Time audience was created.
+   time_point                       last_updated;      // Time audiences's details were last updated or inventory was delivered.
+   time_point                       expiration;        // Time audience was created.
 };
 
 struct signed_block_api_obj : public signed_block

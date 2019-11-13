@@ -19,10 +19,24 @@ namespace node { namespace chain {
    using node::protocol::asset_symbol_type;
 
    /**
-    *  All witnesses with at least 1% net positive approval and
-    *  at least 2 weeks old are able to participate in block
-    *  production.
+    * All witnesses with at least 1% net positive approval and
+    * at least 2 weeks old are able to participate in block
+    * production.
+    * These fields are used for the witness scheduling algorithm which uses
+    * virtual time to ensure that all witnesses are given proportional time
+    * for producing blocks.
+    * voting power is used to determine witness speed, and recent_pow is used to determine miner speed.
+    * The virtual_scheduled_time is the expected time at which this witness should complete a virtual lap.
+    * virtual_scheduled_time = virtual_last_update + (1000*MAXVOTES - virtual_position) / vote
+    * 
+    * Every time the number of votes changes the virtual_position and virtual_scheduled_time must
+    * update. There is a global current virtual_scheduled_time which gets updated every time a witness is scheduled.
+    * virtual_position       = virtual_position + votes * (virtual_current_time - virtual_last_update)
+    * virtual_last_update    = virtual_current_time
+    * votes                  += delta_vote
+    * virtual_scheduled_time = virtual_last_update + (1000*MAXVOTES - virtual_position) / vote
     */
+
    class witness_object : public object< witness_object_type, witness_object >
    {
       witness_object() = delete;
@@ -94,52 +108,28 @@ namespace node { namespace chain {
          uint64_t                     last_aslot = 0;                   // Last absolute slot that the witness was assigned to produce a block.
 
          chain_properties             props;                            // The chain properties object that the witness currently proposes for global network variables
-
-         /**
-          * These fields are used for the witness scheduling algorithm which uses
-          * virtual time to ensure that all witnesses are given proportional time
-          * for producing blocks.
-          *
-          * voting power is used to determine witness speed, and recent_pow is used to determine miner speed.
-          * The virtual_scheduled_time is the expected time at which this witness should complete a virtual lap.
-          *
-          * virtual_scheduled_time = virtual_last_update + (1000*MAXVOTES - virtual_position) / votes
-          *
-          * Every time the number of votes changes the virtual_position and virtual_scheduled_time must
-          * update. There is a global current virtual_scheduled_time which gets updated every time
-          * a witness is scheduled. 
-          * 
-          * To Update the virtual_position:
-          *
-          * virtual_position       = virtual_position + votes * (virtual_current_time - virtual_last_update)
-          * virtual_last_update    = virtual_current_time
-          * votes                  += delta_vote
-          * virtual_scheduled_time = virtual_last_update + (1000*MAXVOTES - virtual_position) / votes
-          *
-          * @defgroup virtual_time Virtual Time Scheduling
-          */
          
-         uint128_t            witness_virtual_last_update;
+         uint128_t                    witness_virtual_last_update;
 
-         uint128_t            witness_virtual_position;
+         uint128_t                    witness_virtual_position;
 
-         uint128_t            witness_virtual_scheduled_time = fc::uint128::max_value();
+         uint128_t                    witness_virtual_scheduled_time = fc::uint128::max_value();
 
-         uint128_t            miner_virtual_last_update;
+         uint128_t                    miner_virtual_last_update;
 
-         uint128_t            miner_virtual_position;
+         uint128_t                    miner_virtual_position;
 
-         uint128_t            miner_virtual_scheduled_time = fc::uint128::max_value();
+         uint128_t                    miner_virtual_scheduled_time = fc::uint128::max_value();
          
-         digest_type          last_work;
+         digest_type                  last_work;
 
-         version              running_version;  // This field represents the WeYouMe blockchain version the witness is running.
+         version                      running_version;  // This field represents the WeYouMe blockchain version the witness is running.
 
-         hardfork_version     hardfork_version_vote;
+         hardfork_version             hardfork_version_vote;
 
-         time_point           hardfork_time_vote = GENESIS_TIME;
+         time_point                   hardfork_time_vote = GENESIS_TIME;
 
-         void                 witness_object::decay_weights( time_point now, const witness_schedule_object& wso )
+         void                         witness_object::decay_weights( time_point now, const witness_schedule_object& wso )
          {
             mining_power -= ( ( mining_power * ( now - last_mining_update ).to_seconds() ) / wso.pow_decay_time.to_seconds() );
             recent_txn_stake_weight -= ( recent_txn_stake_weight * ( now - last_txn_stake_weight_update ).to_seconds() ) / wso.txn_stake_decay_time.to_seconds();

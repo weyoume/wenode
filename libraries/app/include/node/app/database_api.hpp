@@ -80,13 +80,34 @@ enum sort_type
    DISCOURSE_SORT      = 'discourse'
 }
 
+enum ad_sort_type
+{
+   NO_SORT             = 'none',
+   BID_PRICE           = 'price',    // Gets ad bids with the highest bid price.
+   
+}
+
+enum search_query_type
+{
+   NO_SEARCH_TYPE     = 'none',
+   PERSONA_SEARCH     = 'account',
+   PROFILE_SEARCH     = 'profile',
+   BUSINESS_SEARCH    = 'business',
+   BOARD_SEARCH       = 'board',
+   TAG_SEARCH         = 'tag',
+   ASSET_SEARCH       = 'asset',
+   POST_SEARCH        = 'post'
+}
+
 class database_api_impl;
 
 /**
- *  Defines the arguments to a query as a struct so it can be easily extended
+ *  Defines the arguments to a discussion query.
  */
-struct discussion_query {
-   void validate()const{
+struct discussion_query 
+{
+   void validate()const
+   {
       FC_ASSERT( filter_authors.find( account ) == filter_authors.end() );
       FC_ASSERT( filter_boards.find( board ) == filter_boards.end() );
       FC_ASSERT( filter_tags.find( tag ) == filter_tags.end() );
@@ -128,6 +149,61 @@ struct discussion_query {
    uint32_t                truncate_body = 0;     // the number of bytes of the post body to return, 0 for all
 };
 
+
+/**
+ *  Defines the arguments to a network object search query.
+ */
+struct search_query 
+{
+   void validate()const
+   {
+      FC_ASSERT( limit <= 100 );
+   }
+
+   string                  account;               // Name of the account creating the search.
+
+   string                  search_type;           // Type of object to be returned as results.
+
+   string                  query;                 // Search String being queried.
+
+   uint32_t                limit = 0;
+
+   discussion_query        post_options;          // discussion query parameters for filtering a post search.
+
+   account_query           account_options;       // search query parameters for filtering an account search.
+
+   board_query             board_options;
+
+   tag_query               tag_options;
+
+   asset_query             asset_options;    
+
+
+};
+
+/**
+ * Defines the arguments to an ad query, and provides the relevant display context
+ * query from a discussion feed, or a search.
+ */
+struct ad_query 
+{
+   void validate()const
+   {
+      FC_ASSERT( limit <= 100 );
+   }
+
+   string                  interface;             // Name of the interface account of the ad inventory provider.
+   string                  viewer;                // Name of the audience member account receiving the ad.
+   string                  format_type;           // Type of ad inventory format being queried.
+
+   discussion_query        display_query;         // The Discussion feed display query of the ad context.
+   search_query            search_query;          // the Search display query of the ad context.
+   
+   uint32_t                limit = 0;
+
+
+};
+
 /**
  * @brief The database_api class implements the RPC API for the chain database.
  *
@@ -155,8 +231,7 @@ class database_api
        */
       state get_state( string path )const;
 
-      vector< account_name_type > get_active_witnesses()const;
-      vector< account_name_type > get_miner_queue()const;
+      vector< account_name_type > get_active_producers()const;
 
       /////////////////////////////
       // Blocks and transactions //
@@ -309,13 +384,35 @@ class database_api
       fc::optional< witness_api_obj > get_witness_by_account( string account_name )const;
 
       /**
-       *  This method is used to fetch witnesses with pagination.
-       *
-       *  @return an array of `count` witnesses sorted by total votes after witness `from` with at most `limit' results.
+       *  This method is used to fetch elected witnesses with pagination.
+       *  @return an array of `count` witnesses sorted by current voting power after witness `from` with at most `limit' results.
        */
-      vector< witness_api_obj > get_witnesses_by_vote( string from, uint32_t limit )const;
+      vector< witness_api_obj > get_witnesses_by_voting_power( string from, uint32_t limit )const;
 
-      vector< witness_api_obj > get_witnesses_by_mining( string from, uint32_t limit )const;
+      /**
+       *  This method is used to fetch mining witnesses with pagination.
+       *  @return an array of `count` witnesses sorted by current mining power after witness `from` with at most `limit' results.
+       */
+      vector< witness_api_obj > get_witnesses_by_mining_power( string from, uint32_t limit )const;
+
+      /**
+       * Get Network officers according to thier type, with pagination.
+       */
+      vector< network_officers_api_obj >   get_development_officers_by_voting_power( string from, uint32_t limit )const;
+
+      vector< network_officers_api_obj >   get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
+
+      vector< network_officers_api_obj >   get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+
+      vector< executive_board_api_obj >    get_executive_boards_by_voting_power( string from, uint32_t limit )const;
+
+      vector< supernode_api_obj >          get_supernodes_by_view_weight( string from, uint32_t limit )const;
+
+      vector< interface_api_obj >          get_interfaces_by_users( string from, uint32_t limit )const;
+
+      vector< governance_account_api_obj > get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
+
+      vector< community_enterprise_api_obj >    get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
       /**
        * @brief Get names and IDs for registered witnesses
@@ -338,19 +435,35 @@ class database_api
       /**
        * Retrieves all of the open limit, margin, loan, and call orders from a list of accounts.
        */
-      vector< order_state > get_open_orders( vector< string > names )const;
+      vector< order_state >                get_open_orders( vector< string > names )const;
 
-      market_limit_orders get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      market_limit_orders                  get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
-      market_margin_orders get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      market_margin_orders                 get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
-      market_call_orders get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      market_call_orders                   get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
-      market_credit_loans get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      market_credit_loans                  get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
-      vector<credit_pool_api_obj> get_credit_pools( vector<string> assets ) const;
+      vector< credit_pool_api_obj >        get_credit_pools( vector<string> assets ) const;
 
-      vector<liquidity_pool_api_obj> get_liquidity_pools( string buy_symbol, string sell_symbol ) const;
+      vector< liquidity_pool_api_obj >     get_liquidity_pools( string buy_symbol, string sell_symbol ) const;
+
+      /////////
+      // Ads //
+      /////////
+
+
+      /**
+       * Retrieves ad creatives, campaigns, bids, inventory, and audiences
+       * for a specified list of accounts.
+       */
+      vector< account_ad_state >           get_account_ads( vector<string> names )const;
+
+      /**
+       * Retrieves all bids for a specified interface that include a specified audience member
+       */
+      vector< ad_bid_state >               get_interface_audience_bids( string interface, string audience )const;
 
 
       ////////////////////////////
@@ -417,6 +530,7 @@ class database_api
       vector<discussion> get_discussions_by_children( const discussion_query& query )const;
       vector<discussion> get_discussions_by_feed( const discussion_query& query )const;
       vector<discussion> get_discussions_by_blog( const discussion_query& query )const;
+      vector<discussion> get_discussions_by_recommended( const discussion_query& query )const;
       vector<discussion> get_discussions_by_comments( const discussion_query& query )const;
 
       ///@}
@@ -599,7 +713,7 @@ FC_API(node::app::database_api,
    // Witnesses
    (get_witnesses)
    (get_witness_by_account)
-   (get_witnesses_by_vote)
+   (get_witnesses_by_voting_power)
    (lookup_witness_accounts)
    (get_witness_count)
    (get_active_witnesses)

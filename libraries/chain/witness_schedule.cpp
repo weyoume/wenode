@@ -117,7 +117,7 @@ vector< account_name_type > shuffle_producers( database& db, vector< account_nam
       n*= 43069213742576315243ULL;
 
       k ^= (l >> 2);
-      l ^= (m << 13);
+      l ^= (m << 4);
       m ^= (n >> 1);
       n ^= (k << 9);
 
