@@ -80,19 +80,10 @@ enum sort_type
    DISCOURSE_SORT      = 'discourse'
 }
 
-enum ad_sort_type
-{
-   NO_SORT             = 'none',
-   BID_PRICE           = 'price',    // Gets ad bids with the highest bid price.
-   
-}
-
 enum search_query_type
 {
    NO_SEARCH_TYPE     = 'none',
-   PERSONA_SEARCH     = 'account',
-   PROFILE_SEARCH     = 'profile',
-   BUSINESS_SEARCH    = 'business',
+   ACCOUNT_SEARCH     = 'account',
    BOARD_SEARCH       = 'board',
    TAG_SEARCH         = 'tag',
    ASSET_SEARCH       = 'asset',
@@ -102,7 +93,7 @@ enum search_query_type
 class database_api_impl;
 
 /**
- *  Defines the arguments to a discussion query.
+ * Defines the arguments to a discussion query.
  */
 struct discussion_query 
 {
@@ -116,7 +107,7 @@ struct discussion_query
 
    string                  account;               // Name of the account being fetched for feed or blog queries.
    string                  board;                 // Name of the board being queried.
-   string                  tag;                   // Name of the tag being querired. 
+   string                  tag;                   // Name of the tag being querired.
 
    string                  sort_type;             // Sorting index type.
    string                  sort_time;             // Time preference of the sorting type.
@@ -160,25 +151,21 @@ struct search_query
       FC_ASSERT( limit <= 100 );
    }
 
-   string                  account;               // Name of the account creating the search.
+   string                            account;               // Name of the account creating the search.
 
-   string                  search_type;           // Type of object to be returned as results.
+   string                            query;                 // Search String being queried.
 
-   string                  query;                 // Search String being queried.
+   uint32_t                          limit;
 
-   uint32_t                limit = 0;
+   optional<discussion_query>        post_options;          // discussion query parameters for filtering a post search.
 
-   discussion_query        post_options;          // discussion query parameters for filtering a post search.
+   optional<account_query>           account_options;       // search query parameters for filtering an account search.
 
-   account_query           account_options;       // search query parameters for filtering an account search.
+   optional<board_query>             board_options;         // search query parameters for filtering a board search.
 
-   board_query             board_options;
+   optional<tag_query>               tag_options;           // search query parameters for filtering a tag search.
 
-   tag_query               tag_options;
-
-   asset_query             asset_options;    
-
-
+   optional<asset_query>             asset_options;         // search query parameters for filtering an asset search.
 };
 
 /**
@@ -193,15 +180,16 @@ struct ad_query
    }
 
    string                  interface;             // Name of the interface account of the ad inventory provider.
+
    string                  viewer;                // Name of the audience member account receiving the ad.
+
    string                  format_type;           // Type of ad inventory format being queried.
 
-   discussion_query        display_query;         // The Discussion feed display query of the ad context.
+   discussion_query        discussion_query;         // The Discussion feed display query of the ad context.
+
    search_query            search_query;          // the Search display query of the ad context.
    
    uint32_t                limit = 0;
-
-
 };
 
 /**
@@ -463,22 +451,29 @@ class database_api
       /**
        * Retrieves all bids for a specified interface that include a specified audience member
        */
-      vector< ad_bid_state >               get_interface_audience_bids( string interface, string audience )const;
+      vector< ad_bid_state >               get_interface_audience_bids( const ad_query& query )const;
 
+
+      ////////////
+      // Search //
+      ////////////
+
+      search_result_state                  get_search_query( const search_query& query )const;  
 
       ////////////////////////////
       // Authority / validation //
       ////////////////////////////
 
       /// @brief Get a hexdump of the serialized binary form of a transaction
-      std::string                   get_transaction_hex(const signed_transaction& trx)const;
-      annotated_signed_transaction  get_transaction( transaction_id_type trx_id )const;
+      std::string                          get_transaction_hex(const signed_transaction& trx)const;
+
+      annotated_signed_transaction         get_transaction( transaction_id_type trx_id )const;
 
       /**
        *  This API will take a partially signed transaction and a set of public keys that the owner has the ability to sign for
        *  and return the minimal subset of public keys that should add signatures to the transaction.
        */
-      set<public_key_type> get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      set<public_key_type>                 get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
 
       /**
        *  This method will return the set of all public keys that could possibly sign for a given transaction.  This call can

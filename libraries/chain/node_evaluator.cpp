@@ -82,12 +82,13 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    }
    FC_ASSERT( o.account_type == PERSONA || o.account_type == PROFILE || o.account_type == BUSINESS || o.account_type == ANONYMOUS, 
       "Accounts type invalid." );
-   FC_ASSERT( o.account_type != VERIFIED, 
+   FC_ASSERT( o.account_type != VERIFIED,
       "Accounts cannot be initialized as verified." );
 
-   // Ensure account name is not already in use. 
+   // Ensure account name is not already in use.
    const account_object* account_ptr = _db.find_account( o.new_account_name );
-   FC_ASSERT( account_ptr == nullptr, 
+
+   FC_ASSERT( account_ptr == nullptr,
       "Account with the name: ${n} already exists.", ("n", o.new_account_name) );
    
    const witness_schedule_object& wso = _db.get_witness_schedule();
@@ -342,8 +343,8 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
    {
       o.posting->validate();
    }
-   const auto& account = _db.get_account( o.account );
-   const auto& account_auth = _db.get< account_authority_object, by_account >( o.account );
+   const account_object& account = _db.get_account( o.account );
+   const account_authority_object& account_auth = _db.get< account_authority_object, by_account >( o.account );
 
    if( o.owner )
    {
@@ -412,12 +413,13 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       if ( o.json_private.size() > 0 )
       {
          from_string( acc.json_private, o.json_private );
-      }       
+      }
+      acc.deleted = o.deleted;
    });
 
    if( o.active || o.posting )
    {
-      _db.modify( account_auth, [&]( account_authority_object& auth)
+      _db.modify( account_auth, [&]( account_authority_object& auth )
       {
          if( o.active )  
          {  
@@ -3355,7 +3357,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          });
       }  
    }
-   else           // Post found, editing or deleting existing post. 
+   else           // Post found, editing or deleting existing post.
    {
       const comment_object& comment = *itr;
 
@@ -5691,6 +5693,7 @@ void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
 } FC_CAPTURE_AND_RETHROW( (o)) }
 
 
+
 //=============================//
 // === Transfer Evaluators === //
 //=============================//
@@ -5698,7 +5701,7 @@ void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
 
 
 /**
- * Transfers an amount of a liquid asset balance from one account to another
+ * Transfers an amount of a liquid asset balance from one account to another.
  * TODO: Asset white and blacklist checking, and flag checking
  */
 void transfer_evaluator::do_apply( const transfer_operation& o )
@@ -5792,17 +5795,22 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
    const asset_object& asset = _db.get_asset(o.amount.symbol);
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions(o.to);
-   FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), "Transfer is not authorized, due to recipient account's asset permisssions" );
+   FC_ASSERT( to_account_permissions.is_authorized_asset( asset ), 
+      "Transfer is not authorized, due to recipient account's asset permisssions" );
    const account_permission_object& from_account_permissions = _db.get_account_permissions(o.from);
-   FC_ASSERT( from_account_permissions.is_authorized_asset( asset ), "Transfer is not authorized, due to sender account's asset permisssions" );
-   FC_ASSERT( _db.get_liquid_balance( from_account.name, o.amount.symbol ) >= o.amount, "Account does not have sufficient funds for transfer." );
+   FC_ASSERT( from_account_permissions.is_authorized_asset( asset ), 
+      "Transfer is not authorized, due to sender account's asset permisssions" );
+   FC_ASSERT( _db.get_liquid_balance( from_account.name, o.amount.symbol ) >= o.amount, 
+      "Account does not have sufficient funds for transfer." );
 
    const auto& req_idx = _db.get_index< transfer_request_index >().indices().get< by_request_id >();
    auto req_itr = req_idx.find( boost::make_tuple( to_account.name, o.request_id ) );
 
    if( req_itr == req_idx.end() )    // Transfer request does not exist, creating new request.
    {
-      FC_ASSERT( o.requested , "Transfer request does not exist to cancel, set requested to true.");
+      FC_ASSERT( o.requested, 
+         "Transfer request does not exist to cancel, set requested to true.");
+
       _db.create< transfer_request_object >( [&]( transfer_request_object& tro )
       {
          tro.to = to_account.name;

@@ -164,7 +164,7 @@ struct operation_visitor
       const tag_stats_object& stats = get_stats( current.tag );
       remove_stats( current, stats );
 
-      if( comment.cashout_time != fc::time_point::maximum() )
+      if( comment.cashout_time != fc::time_point::maximum() || comment.deleted )
       {
          _db.modify( current, [&]( tag_object& obj ) 
          {
@@ -2073,7 +2073,7 @@ struct operation_visitor
             uint32_t count = 0;
             while( blog_itr != blog_idx.end() && blog_itr->account == author && count < 4 )
             {
-               if( view_idx.find( boost::make_tuple( account, blog_itr->comment ) ) == view_idx.end() )   
+               if( view_idx.find( boost::make_tuple( account, blog_itr->comment ) ) == view_idx.end() )
                {
                   selected.insert( blog_itr->comment );
                   count++;

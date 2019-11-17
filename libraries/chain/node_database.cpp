@@ -4347,22 +4347,26 @@ void database::init_hardforks()
    FC_ASSERT( BLOCKCHAIN_HARDFORK_VERSION == _hardfork_versions[ NUM_HARDFORKS ] );
 }
 
+/**
+ * TODO: Expires all orders that have exceeded thier expiration time.
+ */
 void database::clear_expired_operations()
 { try {
-         //Cancel expired limit orders
-         auto head_time = head_block_time();
-         auto maint_time = get_dynamic_global_properties().next_maintenance_time;
 
-         auto& limit_index = get_index<limit_order_index>().indices().get<by_expiration>();
-         while( !limit_index.empty() && limit_index.begin()->expiration <= head_time )
-         {
-            const limit_order_object& order = *limit_index.begin();
-            auto base_asset = order.sell_price.base.symbol;
-            auto quote_asset = order.sell_price.quote.symbol;
-            cancel_limit_order( order );
-         }
+   // Cancel expired limit orders
+   auto now = head_block_time();
+   auto maint_time = get_dynamic_global_properties().next_maintenance_time;
+   auto& limit_index = get_index<limit_order_index>().indices().get<by_expiration>();
 
-   //Process expired force settlement orders
+   while( !limit_index.empty() && limit_index.begin()->expiration <= now )
+   {
+      const limit_order_object& order = *limit_index.begin();
+      auto base_asset = order.sell_price.base.symbol;
+      auto quote_asset = order.sell_price.quote.symbol;
+      cancel_limit_order( order );
+   }
+
+   // Process expired force settlement orders
    auto& settlement_index = get_index<force_settlement_index>().indices().get<by_expiration>();
    if( !settlement_index.empty() )
    {
@@ -4422,7 +4426,7 @@ void database::clear_expired_operations()
          }
 
          // Has this order not reached its settlement date?
-         if( order.settlement_date > head_time )
+         if( order.settlement_date > now )
          {
             if( next_asset() )
             {

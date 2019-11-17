@@ -31,6 +31,14 @@ namespace node { namespace chain {
 
          shared_string                  permlink;                     // Unique identifing string for the post.
 
+         shared_string                  title;                        // String containing title text.
+
+         shared_string                  body;                         // String containing text for display when the post is opened.
+
+         vector< shared_string >        ipfs;                         // String containing a display image or video file as an IPFS file hash.
+
+         vector< shared_string >        magnet;                       // String containing a bittorrent magnet link to a file swarm.
+
          post_types                     post_type;                    // The type of post that is being created, image, text, article, video etc. 
 
          bool                           privacy;                      // True if the post is encrypted. False if it is plaintext.
@@ -41,13 +49,7 @@ namespace node { namespace chain {
 
          board_name_type                board;                        // The name of the board to which the post is uploaded to. Null string if no board. 
 
-         flat_set< tag_name_type >      tags;                         // Set of string tags for sorting the post by.
-
-         shared_string                  body;                         // String containing text for display when the post is opened.
-
-         shared_string                  ipfs;                         // String containing a display image or video file as an IPFS file hash.
-
-         shared_string                  magnet;                       // String containing a bittorrent magnet link to a file swarm.
+         vector< tag_name_type >        tags;                         // Set of string tags for sorting the post by.
 
          account_name_type              interface;                    // Name of the interface account that was used to broadcast the transaction and view the post.
 
@@ -61,7 +63,7 @@ namespace node { namespace chain {
 
          shared_string                  parent_permlink;              // permlink of the post this post is replying to, empty if root post. 
 
-         shared_string                  json;                         // IPFS link to file containing - Json metadata of the Title, Link, and additional interface specific data relating to the post.
+         shared_string                  json;                         // JSON metadata of the post, including Link, and additional interface specific data relating to the post.
 
          shared_string                  category;
 
@@ -889,6 +891,7 @@ namespace node { namespace chain {
    struct by_responses;
    struct by_author_last_update;
    struct by_time;
+   struct by_title;
 
    typedef multi_index_container<
       comment_object,
@@ -949,6 +952,13 @@ namespace node { namespace chain {
          // NON_CONSENSUS INDICIES - used by APIs
 #ifndef IS_LOW_MEM
          ,
+         ordered_unique< tag< by_title >,
+            composite_key< comment_object,
+               member< comment_object, shared_string, &comment_object::title >,
+               member< comment_object, comment_id_type, &comment_object::id >
+            >,
+            composite_key_compare< strcmp_less, std::less< comment_id_type > >
+         >,
          ordered_unique< tag< by_last_update >,
             composite_key< comment_object,
                member< comment_object, account_name_type, &comment_object::parent_author >,

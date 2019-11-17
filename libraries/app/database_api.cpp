@@ -33,111 +33,115 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Subscriptions
 
-      void                                 set_block_applied_callback( std::function<void( const variant& block_id )> cb );
+      void                                      set_block_applied_callback( std::function<void( const variant& block_id )> cb );
 
       // Blocks and transactions
 
-      optional<block_header>               get_block_header(uint32_t block_num)const;
+      optional<block_header>                    get_block_header(uint32_t block_num)const;
 
-      optional<signed_block_api_obj>       get_block(uint32_t block_num)const;
+      optional<signed_block_api_obj>            get_block(uint32_t block_num)const;
 
-      vector<applied_operation>            get_ops_in_block(uint32_t block_num, bool only_virtual)const;
+      vector<applied_operation>                 get_ops_in_block(uint32_t block_num, bool only_virtual)const;
 
       // Globals
 
-      fc::variant_object                   get_config()const;
+      fc::variant_object                        get_config()const;
 
-      dynamic_global_property_api_obj      get_dynamic_global_properties()const;
+      dynamic_global_property_api_obj           get_dynamic_global_properties()const;
 
       // Keys
 
-      vector<set<string>>                  get_key_references( vector<public_key_type> key )const;
+      vector<set<string>>                       get_key_references( vector<public_key_type> key )const;
 
       // Accounts
 
-      vector< extended_account >           get_full_accounts( vector< string > names )const;
+      vector< extended_account >                get_full_accounts( vector< string > names )const;
 
-      vector< account_api_obj >            get_accounts( vector< string > names )const;
+      vector< account_api_obj >                 get_accounts( vector< string > names )const;
 
-      vector< account_concise_api_obj >    get_concise_accounts( vector< string > names )const;
+      vector< account_concise_api_obj >         get_concise_accounts( vector< string > names )const;
 
-      vector< balance_state >              get_balances( vector< string > names )const;
+      vector< balance_state >                   get_balances( vector< string > names )const;
 
-      vector< message_state >              get_messages( vector< string > names )const;
+      vector< message_state >                   get_messages( vector< string > names )const;
 
-      vector< key_state >                  get_keychains( vector< string > names) const;
+      vector< key_state >                       get_keychains( vector< string > names) const;
 
-      vector<account_id_type>              get_account_references( account_id_type account_id )const;
+      vector<account_id_type>                   get_account_references( account_id_type account_id )const;
 
-      vector<optional<account_api_obj>>    lookup_account_names(const vector<string>& account_names)const;
+      vector<optional<account_api_obj>>         lookup_account_names(const vector<string>& account_names)const;
 
-      set<string>                          lookup_accounts(const string& lower_bound_name, uint32_t limit)const;
+      set<string>                               lookup_accounts(const string& lower_bound_name, uint32_t limit)const;
 
-      uint64_t                             get_account_count()const;
+      uint64_t                                  get_account_count()const;
 
       // Boards
 
-      vector< extended_board >             get_boards( vector<string> boards )const;
+      vector< extended_board >                  get_boards( vector<string> boards )const;
 
       // Assets
 
-      vector< extended_asset >             get_assets( vector<string> assets )const;
+      vector< extended_asset >                  get_assets( vector<string> assets )const;
 
       // Witnesses + Network
 
-      vector<optional<witness_api_obj>>    get_witnesses(const vector<witness_id_type>& witness_ids)const;
+      vector<optional<witness_api_obj>>         get_witnesses(const vector<witness_id_type>& witness_ids)const;
 
-      fc::optional<witness_api_obj>        get_witness_by_account( string account_name )const;
+      fc::optional<witness_api_obj>             get_witness_by_account( string account_name )const;
 
-      set<account_name_type>               lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const;
+      set<account_name_type>                    lookup_witness_accounts(const string& lower_bound_name, uint32_t limit)const;
 
-      uint64_t                             get_witness_count()const;
+      uint64_t                                  get_witness_count()const;
 
-      vector< witness_api_obj >            get_witnesses_by_voting_power( string from, uint32_t limit )const;
+      vector< witness_api_obj >                 get_witnesses_by_voting_power( string from, uint32_t limit )const;
 
-      vector< witness_api_obj >            get_witnesses_by_mining_power( string from, uint32_t limit )const;
+      vector< witness_api_obj >                 get_witnesses_by_mining_power( string from, uint32_t limit )const;
 
-      vector< network_officers_api_obj >   get_development_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officers_api_obj >        get_development_officers_by_voting_power( string from, uint32_t limit )const;
 
-      vector< network_officers_api_obj >   get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officers_api_obj >        get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
 
-      vector< network_officers_api_obj >   get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officers_api_obj >        get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
 
-      vector< executive_board_api_obj >    get_executive_boards_by_voting_power( string from, uint32_t limit )const;
+      vector< executive_board_api_obj >         get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
-      vector< supernode_api_obj >          get_supernodes_by_view_weight( string from, uint32_t limit )const;
+      vector< supernode_api_obj >               get_supernodes_by_view_weight( string from, uint32_t limit )const;
 
-      vector< interface_api_obj >          get_interfaces_by_users( string from, uint32_t limit )const;
+      vector< interface_api_obj >               get_interfaces_by_users( string from, uint32_t limit )const;
 
-      vector< governance_account_api_obj > get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
+      vector< governance_account_api_obj >      get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
 
       vector< community_enterprise_api_obj >    get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
       // Market
 
-      vector< order_state >                get_open_orders( vector< string > names )const;
+      vector< order_state >                     get_open_orders( vector< string > names )const;
 
-      market_limit_orders                  get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
+      market_limit_orders                       get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      market_margin_orders                 get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
+      market_margin_orders                      get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      market_call_orders                   get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
+      market_call_orders                        get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      market_credit_loans                  get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit )const;
+      market_credit_loans                       get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      vector<credit_pool_api_obj>          get_credit_pools( string buy_symbol, string sell_symbol )const;
+      vector<credit_pool_api_obj>               get_credit_pools( string buy_symbol, string sell_symbol )const;
 
-      vector<liquidity_pool_api_obj>       get_liquidity_pools( string buy_symbol, string sell_symbol )const;
+      vector<liquidity_pool_api_obj>            get_liquidity_pools( string buy_symbol, string sell_symbol )const;
 
       // Ads
 
-      vector< account_ad_state >           get_account_ads( vector<string> names )const;
+      vector< account_ad_state >                get_account_ads( vector<string> names )const;
 
-      vector< ad_bid_state >               get_interface_audience_bids( ad_query& query )const;
+      vector< ad_bid_state >                    get_interface_audience_bids( const ad_query& query )const;
+
+      // Search 
+
+      search_result_state                       get_search_query( const search_query& query )const;
 
       // signal handlers
 
-      void                                 on_applied_block( const chain::signed_block& b );
+      void                                      on_applied_block( const chain::signed_block& b );
 
       std::function<void(const variant&)>             _block_applied_callback;
 
@@ -151,15 +155,15 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Authority / validation
 
-      std::string                         get_transaction_hex(const signed_transaction& trx)const;
+      std::string                              get_transaction_hex(const signed_transaction& trx)const;
 
-      set<public_key_type>                get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      set<public_key_type>                     get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
 
-      set<public_key_type>                get_potential_signatures( const signed_transaction& trx )const;
+      set<public_key_type>                     get_potential_signatures( const signed_transaction& trx )const;
 
-      bool                                verify_authority( const signed_transaction& trx )const;
+      bool                                     verify_authority( const signed_transaction& trx )const;
 
-      bool                                verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
+      bool                                     verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
 };
 
 applied_operation::applied_operation() {}
@@ -1797,21 +1801,227 @@ vector< account_ad_state > database_api_impl::get_account_ads( vector<string> na
 }
 
 
-vector< ad_bid_state > database_api::get_interface_audience_bids( string interface, string audience )const
+vector< ad_bid_state > database_api::get_interface_audience_bids( const ad_query& query )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_interface_audience_bids( interface, audience ); 
+      return my->get_interface_audience_bids( query ); 
    });
 }
 
+/**
+ * Retrieves all bids for an interface that includes a specified
+ * account in its audience set. 
+ */
+vector< ad_bid_state > database_api_impl::get_interface_audience_bids( const ad_query& query )const
+{
+   vector< ad_bid_state > results;
+   account_name_type interface = query.interface;
+   account_name_type viewer = query.viewer;
+   format_types format = query.format_type;
+   
+   results.reserve( names.size() );
+   const auto& creative_idx   = _db.get_index< ad_creative_index >().indices().get< by_latest >();
+   const auto& campaign_idx   = _db.get_index< ad_campaign_index >().indices().get< by_latest >();
+   const auto& audience_idx   = _db.get_index< ad_audience_index >().indices().get< by_latest >();
+   const auto& inventory_idx  = _db.get_index< ad_inventory_index >().indices().get< by_latest >();
+   const auto& provider_idx   = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_price >();
 
-vector< ad_bid_state > database_api_impl::get_interface_audience_bids( string interface, string audience )const
+   auto provider_itr = provider_idx.lower_bound( boost::make_tuple( interface, format ) );
+   while( provider_itr != provider_idx.end() && provider_itr->provider == interface )
+   {
+      auto a_itr = audience_idx.find( boost::make_tuple( provider_itr->bidder, provider_itr->audience_id ) );
+      if( a_itr != audience_idx.end() )
+      {
+         const ad_audience_object& aud = *a_itr;
+         if( aud.audience.is_audience( viewer ) )
+         {
+            results.push_back( ad_bid_state( *provider_itr ) );
+            results.back().audience = ad_audience_api_obj( *a_itr );
+            auto cr_itr = creative_idx.find( boost::make_tuple( provider_itr->author, provider_itr->creative_id ) );
+            if( cr_itr != creative_idx.end() )
+            {
+               results.back().creative = ad_creative_api_obj( *cr_itr );
+            }
+            auto c_itr = campaign_idx.find( boost::make_tuple( provider_itr->account, provider_itr->campaign_id ) );
+            if( c_itr != campaign_idx.end() )
+            {
+               results.back().campaign = ad_campaign_api_obj( *c_itr );
+            }
+            auto i_itr = inventory_idx.find( boost::make_tuple( provider_itr->provider, provider_itr->inventory_id ) );
+            if( i_itr != inventory_idx.end() )
+            {
+               results.back().inventory = ad_inventory_api_obj( *i_itr );
+            }
+         }
+      }
+      ++provider_itr;
+   }
+   return results;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// Search                                                           //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+
+search_result_state            database_api::get_search_query( const search_query& query )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_interface_audience_bids( interface, audience ); // TODO: Interface ads api
+      return my->get_search_query( query );
    });
+}
+
+/**
+ * Retreives a series of accounts, boards, tags, assets and posts according to the 
+ * lowest edit distance between the search query and the names of the objects.
+ */
+search_result_state            database_api_impl::get_search_query( const search_query& query )const
+{
+   search_result_state results;
+   account_name_type account = query.account;
+   string q = query.query;
+
+   const auto& account_idx = _db.get_index< account_index >().indices().get< by_name >();
+   const auto& board_idx = _db.get_index< board_index >().indices().get< by_name >();
+   const auto& tag_idx = _db.get_index< tag_following_index >().indices().get< by_tag >();
+   const auto& asset_idx = _db.get_index< asset_index >().indices().get< by_symbol >();
+   const auto& post_idx = _db.get_index< comment_index >().indices().get< by_title >();
+
+   auto account_itr = account_idx.begin();
+   auto board_itr = board_idx.begin();
+   auto tag_itr = tag_idx.begin();
+   auto asset_itr = asset_idx.begin();
+   auto post_itr = post_idx.upper_bound( shared_string() );    // skip index posts with no title
+
+   vector<pair<account_name_type, size_t > > accounts;
+   vector<pair<board_name_type, size_t > > boards;
+   vector<pair<tag_name_type, size_t > > tags;
+   vector<pair<asset_symbol_type, size_t > > assets;
+   vector<pair<shared_string, size_t > > posts;
+
+   accounts.reserve( account_idx.size() );
+   boards.reserve( board_idx.size() );
+   tags.reserve( tag_idx.size() );
+   assets.reserve( asset_idx.size() );
+   posts.reserve( post_idx.size() );
+
+   while( account_itr != account_idx.end() )
+   {
+      accounts.push_back( std::make_pair( account_itr->name, edit_distance( string( account_itr->name ), q ) ) );
+   }
+
+   while( board_itr != board_idx.end() )
+   {
+      boards.push_back( std::make_pair( board_itr->name, edit_distance( string( board_itr->name ), q ) ) );
+   }
+
+   while( tag_itr != tag_idx.end() )
+   {
+      tags.push_back( std::make_pair( tag_itr->tag, edit_distance( string( tag_itr->tag ), q ) ) );
+   }
+
+   while( asset_itr != asset_idx.end() )
+   {
+      assets.push_back( std::make_pair( asset_itr->name, edit_distance( string( asset_itr->name ), q ) ) );
+   }
+
+   while( post_itr != post_idx.end() )
+   {
+      posts.push_back( std::make_pair( post_itr->name, edit_distance( string( post_itr->title ), q ) ) );
+   }
+
+   std::sort( accounts.begin(), accounts.end(), [&]( auto a, auto b )
+   {
+      return a.second>b.second;      // Ascending order, lowest edit distance first.
+   });
+
+   std::sort( boards.begin(), boards.end(), [&]( auto a, auto b )
+   {
+      return a.second>b.second;      // Ascending order, lowest edit distance first.
+   });
+
+   std::sort( tags.begin(), tags.end(), [&]( auto a, auto b )
+   {
+      return a.second>b.second;      // Ascending order, lowest edit distance first.
+   });
+
+   std::sort( assets.begin(), assets.end(), [&]( auto a, auto b )
+   {
+      return a.second>b.second;      // Ascending order, lowest edit distance first.
+   });
+
+   std::sort( posts.begin(), posts.end(), [&]( auto a, auto b )
+   {
+      return a.second>b.second;      // Ascending order, lowest edit distance first.
+   });
+
+   if( accounts.size() > query.limit )
+   {
+      accounts = std::vector( accounts.begin(), accounts.begin() + query.limit );
+   }
+
+   if( boards.size() > query.limit )
+   {
+      boards = std::vector( boards.begin(), boards.begin() + query.limit );
+   }
+
+   if( tags.size() > query.limit )
+   {
+      tags = std::vector( tags.begin(), tags.begin() + query.limit );
+   }
+
+   if( assets.size() > query.limit )
+   {
+      assets = std::vector( assets.begin(), assets.begin() + query.limit );
+   }
+
+   if( posts.size() > query.limit )
+   {
+      posts = std::vector( posts.begin(), posts.begin() + query.limit );
+   }
+
+   result.accounts.reserve( query.limit );
+   result.boards.reserve( query.limit );
+   result.tags.reserve( query.limit );
+   result.assets.reserve( query.limit );
+   result.posts.reserve( query.limit );
+
+   for( auto item : accounts )
+   {
+      account_itr = account_idx.find( item.first );
+      results.accounts.push_back( account_api_obj( *account_itr ) );
+   }
+
+   for( auto item : boards )
+   {
+      board_itr = board_idx.find( item.first );
+      results.boards.push_back( board_api_obj( *board_itr ) );
+   }
+
+   for( auto item : tags )
+   {
+      tag_itr = tag_idx.find( item.first );
+      results.tags.push_back( tag_following_api_obj( *tag_itr ) );
+   }
+
+   for( auto item : assets )
+   {
+      asset_itr = asset_idx.find( item.first );
+      results.assets.push_back( asset_api_obj( *asset_itr ) );
+   }
+
+   for( auto item : posts )
+   {
+      post_itr = post_idx.find( item.first );
+      results.posts.push_back( discussion( *post_itr ) );
+   }
+
+   return results;
 }
 
 
@@ -1821,6 +2031,8 @@ vector< ad_bid_state > database_api_impl::get_interface_audience_bids( string in
 // Witnesses                                                        //
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
+
+
 
 vector<optional<witness_api_obj>> database_api::get_witnesses(const vector<witness_id_type>& witness_ids)const
 {

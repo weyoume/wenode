@@ -28,12 +28,61 @@ namespace node { namespace protocol {
       FC_ASSERT( is_valid_business_account_name( name ), "Business Account name ${n} is invalid", ("n", name) );
    };
 
-
    inline void validate_permlink( const string& permlink )
    {
       FC_ASSERT( permlink.size() < MAX_PERMLINK_LENGTH, "permlink is too long" );
       FC_ASSERT( fc::is_utf8( permlink ), "permlink not formatted in UTF8" );
    };
+
+   /**
+    * Retrieves the edit distance between two strings, 
+    * the number of additions, substitutions or deletions needed
+    * to transfrom string a into string b.
+    */
+   inline size_t edit_distance( const string& s1, const string& s2 )
+   {
+      const size_t m(s1.size());
+      const size_t n(s2.size());
+      
+      if( m==0 ) return n;
+      if( n==0 ) return m;
+      
+      vector<size_t> costs;
+      costs.reserve( n+1 );
+      
+      for( size_t k=0; k<=n; k++ )
+      {
+         costs[k] = k;
+      }
+      
+      size_t i = 0;
+      for( std::string::const_iterator it1 = s1.begin(); it1 != s1.end(); ++it1, ++i )
+      {
+         costs[0] = i+1;
+         size_t corner = i;
+      
+         size_t j = 0;
+         for ( std::string::const_iterator it2 = s2.begin(); it2 != s2.end(); ++it2, ++j )
+         {
+            size_t upper = costs[j+1];
+            if( *it1 == *it2 )
+            {
+               costs[j+1] = corner;
+            }
+            else
+            {
+               size_t t(upper<corner?upper:corner);
+               costs[j+1] = (costs[j]<t?costs[j]:t)+1;
+            }
+      
+            corner = upper;
+         }
+      }
+      
+      size_t result = costs[n];
+      return result;
+   };
+
 
 
    //============================//
@@ -129,9 +178,11 @@ namespace node { namespace protocol {
 
       string                        url;
 
+      bool                          deleted = false;
+
       optional<business_types>      business_type;               
 
-      optional<share_type>          officer_vote_threshold;      
+      optional<share_type>          officer_vote_threshold;
 
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
@@ -1136,11 +1187,15 @@ namespace node { namespace protocol {
 
       string                      permlink;             // Unique identifing string for the post.
 
+      string                      title;                // content related name of the post, used to find post with search API.
+
       post_types                  post_type;            // Type of post being created, text, image, article, video, audio, file, etc.
 
       string                      body;                 // String containing text for display when the post is opened.
 
-      string                      media;                // String containing a display image or video file as an IPFS file hash.
+      vector< string >            ipfs;                 // Vector of Strings containing IPFS file hashes: images, videos, files.
+
+      vector< string >            magnet;               // Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
 
       string                      language;             // String containing the two letter ISO language code of the native language of the author. 
 
@@ -1164,7 +1219,7 @@ namespace node { namespace protocol {
 
       string                      parent_permlink;      // permlink of the post this post is replying to, empty if root post. 
 
-      flat_set< string >          tags;                 // Set of string tags for sorting the post by.
+      vector< string >            tags;                 // Set of string tags for sorting the post by.
 
       string                      json;                 // json string of additional interface specific data relating to the post. 
 

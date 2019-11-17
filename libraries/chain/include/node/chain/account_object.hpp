@@ -148,6 +148,8 @@ namespace node { namespace chain {
          bool                             revenue_share = false;
 
          bool                             can_vote = true;
+
+         bool                             deleted = false;
    };
 
    /**
@@ -999,35 +1001,35 @@ namespace node { namespace chain {
          share_type                        adjacency_value( const account_following_object& f )const
          {
             vector<account_name_type> common_followers;
-            common_followers.reserve( followers.length() );
+            common_followers.reserve( followers.size() );
             std::set_intersection( f.followers.begin(), f.followers.end(), followers.begin(), followers.end(), common_followers.begin());
 
             vector<account_name_type> common_following;
-            common_following.reserve( following.length() );
+            common_following.reserve( following.size() );
             std::set_intersection( f.following.begin(), f.following.end(), following.begin(), following.end(), common_following.begin());
 
             vector<account_name_type> common_mutual_followers;
-            common_mutual_followers.reserve( mutual_followers.length() );
+            common_mutual_followers.reserve( mutual_followers.size() );
             std::set_intersection( f.mutual_followers.begin(), f.mutual_followers.end(), mutual_followers.begin(), mutual_followers.end(), common_mutual_followers.begin());
 
             vector<account_name_type> common_connections;
-            common_connections.reserve( connections.length() );
+            common_connections.reserve( connections.size() );
             std::set_intersection( f.connections.begin(), f.connections.end(), connections.begin(), connections.end(), common_connections.begin());
 
             vector<account_name_type> common_friends;
-            common_friends.reserve( friends.length() );
+            common_friends.reserve( friends.size() );
             std::set_intersection( f.friends.begin(), f.friends.end(), friends.begin(), friends.end(), common_friends.begin());
 
             vector<account_name_type> common_companions;
-            common_companions.reserve( companions.length() );
+            common_companions.reserve( companions.size() );
             std::set_intersection( f.companions.begin(), f.companions.end(), companions.begin(), companions.end(), common_companions.begin());
 
             vector<account_name_type> common_followed_boards;
-            common_followed_boards.reserve( followed_boards.length() );
+            common_followed_boards.reserve( followed_boards.size() );
             std::set_intersection( f.followed_boards.begin(), f.followed_boards.end(), followed_boards.begin(), followed_boards.end(), common_followed_boards.begin());
 
             vector<account_name_type> common_followed_tags;
-            common_followed_tags.reserve( followed_tags.length() );
+            common_followed_tags.reserve( followed_tags.size() );
             std::set_intersection( f.followed_tags.begin(), f.followed_tags.end(), followed_tags.begin(), followed_tags.end(), common_followed_tags.begin());
 
             share_type result = common_followers.size() + common_following.size() + 2*common_mutual_followers.size() + 3*common_connections.size() +
@@ -1244,7 +1246,7 @@ namespace node { namespace chain {
          share_type                        adjacency_value( const tag_following_object& t )const
          {
             vector<account_name_type> common_followers;
-            common_followers.reserve( followers.length() );
+            common_followers.reserve( followers.size() );
             std::set_intersection( t.followers.begin(), t.followers.end(), followers.begin(), followers.end(), common_followers.begin());
             share_type result = common_followers.size();
             return result;

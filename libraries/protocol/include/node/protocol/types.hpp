@@ -294,24 +294,24 @@ namespace node {
 
       struct public_key_type
       {
-            struct binary_key
-            {
-               binary_key() {}
-               uint32_t                 check = 0;
-               fc::ecc::public_key_data data;
-            };
-            fc::ecc::public_key_data key_data;
-            public_key_type();
-            public_key_type( const fc::ecc::public_key_data& data );
-            public_key_type( const fc::ecc::public_key& pubkey );
-            explicit public_key_type( const std::string& base58str );
-            operator fc::ecc::public_key_data() const;
-            operator fc::ecc::public_key() const;
-            explicit operator std::string() const;
-            friend bool operator == ( const public_key_type& p1, const fc::ecc::public_key& p2);
-            friend bool operator == ( const public_key_type& p1, const public_key_type& p2);
-            friend bool operator < ( const public_key_type& p1, const public_key_type& p2) { return p1.key_data < p2.key_data; }
-            friend bool operator != ( const public_key_type& p1, const public_key_type& p2);
+         struct binary_key
+         {
+            binary_key() {}
+            uint32_t                 check = 0;
+            fc::ecc::public_key_data data;
+         };
+         fc::ecc::public_key_data key_data;
+         public_key_type();
+         public_key_type( const fc::ecc::public_key_data& data );
+         public_key_type( const fc::ecc::public_key& pubkey );
+         explicit public_key_type( const std::string& base58str );
+         operator fc::ecc::public_key_data() const;
+         operator fc::ecc::public_key() const;
+         explicit operator std::string() const;
+         friend bool operator == ( const public_key_type& p1, const fc::ecc::public_key& p2 );
+         friend bool operator == ( const public_key_type& p1, const public_key_type& p2 );
+         friend bool operator < ( const public_key_type& p1, const public_key_type& p2 ) { return p1.key_data < p2.key_data; }
+         friend bool operator != ( const public_key_type& p1, const public_key_type& p2 );
       };
 
       #define INIT_PUBLIC_KEY (node::protocol::public_key_type(INIT_PUBLIC_KEY_STR))
@@ -370,38 +370,33 @@ namespace node {
        */
       struct encrypted_keypair_type
       {
-         encrypted_keypair_type();
-         encrypted_keypair_type( const std::string& secure, const std::string& public, const std::string& encrypted ):
-            secure_key( secure ), public_key( public ), encrypted_private_key( encrypted ){}
+         encrypted_keypair_type( const public_key_type& secure_key, const public_key_type& public_key, const std::string& encrypted_private_key );
 
-         encrypted_keypair_type( const fc::ecc::public_key& secure, const fc::ecc::public_key& public, const std::string& encrypted ):
-            secure_key( secure ), public_key( public ), encrypted_private_key( encrypted ){}
-
-         public_key_type   secure_key = public_key_type();               // The public key used to encrypt the encrypted key.
-         public_key_type   public_key = public_key_type();               // the public key of the private encrypted key.
-         shared_string     encrypted_private_key = shared_string();    // the encrypted private key of the public key.
+         public_key_type   secure_key;                 // The public key used to encrypt the encrypted key.
+         public_key_type   public_key;                 // The public key of the private encrypted key.
+         string            encrypted_private_key;      // The encrypted private key of the public key.
          
-         bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         friend bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
          {
             return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) == std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
          }
-         bool operator < ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         friend bool operator < ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
          {
             return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) < std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
          }
-         bool operator > ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         friend bool operator > ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
          {
             return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) > std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
          }
-         bool operator != ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         friend bool operator != ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
          {
             return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) != std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
          }
-         bool operator <= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         friend bool operator <= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
          {
             return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) <= std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
          }
-         bool operator >= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2)
+         friend bool operator >= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
          {
             return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) >= std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
          }

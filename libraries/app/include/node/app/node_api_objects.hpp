@@ -144,32 +144,32 @@ struct comment_api_obj
    time_point                     active;                       // The last time this post was replied to.
    time_point                     last_payout;                  // The last time that the post recieved a content reward payout
    int64_t                        author_reputation;            // Used to measure author lifetime rewards, relative to other accounts.
-   uint16_t                       depth;                    // used to track max nested depth
-   uint32_t                       children;                 // The total number of children, grandchildren, posts with this as root comment.
-   int32_t                        net_votes;                // The amount of upvotes, minus downvotes on the post.
-   uint32_t                       view_count;               // The amount of views on the post.
-   uint32_t                       share_count;              // The amount of shares on the post.
-   int128_t                       net_reward;               // Net reward is the sum of all vote, view, share and comment power.
-   int128_t                       vote_power;               // Sum of weighted voting power from votes.
-   int128_t                       view_power;               // Sum of weighted voting power from viewers.
-   int128_t                       share_power;              // Sum of weighted voting power from shares.
-   int128_t                       comment_power;            // Sum of weighted voting power from comments.
+   uint16_t                       depth;                        // used to track max nested depth
+   uint32_t                       children;                     // The total number of children, grandchildren, posts with this as root comment.
+   int32_t                        net_votes;                    // The amount of upvotes, minus downvotes on the post.
+   uint32_t                       view_count;                   // The amount of views on the post.
+   uint32_t                       share_count;                  // The amount of shares on the post.
+   int128_t                       net_reward;                   // Net reward is the sum of all vote, view, share and comment power.
+   int128_t                       vote_power;                   // Sum of weighted voting power from votes.
+   int128_t                       view_power;                   // Sum of weighted voting power from viewers.
+   int128_t                       share_power;                  // Sum of weighted voting power from shares.
+   int128_t                       comment_power;                // Sum of weighted voting power from comments.
    time_point                     cashout_time;                 // 24 hours from the weighted average of vote time
-   uint32_t                       cashouts_received;        // Number of times that the comment has received content rewards
+   uint32_t                       cashouts_received;            // Number of times that the comment has received content rewards
    time_point                     max_cashout_time;
-   uint128_t                      total_vote_weight;        // the total weight of votes, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_view_weight;        // the total weight of views, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_share_weight;       // the total weight of shares, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_comment_weight;     // the total weight of comments, used to calculate pro-rata share of curation payouts
-   asset                          total_payout_value; // The total payout this comment has received over time, measured in USD */
+   uint128_t                      total_vote_weight;            // the total weight of votes, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_view_weight;            // the total weight of views, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_share_weight;           // the total weight of shares, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_comment_weight;         // the total weight of comments, used to calculate pro-rata share of curation payouts
+   asset                          total_payout_value;           // The total payout this comment has received over time, measured in USD */
    asset                          curator_payout_value;
    asset                          beneficiary_payout_value;
    int64_t                        author_rewards;
    int64_t                        percent_liquid;
-   uint128_t                      reward;                   // The amount of reward_curve this comment is responsible for in its root post.
-   uint128_t                      weight;                   // Used to define the comment curation reward this comment receives.
-   uint128_t                      max_weight;               // Used to define relative contribution of this comment to rewards.
-   asset                          max_accepted_payout;       // USD value of the maximum payout this post will receive
+   uint128_t                      reward;                       // The amount of reward_curve this comment is responsible for in its root post.
+   uint128_t                      weight;                       // Used to define the comment curation reward this comment receives.
+   uint128_t                      max_weight;                   // Used to define relative contribution of this comment to rewards.
+   asset                          max_accepted_payout;          // USD value of the maximum payout this post will receive
    uint32_t                       author_reward_percent;
    uint32_t                       vote_reward_percent;
    uint32_t                       view_reward_percent;
@@ -183,7 +183,7 @@ struct comment_api_obj
    bool                           allow_shares;                // allows a post to receive shares.
    bool                           allow_curation_rewards;      // Allows a post to distribute curation rewards.
    bool                           root;                        // True if post is a root post. 
-   bool                           deleted;                    // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
+   bool                           deleted;                     // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
 };
 
 struct tag_api_obj
@@ -269,6 +269,7 @@ struct account_api_obj
       mined( a.mined ),
       revenue_share( a.revenue_share ),
       can_vote( a.can_vote ),
+      deleted( a.deleted ),
    {
       const auto& auth = db.get< account_authority_object, by_account >( name );
       owner = authority( auth.owner );
@@ -350,8 +351,8 @@ struct account_api_obj
    uint16_t                         witness_vote_count;
    uint16_t                         officer_vote_count;                         // Number of network officers that the account has voted for.
    uint16_t                         executive_board_vote_count;                 // Number of Executive boards that the account has voted for.
-   uint16_t                         governance_subscriptions;              // Number of governance accounts that the account subscribes to.   
-   uint16_t                         recurring_membership;                  // Amount of months membership should be automatically renewed for on expiration
+   uint16_t                         governance_subscriptions;                  // Number of governance accounts that the account subscribes to.   
+   uint16_t                         recurring_membership;                      // Amount of months membership should be automatically renewed for on expiration
    time_point                       created;                                   // Time that the account was created.
    time_point                       membership_expiration;                     // Time that the account has its current membership subscription until.
    time_point                       last_account_update;                       // Time that the account's details were last updated.
@@ -368,6 +369,7 @@ struct account_api_obj
    bool                             mined;
    bool                             revenue_share;
    bool                             can_vote;
+   bool                             deleted;
 };
 
 
@@ -875,6 +877,132 @@ struct board_api_obj
    time_point                         last_board_update;                  // Time that the board's details were last updated.
    time_point                         last_post;                          // Time that the user most recently created a comment.
    time_point                         last_root_post;                     // Time that the board last created a post. 
+};
+
+struct account_concise_api_obj
+{
+   account_concise_api_obj( const chain::account_object& a, const chain::database& db ):
+      id( a.id ),
+      name( a.name ),
+      details( to_string( a.details ) ),
+      json( to_string( a.json ) ),
+      json_private( to_string( a.json_private ) ),
+      url( to_string( a.url ) ),
+      account_type( to_string( a.account_type ) ),
+      membership( to_string( a.membership ) ),
+      secure_public_key( to_string( a.secure_public_key ) ),
+      connection_public_key( to_string( a.connection_public_key ) ),
+      friend_public_key( to_string( a.friend_public_key ) ),
+      companion_public_key( to_string( a.companion_public_key ) ),
+      pinned_comment( a.pinned_comment ),
+      follower_count( a.follower_count ),
+      following_count( a.following_count ),
+      total_rewards( a.total_rewards ),
+      author_reputation( a.author_reputation ),
+      created( a.created ),
+      
+   account_concise_api_obj(){}
+
+   account_id_type                  id;
+   account_name_type                name;                                  // Username of the account, lowercase letter and numbers and hyphens only.
+   string                           details;                               // User's account details.
+   string                           json;                                  // Public plaintext json information.
+   string                           json_private;                          // Private ciphertext json information.
+   string                           url;                                   // Account's external reference URL.
+   string                           account_type;                          // Type of account, persona, profile or business.
+   string                           membership;                            // Level of account membership.
+   string                           secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
+   string                           connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
+   string                           friend_public_key;                     // Key used for encrypting posts for friend level visibility.
+   string                           companion_public_key;                  // Key used for encrypting posts for companion level visibility.
+   comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
+   uint32_t                         follower_count;                        // Number of account followers.
+   uint32_t                         following_count;                       // Number of accounts that the account follows. 
+   int64_t                          total_rewards;                         // Rewards in core asset earned from all reward sources.
+   int64_t                          author_reputation;                     // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+   time_point                       created;                               // Time that the account was created.
+};
+
+struct account_permission_api_obj
+{
+   account_permission_api_obj( const chain::account_permission_object& a, const chain::database& db ):
+      id( a.id ),
+      {
+         whitelisted_accounts.reserve( a.whitelisted_accounts.size() );
+         for( auto name : a.whitelisted_accounts )
+         {
+            whitelisted_accounts.push_back( name );
+         }
+         blacklisted_accounts.reserve( a.blacklisted_accounts.size() );
+         for( auto name : a.blacklisted_accounts )
+         {
+            blacklisted_accounts.push_back( name );
+         }
+         whitelisting_accounts.reserve( a.whitelisting_accounts.size() );
+         for( auto name : a.whitelisting_accounts )
+         {
+            whitelisting_accounts.push_back( name );
+         }
+         blacklisting_accounts.reserve( a.blacklisting_accounts.size() );
+         for( auto name : a.blacklisting_accounts )
+         {
+            blacklisting_accounts.push_back( name );
+         }
+         whitelisted_assets.reserve( a.whitelisted_assets.size() );
+         for( auto name : a.whitelisted_assets )
+         {
+            whitelisted_assets.push_back( name );
+         }
+         blacklisted_assets.reserve( a.blacklisted_assets.size() );
+         for( auto name : a.blacklisted_assets )
+         {
+            blacklisted_assets.push_back( name );
+         }
+         whitelisting_assets.reserve( a.whitelisting_assets.size() );
+         for( auto name : a.whitelisting_assets )
+         {
+            whitelisting_assets.push_back( name );
+         }
+         blacklisting_assets.reserve( a.blacklisting_assets.size() );
+         for( auto name : a.blacklisting_assets )
+         {
+            blacklisting_assets.push_back( name );
+         }
+      },
+   account_permission_api_obj(){}
+
+   account_name_type                      account;                       // Name of the account with permissions set.
+   vector<account_name_type>              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
+   vector<account_name_type>              blacklisted_accounts;          // List of accounts that are not able to recieve transfers from this account.
+   vector<account_name_type>              whitelisting_accounts;         // List of accounts that have whitelisted this account.
+   vector<account_name_type>              blacklisting_accounts;         // List of accounts that have blacklisted this account. 
+   vector<asset_symbol_type>              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
+   vector<asset_symbol_type>              blacklisted_assets;            // List of assets that the account has blacklisted against incoming transfers.
+   vector<asset_symbol_type>              whitelisting_assets;           // List of assets that the account has been whitelisted to receieve transfers of.
+   vector<asset_symbol_type>              blacklisting_assets;           // List of assets that the account has been blacklisted against receieving transfers.
+}
+
+
+struct tag_following_api_obj
+{
+   tag_following_api_obj( const chain::tag_following_object& t, const chain::database& db ):
+      id( t.id ),
+      tag( t.tag ),
+      last_update( t.last_update ),
+      {
+         followers.reserve( t.followers.size() );
+         for( auto name : t.followers )
+         {
+            followers.push_back( name );
+         }
+      }
+
+   tag_following_api_obj(){}
+
+   tag_following_id_type             id;
+   tag_name_type                     tag;                  // Name of the account.
+   vector< account_name_type >       followers;            // Accounts that follow this account. 
+   time_point                        last_update;          // Last time that the tag changed its following sets.
 };
 
 

@@ -202,10 +202,10 @@ namespace node { namespace app {
       transfer_state                                                       transfers;
       board_state                                                          boards;
       network_state                                                        network;
-      ad_state                                                             active_ads; 
+      account_ad_state                                                     active_ads; 
       vector<pair<string,uint32_t>>                                        active_tags;
       vector<pair<account_name_type,uint32_t>>                             top_shared;
-      account_permissions_api_obj                                          permissions;  // TODO: permissions API object
+      account_permissions_api_obj                                          permissions;
       operation_state                                                      operations;
    };
 
@@ -249,8 +249,7 @@ namespace node { namespace app {
       optional<credit_data_api_obj>            credit;
       optional<credit_pool_api_obj>            credit_pool;
       map< string, liquidity_pool_api_obj >    liquidity_pools;
-
-   }
+   };
 
    struct message_state
    {
@@ -308,6 +307,15 @@ namespace node { namespace app {
       vector< ad_bid_api_obj >                account_bids;
       vector< ad_bid_api_obj >                creative_bids;
       vector< ad_bid_state >                  incoming_bids;
+   };
+
+   struct search_result_state
+   {
+      vector< account_api_obj >               accounts;
+      vector< board_api_obj >                 boards;
+      vector< tag_following_api_obj >         tags;
+      vector< asset_api_obj >                 assets;
+      vector< discussion >                    posts;
    };
 
    struct ad_bid_state : public ad_bid_api_obj
