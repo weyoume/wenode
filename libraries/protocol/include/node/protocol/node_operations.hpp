@@ -10,22 +10,38 @@ namespace node { namespace protocol {
 
    inline void validate_account_name( const string& name )
    {
-      FC_ASSERT( is_valid_account_name( name ) , "Account name ${n} is invalid", ("n", name) );
+      FC_ASSERT( is_valid_account_name( name ),
+         "Account name ${n} is invalid", ("n", name) );
    };
 
    inline void validate_persona_account_name( const string& name )
    {
-      FC_ASSERT( is_valid_persona_account_name( name ) , "Persona Account name ${n} is invalid", ("n", name) );
+      FC_ASSERT( is_valid_persona_account_name( name ),
+         "Persona Account name ${n} is invalid", ("n", name) );
    };
 
    inline void validate_profile_account_name( const string& name )
    {
-      FC_ASSERT( is_valid_profile_account_name( name ), "Profile Account name ${n} is invalid", ("n", name) );
+      FC_ASSERT( is_valid_profile_account_name( name ),
+         "Profile Account name ${n} is invalid", ("n", name) );
    };
 
    inline void validate_business_account_name( const string& name )
    {
-      FC_ASSERT( is_valid_business_account_name( name ), "Business Account name ${n} is invalid", ("n", name) );
+      FC_ASSERT( is_valid_business_account_name( name ),
+         "Business Account name ${n} is invalid", ("n", name) );
+   };
+
+   inline void validate_board_name( const string& name )
+   {
+      FC_ASSERT( is_valid_business_account_name( name ),
+         "Board name ${n} is invalid", ("n", name) );
+   };
+
+   inline void validate_tag_name( const string& name )
+   {
+      FC_ASSERT( is_valid_persona_account_name( name ),
+         "Board name ${n} is invalid", ("n", name) );
    };
 
    inline void validate_permlink( const string& permlink )
@@ -124,17 +140,17 @@ namespace node { namespace protocol {
 
       authority                          posting;                       // The account authority required for posting content and voting
 
-      public_key_type                    secure_public_key;             // The secure encryption key for conntent only visible ot this account. 
+      string                             secure_public_key;             // The secure encryption key for conntent only visible ot this account. 
 
-      public_key_type                    connection_public_key;         // The connection public key used for encrypting Connection level content
+      string                             connection_public_key;         // The connection public key used for encrypting Connection level content
 
-      public_key_type                    friend_public_key;             // The connection public key used for encrypting Friend level content
+      string                             friend_public_key;             // The connection public key used for encrypting Friend level content
 
-      public_key_type                    companion_public_key;          // The connection public key used for encrypting Companion level content
+      string                             companion_public_key;          // The connection public key used for encrypting Companion level content
 
       optional<business_types>           business_type;                 // The type of business account being created
 
-      optional<share_type>               officer_vote_threshold;      // The voting power required to be an active officer
+      optional<share_type>               officer_vote_threshold;        // The voting power required to be an active officer
 
       asset                              fee;                           // At least min account creation fee for stake on the new account.
 
@@ -162,13 +178,13 @@ namespace node { namespace protocol {
 
       optional< authority >         posting;
 
-      public_key_type               secure_public_key;
+      string                        secure_public_key;
 
-      public_key_type               connection_public_key;
+      string                        connection_public_key;
 
-      public_key_type               friend_public_key;
+      string                        friend_public_key;
 
-      public_key_type               companion_public_key;
+      string                        companion_public_key;
 
       string                        json;
 
@@ -567,13 +583,13 @@ namespace node { namespace protocol {
     */
    struct reset_account_operation : public base_operation 
    {
-      account_name_type                  signatory;
+      account_name_type         signatory;
 
-      account_name_type reset_account;
+      account_name_type         reset_account;
 
-      account_name_type account_to_reset;
+      account_name_type         account_to_reset;
 
-      authority         new_owner_authority;
+      authority                 new_owner_authority;
 
       void get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return reset_account; }
@@ -587,7 +603,7 @@ namespace node { namespace protocol {
     */
    struct set_reset_account_operation : public base_operation 
    {
-      account_name_type                  signatory;
+      account_name_type         signatory;
 
       account_name_type         account;
 
@@ -797,6 +813,7 @@ namespace node { namespace protocol {
    //===========================//
    // === Network Operations ===//
    //===========================//
+
 
    /**
     * Creates or updates a network officer object for a member.
@@ -1043,7 +1060,6 @@ namespace node { namespace protocol {
     * Supernodes need to remain in the Supernode reward pool for 24 consecutive hours before being eligible for reward distribution.
     * 
     * Open Problem: Ensure that Interfaces correctly attribute Supernodes in view transactions when using their APIs.
-    * 
     */
    struct update_supernode_operation : public base_operation
    {
@@ -1097,7 +1113,7 @@ namespace node { namespace protocol {
 
       vector< pair < string, uint16_t > >               milestones;          // Ordered vector of release milestone descriptions and percentages of budget value.
 
-      fc::optional < asset_symbol_type >                investment;          // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+      optional < asset_symbol_type >                    investment;          // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
       string                                            details;             // The proposals's details description. 
 
@@ -1146,9 +1162,9 @@ namespace node { namespace protocol {
     * Approves a milestone claim from a community enterprise proposal.
     * This releases the funds that are in the pending budget to the proposal's beneficaries.
     * Community Enterprise proposals need to be approved by: 
-    *       - Approvals from at least 5 of the Top 50 witnesses, with a combined voting power of at least 10% of the total witness voting power.
+    *    - Approvals from at least 5 of the Top 50 witnesses, with a combined voting power of at least 10% of the total witness voting power.
     * AND
-    *       - At least 20 total approvals, from accounts with a total combined voting power of at least 10% of total voting power. 
+    *    - At least 20 total approvals, from accounts with a total combined voting power of at least 10% of total voting power. 
     */
    struct approve_enterprise_milestone_operation : public base_operation
    {
@@ -1203,7 +1219,7 @@ namespace node { namespace protocol {
 
       bool                        privacy;              // True if the post is encrypted. False if it is plaintext.
 
-      public_key_type             public_key;           // The public key used to encrypt the post, holders of the private key may decrypt.
+      string                      public_key;           // The public key used to encrypt the post, holders of the private key may decrypt.
 
       feed_types                  reach;                // The extent to which the post will be distributed to account's followers and connections feeds. 
 
@@ -1403,7 +1419,7 @@ namespace node { namespace protocol {
 
       string                      details;            // String explaining the reason for the tag to the author
 
-      bool                        filter;             // True if the post should be filtered from the board and governance account subscribers
+      bool                        filter = false;     // True if the post should be filtered from the board and governance account subscribers
 
       bool                        applied = true;     // True if applying the tag, false if removing the tag.
 
@@ -1439,7 +1455,7 @@ namespace node { namespace protocol {
 
       board_privacy_types         board_privacy;              // Type of board to create.
 
-      public_key_type             board_public_key;           // Key used for encrypting and decrypting posts. Private key shared with accepted members.
+      string                      board_public_key;           // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
       string                      json;                       // Public plaintext json information about the board, its topic and rules.
 
@@ -1466,7 +1482,9 @@ namespace node { namespace protocol {
 
       board_types                 board_type;                // Type of board to create.
 
-      public_key_type             board_public_key;          // Key used for encrypting and decrypting posts. Private key shared with accepted members.
+      board_privacy_types         board_privacy;              // Type of board to create.
+
+      string                      board_public_key;          // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
       string                      json;                      // Public plaintext json information about the board, its topic and rules.
 
@@ -1759,7 +1777,7 @@ namespace node { namespace protocol {
 
       flat_set< string >                 audience;       // List of ad audience_ids, each containing a set of usernames of viewing accounts in their userbase.
 
-      flat_set<account_name_type>        agents;         // Set of Accounts authorized to create delivery transactions for the inventory.
+      flat_set< account_name_type >      agents;         // Set of Accounts authorized to create delivery transactions for the inventory.
 
       bool                               active = true;  // True if the inventory is enabled for display, false to deactivate.
 
@@ -2011,6 +2029,7 @@ namespace node { namespace protocol {
    // === Balance Operations === //
    //============================//
 
+
    /**
     * Claims an account's reward balance into it's liquid balance from newly issued assets.
     */
@@ -2130,7 +2149,7 @@ namespace node { namespace protocol {
 
    struct cancel_transfer_from_savings_operation : public base_operation 
    {
-      account_name_type                  signatory;
+      account_name_type     signatory;
 
       account_name_type     from;
 
@@ -2143,8 +2162,9 @@ namespace node { namespace protocol {
 
 
    /**
-    * Delegate a staked asset balance from one account to the other. The staked amount is still owned
-    * by the original account, but content voting rights and bandwidth allocation are transferred
+    * Delegate a staked asset balance from one account to the other. 
+    * The staked amount is still owned by the original account, 
+    * but content voting rights and bandwidth allocation are transferred
     * to the receiving account.
     */
    struct delegate_asset_operation : public base_operation
@@ -2155,7 +2175,7 @@ namespace node { namespace protocol {
 
       account_name_type      delegatee;        // The account receiving the asset
 
-      asset                  amount;            //  The amount of the asset delegated         
+      asset                  amount;           //  The amount of the asset delegated         
 
       void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return delegator; }
@@ -2192,9 +2212,9 @@ namespace node { namespace protocol {
 
       account_name_type      agent;
 
-      uint32_t               escrow_id = 30;
+      uint32_t               escrow_id = 0;
 
-      asset                  amount = asset( 0, SYMBOL_COIN );
+      asset                  amount;
 
       asset                  fee;
 
@@ -2227,7 +2247,7 @@ namespace node { namespace protocol {
 
       account_name_type      agent;
 
-      uint32_t               escrow_id = 30;
+      uint32_t               escrow_id = 0;
 
       bool                   approve = true;
 
@@ -2254,7 +2274,7 @@ namespace node { namespace protocol {
 
       account_name_type      agent;
 
-      uint32_t               escrow_id = 30;
+      uint32_t               escrow_id = 0;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2359,8 +2379,6 @@ namespace node { namespace protocol {
     * The margin order pays interest on the 
     * loan until it is closed, at which time the position is liquidated
     * and the loan is repaid with interest.
-    * 
-    * TODO: Margin credit liquidity check before opening
     */
    struct margin_order_create_operation : public base_operation
    {
@@ -2593,9 +2611,9 @@ namespace node { namespace protocol {
 
       asset                 amount;        // Amount of interest bearing credit assets being redeemed for thier underlying assts. 
 
-      void                  validate()const;
+      void                     validate()const;
       const account_name_type& get_creator_name() const { return account; }
-      void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
 
@@ -2656,8 +2674,21 @@ namespace node { namespace protocol {
     */
    struct currency_options 
    {
-      asset_symbol_type   buyback_asset = SYMBOL_USD;
+      share_type          annual_issuance = CURRENCY_ISSUANCE_RATE;
 
+      uint16_t            block_producer_percent = CURRENCY_PRODUCER_PERCENT;
+
+      extensions_type     extensions;
+
+      void validate()const;
+   };
+
+
+   /**
+    * Options available to unique assets.
+    */
+   struct unique_options 
+   {
       share_type          annual_issuance = CURRENCY_ISSUANCE_RATE;
 
       uint16_t            block_producer_percent = CURRENCY_PRODUCER_PERCENT;
@@ -2783,7 +2814,7 @@ namespace node { namespace protocol {
 
       asset_options                   common_options;
 
-      optional<currency_opts>         currency_opts;                // Options available for currency assets
+      optional<currency_options>      currency_opts;                // Options available for currency assets
 
       optional<bitasset_options>      bitasset_opts;                // Options available for BitAssets.
 
@@ -2791,7 +2822,9 @@ namespace node { namespace protocol {
 
       optional<credit_options>        credit_opts;                  // Options available for credit assets
 
-      optional<gateway_opts>          gateway_opts;                 // Options avalable for gateway assets
+      optional<gateway_options>       gateway_opts;                 // Options available for gateway assets
+
+      optional<unique_options>        unique_opts;                  // Options available for unique assets
 
       extensions_type                 extensions;
 
@@ -2802,19 +2835,8 @@ namespace node { namespace protocol {
 
 
    /**
-    * @brief Update options common to all assets
-    * @ingroup operations
-    *
-    * There are a number of options which all assets in the network use. These options are enumerated in the @ref
-    * asset_options struct. This operation is used to update these options for an existing asset.
-    *
-    * @note This operation cannot be used to update BitAsset-specific options. For these options, use @ref
-    * asset_update_bitasset_operation instead.
-    *
-    * @pre @ref issuer SHALL be an existing account and MUST match asset_object::issuer on @ref asset_to_update
-    * @pre @ref fee SHALL be nonnegative, and @ref issuer MUST have a sufficient balance to pay it
-    * @pre @ref new_options SHALL be internally consistent, as verified by @ref validate()
-    * @post @ref asset_to_update will have options matching those of new_options
+    * Updates an Asset to use a new set of options for operational
+    * properties, or for changing the asset issuer.
     */
    struct asset_update_operation : public base_operation
    {
@@ -2824,9 +2846,19 @@ namespace node { namespace protocol {
 
       asset_symbol_type             asset_to_update;
 
-      optional<account_name_type>   new_issuer; // If the asset is to be given a new issuer, specify his ID here.
+      optional<account_name_type>   new_issuer;               // If the asset is to be given a new issuer, specify his ID here.
 
-      asset_options                 new_options;
+      asset_options                 new_options; 
+
+      optional<currency_options>    new_currency_opts;        // Options available for currency assets
+
+      optional<bitasset_options>    new_bitasset_opts;        // Options available for BitAssets.
+
+      optional<equity_options>      new_equity_opts;          // Options available for equity assets
+
+      optional<credit_options>      new_credit_opts;          // Options available for credit assets
+
+      optional<gateway_options>     new_gateway_opts;         // Options avalable for gateway assets
 
       extensions_type               extensions;
 
@@ -2834,11 +2866,8 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return issuer; }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+   
 
-
-   /**
-    * @ingroup operations
-    */
    struct asset_issue_operation : public base_operation
    {
       account_name_type      signatory;
@@ -2860,10 +2889,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * @brief used to take an asset out of circulation, returning to the issuer
-    * @ingroup operations
-    *
-    * @note You cannot use this operation on market-issued assets.
+    * Used to take an asset out of circulation, returning to the issuer
     */
    struct asset_reserve_operation : public base_operation
    {
@@ -2882,7 +2908,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * @brief used to transfer accumulated fees back to the issuer's balance.
+    * Used to transfer accumulated fees back to the issuer's balance.
     */
    struct asset_claim_fees_operation : public base_operation
    {
@@ -2969,36 +2995,6 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return issuer; }
       void get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
-
-
-   /**
-    * Update options specific to BitAssets
-    * BitAssets have some options which are not relevant to other asset types. This operation is used to update those
-    * options an an existing BitAsset.
-    *
-    * Issuer MUST be an existing account and must match asset_object::issuer on asset_to_update.
-    * Asset_to_update must be a BitAsset, i.e. is_market_issued() returns true.
-    * Fee must be nonnegative, and issuer must have a sufficient balance to pay it.
-    * new_options must be internally consistent, as verified by validate().
-    * asset_to_update will have BitAsset-specific options matching those of new_options.
-    */
-   struct asset_update_bitasset_operation : public base_operation
-   {
-      account_name_type       signatory;
-      
-      account_name_type       issuer;
-
-      asset_symbol_type       asset_to_update;
-
-      bitasset_options        new_options;
-
-      extensions_type         extensions;
-
-      void                   validate()const;
-      const account_name_type& get_creator_name() const { return issuer; }
-      void                   get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-   };
-
 
    /**
     * @brief Update the set of feed-producing accounts for a BitAsset
@@ -3182,9 +3178,11 @@ namespace node { namespace protocol {
 
       string                    json;                   // The Witnesses json metadata.
 
-      fc::array<uint16_t, 2>    location;               // Appriximate Longitude / Latitude co-ordinates of the witness.
+      double                    latitude;               // Latitude co-ordinates of the witness.
 
-      public_key_type           block_signing_key;      // The public key used to sign blocks.
+      double                    longitude;              // Longitude co-ordinates of the witness.
+
+      string                    block_signing_key;      // The public key used to sign blocks.
 
       chain_properties          props;                  // The declared chain properties for the network, used to adjust variables.
 
@@ -3744,13 +3742,6 @@ FC_REFLECT( node::protocol::asset_update_issuer_operation,
          (extensions)
          );
 
-FC_REFLECT( node::protocol::asset_update_bitasset_operation,
-         (issuer)
-         (asset_to_update)
-         (new_options)
-         (extensions)
-         );
-
 FC_REFLECT( node::protocol::asset_update_feed_producers_operation,
          (issuer)
          (asset_to_update)
@@ -3766,13 +3757,6 @@ FC_REFLECT( node::protocol::asset_publish_feed_operation,
          );
 
 FC_REFLECT( node::protocol::asset_settle_operation, 
-         (account)
-         (amount)
-         (extensions) 
-         );
-
-FC_REFLECT( node::protocol::asset_settle_cancel_operation, 
-         (settlement)
          (account)
          (amount)
          (extensions) 

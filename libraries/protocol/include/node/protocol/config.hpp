@@ -168,8 +168,8 @@
 #define POST_AVERAGE_WINDOW             (60*60*24u) // 1 day
 #define POST_MAX_BANDWIDTH              (4*PERCENT_100) // 2 posts per 1 days, average 1 every 12 hours
 #define POST_WEIGHT_CONSTANT            (uint64_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
-#define MAX_ACC_WITNESS_VOTES            1000
-#define MAX_BODY_SIZE                    (1024 * 1024 * 128 )  // 128 mb of body text limit
+#define MAX_ACC_WITNESS_VOTES           1000
+#define MAX_BODY_SIZE                   (1024 * 1024 * 128 )  // 128 mb of body text limit
 
 #define MINER_PAY_PERCENT               (PERCENT_1) // 1%
 #define MIN_RATION                      (100000)

@@ -658,7 +658,7 @@ namespace node { namespace chain {
    struct by_total_budget;
    struct by_begin_time;
    struct by_end_time;
-   struct by_expiration_time;
+   struct by_expiration;
    struct by_next_payment;
    struct by_total_voting_power;
    struct by_total_approvals;
@@ -674,7 +674,7 @@ namespace node { namespace chain {
             member< community_enterprise_object, time_point, &community_enterprise_object::begin > >,
          ordered_non_unique< tag< by_end_time >,
             member< community_enterprise_object, time_point, &community_enterprise_object::end > >,
-         ordered_non_unique< tag< by_expiration_time >,
+         ordered_non_unique< tag< by_expiration>,
             member< community_enterprise_object, time_point, &community_enterprise_object::expiration > >,
          ordered_unique< tag< by_creator >,
             composite_key< community_enterprise_object,

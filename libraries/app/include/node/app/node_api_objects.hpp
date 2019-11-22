@@ -1479,7 +1479,7 @@ struct account_recovery_request_api_obj
       id( o.id ),
       account_to_recover( o.account_to_recover ),
       new_owner_authority( authority( o.new_owner_authority ) ),
-      expires( o.expires )
+      expiration( o.expiration )
    {}
 
    account_recovery_request_api_obj() {}
@@ -1487,7 +1487,7 @@ struct account_recovery_request_api_obj
    account_recovery_request_id_type     id;
    account_name_type                    account_to_recover;
    authority                            new_owner_authority;
-   time_point                           expires;
+   time_point                           expiration;
 };
 
 
@@ -2162,7 +2162,7 @@ FC_REFLECT( node::app::account_recovery_request_api_obj,
          (id)
          (account_to_recover)
          (new_owner_authority)
-         (expires)
+         (expiration)
          );
 
 FC_REFLECT( node::app::savings_withdraw_api_obj,

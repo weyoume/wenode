@@ -184,7 +184,7 @@ namespace node {
          LIQUIDITY_POOL_ASSET = 'liquidity_pool',   // Liquidity pool asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
          CREDIT_POOL_ASSET = 'credit_pool',         // Credit pool asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
          OPTION_ASSET = 'option',                   // Asset that enables the execution of a trade at a specific price until an expiration date. 
-         PREDICTION_ASSET = 'prediciton',           // Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
+         PREDICTION_ASSET = 'prediction',           // Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
          GATEWAY_ASSET = 'gateway',                 // Asset backed by deposits with an exchange counterparty of another asset or currency. 
          UNIQUE_ASSET = 'unique',                   // Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset. 
       };

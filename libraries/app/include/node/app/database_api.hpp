@@ -142,7 +142,7 @@ struct discussion_query
 
 
 /**
- *  Defines the arguments to a network object search query.
+ * Defines the arguments to a network object search query.
  */
 struct search_query 
 {
@@ -151,21 +151,11 @@ struct search_query
       FC_ASSERT( limit <= 100 );
    }
 
-   string                            account;               // Name of the account creating the search.
+   string                            account;    // Name of the account creating the search.
 
-   string                            query;                 // Search String being queried.
+   string                            query;      // Search String being queried.
 
-   uint32_t                          limit;
-
-   optional<discussion_query>        post_options;          // discussion query parameters for filtering a post search.
-
-   optional<account_query>           account_options;       // search query parameters for filtering an account search.
-
-   optional<board_query>             board_options;         // search query parameters for filtering a board search.
-
-   optional<tag_query>               tag_options;           // search query parameters for filtering a tag search.
-
-   optional<asset_query>             asset_options;         // search query parameters for filtering an asset search.
+   uint32_t                          limit;      // The amount of results to include in the results.          
 };
 
 /**

@@ -2233,15 +2233,16 @@ asset database::network_credit_acquisition( const asset& amount, bool execute )
    return credit_acquired;
 } FC_CAPTURE_AND_RETHROW() }
 
-
+// Look for expired transactions in the deduplication list, and remove them.
+// Transactions must have expired by at least two forking windows in order to be removed.
 void database::clear_expired_transactions()
 {
-   //Look for expired transactions in the deduplication list, and remove them.
-   //Transactions must have expired by at least two forking windows in order to be removed.
    auto& transaction_idx = get_index< transaction_index >();
    const auto& dedupe_index = transaction_idx.indices().get< by_expiration >();
    while( ( !dedupe_index.empty() ) && ( head_block_time() > dedupe_index.begin()->expiration ) )
+   {
       remove( *dedupe_index.begin() );
+   }
 }
 
 /**

@@ -44,7 +44,7 @@ void authority::validate()const
 
 bool is_valid_account_name( const string& name )
 {
-   return is_valid_persona_account_name(name) || is_valid_profile_account_name(name);
+   return is_valid_persona_account_name( name ) || is_valid_profile_account_name( name );
 }
 
 

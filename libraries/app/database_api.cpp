@@ -1021,7 +1021,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<asset_claim_pool_operation>::value: 
                case operation::tag<asset_fund_fee_pool_operation>::value:
                case operation::tag<asset_update_issuer_operation>::value:        
-               case operation::tag<asset_update_bitasset_operation>::value:         
                case operation::tag<asset_update_feed_producers_operation>::value:         
                case operation::tag<asset_publish_feed_operation>::value: 
                case operation::tag<asset_settle_operation>::value:  

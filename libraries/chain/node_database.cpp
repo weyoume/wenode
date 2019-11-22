@@ -1041,52 +1041,52 @@ const comment_share_object* database::find_comment_share( const account_name_typ
    return find< comment_share_object, by_sharer_comment >( boost::make_tuple( sharer, share_id ) );
 }
 
-const ad_creative_object& database::get_ad_creative( const account_name_type& account, const string& creative_id )const
+const ad_creative_object& database::get_ad_creative( const account_name_type& account, const shared_string& creative_id )const
 { try {
    return get< ad_creative_object, by_creative_id >( boost::make_tuple( account, creative_id ) );
 } FC_CAPTURE_AND_RETHROW( (account)(creative_id) ) }
 
-const ad_creative_object* database::find_ad_creative( const account_name_type& account, const string& creative_id )const
+const ad_creative_object* database::find_ad_creative( const account_name_type& account, const shared_string& creative_id )const
 {
    return find< ad_creative_object, by_creative_id >( boost::make_tuple( account, creative_id ) );
 }
 
-const ad_campaign_object& database::get_ad_campaign( const account_name_type& account, const string& campaign_id )const
+const ad_campaign_object& database::get_ad_campaign( const account_name_type& account, const shared_string& campaign_id )const
 { try {
    return get< ad_campaign_object, by_campaign_id >( boost::make_tuple( account, campaign_id ) );
 } FC_CAPTURE_AND_RETHROW( (account)(campaign_id) ) }
 
-const ad_campaign_object* database::find_ad_campaign( const account_name_type& account, const string& campaign_id )const
+const ad_campaign_object* database::find_ad_campaign( const account_name_type& account, const shared_string& campaign_id )const
 {
    return find< ad_campaign_object, by_campaign_id >( boost::make_tuple( account, campaign_id ) );
 }
 
-const ad_inventory_object& database::get_ad_inventory( const account_name_type& account, const string& inventory_id )const
+const ad_inventory_object& database::get_ad_inventory( const account_name_type& account, const shared_string& inventory_id )const
 { try {
    return get< ad_inventory_object, by_inventory_id >( boost::make_tuple( account, inventory_id ) );
 } FC_CAPTURE_AND_RETHROW( (account)(inventory_id) ) }
 
-const ad_inventory_object* database::find_ad_inventory( const account_name_type& account, const string& inventory_id )const
+const ad_inventory_object* database::find_ad_inventory( const account_name_type& account, const shared_string& inventory_id )const
 {
    return find< ad_inventory_object, by_inventory_id >( boost::make_tuple( account, inventory_id ) );
 }
 
-const ad_audience_object& database::get_ad_audience( const account_name_type& account, const string& audience_id )const
+const ad_audience_object& database::get_ad_audience( const account_name_type& account, const shared_string& audience_id )const
 { try {
    return get< ad_audience_object, by_audience_id >( boost::make_tuple( account, audience_id ) );
 } FC_CAPTURE_AND_RETHROW( (account)(audience_id) ) }
 
-const ad_audience_object* database::find_ad_audience( const account_name_type& account, const string& audience_id )const
+const ad_audience_object* database::find_ad_audience( const account_name_type& account, const shared_string& audience_id )const
 {
    return find< ad_audience_object, by_audience_id >( boost::make_tuple( account, audience_id ) );
 }
 
-const ad_bid_object& database::get_ad_bid( const account_name_type& account, const string& bid_id )const
+const ad_bid_object& database::get_ad_bid( const account_name_type& account, const shared_string& bid_id )const
 { try {
    return get< ad_bid_object, by_bid_id >( boost::make_tuple( account, bid_id ) );
 } FC_CAPTURE_AND_RETHROW( (account)(bid_id) ) }
 
-const ad_bid_object* database::find_ad_bid( const account_name_type& account, const string& bid_id )const
+const ad_bid_object* database::find_ad_bid( const account_name_type& account, const shared_string& bid_id )const
 {
    return find< ad_bid_object, by_bid_id >( boost::make_tuple( account, bid_id ) );
 }
@@ -1145,12 +1145,12 @@ const credit_collateral_object* database::find_collateral( const account_name_ty
    return find< credit_collateral_object, by_owner_symbol >( boost::make_tuple( owner, symbol ) );
 }
 
-const credit_loan_object& database::get_loan( const account_name_type& owner, string& loan_id  )const
+const credit_loan_object& database::get_loan( const account_name_type& owner, shared_string& loan_id  )const
 { try {
    return get< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
 } FC_CAPTURE_AND_RETHROW( (owner)(loan_id) ) }
 
-const credit_loan_object* database::find_loan( const account_name_type& owner, string& loan_id )const
+const credit_loan_object* database::find_loan( const account_name_type& owner, shared_string& loan_id )const
 {
    return find< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
 }
@@ -1165,14 +1165,44 @@ const escrow_object* database::find_escrow( const account_name_type& name, uint3
    return find< escrow_object, by_from_id >( boost::make_tuple( name, escrow_id ) );
 }
 
-const limit_order_object& database::get_limit_order( const account_name_type& name, uint32_t orderid )const
+const transfer_request_object& database::get_transfer_request( const account_name_type& name, shared_string& request_id )const
 { try {
-   return get< limit_order_object, by_account >( boost::make_tuple( name, orderid ) );
-} FC_CAPTURE_AND_RETHROW( (name)(orderid) ) }
+   return get< transfer_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(request_id) ) }
 
-const limit_order_object* database::find_limit_order( const account_name_type& name, uint32_t orderid )const
+const transfer_request_object* database::find_transfer_request( const account_name_type& name, shared_string& request_id )const
 {
-   return find< limit_order_object, by_account >( boost::make_tuple( name, orderid ) );
+   return find< transfer_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
+}
+
+const transfer_recurring_request_object& database::get_transfer_recurring_request( const account_name_type& name, shared_string& request_id )const
+{ try {
+   return get< transfer_recurring_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(request_id) ) }
+
+const transfer_recurring_request_object* database::find_transfer_recurring_request( const account_name_type& name, shared_string& request_id )const
+{
+   return find< transfer_recurring_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
+}
+
+const limit_order_object& database::get_limit_order( const account_name_type& name, shared_string& order_id )const
+{ try {
+   return get< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
+
+const limit_order_object* database::find_limit_order( const account_name_type& name, shared_string& order_id )const
+{
+   return find< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
+}
+
+const margin_order_object& database::get_margin_order( const account_name_type& name, shared_string& margin_id )const
+{ try {
+   return get< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(margin_id) ) }
+
+const margin_order_object* database::find_margin_order( const account_name_type& name, shared_string& margin_id )const
+{
+   return find< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
 }
 
 const call_order_object& database::get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const
@@ -1183,16 +1213,6 @@ const call_order_object& database::get_call_order( const account_name_type& name
 const call_order_object* database::find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const
 {
    return find< call_order_object, by_account >( boost::make_tuple( name, symbol ) );
-}
-
-const margin_order_object& database::get_margin_order( const account_name_type& name, string& margin_id )const
-{ try {
-   return get< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
-} FC_CAPTURE_AND_RETHROW( (name)(margin_id) ) }
-
-const margin_order_object* database::find_margin_order( const account_name_type& name, string& margin_id )const
-{
-   return find< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
 }
 
 const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, uint32_t request_id )const
@@ -3232,7 +3252,6 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< asset_claim_pool_evaluator               >();
    _my->_evaluator_registry.register_evaluator< asset_fund_fee_pool_evaluator            >();
    _my->_evaluator_registry.register_evaluator< asset_update_issuer_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< asset_update_bitasset_evaluator          >();
    _my->_evaluator_registry.register_evaluator< asset_update_feed_producers_evaluator    >();
    _my->_evaluator_registry.register_evaluator< asset_publish_feed_evaluator             >();
    _my->_evaluator_registry.register_evaluator< asset_settle_evaluator                   >();
@@ -4331,6 +4350,52 @@ asset database::pay_multi_fee_share( flat_set< const account_object* > payees, c
 } FC_CAPTURE_AND_RETHROW() }
 
 
+/**
+ * Updates the ad campaign of a bidder, and removes an ad bid object.
+ */
+void database::cancel_ad_bid( const ad_bid_object& bid )
+{ try {
+   uint32_t prev_requested = bid.requested;
+   uint32_t prev_remaining = bid.remaining;
+   asset prev_price = bid.bid_price;
+   asset bid_total_remaining = prev_remaining * prev_price;
+   const ad_campaign_object& campaign = get_ad_campaign( bid.account, bid.campaign_id );
+
+   modify( campaign, [&]( ad_campaign_object& aco )
+   {
+      aco.total_bids -= bid_total_remaining;
+   });
+
+   remove( bid );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Updates the ad campaign of a bidder, and removes an ad bid object.
+ */
+void database::cancel_community_enterprise( const community_enterprise_object& e )
+{ try {
+   const reward_fund_object& rfo = get_reward_fund();
+   auto& approval_idx = get_index<enterprise_approval_index>().indices().get<by_enterprise_id>();
+   auto approval_itr = approval_idx.lower_bound( boost::make_tuple( e.creator, e.enterprise_id ) );
+
+   while( approval_itr != approval_idx.end() && 
+      approval_itr->creator == e.creator && 
+      approval_itr->enterprise_id == e.enterprise_id )
+   {
+      const enterprise_approval_object& old_approval = *approval_itr;
+      ++approval_itr;
+      remove( old_approval );
+   }
+
+   asset pending = e.pending_budget;
+   modify( rfo, [&]( reward_fund_object& o )
+   {
+      o.adjust_community_fund_balance( pending );    // Return pending budget to the community fund.
+   });
+
+   remove( e );
+} FC_CAPTURE_AND_RETHROW() }
 
 
 void database::init_hardforks()
@@ -4347,23 +4412,89 @@ void database::init_hardforks()
    FC_ASSERT( BLOCKCHAIN_HARDFORK_VERSION == _hardfork_versions[ NUM_HARDFORKS ] );
 }
 
+
 /**
- * TODO: Expires all orders that have exceeded thier expiration time.
+ * Expire all orders that have exceeded thier expiration time.
  */
 void database::clear_expired_operations()
 { try {
-
-   // Cancel expired limit orders
    auto now = head_block_time();
-   auto maint_time = get_dynamic_global_properties().next_maintenance_time;
-   auto& limit_index = get_index<limit_order_index>().indices().get<by_expiration>();
+   
+   auto& connection_req_index = get_index<connection_request_index>().indices().get<by_expiration>();
+   while( !connection_req_index.empty() && connection_req_index.begin()->expiration <= now )
+   {
+      const connection_request_object& req = *connection_req_index.begin();
+      remove( req );
+   }
 
+   auto& limit_index = get_index<limit_order_index>().indices().get<by_expiration>();
    while( !limit_index.empty() && limit_index.begin()->expiration <= now )
    {
       const limit_order_object& order = *limit_index.begin();
-      auto base_asset = order.sell_price.base.symbol;
-      auto quote_asset = order.sell_price.quote.symbol;
       cancel_limit_order( order );
+   }
+
+   auto& margin_index = get_index<margin_order_index>().indices().get<by_expiration>();
+   while( !margin_index.empty() && margin_index.begin()->expiration <= now )
+   {
+      const margin_order_object& order = *margin_index.begin();
+      close_margin_order( order );
+   }
+
+   auto& transfer_req_index = get_index<transfer_request_index>().indices().get<by_expiration>();
+   while( !transfer_req_index.empty() && transfer_req_index.begin()->expiration <= now )
+   {
+      const transfer_request_object& req = *transfer_req_index.begin();
+      remove( req );
+   }
+
+   auto& transfer_rec_index = get_index<transfer_recurring_request_index>().indices().get<by_expiration>();
+   while( !transfer_rec_index.empty() && transfer_rec_index.begin()->expiration <= now )
+   {
+      const transfer_recurring_request_object& rec = *transfer_rec_index.begin();
+      remove( rec );
+   }
+
+   auto& account_member_request_idx = get_index<account_member_request_index>().indices().get<by_expiration>();
+   while( !account_member_request_idx.empty() && account_member_request_idx.begin()->expiration <= now )
+   {
+      const account_member_request_object& req = *account_member_request_idx.begin();
+      remove( req );
+   }
+
+   auto& account_member_invite_idx = get_index<account_member_invite_index>().indices().get<by_expiration>();
+   while( !account_member_invite_idx.empty() && account_member_invite_idx.begin()->expiration <= now )
+   {
+      const account_member_invite_object& inv = *account_member_invite_idx.begin();
+      remove( inv );
+   }
+
+   auto& board_join_request_idx = get_index<board_join_request_index>().indices().get<by_expiration>();
+   while( !board_join_request_idx.empty() && board_join_request_idx.begin()->expiration <= now )
+   {
+      const board_join_request_object& req = *board_join_request_idx.begin();
+      remove( req );
+   }
+
+   auto& board_join_invite_idx = get_index<board_join_invite_index>().indices().get<by_expiration>();
+   while( !board_join_invite_idx.empty() && board_join_invite_idx.begin()->expiration <= now )
+   {
+      const board_join_invite_object& inv = *board_join_invite_idx.begin();
+      remove( inv );
+   }
+
+   auto& enterprise_idx = get_index<community_enterprise_index>().indices().get<by_expiration>();
+   while( !enterprise_idx.empty() && enterprise_idx.begin()->expiration <= now )
+   {
+      const community_enterprise_object& ent = *enterprise_idx.begin();
+      cancel_community_enterprise( ent );
+   }
+
+   auto& bid_index = get_index<ad_bid_index>().indices().get<by_expiration>();
+   while( !bid_index.empty() && bid_index.begin()->expiration <= now )
+   {
+      const ad_bid_object& bid = *bid_index.begin();
+      cancel_ad_bid( bid );
    }
 
    // Process expired force settlement orders
@@ -4399,16 +4530,16 @@ void database::clear_expired_operations()
       uint32_t count = 0;
 
       // At each iteration, we either consume the current order and remove it, or we move to the next asset
-      for( auto itr = settlement_index.lower_bound(current_asset);
-           itr != settlement_index.end();
-           itr = settlement_index.lower_bound(current_asset) )
+      for( auto itr = settlement_index.lower_bound( current_asset );
+         itr != settlement_index.end();
+         itr = settlement_index.lower_bound( current_asset ) )
       {
          ++count;
          const force_settlement_object& order = *itr;
          auto order_id = order.id;
          current_asset = order.settlement_asset_symbol();
-         const asset_object& mia_object = get_asset(current_asset);
-         const asset_bitasset_data_object& mia_bitasset = get_bitasset_data(mia_object.symbol);
+         const asset_object& mia_object = get_asset( current_asset );
+         const asset_bitasset_data_object& mia_bitasset = get_bitasset_data( mia_object.symbol );
 
          extra_dump = ((count >= 1000) && (count <= 1020));
 

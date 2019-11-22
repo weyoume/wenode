@@ -172,8 +172,8 @@ namespace node { namespace chain {
          const node_property_object&            get_node_properties()const;
          const feed_history_object&             get_feed_history()const;
 
-         const asset_object&        get_core_asset() const;
-         const asset_object*        find_core_asset() const;
+         const asset_object& get_core_asset() const;
+         const asset_object* find_core_asset() const;
 
          const asset_object& get_asset( const asset_symbol_type& symbol ) const;
          const asset_object* find_asset( const asset_symbol_type& symbol ) const;
@@ -268,11 +268,11 @@ namespace node { namespace chain {
          const governance_account_object& get_governance_account( const account_name_type& name )const;
          const governance_account_object* find_governance_account( const account_name_type& name )const;
 
-         const comment_object&  get_comment(  const account_name_type& author, const shared_string& permlink )const;
-         const comment_object*  find_comment( const account_name_type& author, const shared_string& permlink )const;
+         const comment_object& get_comment(  const account_name_type& author, const shared_string& permlink )const;
+         const comment_object* find_comment( const account_name_type& author, const shared_string& permlink )const;
 
-         const comment_object&  get_comment(  const account_name_type& author, const string& permlink )const;
-         const comment_object*  find_comment( const account_name_type& author, const string& permlink )const;
+         const comment_object& get_comment(  const account_name_type& author, const string& permlink )const;
+         const comment_object* find_comment( const account_name_type& author, const string& permlink )const;
 
          const comment_vote_object& get_comment_vote( const account_name_type& voter, const comment_id_type& vote_id )const;
          const comment_vote_object* find_comment_vote( const account_name_type& voter, const comment_id_type& vote_id )const;
@@ -283,20 +283,20 @@ namespace node { namespace chain {
          const comment_share_object& get_comment_share( const account_name_type& sharer, const comment_id_type& share_id )const;
          const comment_share_object* find_comment_share( const account_name_type& sharer, const comment_id_type& share_id )const;
 
-         const ad_creative_object& get_ad_creative( const account_name_type& account, const string& creative_id )const;
-         const ad_creative_object* find_ad_creative( const account_name_type& account, const string& creative_id )const;
+         const ad_creative_object& get_ad_creative( const account_name_type& account, const shared_string& creative_id )const;
+         const ad_creative_object* find_ad_creative( const account_name_type& account, const shared_string& creative_id )const;
 
-         const ad_campaign_object& get_ad_campaign( const account_name_type& account, const string& campaign_id )const;
-         const ad_campaign_object* find_ad_campaign( const account_name_type& account, const string& campaign_id )const;
+         const ad_campaign_object& get_ad_campaign( const account_name_type& account, const shared_string& campaign_id )const;
+         const ad_campaign_object* find_ad_campaign( const account_name_type& account, const shared_string& campaign_id )const;
 
-         const ad_inventory_object& get_ad_inventory( const account_name_type& account, const string& inventory_id )const;
-         const ad_inventory_object* find_ad_inventory( const account_name_type& account, const string& inventory_id )const;
+         const ad_inventory_object& get_ad_inventory( const account_name_type& account, const shared_string& inventory_id )const;
+         const ad_inventory_object* find_ad_inventory( const account_name_type& account, const shared_string& inventory_id )const;
 
-         const ad_audience_object& get_ad_audience( const account_name_type& account, const string& audience_id )const;
-         const ad_audience_object* find_ad_audience( const account_name_type& account, const string& audience_id )const;
+         const ad_audience_object& get_ad_audience( const account_name_type& account, const shared_string& audience_id )const;
+         const ad_audience_object* find_ad_audience( const account_name_type& account, const shared_string& audience_id )const;
 
-         const ad_bid_object& get_ad_bid( const account_name_type& account, const string& bid_id )const;
-         const ad_bid_object* find_ad_bid( const account_name_type& account, const string& bid_id )const;
+         const ad_bid_object& get_ad_bid( const account_name_type& account, const shared_string& bid_id )const;
+         const ad_bid_object* find_ad_bid( const account_name_type& account, const shared_string& bid_id )const;
 
          const asset_liquidity_pool_object& get_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const;
          const asset_liquidity_pool_object* find_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const;
@@ -310,20 +310,26 @@ namespace node { namespace chain {
          const credit_collateral_object& get_collateral( const account_name_type& owner, const asset_symbol_type& symbol  )const;
          const credit_collateral_object* find_collateral( const account_name_type& owner, const asset_symbol_type& symbol )const;
 
-         const credit_loan_object& get_loan( const account_name_type& owner, string& loan_id  )const;
-         const credit_loan_object* find_loan( const account_name_type& owner, string& loan_id )const;
+         const credit_loan_object& get_loan( const account_name_type& owner, shared_string& loan_id  )const;
+         const credit_loan_object* find_loan( const account_name_type& owner, shared_string& loan_id )const;
 
          const escrow_object& get_escrow(  const account_name_type& name, uint32_t escrow_id )const;
          const escrow_object* find_escrow( const account_name_type& name, uint32_t escrow_id )const;
 
-         const limit_order_object& get_limit_order(  const account_name_type& owner, uint32_t id )const;
-         const limit_order_object* find_limit_order( const account_name_type& owner, uint32_t id )const;
+         const limit_order_object& get_limit_order(  const account_name_type& owner, shared_string& order_id )const;
+         const limit_order_object* find_limit_order( const account_name_type& owner, shared_string& order_id )const;
+
+         const transfer_request_object& get_transfer_request( const account_name_type& name, shared_string& request_id )const;
+         const transfer_request_object* find_transfer_request( const account_name_type& name, shared_string& request_id )const;
+
+         const transfer_recurring_request_object& get_transfer_recurring_request( const account_name_type& name, shared_string& request_id )const;
+         const transfer_recurring_request_object* find_transfer_recurring_request( const account_name_type& name, shared_string& request_id )const;
 
          const call_order_object& get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
          const call_order_object* find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
 
-         const margin_order_object& get_margin_order(  const account_name_type& name, string& margin_id )const;
-         const margin_order_object* find_margin_order( const account_name_type& name, string& margin_id )const;
+         const margin_order_object& get_margin_order(  const account_name_type& name, shared_string& margin_id )const;
+         const margin_order_object* find_margin_order( const account_name_type& name, shared_string& margin_id )const;
 
          const savings_withdraw_object& get_savings_withdraw(  const account_name_type& owner, uint32_t request_id )const;
          const savings_withdraw_object* find_savings_withdraw( const account_name_type& owner, uint32_t request_id )const;
@@ -569,6 +575,10 @@ namespace node { namespace chain {
          asset pay_fee_share( const account_object& payee, const asset& amount );
 
          asset pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount );
+
+         void cancel_ad_bid( const ad_bid_object& bid );
+
+         void cancel_community_enterprise( const community_enterprise_object& e );
 
          void validate_invariants()const;
 

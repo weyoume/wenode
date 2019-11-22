@@ -749,60 +749,73 @@ namespace node { namespace chain {
          flat_set<account_name_type>              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
 
          flat_set<account_name_type>              blacklisted_accounts;          // List of accounts that are not able to recieve transfers from this account.
-         
-         flat_set<account_name_type>              whitelisting_accounts;         // List of accounts that have whitelisted this account.
-
-         flat_set<account_name_type>              blacklisting_accounts;         // List of accounts that have blacklisted this account. 
 
          flat_set<asset_symbol_type>              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
 
          flat_set<asset_symbol_type>              blacklisted_assets;            // List of assets that the account has blacklisted against incoming transfers.
-
-         flat_set<asset_symbol_type>              whitelisting_assets;           // List of assets that the account has been whitelisted to receieve transfers of.
-
-         flat_set<asset_symbol_type>              blacklisting_assets;           // List of assets that the account has been blacklisted against receieving transfers.
  
-         bool is_authorized_asset( const asset_object& asset_obj)const           // Determines if an asset is authorized for transfer with an accounts permissions object. 
+         bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          // Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
-            bool fast_check = !(asset_obj.options.flags & white_list);
-            fast_check &= !(whitelisted_assets.size);
-            fast_check &= !(blacklisted_assets.size);
+            bool fast_check = !( asset_obj.options.flags & white_list );
+            fast_check &= !( whitelisted_assets.size );
+            fast_check &= !( blacklisted_assets.size );
+            fast_check &= !( whitelisted_accounts.size );
+            fast_check &= !( blacklisted_accounts.size );
 
             if( fast_check )
-               return true; // The asset does not require transfer permission, and the account does not use an asset whitelist or blacklist
-
-            if( whitelisted_assets.size )
             {
-               if( whitelisted_assets.find( asset_obj.symbol ) == whitelisted_assets.end() )
-                  return false; // The asset is not in the account's whitelist
+               return true; // The asset does not require transfer permission, and the account does not use an asset whitelist or blacklist
+            }
+
+            if( blacklisted_accounts.size )
+            {
+               if( blacklisted_accounts.find( name ) != blacklisted_accounts.end() )
+               {
+                  return false;  // The account is in the blacklist of the account
+               }
+            }
+
+            if( whitelisted_accounts.size )
+            {
+               if( whitelisted_accounts.find( name ) == whitelisted_accounts.end() )
+               {
+                  return false;  // The account is not in the whitelist of the account
+               }
             }
 
             if( blacklisted_assets.size )
             {
                if( blacklisted_assets.find( asset_obj.symbol ) != blacklisted_assets.end() )
+               {
                   return false; // The asset is in the account's blacklist
+               }
             }
 
-            if( blacklisting_assets.size )
+            if( whitelisted_assets.size )
             {
-               if( blacklisting_assets.find( asset_obj.symbol ) != blacklisting_assets.end() ) 
+               if( whitelisted_assets.find( asset_obj.symbol ) == whitelisted_assets.end() )
+               {
+                  return false; // The asset is not in the account's whitelist
+               } 
+            }
+
+            if( asset_obj.options.blacklist_authorities.size )
+            {
+               if( asset_obj.options.blacklist_authorities.find( name ) != asset_obj.options.blacklist_authorities.end() )
                {
                   return false; // The account is in the asset's blacklist
-               }   
+               }
             }
 
-            if( asset_obj.options.whitelist_authorities.size() == 0 ) 
+            if( asset_obj.options.whitelist_authorities.size )
             {
-               return true; // The asset has an empty whitelist. 
-            }
-               
-            if( whitelisting_assets.size )
-            {
-               if( whitelisting_assets.find( asset_obj.symbol ) != whitelisting_assets.end() )
-                  return true; // The asset uses a whitelist, and this account is in the whitelist.
+               if( asset_obj.options.whitelist_authorities.find( name ) == asset_obj.options.whitelist_authorities.end() )
+               {
+                  return false; // The account is not in the asset's whitelist
+               }
             }
 
-            return false; // Account uses a whitelist and the user is not in the whitelist. 
+            return true;
          };
    };
 
@@ -1297,7 +1310,6 @@ namespace node { namespace chain {
          shared_string          message;
 
          time_point             expiration;
-
    };
 
 
@@ -2198,7 +2210,7 @@ FC_REFLECT( node::chain::account_recovery_request_object,
          (id)
          (account_to_recover)
          (new_owner_authority)
-         (expires)
+         (expiration)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_recovery_request_object, node::chain::account_recovery_request_index )

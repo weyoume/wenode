@@ -10,8 +10,52 @@ namespace node { namespace protocol {
       return a.symbol == symbol;
    }
 
+   //============================//
+   // === Account Operations === //
+   //============================//
+
+
+
    void account_create_operation::validate() const
    {
+      validate_account_name( signatory );
+      validate_account_name( registrar );
+      validate_account_name( referrer );
+
+      switch( account_type )
+      {
+         case PERSONA:
+         case PROFILE:
+         case BUSINESS:
+         case ANONYMOUS:
+         {
+            break;
+         }
+         case VERIFIED:
+         {
+            FC_ASSERT( false,
+               "Accounts cannot be initialized as verified." );
+         }
+         default:
+         {
+            FC_ASSERT( false, 
+               "Account type invalid." );
+         }
+      }
+      
+      if( proxy.size() )
+      {
+         validate_account_name( proxy );
+      }
+      if( governance_account.size() )
+      {
+         validate_account_name( governance_account );
+      }
+      if( recovery_account.size() )
+      {
+         validate_account_name( recovery_account );
+      }
+
       if( account_type == PERSONA )
       {
          validate_persona_account_name( new_account_name );
@@ -25,62 +69,806 @@ namespace node { namespace protocol {
          validate_business_account_name( new_account_name );
       }
       
-      
-      
-      FC_ASSERT( is_asset_type( fee, SYMBOL_COIN ), "Account creation fee must be in core asset" );
-      FC_ASSERT( is_asset_type( delegation, SYMBOL_COIN ), "Delegation must be in core asset" );
+      FC_ASSERT( is_asset_type( fee, SYMBOL_COIN ), 
+         "Account creation fee must be in core asset." );
+      FC_ASSERT( is_asset_type( delegation, SYMBOL_COIN ), 
+         "Delegation must be in core asset." );
+      FC_ASSERT( fee >= asset( 0, SYMBOL_COIN ),
+         "Account creation fee cannot be negative" );
+      FC_ASSERT( delegation >= asset( 0, SYMBOL_COIN ),
+         "Delegation cannot be negative" );
 
       owner.validate();
       active.validate();
+      posting.validate();
 
-      if ( json.size() > 0 )
+      if( json.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
-         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
       }
-      FC_ASSERT( fee >= asset( 0, SYMBOL_COIN ), "Account creation fee cannot be negative" );
-      FC_ASSERT( delegation >= asset( 0, SYMBOL_COIN ), "Delegation cannot be negative" );
+      if( json_private.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json_private ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json_private ), 
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
+         "URL size is too large." );
+
+      if( business_type.valid() )
+      {
+         switch( *business_type )
+         {
+            case OPEN_BUSINESS:
+            case PUBLIC_BUSINESS:
+            case PRIVATE_BUSINESS:
+            {
+               break;
+            }
+            default:
+            {
+               FC_ASSERT( false, "Business Type is invalid." );
+            }
+         }
+      }
+
+      if( officer_vote_threshold.valid() )
+      {
+         FC_ASSERT( *officer_vote_threshold > 0, 
+            "Officer vote threshold must be greater than 0.");
+      }
    }
 
    void account_update_operation::validate() const
    {
+      validate_account_name( signatory );
       validate_account_name( account );
-      /*if( owner )
-         owner->validate();
-      if( active )
-         active->validate();
-      if( posting )
-         posting->validate();*/
 
-      if ( json.size() > 0 )
+      FC_ASSERT( account != TEMP_ACCOUNT, 
+         "Cannot update temp account." );
+
+      if( owner.valid() )
       {
-         FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
-         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
+         owner->validate();
+      } 
+      if( active.valid() )
+      {
+         active->validate();
+      }
+      if( posting.valid() )
+      {
+         posting->validate();
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+      if( json_private.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json_private ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json_private ), 
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
+         "URL size is too large." );
+
+      if( business_type.valid() )
+      {
+         switch( *business_type )
+         {
+            case OPEN_BUSINESS:
+            case PUBLIC_BUSINESS:
+            case PRIVATE_BUSINESS:
+            {
+               break;
+            }
+            default:
+            {
+               FC_ASSERT( false, "Business Type is invalid." );
+            }
+         }
+      }
+
+      if( officer_vote_threshold.valid() )
+      {
+         FC_ASSERT( *officer_vote_threshold > 0, 
+            "Officer vote threshold must be greater than 0.");
       }
    }
 
+   void account_membership_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( interface );
+      switch( membership_type )
+      {
+         case NONE:
+         case STANDARD_MEMBERSHIP:
+         case MID_MEMBERSHIP:
+         case TOP_MEMBERSHIP:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Membership Type is invalid." );
+         }
+      }
+
+      FC_ASSERT( fee.amount > 0, 
+         "Fee required." );
+      FC_ASSERT( is_valid_symbol( fee.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
+      FC_ASSERT( account != TEMP_ACCOUNT, 
+         "Cannot create membership for temp account." );
+      FC_ASSERT( months >= 1 && months <= 120, 
+         "Months of membership purchased must be between 1, and 120.", ("m", months ) );
+   }
+
+   void account_vote_executive_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( business_account );
+      validate_account_name( executive );
+      switch( role )
+      {
+         case CHIEF_EXECUTIVE_OFFICER:
+         case CHIEF_OPERATING_OFFICER:
+         case CHIEF_FINANCIAL_OFFICER:
+         case CHIEF_DEVELOPMENT_OFFICER:
+         case CHIEF_TECHNOLOGY_OFFICER:
+         case CHIEF_SECURITY_OFFICER:
+         case CHIEF_GOVERNANCE_OFFICER:
+         case CHIEF_MARKETING_OFFICER:
+         case CHIEF_DESIGN_OFFICER:
+         case CHIEF_ADVOCACY_OFFICER:
+         break;
+         
+         default:
+         {
+            FC_ASSERT( false, "Invalid executive officer role" );
+         }
+         break;
+      }
+   }
+
+   void account_vote_officer_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( business_account );
+      validate_account_name( officer );
+   }
+
+   void account_member_request_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( business_account );
+      FC_ASSERT( message.size() <= MAX_STRING_LENGTH, 
+         "Message is too long" );
+   }
+
+   void account_member_invite_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( business_account );
+      FC_ASSERT( message.size() <= MAX_STRING_LENGTH,
+         "Message is too long." );
+      FC_ASSERT( encrypted_business_key.size() <= MAX_STRING_LENGTH,
+         "Encrypted key is too long." );
+   }
+
+   void account_accept_request_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( business_account );
+      validate_account_name( member );
+      FC_ASSERT( account != member, 
+         "Account: ${a} cannot accept its own join request to a business account: ${b}.", 
+         ("a", member)("b", business_account));
+   }
+
+   void account_accept_invite_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( business_account );
+   }
+
+   void account_remove_member_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( business_account );
+      validate_account_name( member );
+   }
+
+   void account_update_list_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+
+      FC_ASSERT( listed_account.valid() || listed_asset.valid(),
+         "Operation requires either an account or an asset to update list." );
+
+      if( listed_account.valid() )
+      {
+         validate_account_name( *listed_account );
+      }
+      if( listed_asset.valid() )
+      {
+         is_valid_symbol( *listed_asset );
+      }
+   }
+
+   void account_witness_vote_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( witness );
+      FC_ASSERT( vote_rank >= 1 && vote_rank <= 100, 
+         "Vote rank must be between zero and one hundred." );
+   }
+
+   void account_update_proxy_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      if( proxy.size() )
+      {
+         validate_account_name( proxy );
+      }
+      FC_ASSERT( proxy != account, 
+         "Cannot proxy to self" );
+   }
+
+   void request_account_recovery_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( recovery_account );
+      validate_account_name( account_to_recover );
+      new_owner_authority.validate();
+   }
+
+   void recover_account_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account_to_recover );
+      FC_ASSERT( !( new_owner_authority == recent_owner_authority ), 
+         "Cannot set new owner authority to the recent owner authority" );
+      FC_ASSERT( !new_owner_authority.is_impossible(),
+         "New owner authority cannot be impossible" );
+      FC_ASSERT( !recent_owner_authority.is_impossible(),
+         "Recent owner authority cannot be impossible" );
+      FC_ASSERT( new_owner_authority.weight_threshold,
+         "New owner authority cannot be trivial" );
+      new_owner_authority.validate();
+      recent_owner_authority.validate();
+   }
+
+   void reset_account_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( reset_account );
+      validate_account_name( account_to_reset );
+      FC_ASSERT( !new_owner_authority.is_impossible(), 
+         "New owner authority cannot be impossible." );
+      FC_ASSERT( new_owner_authority.weight_threshold, 
+         "New owner authority cannot be trivial." );
+      new_owner_authority.validate();
+   }
+
+   void set_reset_account_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      if( current_reset_account.size() )
+      {
+         validate_account_name( current_reset_account );
+      }
+      validate_account_name( reset_account );
+      FC_ASSERT( current_reset_account != reset_account, 
+         "New reset account cannot be current reset account." );
+      FC_ASSERT( days >= 3 && days <= 365, 
+         "Reset account delay must be between 3 and 365 days." );
+   }
+
+   void change_recovery_account_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account_to_recover );
+      validate_account_name( new_recovery_account );
+   }
+
+   void decline_voting_rights_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+   }
+
+   void connection_request_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( requested_account );
+      FC_ASSERT( account != requested_account, 
+         "Account cannot connect with itself." );
+      FC_ASSERT( message.size() <= MAX_STRING_LENGTH, 
+         "Message is too long." );
+   }
+
+   void connection_accept_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( requesting_account );
+      FC_ASSERT( account != requesting_account, 
+         "Account cannot connect with itself." );
+      FC_ASSERT( connection_id.size() <= MAX_STRING_LENGTH,
+         "Connection ID is too long." );
+      FC_ASSERT( encrypted_key.size() <= MAX_STRING_LENGTH,
+         "Encrypted Key is too long." );
+   }
+
+   void account_follow_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( follower );
+      validate_account_name( following );
+      validate_account_name( interface );
+      FC_ASSERT( follower != following, 
+      "Account cannot follow itself." );
+   }
+
+   void tag_follow_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( follower );
+      validate_tag_name( tag );
+      validate_account_name( interface );
+   }
+
+   void activity_reward_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( interface );
+      validate_permlink( permlink );
+   }
+
+
+   //===========================//
+   // === Network Operations ===//
+   //===========================//
+
+
+   void update_network_officer_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      switch( officer_type )
+      {
+         case DEVELOPMENT:
+         case MARKETING:
+         case ADVOCACY:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Officer Type is invalid." );
+         }
+      }
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL size is too large." );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+   void network_officer_vote_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( network_officer );
+      FC_ASSERT( vote_rank >= 1 && vote_rank <= 100, 
+         "Vote rank must be between zero and one hundred." );
+   }
+
+   void update_executive_board_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( executive );
+
+      FC_ASSERT( url.size() + details.size() + json.size(),
+         "Cannot update Executive Board because it does not contain content." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL size is too large." );
+      
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( budget.amount > 0,
+         "Budget required." );
+      FC_ASSERT( is_valid_symbol( budget.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", budget.symbol) );
+      FC_ASSERT( budget.symbol == SYMBOL_CREDIT, 
+         "Executive Budget must be in the network credit asset." );
+   }
+
+   void executive_board_vote_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( executive_board );
+      FC_ASSERT( vote_rank >= 1 && vote_rank <= 100,
+         "Vote rank must be between zero and one hundred." );
+   }
+
+   void update_governance_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( url.size() + details.size() + json.size(), 
+         "Cannot update governance account because it does not contain content." );
+      FC_ASSERT( url.size() <= MAX_URL_LENGTH, 
+         "URL is too long" );
+      FC_ASSERT( details.size() <= MAX_STRING_LENGTH, 
+         "Details are too long" );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+   void subscribe_governance_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( governance_account );
+   }
+
+   void update_interface_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( url.size() + details.size() + json.size(),
+         "Cannot update Interface because it does not contain content." );
+      FC_ASSERT( url.size() <= MAX_URL_LENGTH,
+         "URL is too long" );
+      FC_ASSERT( details.size() <= MAX_STRING_LENGTH,
+         "Details are too long" );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+   void update_supernode_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( url.size() + details.size() + json.size() + node_api_endpoint.size(), 
+         "Cannot update supernode because it does not contain sufficient content." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL size is too large." );
+      FC_ASSERT( node_api_endpoint.size() < MAX_URL_LENGTH,
+         "Node API length is too large." );
+      FC_ASSERT( notification_api_endpoint.size() < MAX_URL_LENGTH,
+         "Notification API length is too large." );
+      FC_ASSERT( auth_api_endpoint.size() < MAX_URL_LENGTH,
+         "Auth API length is too large." );
+      FC_ASSERT( ipfs_endpoint.size() < MAX_URL_LENGTH,
+         "IPFS length is too large." );
+      FC_ASSERT( bittorrent_endpoint.size() < MAX_URL_LENGTH,
+         "Bittorrent length is too large." );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+   void create_community_enterprise_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( creator );
+      FC_ASSERT( enterprise_id.size() < MAX_STRING_LENGTH,
+         "Enterprise ID is too long." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
+         "URL size is too large." );
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( begin > GENESIS_TIME,
+         "Begin time must be after genesis time." );
+
+      switch( proposal_type )
+      {
+         case FUNDING:
+         {
+            FC_ASSERT( beneficiaries.size() >= 1 && beneficiaries.size() <= 100, 
+            "Funding Proposal must have between 1 and 100 beneficiaries." );
+         }
+         break;
+         case COMPETITION:
+         {
+
+         }
+         break;
+         case INVESTMENT:
+         {
+            FC_ASSERT( beneficiaries.size() == 0, 
+               "Investment Proposal should not specify account beneficiaries." );
+            FC_ASSERT( investment.valid(), 
+               "Investment proposal should specify an asset to invest in." );
+            FC_ASSERT( is_valid_symbol( *investment ), 
+               "Invalid investment symbol." );
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, "Invalid proposal type." );
+         }
+      }
+
+      for( auto name : beneficiaries )
+      {
+         validate_account_name( name.first );
+         FC_ASSERT( name.second <= PERCENT_100,
+            "Beneficiary percent is too large." );
+      }
+
+      FC_ASSERT( milestones.size() >= 2, 
+         "Proposal must have at least 2 milestones." );
+
+      for( auto mile : milestones )
+      {
+         FC_ASSERT( mile.first.size() < MAX_STRING_LENGTH,
+            "Milestone is too long" );
+         FC_ASSERT( mile.second <= PERCENT_100,
+            "Milestone percent is too large." );
+      }
+
+      FC_ASSERT( duration <= 3650,
+         "Duration is too long." );
+      FC_ASSERT( duration > 0,
+         "Duration must be at least one day." );
+      FC_ASSERT( daily_budget.amount > 0,
+         "Budget budget must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( daily_budget.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", daily_budget.symbol) );
+      FC_ASSERT( daily_budget.symbol == SYMBOL_COIN,
+         "Daily Budget must be in Core Asset." );
+      FC_ASSERT( fee.amount > 0,
+         "Fee amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( fee.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
+      FC_ASSERT( fee.symbol == SYMBOL_COIN, 
+         "Fee must be in Core Asset." );
+   }
+
+   void claim_enterprise_milestone_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( creator );
+      FC_ASSERT( enterprise_id.size() < MAX_STRING_LENGTH,
+         "Enterprise ID is too long." );
+      FC_ASSERT( milestone <= PERCENT_100,
+         "Milestone percent is too large." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+   }
+
+   void approve_enterprise_milestone_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( creator );
+      FC_ASSERT( enterprise_id.size() < MAX_STRING_LENGTH,
+         "Enterprise ID is too long." );
+      FC_ASSERT( milestone <= PERCENT_100,
+         "Milestone percent is too large." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( vote_rank >= 1 && vote_rank <= 100,
+         "Vote rank must be between zero and one hundred." );
+   }
+
+   //=====================================//
+   // === Post and Comment Operations === //
+   //=====================================//
+
+
    void comment_operation::validate() const
    {
-      string title_text;
-     
-      FC_ASSERT( body.size() > 0, "Body is empty" );
-      FC_ASSERT( fc::is_utf8( body ), "Body not formatted in UTF8" );
-
-      FC_ASSERT( body.size() + json.size(), "Cannot update comment because it does not contain content." );
-      FC_ASSERT( body.size() < MAX_BODY_SIZE, "Comment rejected: Body size is too large",("Body.size", body.size() ) );
-      FC_ASSERT( media.size() < MAX_BODY_SIZE, "Comment rejected: Media size is too large",("Media.size", media.size() ) );
-      FC_ASSERT( json.size() < MAX_BODY_SIZE, "Comment rejected: Body size is too large",("JSON.size", json.size() ) );
-      FC_ASSERT( fc::is_utf8( json ), "Comment rejected: JSON is not valid UTF8");
-
-      if( parent_author.size() )
-         validate_account_name( parent_author );
+      validate_account_name( signatory );
       validate_account_name( author );
+      validate_account_name( interface );
       validate_permlink( parent_permlink );
       validate_permlink( permlink );
+
+      if( board.size() )
+      {
+         validate_board_name( board );
+      }
+
+      FC_ASSERT( fc::is_utf8( body ),
+         "Body not formatted in UTF8" );
+      FC_ASSERT( body.size() + json.size() + title.size() + ipfs.size() + magnet.size(),
+         "Cannot update comment because it does not contain content." );
+      FC_ASSERT( body.size() < MAX_BODY_SIZE,
+         "Comment rejected: Body size is too large." );
+      FC_ASSERT( title.size() < MAX_STRING_LENGTH,
+         "Comment rejected: Title size is too large." );
+      FC_ASSERT( language.size() == 2,
+         "Comment rejected: Title size is too large." );
+      FC_ASSERT( tags.size(),
+         "Comment rejected: Requires at least one tag." );
+
+      for( auto item : ipfs )
+      {
+         FC_ASSERT( item.size() < MAX_BODY_SIZE, 
+            "Comment rejected: IPFS size is too large." );
+      }
+
+      for( auto item : magnet )
+      {
+         FC_ASSERT( item.size() < MAX_BODY_SIZE, 
+            "Comment rejected: Magnet size is too large." );
+      }
+
+      for( auto item : tags )
+      {
+         FC_ASSERT( item.size() < MAX_BODY_SIZE, 
+            "Comment rejected: Magnet size is too large." );
+      }
+
+      switch( post_type )
+      {
+         case TEXT_POST:
+         case IMAGE_POST:
+         case VIDEO_POST:
+         case PRODUCT_POST:
+         case LINK_POST:
+         case ARTICLE_POST:
+         case AUDIO_POST:
+         case FILE_POST:
+         case POLL_POST:
+         case LIVESTREAM_POST:
+         case LIST_POST:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Comment rejected: Invalid post type." );
+         }
+      }
+
+      switch( reach )
+      {
+         case NO_FEED:
+         case FOLLOW_FEED:
+         case MUTUAL_FEED:
+         case CONNECTION_FEED:
+         case FRIEND_FEED:
+         case COMPANION_FEED:
+         case BOARD_FEED:
+         case GROUP_FEED:
+         case EVENT_FEED:
+         case STORE_FEED:
+         case TAG_FEED:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Comment rejected: Invalid feed type." );
+         }
+      }
+
+      switch( rating )
+      {
+         case FAMILY:
+         case GENERAL:
+         case MATURE:
+         case EXPLICIT:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Comment rejected: Invalid rating type." );
+         }
+      }
+      
+      FC_ASSERT( json.size() < MAX_BODY_SIZE, 
+         "Comment rejected: JSON size is too large." );
+
+      FC_ASSERT( fc::is_utf8( json ), 
+         "Comment rejected: JSON is not valid UTF8" );
+
+      if( parent_author.size() )
+      {
+         validate_account_name( parent_author );
+      }
 
       if( json.size() > 0 )
       {
          FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
+      }
+
+      FC_ASSERT( public_key.size() < MAX_STRING_LENGTH,
+         "Comment rejected: Title size is too large." );
+
+      if( comment_price.amount > 0 )
+      {
+         FC_ASSERT( is_valid_symbol( comment_price.symbol ),
+            "Symbol ${symbol} is not a valid symbol", ("symbol", comment_price.symbol) );
+      }
+
+      if( premium_price.amount > 0 )
+      {
+         FC_ASSERT( is_valid_symbol( premium_price.symbol ),
+            "Symbol ${symbol} is not a valid symbol", ("symbol", comment_price.symbol) );
       }
    }
 
@@ -100,113 +888,1521 @@ namespace node { namespace protocol {
    {
       uint32_t sum = 0;
 
-      FC_ASSERT( beneficiaries.size(), "Must specify at least one beneficiary" );
-      FC_ASSERT( beneficiaries.size() < 128, "Cannot specify more than 127 beneficiaries." ); // Require size serializtion fits in one byte.
+      FC_ASSERT( beneficiaries.size(), 
+         "Must specify at least one beneficiary" );
+      FC_ASSERT( beneficiaries.size() < 128, 
+         "Cannot specify more than 127 beneficiaries." ); // Require size serializtion fits in one byte.
 
       validate_account_name( beneficiaries[0].account );
-      FC_ASSERT( beneficiaries[0].weight <= PERCENT_100, "Cannot allocate more than 100% of rewards to one account" );
+      FC_ASSERT( beneficiaries[0].weight <= PERCENT_100, 
+         "Cannot allocate more than 100% of rewards to one account" );
       sum += beneficiaries[0].weight;
-      FC_ASSERT( sum <= PERCENT_100, "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
+      FC_ASSERT( sum <= PERCENT_100, 
+         "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
 
       for( size_t i = 1; i < beneficiaries.size(); i++ )
       {
          validate_account_name( beneficiaries[i].account );
-         FC_ASSERT( beneficiaries[i].weight <= PERCENT_100, "Cannot allocate more than 100% of rewards to one account" );
+         FC_ASSERT( beneficiaries[i].weight <= PERCENT_100, 
+            "Cannot allocate more than 100% of rewards to one account" );
          sum += beneficiaries[i].weight;
-         FC_ASSERT( sum <= PERCENT_100, "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
-         FC_ASSERT( beneficiaries[i - 1] < beneficiaries[i], "Benficiaries must be specified in sorted order (account ascending)" );
+         FC_ASSERT( sum <= PERCENT_100, 
+            "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
+         FC_ASSERT( beneficiaries[i - 1] < beneficiaries[i], 
+            "Benficiaries must be specified in sorted order (account ascending)" );
       }
    }
 
    void comment_options_operation::validate()const
    {
+      validate_account_name( signatory );
       validate_account_name( author );
-      FC_ASSERT( percent_liquid <= PERCENT_100, "Percent cannot exceed 100%" );
-      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_USD, "Max accepted payout must be in USD" );
-      FC_ASSERT( max_accepted_payout.amount.value >= 0, "Cannot accept less than 0 payout" );
+      FC_ASSERT( percent_liquid <= PERCENT_100, 
+         "Percent cannot exceed 100%" );
+      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_USD, 
+         "Max accepted payout must be in USD" );
+      FC_ASSERT( max_accepted_payout.amount.value >= 0, 
+         "Cannot accept less than 0 payout" );
       validate_permlink( permlink );
       for( auto& e : extensions )
          e.visit( comment_options_extension_validate_visitor() );
    }
 
-   void vote_operation::validate() const
+   void message_operation::validate() const
    {
+      validate_account_name( signatory );
+      validate_account_name( sender );
+      validate_account_name( recipient );
+      FC_ASSERT( message.size(), 
+         "Message must include a message string." );
+      FC_ASSERT( message.size() < MAX_STRING_LENGTH,
+         "Message is too long." );
+      FC_ASSERT( id.size() < MAX_STRING_LENGTH,
+         "Comment rejected: Title size is too large." );
+      FC_ASSERT( time > GENESIS_TIME,
+         "Message time must be after genesis time." );
+   }
+
+   void vote_operation::validate() const
+   {  
+      validate_account_name( signatory );
       validate_account_name( voter );
       validate_account_name( author );
-      FC_ASSERT( abs(weight) <= PERCENT_100, "Weight is not a valid percentage (0 - 10000)" );
+      validate_account_name( interface );
+      FC_ASSERT( abs(weight) <= PERCENT_100, 
+         "Weight is not a valid percentage (0 - 10000)" );
       validate_permlink( permlink );
    }
 
+   void view_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( viewer );
+      validate_account_name( author );
+      validate_account_name( interface );
+      validate_account_name( supernode );
+      validate_permlink( permlink );
+   }
+
+   void share_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( sharer );
+      validate_account_name( author );
+      validate_account_name( interface );
+      if( board.valid() )
+      {
+         validate_board_name( *board );
+      }
+      if( tag.valid() )
+      {
+         validate_tag_name( *tag );
+      }
+      validate_permlink( permlink );
+   }
+
+   void moderation_tag_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( moderator );
+      validate_account_name( author );
+      validate_permlink( permlink );
+      for( auto tag : tags )
+      {
+         validate_tag_name( tag );
+      }
+
+      switch( rating )
+      {
+         case FAMILY:
+         case GENERAL:
+         case MATURE:
+         case EXPLICIT:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Invalid rating type." );
+         }
+      }
+      FC_ASSERT( details.size(), 
+         "Moderation tag must include details explaining the rule or standard violation." );
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+   }
+
+
+   //==========================//
+   // === Board Operations === //
+   //==========================//
+
+
+   void board_create_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( founder );
+      validate_board_name( name );
+
+      switch( board_type )
+      {
+         case BOARD:
+         case GROUP:
+         case EVENT:
+         case STORE:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Invalid board type." );
+         }
+      }
+
+      switch( board_privacy )
+      {
+         case OPEN_BOARD:
+         case PUBLIC_BOARD:
+         case PRIVATE_BOARD:
+         case EXCLUSIVE_BOARD:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Invalid board privacy." );
+         }
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      if( json_private.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json_private ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json_private ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
+         "URL size is too large." );
+      FC_ASSERT( board_public_key.size() < MAX_STRING_LENGTH,
+         "URL size is too large." );
+   }
+
+   void board_update_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_board_name( board );
+
+      switch( board_type )
+      {
+         case BOARD:
+         case GROUP:
+         case EVENT:
+         case STORE:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Invalid board type." );
+         }
+      }
+
+      switch( board_privacy )
+      {
+         case OPEN_BOARD:
+         case PUBLIC_BOARD:
+         case PRIVATE_BOARD:
+         case EXCLUSIVE_BOARD:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Invalid board privacy." );
+         }
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+      
+      if( json_private.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json_private ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json_private ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
+         "URL size is too large." );
+      FC_ASSERT( board_public_key.size() < MAX_STRING_LENGTH,
+         "Board public key is too long" );
+   }
+
+   void board_add_mod_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( moderator );
+      validate_board_name( board );
+   }
+
+   void board_add_admin_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( admin );
+      validate_board_name( board );
+   }
+
+   void board_vote_mod_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( moderator );
+      validate_board_name( board );
+      FC_ASSERT( vote_rank >= 1 && vote_rank <= 100,
+         "Vote rank must be between zero and one hundred." );
+   }
+
+   void board_transfer_ownership_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( new_founder);
+      validate_board_name( board );
+   }
+
+   void board_join_request_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_board_name( board );
+      FC_ASSERT( message.size() < MAX_STRING_LENGTH,
+         "Message is too long." );
+   }
+
+   void board_join_invite_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( member );
+      validate_board_name( board );
+      FC_ASSERT( account != member,
+      "Account: ${a} cannot invite itself to join a board: ${b} .",
+       ("a", member)("b", board));
+      FC_ASSERT( message.size() < MAX_STRING_LENGTH,
+         "Message is too long." );
+      FC_ASSERT( encrypted_board_key.size() < MAX_STRING_LENGTH,
+         "Message is too long." );
+   }
+
+   void board_join_accept_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( member );
+      validate_board_name( board );
+      FC_ASSERT( encrypted_board_key.size() < MAX_STRING_LENGTH,
+         "Message is too long." );
+      FC_ASSERT( account != member, 
+         "Account: ${a} cannot accept its own join request to a board: ${b}.", 
+      ("a", member)("b", board));
+   }
+
+   void board_invite_accept_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_board_name( board );
+   }
+
+   void board_remove_member_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( member );
+      validate_board_name( board );
+   }
+
+   void board_blacklist_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( member );
+      validate_board_name( board );
+      FC_ASSERT( account != member, 
+         "Account: ${a} cannot add or remove itself from the blacklist of board: ${b} .",
+         ("a", member)("b", board));
+   }
+
+   void board_subscribe_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( interface );
+      validate_board_name( board );
+   }
+
+
+
+   //================================//
+   // === Advertising Operations === //
+   //================================//
+
+
+
+   void ad_creative_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( author );
+
+      switch( format_type )
+      {
+         case STANDARD_FORMAT:
+         case PREMIUM_FORMAT:
+         case PRODUCT_FORMAT:
+         case LINK_FORMAT:
+         case BOARD_FORMAT:
+         case GROUP_FORMAT:
+         case EVENT_FORMAT:
+         case ACCOUNT_FORMAT:
+         case STORE_FORMAT:
+         case ASSET_FORMAT:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Invalid ad format type." );
+         }
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( creative_id.size() < MAX_STRING_LENGTH,
+         "Creative ID is too long." );
+      FC_ASSERT( objective.size() < MAX_STRING_LENGTH,
+         "Objective is too long." );
+      FC_ASSERT( creative.size() < MAX_STRING_LENGTH,
+         "Creative is too long." );
+   }
+
+   void ad_campaign_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( interface );
+      FC_ASSERT( campaign_id.size() < MAX_STRING_LENGTH,
+         "Campaign ID is too long." );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( begin > GENESIS_TIME,
+         "Begin time must be after genesis time." );
+      FC_ASSERT( end > GENESIS_TIME,
+         "Begin time must be after genesis time." );
+      FC_ASSERT( end > begin,
+         "Begin time must be after genesis time." );
+      FC_ASSERT( budget.amount > 0,
+         "Budget required." );
+      FC_ASSERT( is_valid_symbol( budget.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", budget.symbol) );
+
+      for( auto name : agents )
+      {
+         validate_account_name( name );
+      }
+   }
+
+   void ad_inventory_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( provider );
+
+      switch( metric )
+      {
+         case VIEW_METRIC:
+         case VOTE_METRIC:
+         case SHARE_METRIC:
+         case FOLLOW_METRIC:
+         case PURCHASE_METRIC:
+         case PREMIUM_METRIC:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Invalid metric type.");
+         }
+      }
+
+      for( auto name : agents )
+      {
+         validate_account_name( name );
+      }
+
+      FC_ASSERT( inventory_id.size() < MAX_STRING_LENGTH,
+         "Inventory ID is too long." );
+      FC_ASSERT( min_price.amount > 0,
+         "Budget required." );
+      FC_ASSERT( is_valid_symbol( min_price.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ( "symbol", min_price.symbol ) );
+      FC_ASSERT( inventory > 0,
+         "Inventory must be greater than zero." );
+      
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      for( auto aud : audience )
+      {
+         FC_ASSERT( aud.size() < MAX_STRING_LENGTH,
+            "Audience ID is too long." );
+      }
+   }
+
+   void ad_audience_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      for( auto name : audience )
+      {
+         validate_account_name( name );
+      }
+
+      FC_ASSERT( audience_id.size() < MAX_STRING_LENGTH,
+         "Audience ID is too long." );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+   void ad_bid_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( bidder );
+      validate_account_name( account );
+      validate_account_name( provider );
+
+      FC_ASSERT( campaign_id.size() < MAX_STRING_LENGTH,
+         "Campaign ID is too long." );
+      FC_ASSERT( creative_id.size() < MAX_STRING_LENGTH,
+         "Creative ID is too long." );
+      FC_ASSERT( inventory_id.size() < MAX_STRING_LENGTH,
+         "Inventory ID is too long." );
+      FC_ASSERT( bid_id.size() < MAX_STRING_LENGTH,
+         "Bid ID is too long." );
+      FC_ASSERT( bid_price.amount > 0,
+         "Bid price must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( bid_price.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ( "symbol", bid_price.symbol ) );
+      FC_ASSERT( expiration > GENESIS_TIME,
+         "Begin time must be after genesis time." );
+      FC_ASSERT( inventory_requested > 0,
+         "Inventory requested must be greater than zero." );
+
+      for( auto aud : included_audiences )
+      {
+         FC_ASSERT( aud.size() < MAX_STRING_LENGTH,
+            "Audience ID is too long." );
+      }
+
+      for( auto aud : excluded_audiences )
+      {
+         FC_ASSERT( aud.size() < MAX_STRING_LENGTH,
+            "Audience ID is too long." );
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+   void ad_deliver_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( bidder );
+      validate_account_name( account );
+
+      FC_ASSERT( bid_id.size() < MAX_STRING_LENGTH,
+         "Bid ID is too long." );
+      FC_ASSERT( delivery_price.amount > 0,
+         "Delivery price must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( delivery_price.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ( "symbol", delivery_price.symbol ) );
+      FC_ASSERT( delivered > 0,
+         "Delivered must be greater than zero." );
+   }
+
+
+   //=============================//
+   // === Transfer Operations === //
+   //=============================//
+
+
    void transfer_operation::validate() const
-   { try {
+   {
+      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
-      FC_ASSERT( amount.amount > 0, "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-      FC_ASSERT( is_valid_symbol(amount.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
-      FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
+      FC_ASSERT( amount.amount > 0, 
+         "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ), 
+         "Memo is not UTF8" );
+   }
+
+   void transfer_request_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      FC_ASSERT( amount.amount > 0, 
+         "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
+      FC_ASSERT( is_valid_symbol(amount.symbol), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ), 
+         "Memo is not UTF8" );
+      FC_ASSERT( request_id.size() < MAX_STRING_LENGTH,
+         "Request ID is too long." );
+      FC_ASSERT( expiration > GENESIS_TIME,
+         "Expiration time must be after genesis time." );
+   }
+
+   void transfer_accept_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      FC_ASSERT( request_id.size() < MAX_STRING_LENGTH,
+         "Request ID is too long." );
+   }
+
+   void transfer_recurring_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      FC_ASSERT( transfer_id.size() < MAX_STRING_LENGTH,
+         "Transfer ID is too long." );
+      FC_ASSERT( amount.amount > 0, 
+         "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
+      FC_ASSERT( is_valid_symbol(amount.symbol), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ), 
+         "Memo is not UTF8" );
+      FC_ASSERT( begin > GENESIS_TIME,
+         "Begin time must be after genesis time." );
+      FC_ASSERT( end > GENESIS_TIME,
+         "End time must be after genesis time." );
+      FC_ASSERT( end > begin,
+         "End time must be after begin time." );
+      FC_ASSERT( interval > fc::hours(1),
+         "Interval time must be at least one hour." );
+   }
+
+   void transfer_recurring_request_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      FC_ASSERT( request_id.size() < MAX_STRING_LENGTH,
+         "Request ID is too long." );
+      FC_ASSERT( amount.amount > 0, 
+         "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
+      FC_ASSERT( is_valid_symbol(amount.symbol), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ), 
+         "Memo is not UTF8" );
+      FC_ASSERT( begin > GENESIS_TIME,
+         "Begin time must be after genesis time." );
+      FC_ASSERT( end > GENESIS_TIME,
+         "End time must be after genesis time." );
+      FC_ASSERT( end > begin,
+         "End time must be after begin time." );
+      FC_ASSERT( interval > fc::hours(1),
+         "Interval time must be at least one hour." );
+      FC_ASSERT( expiration > GENESIS_TIME,
+         "Expiration time must be after genesis time." );
+   }
+
+   void transfer_recurring_accept_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      FC_ASSERT( request_id.size() < MAX_STRING_LENGTH,
+         "Request ID is too long." );
+   }
+
+
+   //============================//
+   // === Balance Operations === //
+   //============================//
+
+
+   void claim_reward_balance_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( reward.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol(reward.symbol),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", reward.symbol) );
+   }
 
    void stake_asset_operation::validate() const
    {
       validate_account_name( from );
-      FC_ASSERT( is_valid_symbol(amount.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      if ( to != account_name_type() ) validate_account_name( to );
-      FC_ASSERT( amount.amount > 0, "Must transfer a nonzero amount" );
+      if( to != account_name_type() )
+      {
+         validate_account_name( to );
+      } 
+      FC_ASSERT( amount.amount > 0,
+         "Must transfer a nonzero amount" );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
 
    void unstake_asset_operation::validate() const
    {
-      validate_account_name( account );
-      FC_ASSERT( is_valid_symbol(amount.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( amount.amount >= 0, "Cannot withdraw negative stake. Account: ${account}, Amount:${amount}", ("account", account)("amount", amount) );
+      validate_account_name( signatory );
+      validate_account_name( from );
+      if ( to != account_name_type() )
+      {
+         validate_account_name( to );
+      }
+      FC_ASSERT( is_valid_symbol(amount.symbol),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( amount.amount >= 0,
+         "Cannot withdraw negative stake. Account: ${account}, From:${amount}", ("from", from)("amount", amount) );
    }
 
    void unstake_asset_route_operation::validate() const
    {
+      validate_account_name( signatory );
       validate_account_name( from_account );
       validate_account_name( to_account );
-      FC_ASSERT( 0 <= percent && percent <= PERCENT_100, "Percent must be valid percent (0 - 10000)" );
+      FC_ASSERT( 0 < percent && percent <= PERCENT_100,
+         "Percent must be valid percent (1 - 10000)" );
    }
+
+   void transfer_to_savings_operation::validate()const 
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol(amount.symbol),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ),
+         "Memo is not UTF8" );
+   }
+
+   void transfer_from_savings_operation::validate()const 
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      FC_ASSERT( amount.amount > 0, 
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ),
+         "Memo is not UTF8" );
+   }
+
+   void cancel_transfer_from_savings_operation::validate()const 
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+   }
+
+   void delegate_asset_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( delegator );
+      validate_account_name( delegatee );
+      FC_ASSERT( delegator != delegatee,
+         "You cannot delegate to yourself" );
+      FC_ASSERT( amount.amount >= 0,
+         "Delegation must be greater than zero." );
+      FC_ASSERT( is_valid_symbol(amount.symbol),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+   }
+
+
+   //===========================//
+   // === Escrow Operations === //
+   //===========================//
+
+
+   void escrow_transfer_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      validate_account_name( agent );
+      FC_ASSERT( is_valid_symbol(fee.symbol),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
+      FC_ASSERT( is_valid_symbol(amount.symbol),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( fee.amount >= 0,
+         "Fee must be greater than or equal to zero." );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( from != agent && to != agent,
+         "Agent account must be a third party" );
+      FC_ASSERT( ratification_deadline > GENESIS_TIME, 
+         "Ratification deadline must be after genesis time." );
+      FC_ASSERT( escrow_expiration > GENESIS_TIME, 
+         "Escrow expiration must be after genesis time." );
+      FC_ASSERT( ratification_deadline < escrow_expiration, 
+         "Ratification deadline must be before escrow expiration" );
+      FC_ASSERT( amount.symbol == fee.symbol, 
+      "Fee Asset must be identical to escrow payment asset.");
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8(json),
+            "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid(json),
+            "JSON Metadata not valid JSON" );
+      }
+   }
+
+   void escrow_approve_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      validate_account_name( agent );
+      validate_account_name( who );
+      FC_ASSERT( who == to || who == agent, 
+         "To Account or Agent Account must approve escrow." );
+   }
+
+   void escrow_dispute_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      validate_account_name( agent );
+      validate_account_name( who );
+      FC_ASSERT( who == from || who == to, 
+         "From Account or To Account must approve dispute." );
+   }
+
+   void escrow_release_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+      validate_account_name( to );
+      validate_account_name( agent );
+      validate_account_name( who );
+      validate_account_name( receiver );
+      FC_ASSERT( who == from || who == to || who == agent,
+         "Who must be from or to or agent" );
+      FC_ASSERT( receiver == from || receiver == to,
+         "Receiver must be from or to" );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( amount.amount > 0, 
+         "Amount cannot be greater than zero" );
+   }
+
+
+   //============================//
+   // === Trading Operations === //
+   //============================//
+
+
+   void limit_order_create_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( interface );
+      validate_account_name( owner );
+      FC_ASSERT( amount_to_sell.symbol == exchange_rate.base.symbol,
+         "Sell asset must be the base of the price" );
+      exchange_rate.validate();
+      FC_ASSERT( (amount_to_sell * exchange_rate).amount > 0,
+         "Amount to sell cannot round to 0 when traded" );
+      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
+         "Order ID is too long." );
+   }
+
+   void limit_order_cancel_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( owner );
+      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
+         "Order ID is too long." );
+   }
+
+   void margin_order_create_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( interface );
+      validate_account_name( owner );
+      
+      exchange_rate.validate();
+      if( stop_price.valid() )
+      {
+         stop_price->validate();
+      }
+      if( target_price.valid() )
+      {
+         target_price->validate();
+      }
+      FC_ASSERT( is_valid_symbol( amount_to_borrow.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount_to_borrow.symbol) );
+      FC_ASSERT( amount_to_borrow.symbol == exchange_rate.base.symbol,
+         "Amount to borrow asset must be the base of the price." );
+      FC_ASSERT( collateral.amount > 0,
+         "Collateral must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
+      FC_ASSERT( ( amount_to_borrow * exchange_rate).amount > 0,
+         "Amount to sell cannot round to 0 when traded" );
+      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
+         "Order ID is too long." );
+   }
+
+   void margin_order_close_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( owner );
+      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
+         "Order ID is too long." );
+      if( exchange_rate.valid() )
+      {
+         exchange_rate->validate();
+      }
+   }
+
+   void call_order_update_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( interface );
+      validate_account_name( funding_account );
+
+      FC_ASSERT( is_valid_symbol( delta_collateral.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", delta_collateral.symbol) );
+      FC_ASSERT( is_valid_symbol( delta_debt.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", delta_debt.symbol) );
+   }
+
+   void bid_collateral_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( bidder );
+      FC_ASSERT( additional_collateral.amount > 0,
+         "Additional Collateral must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( additional_collateral.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", additional_collateral.symbol) );
+      FC_ASSERT( debt_covered.amount > 0,
+         "Debt covered must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( debt_covered.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", debt_covered.symbol) );
+      FC_ASSERT( fee.amount > 0,
+         "Fee must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( fee.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
+   }
+
+
+   //=========================//
+   // === Pool Operations === //
+   //=========================//
+
+
+   void liquidity_pool_create_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( first_amount.amount > 0,
+         "First Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( first_amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", first_amount.symbol) );
+      FC_ASSERT( second_amount.amount > 0,
+         "Second Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( second_amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", second_amount.symbol) );
+   }
+
+   void liquidity_pool_exchange_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( interface );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( is_valid_symbol( receive_asset ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", receive_asset) );
+      if( limit_price.valid() )
+      {
+         limit_price->validate();
+      }
+   }
+
+   void liquidity_pool_fund_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( is_valid_symbol( pair_asset ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", pair_asset) );
+   }
+
+   void liquidity_pool_withdraw_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( is_valid_symbol( receive_asset ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", receive_asset) );
+   }
+
+   void credit_pool_collateral_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+   }
+
+   void credit_pool_borrow_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( collateral.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+   }
+
+   void credit_pool_lend_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+   }
+
+   void credit_pool_withdraw_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+   }
+
+
+   //==========================//
+   // === Asset Operations === //
+   //==========================//
+
+
+   /**
+    * Valid symbols can contain [A-Z0-9], and '.'
+    * They must start with [A, Z]
+    * They must end with [A, Z] before HF_620 or [A-Z0-9] after it
+    * They can contain a maximum of two '.'
+    */
+   bool is_valid_symbol( const string& symbol )
+   {
+      static const std::locale& loc = std::locale::classic();
+      if( symbol.size() < MIN_ASSET_SYMBOL_LENGTH )
+         return false;
+
+      if( symbol.substr(0,3) == "BIT" )
+         return false;
+
+      if( symbol.substr(0,2) == "ME" )
+         return false;
+
+      if( symbol.substr(0,3) == "WYM" )
+         return false;
+
+      if( symbol.size() > MAX_ASSET_SYMBOL_LENGTH )
+         return false;
+
+      if( !isalpha( symbol.front(), loc ) )
+         return false;
+
+      if( !isalnum( symbol.back(), loc ) )
+         return false;
+
+      uint8_t dot_count = 0;
+      for( const auto c : symbol )
+      {
+         if( (isalpha( c, loc ) && isupper( c, loc )) || isdigit( c, loc ) )
+            continue;
+
+         if( c == '.' )
+         {
+            dot_count++;
+            if( dot_count > 2 )
+            {
+               return false;
+            }
+            continue;
+         }
+
+         return false;
+      }
+
+      return true;
+   }
+
+   void bitasset_options::validate() const
+   {
+      FC_ASSERT( minimum_feeds > 0);
+      FC_ASSERT( force_settlement_offset_percent <= PERCENT_100 );
+      FC_ASSERT( maximum_force_settlement_volume <= PERCENT_100 );
+   }
+
+   void asset_options::validate()const
+   {
+      FC_ASSERT( max_supply > 0 );
+      FC_ASSERT( max_supply <= MAX_ASSET_SUPPLY );
+      FC_ASSERT( market_fee_percent <= PERCENT_100 );
+      FC_ASSERT( max_market_fee >= 0 && max_market_fee <= MAX_ASSET_SUPPLY );
+      FC_ASSERT( stake_intervals >= 0 );
+      FC_ASSERT( stake_intervals <= 520 );
+      FC_ASSERT( unstake_intervals >= 0 );
+      FC_ASSERT( unstake_intervals <= 520 );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( description.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
+         "URL size is too large." );
+
+      // There must be no high bits in permissions whose meaning is not known.
+      FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
+      // The global_settle flag may never be set (this is a permission only)
+      FC_ASSERT( !(flags & global_settle) );
+      // the witness_fed and committee_fed flags cannot be set simultaneously
+      FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
+      core_exchange_rate.validate();
+      if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
+      {
+         FC_ASSERT( flags & white_list );
+      }
+         
+      for( auto item : whitelist_markets )
+      {
+         FC_ASSERT( blacklist_markets.find(item) == blacklist_markets.end() );
+      }
+      for( auto item : blacklist_markets )
+      {
+         FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end() );
+      }
+      if( extensions.value.reward_percent.valid() )
+         FC_ASSERT( *extensions.value.reward_percent < PERCENT_100 );
+   }
+
+   void asset_create_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+
+      FC_ASSERT( is_valid_symbol( symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
+      FC_ASSERT( is_valid_symbol( coin_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", coin_liquidity.symbol) );
+      FC_ASSERT( is_valid_symbol( usd_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", usd_liquidity.symbol) );
+      FC_ASSERT( is_valid_symbol( credit_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", credit_liquidity.symbol) );
+      FC_ASSERT( credit_liquidity.amount > 0,
+         "Credit Liquidity must be greater than zero." );
+      FC_ASSERT( coin_liquidity.symbol == SYMBOL_COIN, 
+         "Asset must have initial liquidity in the COIN asset." );
+      FC_ASSERT( coin_liquidity.amount >= 10 * BLOCKCHAIN_PRECISION, 
+         "Asset must have at least 10 COIN asset of initial liquidity." );
+      FC_ASSERT( usd_liquidity.symbol == SYMBOL_USD, 
+         "Asset must have initial liquidity in the USD asset." );
+      FC_ASSERT( usd_liquidity.amount >= 10 * BLOCKCHAIN_PRECISION, 
+         "Asset must have at least 10 USD asset of initial liquidity." );
+
+      
+      
+      
+      
+
+      switch( asset_type )
+      {
+         case STANDARD_ASSET:
+         {
+
+         }
+         break;
+         case CURRENCY_ASSET:
+         {
+            FC_ASSERT( currency_opts.valid(),
+               "Currency asset must have valid currency options." );
+         }
+         break;
+         case EQUITY_ASSET:
+         {
+            FC_ASSERT( equity_opts.valid(),
+               "Equity asset must have valid equity options." );
+         }
+         break;
+         case CREDIT_ASSET:
+         {
+            FC_ASSERT( credit_opts.valid(),
+               "Credit asset must have valid credit options." );
+         }
+         break;
+         case BITASSET_ASSET:
+         {
+            FC_ASSERT( bitasset_opts.valid(),
+               "Bitasset asset must have valid bitasset options." );
+         }
+         break;
+         case GATEWAY_ASSET:
+         {
+            FC_ASSERT( gateway_opts.valid(),
+               "Gateway asset must have valid gateway options." );
+         }
+         break;
+         case LIQUIDITY_POOL_ASSET:
+         {
+            FC_ASSERT( false, 
+               "Cannot directly create a new liquidity pool asset. Please create a liquidity pool between two existing assets." );
+         }
+         break;
+         case CREDIT_POOL_ASSET:
+         {
+            FC_ASSERT( false, 
+               "Cannot directly create a new credit pool asset. Credit pool assets are created in addition to every asset." );
+         }
+         break;
+         case OPTION_ASSET:
+         {
+            FC_ASSERT( false,
+               "Cannot directly create a new option asset. Option assets are issued from an Options market." );
+         }
+         break;
+         case PREDICTION_ASSET:
+         {
+            FC_ASSERT( false, 
+               "Cannot directly create a new prediction asset. Prediction assets are issued from a Prediction market." );
+         }
+         break;
+         case UNIQUE_ASSET:
+         break;
+         default:
+         {
+            FC_ASSERT( false, "Invalid asset type." );
+         }
+      }
+      
+      common_options.validate();
+
+      if( common_options.issuer_permissions & ( disable_force_settle|global_settle ) )
+      {
+         FC_ASSERT( bitasset_opts.valid() );
+      }
+      if( bitasset_opts )
+      {
+         bitasset_opts->validate();
+      } 
+      if( equity_opts )
+      {
+         equity_opts->validate();
+      }
+      if( credit_opts )
+      {
+         credit_opts->validate();
+      }
+      if( currency_opts )
+      {
+         currency_opts->validate();
+      }
+      if( gateway_opts )
+      {
+         gateway_opts->validate();
+      }
+   }
+
+   void asset_update_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+
+      FC_ASSERT( is_valid_symbol( asset_to_update ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_update ) );
+
+      if( new_issuer )
+      {
+         FC_ASSERT( issuer != *new_issuer );
+         validate_account_name( *new_issuer );
+      }
+      new_options.validate();
+
+      if( new_bitasset_opts )
+      {
+         new_bitasset_opts->validate();
+      } 
+      if( new_equity_opts )
+      {
+         new_equity_opts->validate();
+      }
+      if( new_credit_opts )
+      {
+         new_credit_opts->validate();
+      }
+      if( new_currency_opts )
+      {
+         new_currency_opts->validate();
+      }
+      if( new_gateway_opts )
+      {
+         new_gateway_opts->validate();
+      }
+   }
+
+   void asset_issue_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+      validate_account_name( issue_to_account );
+      FC_ASSERT( asset_to_issue.amount.value <= MAX_ASSET_SUPPLY, 
+         "Amount to issue must be less than max asset supply." );
+      FC_ASSERT( asset_to_issue.amount.value > 0,
+         "Amount to issue must be greater than zero." );
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ),
+         "Memo is not UTF8" );
+   }
+
+   void asset_reserve_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( payer );
+      FC_ASSERT( amount_to_reserve.amount.value <= MAX_ASSET_SUPPLY,
+         "Amount to issue must be less than max asset supply." );
+      FC_ASSERT( amount_to_reserve.amount.value > 0,
+         "Amount to reserve must be greater than zero." );
+   }
+
+   void asset_claim_fees_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+      FC_ASSERT( amount_to_claim.amount > 0 );
+   }
+
+   void asset_claim_pool_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+      FC_ASSERT( is_valid_symbol( symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
+      FC_ASSERT( is_valid_symbol( amount_to_claim.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
+      FC_ASSERT( amount_to_claim.amount > 0,
+         "Amount to claim must be greater than zero." );
+   }
+
+   void asset_fund_fee_pool_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from_account );
+      FC_ASSERT( is_valid_symbol( symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
+      FC_ASSERT( pool_amount.symbol == SYMBOL_COIN,
+         "Pool asset must be core asset." );
+      FC_ASSERT( pool_amount.amount > 0,
+         "Poll amount must be greater than zero." );
+   }
+
+   void asset_update_issuer_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+      validate_account_name( new_issuer );
+      FC_ASSERT( is_valid_symbol( asset_to_update ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_update ) );
+      FC_ASSERT( issuer != new_issuer, 
+         "New issuer must be different from issuer." );
+   }
+
+   void asset_update_feed_producers_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+      FC_ASSERT( is_valid_symbol( asset_to_update ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_update ) );
+
+      for( auto name : new_feed_producers )
+      {
+         validate_account_name( name );
+      }
+   }
+
+   void asset_publish_feed_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( publisher );
+      FC_ASSERT( is_valid_symbol( symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
+
+      feed.validate();
+
+      if( !feed.core_exchange_rate.is_null() )
+      {
+         feed.core_exchange_rate.validate();
+      }
+      if( (!feed.settlement_price.is_null()) && (!feed.core_exchange_rate.is_null()) )
+      {
+         FC_ASSERT( feed.settlement_price.base.symbol == feed.core_exchange_rate.base.symbol,
+            "Settlement price base asset must be core exchange rate base asset." );
+      }
+
+      FC_ASSERT( !feed.settlement_price.is_null(),
+         "Settlement price cannot be null." );
+      FC_ASSERT( !feed.core_exchange_rate.is_null(),
+         "core exchange rate cannot be null." );
+      FC_ASSERT( feed.is_for( symbol ),
+         "Price feed must be for symbol." );
+   }
+
+   void asset_settle_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( amount.amount >= 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+   }
+
+   void asset_global_settle_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+      FC_ASSERT( is_valid_symbol( asset_to_settle ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_settle ) );
+      FC_ASSERT( asset_to_settle == settle_price.base.symbol,
+         "Asset to settle must be the same asset as base fo settlement price." );
+   }
+
+
+   //=====================================//
+   // === Block Production Operations === //
+   //=====================================//
+
 
    void witness_update_operation::validate() const
    {
+      validate_account_name( signatory );
       validate_account_name( owner );
-      FC_ASSERT( url.size() > 0, "URL size must be greater than 0" );
-      FC_ASSERT( fc::is_utf8( url ), "URL is not valid UTF8" );
-      FC_ASSERT( fee >= asset( 0, SYMBOL_COIN ), "Fee cannot be negative" );
+
+      FC_ASSERT( details.size() > 0,
+         "Witness requires details." );
+      FC_ASSERT( fc::is_utf8( details ),
+         "Details is not valid UTF8." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details size is too large." );
+      FC_ASSERT( url.size() > 0,
+         "Witness requires URL." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not valid UTF8" );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL size is too large." );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( latitude <= 90 && latitude >= -90,
+         "Latitude must be between +-90 degrees." );
+      FC_ASSERT( longitude <= 180 && longitude >= -180,
+         "Latitude must be between +-180 degrees." );
+      FC_ASSERT( block_signing_key.size() < MAX_STRING_LENGTH,
+         "Block signing key size is too large." );
+      FC_ASSERT( fee.amount >= 0,
+         "Fee must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( fee.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol ) );
+
       props.validate();
    }
-
-   void account_witness_vote_operation::validate() const
-   {
-      validate_account_name( account );
-      validate_account_name( witness );
-   }
-
-   void account_update_proxy_operation::validate() const
-   {
-      validate_account_name( account );
-      if( proxy.size() )
-         validate_account_name( proxy );
-      FC_ASSERT( proxy != account, "Cannot proxy to self" );
-   }
-
-   void custom_operation::validate() const 
-   {
-      /// required auth accounts are the ones whose bandwidth is consumed
-      FC_ASSERT( required_auths.size() > 0, "at least on account must be specified" );
-   }
-
-   void custom_json_operation::validate() const 
-   {
-      /// required auth accounts are the ones whose bandwidth is consumed
-      FC_ASSERT( (required_auths.size() + required_posting_auths.size()) > 0, "at least on account must be specified" );
-      FC_ASSERT( id.size() <= 32, "id is too long" );
-      FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
-      FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
-   }
-
 
    struct proof_of_work_operation_validate_visitor
    {
@@ -253,8 +2449,8 @@ namespace node { namespace protocol {
    void proof_of_work::create( const block_id_type& prev, const account_name_type& account_name, uint64_t n )
    {
       input.miner_account = account_name;
-      input.prev_block     = prev;
-      input.nonce          = n;
+      input.prev_block = prev;
+      input.nonce = n;
 
       auto prv_key = fc::sha256::hash( input );
       auto input = fc::sha256::hash( prv_key );
@@ -282,367 +2478,72 @@ namespace node { namespace protocol {
    {
       validate_account_name( input.miner_account );
       proof_of_work tmp; tmp.create( input.prev_block, input.miner_account, input.nonce );
-      FC_ASSERT( pow_summary == tmp.pow_summary, "reported work does not match calculated work" );
+      FC_ASSERT( pow_summary == tmp.pow_summary, 
+         "Reported work does not match calculated work" );
    }
 
    void equihash_proof_of_work::validate() const
    {
       validate_account_name( input.miner_account );
       auto seed = fc::sha256::hash( input );
-      FC_ASSERT( proof.n == EQUIHASH_N, "proof of work 'n' value is incorrect" );
-      FC_ASSERT( proof.k == EQUIHASH_K, "proof of work 'k' value is incorrect" );
-      FC_ASSERT( proof.seed == seed, "proof of work seed does not match expected seed" );
-      FC_ASSERT( proof.is_valid(), "proof of work is not a solution", ("block_id", input.prev_block)("worker_account", input.miner_account)("nonce", input.nonce) );
+      FC_ASSERT( proof.n == EQUIHASH_N,
+         "Proof of work 'n' value is incorrect" );
+      FC_ASSERT( proof.k == EQUIHASH_K,
+         "Proof of work 'k' value is incorrect" );
+      FC_ASSERT( proof.seed == seed,
+         "Proof of work seed does not match expected seed" );
+      FC_ASSERT( proof.is_valid(),
+         "Proof of work is not a solution", ("block_id", input.prev_block)("worker_account", input.miner_account)("nonce", input.nonce) );
       FC_ASSERT( pow_summary == fc::sha256::hash( proof.inputs ).approx_log_32() );
    }
 
-   void limit_order_create_operation::validate()const
+   void verify_block_operation::validate()const
    {
-      validate_account_name( owner );
-      FC_ASSERT( amount_to_sell.symbol == exchange_rate.base.symbol, "Sell asset must be the base of the price" );
-      exchange_rate.validate();
-
-      FC_ASSERT( (amount_to_sell * exchange_rate).amount > 0, "Amount to sell cannot round to 0 when traded" );
+      validate_account_name( signatory );
+      validate_account_name( producer );
    }
 
-   void limit_order_cancel_operation::validate()const
+   void commit_block_operation::validate()const
    {
-      validate_account_name( owner );
+      validate_account_name( signatory );
+      validate_account_name( producer );
+      FC_ASSERT( commitment_stake.amount >= 0,
+         "Fee must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( commitment_stake.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", commitment_stake.symbol ) );
    }
 
-   void escrow_transfer_operation::validate()const
+   void producer_violation_operation::validate()const
    {
-      validate_account_name( from );
-      validate_account_name( to );
-      validate_account_name( agent );
-      FC_ASSERT( is_valid_symbol(fee.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
-      FC_ASSERT( is_valid_symbol(amount.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( fee.amount >= 0, "Fee cannot be negative" );
-      FC_ASSERT( amount.amount >= 0, "Amount cannot be negative" );
-      FC_ASSERT( from != agent && to != agent, "Agent account must be a third party" );
-      
-      FC_ASSERT( ratification_deadline < escrow_expiration, "ratification deadline must be before escrow expiration" );
-      if ( json.size() > 0 )
-      {
-         FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
-         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
-      }
+      validate_account_name( signatory );
+      validate_account_name( producer );
+      validate_account_name( reporter );
    }
 
-   void escrow_approve_operation::validate()const
+
+   //===========================//
+   // === Custom Operations === //
+   //===========================//
+
+
+   void custom_operation::validate() const 
    {
-      validate_account_name( from );
-      validate_account_name( to );
-      validate_account_name( agent );
-      validate_account_name( who );
-      FC_ASSERT( who == to || who == agent, "to or agent must approve escrow" );
+      /// required auth accounts are the ones whose bandwidth is consumed
+      FC_ASSERT( required_auths.size() > 0, 
+         "At least on account must be specified." );
    }
 
-   void escrow_dispute_operation::validate()const
+   void custom_json_operation::validate() const 
    {
-      validate_account_name( from );
-      validate_account_name( to );
-      validate_account_name( agent );
-      validate_account_name( who );
-      FC_ASSERT( who == from || who == to, "who must be from or to" );
+      /// required auth accounts are the ones whose bandwidth is consumed
+      FC_ASSERT( ( required_auths.size() + required_posting_auths.size() ) > 0,
+         "At least on account must be specified." );
+      FC_ASSERT( id.size() <= 32,
+         "ID is too long." );
+      FC_ASSERT( fc::is_utf8(json),
+         "JSON Metadata not formatted in UTF8." );
+      FC_ASSERT( fc::json::is_valid(json),
+         "JSON Metadata not valid JSON." );
    }
-
-   void escrow_release_operation::validate()const
-   {
-      validate_account_name( from );
-      validate_account_name( to );
-      validate_account_name( agent );
-      validate_account_name( who );
-      validate_account_name( receiver );
-      FC_ASSERT( who == from || who == to || who == agent, "who must be from or to or agent" );
-      FC_ASSERT( receiver == from || receiver == to, "receiver must be from or to" );
-      FC_ASSERT( is_valid_symbol(amount.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( amount.amount > 0, "amount cannot be greater than zero" );
-   }
-
-   void request_account_recovery_operation::validate()const
-   {
-      validate_account_name( recovery_account );
-      validate_account_name( account_to_recover );
-      new_owner_authority.validate();
-   }
-
-   void recover_account_operation::validate()const
-   {
-      validate_account_name( account_to_recover );
-      FC_ASSERT( !( new_owner_authority == recent_owner_authority ), "Cannot set new owner authority to the recent owner authority" );
-      FC_ASSERT( !new_owner_authority.is_impossible(), "new owner authority cannot be impossible" );
-      FC_ASSERT( !recent_owner_authority.is_impossible(), "recent owner authority cannot be impossible" );
-      FC_ASSERT( new_owner_authority.weight_threshold, "new owner authority cannot be trivial" );
-      new_owner_authority.validate();
-      recent_owner_authority.validate();
-   }
-
-   void change_recovery_account_operation::validate()const
-   {
-      validate_account_name( account_to_recover );
-      validate_account_name( new_recovery_account );
-   }
-
-   void transfer_to_savings_operation::validate()const 
-   {
-      validate_account_name( from );
-      validate_account_name( to );
-      FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( is_valid_symbol(amount.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
-      FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
-   }
-
-   void transfer_from_savings_operation::validate()const 
-   {
-      validate_account_name( from );
-      validate_account_name( to );
-      FC_ASSERT( amount.amount > 0 );
-      FC_ASSERT( is_valid_symbol(amount.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( memo.size() < MAX_MEMO_SIZE, "Memo is too large" );
-      FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
-   }
-
-   void cancel_transfer_from_savings_operation::validate()const 
-   {
-      validate_account_name( from );
-   }
-
-   void decline_voting_rights_operation::validate()const
-   {
-      validate_account_name( account );
-   }
-
-   void reset_account_operation::validate()const
-   {
-      validate_account_name( reset_account );
-      validate_account_name( account_to_reset );
-      FC_ASSERT( !new_owner_authority.is_impossible(), "new owner authority cannot be impossible" );
-      FC_ASSERT( new_owner_authority.weight_threshold, "new owner authority cannot be trivial" );
-      new_owner_authority.validate();
-   }
-
-   void set_reset_account_operation::validate()const
-   {
-      validate_account_name( account );
-      if( current_reset_account.size() )
-         validate_account_name( current_reset_account );
-      validate_account_name( reset_account );
-      FC_ASSERT( current_reset_account != reset_account, "new reset account cannot be current reset account" );
-   }
-
-   void claim_reward_balance_operation::validate()const
-   {
-      validate_account_name( account );
-      FC_ASSERT( reward.amount > 0 , "Must claim something." );
-      FC_ASSERT( is_valid_symbol(reward.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", reward.symbol) );
-   }
-
-   void delegate_asset_operation::validate()const
-   {
-      validate_account_name( delegator );
-      validate_account_name( delegatee );
-      FC_ASSERT( delegator != delegatee, "You cannot delegate to yourself" );
-      FC_ASSERT( amount.amount >= 0, "Delegation cannot be negative" );
-      FC_ASSERT( is_valid_symbol(amount.symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-   }
-
-   /**
- *  Valid symbols can contain [A-Z0-9], and '.'
- *  They must start with [A, Z]
- *  They must end with [A, Z] before HF_620 or [A-Z0-9] after it
- *  They can contain a maximum of two '.'
- */
-bool is_valid_symbol( const string& symbol )
-{
-   static const std::locale& loc = std::locale::classic();
-   if( symbol.size() < MIN_ASSET_SYMBOL_LENGTH )
-      return false;
-
-   if( symbol.substr(0,3) == "BIT" ) 
-      return false;
-
-   if( symbol.substr(0,2) == "ME" ) 
-      return false;
-
-   if( symbol.substr(0,3) == "WYM" ) 
-      return false;
-
-   if( symbol.substr(0,3) == "WYM" ) 
-      return false;
-
-   if( symbol.size() > MAX_ASSET_SYMBOL_LENGTH )
-      return false;
-
-   if( !isalpha( symbol.front(), loc ) )
-      return false;
-
-   if( !isalnum( symbol.back(), loc ) )
-      return false;
-
-   uint8_t dot_count = 0;
-   for( const auto c : symbol )
-   {
-      if( (isalpha( c, loc ) && isupper( c, loc )) || isdigit( c, loc ) )
-         continue;
-
-      if( c == '.' )
-      {
-         dot_count++;
-         if( dot_count > 2 )
-         {
-            return false;
-         }
-         continue;
-      }
-
-      return false;
-   }
-
-    return true;
-}
-
-void asset_create_operation::validate()const
-{
-   validate_account_name( issuer );
-   FC_ASSERT( is_valid_symbol(symbol), "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
-   common_options.validate();
-   if( common_options.issuer_permissions & (disable_force_settle|global_settle) )
-      FC_ASSERT( bitasset_opts.valid() );
-   if( bitasset_opts )
-   {
-      bitasset_opts->validate();
-   } 
-   if( equity_opts )
-   {
-      bitasset_opts->validate();
-   }
-   if( credit_opts )
-   {
-      bitasset_opts->validate();
-   }
-}
-
-void asset_update_operation::validate()const
-{
-   validate_account_name( issuer );
-   if( new_issuer )
-      FC_ASSERT(issuer != *new_issuer);
-   new_options.validate();
-}
-
-void asset_update_issuer_operation::validate()const
-{
-   validate_account_name( issuer );
-   FC_ASSERT( issuer != new_issuer );
-}
-
-void asset_publish_feed_operation::validate()const
-{
-   validate_account_name( publisher );
-   feed.validate();
-
-   if( !feed.core_exchange_rate.is_null() )
-   {
-      feed.core_exchange_rate.validate();
-   }
-   if( (!feed.settlement_price.is_null()) && (!feed.core_exchange_rate.is_null()) )
-   {
-      FC_ASSERT( feed.settlement_price.base.symbol == feed.core_exchange_rate.base.symbol );
-   }
-
-   FC_ASSERT( !feed.settlement_price.is_null() );
-   FC_ASSERT( !feed.core_exchange_rate.is_null() );
-   FC_ASSERT( feed.is_for( symbol ) );
-}
-
-void asset_reserve_operation::validate()const
-{
-   validate_account_name( payer );
-   FC_ASSERT( amount_to_reserve.amount.value <= MAX_ASSET_SUPPLY );
-   FC_ASSERT( amount_to_reserve.amount.value > 0 );
-}
-
-void asset_issue_operation::validate()const
-{
-   validate_account_name( issuer );
-   FC_ASSERT( asset_to_issue.amount.value <= MAX_ASSET_SUPPLY );
-   FC_ASSERT( asset_to_issue.amount.value > 0 );
-}
-
-void asset_fund_fee_pool_operation::validate() const
-{
-   validate_account_name( from_account );
-   FC_ASSERT( pool_amount.symbol == SYMBOL_COIN );
-   FC_ASSERT( pool_amount.amount > 0 );
-}
-
-void asset_settle_operation::validate() const
-{
-   validate_account_name( account );
-   FC_ASSERT( amount.amount >= 0 );
-}
-
-void asset_update_bitasset_operation::validate() const
-{
-   validate_account_name( issuer );
-   new_options.validate();
-}
-
-void asset_update_feed_producers_operation::validate() const
-{
-   validate_account_name( issuer );
-}
-
-void asset_global_settle_operation::validate()const
-{
-   validate_account_name( issuer );
-   FC_ASSERT( asset_to_settle == settle_price.base.symbol );
-}
-
-void bitasset_options::validate() const
-{
-   FC_ASSERT(minimum_feeds > 0);
-   FC_ASSERT(force_settlement_offset_percent <= PERCENT_100);
-   FC_ASSERT(maximum_force_settlement_volume <= PERCENT_100);
-}
-
-void asset_options::validate()const
-{
-   FC_ASSERT( max_supply > 0 );
-   FC_ASSERT( max_supply <= MAX_ASSET_SUPPLY );
-   FC_ASSERT( market_fee_percent <= PERCENT_100 );
-   FC_ASSERT( max_market_fee >= 0 && max_market_fee <= MAX_ASSET_SUPPLY );
-   // There must be no high bits in permissions whose meaning is not known.
-   FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
-   // The global_settle flag may never be set (this is a permission only)
-   FC_ASSERT( !(flags & global_settle) );
-   // the witness_fed and committee_fed flags cannot be set simultaneously
-   FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
-   core_exchange_rate.validate();
-   if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
-      FC_ASSERT( flags & white_list );
-   for( auto item : whitelist_markets )
-   {
-      FC_ASSERT( blacklist_markets.find(item) == blacklist_markets.end() );
-   }
-   for( auto item : blacklist_markets )
-   {
-      FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end() );
-   }
-   if( extensions.value.reward_percent.valid() )
-      FC_ASSERT( *extensions.value.reward_percent < PERCENT_100 );
-}
-
-void asset_claim_fees_operation::validate()const {
-   validate_account_name( issuer );
-   FC_ASSERT( amount_to_claim.amount > 0 );
-}
-
-void asset_claim_pool_operation::validate()const {
-   validate_account_name( issuer );
-   FC_ASSERT( amount_to_claim.amount > 0 );
-}
 
 } } // node::protocol

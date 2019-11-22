@@ -384,7 +384,6 @@ namespace node { namespace chain {
          uint16_t                       vote_rank;       // The rank of the vote for the board moderator
    };
 
-   // TODO: Join and request expiration
    class board_join_request_object : public object< board_join_request_object_type, board_join_request_object >
    {
       board_join_request_object() = delete;

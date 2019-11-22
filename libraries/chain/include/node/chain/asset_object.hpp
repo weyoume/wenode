@@ -64,7 +64,7 @@ namespace node { namespace chain {
 
          bool is_market_issued()const   // True if this is a market-issued asset; false otherwise. Market issued assets cannot be issued by the asset issuer. 
          { 
-            switch(asset_type)
+            switch( asset_type )
             {
                case BITASSET_ASSET:
                case PREDICTION_ASSET:
