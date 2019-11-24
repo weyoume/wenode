@@ -160,8 +160,8 @@ enum object_type
    witness_object_type,
    witness_schedule_object_type,
    witness_vote_object_type,
-   block_validation_object_type
-
+   block_validation_object_type,
+   commit_violation_object_type
 };
 
 //========================//
@@ -287,6 +287,7 @@ class witness_object;
 class witness_schedule_object;
 class witness_vote_object;
 class block_validation_object;
+class commit_violation_object;
 
 //=========================//
 // === Object ID Types === //
@@ -295,7 +296,7 @@ class block_validation_object;
 // Global Objects
 
 typedef oid< dynamic_global_property_object         > dynamic_global_property_id_type;
-typedef oid< transaction_object                     > transaction_id_type;
+typedef oid< transaction_object                     > transaction_object_id_type;
 typedef oid< operation_object                       > operation_id_type;
 typedef oid< reward_fund_object                     > reward_fund_id_type;
 typedef oid< block_summary_object                   > block_summary_id_type;
@@ -411,6 +412,7 @@ typedef oid< witness_object                         > witness_id_type;
 typedef oid< witness_schedule_object                > witness_schedule_id_type;
 typedef oid< witness_vote_object                    > witness_vote_id_type;
 typedef oid< block_validation_object                > block_validation_id_type;
+typedef oid< commit_violation_object                > commit_violation_id_type;
 
 enum bandwidth_type
 {
@@ -605,6 +607,7 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (witness_schedule_object_type)
          (witness_vote_object_type)
          (block_validation_object_type)
+         (commit_violation_object_type)
          );
 
 FC_REFLECT_TYPENAME( node::chain::shared_string );

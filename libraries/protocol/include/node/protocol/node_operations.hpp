@@ -1271,10 +1271,10 @@ namespace node { namespace protocol {
    typedef flat_set< comment_options_extension > comment_options_extensions_type;
 
    /**
-    *  Authors of posts may not want all of the benefits that come from creating a post. This
-    *  operation allows authors to update properties associated with their post.
-    *  The max_accepted_payout may be decreased, but never increased.
-    *  The percent_liquid may be decreased, but never increased.
+    * Authors of posts may not want all of the benefits that come from creating a post. This
+    * operation allows authors to update properties associated with their post.
+    * The max_accepted_payout may be decreased, but never increased.
+    * The percent_liquid may be decreased, but never increased.
     */
    struct comment_options_operation : public base_operation
    {
@@ -2342,7 +2342,7 @@ namespace node { namespace protocol {
 
       account_name_type      interface;
 
-      time_point             expiration = time_point::maximum();
+      time_point             expiration;
 
       void  validate()const;
       const account_name_type& get_creator_name() const { return owner; }
@@ -2394,17 +2394,19 @@ namespace node { namespace protocol {
 
       asset                  amount_to_borrow;        // Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed.                
 
-      optional<price>        stop_price;              // User determined price at which the position will be closed if it falls into a net loss.
+      optional<price>        stop_loss_price;         // Price at which the position will be closed if it falls into a net loss.
 
-      optional<price>        target_price;            // User determined price at which the order will be closed if it rises into a net profit.
+      optional<price>        take_profit_price;       // Price at which the order will be closed if it rises into a net profit.
 
-      time_point             created; 
+      optional<price>        limit_stop_loss_price;   // Price at which the position will be closed if it falls into a net loss.
 
-      account_name_type      interface;      
+      optional<price>        limit_take_profit_price; // Price at which the order will be closed if it rises into a net profit.
+
+      account_name_type      interface;
+
+      time_point             expiration;
 
       bool                   fill_or_kill = false;
-
-      time_point             expiration = time_point::maximum();
 
       void  validate()const;
       const account_name_type& get_creator_name() const { return owner; }
@@ -2472,8 +2474,6 @@ namespace node { namespace protocol {
       asset                 additional_collateral;    // the amount of collateral to bid for the debt
 
       asset                 debt_covered;             // the amount of debt to take over
-
-      asset                 fee;
 
       extensions_type       extensions;
 
@@ -2624,6 +2624,7 @@ namespace node { namespace protocol {
 
    bool is_valid_symbol( const string& symbol );
 
+
    /**
     * Options available to all assets.
     */
@@ -2674,22 +2675,7 @@ namespace node { namespace protocol {
     */
    struct currency_options 
    {
-      share_type          annual_issuance = CURRENCY_ISSUANCE_RATE;
-
-      uint16_t            block_producer_percent = CURRENCY_PRODUCER_PERCENT;
-
-      extensions_type     extensions;
-
-      void validate()const;
-   };
-
-
-   /**
-    * Options available to unique assets.
-    */
-   struct unique_options 
-   {
-      share_type          annual_issuance = CURRENCY_ISSUANCE_RATE;
+      share_type          annual_issuance = COIN_ISSUANCE_RATE;
 
       uint16_t            block_producer_percent = CURRENCY_PRODUCER_PERCENT;
 
@@ -2720,6 +2706,7 @@ namespace node { namespace protocol {
 
       void validate()const;
    };
+
 
    /**
     * Options available to equity assets.
@@ -2784,6 +2771,36 @@ namespace node { namespace protocol {
       uint32_t            savings_variable_interest_rate = SAVINGS_VARIABLE_INTEREST_RATE;   // Variable component of Interest rate of the asset for savings balances.
 
       uint32_t            var_interest_range = VAR_INTEREST_RANGE;                           // The percentage range from the buyback price over which to apply the variable interest rate.
+
+      extensions_type     extensions;
+
+      void validate()const;
+   };
+
+
+   /**
+    * Options available to unique assets.
+    */
+   struct unique_options 
+   {
+      share_type          annual_issuance = CURRENCY_ISSUANCE_RATE;
+
+      uint16_t            block_producer_percent = CURRENCY_PRODUCER_PERCENT;
+
+      extensions_type     extensions;
+
+      void validate()const;
+   };
+
+
+   /**
+    * Options available to unique assets.
+    */
+   struct gateway_options 
+   {
+      share_type          annual_issuance = CURRENCY_ISSUANCE_RATE;
+
+      uint16_t            block_producer_percent = CURRENCY_PRODUCER_PERCENT;
 
       extensions_type     extensions;
 
@@ -3144,7 +3161,10 @@ namespace node { namespace protocol {
 
       void validate()const
       {
-         FC_ASSERT( account_creation_fee.amount >= MIN_ACCOUNT_CREATION_FEE);
+         FC_ASSERT( account_creation_fee.amount >= MIN_ACCOUNT_CREATION_FEE,
+            "Account creation fee must be at least 1 Unit.");
+         FC_ASSERT( account_creation_fee.symbol == SYMBOL_COIN,
+            "Acccount creation fee must be in the core asset." );
          FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT);
          FC_ASSERT( credit_interest_rate >= 0 );
          FC_ASSERT( credit_interest_rate <= PERCENT_100 );
@@ -3305,21 +3325,21 @@ namespace node { namespace protocol {
     * After a block becomes irreversible, the fastest Two Thirds Plus One (67) block producers that have committed
     * to the block are rewarded according to their staked amounts from the validation reward pool.
     * If more than 67 producers signed and published commitments transactions, all producers within the last
-    * block to include commitment transactions before exceeding 67 are included for the reward distribution. 
+    * block to include commitment transactions before exceeding 67 are included for the reward distribution.
     */
    struct commit_block_operation : public base_operation
    {
-      account_name_type             signatory;
+      account_name_type                 signatory;
 
-      account_name_type             producer;            // The name of the block producing account.
+      account_name_type                 producer;            // The name of the block producing account.
 
-      block_id_type                 block_id;            // The block id of the block being committed as irreversible to that producer. 
+      block_id_type                     block_id;            // The block id of the block being committed as irreversible to that producer. 
 
-      uint32_t                      block_height;        // The height of the block being committed to.
+      uint32_t                          block_height;        // The height of the block being committed to.
 
-      flat_set<transaction_id_type> verifications;       // The set of attesting transaction ids of verification transactions from currently active producers.
+      flat_set< transaction_id_type >   verifications;       // The set of attesting transaction ids of verification transactions from currently active producers.
 
-      asset                         commitment_stake;    // the value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
+      asset                             commitment_stake;    // the value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
 
       void validate()const;
       const account_name_type& get_creator_name() const { return producer; }
@@ -3335,17 +3355,11 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             reporter;                // The name of the account detecting and reporting the validation violation.
-      
-      account_name_type             producer;                // The name of the alleged infringing block producer.  
+      account_name_type             reporter;      // The name of the account detecting and reporting the validation violation.
 
-      signed_block_header           first_block;             // The first block signed by the producer.
+      signed_transaction            first_trx;     // The first transaction signed by the producer.
 
-      signed_block_header           second_block;            // The second block that is in contravention of a commitment transaction. 
-
-      transaction_id_type           commitment_transaction;  // The transaction id of the violated commitment transaction.
-
-      asset                         commitment_stake;        // The staked balance that the producer forfeits from the violated committment. 
+      signed_transaction            second_trx;    // The second transaction that is in contravention of the first commitment transaction. 
 
       void validate()const;
       const account_name_type& get_creator_name() const { return reporter; }

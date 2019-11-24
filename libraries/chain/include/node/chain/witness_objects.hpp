@@ -281,7 +281,36 @@ namespace node { namespace chain {
 
          time_point                       commit_time = fc::time_point::min();
 
-         asset                            stake = asset( 0 , SYMBOL_COIN );            // Stake must be at least 1 Core asset to receive validation reward split
+         asset                            commitment_stake;   // Stake must be at least 1 Core asset.
+   };
+
+
+   class commit_violation_object : public object< commit_violation_object_type, commit_violation_object >
+   {
+      public:
+         template< typename Constructor, typename Allocator >
+         commit_violation_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         commit_violation_object(){}
+
+         id_type                          id;
+
+         account_name_type                reporter;
+
+         account_name_type                producer;
+
+         uint32_t                         height;
+
+         signed_transaction               first_trx;
+
+         signed_transaction               second_trx; 
+
+         time_point                       created;
+
+         asset                            forfeited_stake;
    };
 
    struct by_voting_power;
@@ -419,12 +448,10 @@ namespace node { namespace chain {
 
    struct by_producer_height;
    struct by_height_stake;
-   struct by_created;
+   struct by_recent_created;
    struct by_commit_time;
    struct by_producer_block_id;
    
-
-
    typedef multi_index_container<
       block_validation_object,
       indexed_by<
@@ -433,19 +460,15 @@ namespace node { namespace chain {
             composite_key< block_validation_object,
                member<block_validation_object, account_name_type, &block_validation_object::producer >,
                member<block_validation_object, uint32_t, &block_validation_object::height >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< witness_id_type > 
             >
          >,
          ordered_unique< tag<by_height_stake>,
             composite_key< block_validation_object,
                member<block_validation_object, uint32_t, &block_validation_object::height >,
-               member<block_validation_object, asset , &block_validation_object::stake >
+               member<block_validation_object, asset, &block_validation_object::commitment_stake >
             >,
             composite_key_compare< 
-               std::greater< uint32_t >, 
+               std::less< uint32_t >, 
                std::greater< asset > 
             >
          >,
@@ -453,20 +476,16 @@ namespace node { namespace chain {
             composite_key< block_validation_object,
                member<block_validation_object, account_name_type, &block_validation_object::producer >,
                member<block_validation_object, block_id_type, &block_validation_object::block_id >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< block_id_type > 
             >
          >,
-         ordered_unique< tag<by_created>,
+         ordered_unique< tag<by_recent_created>,
             composite_key< block_validation_object,
                member<block_validation_object, time_point, &block_validation_object::created >,
                member< block_validation_object, block_validation_id_type, &block_validation_object::id >
             >,
             composite_key_compare< 
                std::less< time_point >, 
-               std::less< block_validation_id_type > 
+               std::less< block_validation_id_type >
             >
          >,
          ordered_unique< tag<by_commit_time>,
@@ -482,6 +501,38 @@ namespace node { namespace chain {
       >,
       allocator< block_validation_object >
    > block_validation_index;
+
+   struct by_reporter_height;
+
+   typedef multi_index_container<
+      commit_violation_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< commit_violation_object, commit_violation_id_type, &commit_violation_object::id > >,
+         ordered_unique< tag<by_reporter_height>,
+            composite_key< commit_violation_object,
+               member<commit_violation_object, account_name_type, &commit_violation_object::reporter >,
+               member<commit_violation_object, uint32_t, &commit_violation_object::height >
+            >
+         >,
+         ordered_unique< tag<by_producer_height>,
+            composite_key< commit_violation_object,
+               member<commit_violation_object, account_name_type, &commit_violation_object::producer >,
+               member<commit_violation_object, uint32_t, &commit_violation_object::height >
+            >
+         >,
+         ordered_unique< tag<by_recent_created>,
+            composite_key< commit_violation_object,
+               member<commit_violation_object, time_point, &commit_violation_object::created >,
+               member<commit_violation_object, commit_violation_id_type, &commit_violation_object::id >
+            >,
+            composite_key_compare< 
+               std::greater< time_point >, 
+               std::less< commit_violation_id_type > 
+            >
+         >
+      >,
+      allocator< commit_violation_object >
+   > commit_violation_index;
 
 } }      // node:chain 
 

@@ -388,9 +388,9 @@ namespace node { namespace chain {
 
          asset                      position;                    // Minimum amount of asset to receive as margin position.
 
-         asset                      position_filled;             // Amount of asset currently held within the order that has filled.                     
+         asset                      position_balance;            // Amount of asset currently held within the order that has filled.                     
 
-         share_type                 collateralization;           // Percentage ratio of ( Collateral + position_filled + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
+         share_type                 collateralization;           // Percentage ratio of ( Collateral + position_balance + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
 
          account_name_type          interface;                   // The interface account that created the order.
 
@@ -429,7 +429,7 @@ namespace node { namespace chain {
          { 
             if( liquidating )
             {
-               return position_filled;
+               return position_balance;
             }
             else
             {
@@ -443,7 +443,7 @@ namespace node { namespace chain {
          { 
             if( liquidating )
             {
-               return position_filled.amount == 0;    // No position left to sell
+               return position_balance.amount == 0;    // No position left to sell
             }
             else
             {
@@ -472,7 +472,7 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         uint32_t               escrow_id = 20;
+         uint32_t               escrow_id = 0;
 
          account_name_type      from;
 
@@ -509,19 +509,19 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type           id;
+         id_type                 id;
 
-         account_name_type from;
+         account_name_type       from;
 
-         account_name_type to;
+         account_name_type       to;
 
-         shared_string     memo;
+         shared_string           memo;
 
-         uint32_t          request_id = 0;
+         uint32_t                request_id = 0;
 
-         asset             amount;
+         asset                   amount;
          
-         time_point        complete;
+         time_point              complete;
    };
 
    /**

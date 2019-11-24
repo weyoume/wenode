@@ -35,6 +35,7 @@ namespace node { namespace chain {
 
    struct by_expiration;
    struct by_trx_id;
+   
    typedef multi_index_container<
       transaction_object,
       indexed_by<

@@ -150,21 +150,27 @@ namespace node { namespace chain {
 
          share_type                     fee_pool = 0;                  // Amount of core asset available to pay fees. Denominated in the core asset.
 
-         asset get_liquid_supply()const { return asset(liquid_supply, symbol); }
+         asset get_liquid_supply()const { return asset( liquid_supply, symbol ); }
 
-         asset get_reward_supply()const { return asset(reward_supply, symbol); }
+         asset get_reward_supply()const { return asset( reward_supply, symbol ); }
 
-         asset get_staked_supply()const { return asset(staked_supply, symbol); }
+         asset get_staked_supply()const { return asset( staked_supply, symbol ); }
 
-         asset get_savings_supply()const { return asset(savings_supply, symbol); }
+         asset get_savings_supply()const { return asset( savings_supply, symbol ); }
 
-         asset get_delegated_supply()const { return asset(delegated_supply, symbol); }
+         asset get_delegated_supply()const { return asset( delegated_supply, symbol ); }
 
-         asset get_receiving_supply()const { return asset(receiving_supply, symbol); }
+         asset get_receiving_supply()const { return asset( receiving_supply, symbol ); }
 
-         asset get_pending_supply()const { return asset(pending_supply, symbol); }
+         asset get_pending_supply()const { return asset( pending_supply, symbol ); }
 
-         asset get_total_supply()const { return asset(total_supply, symbol); }
+         asset get_confidential_supply()const { return asset( confidential_supply, symbol ); }
+
+         asset get_accumulated_fees()const { return asset( accumulated_fees, symbol ); }
+
+         asset get_fee_pool()const { return asset( fee_pool, SYMBOL_COIN ); }
+
+         asset get_total_supply()const { return asset( total_supply, symbol ); }
 
          void asset_dynamic_data_object::adjust_liquid_supply(const asset& delta)
          {
@@ -395,7 +401,7 @@ namespace node { namespace chain {
 
          asset_symbol_type          symbol_a;                             // the asset with the lower id in the buyback price pair
 
-         asset_symbol_type          symbol_b;                             // the asset with the greater id in the buybackprice pair
+         asset_symbol_type          symbol_b;                             // the asset with the greater id in the buyback price pair
          
          time_point                 last_buyback;                         // Time that the asset was last updated
 

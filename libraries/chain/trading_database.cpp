@@ -1093,12 +1093,12 @@ bool database::fill_margin_order( const margin_order_object& order, const asset&
       if( m.liquidating )   // If liquidating, we are paying position asset to repurchase debt.
       {
          m.debt_balance += delta;
-         m.position_filled -= pays;
+         m.position_balance -= pays;
       }
       else   // If not liquidating, we are paying debt to purchase position asset.
       {
          m.debt_balance -= pays; 
-         m.position_filled += delta;
+         m.position_balance += delta;
       }
    });
 
@@ -2114,7 +2114,7 @@ void database::process_margin_updates()
                   collateral_debt_value = margin.collateral;
                }
 
-               asset position_debt_value = margin.position_filled * pos_debt_price;
+               asset position_debt_value = margin.position_balance * pos_debt_price;
                asset equity = margin.debt_balance + position_debt_value + collateral_debt_value;
                asset unrealized_value = margin.debt_balance + position_debt_value - margin.debt;
                share_type collateralization = ( PERCENT_100 * ( equity - margin.debt ) ) / margin.debt;
@@ -2418,9 +2418,9 @@ void database::close_margin_order( const margin_order_object& order )
    const asset_credit_pool_object& credit_pool = get_credit_pool( order.debt_asset(), false );
    const credit_collateral_object& coll_balance = get_collateral( owner.name, order.collateral_asset() );
 
-   if( order.position_filled.amount > 0 )   // Position contained in loan
+   if( order.position_balance.amount > 0 )   // Position contained in loan
    {
-      asset proceeds = liquid_exchange( order.position_filled, order.debt_asset(), true, true );
+      asset proceeds = liquid_exchange( order.position_balance, order.debt_asset(), true, true );
       debt_balance += proceeds;
    }
 

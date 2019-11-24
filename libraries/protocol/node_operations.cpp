@@ -1301,6 +1301,10 @@ namespace node { namespace protocol {
       validate_account_name( interface );
       FC_ASSERT( campaign_id.size() < MAX_STRING_LENGTH,
          "Campaign ID is too long." );
+      FC_ASSERT( campaign_id.size() > 0, 
+         "Campaign has no campaign ID." );
+      FC_ASSERT( budget.amount >= 0, 
+         "Campaign requires a budget greater than or equal to 0." );
 
       if( json.size() > 0 )
       {
@@ -1331,7 +1335,19 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( provider );
-
+      FC_ASSERT( inventory_id.size() > 0,
+         "Inventory has no inventory ID." );
+      FC_ASSERT( fc::is_utf8( inventory_id ),
+         "inventory ID must be UTF-8" );
+      FC_ASSERT( min_price.amount > 0, 
+         "Minimum inventory price must be greater than 0");
+      FC_ASSERT( inventory_id.size() < MAX_STRING_LENGTH,
+         "Inventory ID is too long." );
+      FC_ASSERT( is_valid_symbol( min_price.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ( "symbol", min_price.symbol ) );
+      FC_ASSERT( inventory > 0,
+         "Inventory must be greater than zero." );
+   
       switch( metric )
       {
          case VIEW_METRIC:
@@ -1353,15 +1369,6 @@ namespace node { namespace protocol {
       {
          validate_account_name( name );
       }
-
-      FC_ASSERT( inventory_id.size() < MAX_STRING_LENGTH,
-         "Inventory ID is too long." );
-      FC_ASSERT( min_price.amount > 0,
-         "Budget required." );
-      FC_ASSERT( is_valid_symbol( min_price.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ( "symbol", min_price.symbol ) );
-      FC_ASSERT( inventory > 0,
-         "Inventory must be greater than zero." );
       
       if( json.size() > 0 )
       {
@@ -1769,6 +1776,8 @@ namespace node { namespace protocol {
          "Amount to sell cannot round to 0 when traded" );
       FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
          "Order ID is too long." );
+      FC_ASSERT( expiration > GENESIS_TIME,
+         "Expiration time must be greater than genesis time." );
    }
 
    void limit_order_cancel_operation::validate()const
@@ -1785,27 +1794,49 @@ namespace node { namespace protocol {
       validate_account_name( interface );
       validate_account_name( owner );
       
-      exchange_rate.validate();
-      if( stop_price.valid() )
-      {
-         stop_price->validate();
-      }
-      if( target_price.valid() )
-      {
-         target_price->validate();
-      }
+      FC_ASSERT( amount_to_borrow.amount > 0, 
+         "Please set a greater than zero amount to borrow and collateral.");
+      FC_ASSERT( ( amount_to_borrow * exchange_rate).amount > 0,
+         "Amount to sell cannot round to 0 when traded" );
       FC_ASSERT( is_valid_symbol( amount_to_borrow.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", amount_to_borrow.symbol) );
+         "Symbol ${symbol} is not a valid symbol", ( "symbol", amount_to_borrow.symbol ) );
       FC_ASSERT( amount_to_borrow.symbol == exchange_rate.base.symbol,
          "Amount to borrow asset must be the base of the price." );
       FC_ASSERT( collateral.amount > 0,
          "Collateral must be greater than zero." );
       FC_ASSERT( is_valid_symbol( collateral.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
-      FC_ASSERT( ( amount_to_borrow * exchange_rate).amount > 0,
-         "Amount to sell cannot round to 0 when traded" );
       FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
          "Order ID is too long." );
+      FC_ASSERT( expiration > GENESIS_TIME,
+         "Expiration time must be greater than genesis time." );
+
+      exchange_rate.validate();
+
+      if( stop_loss_price.valid() )
+      {
+         stop_loss_price->validate();
+         FC_ASSERT( *stop_loss_price < exchange_rate,
+            "Stop Loss price must be less than the specified exchange rate, or the order will be immediately stop loss liquidated." );
+      }
+      if( take_profit_price.valid() )
+      {
+         take_profit_price->validate();
+         FC_ASSERT( *take_profit_price > exchange_rate,
+            "Target price must be greater than the specified exchange rate, or the order will be immediately take profit liquidated." );
+      }
+      if( limit_stop_loss_price.valid() )
+      {
+         limit_stop_loss_price->validate();
+         FC_ASSERT( *limit_stop_loss_price < exchange_rate,
+            "Limit Stop Loss price must be less than the specified exchange rate, or the order will be immediately stop loss liquidated." );
+      }
+      if( limit_take_profit_price.valid() )
+      {
+         limit_take_profit_price->validate();
+         FC_ASSERT( *limit_take_profit_price > exchange_rate,
+            "Target price must be greater than the specified exchange rate, or the order will be immediately take profit liquidated." );
+      }
    }
 
    void margin_order_close_operation::validate()const
@@ -2092,11 +2123,6 @@ namespace node { namespace protocol {
       FC_ASSERT( usd_liquidity.amount >= 10 * BLOCKCHAIN_PRECISION, 
          "Asset must have at least 10 USD asset of initial liquidity." );
 
-      
-      
-      
-      
-
       switch( asset_type )
       {
          case STANDARD_ASSET:
@@ -2273,6 +2299,8 @@ namespace node { namespace protocol {
          "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
       FC_ASSERT( amount_to_claim.amount > 0,
          "Amount to claim must be greater than zero." );
+      FC_ASSERT( amount_to_claim.symbol == SYMBOL_COIN, 
+         "Amount to claim from fee pool must be denominated in the core asset." );
    }
 
    void asset_fund_fee_pool_operation::validate()const
@@ -2374,13 +2402,13 @@ namespace node { namespace protocol {
       FC_ASSERT( fc::is_utf8( details ),
          "Details is not valid UTF8." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
+         "Details are too long." );
       FC_ASSERT( url.size() > 0,
          "Witness requires URL." );
       FC_ASSERT( fc::is_utf8( url ),
          "URL is not valid UTF8" );
       FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL size is too large." );
+         "URL is too long." );
 
       if( json.size() > 0 )
       {
@@ -2507,17 +2535,26 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( producer );
-      FC_ASSERT( commitment_stake.amount >= 0,
-         "Fee must be greater than zero." );
+      FC_ASSERT( commitment_stake.amount >= BLOCKCHAIN_PRECISION,
+         "Commitment Stake must be greater than zero." );
       FC_ASSERT( is_valid_symbol( commitment_stake.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", commitment_stake.symbol ) );
+      FC_ASSERT( commitment_stake.symbol == SYMBOL_COIN,
+         "Commitment Stake must be denominated in the core asset." );
+      FC_ASSERT( verifications.size() >= IRREVERSIBLE_THRESHOLD,
+         "Insufficient Verifications for commit transaction. Please Include additional transaction IDs." );
    }
 
    void producer_violation_operation::validate()const
    {
       validate_account_name( signatory );
-      validate_account_name( producer );
       validate_account_name( reporter );
+      first_trx.validate();
+      second_trx.validate();
+      FC_ASSERT( first_trx.operations.size(), 
+         "Transaction ID ${t} has no operations.", ("t", first_trx.id() ) );
+      FC_ASSERT( second_trx.operations.size(), 
+         "Transaction ID ${t} has no operations.", ("t", second_trx.id() ) );
    }
 
 

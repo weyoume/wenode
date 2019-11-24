@@ -1340,7 +1340,7 @@ struct margin_order_api_obj
       debt_balance( o.debt_balance ),
       interest( o.interest ),
       position( o.position ),
-      position_filled( o.position_filled ),
+      position_balance( o.position_balance ),
       collateralization( o.collateralization ),
       interface( o.interface ),
       created( o.created ),
@@ -1365,8 +1365,8 @@ struct margin_order_api_obj
    asset                      debt_balance;                // Debt asset that is held by the order when selling debt, or liquidating position.
    asset                      interest;                    // Amount of interest accrued on the borrowed asset into the debt value.
    asset                      position;                    // Minimum amount of asset to receive as margin position.
-   asset                      position_filled;             // Amount of asset currently held within the order that has filled.                     
-   int64_t                    collateralization;           // Percentage ratio of ( Collateral + position_filled + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
+   asset                      position_balance;             // Amount of asset currently held within the order that has filled.                     
+   int64_t                    collateralization;           // Percentage ratio of ( Collateral + position_balance + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
    account_name_type          interface;                   // The interface account that created the order.
    time_point                 created;                     // Time that the order was created.
    time_point                 last_updated;                // Time that interest was last compounded on the margin order, and collateralization was last updated. 
