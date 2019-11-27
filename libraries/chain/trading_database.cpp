@@ -2259,11 +2259,11 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
 
    const asset_symbol_type& backing_asset = bitasset.backing_asset;
    const asset_object& backing_asset_object = get_asset(backing_asset);
-   asset collateral_gathered = asset(0, backing_asset);
+   asset collateral_gathered = asset( 0, backing_asset);
    const asset_dynamic_data_object& mia_dyn = get_dynamic_data(mia.symbol);
    auto original_mia_supply = mia_dyn.total_supply;
 
-   const auto& call_price_index = get_index< call_order_index >().indices().get<by_price>();
+   const auto& call_price_index = get_index< call_order_index >().indices().get< by_price >();
 
    // cancel all call orders and accumulate it into collateral_gathered
    auto call_itr = call_price_index.lower_bound( price::min( bitasset.backing_asset, mia.symbol ) );
@@ -2285,35 +2285,38 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
       FC_ASSERT( fill_call_order( order, pays, order.debt, settlement_price, true, NULL_ACCOUNT, true ) );  // Fill call orders without deducting pending supply of bitasset
    }
 
-   modify( bitasset, [&original_mia_supply, &collateral_gathered, &mia]( asset_bitasset_data_object& obj )
+   modify( bitasset, [&]( asset_bitasset_data_object& obj )
    {
-      obj.settlement_price = asset(original_mia_supply, mia.symbol) / collateral_gathered;     // Activate global settlement price on asset
-      obj.settlement_fund = collateral_gathered.amount;
+      obj.settlement_price = asset( original_mia_supply, mia.symbol ) / collateral_gathered;     // Activate global settlement price on asset
+      obj.settlement_fund = collateral_gathered;
    });
 
 } FC_CAPTURE_AND_RETHROW( (mia)(settlement_price) ) }
 
 void database::revive_bitasset( const asset_object& bitasset ) 
 { try {
-   FC_ASSERT( bitasset.is_market_issued() );
+   FC_ASSERT( bitasset.is_market_issued(),
+      "Asset must be a market issued asset." );
    const asset_bitasset_data_object& bad = get_bitasset_data(bitasset.symbol);
-   FC_ASSERT( bad.has_settlement() );
-   const asset_dynamic_data_object& bdd = get_dynamic_data(bitasset.symbol);
-   FC_ASSERT( !bad.current_feed.settlement_price.is_null() );
+   FC_ASSERT( bad.has_settlement(),
+      "Asset must have a settlement price before it can be revived.");
+   const asset_dynamic_data_object& bdd = get_dynamic_data( bitasset.symbol );
+   FC_ASSERT( !bad.current_feed.settlement_price.is_null(),
+      "Settlement price cannot be null to revive asset." );
 
-   if( bdd.total_supply > 0 )
+   if( bdd.total_supply > 0 )    // Create + execute a "bid" with 0 additional collateral
    {
-      // Create + execute a "bid" with 0 additional collateral
-      const collateral_bid_object& pseudo_bid = create<collateral_bid_object>([&](collateral_bid_object& bid) 
+      const collateral_bid_object& pseudo_bid = create< collateral_bid_object >([&]( collateral_bid_object& bid ) 
       {
          bid.bidder = bitasset.issuer;
-         bid.inv_swan_price = asset(0, bad.backing_asset) / asset(bdd.total_supply, bitasset.symbol);
+         bid.inv_swan_price = asset(0, bad.backing_asset) / asset( bdd.total_supply, bitasset.symbol );
       });
-      execute_bid( pseudo_bid, bdd.total_supply, bad.settlement_fund, bad.current_feed );
+      execute_bid( pseudo_bid, bdd.total_supply, bad.settlement_fund.amount, bad.current_feed );
    } 
    else
    {
-      FC_ASSERT( bad.settlement_fund == 0 );
+      FC_ASSERT( bad.settlement_fund.amount == 0,
+         "Cannot have settlement fund with zero total asset supply." );
    }
       
    cancel_bids_and_revive_mpa( bitasset, bad );
@@ -2321,27 +2324,29 @@ void database::revive_bitasset( const asset_object& bitasset )
 
 void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad )
 { try {
-   FC_ASSERT( bitasset.is_market_issued() );
-   FC_ASSERT( bad.has_settlement() );
-
-   // cancel remaining bids
-   const auto& bid_idx = get_index< collateral_bid_index >().indices().get<by_price>();
-   auto itr = bid_idx.lower_bound( boost::make_tuple( bitasset.symbol, price::max( bad.backing_asset, bitasset.symbol )));
+   FC_ASSERT( bitasset.is_market_issued(),
+      "Asset must be a market issued asset." );
+   FC_ASSERT( bad.has_settlement(),
+      "Asset must have a settlement price before it can be revived." );
+   
+   const auto& bid_idx = get_index< collateral_bid_index >().indices().get< by_price >();
+   auto itr = bid_idx.lower_bound( boost::make_tuple( bitasset.symbol, price::max( bad.backing_asset, bitasset.symbol ) ) );
    while( itr != bid_idx.end() && itr->inv_swan_price.quote.symbol == bitasset.symbol )
    {
       const collateral_bid_object& bid = *itr;
       ++itr;
-      cancel_bid( bid , true );
+      cancel_bid( bid , true );    // cancel remaining bids
    }
 
    modify( bad, [&]( asset_bitasset_data_object& obj )
    {
       obj.settlement_price = price();
-      obj.settlement_fund = 0;
+      obj.settlement_fund = asset( 0, bad.symbol );
    });
-} FC_CAPTURE_AND_RETHROW( (bitasset) ) }
+} FC_CAPTURE_AND_RETHROW( ( bitasset ) ) }
 
-void database::cancel_bid(const collateral_bid_object& bid, bool create_virtual_op)
+
+void database::cancel_bid( const collateral_bid_object& bid, bool create_virtual_op )
 {
    const account_object& bidder_account = get_account(bid.bidder);
    adjust_liquid_balance(bidder_account, bid.inv_swan_price.base);
@@ -2354,12 +2359,13 @@ void database::cancel_bid(const collateral_bid_object& bid, bool create_virtual_
       vop.debt_covered = asset( 0, bid.inv_swan_price.quote.symbol );
       push_virtual_operation( vop );
    }
-   remove(bid);
+   remove( bid );
 }
+
 
 void database::execute_bid( const collateral_bid_object& bid, share_type debt_covered, share_type collateral_from_fund, const price_feed& current_feed )
 {
-   create<call_order_object>( [&](call_order_object& call )
+   create< call_order_object >( [&]( call_order_object& call )
    {
       call.borrower = bid.bidder;
       call.collateral = bid.inv_swan_price.base.amount + collateral_from_fund;
@@ -2368,15 +2374,20 @@ void database::execute_bid( const collateral_bid_object& bid, share_type debt_co
       call.call_price = price( asset( 1, bid.inv_swan_price.base.symbol ), asset( 1, bid.inv_swan_price.quote.symbol ) );
    });
 
-   push_virtual_operation( execute_bid_operation( bid.bidder, asset( bid.inv_swan_price.base.amount + collateral_from_fund, bid.inv_swan_price.base.symbol ),
-                           asset( debt_covered, bid.inv_swan_price.quote.symbol ) ) );
-   remove(bid);
+   push_virtual_operation( 
+      execute_bid_operation( bid.bidder, 
+      asset( bid.inv_swan_price.base.amount + collateral_from_fund, bid.inv_swan_price.base.symbol ),
+      asset( debt_covered, bid.inv_swan_price.quote.symbol ) ) 
+   );
+
+   remove( bid );
 }
+
 
 void database::cancel_settle_order(const force_settlement_object& order, bool create_virtual_op)
 {
    const account_object& account_object = get_account(order.owner);
-   adjust_liquid_balance(account_object, order.balance);
+   adjust_liquid_balance( account_object, order.balance );
 
    if( create_virtual_op )
    {
@@ -2386,8 +2397,9 @@ void database::cancel_settle_order(const force_settlement_object& order, bool cr
       vop.amount = order.balance;
       push_virtual_operation( vop );
    }
-   remove(order);
+   remove( order );
 }
+
 
 void database::cancel_limit_order( const limit_order_object& order )
 {
@@ -2534,15 +2546,7 @@ bool database::maybe_cull_small_order( const margin_order_object& order )
 /**
  *  Starting with the least collateralized orders, fill them if their
  *  call price is above the max(lowest bid,call_limit).
- *
  *  This method will return true if it filled a short or limit.
- *
- *  @param mia - the market issued asset that should be called.
- *  @param enable_black_swan - when adjusting collateral, triggering a black swan is invalid and will throw if enable_black_swan is not set to true.
- *  @param for_new_limit_order - true if this function is called when matching call orders with a new limit order
- *  @param bitasset_ptr - an optional pointer to the bitasset_data object of the asset
- *
- *  @return true if a margin call was executed.
  */
 bool database::check_call_orders( const asset_object& mia, bool enable_black_swan, bool for_new_limit_order )
 { try {
@@ -2666,20 +2670,20 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
 
 
 /**
- *  let HB = the highest bid for the collateral (aka who will pay the most DEBT for the least collateral)
- *  let SP = current median feed's Settlement Price 
- *  let LC = the least collateralized call order's swan price (debt/collateral)
- *  If there is no valid price feed or no bids then there is no black swan.
- *  A black swan occurs if MAX(HB,SP) <= LC
+ * let HB = the highest bid for the collateral (aka who will pay the most DEBT for the least collateral)
+ * let SP = current median feed's Settlement Price 
+ * let LC = the least collateralized call order's swan price (debt/collateral)
+ * If there is no valid price feed or no bids then there is no black swan.
+ * A black swan occurs if MAX(HB,SP) <= LC
  */
 bool database::check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_bitasset_data_object* bitasset_ptr )
 {
    if( !mia.is_market_issued() ) return false;
 
    const asset_bitasset_data_object& bitasset = ( bitasset_ptr ? *bitasset_ptr : get_bitasset_data(mia.symbol));
-   if( bitasset.has_settlement() ) return true; // already force settled
+   if( bitasset.has_settlement() ) return true;     // already force settled
    auto settle_price = bitasset.current_feed.settlement_price;
-   if( settle_price.is_null() ) return false; // no feed
+   if( settle_price.is_null() ) return false;      // no feed
 
    const call_order_object* call_ptr = nullptr; // place holder for the call order with least collateral ratio
 
@@ -2743,7 +2747,5 @@ bool database::check_for_blackswan( const asset_object& mia, bool enable_black_s
    } 
    return false;
 }
-
-
 
 } } //node::chain

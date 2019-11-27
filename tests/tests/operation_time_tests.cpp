@@ -1956,7 +1956,6 @@ BOOST_AUTO_TEST_CASE( USD_price_feed_limit )
 
       db.skip_price_feed_limit_check = false;
       const auto& gpo = db.get_dynamic_global_properties();
-      auto new_exchange_rate = price( gpo.current_USD_supply, asset( ( PERCENT_100 ) * gpo.current_supply.amount ) );
       set_price_feed( new_exchange_rate );
       set_price_feed( new_exchange_rate );
 

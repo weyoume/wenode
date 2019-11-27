@@ -1436,13 +1436,6 @@ BOOST_AUTO_TEST_CASE( unstake_asset_apply )
          {
             w.median_props.account_creation_fee = ASSET( "10.000 TESTS" );
          });
-
-         db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
-         {
-            gpo.current_supply += wso.median_props.account_creation_fee - ASSET( "0.001 TESTS" ) - gpo.totalTMEfundForSCORE;
-            gpo.totalTMEfundForSCORE = wso.median_props.account_creation_fee - ASSET( "0.001 TESTS" );
-         });
-
       }, database::skip_witness_signature );
 
       unstake_asset_operation op;
@@ -1542,7 +1535,7 @@ BOOST_AUTO_TEST_CASE( witness_update_apply )
       op.url = "foo.bar";
       op.fee = ASSET( "1.000 TESTS" );
       op.block_signing_key = signing_key.get_public_key();
-      op.props.account_creation_fee = asset( MIN_ACCOUNT_CREATION_FEE + 10, SYMBOL_COIN);
+      op.props.account_creation_fee = MIN_ACCOUNT_CREATION_FEE;
       op.props.maximum_block_size = MIN_BLOCK_SIZE_LIMIT + 100;
 
       signed_transaction tx;
@@ -5777,15 +5770,6 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_apply )
             a.rewardBalance = ASSET( "10.000000 VESTS" );
             a.rewardBalanceInTME = ASSET( "10.000 TESTS" );
          });
-
-         db.modify( db.get_dynamic_global_properties(), []( dynamic_global_property_object& gpo )
-         {
-            gpo.current_supply += ASSET( "20.000 TESTS" );
-            gpo.current_USD_supply += ASSET( "10.000 USD" );
-            gpo.virtual_supply += ASSET( "20.000 TESTS" );
-            gpo.pending_rewarded_SCORE += ASSET( "10.000000 VESTS" );
-            gpo.pending_rewarded_SCOREvalueInTME += ASSET( "10.000 TESTS" );
-         });
       });
 
       generate_block();
@@ -6348,12 +6332,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
 
       db_plugin->debug_update( [=]( database& db )
       {
-         db.modify( db.get_dynamic_global_properties(), [=]( dynamic_global_property_object& gpo )
-         {
-            gpo.current_supply -= gpo.total_reward_fund;
-            gpo.total_reward_fund = ASSET( "100.000 TESTS" );
-            gpo.current_supply += gpo.total_reward_fund;
-         });
+         
       });
 
       generate_block();

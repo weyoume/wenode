@@ -289,7 +289,7 @@ void database::init_genesis()
 
    // Create Credit asset
    
-   create<asset_object>( []( asset_object& a ) 
+   create< asset_object >( []( asset_object& a ) 
    {
       a.symbol = SYMBOL_CREDIT;
       a.asset_type = CREDIT_ASSET;
@@ -302,12 +302,12 @@ void database::init_genesis()
       a.options.core_exchange_rate.quote.symbol = SYMBOL_CREDIT;
    });
 
-   create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) 
+   create< asset_dynamic_data_object >([](asset_dynamic_data_object& a) 
    {
       a.symbol = SYMBOL_CREDIT;
    });
 
-   for( int i = 0; i < (GENESIS_WITNESS_AMOUNT + GENESIS_EXTRA_WITNESSES); ++i )
+   for( int i = 0; i < ( GENESIS_WITNESS_AMOUNT + GENESIS_EXTRA_WITNESSES ); ++i )
    {
       // Create account for genesis witness
       create< account_object >( [&]( account_object& a )
@@ -330,28 +330,28 @@ void database::init_genesis()
          auth.account = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
          auth.owner.add_authority( init_public_key, 1 );
          auth.owner.weight_threshold = 1;
-         auth.active  = auth.owner;
+         auth.active = auth.owner;
          auth.posting = auth.active;
       });
-      if(i < GENESIS_WITNESS_AMOUNT)
+      if( i < GENESIS_WITNESS_AMOUNT )
       {
          create< witness_object >( [&]( witness_object& w )
          {
-            w.owner        = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
-            w.signing_key  = init_public_key;
+            w.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
+            w.signing_key = init_public_key;
             w.schedule = witness_object::top_miner;
-         } );
+         });
       }
    }
 
    // Create Equity asset balance object for initial account
-      create< account_balance_object >( [&]( account_balance_object& abo )
-      {
-         abo.owner = INIT_ACCOUNT;
-         abo.symbol = SYMBOL_EQUITY;
-         abo.liquid_balance = 0;
-         abo.staked_balance = INIT_EQUITY_SUPPLY;
-      } );
+   create< account_balance_object >( [&]( account_balance_object& abo )
+   {
+      abo.owner = INIT_ACCOUNT;
+      abo.symbol = SYMBOL_EQUITY;
+      abo.liquid_balance = 0;
+      abo.staked_balance = INIT_EQUITY_SUPPLY;
+   });
 
    // Create the initial Reward fund object to contain the balances of the network reward funds and parameters
 
@@ -377,14 +377,12 @@ void database::init_genesis()
    });
 
    // Create the Global Dynamic Properties Object to track consensus critical network and chain information
-   
    create< dynamic_global_property_object >( [&]( dynamic_global_property_object& p )
    {
       p.current_producer = GENESIS_ACCOUNT_BASE_NAME;
       p.time = GENESIS_TIME;
       p.recent_slots_filled = fc::uint128::max_value();
       p.participation_count = 128;
-      p.maximum_block_size = MAX_BLOCK_SIZE;
    });
 
    create< comment_metrics_object >( [&]( comment_metrics_object& o ) {});
@@ -392,17 +390,19 @@ void database::init_genesis()
    // Nothing to do
    create< feed_history_object >( [&]( feed_history_object& o ) {});
    for( int i = 0; i < 0x10000; i++ )
+   {
       create< block_summary_object >( [&]( block_summary_object& ) {});
+   }
+
    create< hardfork_property_object >( [&]( hardfork_property_object& hpo )
    {
       hpo.processed_hardforks.push_back( GENESIS_TIME );
 
    });
-
-   // Create witness scheduler
+   
    create< witness_schedule_object >( [&]( witness_schedule_object& wso )
    {
-      wso.current_shuffled_producers[0] = GENESIS_ACCOUNT_BASE_NAME;
+      wso.current_shuffled_producers[0] = GENESIS_ACCOUNT_BASE_NAME;    // Create witness scheduler
    });
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -417,7 +417,6 @@ void database::reindex( const fc::path& data_dir, const fc::path& shared_mem_dir
    ASSERT( _block_log.head(), block_log_exception, "No blocks in block log. Cannot reindex an empty chain." );
 
    ilog( "Replaying blocks..." );
-
 
    uint64_t skip_flags =
       skip_witness_signature |
@@ -650,10 +649,9 @@ const witness_schedule_object& database::get_witness_schedule()const
    return get< witness_schedule_object >();
 } FC_CAPTURE_AND_RETHROW() }
 
-// Gets the median chain properties object from the Witness Schedule object.
-const chain_properties& database::chain_properties()const
+const chain_properties& database::get_chain_properties()const
 {
-   return get_witness_schedule().median_props;
+   return get_witness_schedule().median_props;      // Gets the median chain properties object from the Witness Schedule object.
 }
 
 uint128_t database::pow_difficulty()const
@@ -1424,16 +1422,20 @@ bool database::_push_block(const signed_block& new_block)
  */
 void database::push_transaction( const signed_transaction& trx, uint32_t skip )
 { try { try {
-   FC_ASSERT( fc::raw::pack_size(trx) <= (get_dynamic_global_properties().maximum_block_size - 256) );
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+
+   FC_ASSERT( fc::raw::pack_size( trx ) <= ( props.median_props.maximum_block_size - 256 ),
+      "Transaction size must be less than maximum block size." );
+
    set_producing( true );
-   detail::with_skip_flags( *this, skip,
-      [&]()
+
+   detail::with_skip_flags( *this, skip, [&]()
+   {
+      with_write_lock( [&]()
       {
-         with_write_lock( [&]()
-         {
-            _push_transaction( trx );
-         });
+         _push_transaction( trx );
       });
+   });
    set_producing( false );
    }
    catch( ... )
@@ -1495,58 +1497,64 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
 {
    uint32_t skip = get_node_properties().skip_flags;
    uint32_t slot_num = get_slot_at_time( when );
-   FC_ASSERT( slot_num > 0 );
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   FC_ASSERT( slot_num > 0,
+      "Slot number must be greater than zero." );
    string scheduled_witness = get_scheduled_witness( slot_num );
-   FC_ASSERT( scheduled_witness == witness_owner );
+   FC_ASSERT( scheduled_witness == witness_owner,
+      "Scheduled witness must be the same as witness owner." );
 
-   const auto& witness_obj = get_witness( witness_owner );
+   const witness_object& witness_obj = get_witness( witness_owner );
 
    if( !(skip & skip_witness_signature) )
-      FC_ASSERT( witness_obj.signing_key == block_signing_private_key.get_public_key() );
-
+   {
+      FC_ASSERT( witness_obj.signing_key == block_signing_private_key.get_public_key(),
+         "Block signing key must be equal to the witnesses block signing key." );
+   }
+      
    signed_block pending_block;
-
    pending_block.previous = head_block_id();
    pending_block.timestamp = when;
    pending_block.witness = witness_owner;
    
-   const auto& witness = get_witness( witness_owner );
+   const witness_object& witness = get_witness( witness_owner );
    auto blockchainVersion = BLOCKCHAIN_VERSION;
    if( witness.running_version != BLOCKCHAIN_VERSION )
+   {
       pending_block.extensions.insert( block_header_extensions( BLOCKCHAIN_VERSION ) );
+   }
+      
+   const hardfork_property_object& hfp = get_hardfork_property_object();
 
-   const auto& hfp = get_hardfork_property_object();
    auto blockchainHardforkVersion = BLOCKCHAIN_HARDFORK_VERSION;
    if( hfp.current_hardfork_version < BLOCKCHAIN_HARDFORK_VERSION // Binary is newer hardfork than has been applied
-      && ( witness.hardfork_version_vote != _hardfork_versions[ hfp.last_hardfork + 1 ] || witness.hardfork_time_vote != _hardfork_times[ hfp.last_hardfork + 1 ] ) ) // Witness vote does not match binary configuration
+      && ( witness.hardfork_version_vote != _hardfork_versions[ hfp.last_hardfork + 1 ] || 
+      witness.hardfork_time_vote != _hardfork_times[ hfp.last_hardfork + 1 ] ) ) // Witness vote does not match binary configuration
    {
       // Make vote match binary configuration
       pending_block.extensions.insert( block_header_extensions( hardfork_version_vote( _hardfork_versions[ hfp.last_hardfork + 1 ], _hardfork_times[ hfp.last_hardfork + 1 ] ) ) );
    }
-   else if( hfp.current_hardfork_version == BLOCKCHAIN_HARDFORK_VERSION // Binary does not know of a new hardfork
-      && witness.hardfork_version_vote > BLOCKCHAIN_HARDFORK_VERSION ) // Voting for hardfork in the future, that we do not know of...
+   else if( hfp.current_hardfork_version == BLOCKCHAIN_HARDFORK_VERSION     // Binary does not know of a new hardfork
+      && witness.hardfork_version_vote > BLOCKCHAIN_HARDFORK_VERSION )      // Voting for hardfork in the future, that we do not know of...
    {
       // Make vote match binary configuration. This is vote to not apply the new hardfork.
       pending_block.extensions.insert( block_header_extensions( hardfork_version_vote( _hardfork_versions[ hfp.last_hardfork ], _hardfork_times[ hfp.last_hardfork ] ) ) );
    }
    
-   // The 4 is for the max size of the transaction vector length
-   size_t total_block_size = fc::raw::pack_size( pending_block ) + 4;
-   auto maximum_block_size = get_dynamic_global_properties().maximum_block_size; //MAX_BLOCK_SIZE;
+   size_t total_block_size = fc::raw::pack_size( pending_block ) + 4;       // The 4 is for the max size of the transaction vector length
+   uint32_t maximum_block_size = props.median_props.maximum_block_size;     // MAX_BLOCK_SIZE;
 
    with_write_lock( [&]()
    {
-      //
       // The following code throws away existing pending_tx_session and
       // rebuilds it by re-applying pending transactions.
-      //
       // This rebuild is necessary because pending transactions' validity
       // and semantics may have changed since they were received, because
       // time-based semantics are evaluated based on the current block
       // time.  These changes can only be reflected in the database when
       // the value of the "when" variable is known, which means we need to
       // re-apply pending transactions in this method.
-      //
+
       _pending_tx_session.reset();
       _pending_tx_session = start_undo_session( true );
 
@@ -1883,14 +1891,15 @@ void database::update_business_account( const account_business_object& business,
    flat_map< account_name_type, share_type > officers;
    flat_map< account_name_type, flat_map< executive_types, share_type > > exec_map;
    vector< pair< account_name_type, pair< executive_types, share_type > > > role_rank;
-   role_rank.reserve( props.executive_types_amount * officers.size() );
+   uint16_t exec_number = props.median_props.executive_types_amount;
+   role_rank.reserve( exec_number * officers.size() );
    flat_map< account_name_type, pair< executive_types, share_type > > executives;
    executive_officer_set exec_set;
 
    auto bus_officer_vote_itr = bus_officer_vote_idx.lower_bound( business.account );
    share_type voting_power = 0;
 
-   while( bus_officer_vote_itr != bus_officer_vote_idx.end() && 
+   while( bus_officer_vote_itr != bus_officer_vote_idx.end() &&
       bus_officer_vote_itr->business_account == business.account )
    {
       const account_object& voter = get_account( bus_officer_vote_itr->account );
@@ -2220,7 +2229,7 @@ void database::update_proof_of_work_target()
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const witness_schedule_object& wso = get_witness_schedule();
    uint128_t recent_pow = wso.recent_pow;        // Amount of proofs of work, times block precision, decayed over 7 days
-   uint128_t target_pow = ( BLOCKCHAIN_PRECISION * wso.pow_decay_time.to_seconds() ) / wso.pow_target_time.to_seconds();
+   uint128_t target_pow = ( BLOCKCHAIN_PRECISION * wso.median_props.pow_decay_time.to_seconds() ) / wso.median_props.pow_target_time.to_seconds();
    uint128_t new_difficulty = ( wso.pow_target_difficulty * target_pow ) / recent_pow;
    time_point now = props.time;
 
@@ -3531,10 +3540,8 @@ void database::show_free_memory( bool force )
 void database::_apply_block( const signed_block& next_block )
 { try {
    notify_pre_apply_block( next_block );
-
    uint32_t next_block_num = next_block.block_num();
-   //block_id_type next_block_id = next_block.id();
-
+   block_id_type next_block_id = next_block.id();
    uint32_t skip = get_node_properties().skip_flags;
 
    if( !( skip & skip_merkle_check ) )
@@ -3543,7 +3550,8 @@ void database::_apply_block( const signed_block& next_block )
 
       try
       {
-         FC_ASSERT( next_block.transaction_merkle_root == merkle_root, "Merkle check failed", ("next_block.transaction_merkle_root",next_block.transaction_merkle_root)("calc",merkle_root)("next_block",next_block)("id",next_block.id()) );
+         FC_ASSERT( next_block.transaction_merkle_root == merkle_root, 
+            "Merkle check failed", ("next_block.transaction_merkle_root",next_block.transaction_merkle_root)("calc",merkle_root)("next_block",next_block)("id",next_block.id()) );
       }
       catch( fc::assert_exception& e )
       {
@@ -3551,20 +3559,25 @@ void database::_apply_block( const signed_block& next_block )
          auto itr = merkle_map.find( next_block_num );
 
          if( itr == merkle_map.end() || itr->second != merkle_root )
+         {
             throw e;
+         }  
       }
    }
 
    const witness_object& signing_witness = validate_block_header(skip, next_block);
 
-   _current_block_num    = next_block_num;
+   _current_block_num = next_block_num;
    _current_trx_in_block = 0;
    _current_trx_stake_weight = 0;
 
-   const auto& props = get_dynamic_global_properties();
-   auto block_size = fc::raw::pack_size( next_block );
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   
+   size_t block_size = fc::raw::pack_size( next_block );
 
-   FC_ASSERT( block_size <= props.maximum_block_size, "Block Size is too Big", ("next_block_num",next_block_num)("block_size", block_size)("max",props.maximum_block_size) );
+   FC_ASSERT( block_size <= props.median_props.maximum_block_size, 
+      "Block Size is too large.", 
+      ("next_block_num",next_block_num)("block_size", block_size)("max",props.median_props.maximum_block_size ) );
    
    if( block_size < MIN_BLOCK_SIZE )
    {
@@ -3573,30 +3586,33 @@ void database::_apply_block( const signed_block& next_block )
       );
    }
 
-   /// modify current witness so transaction evaluators can know who included the transaction,
-   /// this is mostly for POW operations which must pay the current_producer
-   modify( props, [&]( dynamic_global_property_object& dgp ){
+   // Modify current witness so transaction evaluators can know who included the transaction,
+   // this is mostly for POW operations which must pay the current_producer.
+
+   modify( props, [&]( dynamic_global_property_object& dgp )
+   {
       dgp.current_producer = next_block.witness;
    });
 
-   /// parse witness version reporting
-   process_header_extensions( next_block );
+   process_header_extensions( next_block );     // parse witness version reporting
 
-   const auto& witness = get_witness( next_block.witness );
-   const auto& hardfork_state = get_hardfork_property_object();
+   const witness_object& witness = get_witness( next_block.witness );
+   const hardfork_property_object& hardfork_state = get_hardfork_property_object();
+
    FC_ASSERT( witness.running_version >= hardfork_state.current_hardfork_version,
-      "Block produced by witness that is not running current hardfork",
+      "Block produced by witness that is not running current hardfork.",
       ("witness",witness)("next_block.witness",next_block.witness)("hardfork_state", hardfork_state)
    );
    
+   /** 
+    * We do not need to push the undo state for each transaction
+    * because they either all apply and are valid or the
+    * entire block fails to apply. We only need an "undo" state
+    * for transactions when validating broadcast transactions or
+    * when building a block.
+    */
    for( const auto& trx : next_block.transactions )
    {
-      /* We do not need to push the undo state for each transaction
-       * because they either all apply and are valid or the
-       * entire block fails to apply.  We only need an "undo" state
-       * for transactions when validating broadcast transactions or
-       * when building a block.
-       */
       apply_transaction( trx, skip );
       ++_current_trx_in_block;
    }
@@ -3646,11 +3662,9 @@ void database::_apply_block( const signed_block& next_block )
    account_recovery_processing();
    expire_escrow_ratification();
    process_decline_voting_rights();
-
    process_hardforks();
 
-   // notify observers that the block has been applied
-   notify_applied_block( next_block );
+   notify_applied_block( next_block );      // notify observers that the block has been applied
 
    notify_changed_objects();
 } FC_CAPTURE_LOG_AND_RETHROW( (next_block.block_num()) ) }
@@ -3816,7 +3830,7 @@ void database::update_transaction_stake(const witness_object& signing_witness, c
 {
    const witness_schedule_object& wso = get_witness_schedule();
    const time_point now = head_block_time();
-   fc::microseconds decay_time = wso.txn_stake_decay_time;
+   fc::microseconds decay_time = wso.median_props.txn_stake_decay_time;
    modify( signing_witness, [&]( witness_object& w ) 
    {
       w.recent_txn_stake_weight -= ( w.recent_txn_stake_weight * ( now - w.last_txn_stake_weight_update).to_seconds() ) / decay_time.to_seconds();
@@ -3877,10 +3891,10 @@ void database::create_block_summary(const signed_block& next_block)
 
 void database::update_global_dynamic_data( const signed_block& b )
 { try {
-   const dynamic_global_property_object& _dgp = get_dynamic_global_properties();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
    uint32_t missed_blocks = 0;
-   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
-   price usd_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_USD).hour_median_price;
+   price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
+   price usd_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price;
 
    if( head_block_time() != fc::time_point() )
    {
@@ -3906,7 +3920,7 @@ void database::update_global_dynamic_data( const signed_block& b )
    }
 
    
-   modify( _dgp, [&]( dynamic_global_property_object& dgp )  
+   modify( props, [&]( dynamic_global_property_object& dgp )  
    {
       // dynamic global properties updating, constant time assuming 100% participation. It is O(B) otherwise (B = Num blocks between update)
       for( uint32_t i = 0; i < missed_blocks + 1; i++ )
@@ -3925,23 +3939,23 @@ void database::update_global_dynamic_data( const signed_block& b )
 
    if( !( get_node_properties().skip_flags & skip_undo_history_check ) )
    {
-      ASSERT( _dgp.head_block_number - _dgp.last_irreversible_block_num  < MAX_UNDO_HISTORY, undo_database_exception,
+      ASSERT( props.head_block_number - props.last_irreversible_block_num  < MAX_UNDO_HISTORY, undo_database_exception,
          "The database does not have enough undo history to support a blockchain with so many missed blocks. "
          "Please add a checkpoint if you would like to continue applying blocks beyond this point.",
-         ("last_irreversible_block_num",_dgp.last_irreversible_block_num)("head", _dgp.head_block_number)
+         ("last_irreversible_block_num",props.last_irreversible_block_num)("head", props.head_block_number)
          ("max_undo",MAX_UNDO_HISTORY) );
    }
 } FC_CAPTURE_AND_RETHROW() }
 
-void database::update_signing_witness(const witness_object& signing_witness, const signed_block& new_block)
+void database::update_signing_witness( const witness_object& signing_witness, const signed_block& new_block )
 { try {
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   uint64_t new_block_aslot = dpo.current_aslot + get_slot_at_time( new_block.timestamp );
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   uint64_t new_block_aslot = props.current_aslot + get_slot_at_time( new_block.timestamp );
 
-   modify( signing_witness, [&]( witness_object& _wit )
+   modify( signing_witness, [&]( witness_object& w )
    {
-      _wit.last_aslot = new_block_aslot;
-      _wit.last_confirmed_block_num = new_block.block_num();
+      w.last_aslot = new_block_aslot;
+      w.last_confirmed_block_num = new_block.block_num();
    });
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -4470,8 +4484,10 @@ void database::init_hardforks()
    // _hardfork_versions[ HARDFORK_0_1 ] = HARDFORK_0_1_VERSION;
 
    const auto& hardforks = get_hardfork_property_object();
-   FC_ASSERT( hardforks.last_hardfork <= NUM_HARDFORKS, "Chain knows of more hardforks than configuration", ("hardforks.last_hardfork",hardforks.last_hardfork)("NUM_HARDFORKS",NUM_HARDFORKS) );
-   FC_ASSERT( _hardfork_versions[ hardforks.last_hardfork ] <= BLOCKCHAIN_VERSION, "Blockchain version is older than last applied hardfork" );
+   FC_ASSERT( hardforks.last_hardfork <= NUM_HARDFORKS,
+      "Chain knows of more hardforks than configuration.", ("hardforks.last_hardfork",hardforks.last_hardfork)("NUM_HARDFORKS",NUM_HARDFORKS) );
+   FC_ASSERT( _hardfork_versions[ hardforks.last_hardfork ] <= BLOCKCHAIN_VERSION,
+      "Blockchain version is older than last applied hardfork." );
    FC_ASSERT( BLOCKCHAIN_HARDFORK_VERSION == _hardfork_versions[ NUM_HARDFORKS ] );
 }
 
@@ -4481,79 +4497,79 @@ void database::init_hardforks()
  */
 void database::clear_expired_operations()
 { try {
-   auto now = head_block_time();
+   time_point now = head_block_time();
    
-   auto& connection_req_index = get_index<connection_request_index>().indices().get<by_expiration>();
+   const auto& connection_req_index = get_index< connection_request_index >().indices().get< by_expiration >();
    while( !connection_req_index.empty() && connection_req_index.begin()->expiration <= now )
    {
       const connection_request_object& req = *connection_req_index.begin();
       remove( req );
    }
 
-   auto& limit_index = get_index<limit_order_index>().indices().get<by_expiration>();
+   const auto& limit_index = get_index< limit_order_index >().indices().get< by_expiration >();
    while( !limit_index.empty() && limit_index.begin()->expiration <= now )
    {
       const limit_order_object& order = *limit_index.begin();
       cancel_limit_order( order );
    }
 
-   auto& margin_index = get_index<margin_order_index>().indices().get<by_expiration>();
+   const auto& margin_index = get_index< margin_order_index >().indices().get< by_expiration >();
    while( !margin_index.empty() && margin_index.begin()->expiration <= now )
    {
       const margin_order_object& order = *margin_index.begin();
       close_margin_order( order );
    }
 
-   auto& transfer_req_index = get_index<transfer_request_index>().indices().get<by_expiration>();
+   const auto& transfer_req_index = get_index< transfer_request_index >().indices().get< by_expiration >();
    while( !transfer_req_index.empty() && transfer_req_index.begin()->expiration <= now )
    {
       const transfer_request_object& req = *transfer_req_index.begin();
       remove( req );
    }
 
-   auto& transfer_rec_index = get_index<transfer_recurring_request_index>().indices().get<by_expiration>();
+   const auto& transfer_rec_index = get_index< transfer_recurring_request_index >().indices().get< by_expiration >();
    while( !transfer_rec_index.empty() && transfer_rec_index.begin()->expiration <= now )
    {
       const transfer_recurring_request_object& rec = *transfer_rec_index.begin();
       remove( rec );
    }
 
-   auto& account_member_request_idx = get_index<account_member_request_index>().indices().get<by_expiration>();
+   const auto& account_member_request_idx = get_index< account_member_request_index >().indices().get< by_expiration >();
    while( !account_member_request_idx.empty() && account_member_request_idx.begin()->expiration <= now )
    {
       const account_member_request_object& req = *account_member_request_idx.begin();
       remove( req );
    }
 
-   auto& account_member_invite_idx = get_index<account_member_invite_index>().indices().get<by_expiration>();
+   const auto& account_member_invite_idx = get_index< account_member_invite_index >().indices().get< by_expiration >();
    while( !account_member_invite_idx.empty() && account_member_invite_idx.begin()->expiration <= now )
    {
       const account_member_invite_object& inv = *account_member_invite_idx.begin();
       remove( inv );
    }
 
-   auto& board_join_request_idx = get_index<board_join_request_index>().indices().get<by_expiration>();
+   const auto& board_join_request_idx = get_index< board_join_request_index >().indices().get< by_expiration >();
    while( !board_join_request_idx.empty() && board_join_request_idx.begin()->expiration <= now )
    {
       const board_join_request_object& req = *board_join_request_idx.begin();
       remove( req );
    }
 
-   auto& board_join_invite_idx = get_index<board_join_invite_index>().indices().get<by_expiration>();
+   const auto& board_join_invite_idx = get_index< board_join_invite_index >().indices().get< by_expiration >();
    while( !board_join_invite_idx.empty() && board_join_invite_idx.begin()->expiration <= now )
    {
       const board_join_invite_object& inv = *board_join_invite_idx.begin();
       remove( inv );
    }
 
-   auto& enterprise_idx = get_index<community_enterprise_index>().indices().get<by_expiration>();
+   const auto& enterprise_idx = get_index< community_enterprise_index >().indices().get< by_expiration >();
    while( !enterprise_idx.empty() && enterprise_idx.begin()->expiration <= now )
    {
       const community_enterprise_object& ent = *enterprise_idx.begin();
       cancel_community_enterprise( ent );
    }
 
-   auto& bid_index = get_index<ad_bid_index>().indices().get<by_expiration>();
+   const auto& bid_index = get_index< ad_bid_index >().indices().get< by_expiration >();
    while( !bid_index.empty() && bid_index.begin()->expiration <= now )
    {
       const ad_bid_object& bid = *bid_index.begin();
@@ -4561,7 +4577,7 @@ void database::clear_expired_operations()
    }
 
    // Process expired force settlement orders
-   auto& settlement_index = get_index<force_settlement_index>().indices().get<by_expiration>();
+   const auto& settlement_index = get_index< force_settlement_index >().indices().get< by_expiration >();
    if( !settlement_index.empty() )
    {
       asset_symbol_type current_asset = settlement_index.begin()->settlement_asset_symbol();
@@ -4604,7 +4620,7 @@ void database::clear_expired_operations()
          const asset_object& mia_object = get_asset( current_asset );
          const asset_bitasset_data_object& mia_bitasset = get_bitasset_data( mia_object.symbol );
 
-         extra_dump = ((count >= 1000) && (count <= 1020));
+         extra_dump = ( (count >= 1000) && (count <= 1020) );
 
          if( extra_dump )
          {
@@ -4632,7 +4648,7 @@ void database::clear_expired_operations()
             }
             break;
          }
-         // Can we still settle in this asset?
+         
          if( mia_bitasset.current_feed.settlement_price.is_null() )
          {
             ilog("Canceling a force settlement in ${asset} because settlement price is null",
@@ -4662,7 +4678,7 @@ void database::clear_expired_operations()
 
          if( settlement_fill_price.base.symbol != current_asset )  // only calculate once per asset
          {
-            bitasset_options options = *mia_bitasset.options;
+            bitasset_options options = mia_bitasset.options;
             uint16_t offset = options.force_settlement_offset_percent;
             settlement_fill_price = mia_bitasset.current_feed.settlement_price / ratio_type( PERCENT_100 - offset, PERCENT_100 );
          }
@@ -4672,14 +4688,16 @@ void database::clear_expired_operations()
             settlement_price = settlement_fill_price;
          }
 
-         auto& call_index = get_index<call_order_index>().indices().get<by_collateral>();
+         auto& call_index = get_index< call_order_index >().indices().get< by_collateral >();
          asset settled = asset( mia_bitasset.force_settled_volume , mia_object.symbol);
          // Match against the least collateralized short until the settlement is finished or we reach max settlements
          while( settled < max_settlement_volume && find(order_id) )
          {
-            auto itr = call_index.lower_bound(boost::make_tuple( price::min( mia_bitasset.backing_asset, mia_object.symbol )));
-            // There should always be a call order, since asset exists!
-            FC_ASSERT(itr != call_index.end() && itr->debt_type() == mia_object.symbol);
+            auto itr = call_index.lower_bound( boost::make_tuple( price::min( mia_bitasset.backing_asset, mia_object.symbol )));
+            // There should always be a call order, since asset exists
+            FC_ASSERT( itr != call_index.end() && 
+               itr->debt_type() == mia_object.symbol, 
+               "Call order asset must be the same as market issued asset." );
             asset max_settlement = max_settlement_volume - settled;
 
             if( order.balance.amount == 0 )
@@ -4922,6 +4940,16 @@ void database::validate_invariants()const
       const asset_credit_data_object& cred = *cred_itr;
       asset_checksum[ cred.buyback_asset ] -= cred.buyback_pool;
       ++cred_itr;
+   }
+
+   const auto& bitasset_idx = get_index< asset_bitasset_data_index >().indices().get< by_symbol >();
+   auto bitasset_itr = bitasset_idx.begin();
+
+   while( bitasset_itr != bitasset_idx.end() )
+   {
+      const asset_bitasset_data_object& bitasset = *bitasset_itr;
+      asset_checksum[ bitasset.symbol ] -= bitasset.settlement_fund;
+      ++bitasset_itr;
    }
 
    const auto& escrow_idx = get_index< escrow_index >().indices().get< by_id >();

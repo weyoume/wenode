@@ -131,8 +131,8 @@ namespace node { namespace chain {
 
          void                         witness_object::decay_weights( time_point now, const witness_schedule_object& wso )
          {
-            mining_power -= ( ( mining_power * ( now - last_mining_update ).to_seconds() ) / wso.pow_decay_time.to_seconds() );
-            recent_txn_stake_weight -= ( recent_txn_stake_weight * ( now - last_txn_stake_weight_update ).to_seconds() ) / wso.txn_stake_decay_time.to_seconds();
+            mining_power -= ( ( mining_power * ( now - last_mining_update ).to_seconds() ) / wso.median_props.pow_decay_time.to_seconds() );
+            recent_txn_stake_weight -= ( recent_txn_stake_weight * ( now - last_txn_stake_weight_update ).to_seconds() ) / wso.median_props.txn_stake_decay_time.to_seconds();
             last_mining_update = now;
             last_txn_stake_weight_update = now;
          }
@@ -170,49 +170,43 @@ namespace node { namespace chain {
 
          witness_schedule_object(){}
 
-         id_type                                                           id;
+         id_type                                           id;
 
-         uint128_t                                                         current_witness_virtual_time;    // Tracks the time used for block producer additional selection
+         chain_properties                                  median_props;                    // Median of all witness selected blockchain properties.
 
-         uint128_t                                                         current_miner_virtual_time;      // Tracks the time used for block producer additional selection
+         uint128_t                                         current_witness_virtual_time;    // Tracks the time used for block producer additional selection
 
-         uint32_t                                                          next_shuffle_block_num = 1;      //
+         uint128_t                                         current_miner_virtual_time;      // Tracks the time used for block producer additional selection
 
-         fc::array< account_name_type, TOTAL_PRODUCERS >             		current_shuffled_producers;
+         uint32_t                                          next_shuffle_block_num = 1;      //
 
-         uint128_t                                                         total_witness_voting_power;
+         fc::array< account_name_type, TOTAL_PRODUCERS >   current_shuffled_producers;
 
-         vector<account_name_type>                                         top_witnesses;
+         uint128_t                                         total_witness_voting_power;
 
-         vector<account_name_type>                                         top_miners;
+         vector<account_name_type>                         top_witnesses;
 
-         uint8_t                                                           num_scheduled_producers = 1;
+         vector<account_name_type>                         top_miners;
 
-         uint128_t                                                         pow_target_difficulty = -1;      //
+         uint8_t                                           num_scheduled_producers = 1;
 
-         uint128_t                                                         recent_pow;                      // Rolling average amount of blocks (x prec) mined in the last 7 days.
+         uint128_t                                         pow_target_difficulty = -1;      //
 
-         time_point                                                        last_pow_update;
+         uint128_t                                         recent_pow;                      // Rolling average amount of blocks (x prec) mined in the last 7 days.
+
+         time_point                                        last_pow_update;                 // Time that the recent POW was last updated and decayed
+
+         version                                           majority_version;
+
+         uint8_t                                           dpos_witness_producers = DPOS_WITNESS_PRODUCERS;
+
+         uint8_t                                           dpos_witness_additional_producers = DPOS_WITNESS_ADDITONAL;
+
+         uint8_t                                           pow_miner_producers = POW_MINER_PRODUCERS;
+
+         uint8_t                                           pow_miner_additional_producers = POW_MINER_ADDITIONAL;
          
-         chain_properties                                                  median_props;
-
-         version                                                           majority_version;
-
-         uint8_t                                                           dpos_witness_producers            = DPOS_WITNESS_PRODUCERS;
-
-         uint8_t                                                           dpos_witness_additional_producers = DPOS_WITNESS_ADDITONAL;
-
-         uint8_t                                                           pow_miner_producers               = POW_MINER_PRODUCERS;
-
-         uint8_t                                                           pow_miner_additional_producers    = POW_MINER_ADDITIONAL;
-         
-         uint8_t                                                           hardfork_required_witnesses       = HARDFORK_REQUIRED_WITNESSES;
-
-         fc::microseconds                                                  pow_target_time                   = POW_TARGET_TIME;
-
-         fc::microseconds                                                  pow_decay_time                    = POW_DECAY_TIME;
-
-         fc::microseconds                                                  txn_stake_decay_time              = TXN_STAKE_DECAY_TIME;
+         uint8_t                                           hardfork_required_witnesses = HARDFORK_REQUIRED_WITNESSES;
 
          bool     is_top_producer( const account_name_type& producer )const    // finds if a given producer name is in the top witnesses or miners set. 
          {
@@ -232,7 +226,7 @@ namespace node { namespace chain {
 
          void       witness_schedule_object::decay_pow( time_point now )
          {
-            recent_pow -= ( ( recent_pow * ( now - last_pow_update ).to_seconds() ) / pow_decay_time.to_seconds() );
+            recent_pow -= ( ( recent_pow * ( now - last_pow_update ).to_seconds() ) / median_props.pow_decay_time.to_seconds() );
             last_pow_update = now;
          }
    };

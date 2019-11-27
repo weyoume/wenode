@@ -161,7 +161,7 @@ namespace node { namespace chain {
          uint32_t                               head_block_num()const;
          block_id_type                          head_block_id()const;
          const witness_schedule_object&         get_witness_schedule()const;
-         const chain_properties&                chain_properties()const;
+         const chain_properties&                get_chain_properties()const;
          const price&                           get_usd_price()const;
          const reward_fund_object&              get_reward_fund() const;
          const comment_metrics_object&          get_comment_metrics() const;
@@ -170,7 +170,6 @@ namespace node { namespace chain {
          const asset&                           USD_to_asset( const asset& a) const;
          
          const node_property_object&            get_node_properties()const;
-         const feed_history_object&             get_feed_history()const;
 
          const asset_object& get_core_asset() const;
          const asset_object* find_core_asset() const;

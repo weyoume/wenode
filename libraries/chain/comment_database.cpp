@@ -421,14 +421,14 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
 
    modify( comment, [&]( comment_object& c )
    {
-      if( c.cashouts_received < ( props.content_reward_decay_rate.to_seconds() / props.content_reward_interval.to_seconds() ) )
+      if( c.cashouts_received < ( props.median_props.content_reward_decay_rate.to_seconds() / props.median_props.content_reward_interval.to_seconds() ) )
       {
          if( c.net_reward > 0 )   // A payout is only made for positive reward.
          {
             c.cashouts_received++;
             c.last_payout = now;
          }
-         c.cashout_time += props.content_reward_interval;
+         c.cashout_time += props.median_props.content_reward_interval;
       }
       else
       {

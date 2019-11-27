@@ -83,20 +83,20 @@ class reserve_ratio_object : public object< reserve_ratio_object_type, reserve_r
       id_type           id;
 
       /**
-       *  Average block size is updated every block to be:
+       * Average block size is updated every block to be:
        *
        *     average_block_size = (99 * average_block_size + new_block_size) / 100
        *
-       *  This property is used to update the current_reserve_ratio to maintain approximately
-       *  50% or less utilization of network capacity.
+       * This property is used to update the current_reserve_ratio to maintain approximately
+       * 50% or less utilization of network capacity.
        */
       int32_t    average_block_size = 0;
 
       /**
-       *   Any time average_block_size <= 50% maximum_block_size this value grows by 1 until it
-       *   reaches MAX_RESERVE_RATIO.  Any time average_block_size is greater than
-       *   50% it falls by 1%.  Upward adjustments happen once per round, downward adjustments
-       *   happen every block.
+       * Any time average_block_size <= 50% maximum_block_size this value grows by 1 until it
+       * reaches MAX_RESERVE_RATIO. Any time average_block_size is greater than
+       * 50% it falls by 1%. Upward adjustments happen once per round, downward adjustments
+       * happen every block.
        */
       int64_t    current_reserve_ratio = 1;
 

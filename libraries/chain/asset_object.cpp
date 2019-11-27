@@ -30,19 +30,6 @@
 
 namespace node { namespace chain {
 
-share_type asset_bitasset_data_object::max_force_settlement_volume(share_type current_supply) const
-{
-   if( options.maximum_force_settlement_volume == 0 )
-      return 0;
-   if( options.maximum_force_settlement_volume == PERCENT_100 )
-      return current_supply + force_settled_volume;
-
-   fc::uint128 volume = current_supply.value + force_settled_volume.value;
-   volume *= options.maximum_force_settlement_volume;
-   volume /= PERCENT_100;
-   return volume.to_uint64();
-}
-
 void asset_bitasset_data_object::update_median_feeds( time_point current_time, time_point next_maintenance_time )
 {
    current_feed_publication_time = current_time;

@@ -2,6 +2,7 @@
 #include <node/protocol/base.hpp>
 #include <node/protocol/block_header.hpp>
 #include <node/protocol/asset.hpp>
+#include <node/protocol/chain_properties.hpp>
 
 #include <fc/utf8.hpp>
 #include <fc/crypto/equihash.hpp>
@@ -578,8 +579,8 @@ namespace node { namespace protocol {
 
 
    /**
-    *  This operation allows recovery_account to change account_to_reset's owner authority to
-    *  new_owner_authority after 60 days of inactivity.
+    * This operation allows recovery_account to change account_to_reset's owner authority to
+    * new_owner_authority after 60 days of inactivity.
     */
    struct reset_account_operation : public base_operation 
    {
@@ -663,8 +664,6 @@ namespace node { namespace protocol {
       account_name_type       signatory;
 
       account_name_type       account;
-
-      bool                    decline = true;
 
       void get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
@@ -764,15 +763,15 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             follower;              // Name of the account following the tag.
+      account_name_type             follower;           // Name of the account following the tag.
 
-      tag_name_type                 tag;                   // Tag being followed.
+      tag_name_type                 tag;                // Tag being followed.
 
-      account_name_type             interface;             // Name of the interface account that was used to broadcast the transaction. 
+      account_name_type             interface;          // Name of the interface account that was used to broadcast the transaction. 
 
-      bool                          added = true;         // Set true to add to list, false to remove from list.
+      bool                          added = true;       // Set true to add to list, false to remove from list.
 
-      bool                          followed = true;      // Set true to follow, false to filter.
+      bool                          followed = true;    // Set true to follow, false to filter.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -864,7 +863,7 @@ namespace node { namespace protocol {
       void validate() const;
    };
 
-   struct executive_officer_set 
+   struct executive_officer_set
    {
       account_name_type                 CHIEF_EXECUTIVE_OFFICER;    // Overall leader of Executive team.
 
@@ -1419,6 +1418,8 @@ namespace node { namespace protocol {
 
       string                      details;            // String explaining the reason for the tag to the author
 
+      account_name_type           interface;          // Interface account used for the transaction
+
       bool                        filter = false;     // True if the post should be filtered from the board and governance account subscribers
 
       bool                        applied = true;     // True if applying the tag, false if removing the tag.
@@ -1471,7 +1472,6 @@ namespace node { namespace protocol {
    };
 
 
-
    struct board_update_operation : public base_operation
    {
       account_name_type           signatory;
@@ -1482,7 +1482,7 @@ namespace node { namespace protocol {
 
       board_types                 board_type;                // Type of board to create.
 
-      board_privacy_types         board_privacy;              // Type of board to create.
+      board_privacy_types         board_privacy;             // Type of board to create.
 
       string                      board_public_key;          // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
@@ -2336,13 +2336,13 @@ namespace node { namespace protocol {
 
       asset                  amount_to_sell;
 
-      bool                   fill_or_kill = false;
-
       price                  exchange_rate;
 
       account_name_type      interface;
 
       time_point             expiration;
+
+      bool                   fill_or_kill = false;
 
       void  validate()const;
       const account_name_type& get_creator_name() const { return owner; }
@@ -2794,7 +2794,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * Options available to unique assets.
+    * Options available to gateway assets.
     */
    struct gateway_options 
    {
@@ -2875,7 +2875,9 @@ namespace node { namespace protocol {
 
       optional<credit_options>      new_credit_opts;          // Options available for credit assets
 
-      optional<gateway_options>     new_gateway_opts;         // Options avalable for gateway assets
+      optional<gateway_options>     new_gateway_opts;         // Options available for gateway assets
+
+      optional<unique_options>      new_unique_opts;          // Options available for unique assets
 
       extensions_type               extensions;
 
@@ -3142,48 +3144,15 @@ namespace node { namespace protocol {
 
 
    /**
-    * Witnesses and miners vote on how to set certain chain properties to ensure a smooth
-    * and well functioning network, and can be responsive to changing network conditions.
-    * The active set of witnesses will be used to control the blockchain configuration by
-    * selecting the median value of all properties listed. 
-    */
-   struct chain_properties
-   {
-      asset             account_creation_fee = asset( MIN_ACCOUNT_CREATION_FEE, SYMBOL_COIN );  // Minimum fee required to create a new account by staking.
-
-      uint32_t          maximum_block_size = MAX_BLOCK_SIZE;  // The maximum block size of the network in bytes.
-
-      uint16_t          credit_interest_rate  = CREDIT_INTEREST_RATE;  // The credit interest rate paid to holders of network credit assets.
-
-      fc::microseconds  interest_compound_interval = INTEREST_COMPOUND_INTERVAL;  // The frequency of interest compounding payments. 
-
-      uint16_t          maximum_asset_feed_publishers = MAX_ASSET_FEED_PUBLISHERS;  // The maximum number of accounts that can publish price feeds for a bitasset.
-
-      void validate()const
-      {
-         FC_ASSERT( account_creation_fee.amount >= MIN_ACCOUNT_CREATION_FEE,
-            "Account creation fee must be at least 1 Unit.");
-         FC_ASSERT( account_creation_fee.symbol == SYMBOL_COIN,
-            "Acccount creation fee must be in the core asset." );
-         FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT);
-         FC_ASSERT( credit_interest_rate >= 0 );
-         FC_ASSERT( credit_interest_rate <= PERCENT_100 );
-      };
-   };
-
-
-   /**
     *  Users who wish to become a witness must pay a fee acceptable to
     *  the current witnesses to apply for the position and allow voting
     *  to begin.
-    *
     *  If the owner isn't a witness they will become a witness.  Witnesses
     *  are charged a fee equal to 1 weeks worth of witness pay which in
     *  turn is derived from the current share supply. The fee is
     *  only applied if the owner is not already a witness.
-    *
     *  If the block_signing_key is null then the witness is removed from
-    *  contention.  The network will pick the top voted witnesses for
+    *  contention. The network will pick the top voted witnesses for
     *  producing blocks.
     */
    struct witness_update_operation : public base_operation
@@ -3423,179 +3392,393 @@ namespace node { namespace protocol {
    
 } } // node::protocol
 
-// TODO: Order and finalize the reflection here
-
-
-FC_REFLECT( node::protocol::transfer_to_savings_operation, 
-         (from)
-         (to)
-         (amount)
-         (memo) 
-         );
-
-FC_REFLECT( node::protocol::transfer_from_savings_operation, 
-         (from)
-         (request_id)
-         (to)
-         (amount)
-         (memo) 
-         );
-
-FC_REFLECT( node::protocol::cancel_transfer_from_savings_operation, 
-         (from)
-         (request_id) 
-         );
-
-FC_REFLECT( node::protocol::reset_account_operation, 
-         (reset_account)
-         (account_to_reset)
-         (new_owner_authority) 
-         );
-
-FC_REFLECT( node::protocol::set_reset_account_operation, 
-         (account)
-         (current_reset_account)
-         (reset_account) 
-         );
-
-FC_REFLECT( node::protocol::proof_of_work, 
-         (input)
-         (pow_summary) 
-         );
-
-FC_REFLECT( node::protocol::proof_of_work_input, 
-         (worker_account)
-         (prev_block)
-         (nonce) 
-         );
-
-FC_REFLECT( node::protocol::equihash_proof_of_work, 
-         (input)
-         (proof)
-         (prev_block)
-         (pow_summary) 
-         );
-
-FC_REFLECT( node::protocol::chain_properties, 
-         (account_creation_fee)
-         (maximum_block_size)
-         (credit_interest_rate) 
-         );
-
-FC_REFLECT_TYPENAME( node::protocol::proof_of_work_type )
-
-FC_REFLECT( node::protocol::proof_of_work_operation, 
-         (work)
-         (new_owner_key)
-         (props) 
-         );
+   //============================//
+   // === Account Operations === //
+   //============================//
 
 FC_REFLECT( node::protocol::account_create_operation,
-         (fee)
-         (creator)
+         (signatory)
+         (registrar)
          (new_account_name)
+         (account_type)
+         (referrer)
+         (proxy)
+         (governance_account)
+         (recovery_account)
+         (details)
+         (url)
+         (json)
+         (json_private)
          (owner)
          (active)
          (posting)
          (secure_public_key)
-         (json) 
+         (connection_public_key)
+         (friend_public_key)
+         (companion_public_key)
+         (business_type)
+         (officer_vote_threshold)
+         (fee)
+         (delegation)
+         (extensions)
          );
 
 FC_REFLECT( node::protocol::account_update_operation,
+         (signatory)
          (account)
          (owner)
          (active)
          (posting)
          (secure_public_key)
-         (json) 
-         );
-
-FC_REFLECT( node::protocol::transfer_operation, 
-         (from)
-         (to)
-         (amount)
-         (memo) 
-         );
-
-FC_REFLECT( node::protocol::stake_asset_operation, 
-         (from)
-         (to)
-         (amount) 
-         );
-
-FC_REFLECT( node::protocol::unstake_asset_operation, 
-         (account)
-         (amount) 
-         );
-
-FC_REFLECT( node::protocol::unstake_asset_route_operation, 
-         (from_account)
-         (to_account)
-         (percent)
-         (auto_stake) 
-         );
-
-FC_REFLECT( node::protocol::witness_update_operation, 
-         (owner)
+         (connection_public_key)
+         (friend_public_key)
+         (companion_public_key)
+         (json)
+         (json_private)
+         (details)
          (url)
-         (block_signing_key)
-         (props)
-         (fee) 
+         (deleted)
+         (business_type)
+         (officer_vote_threshold)
          );
 
-FC_REFLECT( node::protocol::account_witness_vote_operation, 
+FC_REFLECT( node::protocol::account_membership_operation,
+         (signatory)
+         (account)
+         (membership_type)
+         (fee)
+         (months)
+         (interface)
+         (recurring)
+         );
+
+FC_REFLECT( node::protocol::account_vote_executive_operation,
+         (signatory)
+         (account)
+         (business_account)
+         (executive)
+         (role)
+         (approved)
+         );
+
+FC_REFLECT( node::protocol::account_vote_officer_operation,
+         (signatory)
+         (account)
+         (business_account)
+         (officer)
+         (approved)
+         );
+
+FC_REFLECT( node::protocol::account_member_request_operation,
+         (signatory)
+         (account)
+         (business_account)
+         (message)
+         (requested)
+         );
+
+FC_REFLECT( node::protocol::account_member_invite_operation,
+         (signatory)
+         (account)
+         (business_account)
+         (member)
+         (message)
+         (encrypted_business_key)
+         (invited)
+         );
+
+FC_REFLECT( node::protocol::account_accept_request_operation,
+         (signatory)
+         (account)
+         (business_account)
+         (member)
+         (encrypted_business_key)
+         (accepted)
+         );
+
+FC_REFLECT( node::protocol::account_accept_invite_operation,
+         (signatory)
+         (account)
+         (business_account)
+         (accepted)
+         );
+
+FC_REFLECT( node::protocol::account_remove_member_operation,
+         (signatory)
+         (account)
+         (business_account)
+         (member)
+         );
+
+FC_REFLECT( node::protocol::account_update_list_operation,
+         (signatory)
+         (account)
+         (listed_account)
+         (listed_asset)
+         (blacklisted)
+         (whitelisted)
+         );
+
+FC_REFLECT( node::protocol::account_witness_vote_operation,
+         (signatory)
          (account)
          (witness)
          (approve) 
          );
 
 FC_REFLECT( node::protocol::account_update_proxy_operation, 
+         (signatory)
          (account)
          (proxy) 
          );
 
-FC_REFLECT( node::protocol::comment_operation, 
-         (parent_author)
-         (parent_permlink)
+FC_REFLECT( node::protocol::request_account_recovery_operation, 
+         (signatory)
+         (recovery_account)
+         (account_to_recover)
+         (new_owner_authority)
+         (extensions) 
+         );
+
+FC_REFLECT( node::protocol::recover_account_operation, 
+         (signatory)
+         (account_to_recover)
+         (new_owner_authority)
+         (recent_owner_authority)
+         (extensions) 
+         );
+
+FC_REFLECT( node::protocol::reset_account_operation, 
+         (signatory)
+         (reset_account)
+         (account_to_reset)
+         (new_owner_authority) 
+         );
+
+FC_REFLECT( node::protocol::set_reset_account_operation, 
+         (signatory)
+         (account)
+         (current_reset_account)
+         (reset_account)
+         (days)
+         );
+
+FC_REFLECT( node::protocol::change_recovery_account_operation, 
+         (signatory)
+         (account_to_recover)
+         (new_recovery_account)
+         (extensions) 
+         );
+
+FC_REFLECT( node::protocol::decline_voting_rights_operation, 
+         (signatory)
+         (account) 
+         );
+
+FC_REFLECT( node::protocol::connection_request_operation, 
+         (signatory)
+         (account)
+         (requested_account)
+         (connection_type)
+         (message)
+         (requested)
+         );       
+
+FC_REFLECT( node::protocol::connection_accept_operation, 
+         (signatory)
+         (account)
+         (requested_account)
+         (connection_id)
+         (connection_type)
+         (encrypted_key)
+         (connected)
+         );
+
+FC_REFLECT( node::protocol::account_follow_operation, 
+         (signatory)
+         (follower)
+         (following)
+         (details)
+         (interface)
+         (added)
+         (followed)
+         );
+
+FC_REFLECT( node::protocol::tag_follow_operation, 
+         (signatory)
+         (follower)
+         (tag)
+         (interface)
+         (added)
+         (followed)
+         );
+
+FC_REFLECT( node::protocol::activity_reward_operation, 
+         (signatory)
+         (account)
+         (permlink)
+         (view_id)
+         (vote_id)
+         (interface)
+         );
+
+   //===========================//
+   // === Network Operations ===//
+   //===========================//
+
+FC_REFLECT( node::protocol::update_network_officer_operation, 
+         (signatory)
+         (account)
+         (officer_type)
+         (details)
+         (url)
+         (json)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::network_officer_vote_operation, 
+         (signatory)
+         (account)
+         (network_officer)
+         (vote_rank)
+         (approved)
+         );
+
+FC_REFLECT( node::protocol::executive_officer_set, 
+         (CHIEF_EXECUTIVE_OFFICER)
+         (CHIEF_OPERATING_OFFICER)
+         (CHIEF_FINANCIAL_OFFICER)
+         (CHIEF_DEVELOPMENT_OFFICER)
+         (CHIEF_TECHNOLOGY_OFFICER)
+         (CHIEF_SECURITY_OFFICER)
+         (CHIEF_GOVERNANCE_OFFICER)
+         (CHIEF_MARKETING_OFFICER)
+         (CHIEF_DESIGN_OFFICER)
+         (CHIEF_ADVOCACY_OFFICER)
+         );
+
+FC_REFLECT( node::protocol::update_executive_board_operation, 
+         (signatory)
+         (account)
+         (executive)
+         (budget)
+         (details)
+         (url)
+         (json)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::executive_board_vote_operation, 
+         (signatory)
+         (account)
+         (executive_board)
+         (vote_rank)
+         (approved)
+         );
+
+FC_REFLECT( node::protocol::update_governance_operation, 
+         (signatory)
+         (account)
+         (details)
+         (url)
+         (json)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::subscribe_governance_operation, 
+         (signatory)
+         (account)
+         (governance_account)
+         (subscribe)
+         );
+
+FC_REFLECT( node::protocol::update_interface_operation, 
+         (signatory)
+         (account)
+         (details)
+         (url)
+         (json)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::update_supernode_operation, 
+         (signatory)
+         (account)
+         (details)
+         (url)
+         (node_api_endpoint)
+         (notification_api_endpoint)
+         (auth_api_endpoint)
+         (ipfs_endpoint)
+         (bittorrent_endpoint)
+         (json)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::create_community_enterprise_operation, 
+         (signatory)
+         (creator)
+         (enterprise_id)
+         (proposal_type)
+         (beneficiaries)
+         (milestones)
+         (investment)
+         (details)
+         (url)
+         (json)
+         (begin)
+         (duration)
+         (daily_budget)
+         (fee)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::claim_enterprise_milestone_operation, 
+         (signatory)
+         (creator)
+         (enterprise_id)
+         (milestone)
+         (details)
+         );
+
+FC_REFLECT( node::protocol::approve_enterprise_milestone_operation, 
+         (signatory)
+         (account)
+         (creator)
+         (enterprise_id)
+         (milestone)
+         (details)
+         (vote_rank)
+         (approved)
+         );
+
+   //=====================================//
+   // === Post and Comment Operations === //
+   //=====================================//
+
+
+FC_REFLECT( node::protocol::comment_operation,
+         (signatory)
          (author)
          (permlink)
          (title)
+         (post_type)
          (body)
+         (ipfs)
+         (magnet)
+         (language)
+         (board)
+         (privacy)
+         (public_key)
+         (reach)
+         (interface)
+         (rating)
+         (comment_price)
+         (premium_price)
+         (parent_author)
+         (parent_permlink)
+         (tags)
          (json) 
-         );
-
-FC_REFLECT( node::protocol::vote_operation, 
-         (voter)
-         (author)
-         (permlink)
-         (weight) 
-         );
-
-FC_REFLECT( node::protocol::custom_operation, 
-         (required_auths)
-         (id)
-         (data) 
-         );
-
-FC_REFLECT( node::protocol::custom_json_operation, 
-         (required_auths)
-         (required_posting_auths)
-         (id)
-         (json) 
-         );
-
-FC_REFLECT( node::protocol::limit_order_create_operation, 
-         (owner)
-         (orderid)
-         (amount_to_sell)
-         (exchange_rate)
-         (fill_or_kill)
-         (expiration) 
-         );
-
-FC_REFLECT( node::protocol::limit_order_cancel_operation, 
-         (owner)
-         (orderid) 
          );
 
 FC_REFLECT( node::protocol::beneficiary_route_type, 
@@ -3619,97 +3802,570 @@ FC_REFLECT( node::protocol::comment_options_operation,
          (extensions) 
          );
 
-FC_REFLECT( node::protocol::escrow_transfer_operation, 
+FC_REFLECT( node::protocol::message_operation,
+         (signatory)
+         (sender)
+         (recipient)
+         (message)
+         (id)
+         (time)
+         );
+
+FC_REFLECT( node::protocol::vote_operation,
+         (signatory)
+         (voter)
+         (author)
+         (permlink)
+         (weight)
+         (interface)
+         );
+
+FC_REFLECT( node::protocol::view_operation,
+         (signatory)
+         (viewer)
+         (author)
+         (permlink)
+         (interface)
+         (supernode)
+         (viewed)
+         );
+
+FC_REFLECT( node::protocol::share_operation,
+         (signatory)
+         (sharer)
+         (author)
+         (permlink)
+         (interface)
+         (board)
+         (tag)
+         (shared)
+         );
+
+FC_REFLECT( node::protocol::moderation_tag_operation,
+         (signatory)
+         (moderator)
+         (author)
+         (permlink)
+         (tags)
+         (rating)
+         (details)
+         (interface)
+         (filter)
+         (applied)
+         );
+
+   //==========================//
+   // === Board Operations === //
+   //==========================//
+
+FC_REFLECT( node::protocol::board_create_operation,
+         (signatory)
+         (founder)
+         (name)
+         (board_type)
+         (board_privacy)
+         (board_public_key)
+         (json)
+         (json_private)
+         (details)
+         (url)
+         );
+
+FC_REFLECT( node::protocol::board_update_operation,
+         (signatory)
+         (account)
+         (board)
+         (board_type)
+         (board_privacy)
+         (board_public_key)
+         (json)
+         (json_private)
+         (details)
+         (url)
+         );
+
+FC_REFLECT( node::protocol::board_add_mod_operation,
+         (signatory)
+         (account)
+         (board)
+         (moderator)
+         (added)
+         );
+
+FC_REFLECT( node::protocol::board_add_admin_operation,
+         (signatory)
+         (account)
+         (board)
+         (admin)
+         (added)
+         );
+
+FC_REFLECT( node::protocol::board_vote_mod_operation,
+         (signatory)
+         (account)
+         (board)
+         (moderator)
+         (vote_rank)
+         (approved)
+         );
+
+FC_REFLECT( node::protocol::board_transfer_ownership_operation,
+         (signatory)
+         (account)
+         (board)
+         (new_founder)
+         );
+
+FC_REFLECT( node::protocol::board_join_request_operation,
+         (signatory)
+         (account)
+         (board)
+         (message)
+         (requested)
+         );
+
+FC_REFLECT( node::protocol::board_join_invite_operation,
+         (signatory)
+         (account)
+         (member)
+         (board)
+         (message)
+         (encrypted_board_key)
+         (invited)
+         );
+
+FC_REFLECT( node::protocol::board_join_accept_operation,
+         (signatory)
+         (account)
+         (member)
+         (board)
+         (encrypted_board_key)
+         (accepted)
+         );
+
+FC_REFLECT( node::protocol::board_invite_accept_operation,
+         (signatory)
+         (account)
+         (board)
+         (accepted)
+         );
+
+FC_REFLECT( node::protocol::board_remove_member_operation,
+         (signatory)
+         (account)
+         (member)
+         (board)
+         );
+
+FC_REFLECT( node::protocol::board_blacklist_operation,
+         (signatory)
+         (account)
+         (member)
+         (board)
+         (blacklisted)
+         );
+
+FC_REFLECT( node::protocol::board_blacklist_operation,
+         (signatory)
+         (account)
+         (board)
+         (interface)
+         (subscribed)
+         (filtered)
+         );
+
+   //================================//
+   // === Advertising Operations === //
+   //================================//
+
+FC_REFLECT( node::protocol::ad_creative_operation,
+         (signatory)
+         (author)
+         (format_type)
+         (creative_id)
+         (objective)
+         (creative)
+         (json)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::ad_campaign_operation,
+         (signatory)
+         (account)
+         (campaign_id)
+         (budget)
+         (begin)
+         (end)
+         (json)
+         (agents)
+         (interface)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::ad_inventory_operation,
+         (signatory)
+         (provider)
+         (inventory_id)
+         (metric)
+         (min_price)
+         (inventory)
+         (json)
+         (audience)
+         (agents)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::ad_audience_operation,
+         (signatory)
+         (account)
+         (audience_id)
+         (json)
+         (audience)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::ad_bid_operation,
+         (signatory)
+         (bidder)
+         (bid_id)
+         (account)
+         (campaign_id)
+         (creative_id)
+         (provider)
+         (inventory_id)
+         (bid_price)
+         (inventory_requested)
+         (included_audiences)
+         (excluded_audiences)
+         (json)
+         (expiration)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::ad_bid_operation,
+         (signatory)
+         (account)
+         (bidder)
+         (bid_id)
+         (delivery_price)
+         (delivered)
+         (transactions)
+         );
+
+   //=============================//
+   // === Transfer Operations === //
+   //=============================//
+
+FC_REFLECT( node::protocol::transfer_operation,
+         (signatory)
          (from)
          (to)
          (amount)
-         (escrow_id)
-         (agent)
-         (fee)
-         (json)
-         (ratification_deadline)
-         (escrow_expiration) 
+         (memo)
          );
 
-FC_REFLECT( node::protocol::escrow_approve_operation, 
-         (from)
+FC_REFLECT( node::protocol::transfer_request_operation,
+         (signatory)
          (to)
-         (agent)
-         (who)
-         (escrow_id)
-         (approve) 
+         (from)
+         (amount)
+         (memo)
+         (request_id)
+         (expiration)
+         (requested)
          );
 
-FC_REFLECT( node::protocol::escrow_dispute_operation, 
+FC_REFLECT( node::protocol::transfer_accept_operation,
+         (signatory)
          (from)
          (to)
-         (agent)
-         (who)
-         (escrow_id) 
+         (request_id)
+         (accepted)
          );
 
-FC_REFLECT( node::protocol::escrow_release_operation, 
+FC_REFLECT( node::protocol::transfer_recurring_operation,
+         (signatory)
          (from)
          (to)
-         (agent)
-         (who)
-         (receiver)
-         (escrow_id)
+         (amount)
+         (transfer_id)
+         (begin)
+         (end)
+         (interval)
+         (memo)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::transfer_recurring_request_operation,
+         (signatory)
+         (to)
+         (from)
+         (amount)
+         (request_id)
+         (begin)
+         (end)
+         (interval)
+         (memo)
+         (expiration)
+         (requested)
+         );
+
+FC_REFLECT( node::protocol::transfer_recurring_accept_operation,
+         (signatory)
+         (from)
+         (to)
+         (request_id)
+         (accepted)
+         );
+
+   //============================//
+   // === Balance Operations === //
+   //============================//
+
+FC_REFLECT( node::protocol::claim_reward_balance_operation,
+         (signatory)
+         (account)
+         (reward)
+         );
+
+FC_REFLECT( node::protocol::stake_asset_operation,
+         (signatory)
+         (from)
+         (to)
          (amount) 
          );
 
-FC_REFLECT( node::protocol::request_account_recovery_operation, 
-         (recovery_account)
-         (account_to_recover)
-         (new_owner_authority)
-         (extensions) 
+FC_REFLECT( node::protocol::unstake_asset_operation, 
+         (signatory)
+         (from)
+         (to)
+         (amount) 
          );
 
-FC_REFLECT( node::protocol::recover_account_operation, 
-         (account_to_recover)
-         (new_owner_authority)
-         (recent_owner_authority)
-         (extensions) 
+FC_REFLECT( node::protocol::unstake_asset_route_operation, 
+         (signatory)
+         (from_account)
+         (to_account)
+         (percent)
+         (auto_stake)
          );
 
-FC_REFLECT( node::protocol::change_recovery_account_operation, 
-         (account_to_recover)
-         (new_recovery_account)
-         (extensions) 
+FC_REFLECT( node::protocol::transfer_to_savings_operation,
+         (signatory)
+         (from)
+         (to)
+         (amount)
+         (memo) 
          );
 
-FC_REFLECT( node::protocol::decline_voting_rights_operation, 
-         (account)
-         (decline) 
+FC_REFLECT( node::protocol::transfer_from_savings_operation, 
+         (signatory)
+         (from)
+         (request_id)
+         (to)
+         (amount)
+         (memo) 
          );
 
-FC_REFLECT( node::protocol::claim_reward_balance_operation, 
-         (account)
-         (reward) 
+FC_REFLECT( node::protocol::cancel_transfer_from_savings_operation, 
+         (signatory)
+         (from)
+         (request_id) 
          );
 
 FC_REFLECT( node::protocol::delegate_asset_operation, 
+         (signatory)
          (delegator)
          (delegatee)
          (asset) 
          );
 
-FC_REFLECT( node::protocol::asset_claim_fees_operation, 
-         (issuer)
-         (amount_to_claim)
-         (extensions) 
+   //===========================//
+   // === Escrow Operations === //
+   //===========================//
+
+FC_REFLECT( node::protocol::escrow_transfer_operation, 
+         (signatory)
+         (from)
+         (to)
+         (agent)
+         (escrow_id)
+         (amount)
+         (fee)
+         (ratification_deadline)
+         (escrow_expiration) 
+         (json)
          );
 
-FC_REFLECT( node::protocol::asset_claim_pool_operation, 
-         (issuer)
-         (symbol)
-         (amount_to_claim)
-         (extensions) 
+FC_REFLECT( node::protocol::escrow_approve_operation, 
+         (signatory)
+         (who)
+         (from)
+         (to)
+         (agent)
+         (escrow_id)
+         (approve) 
          );
+
+FC_REFLECT( node::protocol::escrow_dispute_operation, 
+         (signatory)
+         (who)
+         (from)
+         (to)
+         (agent)
+         (escrow_id) 
+         );
+
+FC_REFLECT( node::protocol::escrow_release_operation, 
+         (signatory)
+         (who)
+         (from)
+         (to)
+         (agent)
+         (receiver)
+         (escrow_id)
+         (amount) 
+         );
+
+   //============================//
+   // === Trading Operations === //
+   //============================//
+
+FC_REFLECT( node::protocol::limit_order_create_operation, 
+         (signatory)
+         (owner)
+         (order_id)
+         (amount_to_sell)
+         (exchange_rate)
+         (interface)
+         (expiration)
+         (fill_or_kill)
+         );
+
+FC_REFLECT( node::protocol::limit_order_cancel_operation, 
+         (signatory)
+         (owner)
+         (order_id) 
+         );
+
+FC_REFLECT( node::protocol::margin_order_create_operation, 
+         (signatory)
+         (owner)
+         (order_id)
+         (exchange_rate)
+         (collateral)
+         (amount_to_borrow)
+         (stop_loss_price)
+         (take_profit_price)
+         (limit_stop_loss_price)
+         (limit_take_profit_price)
+         (interface)
+         (expiration)
+         (fill_or_kill)
+         );
+
+FC_REFLECT( node::protocol::margin_order_close_operation, 
+         (signatory)
+         (owner)
+         (order_id)
+         (exchange_rate)
+         (force_close)
+         (fill_or_kill)
+         );
+
+FC_REFLECT( node::protocol::call_order_update_operation, 
+         (signatory)
+         (funding_account)
+         (delta_collateral)
+         (delta_debt)
+         (target_collateral_ratio)
+         (interface)
+         (extensions)
+         );
+
+FC_REFLECT( node::protocol::bid_collateral_operation, 
+         (signatory)
+         (bidder)
+         (additional_collateral)
+         (debt_covered)
+         (extensions)
+         );
+
+   //=========================//
+   // === Pool Operations === //
+   //=========================//
+
+FC_REFLECT( node::protocol::liquidity_pool_create_operation, 
+         (signatory)
+         (account)
+         (first_amount)
+         (second_amount)
+         );
+
+FC_REFLECT( node::protocol::liquidity_pool_exchange_operation, 
+         (signatory)
+         (account)
+         (amount)
+         (receive_asset)
+         (interface)
+         (limit_price)
+         (acquire)
+         );
+
+FC_REFLECT( node::protocol::liquidity_pool_fund_operation, 
+         (signatory)
+         (account)
+         (amount)
+         (pair_asset)
+         );
+
+FC_REFLECT( node::protocol::liquidity_pool_withdraw_operation, 
+         (signatory)
+         (account)
+         (amount)
+         (receive_asset)
+         );
+
+FC_REFLECT( node::protocol::credit_pool_collateral_operation, 
+         (signatory)
+         (account)
+         (amount)
+         );
+
+FC_REFLECT( node::protocol::credit_pool_borrow_operation, 
+         (signatory)
+         (account)
+         (amount)
+         (collateral)
+         (loan_id)
+         );
+
+FC_REFLECT( node::protocol::credit_pool_lend_operation, 
+         (signatory)
+         (account)
+         (amount)
+         );
+
+FC_REFLECT( node::protocol::credit_pool_withdraw_operation, 
+         (signatory)
+         (account)
+         (amount)
+         );
+
+   //==========================//
+   // === Asset Operations === //
+   //==========================//
 
 FC_REFLECT( node::protocol::asset_options,
+         (display_symbol)
+         (description)
+         (json)
+         (url)
          (max_supply)
+         (stake_intervals)
+         (unstake_intervals)
          (market_fee_percent)
+         (market_fee_share_percent)
          (max_market_fee)
          (issuer_permissions)
          (flags)
@@ -3718,7 +4374,12 @@ FC_REFLECT( node::protocol::asset_options,
          (blacklist_authorities)
          (whitelist_markets)
          (blacklist_markets)
-         (description)
+         (extensions)
+         );
+
+FC_REFLECT( node::protocol::currency_options,
+         (annual_issuance)
+         (block_producer_percent)
          (extensions)
          );
 
@@ -3732,58 +4393,85 @@ FC_REFLECT( node::protocol::bitasset_options,
          (extensions)
          );
 
+FC_REFLECT( node::protocol::equity_options,
+         (dividend_asset)
+         (dividend_share_percent)
+         (liquid_dividend_percent)
+         (staked_dividend_percent)
+         (savings_dividend_percent)
+         (liquid_voting_rights)
+         (staked_voting_rights)
+         (savings_voting_rights)
+         (min_active_time)
+         (min_balance)
+         (min_witnesses)
+         (boost_balance)
+         (boost_activity)
+         (boost_witnesses)
+         (boost_top)
+         (extensions)
+         );
+
+FC_REFLECT( node::protocol::credit_options,
+         (buyback_asset)
+         (buyback_share_percent)
+         (liquid_fixed_interest_rate)
+         (liquid_variable_interest_rate)
+         (staked_fixed_interest_rate)
+         (staked_variable_interest_rate)
+         (savings_fixed_interest_rate)
+         (savings_variable_interest_rate)
+         (var_interest_range)
+         (extensions)
+         );
+
+FC_REFLECT( node::protocol::unique_options,
+         (annual_issuance)
+         (block_producer_percent)
+         (extensions)
+         );
+
+FC_REFLECT( node::protocol::gateway_options,
+         (annual_issuance)
+         (block_producer_percent)
+         (extensions)
+         );
+
 FC_REFLECT( node::protocol::asset_create_operation,
+         (signatory)
          (issuer)
          (symbol)
-         (precision)
+         (asset_type)
+         (coin_liquidity)
+         (usd_liquidity)
+         (credit_liquidity)
          (common_options)
+         (currency_opts)
          (bitasset_opts)
+         (equity_opts)
+         (credit_opts)
+         (gateway_opts)
+         (unique_opts)
          (extensions)
          );
 
 FC_REFLECT( node::protocol::asset_update_operation,
+         (signatory)
          (issuer)
          (asset_to_update)
          (new_issuer)
          (new_options)
+         (new_currency_opts)
+         (new_bitasset_opts)
+         (new_equity_opts)
+         (new_credit_opts)
+         (new_gateway_opts)
+         (new_unique_opts)
          (extensions)
-         );
-
-FC_REFLECT( node::protocol::asset_update_issuer_operation,
-         (issuer)
-         (asset_to_update)
-         (new_issuer)
-         (extensions)
-         );
-
-FC_REFLECT( node::protocol::asset_update_feed_producers_operation,
-         (issuer)
-         (asset_to_update)
-         (new_feed_producers)
-         (extensions)
-         );
-
-FC_REFLECT( node::protocol::asset_publish_feed_operation, 
-         (publisher)
-         (symbol)
-         (feed)
-         (extensions) 
-         );
-
-FC_REFLECT( node::protocol::asset_settle_operation, 
-         (account)
-         (amount)
-         (extensions) 
-         );
-
-FC_REFLECT( node::protocol::asset_global_settle_operation, 
-         (issuer)
-         (asset_to_settle)
-         (settle_price)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::asset_issue_operation, 
+         (signatory)
          (issuer)
          (asset_to_issue)
          (issue_to_account)
@@ -3792,14 +4480,155 @@ FC_REFLECT( node::protocol::asset_issue_operation,
          );
 
 FC_REFLECT( node::protocol::asset_reserve_operation, 
+         (signatory)
          (payer)
          (amount_to_reserve)
          (extensions) 
          );
 
+FC_REFLECT( node::protocol::asset_claim_fees_operation, 
+         (signatory)
+         (issuer)
+         (amount_to_claim)
+         (extensions) 
+         );
+
+FC_REFLECT( node::protocol::asset_claim_pool_operation, 
+         (signatory)
+         (issuer)
+         (symbol)
+         (amount_to_claim)
+         (extensions) 
+         );
+
 FC_REFLECT( node::protocol::asset_fund_fee_pool_operation, 
+         (signatory)
          (from_account)
          (symbol)
+         (pool_amount)
+         (extensions) 
+         );
+
+FC_REFLECT( node::protocol::asset_update_issuer_operation,
+         (signatory)
+         (issuer)
+         (asset_to_update)
+         (new_issuer)
+         (extensions)
+         );
+
+FC_REFLECT( node::protocol::asset_update_feed_producers_operation,
+         (signatory)
+         (issuer)
+         (asset_to_update)
+         (new_feed_producers)
+         (extensions)
+         );
+
+FC_REFLECT( node::protocol::asset_publish_feed_operation, 
+         (signatory)
+         (publisher)
+         (symbol)
+         (feed)
+         (extensions) 
+         );
+
+FC_REFLECT( node::protocol::asset_settle_operation, 
+         (signatory)
+         (account)
          (amount)
          (extensions) 
+         );
+
+FC_REFLECT( node::protocol::asset_global_settle_operation, 
+         (signatory)
+         (issuer)
+         (asset_to_settle)
+         (settle_price)
+         (extensions) 
+         );
+
+   //=====================================//
+   // === Block Production Operations === //
+   //=====================================//
+
+FC_REFLECT( node::protocol::witness_update_operation, 
+         (signatory)
+         (owner)
+         (details)
+         (url)
+         (json)
+         (latitude)
+         (longtiude)
+         (block_signing_key)
+         (props)
+         (active)
+         (fee) 
+         );
+
+FC_REFLECT( node::protocol::proof_of_work,
+         (input)
+         (pow_summary) 
+         );
+
+FC_REFLECT( node::protocol::proof_of_work_input,
+         (worker_account)
+         (prev_block)
+         (nonce) 
+         );
+
+FC_REFLECT( node::protocol::equihash_proof_of_work,
+         (input)
+         (proof)
+         (prev_block)
+         (pow_summary) 
+         );
+
+FC_REFLECT_TYPENAME( node::protocol::proof_of_work_type )
+
+FC_REFLECT( node::protocol::proof_of_work_operation,
+         (work)
+         (new_owner_key)
+         (props) 
+         );
+
+
+FC_REFLECT( node::protocol::verify_block_operation,
+         (signatory)
+         (producer)
+         (block_id)
+         (block_height)
+         );
+
+FC_REFLECT( node::protocol::commit_block_operation,
+         (signatory)
+         (producer)
+         (block_id)
+         (block_height)
+         (verifications)
+         (commitment_stake)
+         );
+
+FC_REFLECT( node::protocol::producer_violation_operation,
+         (signatory)
+         (reporter)
+         (first_trx)
+         (second_trx)
+         );
+
+   //===========================//
+   // === Custom Operations === //
+   //===========================//
+
+FC_REFLECT( node::protocol::custom_operation, 
+         (required_auths)
+         (id)
+         (data) 
+         );
+
+FC_REFLECT( node::protocol::custom_json_operation, 
+         (required_auths)
+         (required_posting_auths)
+         (id)
+         (json) 
          );

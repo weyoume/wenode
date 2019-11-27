@@ -1250,11 +1250,11 @@ namespace node { namespace chain {
 
          id_type                           id;
 
-         tag_name_type                     tag;                  // Name of the account.
+         tag_name_type                     tag;              // Name of the account.
 
-         flat_set< account_name_type >     followers;            // Accounts that follow this account. 
+         flat_set< account_name_type >     followers;        // Accounts that follow this account. 
 
-         time_point                        last_update;          // Last time that the tag changed its following sets.
+         time_point                        last_update;      // Last time that the tag changed its following sets.
 
          share_type                        adjacency_value( const tag_following_object& t )const
          {

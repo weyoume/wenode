@@ -396,6 +396,8 @@ namespace node { namespace chain {
 
          shared_string                  details;          // Explaination as to what rule the post is in contravention of and why it was tagged.
 
+         account_name_type              interface;        // Interface account used for the transaction
+
          bool                           filter;           // True if the post should be filtered by the board or governance address subscribers. 
 
          time_point                     last_update;      // Time the comment tag was last edited by the author.

@@ -1143,7 +1143,7 @@ struct bitasset_data_api_obj
    price                                                   current_maintenance_collateralization;   // Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
    int64_t                                                 force_settled_volume;                    // This is the volume of this asset which has been force-settled this maintanence interval
    price                                                   settlement_price;      // Price at which force settlements of a black swanned asset will occur
-   int64_t                                                 settlement_fund;       // Amount of collateral which is available for force settlement
+   asset                                                   settlement_fund;       // Amount of collateral which is available for force settlement
    bool                                                    asset_cer_updated;       // Track whether core_exchange_rate in corresponding asset_object has updated
    bool                                                    feed_cer_updated;// Track whether core exchange rate in current feed has updated
    fc::microseconds                                        feed_lifetime;                            // Time before a price feed expires

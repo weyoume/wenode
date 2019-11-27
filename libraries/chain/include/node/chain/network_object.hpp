@@ -233,7 +233,7 @@ namespace node { namespace chain {
 
          void                           decay_weights( const dynamic_global_property_object& props )
          {
-            recent_view_weight -= ( ( recent_view_weight * ( props.time - last_update_time ).to_seconds() ) / props.supernode_decay_time.to_seconds() );
+            recent_view_weight -= ( ( recent_view_weight * ( props.time - last_update_time ).to_seconds() ) / props.median_props.supernode_decay_time.to_seconds() );
             daily_active_users -= ( ( daily_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(1).to_seconds() );
             monthly_active_users -= ( ( monthly_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(30).to_seconds() );
             last_update_time = props.time;

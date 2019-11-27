@@ -344,17 +344,18 @@ namespace detail
    void witness_plugin_impl::on_block( const signed_block& b )
    {
       auto& db = _self.database();
-      int64_t max_block_size = db.get_dynamic_global_properties().maximum_block_size;
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      int64_t max_block_size = props.median_props.maximum_block_size;
 
       auto reserve_ratio_ptr = db.find( reserve_ratio_id_type() );
 
       if( BOOST_UNLIKELY( reserve_ratio_ptr == nullptr ) )
       {
-          db.create<reserve_ratio_object>([&](reserve_ratio_object &r) 
+          db.create< reserve_ratio_object >([&]( reserve_ratio_object &r ) 
           {
             r.average_block_size = 0;
             r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
-            r.max_virtual_bandwidth = (uint128_t(MAX_BLOCK_SIZE * MAX_RESERVE_RATIO) * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS) / uint128_t(BLOCK_INTERVAL.count());
+            r.max_virtual_bandwidth = ( uint128_t( MAX_BLOCK_SIZE * MAX_RESERVE_RATIO ) * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS ) / uint128_t( BLOCK_INTERVAL.count() );
           });
       }
       else
@@ -377,7 +378,7 @@ namespace detail
             * different from past observed behavior and make small adjustments when
             * behavior is within expected norms.
             */
-            if( db.head_block_num() % 20 == 0 )
+            if( props.head_block_num % BLOCKS_PER_MINUTE == 0 )
             {
                int64_t distance = ( ( r.average_block_size - ( max_block_size / 4 ) ) * DISTANCE_CALC_PRECISION )
                   / ( max_block_size / 4 );
@@ -389,7 +390,9 @@ namespace detail
 
                   // We do not want the reserve ratio to drop below 1
                   if( r.current_reserve_ratio < RESERVE_RATIO_PRECISION )
+                  {
                      r.current_reserve_ratio = RESERVE_RATIO_PRECISION;
+                  }
                }
                else
                {
@@ -397,7 +400,9 @@ namespace detail
                   r.current_reserve_ratio += std::max( RESERVE_RATIO_MIN_INCREMENT, ( r.current_reserve_ratio * distance ) / ( distance - DISTANCE_CALC_PRECISION ) );
 
                   if( r.current_reserve_ratio > MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION )
+                  {
                      r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
+                  }
                }
 
                if( old_reserve_ratio != r.current_reserve_ratio )
@@ -577,7 +582,9 @@ void witness_plugin::plugin_startup()
       if( _production_enabled )
       {
          if( d.head_block_num() == 0 )
+         {
             new_chain_banner(d);
+         }
          _production_skip_flags |= node::chain::database::skip_undo_history_check;
       }
       schedule_production_loop();

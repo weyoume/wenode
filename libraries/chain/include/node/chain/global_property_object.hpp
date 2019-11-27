@@ -2,8 +2,10 @@
 #include <fc/uint128.hpp>
 
 #include <node/chain/node_object_types.hpp>
-
+#include <node/protocol/types.hpp>
+#include <node/protocol/config.hpp>
 #include <node/protocol/asset.hpp>
+#include <node/protocol/chain_properties.hpp>
 
 namespace node { namespace chain {
 
@@ -11,12 +13,7 @@ namespace node { namespace chain {
    using node::protocol::price;
 
    /**
-    * @class dynamic_global_property_object
-    * @brief Maintains global state information
-    * @ingroup object
-    * @ingroup implementation
-    *
-    * This is an implementation detail. The values here are calculated during normal chain operations and reflect the
+    * The values here are calculated during normal chain operations and reflect the
     * current values of global blockchain properties.
     */
    class dynamic_global_property_object : public object< dynamic_global_property_object_type, dynamic_global_property_object>
@@ -50,13 +47,7 @@ namespace node { namespace chain {
 
          time_point             next_maintenance_time;                                    // Time in microseconds of the next maintenance period.
 
-         asset                  accumulated_network_revenue = asset(0, SYMBOL_COIN);      // Counter for the total of all core assets burned as network revenue. 
-
-         asset                  membership_base_price = MEMBERSHIP_FEE_BASE;              // The price for standard membership per month.
-
-         asset                  membership_mid_price = MEMBERSHIP_FEE_MID;                // The price for Mezzanine membership per month.
-
-         asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                // The price for top level membership per month.
+         asset                  accumulated_network_revenue = asset(0, SYMBOL_COIN);      // Counter for the total of all core assets burned as network revenue.        
 
          price                  current_median_equity_price;                              // The current price of Equity Asset in Coin asset.
 
@@ -66,31 +57,7 @@ namespace node { namespace chain {
 
          uint128_t              total_pow = 0;                                            // The total POW accumulated
 
-         uint16_t               credit_interest_rate = 0;                                 // The median witness elected interest rate that credit asset holders receive for lending to the protocol.
-
-         uint16_t               credit_open_ratio = CREDIT_OPEN_RATIO;                    // The minimum required collateralization ratio for a credit loan to be opened. 
-
-         uint16_t               credit_liquidation_ratio = CREDIT_LIQUIDATION_RATIO;      // The minimum permissible collateralization ratio before a loan is liquidated. 
-
-         uint16_t               credit_min_interest = CREDIT_MIN_INTEREST;                // The minimum component of credit pool interest rates. 
-
-         uint16_t               credit_variable_interest = CREDIT_VARIABLE_INTEREST;      // The variable component of credit pool interest rates, applied at equal base and borrowed balances.
-
-         uint16_t               market_max_credit_ratio = MARKET_MAX_CREDIT_RATIO;        // The maximum percentage of core asset liquidity balances that can be loaned.
-
-         uint16_t               margin_open_ratio = MARGIN_OPEN_RATIO;                    // The minimum required collateralization ratio for a credit loan to be opened. 
-
-         uint16_t               margin_liquidation_ratio = MARGIN_LIQUIDATION_RATIO;      // The minimum permissible collateralization ratio before a loan is liquidated. 
-
-         uint32_t               maximum_block_size = 0;                                   // The current median witness elected maximum block size in bytes, limited to at least #MIN_BLOCK_SIZE_LIMIT. 
-
          uint64_t               current_aslot = 0;                                        // The current absolute slot number. Equal to the total number of slots since genesis.
-
-         uint64_t               maximum_asset_whitelist_authorities = MAX_ASSET_WHITELIST_AUTHORITIES;  // The maximum amount of whitelisted or blacklisted authorities for user issued assets 
-
-         uint8_t                max_stake_intervals = MAX_ASSET_STAKE_INTERVALS;          // Maximum weeks that an asset can stake over.
-
-         uint8_t                max_unstake_intervals = MAX_ASSET_UNSTAKE_INTERVALS;      // Maximum weeks that an asset can unstake over.
 
          fc::uint128_t          recent_slots_filled;                                      // parameter used to compute witness participation.
 
@@ -100,45 +67,9 @@ namespace node { namespace chain {
 
          uint32_t               account_count = 0;                                        // The total number of accounts created. 
 
-         fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;
-
-         fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;        
-
-         uint32_t               vote_reserve_rate = VOTE_RESERVE_RATE;                    // The number of votes regenerated per day.
-
-         uint32_t               view_reserve_rate = VIEW_RESERVE_RATE;                    // The number of views regenerated per day.
-
-         uint32_t               share_reserve_rate = SHARE_RESERVE_RATE;                  // The number of shares regenerated per day.
-
-         uint32_t               comment_reserve_rate = COMMENT_RESERVE_RATE;              // The number of comments regenerated per day.
-
-         fc::microseconds       vote_recharge_time = VOTE_RECHARGE_TIME;                  // Time taken to fully recharge voting power.
-
-         fc::microseconds       view_recharge_time = VIEW_RECHARGE_TIME;                  // Time taken to fully recharge viewing power.
-
-         fc::microseconds       share_recharge_time = SHARE_RECHARGE_TIME;                // Time taken to fully recharge sharing power.
-
-         fc::microseconds       comment_recharge_time = COMMENT_RECHARGE_TIME;            // Time taken to fully recharge commenting power.
-
-         fc::microseconds       curation_auction_decay_time = CURATION_AUCTION_DECAY_TIME;// time of curation reward decay after a post is created. 
-
-         double                 vote_curation_decay = VOTE_CURATION_DECAY;                // Number of votes for the half life of voting curation reward decay.
-
-         double                 view_curation_decay = VIEW_CURATION_DECAY;                // Number of views for the half life of viewer curation reward decay.
-
-         double                 share_curation_decay = SHARE_CURATION_DECAY;              // Number of shares for the half life of sharing curation reward decay.
-
-         double                 comment_curation_decay = COMMENT_CURATION_DECAY;          // Number of comments for the half life of comment curation reward decay.
-
-         fc::microseconds       supernode_decay_time = SUPERNODE_DECAY_TIME;              // Amount of time to average the supernode file weight over. 
-
-         uint16_t               enterprise_vote_percent_required = VOTE_THRESHOLD_PERCENT;   // Percentage of total voting power required to approve enterprise milestones. 
-
-         uint16_t               executive_types_amount = EXECUTIVE_TYPES_AMOUNT;          // Number of roles on a business account executive board.
-
          uint32_t               dynamic_flags = 0;
 
-         
+         chain_properties       median_props;
 
          enum dynamic_flag_bits
          {
@@ -175,8 +106,6 @@ FC_REFLECT( node::chain::dynamic_global_property_object,
          (next_maintenance_time)
          (total_pow)
          (num_pow_witnesses)
-         (credit_interest_rate)
-         (maximum_block_size)
          (current_aslot)
          (recent_slots_filled)
          (participation_count)

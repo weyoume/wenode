@@ -90,12 +90,11 @@
 #define EXECUTIVE_BOARD_ACTIVE_SET            (5)
 #define MIN_EXEC_CREDIT_PRICE                 price( asset( 9, SYMBOL_USD), asset( 10, SYMBOL_CREDIT))     // $0.90 minimum credit price to pay executive budgets
 #define SUPERNODE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)          // Distributes supernode rewards once every day.
-#define SUPERNODE_DECAY_RATE                  fc::days(7)               // Averages supernode file weight over 7 days. 
+#define SUPERNODE_DECAY_TIME                  fc::days(7)               // Averages supernode file weight over 7 days. 
 #define VOTE_THRESHOLD_PERCENT                (10* PERCENT_1)           // Enterprise proposals require 10% of network voting power to approve milestones.
 #define VOTE_THRESHOLD_AMOUNT                 (5)                       // Enterprise proposals require 10% of network voting power to approve milestones.
 #define SET_UPDATE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
 #define ENTERPRISE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)
-
 
 #define VOTE_CHANGE_LOCKOUT_PERIOD      fc::seconds(1)        // 1 second
 #define UPVOTE_LOCKOUT_TIME             fc::hours(1)          // Can't vote on a post in the last 1 hour before payout.
@@ -117,8 +116,7 @@
 #define COMMENT_CURATION_DECAY          (100)                 // Curation reward decays by 50% per 100 comments.
 
 #define MIN_ACTIVITY_WITNESSES           (10)                 // Accounts need at least 10 witness votes to claim activity reward. 
-
-#define MIN_ACCOUNT_CREATION_FEE         (1 * BLOCKCHAIN_PRECISION)
+#define MIN_ACCOUNT_CREATION_FEE         asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN )
 
 #define OWNER_AUTH_RECOVERY_PERIOD                       fc::days(30)
 #define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD       fc::days(1)
@@ -161,7 +159,6 @@
 #define MIN_SHARE_INTERVAL_SEC          1
 #define VOTE_DUST_THRESHOLD             (0)
 #define VOTE_CHANGE_LOCKOUT_PERIOD      (60*10) /// 10 minutes
-#define MIN_ACCOUNT_CREATION_FEE        (1 * BLOCKCHAIN_PRECISION)
 
 #define MIN_ROOT_COMMENT_INTERVAL       (fc::seconds(60)) // 60 seconds
 #define MIN_REPLY_INTERVAL              (fc::seconds(15)) // 15 seconds
@@ -302,6 +299,7 @@
 #define MAX_GOV_ACCOUNTS                       5
 #define MAX_EXEC_VOTES                         10
 #define MAX_OFFICER_VOTES                      150
+#define MAX_EXEC_BUDGET                        asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT )
 
 #define COLLATERAL_RATIO_DENOM                 (1000)
 #define MIN_COLLATERAL_RATIO                   (1001)      // lower than this could result in divide by 0

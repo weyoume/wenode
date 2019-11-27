@@ -69,17 +69,17 @@ void database::process_membership_updates()
             }
             case STANDARD_MEMBERSHIP:
             {
-               monthly_fee = props.membership_base_price;
+               monthly_fee = props.median_props.membership_base_price;
                break; 
             }
             case MID_MEMBERSHIP:
             {
-               monthly_fee = props.membership_mid_price;
+               monthly_fee = props.median_props.membership_mid_price;
                break; 
             }
             case TOP_MEMBERSHIP:
             {
-               monthly_fee = props.membership_top_price;
+               monthly_fee = props.median_props.membership_top_price;
                break; 
             }
             default:

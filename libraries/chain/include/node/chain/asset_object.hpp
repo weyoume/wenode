@@ -225,13 +225,6 @@ namespace node { namespace chain {
             fee_pool += delta.amount;
          }
 
-         void asset_dynamic_data_object::adjust_pending_supply(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
-            pending_supply += delta.amount;
-            total_supply += delta.amount;
-         }
-
          void asset_dynamic_data_object::adjust_accumulated_fees(const asset& delta)
          {
             assert(delta.symbol == symbol);
@@ -258,9 +251,9 @@ namespace node { namespace chain {
 
          account_name_type                             issuer;                                  // The account name of the issuer 
 
-         asset_symbol_type                             backing_asset = SYMBOL_COIN;             // The collateral backing asset of the bitasset
+         asset_symbol_type                             backing_asset;                           // The collateral backing asset of the bitasset
 
-         optional<bitasset_options>                    options;                                 // The tunable options for BitAssets are stored in this field.
+         bitasset_options                              options;                                 // The tunable options for BitAssets are stored in this field.
 
          flat_map<account_name_type, pair<time_point,price_feed>>  feeds;                       // Feeds published for this asset. 
 
@@ -279,45 +272,61 @@ namespace node { namespace chain {
           *  immediately when requested, using the settlement price and fund.
           */
          
-         price                                         settlement_price;      // Price at which force settlements of a black swanned asset will occur
+         price                                         settlement_price;                        // Price at which force settlements of a black swanned asset will occur
          
-         share_type                                    settlement_fund;       // Amount of collateral which is available for force settlement
+         asset                                         settlement_fund;                         // Amount of collateral which is available for force settlement
 
-         bool                                          asset_cer_updated = false;       // Track whether core_exchange_rate in corresponding asset_object has updated
+         bool                                          asset_cer_updated = false;               // Track whether core_exchange_rate in corresponding asset_object has updated
 
-         bool                                          feed_cer_updated = false;// Track whether core exchange rate in current feed has updated
+         bool                                          feed_cer_updated = false;                // Track whether core exchange rate in current feed has updated
 
-         share_type                                    max_force_settlement_volume(share_type current_supply)const;    // Calculate the maximum force settlement volume per maintenance interval, given the current share supply
+         share_type                                    max_force_settlement_volume( share_type total_supply )const    // Calculate the maximum force settlement volume per maintenance interval, given the current share supply     
+         {
+            if( options.maximum_force_settlement_volume == 0 )
+            {
+               return 0;
+            }
+            
+            if( options.maximum_force_settlement_volume == PERCENT_100 )
+            {
+               return total_supply + force_settled_volume;
+            }
 
-         bool                                          has_settlement()const { return !settlement_price.is_null(); }   // True if there has been a black swan
+            fc::uint128 volume = total_supply.value + force_settled_volume.value;
+            volume *= options.maximum_force_settlement_volume;
+            volume /= PERCENT_100;
+            return volume.to_uint64();
+         }
 
-         bool need_to_update_cer() const
+         bool                                          has_settlement()const
+         { 
+            return !settlement_price.is_null();     // True if there has been a black swan
+         }   
+
+         bool need_to_update_cer()const    // Whether need to update core_exchange_rate in asset_object
          {
             return ( ( feed_cer_updated || asset_cer_updated ) && !current_feed.core_exchange_rate.is_null() );
-         }       // Whether need to update core_exchange_rate in asset_object
+         }
 
-         /// The time when @ref current_feed would expire
          time_point feed_expiration_time()const
          {
-            
-            return current_feed_publication_time + *options.feed_lifetime;
+            return current_feed_publication_time + options.feed_lifetime;    // The time when current_feed would expire
          }
 
          bool feed_is_expired(time_point current_time)const
-         { return feed_expiration_time() <= current_time; }
+         { 
+            return feed_expiration_time() <= current_time; 
+         }
 
-         /******
-          * @brief calculate the median feed
-          *
-          * This calculates the median feed from @ref feeds, feed_lifetime
-          * in @ref options, and the given parameters.
+         /*
+          * Calculates the median feed from feeds, feed_lifetime
+          * in options, and the given parameters.
           * It may update the current_feed_publication_time, current_feed and
           * current_maintenance_collateralization member variables.
-          *
           * @param current_time the current time to use in the calculations
           * @param next_maintenance_time the next chain maintenance time
           */
-         void update_median_feeds(time_point current_time, time_point next_maintenance_time);
+         void update_median_feeds( time_point current_time, time_point next_maintenance_time );
    };
 
 

@@ -342,14 +342,6 @@ void database_fixture::fund(
             }
          });
 
-         db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
-         {
-            if( amount.symbol == SYMBOL_COIN )
-               gpo.current_supply += amount;
-            else if( amount.symbol == SYMBOL_USD )
-               gpo.current_USD_supply += amount;
-         });
-
          if( amount.symbol == SYMBOL_USD )
          {
             const auto& median_feed = db.get_feed_history();

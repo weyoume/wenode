@@ -271,6 +271,10 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( business_account );
+      validate_account_name( member );
+      FC_ASSERT( account != member, 
+         "Account: ${a} cannot invite itself to become a member of a Business account: ${b}.", 
+      ("a", member)("b", business_account));
       FC_ASSERT( message.size() <= MAX_STRING_LENGTH,
          "Message is too long." );
       FC_ASSERT( encrypted_business_key.size() <= MAX_STRING_LENGTH,
