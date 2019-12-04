@@ -38,13 +38,17 @@ class account_bandwidth_object : public object< account_bandwidth_object_type, a
 
       account_bandwidth_object() {}
 
-      id_type           id;
+      id_type                id;
 
-      account_name_type account;
-      bandwidth_type    type;
-      share_type        average_bandwidth;
-      share_type        lifetime_bandwidth;
-      time_point        last_bandwidth_update;
+      account_name_type      account;
+
+      bandwidth_type         type;
+
+      share_type             average_bandwidth;
+
+      share_type             lifetime_bandwidth;
+
+      time_point             last_bandwidth_update;
 };
 
 typedef oid< account_bandwidth_object > account_bandwidth_id_type;
@@ -61,9 +65,11 @@ class content_edit_lock_object : public object< content_edit_lock_object_type, c
 
       content_edit_lock_object() {}
 
-      id_type           id;
-      account_name_type account;
-      time_point        lock_time;
+      id_type                 id;
+
+      account_name_type       account;
+      
+      time_point              lock_time;
 };
 
 typedef oid< content_edit_lock_object > content_edit_lock_id_type;
@@ -156,16 +162,36 @@ typedef multi_index_container <
 
 } } // node::witness
 
-FC_REFLECT_ENUM( node::witness::bandwidth_type, (post)(forum)(market) )
+FC_REFLECT_ENUM( node::witness::bandwidth_type, 
+         (post)
+         (forum)
+         (market)
+         );
 
 FC_REFLECT( node::witness::account_bandwidth_object,
-            (id)(account)(type)(average_bandwidth)(lifetime_bandwidth)(last_bandwidth_update) )
-CHAINBASE_SET_INDEX_TYPE( node::witness::account_bandwidth_object, node::witness::account_bandwidth_index )
+         (id)
+         (account)
+         (type)
+         (average_bandwidth)
+         (lifetime_bandwidth)
+         (last_bandwidth_update)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::witness::account_bandwidth_object, node::witness::account_bandwidth_index );
 
 FC_REFLECT( node::witness::content_edit_lock_object,
-            (id)(account)(lock_time) )
-CHAINBASE_SET_INDEX_TYPE( node::witness::content_edit_lock_object, node::witness::content_edit_lock_index )
+         (id)
+         (account)
+         (lock_time)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::witness::content_edit_lock_object, node::witness::content_edit_lock_index );
 
 FC_REFLECT( node::witness::reserve_ratio_object,
-            (id)(average_block_size)(current_reserve_ratio)(max_virtual_bandwidth) )
-CHAINBASE_SET_INDEX_TYPE( node::witness::reserve_ratio_object, node::witness::reserve_ratio_index )
+         (id)
+         (average_block_size)
+         (current_reserve_ratio)
+         (max_virtual_bandwidth)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::witness::reserve_ratio_object, node::witness::reserve_ratio_index );

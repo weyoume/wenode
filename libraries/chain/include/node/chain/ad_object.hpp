@@ -498,14 +498,16 @@ namespace node { namespace chain {
 
 FC_REFLECT( node::chain::ad_creative_object,
          (id)
-         (author)
+         (account)
          (creative_id)
-         (format_type)  
+         (format_type) 
+         (author)
          (objective)
          (creative)
          (json)
          (created)
          (last_updated)
+         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::ad_creative_object, node::chain::ad_creative_index );
@@ -515,12 +517,15 @@ FC_REFLECT( node::chain::ad_campaign_object,
          (account)
          (campaign_id)  
          (budget)
+         (total_bids)
          (begin)
          (end)
          (json)
          (agents)
+         (interface)
          (created)
          (last_updated)
+         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::ad_campaign_object, node::chain::ad_campaign_index );
@@ -530,13 +535,16 @@ FC_REFLECT( node::chain::ad_inventory_object,
          (provider)
          (inventory_id)  
          (metric)
+         (audience_id)
          (min_price)
          (inventory)
          (remaining)
          (json)
-         (audience)
+         (agents)
          (created)
          (last_updated)
+         (expiration)
+         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::ad_inventory_object, node::chain::ad_inventory_index );
@@ -549,6 +557,7 @@ FC_REFLECT( node::chain::ad_audience_object,
          (audience)
          (created)
          (last_updated)
+         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::ad_audience_object, node::chain::ad_audience_index );
@@ -556,11 +565,16 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::ad_audience_object, node::chain::ad_audie
 FC_REFLECT( node::chain::ad_bid_object,
          (id)
          (bidder)
-         (provider)
+         (bid_id)
+         (audience_id)
+         (account)
          (campaign_id)
+         (author)
+         (creative_id)
+         (provider)
          (inventory_id)
-         (metric)
          (bid_price)
+         (metric)
          (requested)
          (remaining)
          (audience)

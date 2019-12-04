@@ -620,7 +620,7 @@ class wallet_api
          string from,
          string to,
          string agent,
-         uint32_t escrow_id,
+         string escrow_id,
          asset amount,
          asset fee,
          time_point ratification_deadline,
@@ -646,7 +646,7 @@ class wallet_api
          string to,
          string agent,
          string who,
-         uint32_t escrow_id,
+         string escrow_id,
          bool approve,
          bool broadcast = false
       );
@@ -666,7 +666,7 @@ class wallet_api
          string to,
          string agent,
          string who,
-         uint32_t escrow_id,
+         string escrow_id,
          bool broadcast = false
       );
 
@@ -688,7 +688,7 @@ class wallet_api
          string agent,
          string who,
          string receiver,
-         uint32_t escrow_id,
+         string escrow_id,
          asset amount,
          bool broadcast = false
       );

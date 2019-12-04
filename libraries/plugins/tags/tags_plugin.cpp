@@ -58,14 +58,16 @@ struct operation_visitor
       {
          if( tag.parent == comment_id_type() )
          {
-            s.top_posts--;
+            s.post_count--;
          }
-         else
-         {
-            s.comments--;
-         }
-         s.total_trending -= static_cast<uint32_t>(tag.trending);
          s.net_votes -= tag.net_votes;
+         s.view_count -= tag.view_count;
+         s.share_count -= tag.share_count;
+         s.children -= tag.children;
+         s.vote_power -= tag.vote_power;
+         s.view_power -= tag.view_power;
+         s.share_power -= tag.share_power;
+         s.comment_power -= tag.comment_power;
       });
    }
 
@@ -75,14 +77,16 @@ struct operation_visitor
       {
          if( tag.parent == comment_id_type() )
          {
-            s.top_posts++;
+            s.post_count++;
          }
-         else
-         {
-            s.comments++;
-         }
-         s.total_trending += static_cast<uint32_t>(tag.trending);
-         s.net_votes   += tag.net_votes;
+         s.net_votes += tag.net_votes;
+         s.view_count += tag.view_count;
+         s.share_count += tag.share_count;
+         s.children += tag.children;
+         s.vote_power += tag.vote_power;
+         s.view_power += tag.view_power;
+         s.share_power += tag.share_power;
+         s.comment_power += tag.comment_power;
       });
    }
 

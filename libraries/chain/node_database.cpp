@@ -387,8 +387,6 @@ void database::init_genesis()
 
    create< comment_metrics_object >( [&]( comment_metrics_object& o ) {});
 
-   // Nothing to do
-   create< feed_history_object >( [&]( feed_history_object& o ) {});
    for( int i = 0; i < 0x10000; i++ )
    {
       create< block_summary_object >( [&]( block_summary_object& ) {});
@@ -1109,7 +1107,7 @@ const asset_liquidity_pool_object* database::find_liquidity_pool( const asset_sy
    return find< asset_liquidity_pool_object, by_asset_pair >( boost::make_tuple( SYMBOL_COIN, symbol ) );
 }
 
-const asset_credit_pool_object& database::get_credit_pool( const asset_symbol_type& symbol, bool credit_asset)const
+const asset_credit_pool_object& database::get_credit_pool( const asset_symbol_type& symbol, bool credit_asset )const
 { try {
    if( credit_asset)
    {
@@ -1121,7 +1119,7 @@ const asset_credit_pool_object& database::get_credit_pool( const asset_symbol_ty
    }
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-const asset_credit_pool_object* database::find_credit_pool( const asset_symbol_type& symbol, bool credit_asset)const
+const asset_credit_pool_object* database::find_credit_pool( const asset_symbol_type& symbol, bool credit_asset )const
 {
    if( credit_asset )
    {
@@ -1153,52 +1151,52 @@ const credit_loan_object* database::find_loan( const account_name_type& owner, s
    return find< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
 }
 
-const escrow_object& database::get_escrow( const account_name_type& name, uint32_t escrow_id )const
+const escrow_object& database::get_escrow( const account_name_type& name, const shared_string& escrow_id )const
 { try {
    return get< escrow_object, by_from_id >( boost::make_tuple( name, escrow_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(escrow_id) ) }
 
-const escrow_object* database::find_escrow( const account_name_type& name, uint32_t escrow_id )const
+const escrow_object* database::find_escrow( const account_name_type& name, const shared_string& escrow_id )const
 {
    return find< escrow_object, by_from_id >( boost::make_tuple( name, escrow_id ) );
 }
 
-const transfer_request_object& database::get_transfer_request( const account_name_type& name, shared_string& request_id )const
+const transfer_request_object& database::get_transfer_request( const account_name_type& name, const shared_string& request_id )const
 { try {
    return get< transfer_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(request_id) ) }
 
-const transfer_request_object* database::find_transfer_request( const account_name_type& name, shared_string& request_id )const
+const transfer_request_object* database::find_transfer_request( const account_name_type& name, const shared_string& request_id )const
 {
    return find< transfer_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
 }
 
-const transfer_recurring_request_object& database::get_transfer_recurring_request( const account_name_type& name, shared_string& request_id )const
+const transfer_recurring_request_object& database::get_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const
 { try {
    return get< transfer_recurring_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(request_id) ) }
 
-const transfer_recurring_request_object* database::find_transfer_recurring_request( const account_name_type& name, shared_string& request_id )const
+const transfer_recurring_request_object* database::find_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const
 {
    return find< transfer_recurring_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
 }
 
-const limit_order_object& database::get_limit_order( const account_name_type& name, shared_string& order_id )const
+const limit_order_object& database::get_limit_order( const account_name_type& name, const shared_string& order_id )const
 { try {
    return get< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
 
-const limit_order_object* database::find_limit_order( const account_name_type& name, shared_string& order_id )const
+const limit_order_object* database::find_limit_order( const account_name_type& name, const shared_string& order_id )const
 {
    return find< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
 }
 
-const margin_order_object& database::get_margin_order( const account_name_type& name, shared_string& margin_id )const
+const margin_order_object& database::get_margin_order( const account_name_type& name, const shared_string& margin_id )const
 { try {
    return get< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(margin_id) ) }
 
-const margin_order_object* database::find_margin_order( const account_name_type& name, shared_string& margin_id )const
+const margin_order_object* database::find_margin_order( const account_name_type& name, const shared_string& margin_id )const
 {
    return find< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
 }
@@ -1213,12 +1211,12 @@ const call_order_object* database::find_call_order( const account_name_type& nam
    return find< call_order_object, by_account >( boost::make_tuple( name, symbol ) );
 }
 
-const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, uint32_t request_id )const
+const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
 { try {
    return get< savings_withdraw_object, by_from_rid >( boost::make_tuple( owner, request_id ) );
 } FC_CAPTURE_AND_RETHROW( (owner)(request_id) ) }
 
-const savings_withdraw_object* database::find_savings_withdraw( const account_name_type& owner, uint32_t request_id )const
+const savings_withdraw_object* database::find_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
 {
    return find< savings_withdraw_object, by_from_rid >( boost::make_tuple( owner, request_id ) );
 }
@@ -1263,8 +1261,8 @@ const time_point database::calculate_discussion_payout_time( const comment_objec
 
 uint32_t database::witness_participation_rate()const
 {
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
-   return uint64_t(PERCENT_100) * dpo.recent_slots_filled.popcount() / 128;
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   return uint64_t(PERCENT_100) * props.recent_slots_filled.popcount() / 128;
 }
 
 void database::add_checkpoints( const flat_map< uint32_t, block_id_type >& checkpts )
@@ -1706,9 +1704,9 @@ void database::notify_on_applied_transaction( const signed_transaction& tx )
 
 account_name_type database::get_scheduled_witness( uint32_t slot_num )const
 {
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
    const witness_schedule_object& wso = get_witness_schedule();
-   uint64_t current_aslot = dpo.current_aslot + slot_num;
+   uint64_t current_aslot = props.current_aslot + slot_num;
    return wso.current_shuffled_producers[ current_aslot % wso.num_scheduled_producers ];
 }
 
@@ -1718,22 +1716,22 @@ fc::time_point database::get_slot_time(uint32_t slot_num)const
       return fc::time_point();
 
    int64_t interval_micsec = BLOCK_INTERVAL.count();
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
 
    if( head_block_num() == 0 )
    {
       // n.b. first block is at genesis_time plus one block interval
-      fc::time_point genesis_time = dpo.time;
-      return genesis_time + fc::microseconds(slot_num * interval_micsec);
+      fc::time_point genesis_time = props.time;
+      return genesis_time + fc::microseconds( slot_num * interval_micsec );
    }
 
    // "slot 0" is head_slot_time
    // "slot 1" is head_slot_time,
-   //   plus maint interval if head block is a maint block
-   //   plus block interval if head block is not a maint block
+   // plus maint interval if head block is a maint block
+   // plus block interval if head block is not a maint block
 
-   int64_t head_block_abs_slot = (head_block_time().time_since_epoch().count() / interval_micsec);
-   return fc::time_point( fc::microseconds(head_block_abs_slot * interval_micsec + slot_num * interval_micsec));
+   int64_t head_block_abs_slot = ( head_block_time().time_since_epoch().count() / interval_micsec );
+   return fc::time_point( fc::microseconds( head_block_abs_slot * interval_micsec + slot_num * interval_micsec ) );
 }
 
 uint32_t database::get_slot_at_time(fc::time_point when)const
@@ -2438,6 +2436,7 @@ void database::process_supernode_rewards()
    asset supernode_reward = rfo.supernode_reward_balance;     // Record the opening balance of the supernode reward fund
 
    const auto& supernode_idx = get_index< supernode_index >().indices().get< by_view_weight >();
+   const auto& sn_acc_idx = get_index< supernode_index >().indices().get< by_account >();
    auto supernode_itr = supernode_idx.begin();
     
    flat_map < account_name_type, share_type > supernode_map;
@@ -2460,6 +2459,14 @@ void database::process_supernode_rewards()
    {
       asset supernode_reward_split = ( supernode_reward * b.second ) / total_supernode_shares; 
       adjust_reward_balance( b.first, supernode_reward_split );       // Pay supernode reward proportionally with view weight.
+      auto sn_ptr = sn_acc_idx.find( b.first );
+      if( sn_ptr != sn_acc_idx.end() )
+      {
+         modify( *sn_ptr, [&]( supernode_object& s )
+         {
+            s.storage_rewards += supernode_reward_split;     // Increment the lifetime storage earnings of the supernode
+         }); 
+      }
       distributed += supernode_reward_split;
    }
 
@@ -3904,7 +3911,7 @@ void database::update_global_dynamic_data( const signed_block& b )
       for( uint32_t i = 0; i < missed_blocks; ++i )
       {
          const auto& witness_missed = get_witness( get_scheduled_witness( i + 1 ) );
-         if(  witness_missed.owner != b.witness )
+         if( witness_missed.owner != b.witness )
          {
             modify( witness_missed, [&]( witness_object& w )
             {
@@ -3956,6 +3963,7 @@ void database::update_signing_witness( const witness_object& signing_witness, co
    {
       w.last_aslot = new_block_aslot;
       w.last_confirmed_block_num = new_block.block_num();
+      w.total_blocks++;
    });
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -3967,13 +3975,15 @@ void database::update_signing_witness( const witness_object& signing_witness, co
  */
 void database::update_last_irreversible_block()
 { try {
-   const dynamic_global_property_object& dpo = get_dynamic_global_properties();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
    const witness_schedule_object& wso = witness_schedule_object();
 
    vector< const witness_object* > wit_objs;
    wit_objs.reserve( wso.num_scheduled_producers );
    for( int i = 0; i < wso.num_scheduled_producers; i++ )
+   {
       wit_objs.push_back( &get_witness( wso.current_shuffled_producers[i] ) );
+   }
 
    static_assert( IRREVERSIBLE_THRESHOLD > 0, "irreversible threshold must be nonzero" );
 
@@ -3987,7 +3997,7 @@ void database::update_last_irreversible_block()
       []( const witness_object* a, const witness_object* b )
       {
          return a->last_confirmed_block_num < b->last_confirmed_block_num;
-      } );
+      });
 
    uint32_t new_last_irreversible_block_num = wit_objs[offset]->last_confirmed_block_num;
 
@@ -3999,30 +4009,30 @@ void database::update_last_irreversible_block()
 
    uint32_t new_last_committed_block_num = wit_objs[offset]->last_commit_height;
 
-   if( new_last_irreversible_block_num > dpo.last_irreversible_block_num )
+   if( new_last_irreversible_block_num > props.last_irreversible_block_num )
    {
       block_id_type irreversible_id = get_block_id_for_num( new_last_irreversible_block_num );
 
-      modify( dpo, [&]( dynamic_global_property_object& _dpo )
+      modify( props, [&]( dynamic_global_property_object& d )
       {
-         _dpo.last_irreversible_block_num = new_last_irreversible_block_num;
-         _dpo.last_irreversible_block_id = irreversible_id;
+         d.last_irreversible_block_num = new_last_irreversible_block_num;
+         d.last_irreversible_block_id = irreversible_id;
       });
    }
 
-   if( new_last_committed_block_num > dpo.last_committed_block_num )
+   if( new_last_committed_block_num > props.last_committed_block_num )
    {
       block_id_type commit_id = get_block_id_for_num( new_last_committed_block_num );
 
-      modify( dpo, [&]( dynamic_global_property_object& _dpo )
+      modify( props, [&]( dynamic_global_property_object& d )
       {
-         _dpo.last_committed_block_num = new_last_committed_block_num;
-         _dpo.last_committed_block_id = commit_id;
+         d.last_committed_block_num = new_last_committed_block_num;
+         d.last_committed_block_id = commit_id;
       });
    }
 
    // Take the highest of last committed and irreverisble blocks, and commit it to the local database.
-   uint32_t commit_height = std::max( dpo.last_committed_block_num, dpo.last_irreversible_block_num );   
+   uint32_t commit_height = std::max( props.last_committed_block_num, props.last_irreversible_block_num );   
    
    commit( commit_height );  // Node will not reverse blocks after they have been committed or produced on by two thirds of producers.
 
@@ -4050,7 +4060,7 @@ void database::update_last_irreversible_block()
       }
    }
 
-   _fork_db.set_max_size( dpo.head_block_number - commit_height + 1 );
+   _fork_db.set_max_size( props.head_block_number - commit_height + 1 );
 
 } FC_CAPTURE_AND_RETHROW() }
 

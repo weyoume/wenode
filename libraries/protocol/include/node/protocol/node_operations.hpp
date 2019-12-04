@@ -79,7 +79,7 @@ namespace node { namespace protocol {
          size_t corner = i;
       
          size_t j = 0;
-         for ( std::string::const_iterator it2 = s2.begin(); it2 != s2.end(); ++it2, ++j )
+         for( std::string::const_iterator it2 = s2.begin(); it2 != s2.end(); ++it2, ++j )
          {
             size_t upper = costs[j+1];
             if( *it1 == *it2 )
@@ -101,10 +101,10 @@ namespace node { namespace protocol {
    };
 
 
-
    //============================//
    // === Account Operations === //
    //============================//
+
 
    /**
     * Creates a brand new WeYouMe account for signing transactions and creating posts.
@@ -149,9 +149,9 @@ namespace node { namespace protocol {
 
       string                             companion_public_key;          // The connection public key used for encrypting Companion level content
 
-      optional<business_types>           business_type;                 // The type of business account being created
+      optional< business_types >         business_type;                 // The type of business account being created
 
-      optional<share_type>               officer_vote_threshold;        // The voting power required to be an active officer
+      optional< share_type >             officer_vote_threshold;        // The voting power required to be an active officer
 
       asset                              fee;                           // At least min account creation fee for stake on the new account.
 
@@ -197,9 +197,9 @@ namespace node { namespace protocol {
 
       bool                          deleted = false;
 
-      optional<business_types>      business_type;               
+      optional< business_types >    business_type;               
 
-      optional<share_type>          officer_vote_threshold;
+      optional< share_type >        officer_vote_threshold;
 
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
@@ -288,7 +288,8 @@ namespace node { namespace protocol {
 
 
    /**
-    * Votes for an account to become an officer of a business account, weighted according to equity holdings.
+    * Votes for an account to become an officer of a business account, 
+    * weighted according to equity holdings.
     */
    struct account_vote_officer_operation : public base_operation
    {
@@ -395,6 +396,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return account; }
    };
 
+
    /**
     * Removes a member from the membership of a business account.
     */
@@ -412,6 +414,7 @@ namespace node { namespace protocol {
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
    };
+
 
    /**
     * Blacklists an account or asset
@@ -670,6 +673,7 @@ namespace node { namespace protocol {
       void validate() const;
    };
 
+
    /**
     * Initiates a 3 step connection exchange betwen two accounts, for the purposes
     * of exchanging encrypted connection keys that can be used to decrypt
@@ -698,9 +702,11 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return account; }
    };
 
+
    /**
     * Accepts an incoming connection request by providing an encrypted posting
     * key, that is decryptable by the recipient that initiated the request.
+    * 
     * This operation assumes that the account includes a valid encrypted private key
     * and that the initial account confirms by returning an additional acceptance transaction.
     * The protocol cannot ensure the reciprocity of the original sender, or
@@ -726,6 +732,7 @@ namespace node { namespace protocol {
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
    };
+
 
    /**
     * Enables an account to follow another account, 
@@ -842,6 +849,7 @@ namespace node { namespace protocol {
       void validate() const;
    };
 
+
    /**
     * Votes to support reward distribution to a network officer
     * for the work they have done.
@@ -863,6 +871,11 @@ namespace node { namespace protocol {
       void validate() const;
    };
 
+
+   /**
+    * Set of all executive officers that 
+    * can be allocated in a business account.
+    */
    struct executive_officer_set
    {
       account_name_type                 CHIEF_EXECUTIVE_OFFICER;    // Overall leader of Executive team.
@@ -944,8 +957,9 @@ namespace node { namespace protocol {
       void validate() const;
    };
 
+
    /**
-    * Votes to support an executive board
+    * Votes to support an executive board.
     */
    struct executive_board_vote_operation : public base_operation
    {
@@ -989,10 +1003,12 @@ namespace node { namespace protocol {
       void validate() const;
    };
 
+
    /** 
     * Adds a governance account to the subscription set of the
     * account, causing its content moderation tags to apply to
     * the account in interfaces.
+    * 
     * This allows an account to opt in to the moderation and enforcement 
     * policies provided by the governance account, and to 
     * its default settings for whitelisting and blacklisting mediators, assets,
@@ -1012,6 +1028,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return account; }
       void validate() const;
    };
+
 
    /**
     * Creates or updates an interface object for an application developer.
@@ -1135,6 +1152,7 @@ namespace node { namespace protocol {
       void validate() const;
    };
 
+
    /**
     * Claims a milestone from a community enterprise proposal
     * This requests to release the funds in the pending budget to the beneficiaries
@@ -1157,10 +1175,12 @@ namespace node { namespace protocol {
       void validate() const;
    };
 
+
    /**
     * Approves a milestone claim from a community enterprise proposal.
     * This releases the funds that are in the pending budget to the proposal's beneficaries.
-    * Community Enterprise proposals need to be approved by: 
+    * Community Enterprise proposals need to be approved by:
+    * 
     *    - Approvals from at least 5 of the Top 50 witnesses, with a combined voting power of at least 10% of the total witness voting power.
     * AND
     *    - At least 20 total approvals, from accounts with a total combined voting power of at least 10% of total voting power. 
@@ -1169,19 +1189,19 @@ namespace node { namespace protocol {
    {
       account_name_type         signatory;
 
-      account_name_type         account;               // Account approving the milestone, must be a current top 50 witness, developer, marketer, or advocate.
+      account_name_type         account;           // Account approving the milestone, must be a current top 50 witness, developer, marketer, or advocate.
 
-      account_name_type         creator;               // The name of the account that created the proposal.
+      account_name_type         creator;           // The name of the account that created the proposal.
 
-      string                    enterprise_id;         // UUIDv4 referring to the proposal. 
+      string                    enterprise_id;     // UUIDv4 referring to the proposal. 
 
-      uint16_t                  milestone = 0;         // Number of the milestone that is being approved as completed.
+      uint16_t                  milestone = 0;     // Number of the milestone that is being approved as completed.
 
-      string                    details;               // Description of completion of milestone, with supporting evidence.
+      string                    details;           // Description of completion of milestone, with supporting evidence.
 
-      uint16_t                  vote_rank;             // The rank of the approval for enterprise proposals
+      uint16_t                  vote_rank;         // The rank of the approval for enterprise proposals
 
-      bool                      approved = true;       // True to claim the milestone amount, false to remove approval. 
+      bool                      approved = true;   // True to claim the milestone amount, false to remove approval. 
          
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
@@ -1193,50 +1213,54 @@ namespace node { namespace protocol {
    // === Post and Comment Operations === //
    //=====================================//
    
-
+   /**
+    * Creates a new comment from an author, including
+    * the types of post, IPFS links, magnet links
+    * and privacy options.
+    */
    struct comment_operation : public base_operation
    {
       account_name_type           signatory;
 
-      account_name_type           author;               // Name of the account that created the post.
+      account_name_type           author;          // Name of the account that created the post.
 
-      string                      permlink;             // Unique identifing string for the post.
+      string                      permlink;        // Unique identifing string for the post.
 
-      string                      title;                // content related name of the post, used to find post with search API.
+      string                      title;           // content related name of the post, used to find post with search API.
 
-      post_types                  post_type;            // Type of post being created, text, image, article, video, audio, file, etc.
+      post_types                  post_type;       // Type of post being created, text, image, article, video, audio, file, etc.
 
-      string                      body;                 // String containing text for display when the post is opened.
+      string                      body;            // String containing text for display when the post is opened.
 
-      vector< string >            ipfs;                 // Vector of Strings containing IPFS file hashes: images, videos, files.
+      vector< string >            ipfs;            // Vector of Strings containing IPFS file hashes: images, videos, files.
 
-      vector< string >            magnet;               // Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
+      vector< string >            magnet;          // Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
 
-      string                      language;             // String containing the two letter ISO language code of the native language of the author. 
+      string                      language;        // String containing the two letter ISO language code of the native language of the author. 
 
-      board_name_type             board;                // The name of the board to which the post is uploaded to.
+      board_name_type             board;           // The name of the board to which the post is uploaded to.
 
-      bool                        privacy;              // True if the post is encrypted. False if it is plaintext.
+      bool                        privacy;         // True if the post is encrypted. False if it is plaintext.
 
-      string                      public_key;           // The public key used to encrypt the post, holders of the private key may decrypt.
+      string                      public_key;      // The public key used to encrypt the post, holders of the private key may decrypt.
 
-      feed_types                  reach;                // The extent to which the post will be distributed to account's followers and connections feeds. 
+      feed_types                  reach;           // The extent to which the post will be distributed to account's followers and connections feeds. 
 
-      account_name_type           interface;            // Name of the interface application that broadcasted the transaction. 
+      account_name_type           interface;       // Name of the interface application that broadcasted the transaction. 
 
-      rating_types                rating;               // User nominated rating as to the maturity of the content, and display sensitivity.
+      rating_types                rating;          // User nominated rating as to the maturity of the content, and display sensitivity.
 
-      asset                       comment_price;        // Price that is required to comment on the post. 
+      asset                       comment_price;   // Price that is required to comment on the post. 
 
-      asset                       premium_price;        // Price that is required to unlock premium content.
+      asset                       premium_price;   // Price that is required to unlock premium content.
 
-      account_name_type           parent_author;        // Account that created the post this post is replying to, empty if root post. 
+      account_name_type           parent_author;   // Account that created the post this post is replying to, empty if root post. 
 
-      string                      parent_permlink;      // permlink of the post this post is replying to, empty if root post. 
+      string                      parent_permlink; // permlink of the post this post is replying to, empty if root post. 
 
-      vector< string >            tags;                 // Set of string tags for sorting the post by.
+      vector< string >            tags;            // Set of string tags for sorting the post by.
 
-      string                      json;                 // json string of additional interface specific data relating to the post. 
+      string                      json;            // json string of additional interface specific data relating to the post. 
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1283,13 +1307,13 @@ namespace node { namespace protocol {
       
       string                      permlink;
 
-      asset                       max_accepted_payout = asset( 1000000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );  // USD value of the maximum payout this post will receive
+      asset                       max_accepted_payout;      // USD value of the maximum payout this post will receive
       
-      uint16_t                    percent_liquid = PERCENT_100;                                                  // Percentage of reward to keep liquid, remaining received as a staked balance
+      uint16_t                    percent_liquid;           // Percentage of reward to keep liquid, remaining received as a staked balance
       
-      bool                        allow_votes = true;                                                            // Allows a post to receive votes;
+      bool                        allow_votes;              // Allows a post to receive votes;
       
-      bool                        allow_curation_rewards = true;                                                 // allows voters to recieve curation rewards. Rewards return to reward fund.
+      bool                        allow_curation_rewards;   // allows voters to recieve curation rewards. Rewards return to reward fund.
 
       comment_options_extensions_type extensions;
 
@@ -1297,6 +1321,7 @@ namespace node { namespace protocol {
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return author; }
    };
+
 
    /**
     * Creates a private encrypted message between two accounts
@@ -1320,7 +1345,10 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return sender; }
    };
 
-   
+   /**
+    * Votes for a comment in order to 
+    * allocate content rewards to them
+    */
    struct vote_operation : public base_operation
    {
       account_name_type    signatory;
@@ -1339,6 +1367,7 @@ namespace node { namespace protocol {
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return voter; }
    };
+
 
    /** 
     * Views the post, which increases the post's reward earnings, and 
@@ -1365,6 +1394,7 @@ namespace node { namespace protocol {
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return viewer; }
    };
+
 
    /**
     * Shares a post to the account's feed, so that all accounts that
@@ -1397,7 +1427,7 @@ namespace node { namespace protocol {
 
    /**
     * Applies a tag to a post for the purposes of filtering from interfaces based on the 
-    * content included in the post. Accounts that list @moderator as a board moderator or
+    * content included in the post. Accounts that list moderator as a board moderator or
     * governance account apply the tag to the post for content management.
     * They additionally can suggest a higher rating level if the rating selected
     * by the author was inaccurate. 
@@ -1448,23 +1478,23 @@ namespace node { namespace protocol {
    {
       account_name_type           signatory;
 
-      account_name_type           founder;                    // The account that created the board, able to add and remove administrators.
+      account_name_type           founder;           // The account that created the board, able to add and remove administrators.
 
-      board_name_type             name;                       // Name of the board.
+      board_name_type             name;              // Name of the board.
 
-      board_types                 board_type;                 // Type of board to create.
+      board_types                 board_type;        // Type of board to create.
 
-      board_privacy_types         board_privacy;              // Type of board to create.
+      board_privacy_types         board_privacy;     // Type of board to create.
 
-      string                      board_public_key;           // Key used for encrypting and decrypting posts. Private key shared with accepted members.
+      string                      board_public_key;  // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
-      string                      json;                       // Public plaintext json information about the board, its topic and rules.
+      string                      json;              // Public plaintext json information about the board, its topic and rules.
 
-      string                      json_private;               // Private ciphertext json information about the board.
+      string                      json_private;      // Private ciphertext json information about the board.
 
-      string                      details;                    // Details of the board, describing what it is for.
+      string                      details;           // Details of the board, describing what it is for.
 
-      string                      url;                        // External reference URL.
+      string                      url;               // External reference URL.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1476,23 +1506,23 @@ namespace node { namespace protocol {
    {
       account_name_type           signatory;
 
-      account_name_type           account;                   // Account updating the board.
+      account_name_type           account;           // Account updating the board.
 
-      board_name_type             board;                     // Name of the board.
+      board_name_type             board;             // Name of the board.
 
-      board_types                 board_type;                // Type of board to create.
+      board_types                 board_type;        // Type of board to create.
 
-      board_privacy_types         board_privacy;             // Type of board to create.
+      board_privacy_types         board_privacy;     // Type of board to create.
 
-      string                      board_public_key;          // Key used for encrypting and decrypting posts. Private key shared with accepted members.
+      string                      board_public_key;  // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
-      string                      json;                      // Public plaintext json information about the board, its topic and rules.
+      string                      json;              // Public plaintext json information about the board, its topic and rules.
 
-      string                      json_private;              // Private ciphertext json information about the board. Encrypted with board public key.
+      string                      json_private;      // Private ciphertext json information about the board. Encrypted with board public key.
 
-      string                      details;                   // Details of the board, describing what it is for.
+      string                      details;           // Details of the board, describing what it is for.
 
-      string                      url;                       // External reference URL.
+      string                      url;               // External reference URL.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1522,13 +1552,13 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;             // Account of the founder of the board.
+      account_name_type              account;          // Account of the founder of the board.
 
-      board_name_type                board;               // Board that is being changed.
+      board_name_type                board;            // Board that is being changed.
 
-      account_name_type              admin;               // New administrator account.
+      account_name_type              admin;            // New administrator account.
 
-      bool                           added = true;        //  True when adding a new moderator, false when removing.
+      bool                           added = true;     //  True when adding a new moderator, false when removing.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1540,15 +1570,15 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;           // Account of a member of the board.
+      account_name_type              account;          // Account of a member of the board.
 
-      board_name_type                board;             // Board of the member.
+      board_name_type                board;            // Board of the member.
 
-      account_name_type              moderator;         // Moderator account.
+      account_name_type              moderator;        // Moderator account.
 
-      uint16_t                       vote_rank;
+      uint16_t                       vote_rank;        // Voting rank for the specified board moderator
 
-      bool                           approved = true;      // True when voting for the moderator, false when removing.
+      bool                           approved = true;  // True when voting for the moderator, false when removing.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1576,13 +1606,13 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;               // Account that wants to join the board.
+      account_name_type              account;            // Account that wants to join the board.
 
-      board_name_type                board;                 // Board that is being changed.
+      board_name_type                board;              // Board that is being changed.
 
-      string                         message;               // Message attatched to the request, encrypted with the boards public key. 
+      string                         message;            // Message attatched to the request, encrypted with the boards public key. 
 
-      bool                           requested = true;      // Set true to request, false to cancel request.
+      bool                           requested = true;   // Set true to request, false to cancel request.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1594,17 +1624,17 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;                      // Account sending the invitation.
+      account_name_type              account;               // Account sending the invitation.
 
-      account_name_type              member;                       // New board member account being invited.
+      account_name_type              member;                // New board member account being invited.
 
-      board_name_type                board;                        // Board that is the member is being invited to.
+      board_name_type                board;                 // Board that is the member is being invited to.
 
-      string                         message;                      // Message attatched to the request, encrypted with the member's secure public key.
+      string                         message;               // Message attatched to the request, encrypted with the member's secure public key.
 
-      string                         encrypted_board_key;          // The Board Private Key, encrypted with the member's secure public key.
+      string                         encrypted_board_key;   // The Board Private Key, encrypted with the member's secure public key.
 
-      bool                           invited = true;               // Set true to request, false to cancel request.
+      bool                           invited = true;        // Set true to request, false to cancel request.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1826,7 +1856,7 @@ namespace node { namespace protocol {
 
       asset                            bid_price;             // Price offered per metric.
 
-      uint32_t                         inventory_requested;   // Maximum total metrics requested.
+      uint32_t                         requested;             // Maximum total metrics requested.
 
       flat_set< string >               included_audiences;    // List of desired audiences for display acceptance. Will be merged into a combined audience
 
@@ -2133,7 +2163,7 @@ namespace node { namespace protocol {
 
       account_name_type      from;
 
-      uint32_t               request_id = 0;
+      string                 request_id;
 
       account_name_type      to;
 
@@ -2153,7 +2183,7 @@ namespace node { namespace protocol {
 
       account_name_type     from;
 
-      uint32_t              request_id = 0;
+      string                request_id;
 
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return from; }
@@ -2212,7 +2242,7 @@ namespace node { namespace protocol {
 
       account_name_type      agent;
 
-      uint32_t               escrow_id = 0;
+      string                 escrow_id;
 
       asset                  amount;
 
@@ -2247,7 +2277,7 @@ namespace node { namespace protocol {
 
       account_name_type      agent;
 
-      uint32_t               escrow_id = 0;
+      string                 escrow_id;
 
       bool                   approve = true;
 
@@ -2274,7 +2304,7 @@ namespace node { namespace protocol {
 
       account_name_type      agent;
 
-      uint32_t               escrow_id = 0;
+      string                 escrow_id;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2305,7 +2335,7 @@ namespace node { namespace protocol {
 
       account_name_type        receiver;   // The account that should receive funds [ From | To ].
 
-      uint32_t                 escrow_id = 30;
+      string                   escrow_id;
 
       asset                    amount = asset( 0, SYMBOL_COIN );       // the amount of the balance asset to release to "receiver".
 
@@ -3354,12 +3384,12 @@ namespace node { namespace protocol {
       vector< char >                data;
 
       void validate()const;
-      const account_name_type& get_creator_name() const { return required_auths[0]; }
+      const account_name_type& get_creator_name() const { return *required_auths.begin(); }
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ for( const auto& i : required_auths ) a.insert(i); }
    };
 
 
-   /** 
+   /**
     * Serves the same purpose as custom_operation but also supports required posting authorities.
     * The operation is designed to be more human readable and developer friendly.
     **/
@@ -3756,7 +3786,6 @@ FC_REFLECT( node::protocol::approve_enterprise_milestone_operation,
    // === Post and Comment Operations === //
    //=====================================//
 
-
 FC_REFLECT( node::protocol::comment_operation,
          (signatory)
          (author)
@@ -4034,7 +4063,7 @@ FC_REFLECT( node::protocol::ad_bid_operation,
          (provider)
          (inventory_id)
          (bid_price)
-         (inventory_requested)
+         (requested)
          (included_audiences)
          (excluded_audiences)
          (json)
@@ -4591,7 +4620,6 @@ FC_REFLECT( node::protocol::proof_of_work_operation,
          (new_owner_key)
          (props) 
          );
-
 
 FC_REFLECT( node::protocol::verify_block_operation,
          (signatory)

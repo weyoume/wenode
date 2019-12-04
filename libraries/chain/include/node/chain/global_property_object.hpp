@@ -11,6 +11,7 @@ namespace node { namespace chain {
 
    using node::protocol::asset;
    using node::protocol::price;
+   using node::protocol::chain_properties;
 
    /**
     * The values here are calculated during normal chain operations and reflect the
@@ -46,6 +47,8 @@ namespace node { namespace chain {
          time_point             time;                                                     // Current blockchain time in microseconds;
 
          time_point             next_maintenance_time;                                    // Time in microseconds of the next maintenance period.
+         
+         chain_properties       median_props;                                             // Median properties object as desginated by the active block producers.               
 
          asset                  accumulated_network_revenue = asset(0, SYMBOL_COIN);      // Counter for the total of all core assets burned as network revenue.        
 
@@ -63,13 +66,7 @@ namespace node { namespace chain {
 
          uint8_t                participation_count = 0;                                  // Divide by 128 to compute participation percentage
 
-         uint32_t               asset_count = 0;                                          // The number of active assets on the network.
-
-         uint32_t               account_count = 0;                                        // The total number of accounts created. 
-
          uint32_t               dynamic_flags = 0;
-
-         chain_properties       median_props;
 
          enum dynamic_flag_bits
          {
@@ -101,16 +98,23 @@ FC_REFLECT( node::chain::dynamic_global_property_object,
          (id)
          (head_block_number)
          (head_block_id)
-         (time)
+         (last_irreversible_block_num)
+         (last_irreversible_block_id)
+         (last_committed_block_num)
+         (last_committed_block_id)
          (current_producer)
+         (time)
          (next_maintenance_time)
+         (median_props)
+         (accumulated_network_revenue)
+         (current_median_equity_price)
+         (current_median_usd_price)
+         (total_voting_power)
          (total_pow)
-         (num_pow_witnesses)
          (current_aslot)
          (recent_slots_filled)
          (participation_count)
-         (last_irreversible_block_num)
-         (vote_power_reserve_rate)
+         (dynamic_flags)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::dynamic_global_property_object, node::chain::dynamic_global_property_index );

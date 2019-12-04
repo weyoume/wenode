@@ -380,6 +380,46 @@ typedef multi_index_container<
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
       >,
+      ordered_unique< tag< by_parent_vote_power >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, int128_t, &tag_object::vote_power >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_view_power >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, int128_t, &tag_object::view_power >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_share_power >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, int128_t, &tag_object::share_power >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_comment_power >,
+            composite_key< tag_object,
+               member< tag_object, board_name_type, &tag_object::board >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, int128_t, &tag_object::comment_power >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
+      >,
       ordered_unique< tag< by_cashout >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
@@ -1047,8 +1087,9 @@ typedef multi_index_container<
 > tag_index;
 
 /**
- *  The purpose of this index is to quickly identify how popular various tags by maintaining variou sums over
- *  all posts under a particular tag
+ *  The purpose of this index is to quickly identify how popular various
+ *  tags by maintaining various sums over
+ *  all posts under a particular tag.
  */
 class tag_stats_object : public object< tag_stats_object_type, tag_stats_object >
 {
@@ -1063,48 +1104,79 @@ class tag_stats_object : public object< tag_stats_object_type, tag_stats_object 
 
       id_type           id;
 
-      tag_name_type     tag;
-      asset             total_payout = asset( 0, SYMBOL_USD );
-      int32_t           net_votes = 0;
-      uint32_t          top_posts = 0;
-      uint32_t          comments  = 0;
-      fc::uint128       total_trending = 0;
+      tag_name_type     tag;                 // Name of the tag being measured.
+
+      asset             total_payout = asset( 0, SYMBOL_USD );    // USD valud of all earned content rewards for all posts using the tag.
+
+      uint32_t          post_count = 0;      // Number of posts using the tag.
+
+      uint32_t          children = 0;        // The amount of comments on root posts for all posts using the tag.
+
+      int32_t           net_votes = 0;       // The amount of upvotes, minus downvotes for all posts using the tag.
+
+      int32_t           view_count = 0;      // The amount of views for all posts using the tag.
+
+      int32_t           share_count = 0;     // The amount of shares for all posts using the tag.
+
+      int128_t          net_reward = 0;      // Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
+
+      int128_t          vote_power = 0;      // Sum of weighted voting power for all posts using the tag.
+
+      int128_t          view_power = 0;      // Sum of weighted view power for all posts using the tag.
+
+      int128_t          share_power = 0;     // Sum of weighted share power for all posts using the tag.
+
+      int128_t          comment_power = 0;   // Sum of weighted comment power for all posts using the tag.
 };
 
 typedef oid< tag_stats_object > tag_stats_id_type;
 
-struct by_comments;
-struct by_top_posts;
-struct by_trending;
+struct by_net_reward;
+struct by_vote_power;
+struct by_view_power;
+struct by_share_power;
+struct by_comment_power;
 
 typedef multi_index_container<
    tag_stats_object,
    indexed_by<
       ordered_unique< tag< by_id >, member< tag_stats_object, tag_stats_id_type, &tag_stats_object::id > >,
       ordered_unique< tag< by_tag >, member< tag_stats_object, tag_name_type, &tag_stats_object::tag > >,
-      /*
-      ordered_non_unique< tag< by_comments >,
+      ordered_non_unique< tag< by_net_reward >,
          composite_key< tag_stats_object,
-            member< tag_stats_object, uint32_t, &tag_stats_object::comments >,
+            member< tag_stats_object, int128_t, &tag_stats_object::net_reward >,
             member< tag_stats_object, tag_name_type, &tag_stats_object::tag >
          >,
-         composite_key_compare< std::less< tag_name_type >, std::greater< uint32_t > >
+         composite_key_compare< std::greater< int128_t >, std::less< tag_name_type > >
       >,
-      ordered_non_unique< tag< by_top_posts >,
+      ordered_unique< tag< by_vote_power >,
          composite_key< tag_stats_object,
-            member< tag_stats_object, uint32_t, &tag_stats_object::top_posts >,
+            member< tag_stats_object, int128_t, &tag_stats_object::vote_power >,
             member< tag_stats_object, tag_name_type, &tag_stats_object::tag >
          >,
-         composite_key_compare< std::less< tag_name_type >, std::greater< uint32_t > >
+         composite_key_compare< std::greater< int128_t >, std::less< tag_name_type > >
       >,
-      */
-      ordered_non_unique< tag< by_trending >,
+      ordered_unique< tag< by_view_power >,
          composite_key< tag_stats_object,
-            member< tag_stats_object, fc::uint128 , &tag_stats_object::total_trending >,
+            member< tag_stats_object, int128_t, &tag_stats_object::view_power >,
+            member< tag_stats_object, tag_name_type, &tag_stats_object::tag > 
+         >,
+         composite_key_compare< std::greater< int128_t >, std::less< tag_name_type > >
+      >,
+      ordered_unique< tag< by_share_power >,
+         composite_key< tag_stats_object,
+            member< tag_stats_object, int128_t, &tag_stats_object::share_power >,
+            member< tag_stats_object, tag_name_type, &tag_stats_object::tag >,
+         >,
+         composite_key_compare< std::greater< int128_t >, std::less< tag_name_type > >
+      >,
+      ordered_unique< tag< by_comment_power >,
+         composite_key< tag_stats_object,
+            member< tag_stats_object, int128_t, &tag_stats_object::comment_power >,
             member< tag_stats_object, tag_name_type, &tag_stats_object::tag >
          >,
-         composite_key_compare<  std::greater< fc::uint128  >, std::less< tag_name_type > >
-      >
+         composite_key_compare< std::greater< int128_t >, std::less< tag_name_type > >
+      >,
   >,
   allocator< tag_stats_object >
 > tag_stats_index;
@@ -1429,11 +1501,15 @@ class peer_stats_object : public object< peer_stats_object_type, peer_stats_obje
       id_type           id;
 
       account_id_type   voter;
+
       account_id_type   peer;
+
       int32_t           direct_positive_votes = 0;
+
       int32_t           direct_votes = 1;
 
       int32_t           indirect_positive_votes = 0;
+
       int32_t           indirect_votes = 1;
 
       float             rank = 0;
@@ -1502,11 +1578,15 @@ class author_tag_stats_object : public object< author_tag_stats_object_type, aut
          c( *this );
       }
 
-      id_type         id;
-      account_id_type author;
-      tag_name_type   tag;
-      asset           total_rewards = asset( 0, SYMBOL_USD );
-      uint32_t        total_posts = 0;
+      id_type             id;
+
+      account_id_type     author;
+
+      tag_name_type       tag;
+
+      asset               total_rewards = asset( 0, SYMBOL_USD );
+
+      uint32_t            total_posts = 0;
 };
 
 typedef oid< author_tag_stats_object > author_tag_stats_id_type;
@@ -1606,29 +1686,135 @@ class tag_api : public std::enable_shared_from_this<tag_api> {
       //app::application* _app = nullptr;
 };
 
-
-
 } } //node::tag
 
 FC_API( node::tags::tag_api, (get_tags) );
 
 FC_REFLECT( node::tags::tag_object,
-   (id)(tag)(created)(active)(cashout)(net_reward)(net_votes)(hot)(trending)(promoted_balance)(children)(author)(parent)(comment) )
-CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_index )
+         (id)
+         (board)
+         (tag)
+         (sort)
+         (author)
+         (parent)
+         (comment)
+         (created)
+         (active)
+         (cashout)
+         (privacy)
+         (rating)
+         (language)
+         (author_reputation)
+         (children)
+         (net_votes)
+         (view_count)
+         (share_count)
+         (net_reward)
+         (vote_power)
+         (view_power)
+         (share_power)
+         (comment_power)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_index );
 
 FC_REFLECT( node::tags::tag_stats_object,
-   (id)(tag)(total_payout)(net_votes)(top_posts)(comments)(total_trending) );
-CHAINBASE_SET_INDEX_TYPE( node::tags::tag_stats_object, node::tags::tag_stats_index )
+         (id)
+         (tag)
+         (total_payout)
+         (post_count)
+         (children)
+         (net_votes)
+         (view_count)
+         (share_count)
+         (net_reward)
+         (vote_power)
+         (view_power)
+         (share_power)
+         (comment_power)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_stats_object, node::tags::tag_stats_index );
 
 FC_REFLECT( node::tags::account_curation_metrics_object,
-   (id)(voter)(peer)(direct_positive_votes)(direct_votes)(indirect_positive_votes)(indirect_votes)(rank) );
-CHAINBASE_SET_INDEX_TYPE( node::tags::account_curation_metrics_object, node::tags::account_curation_metrics_index )
+         (id)
+         (account)
+         (author_votes)
+         (board_votes)
+         (tag_votes)
+         (author_views)
+         (board_views)
+         (tag_views)
+         (author_shares)
+         (board_shares)
+         (tag_shares)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::tags::account_curation_metrics_object, node::tags::account_curation_metrics_index );
+
+FC_REFLECT( node::tags::account_adjacency_object,
+         (id)
+         (account_a)
+         (account_b)
+         (adjacency)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::tags::account_adjacency_object, node::tags::account_adjacency_index );
+
+FC_REFLECT( node::tags::board_adjacency_object,
+         (id)
+         (board_a)
+         (board_b)
+         (adjacency)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::tags::board_adjacency_object, node::tags::board_adjacency_index );
+
+FC_REFLECT( node::tags::tag_adjacency_object,
+         (id)
+         (tag_a)
+         (tag_b)
+         (adjacency)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_adjacency_object, node::tags::tag_adjacency_index );
+
+FC_REFLECT( node::tags::account_recommendations_object,
+         (id)
+         (account)
+         (recommended_posts)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::tags::account_recommendations_object, node::tags::account_recommendations_index );
 
 FC_REFLECT( node::tags::peer_stats_object,
-   (id)(voter)(peer)(direct_positive_votes)(direct_votes)(indirect_positive_votes)(indirect_votes)(rank) );
-CHAINBASE_SET_INDEX_TYPE( node::tags::peer_stats_object, node::tags::peer_stats_index )
+         (id)
+         (voter)
+         (peer)
+         (direct_positive_votes)
+         (direct_votes)
+         (indirect_positive_votes)
+         (indirect_votes)
+         (rank)
+         );
 
-FC_REFLECT( node::tags::comment_metadata, (tags) );
+CHAINBASE_SET_INDEX_TYPE( node::tags::peer_stats_object, node::tags::peer_stats_index );
 
-FC_REFLECT( node::tags::author_tag_stats_object, (id)(author)(tag)(total_posts)(total_rewards) )
-CHAINBASE_SET_INDEX_TYPE( node::tags::author_tag_stats_object, node::tags::author_tag_stats_index )
+FC_REFLECT( node::tags::author_tag_stats_object,
+         (id)
+         (author)
+         (tag)
+         (total_posts)
+         (total_rewards)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::tags::author_tag_stats_object, node::tags::author_tag_stats_index );
+
+FC_REFLECT( node::tags::comment_metadata,
+         (tags)
+         (board)
+         );

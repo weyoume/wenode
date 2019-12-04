@@ -267,7 +267,9 @@ FC_REFLECT( node::market_history::market_duration_object,
 CHAINBASE_SET_INDEX_TYPE( node::market_history::market_duration_object, node::market_history::market_duration_index );
 
 FC_REFLECT( node::market_history::order_history_object,
-                     (id)
-                     (time)
-                     (op) );
+         (id)
+         (time)
+         (op)
+         );
+         
 CHAINBASE_SET_INDEX_TYPE( node::market_history::order_history_object, node::market_history::order_history_index );

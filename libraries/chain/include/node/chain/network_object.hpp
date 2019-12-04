@@ -219,7 +219,7 @@ namespace node { namespace chain {
          
          time_point                     created;                     // The time the supernode was created.
          
-         share_type                     storage_rewards = 0;         // Amount of core asset earned from storage.
+         asset                          storage_rewards;         // Amount of core asset earned from storage.
 
          uint64_t                       daily_active_users = 0;      // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
 
@@ -769,6 +769,7 @@ FC_REFLECT( node::chain::network_officer_object,
          (id)
          (account)
          (active)
+         (officer_approved)
          (officer_type)
          (details)
          (url)
@@ -776,6 +777,8 @@ FC_REFLECT( node::chain::network_officer_object,
          (created)
          (vote_count)
          (voting_power)
+         (witness_vote_count)
+         (witness_voting_power)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::network_officer_object, node::chain::network_officer_index );
@@ -784,6 +787,8 @@ FC_REFLECT( node::chain::network_officer_vote_object,
          (id)
          (account)
          (network_officer)
+         (officer_type)
+         (vote_rank)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::network_officer_vote_object, node::chain::network_officer_vote_index );
@@ -792,8 +797,7 @@ FC_REFLECT( node::chain::executive_board_object,
          (id)
          (account)
          (active)
-         (officers)
-         (members)
+         (board_approved)
          (budget)
          (details)
          (url)
@@ -801,6 +805,8 @@ FC_REFLECT( node::chain::executive_board_object,
          (created)
          (vote_count)
          (voting_power)
+         (witness_vote_count)
+         (witness_voting_power)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::executive_board_object, node::chain::executive_board_index );
@@ -809,6 +815,7 @@ FC_REFLECT( node::chain::executive_board_vote_object,
          (id)
          (account)
          (executive_board)
+         (vote_rank)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::executive_board_vote_object, node::chain::executive_board_vote_index );
@@ -817,12 +824,15 @@ FC_REFLECT( node::chain::governance_account_object,
          (id)
          (account)
          (active)
+         (account_approved)
          (details)
          (url)
          (json)
          (created)
          (subscriber_count)
          (subscriber_power)
+         (witness_subscriber_count)
+         (witness_subscriber_power)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::governance_account_object, node::chain::governance_account_index );
@@ -831,9 +841,33 @@ FC_REFLECT( node::chain::governance_subscription_object,
          (id)
          (account)
          (governance_account)
+         (vote_rank)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::governance_subscription_object, node::chain::governance_subscription_index );
+
+FC_REFLECT( node::chain::supernode_object,
+         (id)
+         (account)
+         (active)
+         (details)
+         (url)
+         (node_api_endpoint)
+         (notification_api_endpoint)
+         (auth_api_endpoint)
+         (ipfs_endpoint)
+         (bittorrent_endpoint)
+         (json)
+         (created)
+         (storage_rewards)
+         (daily_active_users)
+         (monthly_active_users)
+         (recent_view_weight)
+         (last_update_time)
+         (last_activation_time)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::supernode_object, node::chain::supernode_index );
 
 FC_REFLECT( node::chain::interface_object,
          (id)
@@ -845,51 +879,34 @@ FC_REFLECT( node::chain::interface_object,
          (created)
          (daily_active_users)
          (monthly_active_users)
-         (last_user_update)
+         (last_update_time)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::interface_object, node::chain::interface_index );
-
-
-FC_REFLECT( node::chain::supernode_object,
-         (id)
-         (account)
-         (active)
-         (details)
-         (url)
-         (node_api_endpoint)
-         (auth_api_endpoint)
-         (ipfs_endpoint)
-         (bittorrent_endpoint)
-         (json)
-         (created)
-         (daily_active_users)
-         (monthly_active_users)
-         (recent_view_weight)
-         (last_view_weight_update)
-         (last_activation_time)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::supernode_object, node::chain::supernode_index );
 
 FC_REFLECT( node::chain::community_enterprise_object,
          (id)
          (creator)
          (enterprise_id)
          (active)
+         (proposal_type)
          (beneficiaries)
          (milestones)
-         (claimed_milestones)
+         (milestone_history)
          (approved_milestones)
+         (claimed_milestones)
          (investment)
          (details)
          (url)
          (json)
          (begin)
          (end)
+         (expiration)
          (daily_budget)
+         (duration)
          (pending_budget)
-         (next_payment_time)
+         (total_distributed)
+         (days_paid)
          (total_approvals)
          (total_voting_power)
          (total_witness_approvals)
@@ -901,16 +918,17 @@ FC_REFLECT( node::chain::community_enterprise_object,
          (created)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_enterprise_object , node::chain::community_enterprise_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_enterprise_object, node::chain::community_enterprise_index );
 
 FC_REFLECT( node::chain::enterprise_approval_object,
          (id)
          (account)
          (creator)
          (enterprise_id)
+         (vote_rank)
          (milestone)
+         (last_updated)
          (created)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::enterprise_approval_object , node::chain::enterprise_approval_index );
-
+CHAINBASE_SET_INDEX_TYPE( node::chain::enterprise_approval_object, node::chain::enterprise_approval_index );

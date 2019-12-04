@@ -14,12 +14,12 @@
 
 using boost::locale::conv::utf_to_utf;
 
-std::wstring utf8_to_wstring(const std::string& str)
+std::wstring utf8_to_wstring( const std::string& str)
 {
     return utf_to_utf<wchar_t>(str.c_str(), str.c_str() + str.size());
 }
 
-std::string wstring_to_utf8(const std::wstring& str)
+std::string wstring_to_utf8( const std::wstring& str)
 {
     return utf_to_utf<char>(str.c_str(), str.c_str() + str.size());
 }
@@ -324,7 +324,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          a.officer_vote_count++;
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void account_update_evaluator::do_apply( const account_update_operation& o )
@@ -430,7 +430,7 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
          }
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void account_membership_evaluator::do_apply( const account_membership_operation& o )
@@ -537,7 +537,7 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
          a.recurring_membership = 0;
       } 
    });
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void account_vote_executive_evaluator::do_apply( const account_vote_executive_operation& o )
@@ -625,7 +625,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
 
    _db.update_business_account( bus_acc, props );   // updates the voting status of the business account to reflect all voting changes.
 
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void account_vote_officer_evaluator::do_apply( const account_vote_officer_operation& o )
@@ -710,7 +710,7 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
 
    _db.update_business_account( bus_acc, props );   // updates the voting status of the business account to reflect all voting changes.
 
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void account_member_request_evaluator::do_apply( const account_member_request_operation& o )
@@ -758,7 +758,7 @@ void account_member_request_evaluator::do_apply( const account_member_request_op
          "Request already exists, Requested should be set to false to remove existing request." );
       _db.remove( *itr );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void account_member_invite_evaluator::do_apply( const account_member_invite_operation& o )
@@ -820,7 +820,7 @@ void account_member_invite_evaluator::do_apply( const account_member_invite_oper
       }
       _db.remove( *itr );     // Remove the invitation
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void account_accept_request_evaluator::do_apply( const account_accept_request_operation& o )
@@ -865,7 +865,7 @@ void account_accept_request_evaluator::do_apply( const account_accept_request_op
       });
    }
    _db.remove( *itr );
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void account_accept_invite_evaluator::do_apply( const account_accept_invite_operation& o )
@@ -911,7 +911,7 @@ void account_accept_invite_evaluator::do_apply( const account_accept_invite_oper
       });
    }
    _db.remove( invite );
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void account_remove_member_evaluator::do_apply( const account_remove_member_operation& o )
@@ -953,7 +953,7 @@ void account_remove_member_evaluator::do_apply( const account_remove_member_oper
       const account_member_key_object& key = *key_itr;
       _db.remove( key );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void account_update_list_evaluator::do_apply( const account_update_list_operation& o )
@@ -1039,7 +1039,7 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
          }
       }
    });
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void account_witness_vote_evaluator::do_apply( const account_witness_vote_operation& o )
@@ -1121,7 +1121,7 @@ void account_witness_vote_evaluator::do_apply( const account_witness_vote_operat
 
    _db.update_witness( witness, wso, props );    // update the voting state of the witness
 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void account_update_proxy_evaluator::do_apply( const account_update_proxy_operation& o )
@@ -1185,7 +1185,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
          a.proxied.erase( o.account );       // Remove name from old proxy
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void request_account_recovery_evaluator::do_apply( const request_account_recovery_operation& o )
@@ -1257,7 +1257,7 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
          req.expiration = now + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD;
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void recover_account_evaluator::do_apply( const recover_account_operation& o )
@@ -1305,7 +1305,7 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
    {
       a.last_account_recovery = now;
    });
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void reset_account_evaluator::do_apply( const reset_account_operation& o )
@@ -1337,7 +1337,7 @@ void reset_account_evaluator::do_apply( const reset_account_operation& o )
       "Reset account does not match reset account on account." );
 
    _db.update_owner_authority( account, o.new_owner_authority );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void set_reset_account_evaluator::do_apply( const set_reset_account_operation& op )
@@ -1364,7 +1364,7 @@ void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o
       a.reset_account = o.reset_account;
       a.reset_account_delay_days = o.days;
    });
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void change_recovery_account_evaluator::do_apply( const change_recovery_account_operation& o )
@@ -1406,7 +1406,7 @@ void change_recovery_account_evaluator::do_apply( const change_recovery_account_
    {
       _db.remove( *request );
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_operation& o )
@@ -1520,7 +1520,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
  
       _db.remove( *req_itr );
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void connection_accept_evaluator::do_apply( const connection_accept_operation& o )
@@ -1715,7 +1715,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
    _db.update_account_in_feed( o.account, o.requesting_account );
    _db.update_account_in_feed( o.requesting_account, o.account );
 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 /**
  * Enables an account to follow another account by adding it to
@@ -1821,7 +1821,7 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
    _db.update_account_in_feed( o.follower, o.following );
    _db.update_account_in_feed( o.following, o.follower );
    
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 
@@ -1946,7 +1946,7 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
 
    _db.update_tag_in_feed( o.follower, o.tag );
    
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 
@@ -1995,7 +1995,7 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
 
    _db.claim_activity_reward( account, witness );
 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 //============================//
@@ -2072,7 +2072,7 @@ void update_network_officer_evaluator::do_apply( const update_network_officer_op
          noo.active = true;
       });
    } 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void network_officer_vote_evaluator::do_apply( const network_officer_vote_operation& o )
@@ -2153,7 +2153,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
 
    _db.update_network_officer( officer, wso, props );
 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
  /**
  * Creates or updates an executive board object for a team of developers and employees.
@@ -2366,7 +2366,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          noo.created = now;
       });
    } 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void executive_board_vote_evaluator::do_apply( const executive_board_vote_operation& o )
@@ -2445,7 +2445,7 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
 
    _db.update_executive_board( executive, wso, props );
 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void update_governance_evaluator::do_apply( const update_governance_operation& o )
@@ -2506,7 +2506,7 @@ void update_governance_evaluator::do_apply( const update_governance_operation& o
          gao.active = true;
       });
    } 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void subscribe_governance_evaluator::do_apply( const subscribe_governance_operation& o )
@@ -2554,7 +2554,7 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
       });
       _db.remove( *itr );
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void update_interface_evaluator::do_apply( const update_interface_operation& o )
@@ -2616,7 +2616,7 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
          i.last_user_update = now;
       });
    } 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
@@ -2721,7 +2721,7 @@ void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
          s.last_activation_time = now;
       });
    } 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void create_community_enterprise_evaluator::do_apply( const create_community_enterprise_operation& o )
@@ -2871,7 +2871,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          ceo.created = now;
       });
    } 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_milestone_operation& o )
@@ -2909,7 +2909,7 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
 
    _db.update_enterprise( enterprise, witness_schedule, props );
    
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_milestone_operation& o )
@@ -2965,7 +2965,7 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
 
    _db.update_enterprise( enterprise, witness_schedule, props );
 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 
@@ -3423,7 +3423,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          _db.clear_comment_feeds( comment );
       }
    } // end EDIT case
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 struct comment_options_extension_visitor
@@ -3552,7 +3552,7 @@ void message_evaluator::do_apply( const message_operation& o )
          mo.last_updated = now;
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void vote_evaluator::do_apply( const vote_operation& o )
@@ -3810,7 +3810,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          }
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void view_evaluator::do_apply( const view_operation& o )
@@ -3989,7 +3989,7 @@ void view_evaluator::do_apply( const view_operation& o )
 
       _db.remove( *itr );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void share_evaluator::do_apply( const share_operation& o )
@@ -4168,7 +4168,7 @@ void share_evaluator::do_apply( const share_operation& o )
 
       _db.remove( *itr );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 /**
@@ -4267,7 +4267,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
          _db.remove( *itr );
       }
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 //==========================//
@@ -4330,7 +4330,7 @@ void board_create_evaluator::do_apply( const board_create_operation& o )
 
    _db.update_board_moderators( new_board_member );
 
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_update_evaluator::do_apply( const board_update_operation& o )
@@ -4368,7 +4368,7 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
          "Cannot lower the privacy setting of a board, only increase it." );
    }
 
-   _db.modify(board, [&]( board_object& bo)
+   _db.modify(board, [&]( board_object& bo )
    {
       bo.board_type = o.board_type;
       bo.board_privacy = o.board_privacy;
@@ -4379,7 +4379,7 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
       bo.board_public_key = o.board_public_key;
       bo.last_board_update = now;
    });
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_vote_mod_evaluator::do_apply( const board_vote_mod_operation& o )
@@ -4461,7 +4461,7 @@ void board_vote_mod_evaluator::do_apply( const board_vote_mod_operation& o )
 
    _db.update_board_moderators( board_member );
 
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_add_mod_evaluator::do_apply( const board_add_mod_operation& o )
@@ -4506,7 +4506,7 @@ void board_add_mod_evaluator::do_apply( const board_add_mod_operation& o )
          "Account: ${a} cannot be removed while the founder of Board: ${b}.", ("a", o.moderator)("b", o.board));
    }
 
-   _db.modify(board_member, [&]( board_member_object& bmo)
+   _db.modify(board_member, [&]( board_member_object& bmo )
    {
       if(o.added)
       {
@@ -4518,7 +4518,7 @@ void board_add_mod_evaluator::do_apply( const board_add_mod_operation& o )
       }
       
    });
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_add_admin_evaluator::do_apply( const board_add_admin_operation& o )
@@ -4561,7 +4561,7 @@ void board_add_admin_evaluator::do_apply( const board_add_admin_operation& o )
          "Account: ${a} cannot be removed as administrator while the Founder of Board: ${b}.", ("a", o.moderator)("b", o.board));
    }
    
-   _db.modify(board_member, [&]( board_member_object& bmo)
+   _db.modify(board_member, [&]( board_member_object& bmo )
    {
       if(o.added)
       {
@@ -4572,7 +4572,7 @@ void board_add_admin_evaluator::do_apply( const board_add_admin_operation& o )
          bmo.administrators.erase(administrator.name);
       }
    });
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_transfer_ownership_evaluator::do_apply( const board_transfer_ownership_operation& o )
@@ -4595,16 +4595,16 @@ void board_transfer_ownership_evaluator::do_apply( const board_transfer_ownershi
    FC_ASSERT( board_member.founder == account.name ), 
       "Only the founder of the board can transfer ownership.");
 
-   _db.modify(board, [&]( board_object& bo)
+   _db.modify(board, [&]( board_object& bo )
    {
       bo.founder = o.new_founder;
    });
 
-   _db.modify(board_member, [&]( board_member_object& bmo)
+   _db.modify(board_member, [&]( board_member_object& bmo )
    {
       bmo.founder = o.new_founder;
    });
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_join_request_evaluator::do_apply( const board_join_request_operation& o )
@@ -4646,7 +4646,7 @@ void board_join_request_evaluator::do_apply( const board_join_request_operation&
       FC_ASSERT( !o.requested, "Request already exists, Requested should be set to false to remove existing request." );
       _db.remove( *itr );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_join_invite_evaluator::do_apply( const board_join_invite_operation& o )
@@ -4701,7 +4701,7 @@ void board_join_invite_evaluator::do_apply( const board_join_invite_operation& o
       auto key_itr = key_idx.find( std::make_tuple( o.member, o.board ) );
       _db.remove( *key_itr );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_join_accept_evaluator::do_apply( const board_join_accept_operation& o )
@@ -4730,7 +4730,7 @@ void board_join_accept_evaluator::do_apply( const board_join_accept_operation& o
 
    if(o.accepted)   // Accepting the request, skipped if rejecting
    {
-      _db.modify(board_member, [&]( board_member_object& bmo)
+      _db.modify(board_member, [&]( board_member_object& bmo )
       {
          bmo.members.insert(member.name);
       });
@@ -4743,7 +4743,7 @@ void board_join_accept_evaluator::do_apply( const board_join_accept_operation& o
       });
    }
    _db.remove( *req_itr );
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_invite_accept_evaluator::do_apply( const board_invite_accept_operation& o )
@@ -4778,7 +4778,7 @@ void board_invite_accept_evaluator::do_apply( const board_invite_accept_operatio
       });
    }
    _db.remove( invite );
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_remove_member_evaluator::do_apply( const board_remove_member_operation& o )
@@ -4796,10 +4796,14 @@ void board_remove_member_evaluator::do_apply( const board_remove_member_operatio
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
 
-   FC_ASSERT( board_member.is_member( member.name ), "Account: ${a} is not a member of board: ${b}.", ("a", o.member)("b", o.board));
-   FC_ASSERT( !board_member.is_moderator( member.name ), "Account: ${a} cannot be removed while a moderator of board: ${b}.", ("a", o.member)("b", o.board));
-   FC_ASSERT( !board_member.is_administrator( member.name ), "Account: ${a} cannot be removed while an administrator of board: ${b}.", ("a", o.member)("b", o.board));
-   FC_ASSERT( board_member.founder != member.name ), "Account: ${a} cannot be removed while the founder of board: ${b}.", ("a", o.member)("b", o.board));
+   FC_ASSERT( board_member.is_member( member.name ),
+      "Account: ${a} is not a member of board: ${b}.", ("a", o.member)("b", o.board));
+   FC_ASSERT( !board_member.is_moderator( member.name ),
+      "Account: ${a} cannot be removed while a moderator of board: ${b}.", ("a", o.member)("b", o.board));
+   FC_ASSERT( !board_member.is_administrator( member.name ),
+      "Account: ${a} cannot be removed while an administrator of board: ${b}.", ("a", o.member)("b", o.board));
+   FC_ASSERT( board_member.founder != member.name ),
+      "Account: ${a} cannot be removed while the founder of board: ${b}.", ("a", o.member)("b", o.board));
 
    const auto& key_idx = _db.get_index< board_member_key_index >().indices().get< by_member_board >();
 
@@ -4809,7 +4813,7 @@ void board_remove_member_evaluator::do_apply( const board_remove_member_operatio
          "Account: ${a} is not authorised to remove accounts from board: ${b}.", ("a", o.account)("b", o.board)); 
    }
    
-   _db.modify(board_member, [&]( board_member_object& bmo)
+   _db.modify(board_member, [&]( board_member_object& bmo )
    {
       bmo.members.erase( member.name );
    });
@@ -4820,7 +4824,7 @@ void board_remove_member_evaluator::do_apply( const board_remove_member_operatio
       const board_member_key_object& key = *key_itr;
       _db.remove( key );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_blacklist_evaluator::do_apply( const board_blacklist_operation& o )
@@ -4842,12 +4846,16 @@ void board_blacklist_evaluator::do_apply( const board_blacklist_operation& o )
    FC_ASSERT( board_member.is_authorized_blacklist( o.account, board ), 
       "Account: ${a} is not authorised to add or remove accounts from the blacklist of board: ${b}.", ("a", o.account)("b", o.board)); 
    
-   FC_ASSERT( !board_member.is_member( member.name ), "Account: ${a} cannot be blacklisted while a member of board: ${b}. Remove them first.", ("a", o.member)("b", o.board));
-   FC_ASSERT( !board_member.is_moderator( member.name ), "Account: ${a} cannot be blacklisted while a moderator of board: ${b}. Remove them first.", ("a", o.member)("b", o.board));
-   FC_ASSERT( !board_member.is_administrator( member.name ), "Account: ${a} cannot be blacklisted while an administrator of board: ${b}. Remove them first.", ("a", o.member)("b", o.board));
-   FC_ASSERT( board_member.founder != member.name ), "Account: ${a} cannot be blacklisted while the founder of board: ${b}.", ("a", o.member)("b", o.board));
+   FC_ASSERT( !board_member.is_member( member.name ),
+      "Account: ${a} cannot be blacklisted while a member of board: ${b}. Remove them first.", ("a", o.member)("b", o.board));
+   FC_ASSERT( !board_member.is_moderator( member.name ),
+      "Account: ${a} cannot be blacklisted while a moderator of board: ${b}. Remove them first.", ("a", o.member)("b", o.board));
+   FC_ASSERT( !board_member.is_administrator( member.name ),
+      "Account: ${a} cannot be blacklisted while an administrator of board: ${b}. Remove them first.", ("a", o.member)("b", o.board));
+   FC_ASSERT( board_member.founder != member.name ),
+      "Account: ${a} cannot be blacklisted while the founder of board: ${b}.", ("a", o.member)("b", o.board));
 
-   _db.modify(board_member, [&]( board_member_object& bmo)
+   _db.modify(board_member, [&]( board_member_object& bmo )
    {
       if(o.blacklisted)
       {
@@ -4858,7 +4866,7 @@ void board_blacklist_evaluator::do_apply( const board_blacklist_operation& o )
          bmo.blacklist.erase(member.name);
       }
    });
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void board_subscribe_evaluator::do_apply( const board_subscribe_operation& o )
@@ -4947,7 +4955,7 @@ void board_subscribe_evaluator::do_apply( const board_subscribe_operation& o )
    // Add new feed objects or remove old feed objects for board in account's feed.
    _db.update_board_in_feed( o.account, o.board );
 
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 //================================//
@@ -4957,23 +4965,6 @@ void board_subscribe_evaluator::do_apply( const board_subscribe_operation& o )
 
 void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
 { try {
-   FC_ASSERT( o.creative_id.size(), "Creative has no creative ID." );
-   FC_ASSERT( o.creative_id.size() <= MAX_STRING_LENGTH, "Creative ID is too long." );
-   FC_ASSERT( fc::is_utf8( o.creative_id ), "Creative ID must be UTF-8" );
-
-   FC_ASSERT( o.objective.size(), "Creative has no objective." );
-   FC_ASSERT( o.objective.size() <= MAX_STRING_LENGTH, "Objective is too long." );
-   FC_ASSERT( fc::is_utf8( o.objective ), "Objective must be UTF-8" );
-
-   FC_ASSERT( o.creative.size(), "Creative has no content." );
-   FC_ASSERT( o.creative.size() <= MAX_STRING_LENGTH, "Creative is too long." );
-   FC_ASSERT( fc::is_utf8( o.creative ), "Creative must be UTF-8" );
-
-   if( o.json.size() ) 
-   {
-      FC_ASSERT( fc::is_utf8( o.json ), "JSON Metadata must be UTF-8" );
-   }
-   
    const account_name_type& signed_for = o.author;
    if( o.signatory != signed_for )
    {
@@ -5016,7 +5007,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
          aco.last_updated = now;
       }); 
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
@@ -5030,7 +5021,7 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
-   for( auto agent : o.agents )   // Ensure all agent accounts exist
+   for( auto agent : o.agents )         // Ensure all agent accounts exist
    {
       const account_object& agent = _db.get_account( agent );
    }
@@ -5088,7 +5079,7 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
          aco.active = o.active;
       }); 
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
@@ -5103,12 +5094,12 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
    }
    const interface_object& interface = _db.get_interface( o.provider );
    const account_object& provider = _db.get_account( o.provider );
-   for( auto audience : o.audience )   // Ensure all audiences exist
+   for( auto audience : o.audience )       // Ensure all audiences exist
    {
       const ad_audience_object& audience = _db.get_ad_audience( provider.name, audience );
    }
 
-   for( auto agent : o.agents )   // Ensure all agent accounts exist
+   for( auto agent : o.agents )       // Ensure all agent accounts exist
    {
       const account_object& agent = _db.get_account( agent );
    }
@@ -5137,7 +5128,7 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
          aio.active = o.active;
       });
    }
-   else  // inventory exists, editing
+   else       // inventory exists, editing
    {
       const ad_inventory_object& inventory = *inventory_itr;
 
@@ -5146,7 +5137,8 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
       uint32_t delta = o.inventory - prev_inventory;
       uint32_t new_remaining = prev_remaining + delta;
 
-      FC_ASSERT( new_remaining >= 0), "Cannot lower remaining inventory to below 0.";
+      FC_ASSERT( new_remaining >= 0 ,
+         "Cannot lower remaining inventory to below 0.");
 
       _db.modify( inventory, [&]( ad_inventory_object& aio )
       {
@@ -5160,21 +5152,11 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
          aio.active = o.active;
       }); 
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
 { try {
-   FC_ASSERT( o.audience_id.size(), "audience has no audience ID." );
-   FC_ASSERT( o.audience_id.size() <= MAX_STRING_LENGTH, "audience ID is too long." );
-   FC_ASSERT( fc::is_utf8( o.audience_id ), "audience ID must be UTF-8" );
-   FC_ASSERT( o.audience.size() , "Audience must include at least one account.");
-   
-   if( o.json.size() ) 
-   {
-      FC_ASSERT( fc::is_utf8( o.json ), "JSON Metadata must be UTF-8" );
-   }
-   const account_object& account = _db.get_account( o.account );
    const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
@@ -5183,6 +5165,8 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+
+   const account_object& account = _db.get_account( o.account );
 
    for( auto account : o.audience )   // Ensure all audience member accounts exist
    {
@@ -5219,30 +5203,11 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
          aao.active = o.active;
       }); 
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 { try {
-   FC_ASSERT( o.bid_id.size(), "bid has no bid ID." );
-   FC_ASSERT( o.bid_id.size() <= MAX_STRING_LENGTH, "bid ID is too long." );
-   FC_ASSERT( fc::is_utf8( o.bid_id ), "bid ID must be UTF-8" );
-
-   FC_ASSERT( o.campaign_id.size(), "campaign has no campaign ID." );
-   FC_ASSERT( o.campaign_id.size() <= MAX_STRING_LENGTH, "campaign ID is too long." );
-   FC_ASSERT( fc::is_utf8( o.campaign_id ), "campaign ID must be UTF-8" );
-
-   FC_ASSERT( o.inventory_id.size(), "inventory has no inventory ID." );
-   FC_ASSERT( o.inventory_id.size() <= MAX_STRING_LENGTH, "inventory ID is too long." );
-   FC_ASSERT( fc::is_utf8( o.inventory_id ), "inventory ID must be UTF-8" );
-
-   if( o.json.size() ) 
-   {
-      FC_ASSERT( fc::is_utf8( o.json ), "JSON Metadata must be UTF-8" );
-   }
-
-   FC_ASSERT( o.bid_price.amount > 0 , "Minimum bid price must be greater than 0.");
-   FC_ASSERT( o.requested > 0 , "Inventory request must be greater than 0." );
    const account_name_type& signed_for = o.bidder;
    if( o.signatory != signed_for )
    {
@@ -5259,40 +5224,38 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( now < o.expiration, 
+   FC_ASSERT( now < o.expiration,
       "Bid expiration time has to be in the future." );
-
-   FC_ASSERT( campaign.active, 
-   "Campaign must be set to active to create a bid.");
-   FC_ASSERT( now > campaign.begin, 
+   FC_ASSERT( campaign.active,
+      "Campaign must be set to active to create a bid." );
+   FC_ASSERT( now > campaign.begin,
       "Campaign has not begun yet, please wait until the beginning time to create bids." );
-   FC_ASSERT( now < campaign.end, 
+   FC_ASSERT( now < campaign.end,
       "Campaign has expired.");
-   
-   FC_ASSERT( inventory.active, 
-      "Inventory must be set to active to create a bid.");
+   FC_ASSERT( inventory.active,
+      "Inventory must be set to active to create a bid." );
    FC_ASSERT( now < inventory.expiration, 
       "Inventory offering has expired.");
-   FC_ASSERT( inventory.remaining >= o.requested, 
-      "Bid request exceeds the inventory remaining from the provider.");
-   FC_ASSERT( o.bid_price >= inventory.min_price, 
-      "Bid price per metric must be greater than the inventory minimum price.");
+   FC_ASSERT( inventory.remaining >= o.requested,
+      "Bid request exceeds the inventory remaining from the provider." );
+   FC_ASSERT( o.bid_price >= inventory.min_price,
+      "Bid price per metric must be greater than the inventory minimum price." );
 
    asset_symbol_type budget_asset = campaign.budget.symbol;
    asset_symbol_type inventory_asset = inventory.min_price.symbol;
 
-   FC_ASSERT( budget_asset == inventory_asset, 
+   FC_ASSERT( budget_asset == inventory_asset,
       "Campaign's budget asset must match the inventory minimum price asset." );
 
    asset new_total_bids = campaign.total_bids + o.bid_price * o.requested;
-   FC_ASSERT( campaign.budget * AD_RESERVE_RATIO >=  new_total_bids, 
+   FC_ASSERT( campaign.budget * AD_RESERVE_RATIO >=  new_total_bids,
       "Total Bids must not exceed ${r} times the budget of the campaign, increase the budget balance of the campaign.", 
       ("r", AD_RESERVE_RATIO) );
 
-   FC_ASSERT( campaign.is_agent( bidder.name ), 
+   FC_ASSERT( campaign.is_agent( bidder.name ),
       "Bidder must be a designated agent of the campaign to create a bid on its behalf.");
-
-   FC_ASSERT( o.included_audiences.size(), "Bid must contain at least one audience." );
+   FC_ASSERT( o.included_audiences.size(),
+      "Bid must contain at least one audience." );
 
    flat_set<account_name_type> combined_audience;
    string audience_id;
@@ -5302,7 +5265,8 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       for( auto audience_id : o.included_audiences )   // Ensure all includec audience objects exist
       {
          const ad_audience_object& aud = _db.get_ad_audience( bidder.name, audience_id );
-         FC_ASSERT( aud.active, "Bid contains an inactive audience.");
+         FC_ASSERT( aud.active,
+            "Bid contains an inactive audience.");
          for( account_name_type name : aud.audience )
          {
             combined_audience.insert( name );
@@ -5311,7 +5275,8 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       for( auto audience_id : o.excluded_audiences )   // Ensure all excluded audience objects exist
       {
          const ad_audience_object& aud = _db.get_ad_audience( bidder.name, audience_id );
-         FC_ASSERT( aud.active, "Bid contains an inactive audience.");
+         FC_ASSERT( aud.active,
+            "Bid contains an inactive audience.");
          for( account_name_type name : aud.audience )
          {
             combined_audience.erase( name );
@@ -5429,7 +5394,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
          _db.remove( bid );
       }  
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
@@ -5612,7 +5577,7 @@ void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
    {
       _db.remove( bid );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 
@@ -5701,7 +5666,7 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
    _db.adjust_liquid_balance( from_account.name, -o.amount );
    _db.adjust_liquid_balance( to_account.name, o.amount );
 
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
@@ -5765,7 +5730,7 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
          _db.remove( *req_itr );
       }
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
@@ -5812,7 +5777,7 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
    {
       _db.remove( request );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation& o )
@@ -5879,7 +5844,7 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
          _db.remove( *recurring_itr );
       }
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_request_operation& o )
@@ -5946,7 +5911,7 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
          _db.remove( *req_itr );
       }
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_accept_operation& o )
@@ -6000,7 +5965,7 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
    {
       _db.remove( request );
    }
-} FC_CAPTURE_AND_RETHROW( (o)) }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
 //============================//
@@ -6079,7 +6044,7 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
    }
 
    const account_object& from_account = _db.get_account( o.from );
-   const account_object& to_account = o.to.size() ? _db.get_account(o.to) : from_account;
+   const account_object& to_account = o.to.size() ? _db.get_account(o.to ) : from_account;
    const account_balance_object& account_balance = _db.get_account_balance( from_account.name, o.amount.symbol );
    const asset_object& asset_object = _db.get_asset( o.amount.symbol );
    time_point now = _db.head_block_time();
@@ -6322,13 +6287,13 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
       "Insufficient Savings balance." );
    _db.adjust_savings_balance( from, -o.amount );
 
-   _db.create< savings_withdraw_object >( [&]( savings_withdraw_object& s ) 
+   _db.create< savings_withdraw_object >( [&]( savings_withdraw_object& s )
    {
       s.from = o.from;
       s.to = o.to;
       s.amount = o.amount;
       from_string( s.memo, o.memo );
-      s.request_id = o.request_id;
+      from_string( s.request_id, o.request_id);
       s.complete = now + SAVINGS_WITHDRAW_TIME;
    });
 
@@ -6362,7 +6327,6 @@ void cancel_transfer_from_savings_evaluator::do_apply( const cancel_transfer_fro
 
 void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 {
-   
    const account_name_type& signed_for = o.delegator;
    if( o.signatory != signed_for )
    {
@@ -6382,9 +6346,9 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
    asset available_stake = delegator_balance.get_staked_balance() - delegator_balance.get_delegated_balance() - asset( delegator_balance.to_unstake - delegator_balance.total_unstaked, o.amount.symbol );
 
    const witness_schedule_object& wso = _db.get_witness_schedule();
-   const dynamic_global_property_object& gpo = _db.get_dynamic_global_properties();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
-   if( delegation == nullptr ) // If delegation doesn't exist, create it
+   if( delegation == nullptr )          // If delegation doesn't exist, create it
    {
       FC_ASSERT( available_stake >= o.amount, 
          "Account does not have enough stake to delegate." );
@@ -6397,25 +6361,25 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
          ado.min_delegation_time = now;
       }); 
 
-      _db.adjust_delegated_balance( delegator_account, o.amount); // increase delegated balance of delegator account
-      _db.adjust_receiving_balance( delegatee_account, o.amount); // increase receiving balance of delegatee account
+      _db.adjust_delegated_balance( delegator_account, o.amount);       // increase delegated balance of delegator account
+      _db.adjust_receiving_balance( delegatee_account, o.amount);       // increase receiving balance of delegatee account
    }
-   else if( o.amount >= delegation->amount ) // Else if the delegation is increasing
+   else if( o.amount >= delegation->amount )       // Else if the delegation is increasing
    {
       asset delta = o.amount - delegation->amount;
 
       FC_ASSERT( available_stake >= o.amount - delegation->amount, 
          "Account does not have enough stake to delegate." );
 
-      _db.adjust_delegated_balance( delegator_account, delta); // increase delegated balance of delegator account
-      _db.adjust_receiving_balance( delegatee_account, delta); // increase receiving balance of delegatee account
+      _db.adjust_delegated_balance( delegator_account, delta);     // increase delegated balance of delegator account
+      _db.adjust_receiving_balance( delegatee_account, delta);     // increase receiving balance of delegatee account
 
       _db.modify( *delegation, [&]( asset_delegation_object& ado )
       {
          ado.amount = o.amount;
       });
    }
-   else // Else the delegation is decreasing (delegation->asset > o.amount)
+   else        // Else the delegation is decreasing ( delegation->asset > o.amount)
    {
       asset delta = delegation->amount - o.amount;
 
@@ -6432,8 +6396,8 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
          obj.expiration = std::max( now + CONTENT_REWARD_INTERVAL, delegation->min_delegation_time );
       });
 
-      _db.adjust_delegated_balance( delegator_account, -delta); // decrease delegated balance of delegator account
-      _db.adjust_receiving_balance( delegatee_account, -delta); // decrease receiving balance of delegatee account
+      _db.adjust_delegated_balance( delegator_account, -delta);     // decrease delegated balance of delegator account
+      _db.adjust_receiving_balance( delegatee_account, -delta);     // decrease receiving balance of delegatee account
 
       if( o.amount.amount > 0 )
       {
@@ -6485,7 +6449,7 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 
    _db.create< escrow_object >([&]( escrow_object& esc )
    {
-      esc.escrow_id              = o.escrow_id;
+      from_string( esc.escrow_id, o.escrow_id );
       esc.from                   = o.from;
       esc.to                     = o.to;
       esc.agent                  = o.agent;
@@ -6494,7 +6458,8 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
       esc.balance                = o.amount;
       esc.pending_fee            = o.fee;
    });
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
 
 void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 { try {
@@ -6513,7 +6478,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 
    time_point now = _db.head_block_time();
    FC_ASSERT( escrow.to == o.to, 
-      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to)("e", escrow.to) );
+      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to )("e", escrow.to ) );
    FC_ASSERT( escrow.agent == o.agent, 
       "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", escrow.agent) );
    FC_ASSERT( escrow.ratification_deadline >= now, 
@@ -6524,7 +6489,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
    if( o.who == o.to )
    {
       FC_ASSERT( !escrow.to_approved,
-         "Account 'to' (${t}) has already approved the escrow.", ("t", o.to) );
+         "Account 'to' (${t}) has already approved the escrow.", ("t", o.to ) );
 
       if( !reject_escrow )
       {
@@ -6563,7 +6528,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
          esc.pending_fee.amount = 0;
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
@@ -6589,7 +6554,7 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
    FC_ASSERT( !e.disputed,
       "The escrow is already under dispute." );
    FC_ASSERT( e.to == o.to,
-      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to)("e", e.to) );
+      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to )("e", e.to ) );
    FC_ASSERT( e.agent == o.agent,
       "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", e.agent) );
 
@@ -6597,7 +6562,7 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
    {
       esc.disputed = true;
    });
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
@@ -6622,14 +6587,13 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
    FC_ASSERT( e.balance >= o.amount,
       "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.amount)("b", e.balance) );
    FC_ASSERT( e.to == o.to,
-      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to)("e", e.to) );
+      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to )("e", e.to ) );
    FC_ASSERT( e.agent == o.agent,
       "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", e.agent) );
    FC_ASSERT( o.receiver == e.from || o.receiver == e.to,
-      "Funds must be released to 'from' (${f}) or 'to' (${t})", ("f", e.from)("t", e.to) );
+      "Funds must be released to 'from' (${f}) or 'to' (${t})", ("f", e.from)("t", e.to ) );
    
-   // If there is a dispute regardless of expiration, the agent can release funds to either party
-   if( e.disputed )
+   if( e.disputed )     // If there is a dispute regardless of expiration, the agent can release funds to either party
    {
       FC_ASSERT( o.who == e.agent,
          "Only 'agent' (${a}) can release funds in a disputed escrow.", ("a", e.agent) );
@@ -6637,25 +6601,24 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
    else
    {
       FC_ASSERT( o.who == e.from || o.who == e.to,
-         "Only 'from' (${f}) and 'to' (${t}) can release funds from a non-disputed escrow", ("f", e.from)("t", e.to) );
+         "Only 'from' (${f}) and 'to' (${t}) can release funds from a non-disputed escrow", ("f", e.from)("t", e.to ) );
 
-      if( e.escrow_expiration > now )
+      if( e.escrow_expiration > now )     // If escrow expires and there is no dispute, either party can release funds to either party.
       {
          // If there is no dispute and escrow has not expired, either party can release funds to the other.
          if( o.who == e.from )
          {
             FC_ASSERT( o.receiver == e.to,
-               "Only 'from' (${f}) can release funds to 'to' (${t}).", ("f", e.from)("t", e.to) );
+               "Only 'from' (${f}) can release funds to 'to' (${t}).", ("f", e.from)("t", e.to ) );
          }
          else if( o.who == e.to )
          {
             FC_ASSERT( o.receiver == e.from,
-               "Only 'to' (${t}) can release funds to 'from' (${t}).", ("f", e.from)("t", e.to) );
+               "Only 'to' (${t}) can release funds to 'from' (${t}).", ("f", e.from)("t", e.to ) );
          }
       }
    }
-   // If escrow expires and there is no dispute, either party can release funds to either party.
-
+   
    _db.adjust_liquid_balance( o.receiver, o.amount );
 
    _db.modify( e, [&]( escrow_object& esc )
@@ -6667,7 +6630,7 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
    {
       _db.remove( e );
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 //============================//
@@ -6717,7 +6680,7 @@ void limit_order_create_evaluator::do_apply( const limit_order_create_operation&
       FC_ASSERT( filled, 
          "Cancelling order because it was not filled." );
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void limit_order_cancel_evaluator::do_apply( const limit_order_cancel_operation& o )
@@ -6751,11 +6714,11 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
    time_point now = props.time;
 
-   FC_ASSERT( o.expiration > now, 
+   FC_ASSERT( o.expiration > now,
       "Margin order has to expire after head block time." );
-   FC_ASSERT( o.exchange_rate.base == amount_to_borrow.symbol, 
+   FC_ASSERT( o.exchange_rate.base == amount_to_borrow.symbol,
       "Margin order exchange rate should have debt asset as base of price." );
-   FC_ASSERT( owner.loan_default_balance == 0, 
+   FC_ASSERT( owner.loan_default_balance == 0,
       "Account has an outstanding loan default balance. Please expend network credit collateral to recoup losses before opening a new loan." );
 
    const account_object& interface = _db.get_account( o.interface );
@@ -6771,7 +6734,6 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount_to_borrow.symbol, false );
    asset min_collateral = ( o.amount_to_borrow * props.median_props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 20% of debt value.
    share_type collateralization;
-
    asset_symbol_type symbol_a;
    asset_symbol_type symbol_b;
 
@@ -6826,7 +6788,7 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
       moo.sell_price = o.exchange_rate;
       moo.debt = o.amount_to_borrow;
       moo.debt_balance = o.amount_to_borrow;
-      moo.interest = asset( 0, o.amount_to_borrow.symbol);
+      moo.interest = asset( 0, o.amount_to_borrow.symbol );
       moo.position = position;
       moo.position_balance = asset( 0, position.symbol );
       moo.collateralization = collateralization;
@@ -6861,7 +6823,7 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
       FC_ASSERT( filled,
          "Cancelling order because it was not filled." );
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void margin_order_close_evaluator::do_apply( const margin_order_close_operation& o )
@@ -6909,7 +6871,7 @@ void margin_order_close_evaluator::do_apply( const margin_order_close_operation&
 }
 
 
-void call_order_update_evaluator::do_apply(const call_order_update_operation& o)
+void call_order_update_evaluator::do_apply( const call_order_update_operation& o )
 { try {
    const account_name_type& signed_for = o.funding_account;
    if( o.signatory != signed_for )
@@ -7023,10 +6985,10 @@ void call_order_update_evaluator::do_apply(const call_order_update_operation& o)
          );
    }
    
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void bid_collateral_evaluator::do_apply(const bid_collateral_operation& o )
+void bid_collateral_evaluator::do_apply( const bid_collateral_operation& o )
 { try {
    const account_name_type& signed_for = o.bidder;
    if( o.signatory != signed_for )
@@ -7085,7 +7047,7 @@ void bid_collateral_evaluator::do_apply(const bid_collateral_operation& o )
          bid.inv_swan_price = o.additional_collateral / o.debt_covered;
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 //=========================//
@@ -7173,7 +7135,7 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    });
 
    _db.adjust_liquid_balance( o.account, asset( max, liquidity_asset_symbol ) );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_operation& o )
@@ -7224,7 +7186,7 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
       _db.liquid_exchange( o.amount, account, liquidity_pool, int_account );
    }
  
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void liquidity_pool_fund_evaluator::do_apply( const liquidity_pool_fund_operation& o )
@@ -7260,7 +7222,7 @@ void liquidity_pool_fund_evaluator::do_apply( const liquidity_pool_fund_operatio
    const asset_liquidity_pool_object& liquidity_pool = _db.get_liquidity_pool( symbol_a, symbol_b );
 
    _db.liquid_fund( o.amount, account, liquidity_pool );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void liquidity_pool_withdraw_evaluator::do_apply( const liquidity_pool_withdraw_operation& o )
@@ -7296,7 +7258,7 @@ void liquidity_pool_withdraw_evaluator::do_apply( const liquidity_pool_withdraw_
 
    _db.liquid_withdraw( o.amount, o.receive_asset, account, liquidity_pool );
 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_operation& o )
@@ -7382,7 +7344,7 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
          _db.remove( collateral );
       }
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation& o )
@@ -7553,7 +7515,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
          _db.adjust_pending_supply( -delta_debt );
       }
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void credit_pool_lend_evaluator::do_apply( const credit_pool_lend_operation& o )
@@ -7571,7 +7533,7 @@ void credit_pool_lend_evaluator::do_apply( const credit_pool_lend_operation& o )
    const asset_object& asset = _db.get_asset( o.amount.symbol );
    const asset_credit_pool_object& credit_pool = _db.get_credit_pool( asset.symbol, false );
    _db.credit_lend( o.amount, account, credit_pool );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operation& o )
@@ -7589,7 +7551,7 @@ void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operat
    const asset_object& asset = _db.get_asset( o.amount.symbol );
    const asset_credit_pool_object& credit_pool = _db.get_credit_pool( asset.symbol, true );
    _db.credit_withdraw( o.amount, account, credit_pool );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 //==========================//
@@ -7950,7 +7912,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    
    _db.adjust_pending_supply( init_lent_asset );           
    _db.adjust_liquid_balance( o.issuer, init_credit_asset );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void asset_update_evaluator::do_apply( const asset_update_operation& o )
@@ -8104,7 +8066,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       }
       a.options = o.new_options;
    });
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
@@ -8136,7 +8098,7 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
       "Issuing this amount would exceed the asset's maximum supply. Please raise the maximum supply, or reduce issuance amount." );
 
    _db.adjust_liquid_balance( to_account, o.asset_to_issue );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
@@ -8163,7 +8125,7 @@ void asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
       "Cannot reserve more of an asset than its current total supply." );
 
    _db.adjust_liquid_balance( from_account, -o.amount_to_reserve );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void asset_claim_fees_evaluator::do_apply( const asset_claim_fees_operation& o )
@@ -8192,7 +8154,7 @@ void asset_claim_fees_evaluator::do_apply( const asset_claim_fees_operation& o )
    });
 
    _db.adjust_liquid_balance( o.issuer, o.amount_to_claim );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void asset_claim_pool_evaluator::do_apply( const asset_claim_pool_operation& o )
@@ -8221,10 +8183,10 @@ void asset_claim_pool_evaluator::do_apply( const asset_claim_pool_operation& o )
    });
 
    _db.adjust_liquid_balance( o.issuer, o.amount_to_claim );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void asset_fund_fee_pool_evaluator::do_apply(const asset_fund_fee_pool_operation& o)
+void asset_fund_fee_pool_evaluator::do_apply( const asset_fund_fee_pool_operation& o )
 { try {
    const account_name_type& signed_for = o.from_account;
    if( o.signatory != signed_for )
@@ -8246,7 +8208,7 @@ void asset_fund_fee_pool_evaluator::do_apply(const asset_fund_fee_pool_operation
       addo.adjust_fee_pool( o.pool_amount );
    });
 
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 static void validate_new_issuer( database& _db, const asset_object& a, const account_name_type& new_issuer )
@@ -8293,7 +8255,7 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
    {
       a.issuer = o.new_issuer;
    });
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 /*
@@ -8450,10 +8412,10 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
    });
    
    _db.check_call_orders( a, true, false );     // Process margin calls, allow black swan, not for a new limit order
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void asset_publish_feed_evaluator::do_apply(const asset_publish_feed_operation& o )
+void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation& o )
 { try {
    const account_name_type& signed_for = o.publisher;
    if( o.signatory != signed_for )
@@ -8534,7 +8496,7 @@ void asset_publish_feed_evaluator::do_apply(const asset_publish_feed_operation& 
       }
       _db.check_call_orders( base, true, false );    // Process margin calls, allow black swan, not for a new limit order
    }
-} FC_CAPTURE_AND_RETHROW((o)) }
+} FC_CAPTURE_AND_RETHROW(( o )) }
 
 
 void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
@@ -8613,10 +8575,10 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
          fso.settlement_date = settlement_time;
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void asset_global_settle_evaluator::do_apply(const asset_global_settle_operation& o)
+void asset_global_settle_evaluator::do_apply( const asset_global_settle_operation& o )
 { try {
    const account_name_type& signed_for = o.issuer;
    if( o.signatory != signed_for )
@@ -8631,25 +8593,25 @@ void asset_global_settle_evaluator::do_apply(const asset_global_settle_operation
    const asset_dynamic_data_object& mia_dyn = _db.get_dynamic_data( o.amount.symbol );
    const asset_bitasset_data_object& bitasset = _db.get_bitasset_data( o.asset_to_settle );
 
-   FC_ASSERT( asset_to_settle.is_market_issued(), 
+   FC_ASSERT( asset_to_settle.is_market_issued(),
       "Can only globally settle market-issued assets." );
-   FC_ASSERT( asset_to_settle.can_global_settle(), 
+   FC_ASSERT( asset_to_settle.can_global_settle(),
       "The global_settle permission of this asset is disabled." );
-   FC_ASSERT( asset_to_settle.issuer == o.issuer, 
+   FC_ASSERT( asset_to_settle.issuer == o.issuer,
       "Only asset issuer can globally settle an asset." );
-   FC_ASSERT( mia_dyn.get_total_supply().amount > 0, 
+   FC_ASSERT( mia_dyn.get_total_supply().amount > 0,
       "Cannot globally settle an asset with zero supply." );
-   FC_ASSERT( !bitasset.has_settlement(), 
+   FC_ASSERT( !bitasset.has_settlement(),
       "This asset has already been globally settled, cannot global settle again." );
 
-   const auto& idx = _db.get_index< call_order_index >().indices().get<by_collateral>();
+   const auto& idx = _db.get_index< call_order_index >().indices().get< by_collateral >();
 
    FC_ASSERT( !idx.empty(), 
       "Critical error: No debt positions found on entire network. Bitasset supply should not exist." );
 
    auto itr = idx.lower_bound( price::min( bitasset.options.short_backing_asset, o.asset_to_settle ) );
 
-   FC_ASSERT( itr != idx.end() && itr->debt_type() == o.asset_to_settle, 
+   FC_ASSERT( itr != idx.end() && itr->debt_type() == o.asset_to_settle,
       "Critical error: No debt positions found for the asset being settled. Bitasset supply should not exist." );
 
    const call_order_object& least_collateralized_short = *itr;
@@ -8658,7 +8620,7 @@ void asset_global_settle_evaluator::do_apply(const asset_global_settle_operation
       "Cannot force settle at supplied price: Least collateralized short lacks sufficient collateral to settle. Please lower the price");
 
    _db.globally_settle_asset( asset_to_settle, o.settle_price );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 //==================================//
@@ -8730,7 +8692,7 @@ void witness_update_evaluator::do_apply( const witness_update_operation& o )
          w.active = true;
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
@@ -8831,7 +8793,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
    });
 
    _db.claim_proof_of_work_reward( worker_account );     // Rewards miner account from mining POW reward pool.
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void verify_block_evaluator::do_apply( const verify_block_operation& o )
@@ -8895,7 +8857,7 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
          bvo.block_id = o.block_id;
       });
    }
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void commit_block_evaluator::do_apply( const commit_block_operation& o )
@@ -8985,7 +8947,7 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
       w.last_commit_id = o.block_id;
    });
    
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 /**
  * In the event of block producers signing conflicting commitment transactions
@@ -9096,7 +9058,7 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
 
    _db.adjust_staked_balance( first_producer, -forfeited_stake );    // Transfer forfeited stake amount from producer to reporter.
    _db.adjust_staked_balance( o.reporter, forfeited_stake );
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 //===========================//
@@ -9110,7 +9072,7 @@ void custom_evaluator::do_apply( const custom_operation& o )
    {
       FC_ASSERT( o.data.size() <= 8192, "custom_operation data must be less than 8k" );
    }  
-} FC_CAPTURE_AND_RETHROW( (o) ) }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void custom_json_evaluator::do_apply( const custom_json_operation& o )

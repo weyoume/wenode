@@ -73,7 +73,9 @@ namespace node { namespace chain {
 
          shared_string                json;                             // The witnesses or miners json metadata.
 
-         fc::array<uint16_t, 2>       location;                         // Longitude / Latitude Co-ordinates of the witness or miner's approximate geo-location.
+         double                       latitude;                         // Latitude co-ordinates of the witness.
+
+         double                       longitude;                        // Longitude co-ordinates of the witness.
 
          public_key_type              signing_key;                      // The key used to sign blocks on behalf of this witness or miner.
 
@@ -159,6 +161,7 @@ namespace node { namespace chain {
          uint16_t               vote_rank;   // the ordered rank to which the witness is supported, with 1 being the highest voted witness, and increasing for others.
    };
 
+
    class witness_schedule_object : public object< witness_schedule_object_type, witness_schedule_object >
    {
       public:
@@ -184,9 +187,9 @@ namespace node { namespace chain {
 
          uint128_t                                         total_witness_voting_power;
 
-         vector<account_name_type>                         top_witnesses;
+         vector< account_name_type >                       top_witnesses;
 
-         vector<account_name_type>                         top_miners;
+         vector< account_name_type >                       top_miners;
 
          uint8_t                                           num_scheduled_producers = 1;
 
@@ -541,19 +544,37 @@ FC_REFLECT_ENUM( node::chain::witness_object::witness_schedule_type,
 FC_REFLECT( node::chain::witness_object,
          (id)
          (owner)
+         (active)
+         (schedule)
+         (last_confirmed_block_num)
+         (details)
+         (url)
+         (json)
+         (latitude)
+         (longitude)
+         (signing_key)
          (created)
-         (url)(votes)(schedule)
-         (virtual_last_update)
-         (virtual_position)
-         (virtual_scheduled_time)
+         (last_commit_height)
+         (last_commit_id)
+         (total_blocks)
+         (voting_power)
+         (vote_count)
+         (mining_power)
+         (mining_count)
+         (last_mining_update)
+         (last_pow_time)
+         (recent_txn_stake_weight)
+         (last_txn_stake_weight_update)
+         (accumulated_activity_stake)
          (total_missed)
          (last_aslot)
-         (last_confirmed_block_num)
-         (pow_worker)
-         (signing_key)
          (props)
-         (USD_exchange_rate)
-         (last_USD_exchange_update)
+         (witness_virtual_last_update)
+         (witness_virtual_position)
+         (witness_virtual_scheduled_time)
+         (miner_virtual_last_update)
+         (miner_virtual_position)
+         (miner_virtual_scheduled_time)
          (last_work)
          (running_version)
          (hardfork_version_vote)
@@ -565,27 +586,60 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::witness_object, node::chain::witness_inde
 FC_REFLECT( node::chain::witness_vote_object, 
          (id)
          (witness)
-         (account) 
+         (account)
+         (vote_rank)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::witness_vote_object, node::chain::witness_vote_index );
 
 FC_REFLECT( node::chain::witness_schedule_object,
          (id)
-         (current_virtual_time)
+         (median_props)
+         (current_witness_virtual_time)
+         (current_miner_virtual_time)
          (next_shuffle_block_num)
          (current_shuffled_producers)
-         (num_scheduled_witnesses)
-         (top_witness_weight)
-         (additional_witness_weight)
-         (miner_weight)
-         (witness_pay_normalization_factor)
-         (median_props)
+         (total_witness_voting_power)
+         (top_witnesses)
+         (top_miners)
+         (num_scheduled_producers)
+         (pow_target_difficulty)
+         (recent_pow)
+         (last_pow_update)
          (majority_version)
-         (max_voted_witnesses)
-         (max_miner_witnesses)
-         (max_runner_witnesses)
+         (dpos_witness_producers)
+         (dpos_witness_additional_producers)
+         (pow_miner_producers)
+         (pow_miner_additional_producers)
          (hardfork_required_witnesses)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::witness_schedule_object, node::chain::witness_schedule_index );
+
+FC_REFLECT( node::chain::block_validation_object,
+         (id)
+         (producer)
+         (block_id)
+         (height)
+         (created)
+         (verifications)
+         (verifiers)
+         (committed)
+         (commit_time)
+         (commitment_stake)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::block_validation_object, node::chain::block_validation_index );
+
+FC_REFLECT( node::chain::commit_violation_object,
+         (id)
+         (reporter)
+         (producer)
+         (height)
+         (first_trx)
+         (second_trx)
+         (created)
+         (forfeited_stake)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::commit_violation_object, node::chain::commit_violation_index );

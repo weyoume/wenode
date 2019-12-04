@@ -1,8 +1,6 @@
 #pragma once
 #include <node/protocol/transaction.hpp>
-
 #include <node/chain/node_object_types.hpp>
-
 #include <boost/multi_index/hashed_index.hpp>
 
 namespace node { namespace chain {
@@ -28,9 +26,9 @@ namespace node { namespace chain {
 
          id_type              id;
 
-         bip::vector< char, allocator< char > > packed_trx;
-         transaction_id_type  trx_id;
-         time_point           expiration;
+         bip::vector< char, allocator< char > >      packed_trx;
+         transaction_id_type                         trx_id;
+         time_point                                  expiration;
    };
 
    struct by_expiration;
@@ -48,5 +46,11 @@ namespace node { namespace chain {
 
 } } // node::chain
 
-FC_REFLECT( node::chain::transaction_object, (id)(packed_trx)(trx_id)(expiration) )
-CHAINBASE_SET_INDEX_TYPE( node::chain::transaction_object, node::chain::transaction_index )
+FC_REFLECT( node::chain::transaction_object,
+         (id)
+         (packed_trx)
+         (trx_id)
+         (expiration)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::transaction_object, node::chain::transaction_index );

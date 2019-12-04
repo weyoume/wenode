@@ -3383,7 +3383,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       op.from = "alice";
       op.to = "bob";
       op.amount = ASSET( "1.000 TESTS" );
-      op.escrow_id = 0;
+      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17";
       op.agent = "sam";
       op.fee = ASSET( "0.100 TESTS" );
       op.json = "";
@@ -3426,7 +3426,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_authorities )
       op.to = "bob";
       op.USDamount = ASSET( "1.000 USD" );
       op.TMEamount = ASSET( "1.000 TESTS" );
-      op.escrow_id = 0;
+      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17"
       op.agent = "sam";
       op.fee = ASSET( "0.100 TESTS" );
       op.json = "";
@@ -3464,7 +3464,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
       op.to = "bob";
       op.USDamount = ASSET( "1.000 USD" );
       op.TMEamount = ASSET( "1.000 TESTS" );
-      op.escrow_id = 0;
+      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17"
       op.agent = "sam";
       op.fee = ASSET( "0.100 TESTS" );
       op.json = "";
@@ -3559,7 +3559,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_validate )
       op.to = "bob";
       op.agent = "sam";
       op.who = "bob";
-      op.escrow_id = 0;
+      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17"
       op.approve = true;
 
       BOOST_TEST_MESSAGE( "--- failure when who is not to or agent" );
@@ -3589,7 +3589,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_authorities )
       op.to = "bob";
       op.agent = "sam";
       op.who = "bob";
-      op.escrow_id = 0;
+      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17"
       op.approve = true;
 
       flat_set< account_name_type > auths;

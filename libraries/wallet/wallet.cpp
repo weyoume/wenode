@@ -1835,7 +1835,7 @@ annotated_signed_transaction wallet_api::escrow_transfer(
       string from,
       string to,
       string agent,
-      uint32_t escrow_id,
+      string escrow_id,
       asset amount,
       asset fee,
       time_point ratification_deadline,
@@ -1868,7 +1868,7 @@ annotated_signed_transaction wallet_api::escrow_approve(
       string to,
       string agent,
       string who,
-      uint32_t escrow_id,
+      string escrow_id,
       bool approve,
       bool broadcast
    )
@@ -1893,7 +1893,7 @@ annotated_signed_transaction wallet_api::escrow_dispute(
       string to,
       string agent,
       string who,
-      uint32_t escrow_id,
+      string escrow_id,
       bool broadcast
    )
 {
@@ -1918,7 +1918,7 @@ annotated_signed_transaction wallet_api::escrow_release(
    string agent,
    string who,
    string receiver,
-   uint32_t escrow_id,
+   string escrow_id,
    asset amount,
    bool broadcast
 )

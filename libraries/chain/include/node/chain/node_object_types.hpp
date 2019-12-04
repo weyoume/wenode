@@ -493,6 +493,7 @@ namespace fc
 FC_REFLECT_ENUM( node::chain::object_type,
 
          // Global objects
+         
          (dynamic_global_property_object_type)
          (transaction_object_type)
          (operation_object_type)

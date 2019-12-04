@@ -196,6 +196,7 @@ namespace node { namespace chain {
             }
          }   
    };
+   
 
    /**
     * Feed objects are used to hold the posts that have been posted or shared by the 
@@ -213,7 +214,7 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                                      id;
+         id_type                                     id;
 
          account_name_type                           account;               // Account that should see comment in their feed.
 
@@ -234,6 +235,7 @@ namespace node { namespace chain {
          time_point                                  feed_time;             // Time that the comment was added or last shared with account. 
    };
 
+
    /**
     * Blog objects hold posts that are shared or posted by a particular account or to a tag, or a board.
     * Operates like outbox. 
@@ -251,13 +253,13 @@ namespace node { namespace chain {
 
          id_type                   id;
 
-         account_name_type         account;              // Blog or sharing account for account type blogs, null for other types
+         account_name_type         account;               // Blog or sharing account for account type blogs, null for other types
 
-         board_name_type           board;                // Board posted or shared to for board type blogs
+         board_name_type           board;                 // Board posted or shared to for board type blogs
 
-         tag_name_type             tag;                  // Tag posted or shared to for tag type blogs.            
+         tag_name_type             tag;                   // Tag posted or shared to for tag type blogs.            
 
-         comment_id_type           comment;              // Comment ID
+         comment_id_type           comment;               // Comment ID
 
          flat_map< account_name_type, time_point >   shared_by;     // Map of the times that accounts that have shared the comment in the blog.
 
@@ -365,6 +367,7 @@ namespace node { namespace chain {
          time_point              created;            // Time the share was created
    };
 
+
    /**
     * Moderation Tag objects are used by board moderators and governance addresses to apply
     * tags detailing the type of content that they find on the network that is 
@@ -438,9 +441,9 @@ namespace node { namespace chain {
 
          shared_string           uuid;                     // uuidv4 uniquely identifying the message for local storage.
 
-         time_point              created;                  // Time the message was sent.
-
          time_point              last_updated;             // Time the message was last changed, used to reload encrypted message storage.
+
+         time_point              created;                  // Time the message was sent.
    };
 
 
@@ -982,12 +985,10 @@ namespace node { namespace chain {
       allocator< comment_object >
    > comment_index;
 
-
    struct by_sender_recipient;
    struct by_account_inbox;
    struct by_account_outbox;
    struct by_sender_uuid;
-
 
    typedef multi_index_container<
       message_object,
@@ -1024,11 +1025,9 @@ namespace node { namespace chain {
             >,
             composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< message_id_type > >
          >
-
       >,
       allocator< message_object >
    > message_index;
-
 
    struct by_moderator_comment;
    struct by_comment_moderator;
@@ -1062,7 +1061,6 @@ namespace node { namespace chain {
       allocator< moderation_tag_object >
    > moderation_tag_index;
 
-
    typedef multi_index_container<
       comment_metrics_object,
       indexed_by<
@@ -1077,20 +1075,44 @@ FC_REFLECT( node::chain::comment_object,
          (id)
          (author)
          (permlink)
-         (category)
-         (parent_author)
-         (parent_permlink)
          (title)
          (body)
+         (ipfs)
+         (magnet)
+         (post_type)
+         (privacy)
+         (public_key)
+         (reach)
+         (board)
+         (tags)
+         (interface)
+         (rating)
+         (language)
+         (root_comment)
+         (parent_author)
+         (parent_permlink)
          (json)
+         (category)
+         (comment_price)
+         (payments_received)
+         (beneficiaries)
          (last_update)
          (created)
          (active)
          (last_payout)
+         (author_reputation)
          (depth)
          (children)
+         (net_votes)
+         (view_count)
+         (share_count)
          (net_reward)
+         (vote_power)
+         (view_power)
+         (share_power)
+         (comment_power)
          (cashout_time)
+         (cashouts_received)
          (max_cashout_time)
          (total_vote_weight)
          (total_view_weight)
@@ -1100,41 +1122,40 @@ FC_REFLECT( node::chain::comment_object,
          (curator_payout_value)
          (beneficiary_payout_value)
          (author_rewards)
-         (net_votes)
-         (root_comment)
-         (max_accepted_payout)
          (percent_liquid)
+         (reward)
+         (weight)
+         (max_weight)
+         (max_accepted_payout)
+         (author_reward_percent)
+         (vote_reward_percent)
+         (view_reward_percent)
+         (share_reward_percent)
+         (comment_reward_percent)
+         (storage_reward_percent)
+         (moderation_reward_percent)
          (allow_replies)
          (allow_votes)
+         (allow_views)
+         (allows_shares)
          (allow_curation_rewards)
-         (beneficiaries)
+         (root)
+         (deleted)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::comment_object, node::chain::comment_index );
 
-FC_REFLECT( node::chain::comment_vote_object,
-         (id)
-         (voter)
-         (comment)
-         (weight)
-         (reward)
-         (vote_percent)
-         (last_update)
-         (num_changes)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::comment_vote_object, node::chain::comment_vote_index );
-
-
 FC_REFLECT( node::chain::feed_object, 
          (id)
          (account)
-         (first_reblogged_by)
-         (first_reblogged_on)
-         (reblogged_by)
          (comment)
-         (reblogs)
-         (account_feed_id) 
+         (feed_type)
+         (shared_by)
+         (boards)
+         (tags)
+         (first_shared_by)
+         (shares)
+         (feed_time) 
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::feed_object, node::chain::feed_index );
@@ -1142,9 +1163,122 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::feed_object, node::chain::feed_index );
 FC_REFLECT( node::chain::blog_object, 
          (id)
          (account)
+         (board)
+         (tag)
          (comment)
-         (reblogged_on)
-         (blog_feed_id) 
+         (shared_by)
+         (blog_type)
+         (first_shared_by)
+         (shares)
+         (blog_time) 
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::blog_object, node::chain::blog_index );
+
+FC_REFLECT( node::chain::comment_vote_object,
+         (id)
+         (voter)
+         (comment)
+         (weight)
+         (max_weight)
+         (reward)
+         (vote_percent)
+         (last_update)
+         (created)
+         (num_changes)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::comment_vote_object, node::chain::comment_vote_index );
+
+FC_REFLECT( node::chain::comment_view_object,
+         (id)
+         (viewer)
+         (comment)
+         (interface)
+         (supernode)
+         (reward)
+         (weight)
+         (max_weight)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::comment_view_object, node::chain::comment_view_index );
+
+FC_REFLECT( node::chain::comment_share_object,
+         (id)
+         (sharer)
+         (comment)
+         (interface)
+         (reward)
+         (weight)
+         (max_weight)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::comment_share_object, node::chain::comment_share_index );
+
+FC_REFLECT( node::chain::moderation_tag_object,
+         (id)
+         (moderator)
+         (comment)
+         (board)
+         (tags)
+         (rating)
+         (details)
+         (interface)
+         (filter)
+         (last_update)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::moderation_tag_object, node::chain::moderation_tag_index );
+
+FC_REFLECT( node::chain::message_object,
+         (id)
+         (sender)
+         (recipient)
+         (sender_public_key)
+         (recipient_public_key)
+         (message)
+         (json)
+         (uuid)
+         (last_update)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::message_object, node::chain::message_index );
+
+FC_REFLECT( node::chain::comment_metrics_object,
+         (id)
+         (recent_post_count)
+         (recent_vote_power)
+         (recent_view_power)
+         (recent_share_power)
+         (recent_comment_power)
+         (average_vote_power)
+         (average_view_power)
+         (average_share_power)
+         (average_comment_power)
+         (median_vote_power)
+         (median_view_power)
+         (median_share_power)
+         (median_comment_power)
+         (recent_vote_count)
+         (recent_view_count)
+         (recent_share_count)
+         (recent_comment_count)
+         (average_vote_count)
+         (average_view_count)
+         (average_share_count)
+         (average_comment_count)
+         (median_vote_count)
+         (median_view_count)
+         (median_share_count)
+         (median_comment_count)
+         (vote_view_ratio)
+         (vote_share_ratio)
+         (vote_comment_ratio)
+         (last_update)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::comment_metrics_object, node::chain::comment_metrics_index );

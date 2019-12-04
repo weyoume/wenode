@@ -38,6 +38,7 @@ struct comment_api_obj
       id( o.id ),
       author( o.author ),
       permlink( to_string( o.permlink ) ),
+      title( to_string( o.title ) ),
       post_type( to_string( o.post_type ) ),
       privacy( o.privacy ),
       public_key( to_string( o.public_key ) ),
@@ -119,6 +120,7 @@ struct comment_api_obj
    comment_id_type                id;
    account_name_type              author;                       // Name of the account that created the post.
    string                         permlink;                     // Unique identifing string for the post.
+   string                         title;                        // Name of the post for reference.
    string                         post_type;                    // The type of post that is being created, image, text, article, video etc. 
    bool                           privacy;                      // True if the post is encrypted. False if it is plaintext.
    string                         public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
@@ -186,25 +188,80 @@ struct comment_api_obj
    bool                           deleted;                     // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
 };
 
-struct tag_api_obj
+
+struct blog_api_obj
 {
-   tag_api_obj( const tags::tag_stats_object& o ) :
+   blog_api_obj( const chain::blog_object& o, const chain::database& db ):
+      id( o.id ),
+      account( o.account ),
+      board( o.board ),
       tag( o.tag ),
-      total_payouts(o.total_payout),
-      net_votes(o.net_votes),
-      top_posts(o.top_posts),
-      comments(o.comments),
-      trending(o.total_trending) {}
+      comment( o.comment ),
+      blog_type( to_string( o.blog_type ) ),
+      first_shared_by( o.first_shared_by ),
+      shares( o.shares ),
+      blog_time( o.blog_time ),
+      {
+         for( auto s : o.shared_by )
+         {
+            shared_by[ s.first ] =  s.second;
+         }
+      }
+      
+   blog_api_obj(){}
 
-   tag_api_obj() {}
-
-   string               tag;
-   asset                total_payouts;
-   int32_t              net_votes;
-   uint32_t             top_posts;
-   uint32_t             comments;
-   fc::uint128          trending;
+   blog_id_type                            id;
+   account_name_type                       account;               // Blog or sharing account for account type blogs, null for other types.
+   board_name_type                         board;                 // Board posted or shared to for board type blogs.
+   tag_name_type                           tag;                   // Tag posted or shared to for tag type blogs.          
+   comment_id_type                         comment;               // Comment ID.
+   map< account_name_type, time_point >    shared_by;             // Map of the times that accounts that have shared the comment in the blog.
+   string                                  blog_type;             // Account, Board, or Tag blog.
+   account_name_type                       first_shared_by;       // First account that shared the comment with the account, board or tag.
+   uint32_t                                shares;                // Number of accounts that have shared the comment with account, board or tag.
+   time_point                              blog_time;             // Latest time that the comment was shared on the account, board or tag.
 };
+
+
+struct feed_api_obj
+{
+   feed_api_obj( const chain::feed_object& o, const chain::database& db ):
+      id( o.id ),
+      account( o.account ),
+      comment( o.comment ),
+      feed_type( to_string( o.feed_type ) ),
+      first_shared_by( o.first_shared_by ),
+      shares( o.shares ),
+      feed_time( o.feed_time ),
+      {
+         for( auto s : o.shared_by )
+         {
+            shared_by[ s.first ] = s.second;
+         }
+         for( auto b : o.boards )
+         {
+            boards[ b.first ][b.second.first] = b.second.second;
+         }
+         for( auto t : o.tags )
+         {
+            tags[ t.first ][ t.second.first ] = t.second.second;
+         }
+      },
+
+   feed_api_obj(){}
+
+   feed_id_type                                id;
+   account_name_type                           account;               // Account that should see comment in their feed.
+   comment_id_type                             comment;               // ID of comment being shared
+   string                                      feed_type;             // Type of feed, follow, connection, board, tag etc. 
+   map< account_name_type, time_point >        shared_by;             // Map of the times that accounts that have shared the comment.
+   map< board_name_type, map< account_name_type, time_point > >   boards;  // Map of all boards that the comment has been shared with
+   map< tag_name_type, map< account_name_type, time_point > >     tags;    // Map of all tags that the comment has been shared with.
+   account_name_type                           first_shared_by;       // First account that shared the comment with account. 
+   uint32_t                                    shares;                // Number of accounts that have shared the comment with account.
+   time_point                                  feed_time;             // Time that the comment was added or last shared with account. 
+};
+
 
 struct account_api_obj
 {
@@ -270,38 +327,38 @@ struct account_api_obj
       revenue_share( a.revenue_share ),
       can_vote( a.can_vote ),
       deleted( a.deleted ),
-   {
-      const auto& auth = db.get< account_authority_object, by_account >( name );
-      owner = authority( auth.owner );
-      active = authority( auth.active );
-      posting = authority( auth.posting );
-      last_owner_update = auth.last_owner_update;
-
-      if( db.has_index< witness::account_bandwidth_index >() )
       {
-         auto forum_bandwidth = db.find< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( name, witness::bandwidth_type::forum ) );
+         const auto& auth = db.get< account_authority_object, by_account >( name );
+         owner = authority( auth.owner );
+         active = authority( auth.active );
+         posting = authority( auth.posting );
+         last_owner_update = auth.last_owner_update;
 
-         if( forum_bandwidth != nullptr )
+         if( db.has_index< witness::account_bandwidth_index >() )
          {
-            average_bandwidth = forum_bandwidth->average_bandwidth;
-            lifetime_bandwidth = forum_bandwidth->lifetime_bandwidth;
-            last_bandwidth_update = forum_bandwidth->last_bandwidth_update;
+            auto forum_bandwidth = db.find< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( name, witness::bandwidth_type::forum ) );
+
+            if( forum_bandwidth != nullptr )
+            {
+               average_bandwidth = forum_bandwidth->average_bandwidth;
+               lifetime_bandwidth = forum_bandwidth->lifetime_bandwidth;
+               last_bandwidth_update = forum_bandwidth->last_bandwidth_update;
+            }
+
+            auto market_bandwidth = db.find< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( name, witness::bandwidth_type::market ) );
+
+            if( market_bandwidth != nullptr )
+            {
+               average_market_bandwidth = market_bandwidth->average_bandwidth;
+               lifetime_market_bandwidth = market_bandwidth->lifetime_bandwidth;
+               last_market_bandwidth_update = market_bandwidth->last_bandwidth_update;
+            }
          }
-
-         auto market_bandwidth = db.find< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( name, witness::bandwidth_type::market ) );
-
-         if( market_bandwidth != nullptr )
+         for( auto name : a.proxied )
          {
-            average_market_bandwidth = market_bandwidth->average_bandwidth;
-            lifetime_market_bandwidth = market_bandwidth->lifetime_bandwidth;
-            last_market_bandwidth_update = market_bandwidth->last_bandwidth_update;
+            proxied.push_back( name );
          }
-      }
-      for( auto name : a.proxied )
-      {
-         proxied.push_back( name );
-      }
-   }
+      },
 
    account_api_obj(){}
 
@@ -594,6 +651,43 @@ struct account_following_api_obj
    time_point                      last_update;          // Last time that the account changed its following sets.
 };
 
+
+struct account_permission_api_obj
+{
+   account_permission_api_obj( const chain::account_permission_object& a, const chain::database& db ):
+      id( a.id ),
+      {
+         whitelisted_accounts.reserve( a.whitelisted_accounts.size() );
+         for( auto name : a.whitelisted_accounts )
+         {
+            whitelisted_accounts.push_back( name );
+         }
+         blacklisted_accounts.reserve( a.blacklisted_accounts.size() );
+         for( auto name : a.blacklisted_accounts )
+         {
+            blacklisted_accounts.push_back( name );
+         }
+         whitelisted_assets.reserve( a.whitelisted_assets.size() );
+         for( auto name : a.whitelisted_assets )
+         {
+            whitelisted_assets.push_back( name );
+         }
+         blacklisted_assets.reserve( a.blacklisted_assets.size() );
+         for( auto name : a.blacklisted_assets )
+         {
+            blacklisted_assets.push_back( name );
+         }
+      },
+   account_permission_api_obj(){}
+
+   account_name_type                        account;                       // Name of the account with permissions set.
+   vector< account_name_type >              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
+   vector< account_name_type >              blacklisted_accounts;          // List of accounts that are not able to recieve transfers from this account.
+   vector< asset_symbol_type >              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
+   vector< asset_symbol_type >              blacklisted_assets;            // List of assets that the account has blacklisted against incoming transfers.
+}
+
+
 struct message_api_obj
 {
    message_api_obj( const chain::message_object& m, const chain::database& db ):
@@ -714,6 +808,7 @@ struct account_invite_api_obj
    time_point                              expiration;   
 };
 
+
 struct board_request_api_obj
 {
    board_request_api_obj( const chain::board_join_request_object& o, const chain::database& db ):
@@ -723,7 +818,7 @@ struct board_request_api_obj
       message( to_string( o.message ) ),
       expiration( o.expiration ),
 
-   connection_request_api_obj(){}
+   board_request_api_obj(){}
 
    board_join_request_id_type              id;                 
    account_name_type                       account;        
@@ -731,6 +826,7 @@ struct board_request_api_obj
    string                                  message;
    time_point                              expiration;   
 };
+
 
 struct board_invite_api_obj
 {
@@ -742,7 +838,7 @@ struct board_invite_api_obj
       message( to_string( o.message ) ),
       expiration( o.expiration ),
 
-   connection_request_api_obj(){}
+   board_invite_api_obj(){}
 
    account_member_request_id_type          id;                 
    account_name_type                       account;             
@@ -751,6 +847,7 @@ struct board_invite_api_obj
    string                                  message;
    time_point                              expiration;   
 };
+
 
 struct transfer_request_api_obj
 {
@@ -773,6 +870,7 @@ struct transfer_request_api_obj
    string                                 memo;           // The memo is plain-text, encryption on the memo is advised. 
    time_point                             expiration;     // time that the request expires. 
 };
+
 
 struct transfer_recurring_api_obj
 {
@@ -801,6 +899,7 @@ struct transfer_recurring_api_obj
    fc::microseconds                  interval;          // Microseconds between each transfer event.
    time_point                        next_transfer;     // Time of the next transfer.   
 };
+
 
 struct transfer_recurring_request_api_obj
 {
@@ -878,109 +977,6 @@ struct board_api_obj
    time_point                         last_post;                          // Time that the user most recently created a comment.
    time_point                         last_root_post;                     // Time that the board last created a post. 
 };
-
-struct account_concise_api_obj
-{
-   account_concise_api_obj( const chain::account_object& a, const chain::database& db ):
-      id( a.id ),
-      name( a.name ),
-      details( to_string( a.details ) ),
-      json( to_string( a.json ) ),
-      json_private( to_string( a.json_private ) ),
-      url( to_string( a.url ) ),
-      account_type( to_string( a.account_type ) ),
-      membership( to_string( a.membership ) ),
-      secure_public_key( to_string( a.secure_public_key ) ),
-      connection_public_key( to_string( a.connection_public_key ) ),
-      friend_public_key( to_string( a.friend_public_key ) ),
-      companion_public_key( to_string( a.companion_public_key ) ),
-      pinned_comment( a.pinned_comment ),
-      follower_count( a.follower_count ),
-      following_count( a.following_count ),
-      total_rewards( a.total_rewards ),
-      author_reputation( a.author_reputation ),
-      created( a.created ),
-      
-   account_concise_api_obj(){}
-
-   account_id_type                  id;
-   account_name_type                name;                                  // Username of the account, lowercase letter and numbers and hyphens only.
-   string                           details;                               // User's account details.
-   string                           json;                                  // Public plaintext json information.
-   string                           json_private;                          // Private ciphertext json information.
-   string                           url;                                   // Account's external reference URL.
-   string                           account_type;                          // Type of account, persona, profile or business.
-   string                           membership;                            // Level of account membership.
-   string                           secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
-   string                           connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
-   string                           friend_public_key;                     // Key used for encrypting posts for friend level visibility.
-   string                           companion_public_key;                  // Key used for encrypting posts for companion level visibility.
-   comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
-   uint32_t                         follower_count;                        // Number of account followers.
-   uint32_t                         following_count;                       // Number of accounts that the account follows. 
-   int64_t                          total_rewards;                         // Rewards in core asset earned from all reward sources.
-   int64_t                          author_reputation;                     // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
-   time_point                       created;                               // Time that the account was created.
-};
-
-struct account_permission_api_obj
-{
-   account_permission_api_obj( const chain::account_permission_object& a, const chain::database& db ):
-      id( a.id ),
-      {
-         whitelisted_accounts.reserve( a.whitelisted_accounts.size() );
-         for( auto name : a.whitelisted_accounts )
-         {
-            whitelisted_accounts.push_back( name );
-         }
-         blacklisted_accounts.reserve( a.blacklisted_accounts.size() );
-         for( auto name : a.blacklisted_accounts )
-         {
-            blacklisted_accounts.push_back( name );
-         }
-         whitelisting_accounts.reserve( a.whitelisting_accounts.size() );
-         for( auto name : a.whitelisting_accounts )
-         {
-            whitelisting_accounts.push_back( name );
-         }
-         blacklisting_accounts.reserve( a.blacklisting_accounts.size() );
-         for( auto name : a.blacklisting_accounts )
-         {
-            blacklisting_accounts.push_back( name );
-         }
-         whitelisted_assets.reserve( a.whitelisted_assets.size() );
-         for( auto name : a.whitelisted_assets )
-         {
-            whitelisted_assets.push_back( name );
-         }
-         blacklisted_assets.reserve( a.blacklisted_assets.size() );
-         for( auto name : a.blacklisted_assets )
-         {
-            blacklisted_assets.push_back( name );
-         }
-         whitelisting_assets.reserve( a.whitelisting_assets.size() );
-         for( auto name : a.whitelisting_assets )
-         {
-            whitelisting_assets.push_back( name );
-         }
-         blacklisting_assets.reserve( a.blacklisting_assets.size() );
-         for( auto name : a.blacklisting_assets )
-         {
-            blacklisting_assets.push_back( name );
-         }
-      },
-   account_permission_api_obj(){}
-
-   account_name_type                      account;                       // Name of the account with permissions set.
-   vector<account_name_type>              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
-   vector<account_name_type>              blacklisted_accounts;          // List of accounts that are not able to recieve transfers from this account.
-   vector<account_name_type>              whitelisting_accounts;         // List of accounts that have whitelisted this account.
-   vector<account_name_type>              blacklisting_accounts;         // List of accounts that have blacklisted this account. 
-   vector<asset_symbol_type>              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
-   vector<asset_symbol_type>              blacklisted_assets;            // List of assets that the account has blacklisted against incoming transfers.
-   vector<asset_symbol_type>              whitelisting_assets;           // List of assets that the account has been whitelisted to receieve transfers of.
-   vector<asset_symbol_type>              blacklisting_assets;           // List of assets that the account has been blacklisted against receieving transfers.
-}
 
 
 struct tag_following_api_obj
@@ -1509,7 +1505,7 @@ struct savings_withdraw_api_obj
    account_name_type          from;
    account_name_type          to;
    string                     memo;
-   uint32_t                   request_id = 0;
+   string                     request_id;
    asset                      amount;
    time_point                 complete;
 };
@@ -1525,7 +1521,8 @@ struct witness_api_obj
       details( to_string( w.details ) ),
       url( to_string( w.url ) ),
       json( to_string( w.json ) ),
-      location( w.location ),
+      latitude( w.latitude ),
+      longitude( w.longitude ),
       signing_key( w.signing_key ),
       created( w.created ),
       last_commit_height( w.last_commit_height ),
@@ -1564,7 +1561,8 @@ struct witness_api_obj
    string                       details;                          // Witness or miner's details, explaining who they are, machine specs, capabilties.
    string                       url;                              // The witnesses or miners URL explaining their details.
    string                       json;                             // The witnesses or miners json metadata.
-   fc::array<uint16_t, 2>       location;                         // Longitude / Latitude Co-ordinates of the witness or miner's approximate geo-location.
+   double                       latitude;                         // Latitude Co-ordinates of the witness or miner's approximate geo-location.
+   double                       longitude;                        // Longitude Co-ordinates of the witness or miner's approximate geo-location.
    public_key_type              signing_key;                      // The key used to sign blocks on behalf of this witness or miner.
    time_point                   created;                          // The time the witness was created.
    uint32_t                     last_commit_height;               // Block height that has been most recently committed by the producer
@@ -1734,7 +1732,7 @@ struct supernode_api_obj
    string                  bittorrent_endpoint;         // The Bittorrent Seed Box endpoint URL of the Supernode. 
    string                  json;                        // Json metadata of the supernode, including additonal outside of consensus APIs and services. 
    time_point              created;                     // The time the supernode was created.
-   int64_t                 storage_rewards;             // Amount of core asset earned from storage.
+   asset                   storage_rewards;             // Amount of core asset earned from storage.
    uint64_t                daily_active_users;          // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
    uint64_t                monthly_active_users;        // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
    int64_t                 recent_view_weight;          // The rolling 7 day average of daily accumulated voting power of viewers. 
@@ -1830,7 +1828,7 @@ struct community_enterprise_api_obj
    vector< string >                   milestone_history;                          // Ordered vector of the details of every claimed milestone.
    int16_t                            approved_milestones;                        // Number of the last approved milestone by the community.
    int16_t                            claimed_milestones;                         // Number of milestones claimed for release.  
-   fc::optional < asset_symbol_type > investment;                                 // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+   asset_symbol_type                  investment;                                 // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
    string                             details;                                    // The proposals's details description. 
    string                             url;                                        // The proposals's reference URL. 
    string                             json;                                       // Json metadata of the proposal. 
@@ -1852,6 +1850,7 @@ struct community_enterprise_api_obj
    int64_t                            current_witness_voting_power;               // The amount of witness voting power that supports the latest claimed milestone.
    time_point                         created;                                    // The time the proposal was created.
 };
+
 
 struct ad_creative_api_obj
 {
@@ -1882,6 +1881,7 @@ struct ad_creative_api_obj
    time_point                  last_updated;      // Time creative's details were last updated.
    bool                        active;            // True when the creative is active for use in campaigns, false to deactivate.
 };
+
 
 struct ad_campaign_api_obj
 {
@@ -1921,6 +1921,7 @@ struct ad_campaign_api_obj
    time_point                       last_updated;      // Time campaigns's details were last updated or inventory was delivered.
    bool                             active;            // True when active for bidding and delivery, false to deactivate.
 };
+
 
 struct ad_inventory_api_obj
 {
@@ -1963,6 +1964,7 @@ struct ad_inventory_api_obj
    bool                             active;            // True when active for bidding and delivery, false to deactivate.
 };
 
+
 struct ad_audience_api_obj
 {
    ad_audience_api_obj( const chain::ad_audience_object& o, const database& db ):
@@ -1991,6 +1993,7 @@ struct ad_audience_api_obj
    time_point                       last_updated;      // Time audiences's details were last updated.
    bool                             active;            // True when active for bidding and delivery, false to deactivate.
 };
+
 
 struct ad_bid_api_obj
 {
@@ -2030,6 +2033,42 @@ struct ad_bid_api_obj
    time_point                       expiration;        // Time audience was created.
 };
 
+
+struct tag_api_obj
+{
+   tag_api_obj( const tags::tag_stats_object& o, const chain::database& db ):
+      id( o.id ),
+      tag( o.tag ),
+      total_payout( o.total_payout ),
+      post_count( o.post_count ),
+      children( o.children ),
+      net_votes( o.net_votes ),
+      view_count( o.view_count ),
+      share_count( o.share_count ),
+      net_reward( o.net_reward ),
+      vote_power( o.vote_power ),
+      view_power( o.view_power ),
+      share_power( o.share_power ),
+      comment_power( o.comment_power ),
+
+   tag_api_obj() {}
+
+   tags::tag_stats_id_type    id;
+   tag_name_type              tag;             // Name of the tag being measured.
+   asset                      total_payout;    // USD value of all earned content rewards for all posts using the tag.
+   uint32_t                   post_count;      // Number of posts using the tag.
+   uint32_t                   children;        // The amount of comments on root posts for all posts using the tag.
+   int32_t                    net_votes;       // The amount of upvotes, minus downvotes for all posts using the tag.
+   int32_t                    view_count;      // The amount of views for all posts using the tag.
+   int32_t                    share_count;     // The amount of shares for all posts using the tag.
+   int128_t                   net_reward;      // Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
+   int128_t                   vote_power;      // Sum of weighted voting power for all posts using the tag.
+   int128_t                   view_power;      // Sum of weighted view power for all posts using the tag.
+   int128_t                   share_power;     // Sum of weighted share power for all posts using the tag.
+   int128_t                   comment_power;   // Sum of weighted comment power for all posts using the tag.
+};
+
+
 struct signed_block_api_obj : public signed_block
 {
    signed_block_api_obj( const signed_block& block ) : signed_block( block )
@@ -2038,14 +2077,17 @@ struct signed_block_api_obj : public signed_block
       signing_key = signee();
       transaction_ids.reserve( transactions.size() );
       for( const signed_transaction& tx : transactions )
+      {
          transaction_ids.push_back( tx.id() );
+      } 
    }
    signed_block_api_obj() {}
 
-   block_id_type                 block_id;
-   public_key_type               signing_key;
-   vector< transaction_id_type > transaction_ids;
+   block_id_type                     block_id;
+   public_key_type                   signing_key;
+   vector< transaction_id_type >     transaction_ids;
 };
+
 
 struct dynamic_global_property_api_obj : public dynamic_global_property_object
 {
@@ -2075,25 +2117,48 @@ struct dynamic_global_property_api_obj : public dynamic_global_property_object
    uint128_t   max_virtual_bandwidth = 0;
 };
 
+
 } } // node::app
 
 FC_REFLECT( node::app::comment_api_obj,
          (id)
          (author)
          (permlink)
-         (category)
+         (title)
+         (post_type)
+         (privacy)
+         (public_key)
+         (reach)
+         (board)
+         (tags)
+         (body)
+         (ipfs)
+         (magnet)
+         (interface)
+         (rating)
+         (language)
+         (root_comment)
          (parent_author)
          (parent_permlink)
-         (title)
-         (body)
          (json)
+         (category)
+         (comment_price)
+         (payments_received)
+         (beneficiaries)
          (last_update)
          (created)
          (active)
          (last_payout)
          (depth)
          (children)
+         (net_votes)
+         (view_count)
+         (share_count)
          (net_reward)
+         (vote_power)
+         (view_power)
+         (share_power)
+         (comment_power)
          (cashout_time)
          (max_cashout_time)
          (total_vote_weight)
@@ -2102,53 +2167,538 @@ FC_REFLECT( node::app::comment_api_obj,
          (total_comment_weight)
          (total_payout_value)
          (curator_payout_value)
+         (beneficiary_payout_value)
          (author_rewards)
-         (net_votes)
-         (root_comment)
-         (max_accepted_payout)
          (percent_liquid)
+         (reward)
+         (weight)
+         (max_weight)
+         (max_accepted_payout)
+         (author_reward_percent)
+         (vote_reward_percent)
+         (view_reward_percent)
+         (comment_reward_percent)
+         (storage_reward_percent)
+         (moderator_reward_percent)
          (allow_replies)
          (allow_votes)
+         (allow_views)
+         (allow_shares)
          (allow_curation_rewards)
-         (beneficiaries)
+         (root)
+         (deleted)
+         );
+
+FC_REFLECT( node::app::blog_api_obj,
+         (id)
+         (account)
+         (board)
+         (tag)
+         (comment)
+         (shared_by)
+         (blog_type)
+         (first_shared_by)
+         (shares)
+         (blog_time)
+         );
+
+FC_REFLECT( node::app::feed_api_obj,
+         (id)
+         (account)
+         (comment)
+         (feed_type)
+         (shared_by)
+         (boards)
+         (tags)
+         (first_shared_by)
+         (shares)
+         (feed_time)
          );
 
 FC_REFLECT( node::app::account_api_obj,
          (id)
          (name)
-         (owner)
-         (active)
-         (posting)
-         (secure_public_key)
+         (details)
          (json)
+         (json_private)
+         (url)
+         (account_type)
+         (membership)
+         (secure_public_key)
+         (connection_public_key)
+         (friend_public_key)
+         (companion_public_key)
+         (pinned_comment)
          (proxy)
-         (last_owner_update)
-         (last_account_update)
-         (created)
-         (mined)
+         (proxied)
+         (registrar)
+         (referrer)
          (recovery_account)
-         (last_account_recovery)
          (reset_account)
+         (membership_interface)
+         (reset_account_delay_days)
+         (referrer_rewards_percentage)
          (comment_count)
+         (follower_count)
+         (following_count)
          (lifetime_vote_count)
          (post_count)
-         (can_vote)
          (voting_power)
-         (last_vote_time)
+         (viewing_power)
+         (sharing_power)
+         (commenting_power)
          (savings_withdraw_requests)
          (withdraw_routes)
-         (curation_rewards)
          (posting_rewards)
-         (proxied_voting_power)
+         (curation_rewards)
+         (moderation_rewards)
+         (total_rewards)
+         (author_reputation)
+         (loan_default_balance)
+         (recent_activity_claims)
          (witness_vote_count)
-         (average_bandwidth)
-         (lifetime_bandwidth)
-         (last_bandwidth_update)
-         (average_market_bandwidth)
-         (lifetime_market_bandwidth)
-         (last_market_bandwidth_update)
+         (officer_vote_count)
+         (executive_board_vote_count)
+         (governance_subscriptions)
+         (recurring_membership)
+         (created)
+         (membership_expiration)
+         (last_account_update)
+         (last_vote_time)
+         (last_view_time)
+         (last_share_time)
          (last_post)
          (last_root_post)
+         (last_transfer_time)
+         (last_activity_reward)
+         (last_account_recovery)
+         (last_board_created)
+         (last_asset_created)
+         (mined)
+         (revenue_share)
+         (can_vote)
+         (deleted)
+         );
+
+FC_REFLECT( node::app::account_concise_api_obj,
+         (id)
+         (name)
+         (details)
+         (json)
+         (json_private)
+         (url)
+         (account_type)
+         (membership)
+         (secure_public_key)
+         (connection_public_key)
+         (friend_public_key)
+         (companion_public_key)
+         (pinned_comment)
+         (follower_count)
+         (following_count)
+         (total_rewards)
+         (author_reputation)
+         (created)
+         );
+
+FC_REFLECT( node::app::account_balance_api_obj,
+         (id)
+         (owner)
+         (symbol)
+         (liquid_balance)
+         (staked_balance)
+         (reward_balance)
+         (savings_balance)
+         (delegated_balance)
+         (receiving_balance)
+         (total_balance)
+         (stake_rate)
+         (next_stake_time)
+         (to_stake)
+         (total_staked)
+         (unstake_rate)
+         (next_unstake_time)
+         (to_unstake)
+         (total_unstaked)
+         (last_interest_time)
+         (maintenance_flag)
+         );
+
+FC_REFLECT( node::app::account_business_api_obj,
+         (id)
+         (account)
+         (business_type)
+         (business_public_key)
+         (executive_board)
+         (executives)
+         (officers)
+         (members)
+         (officer_vote_threshold)
+         (equity_assets)
+         (credit_assets)
+         (equity_revenue_shares)
+         (credit_revenue_shares)
+         );
+
+FC_REFLECT( node::app::account_following_api_obj,
+         (id)
+         (account)
+         (followers)
+         (following)
+         (mutual_followers)
+         (connections)
+         (friends)
+         (companions)
+         (followed_boards)
+         (followed_tags)
+         (filtered)
+         (filtered_boards)
+         (filtered_tags)
+         (last_update)
+         );
+
+FC_REFLECT( node::app::account_permission_api_obj,
+         (id)
+         (account)
+         (whitelisted_accounts)
+         (blacklisted_accounts)
+         (whitelisted_assets)
+         (blacklisted_assets)
+         );
+
+FC_REFLECT( node::app::message_api_obj,
+         (id)
+         (sender)
+         (recipient)
+         (sender_public_key)
+         (recipient_public_key)
+         (message)
+         (json)
+         (uuid)
+         (last_update)
+         (created)
+         );
+
+FC_REFLECT( node::app::connection_api_obj,
+         (id)
+         (account_a)
+         (encrypted_key_a)
+         (account_b)
+         (encrypted_key_b)
+         (connection_type)
+         (connection_id)
+         (connection_strength)
+         (consecutive_days)
+         (last_message_time_a)
+         (last_message_time_b)
+         (last_update_time)
+         (created)
+         );
+
+FC_REFLECT( node::app::connection_request_api_obj,
+         (id)
+         (account)
+         (requested_account)
+         (connection_type)
+         (message)
+         (expiration)
+         );
+
+FC_REFLECT( node::app::account_request_api_obj,
+         (id)
+         (account)
+         (business_account)
+         (message)
+         (expiration)
+         );
+
+FC_REFLECT( node::app::account_invite_api_obj,
+         (id)
+         (account)
+         (business_account)
+         (member)
+         (message)
+         (expiration)
+         );
+
+FC_REFLECT( node::app::board_request_api_obj,
+         (id)
+         (account)
+         (board)
+         (message)
+         (expiration)
+         );
+
+FC_REFLECT( node::app::board_invite_api_obj,
+         (id)
+         (account)
+         (board)
+         (member)
+         (message)
+         (expiration)
+         );
+
+FC_REFLECT( node::app::transfer_request_api_obj,
+         (id)
+         (to)
+         (from)
+         (amount)
+         (request_id)
+         (memo)
+         (expiration)
+         );
+
+FC_REFLECT( node::app::transfer_recurring_api_obj,
+         (id)
+         (from)
+         (to)
+         (amount)
+         (transfer_id)
+         (memo)
+         (begin)
+         (end)
+         (interval)
+         (next_transfer)
+         );
+
+FC_REFLECT( node::app::transfer_recurring_request_api_obj,
+         (id)
+         (from)
+         (to)
+         (amount)
+         (request_id)
+         (memo)
+         (begin)
+         (end)
+         (interval)
+         (expiration)
+         );
+
+FC_REFLECT( node::app::board_api_obj,
+         (id)
+         (name)
+         (founder)
+         (board_type)
+         (board_public_key)
+         (json)
+         (json_private)
+         (pinned_comment)
+         (subscriber_count)
+         (post_count)
+         (comment_count)
+         (vote_count)
+         (view_count)
+         (share_count)
+         (total_content_rewards)
+         (created)
+         (last_board_update)
+         (last_post)
+         (last_root_post)
+         );
+
+FC_REFLECT( node::app::tag_following_api_obj,
+         (id)
+         (tag)
+         (followers)
+         (last_update)
+         );
+
+FC_REFLECT( node::app::moderation_tag_api_obj,
+         (id)
+         (moderator)
+         (comment)
+         (board)
+         (tags)
+         (rating)
+         (details)
+         (interface)
+         (filter)
+         (last_update)
+         (created)
+         );
+
+FC_REFLECT( node::app::asset_api_obj,
+         (id)
+         (symbol)
+         (asset_type)
+         (issuer)
+         (created)
+         (display_symbol)
+         (description)
+         (json)
+         (url)
+         (max_supply)
+         (stake_intervals)
+         (unstake_intervals)
+         (market_fee_percent)
+         (market_fee_share_percent)
+         (max_market_fee)
+         (issuer_permissions)
+         (flags)
+         (core_exchange_rate)
+         (whitelist_authorities)
+         (blacklist_authorities)
+         (whitelist_markets)
+         (blacklist_markets)
+         );
+
+FC_REFLECT( node::app::bitasset_data_api_obj,
+         (id)
+         (symbol)
+         (issuer)
+         (backing_asset)
+         (feeds)
+         (current_feed)
+         (current_feed_publication_time)
+         (current_maintenance_collateralization)
+         (force_settled_volume)
+         (settlement_price)
+         (settlement_fund)
+         (asset_cer_updated)
+         (feed_cer_updated)
+         (feed_lifetime)
+         (minimum_feeds)
+         (force_settlement_delay)
+         (force_settlement_offset_percent)
+         (maximum_force_settlement_volume)
+         );
+
+FC_REFLECT( node::app::equity_data_api_obj,
+         (id)
+         (dividend_asset)
+         (dividend_pool)
+         (last_dividend)
+         (dividend_asset)
+         (dividend_share_percent)
+         (liquid_dividend_percent)
+         (staked_dividend_percent)
+         (savings_dividend_percent)
+         (liquid_voting_rights)
+         (staked_voting_rights)
+         (savings_voting_rights)
+         (min_active_time)
+         (min_balance)
+         (min_witnesses)
+         (boost_balance)
+         (boost_activity)
+         (boost_witnesses)
+         (boost_top)
+         );
+
+FC_REFLECT( node::app::credit_data_api_obj,
+         (id)
+         (buyback_asset)
+         (buyback_pool)
+         (buyback_price)
+         (symbol_a)
+         (symbol_b)
+         (last_buyback)
+         (buyback_share_percent)
+         (liquid_fixed_interest_rate)
+         (liquid_variable_interest_rate)
+         (staked_fixed_interest_rate)
+         (staked_variable_interest_rate)
+         (savings_fixed_interest_rate)
+         (savings_variable_interest_rate)
+         (var_interest_range)
+         );
+
+FC_REFLECT( node::app::liquidity_pool_api_obj,
+         (id)
+         (issuer)
+         (symbol_a)
+         (symbol_b)
+         (symbol_liquid)
+         (balance_a)
+         (balance_b)
+         (balance_liquid)
+         (hour_median_price)
+         (day_median_price)
+         (price_history)
+         );
+
+FC_REFLECT( node::app::credit_pool_api_obj,
+         (id)
+         (issuer)
+         (base_symbol)
+         (credit_symbol)
+         (base_balance)
+         (borrowed_balance)
+         (credit_balance)
+         (last_interest_rate)
+         (last_price)
+         );
+
+FC_REFLECT( node::app::limit_order_api_obj,
+         (id)
+         (created)
+         (expiration)
+         (seller)
+         (order_id)
+         (for_sale)
+         (sell_price)
+         (interface)
+         (real_price)
+         );
+
+FC_REFLECT( node::app::margin_order_api_obj,
+         (id)
+         (owner)
+         (order_id)
+         (sell_price)
+         (collateral)
+         (debt)
+         (debt_balance)
+         (interest)
+         (position)
+         (position_balance)
+         (collateralization)
+         (interface)
+         (created)
+         (last_updated)
+         (expiration)
+         (unrealized_value)
+         (last_interest_rate)
+         (liquidating)
+         (stop_loss_price)
+         (take_profit_price)
+         (limit_stop_loss_price)
+         (limit_take_profit_price)
+         (real_price)
+         );
+
+FC_REFLECT( node::app::call_order_api_obj,
+         (id)
+         (borrower)
+         (collateral)
+         (debt)
+         (call_price)
+         (target_collateral_ratio)
+         (interface)
+         (real_price)
+         );
+
+FC_REFLECT( node::app::credit_loan_api_obj,
+         (id)
+         (owner)
+         (loan_id)
+         (debt)
+         (interest)
+         (collateral)
+         (loan_price)
+         (liquidation_price)
+         (symbol_a)
+         (symbol_b)
+         (last_interest_rate)
+         (created)
+         (last_updated)
+         );
+
+FC_REFLECT( node::app::credit_collateral_api_obj,
+         (id)
+         (owner)
+         (symbol)
+         (collateral)  
          );
 
 FC_REFLECT( node::app::owner_authority_history_api_obj,
@@ -2175,41 +2725,248 @@ FC_REFLECT( node::app::savings_withdraw_api_obj,
          (complete)
          );
 
-FC_REFLECT( node::app::feed_history_api_obj,
+FC_REFLECT( node::app::witness_api_obj,
          (id)
-         (current_median_history)
-         (price_history)
+         (owner)
+         (active)
+         (schedule)
+         (last_confirmed_block_num)
+         (details)
+         (url)
+         (json)
+         (latitude)
+         (longitude)
+         (signing_key)
+         (created)
+         (last_commit_height)
+         (last_commit_id)
+         (total_blocks)
+         (voting_power)
+         (vote_count)
+         (mining_power)
+         (mining_count)
+         (last_mining_update)
+         (last_pow_time)
+         (recent_txn_stake_weight)
+         (last_txn_stake_weight_update)
+         (accumulated_activity_stake)
+         (total_missed)
+         (last_aslot)
+         (props)
+         (witness_virtual_last_update)
+         (witness_virtual_position)
+         (witness_virtual_scheduled_time)
+         (miner_virtual_last_update)
+         (miner_virtual_position)
+         (miner_virtual_scheduled_time)
+         (last_work)
+         (running_version)
+         (hardfork_version_vote)
+         (hardfork_time_vote)
+         );
+
+FC_REFLECT( node::app::network_officer_api_obj,
+         (id)
+         (account)
+         (active)
+         (officer_approved)
+         (officer_type)
+         (details)
+         (url)
+         (json)
+         (created)
+         (vote_count)
+         (voting_power)
+         (witness_vote_count)
+         (witness_voting_power)
+         );
+
+FC_REFLECT( node::app::executive_board_api_obj,
+         (id)
+         (account)
+         (active)
+         (board_approved)
+         (budget)
+         (details)
+         (url)
+         (json)
+         (created)
+         (vote_count)
+         (voting_power)
+         (witness_vote_count)
+         (witness_voting_power)
+         );
+
+FC_REFLECT( node::app::governance_account_api_obj,
+         (id)
+         (account)
+         (active)
+         (account_approved)
+         (details)
+         (url)
+         (json)
+         (created)
+         (subscriber_count)
+         (subscriber_power)
+         (witness_subscriber_count)
+         (witness_subscriber_power)
+         );
+
+FC_REFLECT( node::app::supernode_api_obj,
+         (id)
+         (account)
+         (active)
+         (details)
+         (url)
+         (node_api_endpoint)
+         (notification_api_endpoint)
+         (auth_api_endpoint)
+         (ipfs_endpoint)
+         (bittorrent_endpoint)
+         (json)
+         (created)
+         (storage_rewards)
+         (daily_active_users)
+         (monthly_active_users)
+         (recent_view_weight)
+         (last_update_time)
+         (last_activation_time)
+         );
+
+FC_REFLECT( node::app::interface_api_obj,
+         (id)
+         (account)
+         (active)
+         (details)
+         (url)
+         (json)
+         (created)
+         (daily_active_users)
+         (monthly_active_users)
+         (last_update_time)
+         );
+
+FC_REFLECT( node::app::community_enterprise_api_obj,
+         (id)
+         (creator)
+         (enterprise_id)
+         (active)
+         (proposal_type)
+         (beneficiaries)
+         (milestones)
+         (milestone_history)
+         (approved_milestones)
+         (claimed_milestones)
+         (investment)
+         (details)
+         (url)
+         (json)
+         (begin)
+         (end)
+         (expiration)
+         (daily_budget)
+         (duration)
+         (pending_budget)
+         (total_distributed)
+         (days_paid)
+         (total_approvals)
+         (total_voting_power)
+         (total_witness_approvals)
+         (total_witness_voting_power)
+         (current_approvals)
+         (current_voting_power)
+         (current_witness_approvals)
+         (current_witness_voting_power)
+         (created)
+         );
+
+FC_REFLECT( node::app::ad_creative_api_obj,
+         (id)
+         (account)
+         (creative_id)
+         (format_type) 
+         (author)
+         (objective)
+         (creative)
+         (json)
+         (created)
+         (last_updated)
+         (active)
+         );
+
+FC_REFLECT( node::app::ad_campaign_api_obj,
+         (id)
+         (account)
+         (campaign_id)  
+         (budget)
+         (total_bids)
+         (begin)
+         (end)
+         (json)
+         (agents)
+         (interface)
+         (created)
+         (last_updated)
+         (active)
+         );
+
+FC_REFLECT( node::app::ad_inventory_api_obj,
+         (id)
+         (provider)
+         (inventory_id)  
+         (metric)
+         (audience_id)
+         (min_price)
+         (inventory)
+         (remaining)
+         (json)
+         (agents)
+         (created)
+         (last_updated)
+         (expiration)
+         (active)
+         );
+
+FC_REFLECT( node::app::ad_audience_api_obj,
+         (id)
+         (account)
+         (audience_id)
+         (json)
+         (audience)
+         (created)
+         (last_updated)
+         (active)
+         );
+
+FC_REFLECT( node::app::ad_bid_api_obj,
+         (id)
+         (bidder)
+         (bid_id)
+         (audience_id)
+         (account)
+         (campaign_id)
+         (author)
+         (creative_id)
+         (provider)
+         (inventory_id)
+         (bid_price)
+         (metric)
+         (requested)
+         (remaining)
+         (audience)
+         (created)
+         (last_updated)
+         (expiration)
          );
 
 FC_REFLECT( node::app::tag_api_obj,
+         (id)
          (name)
          (total_payouts)
          (net_votes)
          (top_posts)
          (comments)
          (trending)
-         );
-
-FC_REFLECT( node::app::witness_api_obj,
-         (id)
-         (owner)
-         (created)
-         (url)(votes)
-         (virtual_last_update)
-         (virtual_position)
-         (virtual_scheduled_time)
-         (total_missed)
-         (last_aslot)
-         (last_confirmed_block_num)
-         (pow_worker)
-         (signing_key)
-         (props)
-         (USD_exchange_rate)
-         (last_USD_exchange_update)
-         (last_work)
-         (running_version)
-         (hardfork_version_vote)
-         (hardfork_time_vote)
          );
 
 FC_REFLECT_DERIVED( node::app::signed_block_api_obj, (node::protocol::signed_block),

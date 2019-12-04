@@ -149,22 +149,47 @@ class market_history_api
 } } // node::market_history
 
 FC_REFLECT( node::market_history::market_ticker,
-   (latest)(lowest_ask)(highest_bid)(percent_change)(buy_volume)(sell_volume) );
+         (latest)
+         (lowest_ask)
+         (highest_bid)
+         (hour_percent_change)
+         (day_percent_change)
+         (week_percent_change)
+         (month_percent_change)
+         (buy_volume)
+         (sell_volume)
+         );
+
 FC_REFLECT( node::market_history::market_volume,
-   (buy_volume)(sell_volume) );
+         (buy_volume)
+         (sell_volume)
+         );
+
 FC_REFLECT( node::market_history::order,
-   (price)(buy_amount)(sell_amount) );
+         (order_price)
+         (real_price)
+         (buy_asset)
+         (sell_asset)
+         (created)
+         );
+
 FC_REFLECT( node::market_history::order_book,
-   (bids)(asks) );
+         (bids)
+         (asks)
+         );
+
 FC_REFLECT( node::market_history::market_trade,
-   (date)(current_pays)(open_pays) );
+         (date)
+         (current_pays)
+         (open_pays)
+         );
 
 FC_API( node::market_history::market_history_api,
-   (get_ticker)
-   (get_volume)
-   (get_order_book)
-   (get_trade_history)
-   (get_recent_trades)
-   (get_market_history)
-   (get_market_history_durations)
-);
+         (get_ticker)
+         (get_volume)
+         (get_order_book)
+         (get_trade_history)
+         (get_recent_trades)
+         (get_market_history)
+         (get_market_history_durations)
+         );

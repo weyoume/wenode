@@ -312,26 +312,26 @@ namespace node { namespace chain {
          const credit_loan_object& get_loan( const account_name_type& owner, shared_string& loan_id  )const;
          const credit_loan_object* find_loan( const account_name_type& owner, shared_string& loan_id )const;
 
-         const escrow_object& get_escrow(  const account_name_type& name, uint32_t escrow_id )const;
-         const escrow_object* find_escrow( const account_name_type& name, uint32_t escrow_id )const;
+         const escrow_object& get_escrow( const account_name_type& name, const shared_string& escrow_id )const;
+         const escrow_object* find_escrow( const account_name_type& name, const shared_string& escrow_id )const;
 
-         const limit_order_object& get_limit_order(  const account_name_type& owner, shared_string& order_id )const;
-         const limit_order_object* find_limit_order( const account_name_type& owner, shared_string& order_id )const;
+         const limit_order_object& get_limit_order(  const account_name_type& owner, const shared_string& order_id )const;
+         const limit_order_object* find_limit_order( const account_name_type& owner, const shared_string& order_id )const;
 
-         const transfer_request_object& get_transfer_request( const account_name_type& name, shared_string& request_id )const;
-         const transfer_request_object* find_transfer_request( const account_name_type& name, shared_string& request_id )const;
+         const transfer_request_object& get_transfer_request( const account_name_type& name, const shared_string& request_id )const;
+         const transfer_request_object* find_transfer_request( const account_name_type& name, const shared_string& request_id )const;
 
-         const transfer_recurring_request_object& get_transfer_recurring_request( const account_name_type& name, shared_string& request_id )const;
-         const transfer_recurring_request_object* find_transfer_recurring_request( const account_name_type& name, shared_string& request_id )const;
+         const transfer_recurring_request_object& get_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const;
+         const transfer_recurring_request_object* find_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const;
 
          const call_order_object& get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
          const call_order_object* find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
 
-         const margin_order_object& get_margin_order(  const account_name_type& name, shared_string& margin_id )const;
-         const margin_order_object* find_margin_order( const account_name_type& name, shared_string& margin_id )const;
+         const margin_order_object& get_margin_order( const account_name_type& name, const shared_string& margin_id )const;
+         const margin_order_object* find_margin_order( const account_name_type& name, const shared_string& margin_id )const;
 
-         const savings_withdraw_object& get_savings_withdraw(  const account_name_type& owner, uint32_t request_id )const;
-         const savings_withdraw_object* find_savings_withdraw( const account_name_type& owner, uint32_t request_id )const;
+         const savings_withdraw_object& get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const;
+         const savings_withdraw_object* find_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const;
 
          annotated_signed_transaction get_transaction( const transaction_id_type& id )const;
          

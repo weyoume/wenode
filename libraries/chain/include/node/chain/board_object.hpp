@@ -673,15 +673,14 @@ FC_REFLECT( node::chain::board_object,
          (board_public_key)
          (json)
          (json_private)
-         (moderator_rewards_percentage)
+         (pinned_comment)
          (subscriber_count)
          (post_count)
          (comment_count)
          (vote_count)
          (view_count)
          (share_count)
-         (curation_rewards)
-         (posting_rewards)
+         (total_content_rewards)
          (created)
          (last_board_update)
          (last_post)
@@ -690,17 +689,61 @@ FC_REFLECT( node::chain::board_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::board_object, node::chain::board_index );
 
-
 FC_REFLECT( node::chain::board_member_object,
          (id)
          (name)
          (founder)
+         (board_privacy)
+         (board_type)
          (subscribers)
          (members)
          (moderators)
          (administrators)
          (blacklist)
+         (mod_weight)
+         (total_mod_weight)
+         (last_update)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::board_member_object, node::chain::board_member_index );
 
+FC_REFLECT( node::chain::board_moderator_vote_object,
+         (id)
+         (account)
+         (board)
+         (moderator)
+         (vote_rank)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::board_moderator_vote_object, node::chain::board_moderator_vote_index );
+
+FC_REFLECT( node::chain::board_join_request_object,
+         (id)
+         (account)
+         (board)
+         (message)
+         (expiration)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::board_join_request_object, node::chain::board_join_request_index );
+
+FC_REFLECT( node::chain::board_join_invite_object,
+         (id)
+         (account)
+         (member)
+         (board)
+         (message)
+         (expiration)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::board_join_invite_object, node::chain::board_join_invite_index );
+
+FC_REFLECT( node::chain::board_member_key_object,
+         (id)
+         (account)
+         (member)
+         (board)
+         (encrypted_board_key)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::board_member_key_object, node::chain::board_member_key_index );

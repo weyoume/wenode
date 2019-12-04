@@ -218,13 +218,13 @@ namespace node { namespace protocol {
 
 } } // node::protocol
 
-FC_REFLECT( node::protocol::asset, 
+FC_REFLECT( node::protocol::asset,
          (amount)
-         (symbol) 
+         (symbol)
+         (precision)
          );
 
-FC_REFLECT( node::protocol::price, 
+FC_REFLECT( node::protocol::price,
          (base)
          (quote) 
          );
-

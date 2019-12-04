@@ -1,26 +1,3 @@
-/*
- * Copyright (c) 2017 Cryptonomex, Inc., and contributors.
- *
- * The MIT License
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
 #pragma once
 #include <fc/fixed_string.hpp>
 #include <node/protocol/node_operations.hpp>
@@ -732,83 +709,107 @@ namespace node { namespace chain {
 } } // node::chain
 
 FC_REFLECT( node::chain::asset_object,
-                  (id)
-                  (symbol)
-                  (issuer)
-                  (options)
-                  (created)
-                  );
+         (id)
+         (symbol)
+         (asset_type)
+         (issuer)
+         (options)
+         (created)
+         );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_object, node::chain::asset_index );
 
-FC_REFLECT( node::chain::asset_bitasset_data_object,
-                  (id)
-                  (symbol)
-                  (feeds)
-                  (collateral_asset)
-                  (current_feed)
-                  (current_feed_publication_time)
-                  (current_maintenance_collateralization)
-                  (options)
-                  (force_settled_volume)
-                  (settlement_price)
-                  (settlement_fund)
-                  (asset_cer_updated)
-                  (feed_cer_updated)
-                  );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::asset_bitasset_data_object, node::chain::asset_bitasset_data_index );
-
 FC_REFLECT( node::chain::asset_dynamic_data_object,
-                  (id)
-                  (symbol)
-                  (total_supply)
-                  (liquid_supply)
-                  (staked_supply)
-                  (reward_supply)
-                  (savings_supply)
-                  (delegated_supply)
-                  (received_supply)
-                  (pending_supply)
-                  (confidential_supply)
-                  (accumulated_fees)
-                  (fee_pool) 
-                  );
+         (id)
+         (symbol)
+         (issuer)
+         (total_supply)
+         (liquid_supply)
+         (staked_supply)
+         (reward_supply)
+         (savings_supply)
+         (delegated_supply)
+         (receiving_supply)
+         (pending_supply)
+         (confidential_supply)
+         (accumulated_fees)
+         (fee_pool) 
+         );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_dynamic_data_object, node::chain::asset_dynamic_data_index );
 
+FC_REFLECT( node::chain::asset_bitasset_data_object,
+         (id)
+         (symbol)
+         (issuer)
+         (backing_asset)
+         (options)
+         (feeds)
+         (current_feed)
+         (current_feed_publication_time)
+         (current_maintenance_collateralization)
+         (force_settled_volume)
+         (settlement_price)
+         (settlement_fund)
+         (asset_cer_updated)
+         (feed_cer_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_bitasset_data_object, node::chain::asset_bitasset_data_index );
+
+FC_REFLECT( node::chain::asset_equity_data_object,
+         (id)
+         (business_account)
+         (symbol)
+         (options)
+         (dividend_asset)
+         (dividend_pool)
+         (last_dividend)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_equity_data_object, node::chain::asset_equity_data_index );
+
+FC_REFLECT( node::chain::asset_credit_data_object,
+         (id)
+         (business_account)
+         (symbol)
+         (options)
+         (buyback_asset)
+         (buyback_pool)
+         (buyback_price)
+         (symbol_a)
+         (symbol_b)
+         (last_buyback)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_credit_data_object, node::chain::asset_credit_data_index );
+
 FC_REFLECT( node::chain::asset_liquidity_pool_object,
-                  (id)
-                  (symbol)
-                  (total_supply)
-                  (liquid_supply)
-                  (staked_supply)
-                  (reward_supply)
-                  (savings_supply)
-                  (delegated_supply)
-                  (received_supply)
-                  (pending_supply)
-                  (confidential_supply)
-                  (accumulated_fees)
-                  (fee_pool) 
-                  );
+         (id)
+         (issuer)
+         (symbol_a)
+         (symbol_b)
+         (symbol_liquid)
+         (balance_a)
+         (balance_b)
+         (balance_liquid)
+         (hour_median_price)
+         (day_median_price)
+         (price_history)
+         );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_liquidity_pool_object, node::chain::asset_liquidity_pool_index );
 
 FC_REFLECT( node::chain::asset_credit_pool_object,
-                  (id)
-                  (symbol)
-                  (total_supply)
-                  (liquid_supply)
-                  (staked_supply)
-                  (reward_supply)
-                  (savings_supply)
-                  (delegated_supply)
-                  (received_supply)
-                  (pending_supply)
-                  (confidential_supply)
-                  (accumulated_fees)
-                  (fee_pool) 
-                  );
+         (id)
+         (issuer)
+         (base_symbol)
+         (credit_symbol)
+         (base_balance)
+         (borrowed_balance)
+         (credit_balance)
+         (last_interest_rate)
+         (last_price)
+         );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_credit_pool_object, node::chain::asset_credit_pool_index );

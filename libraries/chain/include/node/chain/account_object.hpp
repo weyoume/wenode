@@ -1050,7 +1050,6 @@ namespace node { namespace chain {
             return result;
          };
 
-
          bool                              is_connection( const account_name_type& account )const
          {
             return std::find( connections.begin(), connections.end(), account ) != connections.end();
@@ -1968,8 +1967,7 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >,
             member< tag_following_object, tag_following_id_type, &tag_following_object::id > >,
          ordered_unique< tag< by_tag >,
-            member< tag_following_object, tag_name_type, &tag_following_object::tag >,
-         >
+            member< tag_following_object, tag_name_type, &tag_following_object::tag > >
       >,
       allocator< tag_following_object >
    > tag_following_index;
@@ -2135,37 +2133,180 @@ namespace node { namespace chain {
       allocator< connection_object >
    > connection_index;
 
-} }
+} }   // node::chain
 
 FC_REFLECT( node::chain::account_object,
          (id)
          (name)
-         (secure_public_key)
+         (details)
          (json)
          (json_private)
+         (url)
+         (account_type)
+         (membership)
+         (secure_public_key)
+         (connection_public_key)
+         (friend_public_key)
+         (companion_public_key)
+         (pinned_comment)
          (proxy)
-         (last_account_update)
-         (created)
-         (mined)
+         (proxied)
+         (registrar)
+         (referrer)
          (recovery_account)
-         (last_account_recovery)
          (reset_account)
+         (membership_interface)
+         (reset_account_delay_days)
+         (referrer_rewards_percentage)
          (comment_count)
+         (follower_count)
+         (following_count)
          (lifetime_vote_count)
          (post_count)
-         (can_vote)
          (voting_power)
-         (last_vote_time)
+         (viewing_power)
+         (sharing_power)
+         (commenting_power)
          (savings_withdraw_requests)
-         (curation_rewards)
+         (withdraw_routes)
          (posting_rewards)
-         (proxied_voting_power)
+         (curation_rewards)
+         (moderation_rewards)
+         (total_rewards)
+         (author_reputation)
+         (loan_default_balance)
+         (recent_activity_claims)
          (witness_vote_count)
+         (officer_vote_count)
+         (executive_board_vote_count)
+         (governance_subscriptions)
+         (recurring_membership)
+         (created)
+         (membership_expiration)
+         (last_account_update)
+         (last_vote_time)
+         (last_view_time)
+         (last_share_time)
          (last_post)
          (last_root_post)
+         (last_transfer_time)
+         (last_activity_reward)
+         (last_account_recovery)
+         (last_board_created)
+         (last_asset_created)
+         (mined)
+         (revenue_share)
+         (can_vote)
+         (deleted)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_object, node::chain::account_index );
+
+FC_REFLECT( node::chain::account_business_object,
+         (id)
+         (account)
+         (business_type)
+         (business_public_key)
+         (executive_board)
+         (executives)
+         (officers)
+         (members)
+         (officer_vote_threshold)
+         (equity_assets)
+         (credit_assets)
+         (equity_revenue_shares)
+         (credit_revenue_shares)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_business_object, node::chain::account_business_index );
+
+FC_REFLECT( node::chain::account_executive_vote_object,
+         (id)
+         (account)
+         (business_account)
+         (executive_account)
+         (role)
+         (vote_rank)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_executive_vote_object, node::chain::account_executive_vote_index );
+
+FC_REFLECT( node::chain::account_officer_vote_object,
+         (id)
+         (account)
+         (business_account)
+         (officer_account)
+         (vote_rank)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_officer_vote_object, node::chain::account_officer_vote_index );
+
+FC_REFLECT( node::chain::account_member_request_object,
+         (id)
+         (account)
+         (business_account)
+         (message)
+         (expiration)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_member_request_object, node::chain::account_member_request_index );
+
+FC_REFLECT( node::chain::account_member_invite_object,
+         (id)
+         (account)
+         (business_account)
+         (member)
+         (message)
+         (expiration)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_member_invite_object, node::chain::account_member_invite_index );
+
+FC_REFLECT( node::chain::account_member_key_object,
+         (id)
+         (account)
+         (member)
+         (business_account)
+         (encrypted_business_key)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_member_key_object, node::chain::account_member_key_index );
+
+FC_REFLECT( node::chain::account_permission_object,
+         (id)
+         (account)
+         (whitelisted_accounts)
+         (blacklisted_accounts)
+         (whitelisted_assets)
+         (blacklisted_assets)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_permission_object, node::chain::account_permission_index );
+
+FC_REFLECT( node::chain::account_balance_object,
+         (id)
+         (owner)
+         (symbol)
+         (liquid_balance)
+         (staked_balance)
+         (reward_balance)
+         (savings_balance)
+         (delegated_balance)
+         (receiving_balance)
+         (total_balance)
+         (stake_rate)
+         (next_stake_time)
+         (to_stake)
+         (total_staked)
+         (unstake_rate)
+         (next_unstake_time)
+         (to_unstake)
+         (total_unstaked)
+         (last_interest_time)
+         (maintenance_flag)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_balance_object, node::chain::account_balance_index );
 
 FC_REFLECT( node::chain::account_authority_object,
          (id)
@@ -2176,14 +2317,71 @@ FC_REFLECT( node::chain::account_authority_object,
          (last_owner_update)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_authority_object, node::chain::account_authority_index )
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_authority_object, node::chain::account_authority_index );
+
+FC_REFLECT( node::chain::account_following_object,
+         (id)
+         (account)
+         (followers)
+         (following)
+         (mutual_followers)
+         (connections)
+         (friends)
+         (companions)
+         (followed_boards)
+         (followed_tags)
+         (filtered)
+         (filtered_boards)
+         (filtered_tags)
+         (last_update)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_following_object, node::chain::account_following_index );
+
+FC_REFLECT( node::chain::tag_following_object,
+         (id)
+         (tag)
+         (followers)
+         (last_update)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::tag_following_object, node::chain::tag_following_index );
+
+FC_REFLECT( node::chain::connection_request_object,
+         (id)
+         (account)
+         (requested_account)
+         (connection_type)
+         (message)
+         (expiration)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::connection_request_object, node::chain::connection_request_index );
+
+FC_REFLECT( node::chain::connection_object,
+         (id)
+         (account_a)
+         (encrypted_key_a)
+         (account_b)
+         (encrypted_key_b)
+         (connection_type)
+         (connection_id)
+         (connection_strength)
+         (consecutive_days)
+         (last_message_time_a)
+         (last_message_time_b)
+         (last_update_time)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::connection_object, node::chain::connection_index );
 
 FC_REFLECT( node::chain::asset_delegation_object,
          (id)
          (delegator)
          (delegatee)
-         (asset)
-         (min_delegation_time) 
+         (amount)
+         (min_delegation_time)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_delegation_object, node::chain::asset_delegation_index );
@@ -2191,8 +2389,8 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_delegation_object, node::chain::ass
 FC_REFLECT( node::chain::asset_delegation_expiration_object,
          (id)
          (delegator)
-         (asset)
-         (expiration) 
+         (amount)
+         (expiration)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_delegation_expiration_object, node::chain::asset_delegation_expiration_index );
@@ -2223,35 +2421,3 @@ FC_REFLECT( node::chain::change_recovery_account_request_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::change_recovery_account_request_object, node::chain::change_recovery_account_request_index );
-
-FC_REFLECT( node::chain::account_balance_object,
-         (id)
-         (owner)
-         (symbol)
-         (total_balance)
-         (liquid_balance)
-         (reward_balance)
-         (staked_balance)
-         (savings_balance)
-         (delegated_balance)
-         (received_balance)
-         (maintenance_flag)
-          );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_balance_object, node::chain::account_balance_index );
-
-FC_REFLECT( node::chain::account_permission_object,
-         (id)
-         (account)
-         (whitelisted_accounts)
-         (blacklisted_accounts)
-         (whitelisting_accounts)
-         (blacklisting_accounts)
-         (whitelisted_assets)
-         (blacklisted_assets)
-         (whitelisting_assets)
-         (blacklisting_assets)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_permission_object, node::chain::account_permission_index );
-

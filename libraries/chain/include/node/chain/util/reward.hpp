@@ -47,7 +47,7 @@ uint128_t evaluate_reward_curve(
    const uint128_t& content_constant = CONTENT_CONSTANT 
    );
 
-inline bool is_comment_payout_dust( const price& p, uint64_t reward_payout )
+inline bool is_comment_payout_dust( const price& p, share_type reward_payout )
 {
    return asset_to_USD( p, asset( reward_payout, SYMBOL_COIN ) ) < MIN_PAYOUT_USD;
 }
@@ -55,11 +55,13 @@ inline bool is_comment_payout_dust( const price& p, uint64_t reward_payout )
 } } } // node::chain::util
 
 FC_REFLECT( node::chain::util::comment_reward_context,
-   (reward)
-   (max_reward)
-   (total_reward_squared)
-   (total_reward_fund)
-   (current_COIN_USD_price)
-   (reward_curve)
-   (content_constant)
-   );
+         (reward)
+         (max_reward)
+         (total_reward_squared)
+         (total_reward_fund)
+         (current_COIN_USD_price)
+         (cashouts_received)
+         (cashout_decay)
+         (reward_curve)
+         (content_constant)
+         );

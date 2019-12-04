@@ -2,9 +2,7 @@
 
 #include <node/protocol/authority.hpp>
 #include <node/protocol/node_operations.hpp>
-
 #include <node/chain/node_object_types.hpp>
-
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <numeric>
@@ -472,7 +470,7 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         uint32_t               escrow_id = 0;
+         shared_string          escrow_id;
 
          account_name_type      from;
 
@@ -517,33 +515,11 @@ namespace node { namespace chain {
 
          shared_string           memo;
 
-         uint32_t                request_id = 0;
+         shared_string           request_id;
 
          asset                   amount;
          
          time_point              complete;
-   };
-
-   /**
-    *  This object gets updated once per hour, on the hour.
-    */
-   class feed_history_object  : public object< feed_history_object_type, feed_history_object >
-   {
-      feed_history_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         feed_history_object( Constructor&& c, allocator< Allocator > a )
-            :price_history( a.get_segment_manager() )
-         {
-            c( *this );
-         }
-
-         id_type                                   id;
-
-         price                                     current_median_history;    // the current median of the price history, used as the base for price operations
-         
-         bip::deque< price, allocator< price > >   price_history;             // tracks this 3.5 days of median_feed one per hour
    };
 
    /**
@@ -560,7 +536,7 @@ namespace node { namespace chain {
 
          unstake_asset_route_object(){}
 
-         id_type  id;
+         id_type             id;
 
          account_name_type   from_account;          // Account that is unstaking the asset balance
 
@@ -973,8 +949,9 @@ namespace node { namespace chain {
          ordered_unique< tag< by_from_id >,
             composite_key< escrow_object,
                member< escrow_object, account_name_type,  &escrow_object::from >,
-               member< escrow_object, uint32_t, &escrow_object::escrow_id >
-            >
+               member< escrow_object, shared_string, &escrow_object::escrow_id >
+            >,
+            composite_key_compare< std::less< account_name_type >, strcmp_less >
          >,
          ordered_unique< tag< by_to >,
             composite_key< escrow_object,
@@ -1017,8 +994,9 @@ namespace node { namespace chain {
          ordered_unique< tag< by_from_rid >,
             composite_key< savings_withdraw_object,
                member< savings_withdraw_object, account_name_type,  &savings_withdraw_object::from >,
-               member< savings_withdraw_object, uint32_t, &savings_withdraw_object::request_id >
-            >
+               member< savings_withdraw_object, shared_string, &savings_withdraw_object::request_id >
+            >,
+            composite_key_compare< std::less< account_name_type >, strcmp_less >
          >,
          ordered_unique< tag< by_to_complete >,
             composite_key< savings_withdraw_object,
@@ -1031,8 +1009,9 @@ namespace node { namespace chain {
             composite_key< savings_withdraw_object,
                member< savings_withdraw_object, time_point,  &savings_withdraw_object::complete >,
                member< savings_withdraw_object, account_name_type,  &savings_withdraw_object::from >,
-               member< savings_withdraw_object, uint32_t, &savings_withdraw_object::request_id >
-            >
+               member< savings_withdraw_object, shared_string, &savings_withdraw_object::request_id >
+            >,
+            composite_key_compare< std::less<time_point>, std::less< account_name_type >, strcmp_less >
          >
       >,
       allocator< savings_withdraw_object >
@@ -1301,132 +1280,79 @@ namespace node { namespace chain {
 #include <node/chain/board_object.hpp>
 #include <node/chain/ad_object.hpp>
 
-FC_REFLECT_ENUM( node::chain::curve_id,
-               (quadratic)
-               (quadratic_curation)
-               (linear)
-               (square_root)
-               (convergent_semi_quadratic)
-               );
+FC_REFLECT( node::chain::transfer_request_object,
+         (id)
+         (to)
+         (from)
+         (amount)
+         (request_id)
+         (memo)
+         (expiration)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::transfer_request_object, node::chain::transfer_request_index );
+
+FC_REFLECT( node::chain::transfer_recurring_object,
+         (id)
+         (from)
+         (to)
+         (amount)
+         (transfer_id)
+         (memo)
+         (begin)
+         (end)
+         (interval)
+         (next_transfer)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::transfer_recurring_object, node::chain::transfer_recurring_index );
+
+FC_REFLECT( node::chain::transfer_recurring_request_object,
+         (id)
+         (from)
+         (to)
+         (amount)
+         (request_id)
+         (memo)
+         (begin)
+         (end)
+         (interval)
+         (expiration)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::transfer_recurring_request_object, node::chain::transfer_recurring_request_index );
 
 FC_REFLECT( node::chain::limit_order_object,
          (id)
          (created)
          (expiration)
          (seller)
-         (orderid)
+         (order_id)
          (for_sale)
          (sell_price)
-         (deferred_fee) 
-         (deferred_paid_fee)
+         (interface)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::limit_order_object, node::chain::limit_order_index );
 
-FC_REFLECT( node::chain::margin_order_object,
-         (id)
-         (created)
-         (expiration)
-         (seller)
-         (orderid)
-         (for_sale)
-         (sell_price)
-         (deferred_fee) 
-         (deferred_paid_fee)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::margin_order_object, node::chain::margin_order_index );
-
-FC_REFLECT( node::chain::unstake_asset_route_object,
-         (id)
-         (from_account)
-         (to_account)
-         (symbol)
-         (percent)
-         (auto_stake) 
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::unstake_asset_route_object, node::chain::unstake_asset_route_index );
-
-FC_REFLECT( node::chain::savings_withdraw_object,
-         (id)
-         (from)
-         (to)
-         (symbol)
-         (memo)
-         (request_id)
-         (amount)
-         (complete)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::savings_withdraw_object, node::chain::savings_withdraw_index );
-
-FC_REFLECT( node::chain::escrow_object,
-         (id)
-         (escrow_id)
-         (from)
-         (to)
-         (agent)
-         (ratification_deadline)
-         (escrow_expiration)
-         (balance)
-         (pending_fee)
-         (to_approved)
-         (agent_approved)
-         (disputed) 
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::escrow_object, node::chain::escrow_index );
-
-FC_REFLECT( node::chain::decline_voting_rights_request_object,
-         (id)
-         (account)
-         (effective_date) 
-         );
-            
-CHAINBASE_SET_INDEX_TYPE( node::chain::decline_voting_rights_request_object, node::chain::decline_voting_rights_request_index );
-
-FC_REFLECT( node::chain::reward_fund_object,
-         (id)
-         (content_reward_balance)
-         (equity_reward_balance)
-         (validation_reward_balance) 
-         (txn_stake_reward_balance) 
-         (work_reward_balance)
-         (producer_activity_reward_balance) 
-         (supernode_reward_balance)
-         (power_reward_balance)
-         (community_fund_balance)
-         (development_reward_balance)
-         (marketing_reward_balance)
-         (advocacy_reward_balance)
-         (activity_reward_balance)
-         (total_pending_reward_balance)
-         (recent_content_claims)
-         (last_update)
-         (content_constant)
-         (author_reward_curve)
-         (curation_reward_curve)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::reward_fund_object, node::chain::reward_fund_index );
-
 FC_REFLECT( node::chain::call_order_object,
          (id)
          (borrower)
-         (collateral)  
-         (debt)       
-         (call_price)  
-         (target_collateral_ratio) 
+         (collateral)
+         (debt)
+         (call_price)
+         (target_collateral_ratio)
+         (interface)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::call_order_object, node::chain::call_order_index );    
+CHAINBASE_SET_INDEX_TYPE( node::chain::call_order_object, node::chain::call_order_index );
 
 FC_REFLECT( node::chain::force_settlement_object, 
          (id)
          (owner)
          (balance)
          (settlement_date)
+         (interface)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::force_settlement_object, node::chain::force_settlement_index );
@@ -1465,3 +1391,115 @@ FC_REFLECT( node::chain::credit_loan_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::credit_loan_object, node::chain::credit_loan_index );
+
+FC_REFLECT( node::chain::margin_order_object,
+         (id)
+         (owner)
+         (order_id)
+         (sell_price)
+         (collateral)
+         (debt)
+         (debt_balance)
+         (interest)
+         (position)
+         (position_balance)
+         (collateralization)
+         (interface)
+         (created)
+         (last_updated)
+         (expiration)
+         (unrealized_value)
+         (last_interest_rate)
+         (liquidating)
+         (stop_loss_price)
+         (take_profit_price)
+         (limit_stop_loss_price)
+         (limit_take_profit_price)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::margin_order_object, node::chain::margin_order_index );
+
+FC_REFLECT( node::chain::escrow_object,
+         (id)
+         (escrow_id)
+         (from)
+         (to)
+         (agent)
+         (ratification_deadline)
+         (escrow_expiration)
+         (balance)
+         (pending_fee)
+         (to_approved)
+         (agent_approved)
+         (disputed) 
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::escrow_object, node::chain::escrow_index );
+
+FC_REFLECT( node::chain::savings_withdraw_object,
+         (id)
+         (from)
+         (to)
+         (memo)
+         (request_id)
+         (amount)
+         (complete)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::savings_withdraw_object, node::chain::savings_withdraw_index );
+
+FC_REFLECT( node::chain::unstake_asset_route_object,
+         (id)
+         (from_account)
+         (to_account)
+         (symbol)
+         (percent)
+         (auto_stake)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::unstake_asset_route_object, node::chain::unstake_asset_route_index );
+
+FC_REFLECT( node::chain::decline_voting_rights_request_object,
+         (id)
+         (account)
+         (effective_date) 
+         );
+            
+CHAINBASE_SET_INDEX_TYPE( node::chain::decline_voting_rights_request_object, node::chain::decline_voting_rights_request_index );
+
+FC_REFLECT_ENUM( node::chain::curve_id,
+         (quadratic)
+         (quadratic_curation)
+         (linear)
+         (square_root)
+         (convergent_semi_quadratic)
+         );
+
+FC_REFLECT( node::chain::reward_fund_object,
+         (id)
+         (content_reward_balance)
+         (equity_reward_balance)
+         (validation_reward_balance) 
+         (txn_stake_reward_balance) 
+         (work_reward_balance)
+         (producer_activity_reward_balance) 
+         (supernode_reward_balance)
+         (power_reward_balance)
+         (community_fund_balance)
+         (development_reward_balance)
+         (marketing_reward_balance)
+         (advocacy_reward_balance)
+         (activity_reward_balance)
+         (premium_partners_fund_balance)
+         (total_pending_reward_balance)
+         (total_reward_shares)
+         (recent_content_claims)
+         (recent_activity_claims)
+         (content_constant)
+         (content_reward_decay_rate)
+         (author_reward_curve)
+         (curation_reward_curve)
+         (last_update)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::reward_fund_object, node::chain::reward_fund_index );

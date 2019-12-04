@@ -12,25 +12,29 @@ namespace node { namespace app {
 
    struct discussion_index
    {
-      string           category;    /// category by which everything is filtered
-      vector< string > trending;    /// trending posts over the last 24 hours
-      vector< string > payout;      /// pending posts by payout
-      vector< string > payout_comments; /// pending comments by payout
-      vector< string > trending30;  /// pending lifetime payout
-      vector< string > created;     /// creation date
-      vector< string > responses;   /// creation date
-      vector< string > updated;     /// creation date
-      vector< string > active;      /// last update or reply
-      vector< string > votes;       /// last update or reply
-      vector< string > cashout;     /// last update or reply
-      vector< string > maturing;    /// about to be paid out
-      vector< string > best;        /// total lifetime payout
-      vector< string > hot;         /// total lifetime payout
+      string                category;
+      vector< string >      payout;
+      vector< string >      payout_comments;
+      vector< string >      created;
+      vector< string >      responses;
+      vector< string >      updated;
+      vector< string >      active;
+      vector< string >      cashout;
+      vector< string >      best;
+
+      vector< string >      net_votes;
+      vector< string >      view_count;
+      vector< string >      share_count;
+      vector< string >      comment_count;
+      vector< string >      vote_power;
+      vector< string >      view_power;
+      vector< string >      share_power;
+      vector< string >      comment_power;
    };
 
    struct tag_index
    {
-      vector< string > trending; /// pending payouts
+      vector< string > trending; // pending payouts
    };
 
    struct vote_state
@@ -70,20 +74,50 @@ namespace node { namespace app {
 
    struct account_vote
    {
-      string         authorperm;
+      string         author;
+      string         permlink;
       uint64_t       weight = 0;
       int64_t        reward = 0;
       int16_t        percent = 0;
       time_point     time;
    };
 
+   struct account_view
+   {
+      string         author;
+      string         permlink;
+      uint64_t       weight = 0;
+      int64_t        reward = 0;
+      time_point     time;
+   };
+
+   struct account_share
+   {
+      string         author;
+      string         permlink;
+      uint64_t       weight = 0;
+      int64_t        reward = 0;
+      time_point     time;
+   };
+
+   struct account_moderation
+   {
+      string                     author;
+      string                     permlink;
+      vector< tag_name_type >    tags;             // Set of additional string tags for sorting the post by
+      string                     rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
+      string                     details;          // Explanation as to what rule the post is in contravention of and why it was tagged.
+      bool                       filter;           // True if the post should be filtered by the board or governance address subscribers.
+      time_point                 time;
+   };
+
    struct order_state
    {
-      vector< limit_order_api_obj>          limit_orders;
-      vector< margin_order_api_obj>         margin_orders;
-      vector< call_order_api_obj>           call_orders;
-      vector< credit_loan_api_obj>          loan_orders;
-      vector< credit_collateral_api_obj>    collateral;
+      vector< limit_order_api_obj >          limit_orders;
+      vector< margin_order_api_obj >         margin_orders;
+      vector< call_order_api_obj >           call_orders;
+      vector< credit_loan_api_obj >          loan_orders;
+      vector< credit_collateral_api_obj >    collateral;
    };
 
    struct operation_state
@@ -121,17 +155,17 @@ namespace node { namespace app {
       map< account_name_type, transfer_recurring_request_api_obj >         outgoing_recurring_transfer_requests;
    };
 
-   struct board_state
+   struct board_state     // TODO: finish boards API in extended account
    {
       map< board_name_type, board_request_api_obj >                        pending_requests;
       map< board_name_type, board_invite_api_obj >                         incoming_invites;
       map< board_name_type, board_invite_api_obj >                         outgoing_invites;
       map< board_name_type, int64_t >                                      incoming_moderator_votes;
       map< board_name_type, map<account_name_type, uint16_t > >            outgoing_moderator_votes;
-      vector< board_name_type>                                             founded_boards;
-      vector< board_name_type>                                             admin_boards;
-      vector< board_name_type>                                             moderator_boards;
-      vector< board_name_type>                                             member_boards;
+      vector< board_name_type >                                            founded_boards;
+      vector< board_name_type >                                            admin_boards;
+      vector< board_name_type >                                            moderator_boards;
+      vector< board_name_type >                                            member_boards;
    };
 
    struct connection_state
@@ -143,7 +177,7 @@ namespace node { namespace app {
       map< account_name_type, connection_request_api_obj >                 outgoing_requests;
    };
 
-   struct business_account_state
+   struct business_account_state    // TODO: Full business accounts
    {
       account_business_api_obj                                             business;
       vector< account_name_type >                                          member_businesses;
@@ -163,7 +197,7 @@ namespace node { namespace app {
       interface_api_obj                                                    interface;
       supernode_api_obj                                                    supernode;
       governance_account_api_obj                                           governance_account;
-      vector<community_enterprise_api_obj>                                 enterprise_proposals;
+      vector< community_enterprise_api_obj >                               enterprise_proposals;
 
       map< account_name_type, uint16_t >                                   witness_votes;
       map< string, map< account_name_type, uint16_t > >                    network_officer_votes;
@@ -178,14 +212,16 @@ namespace node { namespace app {
       discussion( const comment_object& o ):comment_api_obj(o){}
       discussion(){}
 
-      string                      url;                      // /category/@rootauthor/root_permlink#author/permlink
-      string                      root_title;
-      vector<vote_state>          active_votes;
-      vector<view_state>          active_views;
-      vector<share_state>         active_shares;
-      vector<moderation_state>    active_mod_tags;
-      vector<string>              replies;                    // author/slug mapping
-      uint32_t                    body_length = 0;
+      string                        url;                         // /category/@rootauthor/root_permlink#author/permlink
+      string                        root_title;
+      vector< vote_state >          active_votes;
+      vector< view_state >          active_views;
+      vector< share_state >         active_shares;
+      vector< moderation_state >    active_mod_tags;
+      vector< string >              replies;                    // author/slug mapping
+      uint32_t                      body_length = 0;
+      blog_api_obj                  blog;                      // Details Injected if using get_discussions_by_blog.
+      feed_api_obj                  feed;                      // Details injected if using get_discussions_by_feed.
    };
 
    struct extended_account : public account_api_obj
@@ -193,22 +229,23 @@ namespace node { namespace app {
       extended_account(){}
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
 
-      account_following_api_obj                                            following;
-      connection_state                                                     connections;
-      map< string, account_balance_api_obj >                               balances;
-      business_account_state                                               business;
-      key_state                                                            keychain;
-      message_state                                                        messages;
-      transfer_state                                                       transfers;
-      board_state                                                          boards;
-      network_state                                                        network;
-      account_ad_state                                                     active_ads; 
-      vector<pair<string,uint32_t>>                                        active_tags;
-      vector<pair<account_name_type,uint32_t>>                             top_shared;
-      account_permissions_api_obj                                          permissions;
-      operation_state                                                      operations;
+      account_following_api_obj                         following;
+      connection_state                                  connections;
+      map< string, account_balance_api_obj >            balances;
+      order_state                                       orders;
+      business_account_state                            business;
+      key_state                                         keychain;
+      message_state                                     messages;
+      transfer_state                                    transfers;
+      board_state                                       boards;
+      network_state                                     network;
+      account_ad_state                                  active_ads; 
+      vector< pair< string, uint32_t > >                active_tags;
+      vector< pair< account_name_type, uint32_t > >     top_shared;
+      account_permission_api_obj                        permissions;
+      vector< pair< tag_name_type, uint32_t > >         tags_usage;
+      operation_state                                   operations;
    };
-
 
    struct extended_board : public board_api_obj
    {
@@ -220,12 +257,11 @@ namespace node { namespace app {
       vector< account_name_type >                       moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
       vector< account_name_type >                       administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
       vector< account_name_type >                       blacklist;                   // Accounts that are not able to post in this board, or request to join.
-      map< account_name_type,int64_t >                  mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
+      map< account_name_type, int64_t >                 mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
       int64_t                                           total_mod_weight = 0;        // Total of all moderator weights. 
       map< account_name_type, board_request_api_obj >   requests;
-      map <account_name_type, board_invite_api_obj >    invites;
+      map< account_name_type, board_invite_api_obj >    invites;
    };
-
 
    struct extended_asset : public asset_api_obj
    {
@@ -243,11 +279,10 @@ namespace node { namespace app {
       int64_t                                  confidential_supply;       // total confidential asset supply
       int64_t                                  accumulated_fees;          // Amount of Fees that have accumulated to be paid to the asset issuer. Denominated in this asset.
       int64_t                                  fee_pool;                  // Amount of core asset available to pay fees. Denominated in the core asset.
-
-      optional<bitasset_data_api_obj>          bitasset;
-      optional<equity_data_api_obj>            equity; 
-      optional<credit_data_api_obj>            credit;
-      optional<credit_pool_api_obj>            credit_pool;
+      bitasset_data_api_obj                    bitasset;
+      equity_data_api_obj >                    equity; 
+      credit_data_api_obj >                    credit;
+      credit_pool_api_obj >                    credit_pool;
       map< string, liquidity_pool_api_obj >    liquidity_pools;
    };
 
@@ -291,11 +326,15 @@ namespace node { namespace app {
       credit_loan_api_obj                     loan_asks;
    };
 
-   struct market_credit_pools
+   struct market_state
    {
-      credit_pool_api_obj                     buy_pool;
-      credit_pool_api_obj                     sell_pool;
-   };
+      market_limit_orders                     limit_orders;
+      market_margin_orders                    margin_orders;
+      market_call_orders                      call_orders;
+      vector< liquidity_pool_api_obj >        liquidity_pools;
+      vector< credit_pool_api_obj >           credit_pools;
+      market_credit_loans                     credit_loans;
+   }
 
    struct account_ad_state
    {
@@ -329,163 +368,355 @@ namespace node { namespace app {
       ad_audience_api_obj                     audience;
    };
 
-   /**
-    *  This struct is designed
-    */
    struct state 
    {
-      string                            current_route;
-
-      dynamic_global_property_api_obj   props;
-
-      app::tag_index                    tag_idx;
-
-      /**
-      * "" is the global discussion index
-      */
-      map<string, discussion_index>     discussion_idx;
-
-      map< string, tag_api_obj >        tags;
-
-      /**
-      *  map from account/slug to full nested discussion
-      */
-      map< string, discussion >         content;
-      map< string, extended_account >   accounts;
-
-      /**
-      * The list of miners who are queued to produce work
-      */
-      vector< account_name_type >       pow_queue;
-      map< string, witness_api_obj >    witnesses;
-      witness_schedule_api_obj          witness_schedule;
-      price                             feed_price;
-      string                            error;
-      optional< market >                market_data;
+      string                                  current_route;
+      dynamic_global_property_api_obj         props;
+      app::tag_index                          tag_idx;
+      map< string, extended_account >         accounts;
+      map< string, extended_board >           boards;
+      map< string, tag_following_api_obj >    tags;
+      map< string, discussion_index >         discussion_idx;
+      map< string, tag_api_obj >              tag_stats;
+      map< string, discussion >               content;
+      map< string, witness_api_obj >          witnesses;
+      map< string, witness_api_obj >          miners;
+      map< string, vector< string > >         blogs;
+      map< string, vector< string > >         feeds;
+      map< string, vector< string > >         comments;
+      map< string, vector< string > >         recent_replies;
+      witness_schedule_api_obj                witness_schedule;
+      string                                  error;
    };
 
 } }
 
-FC_REFLECT_DERIVED( node::app::extended_account,
-                   (node::app::account_api_obj),
-                   (reputation)
-                   (transfer_history)
-                   (market_history)
-                   (post_history)
-                   (vote_history)
-                   (other_history)
-                   (witness_votes)
-                   (tags_usage)
-                   (guest_bloggers)
-                   (open_orders)
-                   (comments)
-                   (feed)
-                   (blog)
-                   (recent_replies)
-                   (recommended) 
-                   )
-
-FC_REFLECT( node::app::vote_state, 
-            (voter)
-            (weight)
-            (reward)
-            (percent)
-            (reputation)
-            (time) 
-            );
-
-FC_REFLECT( node::app::account_vote, 
-            (authorperm)
-            (weight)
-            (reward)
-            (percent)
-            (time) 
-            );
-
-FC_REFLECT( node::app::discussion_index, 
+FC_REFLECT( node::app::discussion_index,
          (category)
-         (trending)
          (payout)
          (payout_comments)
-         (trending30)
-         (updated)
          (created)
          (responses)
+         (updated)
          (active)
-         (votes)
-         (maturing)
+         (cashout)
          (best)
-         (hot)
-         (promoted)
-         (cashout) 
+         (net_votes)
+         (view_count)
+         (share_count)
+         (comment_count)
+         (vote_power)
+         (view_power)
+         (share_power)
+         (comment_power)
          );
 
-FC_REFLECT( node::app::tag_index, 
+FC_REFLECT( node::app::tag_index,
          (trending) 
+         );
+
+FC_REFLECT( node::app::vote_state,
+         (voter)
+         (weight)
+         (reward)
+         (percent)
+         (time) 
+         );
+
+FC_REFLECT( node::app::view_state,
+         (voter)
+         (weight)
+         (reward)
+         (time) 
+         );
+
+FC_REFLECT( node::app::share_state,
+         (voter)
+         (weight)
+         (reward)
+         (time) 
+         );
+
+FC_REFLECT( node::app::moderation_state,
+         (moderator)
+         (tags)
+         (rating)
+         (details)
+         (filter)
+         (time) 
+         );
+
+FC_REFLECT( node::app::account_vote,
+         (author)
+         (permlink)
+         (weight)
+         (reward)
+         (percent)
+         (time)
+         );
+
+FC_REFLECT( node::app::account_view,
+         (author)
+         (permlink)
+         (weight)
+         (reward)
+         (time)
+         );
+
+FC_REFLECT( node::app::account_share,
+         (author)
+         (permlink)
+         (weight)
+         (reward)
+         (time)
+         );
+
+FC_REFLECT( node::app::account_moderation,
+         (author)
+         (permlink)
+         (tags)
+         (rating)
+         (details)
+         (filter)
+         (time)
+         );
+
+FC_REFLECT( node::app::order_state,
+         (limit_orders)
+         (margin_orders)
+         (call_orders)
+         (loan_orders)
+         (collateral)
+         );
+
+FC_REFLECT( node::app::operation_state,
+         (account_history)
+         (connection_history)
+         (follow_history)
+         (activity_history)
+         (post_history)
+         (message_history)
+         (vote_history)
+         (view_history)
+         (share_history)
+         (moderation_history)
+         (board_history)
+         (ad_history)
+         (transfer_history)
+         (balance_history)
+         (escrow_history)
+         (trading_history)
+         (liquidity_history)
+         (credit_history)
+         (asset_history)
+         (network_history)
+         (other_history)
+         );
+
+FC_REFLECT( node::app::transfer_state,
+         (incoming_requests)
+         (outgoing_requests)
+         (incoming_recurring_transfers)
+         (outgoing_recurring_transfers)
+         (incoming_recurring_transfer_requests)
+         (outgoing_recurring_transfer_requests)
+         );
+
+FC_REFLECT( node::app::board_state,
+         (pending_requests)
+         (incoming_invites)
+         (outgoing_invites)
+         (incoming_moderator_votes)
+         (outgoing_moderator_votes)
+         (founded_boards)
+         (admin_boards)
+         (moderator_boards)
+         (member_boards)
+         );
+
+FC_REFLECT( node::app::connection_state,
+         (connections)
+         (friends)
+         (companions)
+         (incoming_requests)
+         (outgoing_requests)
+         );
+
+FC_REFLECT( node::app::business_account_state,
+         (business)
+         (member_businesses)
+         (officer_businesses)
+         (executive_businesses)
+         (incoming_requests)
+         (incoming_invites)
+         (outgoing_requests)
+         (outgoing_invites)
+         );
+
+FC_REFLECT( node::app::network_state,
+         (witness)
+         (network_officer)
+         (executive_board)
+         (interface)
+         (supernode)
+         (governance_account)
+         (enterprise_proposals)
+         (witness_votes)
+         (network_officer_votes)
+         (executive_board_votes)
+         (account_executive_votes)
+         (account_officer_votes)
+         (enterprise_approvals)
          );
 
 FC_REFLECT_DERIVED( node::app::discussion, (node::app::comment_api_obj), 
          (url)
          (root_title)
-         (pending_payout_value)
-         (total_pending_payout_value)
          (active_votes)
+         (active_views)
+         (active_shares)
+         (active_mod_tags)
          (replies)
-         (author_reputation)
-         (promoted)
          (body_length)
-         (reblogged_by)
-         (first_reblogged_by)
-         (first_reblogged_on) 
-         )
+         (blog)
+         (feed)
+         );
+
+FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
+         (following)
+         (connections)
+         (balances)
+         (orders)
+         (business)
+         (keychain)
+         (messages)
+         (transfers)
+         (boards)
+         (network)
+         (active_ads)
+         (active_tags)
+         (top_shared)
+         (permissions)
+         (tags_usage)
+         (operations)
+         );
+
+FC_REFLECT_DERIVED( node::app::extended_board, ( node::app::board_api_obj ),
+         (subscribers)
+         (members)
+         (moderators)
+         (administrators)
+         (blacklist)
+         (mod_weight)
+         (total_mod_weight)
+         (requests)
+         (invites)
+         );
+
+FC_REFLECT_DERIVED( node::app::extended_asset, ( node::app::asset_api_obj ),
+         (total_supply)
+         (liquid_supply)
+         (staked_supply)
+         (reward_supply)
+         (savings_supply)
+         (delegated_supply)
+         (receiving_supply)
+         (pending_supply)
+         (confidential_supply)
+         (accumulated_fees)
+         (fee_pool)
+         (bitasset)
+         (equity)
+         (credit)
+         (credit_pool)
+         (liquidity_pools)
+         );
+
+FC_REFLECT( node::app::message_state,
+         (inbox)
+         (outbox)
+         (conversations)
+         );
+
+FC_REFLECT( node::app::key_state,
+         (connection_keys)
+         (friend_keys)
+         (companion_keys)
+         (board_keys)
+         (business_keys)
+         );
+
+FC_REFLECT( node::app::market_limit_orders,
+         (limit_bids)
+         (limit_asks)
+         );
+
+FC_REFLECT( node::app::market_margin_orders,
+         (margin_bids)
+         (margin_asks)
+         );
+
+FC_REFLECT( node::app::market_call_orders,
+         (calls)
+         (settlement_price)
+         );
+
+FC_REFLECT( node::app::market_credit_loans,
+         (loan_bids)
+         (loan_asks)
+         );
+
+FC_REFLECT( node::app::market_state,
+         (limit_orders)
+         (margin_orders)
+         (call_orders)
+         (liquidity_pools)
+         (credit_pools)
+         (credit_loans)
+         );
+
+FC_REFLECT( node::app::account_ad_state,
+         (creatives)
+         (campaigns)
+         (audiences)
+         (inventories)
+         (created_bids)
+         (account_bids)
+         (creative_bids)
+         (incoming_bids)
+         );
+
+FC_REFLECT( node::app::search_result_state,
+         (accounts)
+         (boards)
+         (tags)
+         (assets)
+         (posts)
+         );
+
+FC_REFLECT_DERIVED( node::app::ad_bid_state, ( node::app::ad_bid_api_obj ),
+         (creative)
+         (campaign)
+         (inventory)
+         (audience)
+         );
 
 FC_REFLECT( node::app::state, 
          (current_route)
          (props)
          (tag_idx)
-         (tags)
-         (content)
          (accounts)
-         (pow_queue)
-         (witnesses)
+         (boards)
+         (tags)
          (discussion_idx)
+         (tag_stats)
+         (content)
+         (witnesses)
+         (miners)
+         (blogs)
+         (feeds)
+         (comments)
+         (recent_replies)
          (witness_schedule)
-         (feed_price)
          (error)
-         (market_data) 
-         )
-
-FC_REFLECT_DERIVED( node::app::extended_limit_order, (node::app::limit_order_api_obj), 
-         (real_price)
-         (rewarded) 
-         )
-
-FC_REFLECT( node::app::order_history_item, 
-         (time)
-         (type)
-         (buy_asset_quantity)
-         (sell_asset_quantity)
-         (real_price) 
-         );
-
-FC_REFLECT( node::app::market, 
-         (bids)
-         (asks)
-         (history)
-         (price_history)
-         (available_candlesticks)
-         (available_zoom)
-         (current_candlestick)
-         (current_zoom) 
-         );
-
-FC_REFLECT( node::app::candle_stick, 
-         (open_time)
-         (period)
-         (high)
-         (low)
-         (open)
-         (close)
-         (buy_asset_volume)
-         (sell_asset_volume) 
          );

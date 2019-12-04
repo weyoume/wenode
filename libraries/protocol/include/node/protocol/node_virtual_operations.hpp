@@ -118,7 +118,7 @@ namespace node { namespace protocol {
       account_name_type from;
       account_name_type to;
       asset             amount;
-      uint32_t          request_id = 0;
+      string            request_id;
       string            memo;
    };
 
