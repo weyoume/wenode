@@ -1,1 +1,1 @@
-docker build -t weyoume/testnet-wenode .
+docker build -t weyoume/wenode .

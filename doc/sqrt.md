@@ -2,7 +2,7 @@
 # Introduction
 
 In this document we derive the approximate integer square root function used by WeYouMe for the curation curve
-[here](https://github.com/WeYouMe/WeYouMe/issues/1052).
+[here](https://github.com/weyoume/wenode/issues/1052).
 
 # MSB function
 

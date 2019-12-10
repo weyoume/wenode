@@ -1,1 +1,1 @@
-docker exec -it testnet-wenode /usr/local/node/bin/wallet
+docker exec -it wenode /usr/local/node/bin/wallet

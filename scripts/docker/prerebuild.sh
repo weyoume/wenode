@@ -1,1 +1,1 @@
-docker rm -f testnet-wenode
+docker rm -f wenode

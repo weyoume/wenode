@@ -155,7 +155,7 @@ namespace node { namespace app {
       map< account_name_type, transfer_recurring_request_api_obj >         outgoing_recurring_transfer_requests;
    };
 
-   struct board_state     // TODO: finish boards API in extended account
+   struct board_state
    {
       map< board_name_type, board_request_api_obj >                        pending_requests;
       map< board_name_type, board_invite_api_obj >                         incoming_invites;
@@ -177,7 +177,7 @@ namespace node { namespace app {
       map< account_name_type, connection_request_api_obj >                 outgoing_requests;
    };
 
-   struct business_account_state    // TODO: Full business accounts
+   struct business_account_state
    {
       account_business_api_obj                                             business;
       vector< account_name_type >                                          member_businesses;

@@ -226,7 +226,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( business_account );
-      validate_account_name( executive );
+      validate_account_name( executive_account );
       switch( role )
       {
          case CHIEF_EXECUTIVE_OFFICER:
@@ -254,7 +254,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( business_account );
-      validate_account_name( officer );
+      validate_account_name( officer_account );
    }
 
    void account_member_request_operation::validate() const
@@ -314,10 +314,14 @@ namespace node { namespace protocol {
 
       FC_ASSERT( listed_account.valid() || listed_asset.valid(),
          "Operation requires either an account or an asset to update list." );
+      FC_ASSERT( !( blacklisted && whitelisted ),
+         "Operation cannot add item to both blacklist and whitelist." );
 
       if( listed_account.valid() )
       {
          validate_account_name( *listed_account );
+         FC_ASSERT( *listed_account != account,
+            "Account cannot add itself to its blacklist or whitelist." );
       }
       if( listed_asset.valid() )
       {
@@ -2208,12 +2212,12 @@ namespace node { namespace protocol {
             "JSON Metadata not valid JSON." );
       }
 
-      FC_ASSERT( description.size() < MAX_STRING_LENGTH,
-         "Description is too long." );
-      FC_ASSERT( description.size(),
-         "Description is required." );
-      FC_ASSERT( fc::is_utf8( description ), 
-         "description is not formatted in UTF8." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( details.size(),
+         "Details is required." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details is not formatted in UTF8." );
 
       FC_ASSERT( url.size() < MAX_URL_LENGTH,
          "URL size is too large." );

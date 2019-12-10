@@ -2,7 +2,7 @@
 Plugin readme
 -------------
 
-The latest release (TODO: Version number) exposes the plugin architecture.
+The latest release exposes the plugin architecture.
 Each plugin has full access to the database and can change node behavior.
 Each plugin may also provide API's.
 
@@ -70,7 +70,7 @@ to sync to the real network, RPC should not be accessible to the entire internet
 the list of public API's.
 
 The API's configured with `public-api` are assigned numbers starting at zero.  So the `debug_node_api` is callable by
-API number 2 (TODO:  Explain about resolving names to API's and get it working).
+API number 2.
 
 The API provides the following methods
 (see `libraries/plugins/debug_node/include/node/plugins/debug_node/debug_node_api.hpp`

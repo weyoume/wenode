@@ -134,19 +134,19 @@ namespace node { namespace chain {
          share_type                                 adjacency_value( const board_member_object& m )const
          {
             vector<account_name_type> common_subscribers;
-            common_subscribers.reserve( subscribers.length() );
+            common_subscribers.reserve( subscribers.size() );
             std::set_intersection( m.subscribers.begin(), m.subscribers.end(), subscribers.begin(), subscribers.end(), common_subscribers.begin());
 
             vector<account_name_type> common_members;
-            common_members.reserve( members.length() );
+            common_members.reserve( members.size() );
             std::set_intersection( m.members.begin(), m.members.end(), members.begin(), members.end(), common_members.begin());
 
             vector<account_name_type> common_moderators;
-            common_moderators.reserve( moderators.length() );
+            common_moderators.reserve( moderators.size() );
             std::set_intersection( m.moderators.begin(), m.moderators.end(), moderators.begin(), moderators.end(), common_moderators.begin());
 
             vector<account_name_type> common_administrators;
-            common_administrators.reserve( administrators.length() );
+            common_administrators.reserve( administrators.size() );
             std::set_intersection( m.administrators.begin(), m.administrators.end(), administrators.begin(), administrators.end(), common_administrators.begin());
 
             share_type result = common_subscribers.size() + 3*common_members.size() + 5*common_moderators.size() + 10*common_administrators.size();

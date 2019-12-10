@@ -760,8 +760,9 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& bus_inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_business >();
 
    const auto& board_req_idx = _db.get_index< board_join_request_index >().indices().get< by_account_board >();
-   const auto& board_acc_inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_account >();
-   const auto& board_member_inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_member >();
+   const auto& board_acc_inv_idx = _db.get_index< board_join_invite_index >().indices().get< by_account >();
+   const auto& board_member_inv_idx = _db.get_index< board_join_invite_index >().indices().get< by_member >();
+   const auto& board_member_idx = _db.get_index< board_member_index >().indices().get< by_name >();
 
    const auto& transfer_req_idx = _db.get_index< transfer_request_index >().indices().get< by_request_id >();
    const auto& transfer_from_req_idx = _db.get_index< transfer_request_index >().indices().get< by_from_account >();
@@ -886,6 +887,26 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             results.back().business.business = account_business_api_obj( *business_itr );
          }
 
+         auto business_itr = business_idx.begin();
+
+         while( business_itr != business_idx.end() )
+         {
+            if( business_itr->is_executive( name ) )
+            {
+               results.back().business.executive_businesses.push_back( business_itr->name );
+            }
+            else if( business_itr->is_officer( name ) )
+            {
+               results.back().business.officer_businesses.push_back( business_itr->name );
+            }
+            else if( business_itr->is_member( name ) )
+            {
+               results.back().business.member_businesses.push_back( business_itr->name );
+            }
+            
+            ++business_itr;
+         }
+
          auto account_req_itr = account_req_idx.lower_bound( name );
          auto bus_req_itr = bus_req_idx.lower_bound( name );
 
@@ -904,8 +925,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          auto account_inv_itr = account_inv_idx.lower_bound( name );
          auto member_inv_itr = member_inv_idx.lower_bound( name );
          auto bus_inv_itr = bus_inv_idx.lower_bound( name );
-
-         // TODO: Get exec, officer, member businesses
 
          while( account_inv_itr != account_inv_idx.end() && account_inv_itr->account == name )
          {
@@ -997,11 +1016,33 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++connection_acc_itr;
          }
 
+         auto board_itr = board_member_idx.begin();
+
+         while( board_itr != board_member_idx.end() )
+         {
+            if( board_itr->founder == name )
+            {
+               results.back().boards.founded_boards.push_back( board_itr->name );
+            }
+            else if( board_itr->is_administrator( name ) )
+            {
+               results.back().boards.admin_boards.push_back( board_itr->name );
+            }
+            else if( board_itr->is_moderator( name ) )
+            {
+               results.back().boards.moderator_boards.push_back( board_itr->name );
+            }
+            else if( board_itr->is_member( name ) )
+            {
+               results.back().boards.member_boards.push_back( board_itr->name );
+            }
+            
+            ++board_itr;
+         }
+
          auto board_req_itr = board_req_idx.lower_bound( name );
          auto board_acc_inv_itr = board_acc_inv_idx.lower_bound( name );
          auto board_member_inv_itr = board_member_inv_idx.lower_bound( name );
-
-         // TODO: member, moderator, admin, founder boards
 
          while( board_req_itr != board_req_idx.end() && board_req_itr->account == name )
          {

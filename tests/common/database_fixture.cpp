@@ -61,15 +61,6 @@ clean_database_fixture::clean_database_fixture()
 
    //ahplugin->plugin_startup();
    db_plugin->plugin_startup();
-   score( GENESIS_ACCOUNT_BASE_NAME, 10000 );
-
-   // Fill up the rest of the required miners
-   for( int i = GENESIS_WITNESS_AMOUNT; i < TOTAL_PRODUCERS; i++ )
-   {
-      account_create( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), init_account_pub_key );
-      fund( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
-      witness_create( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
-   }
 
    validate_database();
    } catch ( const fc::exception& e )
@@ -110,25 +101,15 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
    }
    init_account_pub_key = init_account_priv_key.get_public_key();
 
-   db.open( data_dir->path(), data_dir->path(), INITIAL_TEST_SUPPLY, size, chainbase::database::read_write );
+   db.open( data_dir->path(), data_dir->path(), size, chainbase::database::read_write, init_account_pub_key );
 
    boost::program_options::variables_map options;
-
 
    generate_block();
    db.set_hardfork( NUM_HARDFORKS );
    generate_block();
 
-   score( GENESIS_ACCOUNT_BASE_NAME, 10000 );
-
-   // Fill up the rest of the required miners
-   for( int i = GENESIS_WITNESS_AMOUNT; i < TOTAL_PRODUCERS; i++ )
-   {
-      account_create( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), init_account_pub_key );
-      fund( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), MIN_PRODUCER_REWARD.amount.value );
-      witness_create( GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i ), init_account_priv_key, "foo.bar", init_account_pub_key, MIN_PRODUCER_REWARD.amount );
-   }
-
+   
    validate_database();
 }
 
@@ -181,17 +162,17 @@ fc::ecc::private_key database_fixture::generate_private_key(string seed)
 
 string database_fixture::generate_anon_acct_name()
 {
-   // names of the form "anon-acct-x123" ; the "x" is necessary
-   //    to workaround issue #46
+   // names of the form "anon-acct-x123"
    return "anon-acct-x" + std::to_string( anon_acct_count++ );
 }
 
 void database_fixture::open_database()
 {
-   if( !data_dir ) {
+   if( !data_dir ) 
+   {
       data_dir = fc::temp_directory( graphene::utilities::temp_directory_path() );
       db._log_hardforks = false;
-      db.open( data_dir->path(), data_dir->path(), INITIAL_TEST_SUPPLY, 1024 * 1024 * 8, chainbase::database::read_write ); // 8 MB file for testing
+      db.open( data_dir->path(), data_dir->path(), 1024 * 1024 * 8, chainbase::database::read_write, init_account_pub_key ); // 8 MB file for testing
    }
 }
 
@@ -215,33 +196,47 @@ void database_fixture::generate_blocks(fc::time_point timestamp, bool miss_inter
 
 const account_object& database_fixture::account_create(
    const string& name,
-   const string& creator,
-   const private_key_type& creator_key,
+   const string& registrar,
+   const string& governance_account,
+   const private_key_type& registrar_key,
    const share_type& fee,
    const public_key_type& key,
    const public_key_type& post_key,
+   const string& details,
+   const string& url,
    const string& json
    )
 {
    try
    {
-      
       account_create_operation op;
+
+      op.signatory = registrar;
+      op.registrar = registrar;
       op.new_account_name = name;
-      op.creator = creator;
-      op.fee = asset( fee, SYMBOL_COIN );
-      op.delegation = asset( 0, SYMBOL_COIN );
+      op.account_type = PERSONA;
+      op.referrer = registrar;
+      op.proxy = governance_account;
+      op.governance_account = governance_account;
+      op.recovery_account = governance_account;
+      op.details = details;
+      op.url = url;
+      op.json = json;
+      op.json_private = json;
       op.owner = authority( 1, key, 1 );
       op.active = authority( 1, key, 1 );
       op.posting = authority( 1, post_key, 1 );
       op.secure_public_key = key;
-      op.json = json;
-
+      op.connection_public_key = key;
+      op.friend_public_key = key;
+      op.companion_public_key = key;
+      op.fee = asset( fee, SYMBOL_COIN );
+      op.delegation = asset( 0, SYMBOL_COIN );
+      
       trx.operations.push_back( op );
       
-
-      trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
-      trx.sign( creator_key, db.get_chain_id() );
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.sign( registrar_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
       trx.operations.clear();
@@ -251,25 +246,29 @@ const account_object& database_fixture::account_create(
 
       return acct;
    }
-   FC_CAPTURE_AND_RETHROW( (name)(creator) )
+   FC_CAPTURE_AND_RETHROW( (name)(registrar) )
 }
 
 const account_object& database_fixture::account_create(
    const string& name,
-   const public_key_type& key,
-   const public_key_type& post_key
+   const public_key_type& owner_key,
+   const public_key_type& active_key,
+   const public_key_type& posting_key
 )
 {
    try
    {
       return account_create(
          name,
-         GENESIS_ACCOUNT_BASE_NAME,
+         INIT_ACCOUNT,
+         INIT_ACCOUNT,
          init_account_priv_key,
          std::max( db.get_witness_schedule().median_props.account_creation_fee.amount, share_type( 100 ) ),
          key,
          post_key,
-         "" );
+         "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.",
+         "https://en.wikipedia.org/wiki/Loch_Ness_Monster",
+         "{\"cookie_price\":\"3.50 MUSD\"}" );
    }
    FC_CAPTURE_AND_RETHROW( (name) );
 }
@@ -282,23 +281,259 @@ const account_object& database_fixture::account_create(
    return account_create( name, key, key );
 }
 
+const account_object& database_fixture::profile_create(
+   const string& name,
+   const string& registrar,
+   const string& governance_account,
+   const private_key_type& registrar_key,
+   const share_type& fee,
+   const public_key_type& key,
+   const public_key_type& post_key,
+   const string& details,
+   const string& url,
+   const string& json
+   )
+{
+   try
+   {
+      account_create_operation op;
+
+      op.signatory = registrar;
+      op.registrar = registrar;
+      op.new_account_name = name;
+      op.account_type = PROFILE;
+      op.referrer = registrar;
+      op.proxy = governance_account;
+      op.governance_account = governance_account;
+      op.recovery_account = governance_account;
+      op.details = details;
+      op.url = url;
+      op.json = json;
+      op.json_private = json;
+      op.owner = authority( 1, key, 1 );
+      op.active = authority( 1, key, 1 );
+      op.posting = authority( 1, post_key, 1 );
+      op.secure_public_key = key;
+      op.connection_public_key = key;
+      op.friend_public_key = key;
+      op.companion_public_key = key;
+      op.fee = asset( fee, SYMBOL_COIN );
+      op.delegation = asset( 0, SYMBOL_COIN );
+      
+      trx.operations.push_back( op );
+      
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.sign( registrar_key, db.get_chain_id() );
+      trx.validate();
+      db.push_transaction( trx, 0 );
+      trx.operations.clear();
+      trx.signatures.clear();
+
+      const account_object& acct = db.get_account( name );
+
+      return acct;
+   }
+   FC_CAPTURE_AND_RETHROW( (name)(registrar) )
+}
+
+const account_object& database_fixture::business_create(
+   const string& name,
+   const string& registrar,
+   const string& governance_account,
+   const private_key_type& registrar_key,
+   const share_type& fee,
+   const public_key_type& key,
+   const public_key_type& post_key,
+   const string& details,
+   const string& url,
+   const string& json
+   )
+{
+   try
+   {
+      account_create_operation op;
+
+      op.signatory = registrar;
+      op.registrar = registrar;
+      op.new_account_name = name;
+      op.account_type = BUSINESS;
+      op.referrer = registrar;
+      op.proxy = governance_account;
+      op.governance_account = governance_account;
+      op.recovery_account = governance_account;
+      op.details = details;
+      op.url = url;
+      op.json = json;
+      op.json_private = json;
+      op.owner = authority( 1, key, 1 );
+      op.active = authority( 1, key, 1 );
+      op.posting = authority( 1, post_key, 1 );
+      op.secure_public_key = key;
+      op.connection_public_key = key;
+      op.friend_public_key = key;
+      op.companion_public_key = key;
+      op.fee = asset( fee, SYMBOL_COIN );
+      op.delegation = asset( 0, SYMBOL_COIN );
+      op.business_type = PUBLIC_BUSINESS;
+      op.officer_vote_threshold = 10 * BLOCKCHAIN_PRECISION;
+      
+      trx.operations.push_back( op );
+      
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.sign( registrar_key, db.get_chain_id() );
+      trx.validate();
+      db.push_transaction( trx, 0 );
+      trx.operations.clear();
+      trx.signatures.clear();
+
+      const account_object& acct = db.get_account( name );
+
+      return acct;
+   }
+   FC_CAPTURE_AND_RETHROW( (name)(registrar) )
+}
+
+const board_object& database_fixture::board_create(
+   const string& name,
+   const string& founder,
+   const private_key_type& founder_key,
+   const public_key_type& board_key,
+   const string& board_type,
+   const string& board_privacy,
+   const string& details,
+   const string& url,
+   const string& json
+   )
+{
+   try
+   {
+      board_create_operation op;
+
+      op.signatory = founder;
+      op.founder = founder;
+      op.name = name;
+      op.board_type = BOARD;
+      op.board_privacy = OPEN_BOARD;
+      op.board_public_key = board_key;
+      op.json = json;
+      op.json_private = json;
+      op.details = details;
+      op.url = url;
+      
+      trx.operations.push_back( op );
+      
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.sign( founder_key, db.get_chain_id() );
+      trx.validate();
+      db.push_transaction( trx, 0 );
+      trx.operations.clear();
+      trx.signatures.clear();
+
+      const board_object& board = db.get_board( name );
+
+      return board;
+   }
+   FC_CAPTURE_AND_RETHROW( (name)(founder) )
+}
+
+const asset_object& database_fixture::asset_create(
+   const string& symbol,
+   const string& issuer,
+   const private_key_type& issuer_key,
+   const string& asset_type,
+   const string& details,
+   const string& url,
+   const string& json,
+   const share_type& liquidity
+   )
+{
+   try
+   {
+      asset_create_operation op;
+
+      op.signatory = issuer;
+      op.issuer = issuer;
+      op.symbol = symbol;
+      op.asset_type = asset_type;
+      op.coin_liquidity = asset( liquidity, SYMBOL_COIN );
+      op.usd_liquidity = asset( liquidity, SYMBOL_USD );
+      op.credit_liquidity = asset( liquidity, SYMBOL_CREDIT );
+      op.common_options.display_symbol = symbol;
+      op.common_options.json = json;
+      op.common_options.json_private = json;
+      op.common_options.details = details;
+      op.common_options.url = url;
+      
+      trx.operations.push_back( op );
+      
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.sign( issuer_key, db.get_chain_id() );
+      trx.validate();
+      db.push_transaction( trx, 0 );
+      trx.operations.clear();
+      trx.signatures.clear();
+
+      const board_object& board = db.get_board( name );
+
+      return board;
+   }
+   FC_CAPTURE_AND_RETHROW( (name)(founder) )
+}
+
 const witness_object& database_fixture::witness_create(
    const string& owner,
    const private_key_type& owner_key,
+   const string& details,
    const string& url,
+   const string& json,
    const public_key_type& signing_key,
    const share_type& fee )
 {
    try
    {
       witness_update_operation op;
+
+      op.signatory = owner;
       op.owner = owner;
+      op.details = details;
       op.url = url;
+      op.json = json;
       op.block_signing_key = signing_key;
       op.fee = asset( fee, SYMBOL_COIN );
 
       trx.operations.push_back( op );
-      trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.sign( owner_key, db.get_chain_id() );
+      trx.validate();
+      db.push_transaction( trx, 0 );
+      trx.operations.clear();
+      trx.signatures.clear();
+
+      return db.get_witness( owner );
+   }
+   FC_CAPTURE_AND_RETHROW( (owner)(url) )
+}
+
+const governance_account_object& database_fixture::governance_create(
+   const string& account,
+   const private_key_type& account_key,
+   const string& details,
+   const string& url,
+   const string& json
+   )
+{
+   try
+   {
+      update_governance_operation op;
+
+      op.signatory = account;
+      op.owner = account;
+      op.details = details;
+      op.url = url;
+      op.json = json;
+
+      trx.operations.push_back( op );
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( owner_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -331,27 +566,7 @@ void database_fixture::fund(
    {
       db_plugin->debug_update( [=]( database& db)
       {
-         db.modify( db.get_account( account_name ), [&]( account_object& a )
-         {
-            if( amount.symbol == SYMBOL_COIN )
-               a.balance += amount;
-            else if( amount.symbol == SYMBOL_USD )
-            {
-               a.USDbalance += amount;
-               a.USD_seconds_last_update = db.head_block_time();
-            }
-         });
-
-         if( amount.symbol == SYMBOL_USD )
-         {
-            const auto& median_feed = db.get_feed_history();
-            if( median_feed.current_median_history.is_null() )
-               db.modify( median_feed, [&]( feed_history_object& f )
-               {
-                  f.current_median_history = price( asset( 1, SYMBOL_USD ), asset( 1, SYMBOL_COIN ) );
-               });
-         }
-
+         db.adjust_liquid_balance( account_name, amount );
       }, default_skip );
    }
    FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
@@ -368,9 +583,10 @@ void database_fixture::transfer(
       op.from = from;
       op.to = to;
       op.amount = amount;
+      op.memo = "Memo: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 
       trx.operations.push_back( op );
-      trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.validate();
       db.push_transaction( trx, ~0 );
       trx.operations.clear();
@@ -387,16 +603,26 @@ void database_fixture::stake( const string& from, const share_type& amount )
       op.amount = asset( amount, SYMBOL_COIN );
 
       trx.operations.push_back( op );
-      trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.validate();
       db.push_transaction( trx, ~0 );
       trx.operations.clear();
    } FC_CAPTURE_AND_RETHROW( (from)(amount) )
 }
 
-void database_fixture::stake( const string& account, const asset& amount )
+void database_fixture::fund_stake(
+   const string& account_name,
+   const asset& amount
+   )
 {
-   db.adjust_staked_balance( account , amount );
+   try
+   {
+      db_plugin->debug_update( [=]( database& db)
+      {
+         db.adjust_staked_balance( account_name, amount );
+      }, default_skip );
+   }
+   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
 
 void database_fixture::proxy( const string& account, const string& proxy )
@@ -412,34 +638,24 @@ void database_fixture::proxy( const string& account, const string& proxy )
    } FC_CAPTURE_AND_RETHROW( (account)(proxy) )
 }
 
-void database_fixture::set_price_feed( const price& new_price )
+const asset& database_fixture::get_liquid_balance( const string& account_name, const string& symbol )const
 {
-   try
-   {
-      for ( int i = 1; i < 8; i++ )
-      {
-         feed_publish_operation op;
-         op.publisher = GENESIS_ACCOUNT_BASE_NAME + fc::to_string( i );
-         op.exchange_rate = new_price;
-         trx.operations.push_back( op );
-         trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
-         db.push_transaction( trx, ~0 );
-         trx.operations.clear();
-      }
-   } FC_CAPTURE_AND_RETHROW( (new_price) )
-
-   generate_blocks( BLOCKS_PER_HOUR );
-   BOOST_REQUIRE(
-#ifdef IS_TEST_NET
-      !db.skip_price_feed_limit_check ||
-#endif
-      db.get(feed_history_id_type()).current_median_history == new_price
-   );
+  return db.get_liquid_balance( account_name, symbol );
 }
 
-const asset& database_fixture::get_balance( const string& account_name )const
+const asset& database_fixture::get_staked_balance( const string& account_name, const string& symbol )const
 {
-  return db.get_account( account_name ).balance;
+  return db.get_staked_balance( account_name, symbol );
+}
+
+const asset& database_fixture::get_savings_balance( const string& account_name, const string& symbol )const
+{
+  return db.get_savings_balance( account_name, symbol );
+}
+
+const asset& database_fixture::get_reward_balance( const string& account_name, const string& symbol )const
+{
+  return db.get_reward_balance( account_name, symbol );
 }
 
 void database_fixture::sign(signed_transaction& trx, const fc::ecc::private_key& key)

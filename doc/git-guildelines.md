@@ -1,4 +1,4 @@
-The git guidelines for WeYouMeIt are influenced by the
+The git guidelines for WeYouMe are influenced by the
 [Graphene](https://github.com/cryptonomex/graphene/wiki/How-we-use-version-control)
 git guidelines as well as [Git
 Flow](http://nvie.com/posts/a-successful-git-branching-model/) and [this

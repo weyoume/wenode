@@ -45,8 +45,6 @@ class {plugin_name}_api
 
       void on_api_startup();
 
-      // TODO:  Add API methods here
-
    private:
       std::shared_ptr< detail::{plugin_name}_api_impl > my;
 }};
@@ -54,7 +52,6 @@ class {plugin_name}_api
 }} }} }}
 
 FC_API( {plugin_provider}::plugin::{plugin_name}::{plugin_name}_api,
-   // TODO:  Add method bubble list here
    )
 """,
 

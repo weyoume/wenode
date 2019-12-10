@@ -103,11 +103,11 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN ) + o.delegation;
 
    FC_ASSERT( current_delegation >= target_delegation, "Insufficient Delegation ${f} required, ${p} provided.",
-               ("f", target_delegation )
-               ( "p", current_delegation )
-               ( "account_creation_fee", acc_fee )
-               ( "o.fee", o.fee )
-               ( "o.delegation", o.delegation ) );
+      ("f", target_delegation )
+      ( "p", current_delegation )
+      ( "account_creation_fee", acc_fee )
+      ( "o.fee", o.fee )
+      ( "o.delegation", o.delegation ) );
 
    // Ensure all referenced accounts exist
    
@@ -142,8 +142,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    {
       FC_ASSERT( o.governance_account.size(),
          "Business accounts must have an initial governance account.");
-      FC_ASSERT( o.business_type.valid() && o.officer_vote_threshold.valid(),
-         "Business accounts must select business type.");
+      FC_ASSERT( o.business_type.valid() && o.officer_vote_threshold.valid() && o.business_public_key.valid(),
+         "Business accounts must select business type, officer vote threshold and business key.");
       FC_ASSERT( *o.business_type == OPEN_BUSINESS ||
          *o.business_opts.business_type == PUBLIC_BUSINESS ||
          *o.business_opts.business_type == PRIVATE_BUSINESS,
@@ -234,13 +234,13 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       auth.owner = o.owner;
       auth.active = o.active;
       auth.posting = o.posting;
-      auth.last_owner_update = fc::time_point::min();
+      auth.last_owner_update = now;
    });
 
    _db.create< account_following_object >( [&]( account_following_object& afo ) 
    {
       afo.account = o.new_account_name;
-      afo.last_follow_update = fc::time_point::min();   
+      afo.last_update = now;
    }); 
 
    if( o.account_type == BUSINESS )
@@ -249,6 +249,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       {
          abo.account = o.new_account_name;
          abo.business_type = *o.business_type;
+         abo.business_public_key = *o.business_public_key;
          abo.executive_board.CHIEF_EXECUTIVE_OFFICER = o.registrar;
          abo.officer_vote_threshold = *o.officer_vote_threshold;
       });
@@ -271,7 +272,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
 
    if( o.governance_account.size() )
    {
-      _db.create< governance_subscription_object >( [&]( governance_subscription_object& gso ) 
+      _db.create< governance_subscription_object >( [&]( governance_subscription_object& gso )
       {
          gso.governance_account = o.governance_account;
          gso.account = o.new_account_name;
@@ -283,9 +284,9 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       });
    }
 
-   if( find_network_officer( o.registrar ) != nullptr )
+   if( _db.find_network_officer( o.registrar ) != nullptr )
    {
-      _db.create<network_officer_vote_object>( [&]( network_officer_vote_object& novo ) 
+      _db.create< network_officer_vote_object >( [&]( network_officer_vote_object& novo )
       {
          novo.network_officer = o.registrar;
          novo.account = o.new_account_name;
@@ -297,7 +298,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       });
    }
 
-   if( find_executive_board( o.registrar ) != nullptr )
+   if( _db.find_executive_board( o.registrar ) != nullptr )
    {
       _db.create< executive_board_vote_object >( [&]( executive_board_vote_object& ebvo )
       {
@@ -305,12 +306,12 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          ebvo.account = o.new_account_name;
       });
 
-      _db.modify( new_account, [&]( account_object& a ) 
+      _db.modify( new_account, [&]( account_object& a )
       {
          a.officer_vote_count++;
       });
    }
-   if( find_witness( o.registrar ) != nullptr )
+   if( _db.find_witness( o.registrar ) != nullptr )
    {
       _db.create< witness_vote_object >( [&]( witness_vote_object& wvo )
       {
@@ -449,7 +450,7 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = props.time;
    asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
-   asset monthly_fee = asset(0, SYMBOL_USD );
+   asset monthly_fee = asset( 0, SYMBOL_USD );
 
    switch( o.membership_type )
    {
@@ -481,7 +482,7 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
       break;
    }
 
-   asset carried_fees = asset(0, SYMBOL_USD );
+   asset carried_fees = asset( 0, SYMBOL_USD );
    fc::microseconds remaining = account.membership_expiration - now;
 
    switch( account.membership_type )
@@ -552,7 +553,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
    }
 
    const account_object& voter = _db.get_account( o.account );
-   const account_object& executive = _db.get_account( o.executive );
+   const account_object& executive = _db.get_account( o.executive_account );
    const account_object& business = _db.get_account( o.business_account );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );  
@@ -572,7 +573,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
          ("a", o.account)("b", o.business_account) );
       FC_ASSERT( bus_acc.is_officer( executive.name ),
          "Account: ${a} must be an officer of business: ${b} before being voted as Executive.",
-         ("a", o.executive)("b", o.business_account) );
+         ("a", o.executive_account)("b", o.business_account) );
    }
    
    const auto& rank_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
@@ -640,7 +641,7 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
    }
 
    const account_object& voter = _db.get_account( o.account );
-   const account_object& officer = _db.get_account( o.officer );
+   const account_object& officer = _db.get_account( o.officer_account );
    const account_object& business = _db.get_account( o.business_account );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
@@ -990,7 +991,7 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
    {
       const account_business_object& bus_acc = _db.get_account_business( o.account );
       FC_ASSERT( !bus_acc.is_member( account_name ),
-      "Account: ${a} cannot be blacklisted while a member of business: ${b}. Remove them first.", ("a", account_name)("b", o.account));
+         "Account: ${a} cannot be blacklisted while a member of business: ${b}. Remove them first.", ("a", account_name)("b", o.account));
       FC_ASSERT( !bus_acc.is_officer( account_name ),
          "Account: ${a} cannot be blacklisted while a officer of business: ${b}. Remove them first.", ("a", account_name)("b", o.account));
       FC_ASSERT( !bus_acc.is_executive( account_name ),
@@ -1119,7 +1120,7 @@ void account_witness_vote_evaluator::do_apply( const account_witness_vote_operat
       _db.update_witness_votes( voter );
    }
 
-   _db.update_witness( witness, wso, props );    // update the voting state of the witness
+   _db.process_update_witness_set();     // Recalculates the voting power for all witnesses.
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -1182,9 +1183,12 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
 
       _db.modify( old_proxy, [&]( account_object& a )
       {
-         a.proxied.erase( o.account );       // Remove name from old proxy
+         a.proxied.erase( o.account );       // Remove name from old proxy.
       });
    }
+
+   _db.process_update_witness_set();    // Recalculates the voting power for all witnesses.
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -2363,7 +2367,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
             from_string( ebo.json, o.json );
          }
          ebo.active = true;
-         noo.created = now;
+         ebo.created = now;
       });
    } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -2592,6 +2596,7 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
             from_string( i.json, o.json );
          }
          i.active = o.active;
+         i.decay_weights( props );
       });
    }
    else  // create new interface
@@ -2613,7 +2618,7 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
          }
          i.active = true;
          i.created = now;
-         i.last_user_update = now;
+         i.last_update_time = now;
       });
    } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -2716,8 +2721,8 @@ void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
          }
          s.active = true;
          s.created = now;
-         s.last_view_weight_update = now;
-         s.last_user_update = now;
+         s.last_update_time = now;
+         
          s.last_activation_time = now;
       });
    } 

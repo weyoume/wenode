@@ -161,7 +161,7 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
    tx.operations.push_back(op);
    tx.ref_block_num = db->head_block_num();
    tx.ref_block_prefix = work.input.prev_block._hash[1];
-   tx.set_expiration( db->head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+   tx.set_expiration( db->head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
    tx.sign( *priv, CHAIN_ID );
 

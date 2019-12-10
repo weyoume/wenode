@@ -87,7 +87,8 @@ database::~database()
    clear_pending();
 }
 
-void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size, uint32_t chainbase_flags )
+void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size, 
+   uint32_t chainbase_flags, const public_key_type& init_public_key = INIT_PUBLIC_KEY )
 { try {
    init_schema();
    chainbase::database::open( shared_mem_dir, chainbase_flags, shared_file_size );
@@ -98,11 +99,13 @@ void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, u
    if( chainbase_flags & chainbase::database::read_write )
    {
       if( !find< dynamic_global_property_object >() )
+      {
          with_write_lock( [&]()
          {
-            init_genesis();
+            init_genesis( init_public_key );
          });
-
+      }
+         
       _block_log.open( data_dir / "block_log" );
 
       auto log_head = _block_log.head();
@@ -120,7 +123,8 @@ void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, u
       {
          auto head_block = _block_log.read_block_by_num( head_block_num() );
          // This assertion should be caught and a reindex should occur
-         FC_ASSERT( head_block.valid() && head_block->id() == head_block_id(), "Chain state does not match block log. Please reindex blockchain." );
+         FC_ASSERT( head_block.valid() && head_block->id() == head_block_id(), 
+            "Chain state does not match block log. Please reindex blockchain." );
 
          _fork_db.start_block( *head_block );
       }
@@ -138,7 +142,7 @@ void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, u
  * Generates initial assets, accounts, witnesses, boards
  * and sets initial global dynamic properties. 
  */
-void database::init_genesis()
+void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLIC_KEY )
 { try {
    struct auth_inhibitor
    {
@@ -151,16 +155,19 @@ void database::init_genesis()
       uint32_t old_flags;
    } inhibitor(*this);
 
-   // Create blockchain accounts
-   public_key_type      init_public_key(INIT_PUBLIC_KEY);
+   // Create initial blockchain accounts
 
    time_point now = head_block_time();
 
    create< account_object >( [&]( account_object& a )
    {
       a.name = INIT_ACCOUNT;
-      a.account_type = BUSINESS; 
+      a.account_type = BUSINESS;
+      a.registrar = INIT_ACCOUNT;
       a.secure_public_key = init_public_key;
+      a.connection_public_key = init_public_key;
+      a.friend_public_key = init_public_key;
+      a.companion_public_key = init_public_key;
       a.created = now;
       a.last_account_update = now;
       a.last_vote_time = now;
@@ -169,11 +176,13 @@ void database::init_genesis()
       a.last_transfer_time = now;
       a.last_activity_reward = now;
       a.last_account_recovery = now;
+      a.details = INIT_DETAILS;
+      a.url = INIT_URL;
       a.membership = TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
-
    });
+
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = INIT_ACCOUNT;
@@ -184,10 +193,123 @@ void database::init_genesis()
       auth.active.weight_threshold = 1;
    });
 
+   create< account_following_object >( [&]( account_following_object& afo ) 
+   {
+      afo.account = INIT_ACCOUNT;
+      afo.last_update = now;
+   });
+
+   create< account_object >( [&]( account_object& a )
+   {
+      a.name = INIT_CEO;
+      a.account_type = PROFILE;
+      a.registrar = INIT_ACCOUNT;
+      a.secure_public_key = init_public_key;
+      a.connection_public_key = init_public_key;
+      a.friend_public_key = init_public_key;
+      a.companion_public_key = init_public_key;
+      a.created = now;
+      a.last_account_update = now;
+      a.last_vote_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.details = INIT_CEO_DETAILS;
+      a.url = INIT_CEO_URL;
+      a.membership = TOP_MEMBERSHIP;
+      a.membership_expiration = time_point::maximum();
+   });
+
+   create< account_authority_object >( [&]( account_authority_object& auth )
+   {
+      auth.account = INIT_CEO;
+      auth.owner.add_authority( init_public_key, 1 );
+      auth.owner.weight_threshold = 1;
+      auth.active = auth.owner;
+      auth.posting = auth.active;
+      auth.active.weight_threshold = 1;
+   });
+
+   create< account_following_object >( [&]( account_following_object& afo ) 
+   {
+      afo.account = INIT_CEO;
+      afo.last_update = now;
+   });
+
+   create< account_business_object >( [&]( account_business_object& abo )
+   {
+      abo.account = INIT_ACCOUNT;
+      abo.business_type = PUBLIC_BUSINESS;
+      abo.executive_board.CHIEF_EXECUTIVE_OFFICER = INIT_CEO;
+      abo.officer_vote_threshold = 1000 * BLOCKCHAIN_PRECISION;
+   });
+
+   create< governance_account_object >( [&]( governance_account_object& gao )
+   {
+      gao.account = INIT_ACCOUNT;
+      from_string( gao.url, INIT_URL );
+      from_string( gao.details, INIT_DETAILS );
+      gao.created = now;
+      gao.active = true;
+   });
+
+   create< supernode_object >( [&]( supernode_object& s )
+   {
+      s.account = INIT_ACCOUNT;
+      from_string( s.url, INIT_URL );
+      from_string( s.details, INIT_DETAILS );
+      from_string( s.node_api_endpoint, INIT_NODE_ENDPOINT );
+      from_string( s.auth_api_endpoint, INIT_AUTH_ENDPOINT );
+      from_string( s.notification_api_endpoint, INIT_NOTIFICATION_ENDPOINT );
+      from_string( s.ipfs_endpoint, INIT_IPFS_ENDPOINT );
+      from_string( s.bittorrent_endpoint, INIT_BITORRENT_ENDPOINT );
+      
+      s.active = true;
+      s.created = now;
+      s.last_update_time = now;
+      s.last_activation_time = now;
+   });
+
+   create< network_officer_object >( [&]( network_officer_object& noo )
+   {
+      noo.account = INIT_CEO;
+      noo.officer_type = DEVELOPMENT;
+      from_string( noo.url, INIT_CEO_URL );
+      from_string( noo.details, INIT_CEO_DETAILS );
+      noo.officer_approved = true;
+      noo.created = now;
+      noo.active = true;
+   });
+
+   create< executive_board_object >( [&]( executive_board_object& ebo )
+   {
+      ebo.account = INIT_ACCOUNT;
+      ebo.budget = asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      from_string( ebo.url, INIT_URL );
+      from_string( ebo.details, INIT_DETAILS );
+      ebo.active = true;
+      ebo.created = now;
+      ebo.board_approved = true;
+   });
+
+   create< interface_object >( [&]( interface_object& i )
+   {
+      i.account = INIT_ACCOUNT;
+      from_string( i.url, INIT_URL );
+      from_string( i.details, INIT_DETAILS );
+      i.active = true;
+      i.created = now;
+      i.last_update_time = now;
+   });
+
+
    create< account_object >( [&]( account_object& a )
    {
       a.name = WITNESS_ACCOUNT;
    });
+
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = WITNESS_ACCOUNT;
@@ -219,7 +341,7 @@ void database::init_genesis()
 
    // Create core asset
    
-   create<asset_object>( []( asset_object& a ) 
+   create< asset_object >( []( asset_object& a ) 
    {
       a.symbol = SYMBOL_COIN;
       a.options.max_supply = MAX_ASSET_SUPPLY;
@@ -233,7 +355,7 @@ void database::init_genesis()
       a.options.core_exchange_rate.quote.symbol = SYMBOL_COIN;
    });
 
-   create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) 
+   create< asset_dynamic_data_object >( []( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_COIN;
       a.total_supply = INIT_COIN_SUPPLY;
@@ -241,7 +363,7 @@ void database::init_genesis()
 
    // Create Equity asset
 
-   create<asset_object>( []( asset_object& a ) 
+   create< asset_object >( []( asset_object& a )
    {
       a.symbol = SYMBOL_EQUITY;
       a.options.max_supply = INIT_EQUITY_SUPPLY;
@@ -258,7 +380,7 @@ void database::init_genesis()
 
    });
 
-   create<asset_dynamic_data_object>([](asset_dynamic_data_object& a) 
+   create< asset_dynamic_data_object >( []( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_EQUITY;
       a.staked_supply = INIT_EQUITY_SUPPLY;
@@ -267,7 +389,7 @@ void database::init_genesis()
 
    // Create USD asset
 
-   create<asset_object>( []( asset_object& a ) 
+   create< asset_object >( []( asset_object& a )
    {
       a.symbol = SYMBOL_USD;
       a.options.max_supply = MAX_ASSET_SUPPLY;
@@ -281,7 +403,7 @@ void database::init_genesis()
       a.options.core_exchange_rate.quote.symbol = SYMBOL_USD;
    });
 
-   create<asset_bitasset_data_object>( [&]( asset_bitasset_data_object& a ) 
+   create< asset_bitasset_data_object >( [&]( asset_bitasset_data_object& a )
    {
       a.symbol = SYMBOL_USD;
       a.backing_asset = SYMBOL_COIN;
@@ -289,7 +411,7 @@ void database::init_genesis()
 
    // Create Credit asset
    
-   create< asset_object >( []( asset_object& a ) 
+   create< asset_object >( []( asset_object& a )
    {
       a.symbol = SYMBOL_CREDIT;
       a.asset_type = CREDIT_ASSET;
@@ -402,17 +524,19 @@ void database::init_genesis()
    {
       wso.current_shuffled_producers[0] = GENESIS_ACCOUNT_BASE_NAME;    // Create witness scheduler
    });
+
 } FC_CAPTURE_AND_RETHROW() }
 
 void database::reindex( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size )
 { try {
    ilog( "Reindexing Blockchain" );
    wipe( data_dir, shared_mem_dir, false );
-   open( data_dir, shared_mem_dir, shared_file_size, chainbase::database::read_write );
+   open( data_dir, shared_mem_dir, shared_file_size, chainbase::database::read_write, INIT_PUBLIC_KEY );
    _fork_db.reset();    // override effect of _fork_db.start_block() call in open()
 
    auto start = fc::time_point::now();
-   ASSERT( _block_log.head(), block_log_exception, "No blocks in block log. Cannot reindex an empty chain." );
+   ASSERT( _block_log.head(), block_log_exception,
+      "No blocks in block log. Cannot reindex an empty chain." );
 
    ilog( "Replaying blocks..." );
 
@@ -747,26 +871,6 @@ const asset_credit_data_object* database::find_credit_data( const asset_symbol_t
    return find< asset_credit_data_object, by_symbol >( (symbol) );
 }
 
-const witness_object& database::get_witness( const account_name_type& name ) const
-{ try {
-   return get< witness_object, by_name >( name );
-} FC_CAPTURE_AND_RETHROW( (name) ) }
-
-const witness_object* database::find_witness( const account_name_type& name ) const
-{
-   return find< witness_object, by_name >( name );
-}
-
-const block_validation_object& database::get_block_validation( const account_name_type& producer, uint32_t height ) const
-{ try {
-   return get< block_validation_object, by_producer_height >( boost::make_tuple( producer, height) );
-} FC_CAPTURE_AND_RETHROW( (producer)(height) ) }
-
-const block_validation_object* database::find_block_validation( const account_name_type& producer, uint32_t height ) const
-{
-   return find< block_validation_object, by_producer_height >( boost::make_tuple( producer, height) );
-}
-
 const account_object& database::get_account( const account_name_type& name )const
 { try {
 	return get< account_object, by_name >( name );
@@ -887,6 +991,36 @@ const account_authority_object* database::find_account_authority( const account_
    return find< account_authority_object, by_account >( account );
 }
 
+const witness_object& database::get_witness( const account_name_type& name ) const
+{ try {
+   return get< witness_object, by_name >( name );
+} FC_CAPTURE_AND_RETHROW( (name) ) }
+
+const witness_object* database::find_witness( const account_name_type& name ) const
+{
+   return find< witness_object, by_name >( name );
+}
+
+const witness_vote_object& database::get_witness_vote( const account_name_type& account, const account_name_type& witness )const
+{ try {
+   return get< witness_vote_object, by_account_witness >( boost::make_tuple( account, witness ) );
+} FC_CAPTURE_AND_RETHROW( (account)(witness) ) }
+
+const witness_vote_object* database::find_witness_vote( const account_name_type& account, const account_name_type& witness )const
+{
+   return find< witness_vote_object, by_account_witness >( boost::make_tuple( account, witness ) );
+}
+
+const block_validation_object& database::get_block_validation( const account_name_type& producer, uint32_t height ) const
+{ try {
+   return get< block_validation_object, by_producer_height >( boost::make_tuple( producer, height) );
+} FC_CAPTURE_AND_RETHROW( (producer)(height) ) }
+
+const block_validation_object* database::find_block_validation( const account_name_type& producer, uint32_t height ) const
+{
+   return find< block_validation_object, by_producer_height >( boost::make_tuple( producer, height) );
+}
+
 const network_officer_object& database::get_network_officer( const account_name_type& account )const
 { try {
 	return get< network_officer_object, by_account >( account );
@@ -897,6 +1031,16 @@ const network_officer_object* database::find_network_officer( const account_name
    return find< network_officer_object, by_account >( account );
 }
 
+const network_officer_vote_object& database::get_network_officer_vote( const account_name_type& account, const account_name_type& officer )const
+{ try {
+   return get< network_officer_vote_object, by_account_officer >( boost::make_tuple( account, officer ) );
+} FC_CAPTURE_AND_RETHROW( (account)(officer) ) }
+
+const network_officer_vote_object* database::find_network_officer_vote( const account_name_type& account, const account_name_type& officer )const
+{
+   return find< network_officer_vote_object, by_account_officer >( boost::make_tuple( account, officer ) );
+}
+
 const executive_board_object& database::get_executive_board( const account_name_type& account )const
 { try {
 	return get< executive_board_object, by_account >( account );
@@ -905,6 +1049,16 @@ const executive_board_object& database::get_executive_board( const account_name_
 const executive_board_object* database::find_executive_board( const account_name_type& account )const
 {
    return find< executive_board_object, by_account >( account );
+}
+
+const executive_board_vote_object& database::get_executive_board_vote( const account_name_type& account, const account_name_type& executive )const
+{ try {
+   return get< executive_board_vote_object, by_account_executive >( boost::make_tuple( account, executive ) );
+} FC_CAPTURE_AND_RETHROW( (account)(executive) ) }
+
+const executive_board_vote_object* database::find_executive_board_vote( const account_name_type& account, const account_name_type& executive )const
+{
+   return find< executive_board_vote_object, by_account_executive >( boost::make_tuple( account, executive ) );
 }
 
 const supernode_object& database::get_supernode( const account_name_type& account )const
@@ -1496,6 +1650,7 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
    uint32_t skip = get_node_properties().skip_flags;
    uint32_t slot_num = get_slot_at_time( when );
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+
    FC_ASSERT( slot_num > 0,
       "Slot number must be greater than zero." );
    string scheduled_witness = get_scheduled_witness( slot_num );
@@ -1556,25 +1711,20 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
       _pending_tx_session.reset();
       _pending_tx_session = start_undo_session( true );
 
-      uint64_t postponed_tx_count = 0;
-      // pop pending state (reset to head block state)
+      uint64_t postponed_tx_count = 0;   // pop pending state (reset to head block state)
+      
       for( const signed_transaction& tx : _pending_tx )
       {
-         // Only include transactions that have not expired yet for currently generating block,
-         // this should clear problem transactions and allow block production to continue
-
-         if( tx.expiration < when )
+         if( tx.expiration < when )    // Only include transactions that have not expired yet for currently generating block.
             continue;
 
          uint64_t new_total_size = total_block_size + fc::raw::pack_size( tx );
 
-         // postpone transaction if it would make block too big
          if( new_total_size >= maximum_block_size )
          {
-            postponed_tx_count++;
+            postponed_tx_count++;     // postpone transaction if it would make block too big
             continue;
          }
-
          try
          {
             auto temp_session = start_undo_session( true );
@@ -1584,11 +1734,10 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
             total_block_size += fc::raw::pack_size( tx );
             pending_block.transactions.push_back( tx );
          }
-         catch ( const fc::exception& e )
+         catch ( const fc::exception& e )      // Do nothing, transaction will not be re-applied
          {
-            // Do nothing, transaction will not be re-applied
-            //wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
-            //wlog( "The transaction was ${t}", ("t", tx) );
+            wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
+            wlog( "The transaction was ${t}", ("t", tx) );
          }
       }
       if( postponed_tx_count > 0 )
@@ -1608,12 +1757,13 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
    pending_block.transaction_merkle_root = pending_block.calculate_merkle_root();
 
    if( !(skip & skip_witness_signature) )
+   {
       pending_block.sign( block_signing_private_key );
+   }
 
-   // TODO:  Move this to _push_block() so session is restored.
    if( !(skip & skip_block_size_check) )
    {
-      FC_ASSERT( fc::raw::pack_size(pending_block) <= MAX_BLOCK_SIZE );
+      FC_ASSERT( fc::raw::pack_size( pending_block ) <= MAX_BLOCK_SIZE );
    }
 
    push_block( pending_block, skip );
@@ -1622,22 +1772,20 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
 }
 
 /**
- * Removes the most recent block from the database and
- * undoes any changes it made.
+ * Removes the most recent block from the database and undoes any changes it made.
  */
 void database::pop_block()
 { try {
-      _pending_tx_session.reset();
-      auto head_id = head_block_id();
+   _pending_tx_session.reset();
+   auto head_id = head_block_id();
 
-      /// save the head block so we can recover its transactions
-      optional<signed_block> head_block = fetch_block_by_id( head_id );
-      ASSERT( head_block.valid(), pop_empty_chain, "there are no blocks to pop" );
+   optional<signed_block> head_block = fetch_block_by_id( head_id );   // save the head block so we can recover its transactions
+   ASSERT( head_block.valid(), pop_empty_chain,
+      "There are no blocks to pop." );
 
-      _fork_db.pop_block();
-      undo();
-
-      _popped_tx.insert( _popped_tx.begin(), head_block->transactions.begin(), head_block->transactions.end() );
+   _fork_db.pop_block();
+   undo();
+   _popped_tx.insert( _popped_tx.begin(), head_block->transactions.begin(), head_block->transactions.end() );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -1744,12 +1892,18 @@ uint32_t database::get_slot_at_time(fc::time_point when)const
    return slot_number;
 }
 
-
 void database::update_witness_set()
 { try {
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
 
+   process_update_witness_set();
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+void database::process_update_witness_set()
+{ try {
    const witness_schedule_object& wso = get_witness_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const auto& wit_idx = get_index< witness_index >().indices().get< by_voting_power >();
@@ -1794,7 +1948,7 @@ share_type database::update_witness( const witness_object& witness, const witnes
          weight += get_proxied_voting_power( voter, equity_price );
       }
       // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
-      voting_power += ( weight.value >> vote.vote_rank );    
+      voting_power += ( weight.value >> vote.vote_rank );
       vote_count++;
       ++wit_vote_itr;
    }
@@ -3925,7 +4079,6 @@ void database::update_global_dynamic_data( const signed_block& b )
          }
       }
    }
-
    
    modify( props, [&]( dynamic_global_property_object& dgp )  
    {

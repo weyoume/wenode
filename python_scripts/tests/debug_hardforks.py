@@ -81,7 +81,7 @@ def run_node_tests( debug_node ):
       blocks_to_generate = 21 - total_blocks % 21;
       debug_node.debug_generate_blocks( blocks_to_generate );
 
-      print( "Setting the hardfork now" ) # TODO: Grab most recent hardfork num from build directory
+      print( "Setting the hardfork now" )
       sys.stdout.flush()
       debug_node.debug_set_hardfork( 9 )
 

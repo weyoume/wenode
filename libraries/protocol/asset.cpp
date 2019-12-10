@@ -303,10 +303,12 @@ namespace node { namespace protocol {
             else
             {
                // from the accurate ocp, now we have ncp and cp. use the one which is closer to ocp.
-               // TODO improve performance
                auto diff1 = abs( ncp - ocp );
                auto diff2 = abs( cp - ocp );
-               if( diff1 < diff2 ) cp = ncp;
+               if( diff1 < diff2 )
+               {
+                  cp = ncp;
+               }
             }
          }
 
@@ -338,11 +340,7 @@ namespace node { namespace protocol {
          FC_ASSERT( maximum_short_squeeze_ratio <= MAX_COLLATERAL_RATIO );
          FC_ASSERT( maintenance_collateral_ratio >= MIN_COLLATERAL_RATIO );
          FC_ASSERT( maintenance_collateral_ratio <= MAX_COLLATERAL_RATIO );
-         // Note: there was code here calling `max_short_squeeze_price();` before core-1270 hard fork,
-         //       in order to make sure that it doesn't overflow,
-         //       but the code doesn't actually check overflow, and it won't overflow, so the code is removed.
-
-         // Note: not checking `maintenance_collateral_ratio >= maximum_short_squeeze_ratio` since launch
+         
       } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
       bool price_feed::is_for( asset_symbol_type symbol ) const

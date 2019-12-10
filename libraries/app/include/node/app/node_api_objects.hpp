@@ -1044,7 +1044,7 @@ struct asset_api_obj
       issuer( a.issuer ),
       created( a.created ),
       display_symbol( to_string( a.options.display_symbol) ),
-      description( to_string( a.options.description) ),
+      details( to_string( a.options.details) ),
       json( to_string( a.options.json ) ),
       url( to_string( a.options.url ) ),
       max_supply( a.options.max_supply ),
@@ -1082,7 +1082,7 @@ struct asset_api_obj
    account_name_type               issuer;                                // name of the account which issued this asset.
    time_point                      created;                               // Time that the asset was created. 
    string                          display_symbol;                        // Non-consensus display name for interface reference.
-   string                          description;                           // Data that describes the purpose of this asset.
+   string                          details;                               // Data that describes the purpose of this asset.
    string                          json;                                  // Additional JSON metadata of this asset.
    string                          url;                                   // Reference URL for the asset. 
    int64_t                         max_supply;                            // The maximum supply of this asset which may exist at any given time. 
@@ -2524,7 +2524,7 @@ FC_REFLECT( node::app::asset_api_obj,
          (issuer)
          (created)
          (display_symbol)
-         (description)
+         (details)
          (json)
          (url)
          (max_supply)

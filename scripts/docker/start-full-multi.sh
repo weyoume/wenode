@@ -2,7 +2,7 @@
 
 # this will remove the currently running docker node process
 # be careful
-docker rm -f testnet-wenode ;
+docker rm -f wenode ;
 
 # EITHER ADD YOUR PRIVATE KEYS AS A LIST IN ./scripts/private-keys
 # eg. no whitespaces start and finish of the file
@@ -36,12 +36,11 @@ done
 echo [$witness_names]
 
 docker run \
-	--env USE_WAY_TOO_MUCH_RAM=1 \
 	--env USE_FULLNODE=1 \
 	--env USE_NGINX_FRONTEND=1 \
 	--env PRIVATE_KEYS=$PRIVATE_KEYS \
 	--env WITNESS_NAMES="$witness_names" \
 	--env WITNESS_NAME="webuilder" \
-	-d -p 2001:2001 -p 8090:8090 --name testnet-wenode \
-	weyoume/testnet-wenode
+	-d -p 2001:2001 -p 8090:8090 --name wenode \
+	weyoume/wenode
 

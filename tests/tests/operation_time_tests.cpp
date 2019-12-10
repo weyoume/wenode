@@ -1,4 +1,4 @@
-#ifdef IS_TEST_NET
+//#ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
 #include <node/protocol/exceptions.hpp>
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
             tx.operations.push_back( copt );
          }
 
-         tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+         tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( author.private_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
       }
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
          vote.permlink = "mypost";
          vote.weight = PERCENT_100;
          tx.operations.push_back( vote );
-         tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+         tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( voter.private_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
       }
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_dust )
       signed_transaction tx;
       tx.operations.push_back( comment );
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
       validate_database();
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE( reward_funds )
       vote.weight = PERCENT_100;
       tx.operations.push_back( comment );
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay )
       vote.weight = PERCENT_100;
       tx.operations.push_back( comment );
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -400,7 +400,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay )
       com.title = "foo";
       com.body = "bar";
       tx.operations.push_back( com );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -485,7 +485,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay )
       vote.voter = "alice";
       vote.author = "alice";
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay )
       vote.author = "alice";
       vote.weight = PERCENT_100;
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( bob_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -569,7 +569,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       com.title = "foo";
       com.body = "bar";
       tx.operations.push_back( com );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -625,7 +625,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       tx.signatures.clear();
       vote.voter = "alice";
       vote.author = "bob";
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( vote );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -797,7 +797,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       vote.voter = "alice";
       vote.author = "alice";
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -818,7 +818,7 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       vote.author = "alice";
       vote.weight = PERCENT_100;
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( bob_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -876,7 +876,7 @@ BOOST_AUTO_TEST_CASE( nested_comments )
       comment_op.parent_permlink = "test";
       comment_op.title = "foo";
       comment_op.body = "bar";
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( comment_op );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1189,7 +1189,7 @@ BOOST_AUTO_TEST_CASE( TME_fund_for_SCORE_withdrawals )
       unstake_asset_operation op;
       op.account = "alice";
       op.SCORE = asset( new_alice.SCORE.amount / 2, SYMBOL_TP );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1311,7 +1311,7 @@ BOOST_AUTO_TEST_CASE( TME_fund_for_SCORE_withdraw_route )
       wv.SCORE = withdraw_amount;
 
       signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( wv );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1374,7 +1374,7 @@ BOOST_AUTO_TEST_CASE( TME_fund_for_SCORE_withdraw_route )
       op.to_account = "sam";
       op.percent = PERCENT_1 * 50 + 1;
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -1461,7 +1461,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
 
       for( int i = 0; i < 7; i++ )
       {
-         txs[i].set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+         txs[i].set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          txs[i].operations.push_back( ops[i] );
          txs[i].sign( keys[i], db.get_chain_id() );
          db.push_transaction( txs[i], 0 );
@@ -1486,7 +1486,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
             txs[j].operations.clear();
             txs[j].signatures.clear();
             ops[j].exchange_rate = price( ops[j].exchange_rate.base, asset( ops[j].exchange_rate.quote.amount + 10, SYMBOL_USD ) );
-            txs[j].set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+            txs[j].set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
             txs[j].operations.push_back( ops[j] );
             txs[j].sign( keys[j], db.get_chain_id() );
             db.push_transaction( txs[j], 0 );
@@ -1535,7 +1535,7 @@ BOOST_AUTO_TEST_CASE( USD_interest )
       transfer.amount = ASSET( "1.000 USD" );
       tx.operations.clear();
       tx.signatures.clear();
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( transfer );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1559,7 +1559,7 @@ BOOST_AUTO_TEST_CASE( USD_interest )
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( transfer );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1577,7 +1577,7 @@ BOOST_AUTO_TEST_CASE( USD_interest )
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( transfer );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1606,7 +1606,7 @@ BOOST_AUTO_TEST_CASE( post_rate_limit )
       signed_transaction tx;
 
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1685,7 +1685,7 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
       comment.body = "test";
 
       tx.operations.push_back( comment );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1726,7 +1726,7 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
       tx.signatures.clear();
 
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1740,7 +1740,7 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
       tx.signatures.clear();
 
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( bob_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1754,7 +1754,7 @@ BOOST_AUTO_TEST_CASE( comment_freeze )
       tx.signatures.clear();
 
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( dave_private_key, db.get_chain_id() );
 
       db.push_transaction( tx, 0 );
@@ -1811,7 +1811,7 @@ BOOST_AUTO_TEST_CASE( USD_stability )
 
       signed_transaction tx;
       tx.operations.push_back( comment );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1946,7 +1946,7 @@ BOOST_AUTO_TEST_CASE( USD_price_feed_limit )
       signed_transaction tx;
       tx.operations.push_back( comment );
       tx.operations.push_back( vote );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1965,4 +1965,4 @@ BOOST_AUTO_TEST_CASE( USD_price_feed_limit )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-#endif
+//#endif

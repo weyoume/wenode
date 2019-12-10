@@ -13,20 +13,19 @@ for ((i=0;i<$peerCount;i++)) ; do
 		echo "#### LOOP "$i" ####"
 		echo "starting docker container WeYouMe"$i" with witness "${witnesses[$i]}
 		echo "no linked ports, nginx-router will handle"
-		echo "image WeYouMe/WeYouMe"
+		echo "image weyoume/wenode"
 		echo "not load balanced internally"
 		echo "full web node"
 		echo "peer, witness, api"
 
 		docker run --ip $subnet$(($i+3)) \
 			--network nodes \
-			--env USE_WAY_TOO_MUCH_RAM=1 \
 			--env USE_FULLNODE=1 \
 			--env USE_NGINX_FRONTEND=1 \
 			--env WITNESS_NAME=${witnesses[$i]} \
 			--env PRIVATE_KEY=${keys[$i]}  \
-			-d --name WeYouMe$i \
-			WeYouMe/WeYouMe &
+			-d --name wenode$i \
+			weyoume/wenode &
 		((nodescount++))
 		# sleep 1
 	fi

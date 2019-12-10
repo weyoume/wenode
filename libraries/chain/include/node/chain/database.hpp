@@ -112,13 +112,18 @@ namespace node { namespace chain {
           *
           * @param data_dir Path to open or create database in
           */
-         void open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size = 0, uint32_t chainbase_flags = 0 );
+         void open( 
+            const fc::path& data_dir, 
+            const fc::path& shared_mem_dir, 
+            uint64_t shared_file_size = 0, 
+            uint32_t chainbase_flags = 0, 
+            const public_key_type& init_public_key = INIT_PUBLIC_KEY );
 
 
          /**
-          * Begins a new blockchain and creates initial objects for the network.
+          * Begins a new blockchain and creates initial objects for the network using a specified initial public key.
           */
-         void init_genesis();
+         void init_genesis( const public_key_type& init_public_key = INIT_PUBLIC_KEY );
 
          /**
           * @brief Rebuild object graph from block history and open detabase
@@ -192,12 +197,6 @@ namespace node { namespace chain {
          const asset_credit_data_object& get_credit_data( const asset_symbol_type& symbol ) const;
          const asset_credit_data_object* find_credit_data( const asset_symbol_type& symbol ) const;
 
-         const witness_object& get_witness( const account_name_type& name ) const;
-         const witness_object* find_witness( const account_name_type& name ) const;
-
-         const block_validation_object& get_block_validation( const account_name_type& producer, uint32_t height ) const;
-         const block_validation_object* find_block_validation( const account_name_type& producer, uint32_t height ) const;
-
          const account_object& get_account(  const account_name_type& name )const;
          const account_object* find_account( const account_name_type& name )const;
 
@@ -234,11 +233,26 @@ namespace node { namespace chain {
          const account_authority_object& get_account_authority( const account_name_type& account )const;
          const account_authority_object* find_account_authority( const account_name_type& account )const;
 
+         const witness_object& get_witness( const account_name_type& name ) const;
+         const witness_object* find_witness( const account_name_type& name ) const;
+
+         const witness_vote_object& get_witness_vote( const account_name_type& account, const account_name_type& witness )const;
+         const witness_vote_object* find_witness_vote( const account_name_type& account, const account_name_type& witness )const;
+
+         const block_validation_object& get_block_validation( const account_name_type& producer, uint32_t height ) const;
+         const block_validation_object* find_block_validation( const account_name_type& producer, uint32_t height ) const;
+
          const network_officer_object& get_network_officer( const account_name_type& account )const;
          const network_officer_object* find_network_officer( const account_name_type& account )const;
 
+         const network_officer_vote_object& get_network_officer_vote( const account_name_type& account, const account_name_type& officer )const;
+         const network_officer_vote_object* find_network_officer_vote( const account_name_type& account, const account_name_type& officer )const;
+         
          const executive_board_object& get_executive_board( const account_name_type& account )const;
          const executive_board_object* find_executive_board( const account_name_type& account )const;
+
+         const executive_board_vote_object& get_executive_board_vote( const account_name_type& account, const account_name_type& executive )const;
+         const executive_board_vote_object* find_executive_board_vote( const account_name_type& account, const account_name_type& executive )const;
 
          const supernode_object& get_supernode( const account_name_type& account )const;
          const supernode_object* find_supernode( const account_name_type& account )const;
@@ -499,6 +513,8 @@ namespace node { namespace chain {
          share_type update_witness( const witness_object& witness, const witness_schedule_object& wso, const dynamic_global_property_object& props );
 
          void update_witness_set();
+
+         void process_update_witness_set();
 
          void update_board_moderators( const board_member_object& board );
 

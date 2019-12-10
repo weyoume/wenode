@@ -219,7 +219,7 @@ namespace node { namespace chain {
          
          time_point                     created;                     // The time the supernode was created.
          
-         asset                          storage_rewards;         // Amount of core asset earned from storage.
+         asset                          storage_rewards;             // Amount of core asset earned from storage.
 
          uint64_t                       daily_active_users = 0;      // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
 

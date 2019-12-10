@@ -92,7 +92,7 @@ namespace node {
          BUSINESS   = 'business',  // Corporate account type, issues a cryptoequity asset to owners for approving txns, owned by other accounts
          ANONYMOUS  = 'anonymous'  // No identity account type, creates new stealth accounts by delegation for every txn
       };
-s
+
       // Types of boards, groups and events that can be used for holding posts, topic moderation, and community management.
       enum board_types
       {
@@ -375,30 +375,12 @@ s
          public_key_type   public_key;                 // The public key of the private encrypted key.
          string            encrypted_private_key;      // The encrypted private key of the public key.
          
-         friend bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
-         {
-            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) == std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
-         }
-         friend bool operator < ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
-         {
-            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) < std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
-         }
-         friend bool operator > ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
-         {
-            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) > std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
-         }
-         friend bool operator != ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
-         {
-            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) != std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
-         }
-         friend bool operator <= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
-         {
-            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) <= std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
-         }
-         friend bool operator >= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
-         {
-            return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) >= std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
-         }
+         friend bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
+         friend bool operator < ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
+         friend bool operator > ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
+         friend bool operator != ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
+         friend bool operator <= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
+         friend bool operator >= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
       };
 
 } };  // node::protocol
@@ -413,7 +395,7 @@ namespace fc
    void from_variant( const fc::variant& var, node::protocol::extended_private_key_type& vo );
 };
 
-FC_REFLECT_ENUM( node::chain::account_types,
+FC_REFLECT_ENUM( node::protocol::account_types,
          (PERSONA)
          (PROFILE)
          (VERIFIED)
@@ -421,33 +403,33 @@ FC_REFLECT_ENUM( node::chain::account_types,
          (ANONYMOUS)
          );
 
-FC_REFLECT_ENUM( node::chain::board_types,
+FC_REFLECT_ENUM( node::protocol::board_types,
          (BOARD)
          (GROUP)
          (EVENT)
          (STORE)
          );
 
-FC_REFLECT_ENUM( node::chain::board_privacy_types,
+FC_REFLECT_ENUM( node::protocol::board_privacy_types,
          (OPEN_BOARD)
          (PUBLIC_BOARD)
          (PRIVATE_BOARD)
          (EXCLUSIVE_BOARD)
          );
 
-FC_REFLECT_ENUM( node::chain::business_types,
+FC_REFLECT_ENUM( node::protocol::business_types,
          (OPEN_BUSINESS)
          (PUBLIC_BUSINESS)
          (PRIVATE_BUSINESS)
          );
 
-FC_REFLECT_ENUM( node::chain::network_officer_types,
+FC_REFLECT_ENUM( node::protocol::network_officer_types,
          (DEVELOPMENT)
          (MARKETING)
          (ADVOCACY)
          );
 
-FC_REFLECT_ENUM( node::chain::executive_types,
+FC_REFLECT_ENUM( node::protocol::executive_types,
          (CHIEF_EXECUTIVE_OFFICER)
          (CHIEF_OPERATING_OFFICER)
          (CHIEF_FINANCIAL_OFFICER)
@@ -460,13 +442,13 @@ FC_REFLECT_ENUM( node::chain::executive_types,
          (CHIEF_ADVOCACY_OFFICER)
          );
 
-FC_REFLECT_ENUM( node::chain::proposal_types,
+FC_REFLECT_ENUM( node::protocol::proposal_types,
          (FUNDING)
          (COMPETITION)
          (INVESTMENT)
          );
 
-FC_REFLECT_ENUM( node::chain::asset_types,
+FC_REFLECT_ENUM( node::protocol::asset_types,
          (CURRENCY_ASSET)
          (STANDARD_ASSET)
          (EQUITY_ASSET)
@@ -480,7 +462,7 @@ FC_REFLECT_ENUM( node::chain::asset_types,
          (UNIQUE_ASSET)
          );
 
-FC_REFLECT_ENUM( node::chain::post_types,
+FC_REFLECT_ENUM( node::protocol::post_types,
          (TEXT_POST)
          (IMAGE_POST)
          (VIDEO_POST)
@@ -495,7 +477,7 @@ FC_REFLECT_ENUM( node::chain::post_types,
          (LIST_POST)
          );
 
-FC_REFLECT_ENUM( node::chain::metric_types,
+FC_REFLECT_ENUM( node::protocol::metric_types,
          (VIEW_METRIC)
          (VOTE_METRIC)
          (SHARE_METRIC)
@@ -504,14 +486,14 @@ FC_REFLECT_ENUM( node::chain::metric_types,
          (PREMIUM_METRIC)
          );
 
-FC_REFLECT_ENUM( node::chain::connection_types,
+FC_REFLECT_ENUM( node::protocol::connection_types,
          (PUBLIC)
          (CONNECTION)
          (FRIEND)
          (COMPANION)
          );
 
-FC_REFLECT_ENUM( node::chain::feed_types,
+FC_REFLECT_ENUM( node::protocol::feed_types,
          (NO_FEED)
          (FOLLOW_FEED)
          (MUTUAL_FEED)
@@ -525,20 +507,20 @@ FC_REFLECT_ENUM( node::chain::feed_types,
          (TAG_FEED)
          );
 
-FC_REFLECT_ENUM( node::chain::blog_types,
+FC_REFLECT_ENUM( node::protocol::blog_types,
          (ACCOUNT_BLOG)
          (BOARD_BLOG)
          (TAG_BLOG)
          );
 
-FC_REFLECT_ENUM( node::chain::rating_types,
+FC_REFLECT_ENUM( node::protocol::rating_types,
          (FAMILY)
          (GENERAL)
          (MATURE)
          (EXPLICIT)
          );
 
-FC_REFLECT_ENUM( node::chain::feed_types,
+FC_REFLECT_ENUM( node::protocol::feed_types,
          (charge_market_fee)
          (white_list)
          (override_authority)

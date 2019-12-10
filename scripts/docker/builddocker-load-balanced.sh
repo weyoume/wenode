@@ -1,5 +1,5 @@
 #!/bin/bash
 
-docker build -t WeYouMe/WeYouMe0-lb .
+docker build -t weyoume/wenode0-lb .
 
 

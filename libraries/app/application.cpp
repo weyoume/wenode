@@ -1,26 +1,4 @@
-/*
- * Copyright (c) 2015 Cryptonomex, Inc., and contributors.
- *
- * The MIT License
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+
 #include <node/app/api.hpp>
 #include <node/app/api_access.hpp>
 #include <node/app/application.hpp>
@@ -100,16 +78,18 @@ namespace detail {
             for( const string& endpoint_string : seeds )
             {
                try {
-									std::vector<fc::ip::endpoint> endpoints = resolve_string_to_ip_endpoints(endpoint_string);
+						std::vector<fc::ip::endpoint> endpoints = resolve_string_to_ip_endpoints(endpoint_string);
                   for (const fc::ip::endpoint& endpoint : endpoints)
                   {
-										ilog("Adding seed node ${endpoint}", ("endpoint", endpoint));
-										_p2p_network->add_node(endpoint);
-										_p2p_network->connect_to_endpoint(endpoint);
+                     ilog("Adding seed node ${endpoint}", ("endpoint", endpoint));
+                     _p2p_network->add_node(endpoint);
+                     _p2p_network->connect_to_endpoint(endpoint);
                   }
-               } catch( const fc::exception& e ) {
+               } 
+               catch( const fc::exception& e ) 
+               {
                   wlog( "caught exception ${e} while adding seed node ${endpoint}",
-                           ("e", e.to_detail_string())("endpoint", endpoint_string) );
+                     ("e", e.to_detail_string())("endpoint", endpoint_string) );
                }
             }
          }
@@ -122,7 +102,9 @@ namespace detail {
             _p2p_network->listen_on_endpoint( endpoints[0], true);
          }
          else
+         {  
             _p2p_network->listen_on_port(0, false);
+         }
 
          if( _options->count("p2p-max-connections") )
          {
@@ -153,9 +135,11 @@ namespace detail {
          try
          {
             string::size_type colon_pos = endpoint_string.find(':');
-            if (colon_pos == std::string::npos)
+            if(colon_pos == std::string::npos)
+            {
                FC_THROW("Missing required port number in endpoint string \"${endpoint_string}\"",
                         ("endpoint_string", endpoint_string));
+            } 
             std::string port_string = endpoint_string.substr(colon_pos + 1);
             try
             {
@@ -163,10 +147,10 @@ namespace detail {
 
                std::string hostname = endpoint_string.substr(0, colon_pos);
                std::vector<fc::ip::endpoint> endpoints = fc::resolve(hostname, port);
-               if (endpoints.empty())
+               if( endpoints.empty() )
+               {
                   FC_THROW_EXCEPTION(fc::unknown_host_exception, "The host name can not be resolved: ${hostname}", ("hostname", hostname));
-							//  ilog("endpoints");
-							//  ilog(endpoints);
+               }
                return endpoints;
             }
             catch (const boost::bad_lexical_cast&)
@@ -364,8 +348,6 @@ namespace detail {
          }
          else
          {
-            // TODO:  Remove this generous default access policy
-            // when the UI logs in properly
             _apiaccess = api_access();
             api_access_info wild_access;
             wild_access.username = "*";
@@ -500,10 +482,6 @@ namespace detail {
             FC_ASSERT( blk_msg.block.timestamp.time_since_epoch() <= max_accept_time );
 
             try {
-               // TODO: in the case where this block is valid but on a fork that's too old for us to switch to,
-               // you can help the network code out by throwing a block_older_than_undo_history exception.
-               // when the net code sees that, it will stop trying to push blocks from that chain, but
-               // leave that peer connected so that they can get sync blocks from us
                bool result = _chain_db->push_block(blk_msg.block, (_is_block_producer | _force_validate) ? database::skip_nothing : database::skip_transaction_signatures);
 
                if( !sync_mode )

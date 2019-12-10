@@ -473,7 +473,7 @@ void database::update_median_feed()
                copy.push_back( i );
             }
 
-            std::sort( copy.begin(), copy.end() );               /// TODO: use nth_item
+            std::sort( copy.begin(), copy.end() );
             fho.current_median_history = copy[copy.size()/2];
          }
       });
@@ -1118,10 +1118,15 @@ share_type database::get_voting_power( const account_name_type& a, const price& 
 
 share_type database::get_proxied_voting_power( const account_object& a, const price& equity_price )const
 { try {
+   if( a.proxied.size() == 0 )
+   {
+      return 0;
+   }
    share_type voting_power = 0;
    for( auto name : a.proxied )
    {
       voting_power += get_voting_power( name, equity_price );
+      voting_power += get_proxied_voting_power( name, equity_price );    // Recursively finds voting power of proxies
    }
    return voting_power;
 
@@ -1130,7 +1135,7 @@ share_type database::get_proxied_voting_power( const account_object& a, const pr
 
 share_type database::get_proxied_voting_power( const account_name_type& a, const price& equity_price )const
 { try {
-   return( get_account(a), equity_price);
+   return get_proxied_voting_power( get_account(a), equity_price);
 } FC_CAPTURE_AND_RETHROW() }
 
 

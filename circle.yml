@@ -11,4 +11,4 @@ dependencies:
 
 test:
     override:
-        - time docker build --rm=false -t weyoume/testnet-wenode -f Dockerfile.test .
+        - time docker build --rm=false -t weyoume/wenode -f Dockerfile.test .

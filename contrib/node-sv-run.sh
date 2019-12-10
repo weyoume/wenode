@@ -4,7 +4,7 @@ NODE="/usr/local/node-default/bin/node"
 
 VERSION=`cat /etc/nodeversion`
 
-if [[ "$USE_WAY_TOO_MUCH_RAM" ]]; then
+if [[ "$USE_FULLNODE" ]]; then
     NODE="/usr/local/node/bin/node"
 fi
 
@@ -58,7 +58,7 @@ if [[ ! -z "$PRIVATE_KEY" ]]; then
 fi
 
 if [[ ! -z "$TRACK_ACCOUNT" ]]; then
-    if [[ ! "$USE_WAY_TOO_MUCH_RAM" ]]; then
+    if [[ ! "$USE_FULLNODE" ]]; then
         ARGS+=" --enable-plugin=account_history"
     fi
     ARGS+=" --track-account-range=[\"$TRACK_ACCOUNT\",\"$TRACK_ACCOUNT\"]"

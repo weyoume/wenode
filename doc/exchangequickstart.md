@@ -22,7 +22,7 @@ sh get-docker.sh
 
 Pull in the WeYouMe repo from the official source on github and then change into the directory that's created for it.
 ```
-git clone https://github.com/WeYouMe/WeYouMe
+git clone https://github.com/weyoume/wenode
 cd WeYouMe
 ```
 
@@ -31,7 +31,7 @@ cd WeYouMe
 Docker isn't just for downloading already built images, it can be used to build from source the same way you would otherwise build. By doing this you ensure that your build environment is identical to what we use to develop the software. Use the below command to start the build:
 
 ```
-docker build -t=WeYouMe/WeYouMe .
+docker build -t=weyoume/wenode .
 ```
 
 Don't forget the `.` at the end of the line which indicates the build target is in the current directory.
@@ -45,7 +45,7 @@ When the build completes you will see a message indicating that it is 'successfu
 If you'd like to use our already pre-built official binary images, it's as simple as downloading it from the Dockerhub registry with only one command:
 
 ```
-docker pull WeYouMe/WeYouMe
+docker pull weyoume/wenode
 ```
 
 ### Running a binary build without a Docker container
@@ -55,7 +55,7 @@ If you build with Docker but do not want to run node from within a docker contai
 To extract the binary you need to start a container and then copy the file from it.
 
 ```
-docker run -d --name node-exchange WeYouMe/WeYouMe
+docker run -d --name node-exchange weyoume/wenode
 docker cp node-exchange:/usr/local/node-default/bin/node /local/path/to/node
 docker cp node-exchange:/usr/local/node-default/bin/cliwallet /local/path/to/cliwallet
 docker stop node-exchange
@@ -77,7 +77,7 @@ mkdir wallet
 The below command will start a daemonized instance opening ports for p2p and RPC  while linking the directories we created for blockchain and wallet data inside the container. Fill in `TRACK_ACCOUNT` with the name of your exchange account that you want to follow. The `-v` flags are how you map directories outside of the container to the inside, you list the path to the directories you created earlier before the `:` for each `-v` flag. The restart policy ensures that the container will automatically restart even if your system is restarted.
 
 ```
-docker run -d --name node-exchange --env TRACK_ACCOUNT=nameofaccount -p 2001:2001 -p 8090:8090 -v /path/to/wallet:/var/wallet -v /path/to/blockchain:/var/lib/node/blockchain --restart always WeYouMe/WeYouMe
+docker run -d --name node-exchange --env TRACK_ACCOUNT=nameofaccount -p 2001:2001 -p 8090:8090 -v /path/to/wallet:/var/wallet -v /path/to/blockchain:/var/lib/node/blockchain --restart always weyoume/wenode
 ```
 
 You can see that the container is running with the `docker ps` command.

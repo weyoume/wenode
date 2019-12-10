@@ -10,9 +10,9 @@ nodescount=0
 for ((i=0;i<$peerCount;i++)) ; do
 	if [[ ! -z "${witnesses[$i]}" ]] ; then
 		echo "#### LOOP "$i" ####"
-		echo "stopping docker container WeYouMe"$i" with witness "${witnesses[$i]}
-		# docker run --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULLNODE=1 --env WITNESS_NAME=${witnesses[$i]} --env PRIVATE_KEY=${keys[$i]} --env MINER_NAME=${witnesses[$i]} -d --name WeYouMe$i WeYouMe/WeYouMe
-		docker stop WeYouMe$i & 
+		echo "stopping docker container wenode"$i" with witness "${witnesses[$i]}
+		# docker run --env USE_FULLNODE=1 --env WITNESS_NAME=${witnesses[$i]} --env PRIVATE_KEY=${keys[$i]} --env MINER_NAME=${witnesses[$i]} -d --name wenode$i weyoume/wenode
+		docker stop wenode$i & 
 		((nodescount++))
 		sleep 1
 	fi

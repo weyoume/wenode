@@ -1,26 +1,4 @@
-/*
- * Copyright (c) 2015 Cryptonomex, Inc., and contributors.
- *
- * The MIT License
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
@@ -53,7 +31,6 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
       fc::temp_directory data_dir( graphene::utilities::temp_directory_path() );
       signed_block b;
 
-      // TODO:  Don't generate this here
       auto init_account_priv_key = fc::ecc::private_key::regenerate( fc::sha256::hash( string( "init_key" ) ) );
       signed_block cutoff_block;
       {
@@ -62,7 +39,6 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          db.open(data_dir.path(), data_dir.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
          b = db.generate_block(db.get_slot_time(1), db.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
 
-         // TODO:  Change this test when we correct #406
          // n.b. we generate MIN_UNDO_HISTORY+1 extra blocks which will be discarded on save
          for( uint32_t i = 1; ; ++i )
          {
@@ -245,7 +221,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
-      trx.set_expiration( db1.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
       PUSH_TX( db1, trx );
       //*/
@@ -305,7 +281,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
-      trx.set_expiration( db1.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
       PUSH_TX( db1, trx, skip_sigs );
 
@@ -315,7 +291,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       t.to = "alice";
       t.amount = asset(500,SYMBOL_COIN);
       trx.operations.push_back(t);
-      trx.set_expiration( db1.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
       PUSH_TX( db1, trx, skip_sigs );
 
@@ -359,7 +335,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
-      trx.set_expiration( db1.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
 
       BOOST_TEST_MESSAGE( "Pushing Pending Transaction" );
@@ -413,14 +389,14 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       tx.ref_block_num = 0;
       tx.ref_block_prefix = 0;
       tx.signatures.clear();
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       PUSH_TX( db, tx );
 
       BOOST_TEST_MESSAGE( "proper ref_block_num, ref_block_prefix" );
 
       tx.signatures.clear();
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       PUSH_TX( db, tx, database::skip_transaction_dupe_check );
 
@@ -429,7 +405,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       tx.ref_block_num = 0;
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( PUSH_TX( db, tx, database::skip_transaction_dupe_check ), fc::exception );
 
@@ -438,7 +414,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       tx.ref_block_num = 1;
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( PUSH_TX( db, tx, database::skip_transaction_dupe_check ), fc::exception );
 
@@ -447,7 +423,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       tx.ref_block_num = 9999;
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       REQUIRE_THROW( PUSH_TX( db, tx, database::skip_transaction_dupe_check ), fc::exception );
    }
@@ -469,7 +445,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    t.to = "bob";
    t.amount = asset(amount,SYMBOL_COIN);
    trx.operations.push_back(t);
-   trx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+   trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
    trx.validate();
 
    db.push_transaction(trx, ~0);
@@ -714,7 +690,7 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
       generate_block();
 
       signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
       transfer_operation op;
       op.from = GENESIS_ACCOUNT_BASE_NAME;

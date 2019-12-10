@@ -108,13 +108,16 @@ extern uint32_t ( TESTING_GENESIS_TIMESTAMP );
 #define INVOKE(test) ((struct test*)this)->test_method(); trx.clear()
 
 #define PREP_ACTOR(name) \
-   fc::ecc::private_key name ## _private_key = generate_private_key(BOOST_PP_STRINGIZE(name));   \
-   fc::ecc::private_key name ## _post_key = generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "_post" ); \
-   public_key_type name ## _public_key = name ## _private_key.get_public_key();
+   fc::ecc::private_key name ## _private_owner_key = generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "ownerpassword" );     \
+   fc::ecc::private_key name ## _private_active_key = generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "activepassword" );   \
+   fc::ecc::private_key name ## _private_posting_key = generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "postingpassword" ); \
+   public_key_type name ## _public_owner_key = name ## _private_owner_key.get_public_key();      \
+   public_key_type name ## _public_active_key = name ## _private_active_key.get_public_key();    \
+   public_key_type name ## _public_posting_key = name ## _private_posting_key.get_public_key(); 
 
 #define ACTOR(name) \
    PREP_ACTOR(name) \
-   const auto& name = account_create(BOOST_PP_STRINGIZE(name), name ## _public_key, name ## _post_key.get_public_key()); \
+   const auto& name = account_create( BOOST_PP_STRINGIZE(name), name ## _public_owner_key, name ## _public_posting_key); \
    account_id_type name ## _id = name.id; (void)name ## _id;
 
 #define GET_ACTOR(name) \
@@ -135,8 +138,7 @@ namespace node { namespace chain {
 using namespace node::protocol;
 
 struct database_fixture {
-   // the reason we use an app is to exercise the indexes of built-in
-   //   plugins
+   // the reason we use an app is to exercise the indexes of built-in plugins
    node::app::application app;
    chain::database &db;
    signed_transaction trx;
@@ -161,28 +163,31 @@ struct database_fixture {
    string generate_anon_acct_name();
    void open_database();
    void generate_block(uint32_t skip = 0,
-                               const fc::ecc::private_key& key = generate_private_key("init_key"),
-                               int miss_blocks = 0);
+      const fc::ecc::private_key& key = generate_private_key("init_key"),
+      int miss_blocks = 0);
 
    /**
     * @brief Generates block_count blocks
     * @param block_count number of blocks to generate
     */
-   void generate_blocks(uint32_t block_count);
+   void generate_blocks( uint32_t block_count );
 
    /**
     * @brief Generates blocks until the head block time matches or exceeds timestamp
     * @param timestamp target time to generate blocks until
     */
-   void generate_blocks(fc::time_point timestamp, bool miss_intermediate_blocks = true);
+   void generate_blocks( fc::time_point timestamp, bool miss_intermediate_blocks = true );
 
    const account_object& account_create(
       const string& name,
-      const string& creator,
-      const private_key_type& creator_key,
+      const string& registrar,
+      const string& governance_account,
+      const private_key_type& registrar_key,
       const share_type& fee,
       const public_key_type& key,
       const public_key_type& post_key,
+      const string& details,
+      const string& url,
       const string& json
    );
 
@@ -197,23 +202,83 @@ struct database_fixture {
       const public_key_type& key
    );
 
+   const account_object& profile_create(
+      const string& name,
+      const string& registrar,
+      const string& governance_account,
+      const private_key_type& registrar_key,
+      const share_type& fee,
+      const public_key_type& key,
+      const public_key_type& post_key,
+      const string& details,
+      const string& url,
+      const string& json
+   );
+
+   const account_object& business_create(
+      const string& name,
+      const string& registrar,
+      const string& governance_account,
+      const private_key_type& registrar_key,
+      const share_type& fee,
+      const public_key_type& key,
+      const public_key_type& post_key,
+      const string& details,
+      const string& url,
+      const string& json
+   );
+
+   const board_object& board_create(
+      const string& name,
+      const string& founder,
+      const private_key_type& founder_key,
+      const public_key_type& board_key,
+      const string& board_type,
+      const string& board_privacy,
+      const string& details,
+      const string& url,
+      const string& json
+   );
+
+   const asset_object& asset_create(
+      const string& symbol,
+      const string& issuer,
+      const private_key_type& issuer_key,
+      const string& asset_type,
+      const string& details,
+      const string& url,
+      const string& json,
+      const share_type& liquidity
+   );
 
    const witness_object& witness_create(
       const string& owner,
       const private_key_type& owner_key,
+      const string& details,
       const string& url,
+      const string& json,
       const public_key_type& signing_key,
       const share_type& fee
    );
 
-   void fund( const string& account_name, const share_type& amount = 500000 );
    void fund( const string& account_name, const asset& amount );
-   void transfer( const string& from, const string& to, const share_type& amount );
-   void score( const string& from, const share_type& amount );
-   void score( const string& account, const asset& amount );
+
+   void transfer( const string& from, const string& to, const asset& amount );
+
+   void fund_stake( const string& from, const asset& amount );
+
+   void stake( const string& from, const asset& amount );
+   
    void proxy( const string& account, const string& proxy );
-   void set_price_feed( const price& new_price );
-   const asset& get_balance( const string& account_name )const;
+
+   const asset& get_liquid_balance( const string& account_name, const string& symbol )const;
+
+   const asset& get_staked_balance( const string& account_name, const string& symbol )const;
+
+   const asset& get_savings_balance( const string& account_name, const string& symbol )const;
+
+   const asset& get_reward_balance( const string& account_name, const string& symbol )const;
+
    void sign( signed_transaction& trx, const fc::ecc::private_key& key );
 
    vector< operation > get_last_operations( uint32_t ops );

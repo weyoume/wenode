@@ -13,7 +13,7 @@ From the root of the repository:
 (Also in the root of the repository.)
 
     docker build --rm=false \
-        -t WeYouMe/WeYouMe-test \
+        -t weyoume/wenode-test \
         -f Dockerfile.test .
 
 ## To Troubleshoot Failing Tests
@@ -27,7 +27,7 @@ Then, inside the container:
 (These steps are taken from `/Dockerfile.test` in the
 repository root.)
 
-    git clone https://github.com/WeYouMe/WeYouMe.git /usr/local/src/node
+    git clone https://github.com/weyoume/wenode.git /usr/local/src/node
     cd /usr/local/src/node
     git checkout <branch> # e.g. 123-feature
     git submodule update --init --recursive

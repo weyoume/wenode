@@ -404,8 +404,6 @@ public:
 
    bool load_wallet_file(string wallet_filename = "")
    {
-      // TODO:  Merge imported wallet with existing wallet,
-      //        instead of replacing it
       if( wallet_filename == "" )
          wallet_filename = _wallet_filename;
 
@@ -577,15 +575,14 @@ public:
                  std::back_inserter( v_approving_account_names ) );
 
       for( const auto& a : req_posting_approvals )
+      {
          v_approving_account_names.push_back(a);
-
-      /// TODO: fetch the accounts specified via other_auths as well.
+      }
 
       auto approving_account_objects = _remote_db->get_accounts( v_approving_account_names );
 
-      /// TODO: recursively check one layer deeper in the authority tree for keys
-
-      FC_ASSERT( approving_account_objects.size() == v_approving_account_names.size(), "", ("aco.size:", approving_account_objects.size())("acn",v_approving_account_names.size()) );
+      FC_ASSERT( approving_account_objects.size() == v_approving_account_names.size(), 
+         "", ("aco.size:", approving_account_objects.size())("acn",v_approving_account_names.size()) );
 
       flat_map< string, account_api_obj > approving_account_lut;
       size_t i = 0;

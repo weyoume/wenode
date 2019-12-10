@@ -1,71 +1,74 @@
-Quickstart
-----------
+# Quickstart Guide
 
-### Get current node
-Use docker:
-```
-docker run \
-    -d -p 2001:2001 -p 8090:8090 --name node-default \
-    --restart unless-stopped WeYouMe/WeYouMe
-```
-#### Low memory node?
-Above runs low memory node, which is suitable for:
-- seed nodes
-- witness nodes
-- exchanges, etc.
-For full api node use:
+## Low memory node:
+
+Suitable for:
+- Seed nodes.
+- Witness nodes.
+- Exchanges.
 
 ```
 docker run \
-    --env USE_WAY_TOO_MUCH_RAM=1 --env USE_FULLNODE=1 \
-    -d -p 2001:2001 -p 8090:8090 --name node \
+    -d -p 2001:2001 -p 8090:8090 \
+    --name wenode \
+    --restart unless-stopped \ 
+    weyoume/wenode
+```
+
+## Full API Node:
+
+Suitable for:
+- Web Applications.
+- Mobile Applications.
+- Public API nodes.
+
+```
+docker run \
+    --env USE_FULLNODE=1 \
+    -d -p 2001:2001 -p 8090:8090 \
+    --name wenode \
     --restart unless-stopped \
-    WeYouMe/WeYouMe
+    weyoume/wenode
 ```
-### Configure for your use case
-#### Full API node
-You need to use `USE_WAY_TOO_MUCH_RAM=1` and `USE_FULLNODE=1` as stated above.
-You can Use `contrib/config-for-fullnode.ini` as a base for your `config.ini` file.
 
-#### Exchanges
+You need to use add `USE_FULLNODE=1` as stated above.
+You can use `contrib/config-for-fullnode.ini` as a base for your `config.ini` file.
+
+## Exchanges:
+
 Use low memory node.
 
-Also make sure that your `config.ini` contains:
+Ensure that your `config.ini` contains:
 ```
 enable-plugin = account_history
 public-api = database_api login_api
 track-account-range = ["yourexchangeid", "yourexchangeid"]
 ```
-Do not add other APIs or plugins unless you know what you are doing.
 
-This configuration exists in Docker with the following command
+This configuration exists in Docker with the following command:
 
 ```
 docker run -d --env TRACK_ACCOUNT="yourexchangeid" \
-    --name node \
+    --name wenode \
     --restart unless-stopped \
-    WeYouMe/WeYouMe
+    weyoume/wenode
 ```
 
-### Resources usage
+## Resource usage:
 
-Please make sure that you have enough resources available.
+Ensure that you have enough resources available.
 Check `shared-file-size =` in your `config.ini` to reflect your needs.
-Set it to at least 25% more than current size.
-
-Provided values are expected to grow significantly over time.
-
 Blockchain data takes over **64GB** of storage space.
+Set it to at least 25% more than current size. Provided values are expected to grow significantly over time.
 
-#### Full node
-Shared memory file for full node uses something about **200GB** (depends on exact settings)
+## Full node:
+Shared memory file for full node uses something about **200GB**.
 
-#### Exchange node
-Shared memory file for exchange node users over **24GB**
-(tracked history for single account)
+## Exchange node:
+Shared memory file for exchange node users over **24GB**.
 
-#### Seed node
-Shared memory file for seed node uses over **24GB**
+## Seed node:
+Shared memory file for seed node uses over **24GB**.
 
-#### Other use cases
+## Other use cases:
 Shared memory file size varies, depends on your specific configuration but it is expected to be somewhere between "seed node" and "full node" usage.

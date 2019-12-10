@@ -396,15 +396,32 @@
  *  Reserved Account IDs with special meaning
  */
 
-#define INIT_ACCOUNT                    "weyoume"                // The initial Executive Board account, issuer of equity asset. 
+
 #define WITNESS_ACCOUNT                 "witnesses"              // Represents the current witnesses
 #define NULL_ACCOUNT                    "null"                   // Represents the canonical account with NO authority (nobody can access funds in null account)
 #define TEMP_ACCOUNT                    "temp"                   // Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
 #define PROXY_TO_SELF_ACCOUNT           ""                       // Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
 #define ROOT_POST_PARENT                (account_name_type())    // Represents the canonical root post parent account
-#define COMMITTEE_ACCOUNT               "committee"              // Represents the committee members.
+#define COMMITTEE_ACCOUNT               "committee"              // Represents the committee members
 #define COMMUNITY_ACCOUNT               "community"              // Represents the Community Enterprise Fund
 #define EXECUTIVE_ACCOUNT               "executive"              // Represents the Executive Board
 #define DEVELOPMENT_ACCOUNT             "development"            // Represents the Development Team
 #define MARKETING_ACCOUNT               "marketing"              // Represents the Marketing Team
 #define ADVOCACY_ACCOUNT                "advocacy"               // Represents the Advocacy Team
+
+/**
+ * Implementation Specific Config settings for launching entity.
+ */
+
+#define INIT_ACCOUNT                    "weyoume"                // The initial Executive Board account, issuer of equity asset. 
+#define INIT_DETAILS                    "WeYouMe is a social media protocol to enable everyone to share information and value freely."   // Details string of init account.
+#define INIT_URL                        "https://www.weyoume.io"
+#define INIT_NODE_ENDPOINT              "https://node.weyoume.io"
+#define INIT_AUTH_ENDPOINT              "https://auth.weyoume.io"
+#define INIT_NOTIFICATION_ENDPOINT      "https://notify.weyoume.io"
+#define INIT_IPFS_ENDPOINT              "https://ipfs.weyoume.io"
+#define INIT_BITORRENT_ENDPOINT         "https://bittorrent.weyoume.io"
+
+#define INIT_CEO                        "harrison.mclean"               // firstname.lastname of launching Chief Executive Officer
+#define INIT_CEO_DETAILS                "WeYouMe is a social media protocol to enable everyone to share information and value freely."   // Details string of init account.
+#define INIT_CEO_URL                    "https://www.weyoume.io"

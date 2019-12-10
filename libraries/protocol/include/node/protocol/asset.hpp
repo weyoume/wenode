@@ -178,7 +178,6 @@ namespace node { namespace protocol {
        *
        *  BlackSwan ---> SQR ---> MCR ----> SP
        */
-      ///@{
       /**
        * Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL
        */
@@ -187,20 +186,23 @@ namespace node { namespace protocol {
       /// Price at which automatically exchanging this asset for CORE from fee pool occurs (used for paying fees)
       price core_exchange_rate;
 
-      /** Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM */
+      /** 
+       * Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM *
+       * /
       uint16_t maintenance_collateral_ratio = MAINTENANCE_COLLATERAL_RATIO;
 
-      /** Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM */
+      /** 
+       * Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM 
+       */
       uint16_t maximum_short_squeeze_ratio = MAX_SHORT_SQUEEZE_RATIO;
 
-      /** When selling collateral to pay off debt, the least amount of debt to receive should be
+      /** 
+       * When selling collateral to pay off debt, the least amount of debt to receive should be
        *  min_usd = max_short_squeeze_price() * collateral
-       *
        *  This is provided to ensure that a black swan cannot be trigged due to poor liquidity alone, it
        *  must be confirmed by having the max_short_squeeze_price() move below the black swan price.
        */
       price max_short_squeeze_price()const;
-      /// Another implementation of max_short_squeeze_price() before the core-1270 hard fork
 
       /// Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
       /// Calculation: ~settlement_price * maintenance_collateral_ratio / GRAPHENE_COLLATERAL_RATIO_DENOM

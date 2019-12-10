@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       vote.permlink = "test";
       tx.operations.push_back( vote );
 
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       op.amount_to_sell = ASSET( "1.000 USD" );
       op.min_to_receive = ASSET( "2.000 TESTS" );
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx,  0 );
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       op.amount_to_sell = ASSET( "1.000 TESTS" );
       op.min_to_receive = ASSET( "0.500 USD" );
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -111,7 +111,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       op.amount_to_sell = ASSET( "0.500 USD" );
       op.min_to_receive = ASSET( "0.900 TESTS" );
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       op.amount_to_sell = ASSET( "0.450 TESTS" );
       op.min_to_receive = ASSET( "0.250 USD" );
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + MAX_TIME_UNTIL_EXPIRATION );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( bob_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
       validate_database();
