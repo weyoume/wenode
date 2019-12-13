@@ -211,10 +211,6 @@ namespace node { namespace protocol {
          }
       }
 
-      FC_ASSERT( fee.amount > 0, 
-         "Fee required." );
-      FC_ASSERT( is_valid_symbol( fee.symbol ), 
-         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
       FC_ASSERT( account != TEMP_ACCOUNT, 
          "Cannot create membership for temp account." );
       FC_ASSERT( months >= 1 && months <= 120, 
@@ -390,13 +386,7 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      if( current_reset_account.size() )
-      {
-         validate_account_name( current_reset_account );
-      }
-      validate_account_name( reset_account );
-      FC_ASSERT( current_reset_account != reset_account, 
-         "New reset account cannot be current reset account." );
+      validate_account_name( new_reset_account );
       FC_ASSERT( days >= 3 && days <= 365, 
          "Reset account delay must be between 3 and 365 days." );
    }
@@ -943,7 +933,7 @@ namespace node { namespace protocol {
          "Message must include a message string." );
       FC_ASSERT( message.size() < MAX_STRING_LENGTH,
          "Message is too long." );
-      FC_ASSERT( id.size() < MAX_STRING_LENGTH,
+      FC_ASSERT( message_id.size() < MAX_STRING_LENGTH,
          "Comment rejected: Title size is too large." );
       FC_ASSERT( time > GENESIS_TIME,
          "Message time must be after genesis time." );
@@ -1400,11 +1390,8 @@ namespace node { namespace protocol {
             "JSON Metadata not valid JSON." );
       }
 
-      for( auto aud : audience )
-      {
-         FC_ASSERT( aud.size() < MAX_STRING_LENGTH,
-            "Audience ID is too long." );
-      }
+      FC_ASSERT( audience_id.size() < MAX_STRING_LENGTH,
+         "Audience ID is too long." );
    }
 
 
@@ -1514,6 +1501,10 @@ namespace node { namespace protocol {
 
       FC_ASSERT( bid_id.size() < MAX_STRING_LENGTH,
          "Bid ID is too long." );
+      FC_ASSERT( bid_id.size(),
+         "Delivery has no bid ID." );
+      FC_ASSERT( fc::is_utf8( bid_id ),
+         "bid ID must be UTF-8" );
       FC_ASSERT( delivery_price.amount > 0,
          "Delivery price must be greater than zero." );
       FC_ASSERT( is_valid_symbol( delivery_price.symbol ),
@@ -2243,12 +2234,7 @@ namespace node { namespace protocol {
       for( auto item : blacklist_markets )
       {
          FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end() );
-      }
-      if( extensions.value.reward_percent.valid() )
-      {
-
-      }
-         FC_ASSERT( *extensions.value.reward_percent < PERCENT_100 );
+      }  
    }
 
    void asset_create_operation::validate()const
@@ -2396,27 +2382,27 @@ namespace node { namespace protocol {
       }
       new_options.validate();
 
-      if( new_bitasset_opts )
+      if( new_bitasset_opts.valid() )
       {
          new_bitasset_opts->validate();
       } 
-      if( new_equity_opts )
+      if( new_equity_opts.valid() )
       {
          new_equity_opts->validate();
       }
-      if( new_credit_opts )
+      if( new_credit_opts.valid() )
       {
          new_credit_opts->validate();
       }
-      if( new_currency_opts )
+      if( new_currency_opts.valid() )
       {
          new_currency_opts->validate();
       }
-      if( new_gateway_opts )
+      if( new_gateway_opts.valid() )
       {
          new_gateway_opts->validate();
       }
-      if( new_unique_opts )
+      if( new_unique_opts.valid() )
       {
          new_unique_opts->validate();
       }

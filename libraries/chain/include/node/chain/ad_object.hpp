@@ -76,7 +76,7 @@ namespace node { namespace chain {
 
          shared_string                    json;              // json metadata for the campaign.
 
-         flat_set<account_name_type>      agents;            // Set of Accounts authorized to create bids for the campaign.
+         flat_set< account_name_type >    agents;            // Set of Accounts authorized to create bids for the campaign.
 
          account_name_type                interface;         // Interface that facilitated the purchase of the advertising campaign.
          

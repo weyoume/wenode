@@ -120,6 +120,7 @@
 
 #define OWNER_AUTH_RECOVERY_PERIOD                       fc::days(30)
 #define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD       fc::days(1)
+#define DECLINE_VOTING_RIGHTS_DURATION                   fc::days(3)
 #define OWNER_UPDATE_LIMIT                               fc::minutes(60)
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM      1
 #define MIN_BOARD_CREATE_INTERVAL                        fc::days(1)

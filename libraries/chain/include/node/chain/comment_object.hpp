@@ -69,6 +69,8 @@ namespace node { namespace chain {
 
          asset                          comment_price;                // The price paid to create a comment
 
+         asset                          premium_price;                // The price paid to unlock the post's premium encryption.
+
          flat_map<account_name_type, flat_map< asset_symbol_type, asset > >  payments_received;    // Map of all transfers received that referenced this comment. 
 
          bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;
@@ -103,7 +105,7 @@ namespace node { namespace chain {
 
          int128_t                       comment_power = 0;            // Sum of weighted voting power from comments.
  
-         time_point                     cashout_time;                 // 24 hours from the weighted average of vote time
+         time_point                     cashout_time;                 // Next scheduled time to receive a content reward cashout.
 
          uint32_t                       cashouts_received = 0;        // Number of times that the comment has received content rewards
 
@@ -127,7 +129,7 @@ namespace node { namespace chain {
 
          share_type                     percent_liquid = PERCENT_100;
 
-         uint128_t                      reward = 0;                   // The amount of reward_curve this comment is responsible for in its root post.
+         int128_t                       reward = 0;                   // The amount of reward_curve this comment is responsible for in its root post.
 
          uint128_t                      weight = 0;                   // Used to define the comment curation reward this comment receives.
 
@@ -163,7 +165,7 @@ namespace node { namespace chain {
 
          bool                           deleted = false;                    // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
 
-         bool                           comment_paid( account_name_type name )    // return true if user has paid comment price
+         bool                           comment_paid( account_name_type name ) const    // return true if user has paid comment price
          {
             if( comment_price.amount > 0 )
             {
@@ -296,7 +298,7 @@ namespace node { namespace chain {
 
          uint128_t               max_weight = 0;     // Used to define relative contribution of this comment to rewards.
 
-         uint128_t               reward = 0;         // The amount of reward_curve this vote is responsible for
+         int128_t                reward = 0;         // The amount of reward_curve this vote is responsible for
 
          int16_t                 vote_percent = 0;   //  The percent weight of the vote
 
@@ -331,7 +333,7 @@ namespace node { namespace chain {
 
          account_name_type       supernode;          // Name of the supernode account that served the IPFS file data in the post.
 
-         uint128_t               reward = 0;         // The amount of voting power this view contributed.
+         int128_t                reward = 0;         // The amount of voting power this view contributed.
 
          uint128_t               weight = 0;         // The curation reward weight of the view. Decays with time and additional views.
 
@@ -358,7 +360,7 @@ namespace node { namespace chain {
 
          account_name_type       interface;          // Name of the interface account that was used to broadcast the transaction and view the post. 
 
-         uint128_t               reward = 0;         // The amount of voting power this share contributed.
+         int128_t                reward = 0;         // The amount of voting power this share contributed.
 
          uint128_t               weight = 0;         // The curation reward weight of the share.
 

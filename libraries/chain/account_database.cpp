@@ -871,24 +871,32 @@ void database::account_recovery_processing()
 
 void database::process_decline_voting_rights()
 {
-   const auto& request_idx = get_index< decline_voting_rights_request_index >().indices().get< by_effective_date >();
-   auto itr = request_idx.begin();
+   time_point now = head_block_time();
+   const auto& req_idx = get_index< decline_voting_rights_request_index >().indices().get< by_effective_date >();
+   auto req_itr = req_idx.begin();
 
-   while( itr != request_idx.end() && itr->effective_date <= head_block_time() )
+   while( req_itr != req_idx.end() && req_itr->effective_date <= now )
    {
-      const account_object& account = get_account(itr->account);
-      share_type voting_power = get_voting_power(account);
+      const account_object& account = get_account( req_itr->account );
 
-      clear_witness_votes( account );
+      clear_network_votes( account );
 
-      modify( get_account(itr->account), [&]( account_object& a )
+      for( auto proxy : account.proxied )   // Remove all accounts proxied to the acocunt.
+      {
+         modify( get_account( proxy ), [&]( account_object& a )
+         {
+            a.proxy = PROXY_TO_SELF_ACCOUNT;
+         });
+      }
+
+      modify( get_account( req_itr->account ), [&]( account_object& a )
       {
          a.can_vote = false;
          a.proxy = PROXY_TO_SELF_ACCOUNT;
+         a.proxied.clear();
       });
 
-      remove( *itr );
-      itr = request_idx.begin();
+      remove( *req_itr );
    }
 }
 

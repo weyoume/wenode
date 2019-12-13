@@ -199,39 +199,39 @@ namespace node { namespace chain {
             c(*this);
          };
 
-         id_type                                 id;
+         id_type                                         id;
 
-         account_name_type                       account;                    // Username of the business account, lowercase letters only.
+         account_name_type                               account;                    // Username of the business account, lowercase letters only.
 
-         business_types                          business_type;              // Type of business account, controls authorizations for transactions of different types.
+         business_types                                  business_type;              // Type of business account, controls authorizations for transactions of different types.
 
-         public_key_type                         business_public_key;        // Public key of the business account for internal message encryption. 
+         public_key_type                                 business_public_key;        // Public key of the business account for internal message encryption. 
 
-         executive_officer_set                   executive_board;            // Set of highest voted executive accounts for each role.
+         executive_officer_set                           executive_board;            // Set of highest voted executive accounts for each role.
 
-         flat_map<account_name_type, pair< executive_types, share_type > >   executives;   // Set of all executive names.    
+         flat_map< account_name_type, pair< executive_types, share_type > >  executives;   // Set of all executive names.    
 
-         flat_map<account_name_type, share_type> officers;                   // Set of all officers in the business, and their supporting voting power.
+         flat_map< account_name_type, share_type >       officers;                   // Set of all officers in the business, and their supporting voting power.
 
-         flat_set<account_name_type>             members;                    // Set of all members of the business.
+         flat_set< account_name_type >                   members;                    // Set of all members of the business.
 
-         share_type                              officer_vote_threshold;     // Amount of voting power required for an officer to be active. 
+         share_type                                      officer_vote_threshold;     // Amount of voting power required for an officer to be active. 
 
-         flat_set<asset_symbol_type>             equity_assets;              // Set of equity assets that offer dividends and voting power over the business account's structure
+         flat_set< asset_symbol_type >                   equity_assets;              // Set of equity assets that offer dividends and voting power over the business account's structure
 
-         flat_set<asset_symbol_type>             credit_assets;              // Set of credit assets that offer interest and buybacks from the business account
+         flat_set< asset_symbol_type >                   credit_assets;              // Set of credit assets that offer interest and buybacks from the business account
 
-         flat_map<asset_symbol_type, uint16_t>   equity_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+         flat_map< asset_symbol_type, uint16_t >         equity_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 
-         flat_map<asset_symbol_type, uint16_t>   credit_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+         flat_map< asset_symbol_type, uint16_t >         credit_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 
          bool is_authorized_request( const account_name_type& account, const account_permission_object& obj )const      // Determines Permission to request to join.
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the board's blacklist
+                  return false; // The account is in the account's blacklist
                }   
             }
             if( business_type == PRIVATE_BUSINESS ) // Exclusive groups do not allow join requests, invitation only. 
@@ -246,11 +246,11 @@ namespace node { namespace chain {
 
          bool is_authorized_invite( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to send invites, accept join requests
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the board's blacklist
+                  return false; // The account is in the account's blacklist
                }   
             }
             if( business_type == OPEN_BUSINESS ) // Public groups, officers can invite.
@@ -290,7 +290,7 @@ namespace node { namespace chain {
 
          bool is_authorized_blacklist( const account_name_type& account, const account_permission_object& obj )const // Determines Permission to blacklist an account from the board. 
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
@@ -323,7 +323,7 @@ namespace node { namespace chain {
 
          bool is_authorized_transfer( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to send invites, accept join requests
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
@@ -367,7 +367,7 @@ namespace node { namespace chain {
 
          bool is_authorized_general( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to make general transactions 
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
@@ -411,7 +411,7 @@ namespace node { namespace chain {
 
          bool is_authorized_content( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to create content and interactions, and manage boards
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
@@ -444,11 +444,11 @@ namespace node { namespace chain {
 
          bool is_authorized_vote_executive( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to vote for executives
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the board's blacklist
+                  return false; // The account is in the businesses's blacklist
                }   
             }
             if( business_type == OPEN_BUSINESS  || business_type == PUBLIC_BUSINESS ) // Public and open business, all equity holders can vote for executives.
@@ -470,7 +470,7 @@ namespace node { namespace chain {
 
          bool is_authorized_vote_officer( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to vote for executives
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
@@ -507,7 +507,7 @@ namespace node { namespace chain {
 
          bool is_authorized_governance( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to update governance and create moderation tags
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
@@ -551,7 +551,7 @@ namespace node { namespace chain {
 
          bool is_authorized_network( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to alter interface, supernode, network officers, witnesses, exec board
          {
-            if( obj.blacklisted_accounts.size )
+            if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
@@ -595,22 +595,22 @@ namespace node { namespace chain {
             }
          };
 
-         bool                                    is_chief( const account_name_type& executive )    // finds if a given account name is in the CEO or COO. 
+         bool                                    is_chief( const account_name_type& executive ) const       // finds if a given account name is in the CEO or COO. 
          {
             return executive_board.CHIEF_EXECUTIVE_OFFICER == executive || executive_board.CHIEF_OPERATING_OFFICER == executive;
          };
 
-         bool                                    is_executive( const account_name_type& executive )    // finds if a given account name is in the executives set. 
+         bool                                    is_executive( const account_name_type& executive ) const   // finds if a given account name is in the executives set. 
          {
             return std::find( executives.begin(), executives.end(), executive ) != executives.end();
          };
 
-         bool                                    is_officer( const account_name_type& officer )    // finds if a given account name is in the officers set. 
+         bool                                    is_officer( const account_name_type& officer ) const    // finds if a given account name is in the officers set. 
          {
             return std::find( officers.begin(), officers.end(), officer ) != officers.end();
          };
 
-         bool                                    is_member( const account_name_type& member )    // finds if a given account name is in the members set. 
+         bool                                    is_member( const account_name_type& member ) const   // finds if a given account name is in the members set. 
          {
             return std::find( members.begin(), members.end(), member ) != members.end();
          };
@@ -1794,14 +1794,18 @@ namespace node { namespace chain {
             member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id >
          >,
          ordered_unique< tag< by_member_business >,
-            member< account_member_key_object, account_name_type, &account_member_key_object::member >,
-            member< account_member_key_object, account_name_type, &account_member_key_object::business_account >,
-            member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id >
+            composite_key< account_member_key_object,
+               member< account_member_key_object, account_name_type, &account_member_key_object::member >,
+               member< account_member_key_object, account_name_type, &account_member_key_object::business_account >,
+               member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id >
+            >
          >,
          ordered_unique< tag< by_business_member >,
-            member< account_member_key_object, account_name_type, &account_member_key_object::business_account >,
-            member< account_member_key_object, account_name_type, &account_member_key_object::member >,
-            member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id >
+            composite_key< account_member_key_object,
+               member< account_member_key_object, account_name_type, &account_member_key_object::business_account >,
+               member< account_member_key_object, account_name_type, &account_member_key_object::member >,
+               member< account_member_key_object, account_member_key_id_type, &account_member_key_object::id >
+            >
          >
       >,
       allocator< account_member_key_object >

@@ -35,6 +35,10 @@ namespace node { namespace chain {
 
          public_key_type                    board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
+         shared_string                      details;                            // Describes the board and what it is about and the rules of posting.
+
+         shared_string                      url;                                // Board URL link for more details.
+
          shared_string                      json;                               // Public plaintext json information about the board, its topic and rules.
 
          shared_string                      json_private;                       // Private ciphertext json information about the board.

@@ -127,7 +127,9 @@ namespace node { namespace protocol {
 
       account_name_type                  recovery_account;              // Account that can execute a recovery operation, in the event that the owner key is compromised. 
 
-      string                             details;                       // The account's details string
+      account_name_type                  reset_account;                 // Account that has the ability to execute a reset operation after 60 days of inactivity.
+
+      string                             details;                       // The account's details string.
 
       string                             url;                           // The account's selected personal URL. 
 
@@ -279,6 +281,8 @@ namespace node { namespace protocol {
 
       executive_types              role;                  // Role of the executive.
 
+      uint16_t                     vote_rank;             // Rank of voting preference
+
       bool                         approved = true;       // True to add, false to remove. 
 
       void validate() const;
@@ -300,6 +304,8 @@ namespace node { namespace protocol {
       account_name_type            business_account;      // Business account.
 
       account_name_type            officer_account;       // Name of officer being voted for.
+
+      uint16_t                     vote_rank;             // Rank of voting preference
 
       bool                         approved = true;       // True to add, false to remove. 
 
@@ -582,8 +588,9 @@ namespace node { namespace protocol {
 
 
    /**
-    * This operation allows recovery_account to change account_to_reset's owner authority to
-    * new_owner_authority after 60 days of inactivity.
+    * This operation allows recovery_account to change
+    * account_to_reset's owner authority to
+    * new_owner_authority after 7 days of inactivity.
     */
    struct reset_account_operation : public base_operation 
    {
@@ -602,8 +609,9 @@ namespace node { namespace protocol {
 
 
    /**
-    * This operation allows 'account' owner to control which account has the power
-    * to execute the 'reset_account_operation' after a specified duration.
+    * This operation allows 'account' owner to control
+    * which account has the power to execute the 
+    * 'reset_account_operation' after a specified duration.
     */
    struct set_reset_account_operation : public base_operation 
    {
@@ -611,9 +619,7 @@ namespace node { namespace protocol {
 
       account_name_type         account;
 
-      account_name_type         current_reset_account;
-
-      account_name_type         reset_account;
+      account_name_type         new_reset_account;
 
       int16_t                   days = 7;
 
@@ -668,6 +674,8 @@ namespace node { namespace protocol {
 
       account_name_type       account;
 
+      bool                    declined = true;     // True to decine voting rights, false to cancel pending request.
+
       void get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
       void validate() const;
@@ -710,7 +718,7 @@ namespace node { namespace protocol {
     * This operation assumes that the account includes a valid encrypted private key
     * and that the initial account confirms by returning an additional acceptance transaction.
     * The protocol cannot ensure the reciprocity of the original sender, or
-    * the accuracy of the private keys included. 
+    * the accuracy of the private keys included.
     */
    struct connection_accept_operation : public base_operation
    {
@@ -816,9 +824,9 @@ namespace node { namespace protocol {
    };
 
 
-   //===========================//
-   // === Network Operations ===//
-   //===========================//
+   //============================//
+   // === Network Operations === //
+   //============================//
 
 
    /**
@@ -923,13 +931,13 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates or updates a executive board object for a development and administration team of a business account.
+    * Creates or updates an executive board object for a development and administration team of a business account.
     * Executive boards enable the issuance of network credit asset for operating a
     * multifaceted development and marketing team for the protocol.
     * Executive boards must:
     * 1 - Hold a minimum balance of 100 Equity assets.
-    * 2 - Operate active supernode with at least 100 daily active users.
-    * 3 - Operate active interface account with at least 100 daily active users.
+    * 2 - Operate an active supernode with at least 100 daily active users.
+    * 3 - Operate an active interface with at least 100 daily active users.
     * 4 - Operate an active governance account with at least 100 subscribers.
     * 5 - Have at least 3 members or officers that are top 50 network officers, 1 from each role.
     * 6 - Have at least one member or officer that is an active top 50 witness.
@@ -1262,6 +1270,8 @@ namespace node { namespace protocol {
 
       string                      json;            // json string of additional interface specific data relating to the post. 
 
+      bool                        deleted = false; // True to delete post, false to create post. 
+
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return author; }
@@ -1336,7 +1346,7 @@ namespace node { namespace protocol {
 
       string                        message;        // Encrypted ciphertext of the message being sent. 
 
-      string                        id;             // uuidv4 uniquely identifying the message for local storage.
+      string                        uuid;           // uuidv4 uniquely identifying the message for local storage.
 
       time_point                    time;           // Time the message was sent.
 
@@ -1407,15 +1417,17 @@ namespace node { namespace protocol {
 
       account_name_type          sharer;           // Name of the viewing account.
 
-      account_name_type          author;           // Name of the account that created the post being shared. 
+      account_name_type          author;           // Name of the account that created the post being shared.
 
       string                     permlink;         // Permlink to the post being shared.
+
+      feed_types                 reach;            // Audience reach selection for share.
 
       account_name_type          interface;        // Name of the interface account that was used to broadcast the transaction and share the post.
 
       optional<board_name_type>  board;            // Optionally share the post with a new board.
 
-      optional<tag_name_type>    tag;              // Optionally share the post with a new tag. 
+      optional<tag_name_type>    tag;              // Optionally share the post with a new tag.
 
       bool                       shared = true;    // True if sharing the post, false if removing share.
 
@@ -1722,9 +1734,9 @@ namespace node { namespace protocol {
 
       account_name_type              interface;           // Name of the interface account that was used to broadcast the transaction and subscribe to the board.
 
-      bool                           subscribed = true;   // true if subscribing, false if unsubscribing. 
-
-      bool                           filtered = false;    // True to filter, false to subscribe.
+      bool                           added = true;        // True to add to lists, false to remove.
+      
+      bool                           subscribed = true;   // true if subscribing, false if filtering. 
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1797,6 +1809,8 @@ namespace node { namespace protocol {
 
       string                             inventory_id;   // uuidv4 referring to the inventory offering.
 
+      string                             audience_id;    // uuidv4 referring to audience object containing usernames of desired accounts in interface's audience.
+
       metric_types                       metric;         // Type of expense metric used.
 
       asset                              min_price;      // Minimum bidding price per metric.
@@ -1805,7 +1819,7 @@ namespace node { namespace protocol {
 
       string                             json;           // json metadata for the inventory.
 
-      flat_set< string >                 audience;       // List of ad audience_ids, each containing a set of usernames of viewing accounts in their userbase.
+      
 
       flat_set< account_name_type >      agents;         // Set of Accounts authorized to create delivery transactions for the inventory.
 
@@ -3229,7 +3243,7 @@ namespace node { namespace protocol {
    {
       proof_of_work_input     input;
 
-      uint32_t                pow_summary = 0;
+      uint128_t               pow_summary = 0;
 
       void create( const block_id_type& prev_block, const account_name_type& account_name, uint64_t nonce );
       void validate()const;
@@ -3244,7 +3258,7 @@ namespace node { namespace protocol {
 
       block_id_type                 prev_block;
 
-      uint32_t                      pow_summary = 0;
+      uint128_t                     pow_summary = 0;
 
       void create( const block_id_type& recent_block, const account_name_type& account_name, uint32_t nonce );
       void validate() const;

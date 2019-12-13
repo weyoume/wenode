@@ -266,9 +266,9 @@ namespace node { namespace chain {
 
          block_id_type                    block_id;
 
-         uint32_t                         height;
+         uint32_t                         block_height;
 
-         time_point                       created; 
+         time_point                       created;
 
          flat_set<transaction_id_type>    verifications;
 
@@ -299,7 +299,7 @@ namespace node { namespace chain {
 
          account_name_type                producer;
 
-         uint32_t                         height;
+         uint32_t                         block_height;
 
          signed_transaction               first_trx;
 
@@ -456,12 +456,12 @@ namespace node { namespace chain {
          ordered_unique< tag<by_producer_height>,
             composite_key< block_validation_object,
                member<block_validation_object, account_name_type, &block_validation_object::producer >,
-               member<block_validation_object, uint32_t, &block_validation_object::height >
+               member<block_validation_object, uint32_t, &block_validation_object::block_height >
             >
          >,
          ordered_unique< tag<by_height_stake>,
             composite_key< block_validation_object,
-               member<block_validation_object, uint32_t, &block_validation_object::height >,
+               member<block_validation_object, uint32_t, &block_validation_object::block_height >,
                member<block_validation_object, asset, &block_validation_object::commitment_stake >
             >,
             composite_key_compare< 
@@ -508,13 +508,13 @@ namespace node { namespace chain {
          ordered_unique< tag<by_reporter_height>,
             composite_key< commit_violation_object,
                member<commit_violation_object, account_name_type, &commit_violation_object::reporter >,
-               member<commit_violation_object, uint32_t, &commit_violation_object::height >
+               member<commit_violation_object, uint32_t, &commit_violation_object::block_height >
             >
          >,
          ordered_unique< tag<by_producer_height>,
             composite_key< commit_violation_object,
                member<commit_violation_object, account_name_type, &commit_violation_object::producer >,
-               member<commit_violation_object, uint32_t, &commit_violation_object::height >
+               member<commit_violation_object, uint32_t, &commit_violation_object::block_height >
             >
          >,
          ordered_unique< tag<by_recent_created>,

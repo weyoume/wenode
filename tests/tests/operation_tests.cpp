@@ -84,6 +84,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       op.proxy = INIT_ACCOUNT;
       op.governance_account = INIT_ACCOUNT;
       op.recovery_account = INIT_ACCOUNT;
+      op.reset_account = INIT_ACCOUNT;
       op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
       op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
@@ -113,8 +114,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.account_type = PERSONA );
       BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.governance_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.created == now );
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
@@ -158,8 +159,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.account_type = PERSONA );
       BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.governance_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.created == now );
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
@@ -204,8 +205,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.account_type = BUSINESS );
       BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.governance_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.created == now );
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
@@ -1497,30 +1498,16 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-/**
- * request_account_recovery_operation,
-   recover_account_operation,
-   reset_account_operation,
-   set_reset_account_operation,
-   change_recovery_account_operation,
-   decline_voting_rights_operation,
-   connection_request_operation,
-   connection_accept_operation,
-   account_follow_operation,
-   tag_follow_operation,
-   activity_reward_operation,
-   */
-
-BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
+BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "├── Testing: REQUEST ACCOUNT RECOVERY" );
+      BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT RECOVERY SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal request account recovery" );
       time_point now = db.head_block_time();
 
-      ACTORS( (alice)(bob)(chris)(dave) );
+      ACTORS( (alice)(bob)(chris)(sam)(dave) );
       fund( "alice", 1000 * BLOCKCHAIN_PRECISION );
       fund_stake( "alice", 1000 * BLOCKCHAIN_PRECISION );
 
@@ -1529,6 +1516,7 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       acc_create.signatory = "alice";
       acc_create.registrar = "alice";
       acc_create.recovery_account = "alice";
+      acc_create.reset_account = "alice";
       acc_create.account_type = PERSONA;
       acc_create.new_account_name = "bob";
       acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
@@ -1578,16 +1566,14 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
 
       BOOST_REQUIRE( bob_auth.owner == *acc_update.owner );
 
-
-      BOOST_TEST_MESSAGE( "Creating recover request for bob with alice" );
+      tx.operations.clear();
+      tx.signatures.clear();
 
       request_account_recovery_operation request;
+      request.signatory = "alice";
       request.recovery_account = "alice";
       request.account_to_recover = "bob";
       request.new_owner_authority = authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       tx.operations.push_back( request );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
@@ -1595,18 +1581,16 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
 
       BOOST_REQUIRE( bob_auth.owner == *acc_update.owner );
 
-
-      BOOST_TEST_MESSAGE( "Recovering bob's account with original owner auth and new secret" );
-
-      generate_blocks( db.head_block_time() + OWNER_UPDATE_LIMIT );
-
-      recover_account_operation recover;
-      recover.account_to_recover = "bob";
-      recover.new_owner_authority = request.new_owner_authority;
-      recover.recent_owner_authority = acc_create.owner;
+      generate_blocks( now + OWNER_UPDATE_LIMIT );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      recover_account_operation recover;
+      recover.signatory = "bob";
+      recover.account_to_recover = "bob";
+      recover.new_owner_authority = request.new_owner_authority;
+      recover.recent_owner_authority = acc_create.owner;
 
       tx.operations.push_back( recover );
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
@@ -1616,22 +1600,20 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
 
       BOOST_REQUIRE( owner1 == recover.new_owner_authority );
 
-
-      BOOST_TEST_MESSAGE( "Creating new recover request for a bogus key" );
-
-      request.new_owner_authority = authority( 1, generate_private_key( "foo bar" ).get_public_key(), 1 );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: normal request account recovery" );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      request.new_owner_authority = authority( 1, generate_private_key( "foo bar" ).get_public_key(), 1 );
 
       tx.operations.push_back( request );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when bob does not have new requested authority" );
 
-      BOOST_TEST_MESSAGE( "Testing failure when bob does not have new authority" );
-
-      generate_blocks( db.head_block_time() + OWNER_UPDATE_LIMIT + fc::seconds( BLOCK_INTERVAL ) );
+      generate_blocks( now + OWNER_UPDATE_LIMIT + fc::seconds( BLOCK_INTERVAL ) );
 
       recover.new_owner_authority = authority( 1, generate_private_key( "idontknow" ).get_public_key(), 1 );
 
@@ -1645,8 +1627,9 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       const auto& owner2 = db.get< account_authority_object, by_account >("bob").owner;
       BOOST_REQUIRE( owner2 == authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 ) );
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when bob does not have new requested authority" );
 
-      BOOST_TEST_MESSAGE( "Testing failure when bob does not have old authority" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when bob does not have old authority" );
 
       recover.recent_owner_authority = authority( 1, generate_private_key( "idontknow" ).get_public_key(), 1 );
       recover.new_owner_authority = authority( 1, generate_private_key( "foo bar" ).get_public_key(), 1 );
@@ -1661,8 +1644,9 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       const auto& owner3 = db.get< account_authority_object, by_account >("bob").owner;
       BOOST_REQUIRE( owner3 == authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 ) );
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when bob does not have old authority" );
 
-      BOOST_TEST_MESSAGE( "Testing using the same old owner auth again for recovery" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: using the same old owner auth again for recovery" );
 
       recover.recent_owner_authority = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
       recover.new_owner_authority = authority( 1, generate_private_key( "foo bar" ).get_public_key(), 1 );
@@ -1678,7 +1662,9 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       const auto& owner4 = db.get< account_authority_object, by_account >("bob").owner;
       BOOST_REQUIRE( owner4 == recover.new_owner_authority );
 
-      BOOST_TEST_MESSAGE( "Creating a recovery request that will expire" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: using the same old owner auth again for recovery" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: creating a recovery request that will expire" );
 
       request.new_owner_authority = authority( 1, generate_private_key( "expire" ).get_public_key(), 1 );
 
@@ -1694,7 +1680,7 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
 
       BOOST_REQUIRE( req_itr->account_to_recover == "bob" );
       BOOST_REQUIRE( req_itr->new_owner_authority == authority( 1, generate_private_key( "expire" ).get_public_key(), 1 ) );
-      BOOST_REQUIRE( req_itr->expires == db.head_block_time() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD );
+      BOOST_REQUIRE( req_itr->expires == now + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD );
       auto expires = req_itr->expires;
       ++req_itr;
       BOOST_REQUIRE( req_itr == request_idx.end() );
@@ -1702,11 +1688,11 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       generate_blocks( time_point( expires - BLOCK_INTERVAL ), true );
 
       const auto& new_request_idx = db.get_index< account_recovery_request_index >().indices();
-      BOOST_REQUIRE( new_request_idx.begin() != new_request_idx.end() );
+      BOOST_REQUIRE( new_request_idx.begin() != new_request_idx.end() );    // Request has not yet expired
 
       generate_block();
 
-      BOOST_REQUIRE( new_request_idx.begin() == new_request_idx.end() );
+      BOOST_REQUIRE( new_request_idx.begin() == new_request_idx.end() );    // Request has now expired
 
       recover.new_owner_authority = authority( 1, generate_private_key( "expire" ).get_public_key(), 1 );
       recover.recent_owner_authority = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
@@ -1715,14 +1701,16 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       tx.signatures.clear();
 
       tx.operations.push_back( recover );
-      tx.set_expiration( db.head_block_time() );
+      tx.set_expiration( now );
       tx.sign( generate_private_key( "expire" ), db.get_chain_id() );
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // Recover won't work, because request expired
       const auto& owner5 = db.get< account_authority_object, by_account >("bob").owner;
       BOOST_REQUIRE( owner5 == authority( 1, generate_private_key( "foo bar" ).get_public_key(), 1 ) );
 
-      BOOST_TEST_MESSAGE( "Expiring owner authority history" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: creating a recovery request that will expire" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Expiring owner authority history" );
 
       acc_update.owner = authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 );
 
@@ -1730,11 +1718,11 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       tx.signatures.clear();
 
       tx.operations.push_back( acc_update );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( generate_private_key( "foo bar" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      generate_blocks( db.head_block_time() + ( OWNER_AUTH_RECOVERY_PERIOD - ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD ) );
+      generate_blocks( now + ( OWNER_AUTH_RECOVERY_PERIOD - ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD ) );
       generate_block();
 
       request.new_owner_authority = authority( 1, generate_private_key( "last key" ).get_public_key(), 1 );
@@ -1743,7 +1731,7 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       tx.signatures.clear();
 
       tx.operations.push_back( request );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1754,10 +1742,10 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       tx.signatures.clear();
 
       tx.operations.push_back( recover );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
       tx.sign( generate_private_key( "last key" ), db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // bob_owner key has expired
       const auto& owner6 = db.get< account_authority_object, by_account >("bob").owner;
       BOOST_REQUIRE( owner6 == authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 ) );
 
@@ -1767,23 +1755,16 @@ BOOST_AUTO_TEST_CASE( request_account_recovery_operation_test )
       tx.signatures.clear();
 
       tx.operations.push_back( recover );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( generate_private_key( "foo bar" ), db.get_chain_id() );
       tx.sign( generate_private_key( "last key" ), db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      db.push_transaction( tx, 0 );     // foo bar key has not yet expired
       const auto& owner7 = db.get< account_authority_object, by_account >("bob").owner;
       BOOST_REQUIRE( owner7 == authority( 1, generate_private_key( "last key" ).get_public_key(), 1 ) );
-   }
-   FC_LOG_AND_RETHROW()
-}
 
-BOOST_AUTO_TEST_CASE( change_recovery_account )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing change_recovery_account_operation" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Expiring owner authority history" );
 
-      ACTORS( (alice)(bob)(sam)(tyler) )
+      BOOST_TEST_MESSAGE( "│   ├── Testing: change recovery account" );
 
       auto change_recovery_account = [&]( const std::string& account_to_recover, const std::string& new_recovery_account )
       {
@@ -1793,7 +1774,7 @@ BOOST_AUTO_TEST_CASE( change_recovery_account )
 
          signed_transaction tx;
          tx.operations.push_back( op );
-         tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( alice_private_owner_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
       };
@@ -1807,7 +1788,7 @@ BOOST_AUTO_TEST_CASE( change_recovery_account )
 
          signed_transaction tx;
          tx.operations.push_back( op );
-         tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( recent_owner_key, db.get_chain_id() );
          // only Alice -> throw
          REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1829,7 +1810,7 @@ BOOST_AUTO_TEST_CASE( change_recovery_account )
 
          signed_transaction tx;
          tx.operations.push_back( op );
-         tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( recovery_account_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
       };
@@ -1842,285 +1823,629 @@ BOOST_AUTO_TEST_CASE( change_recovery_account )
 
          signed_transaction tx;
          tx.operations.push_back( op );
-         tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( old_private_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
       };
 
       // if either/both users do not exist, we shouldn't allow it
-      REQUIRE_THROW( change_recovery_account("alice", "nobody"), fc::exception );
-      REQUIRE_THROW( change_recovery_account("haxer", "sam"   ), fc::exception );
-      REQUIRE_THROW( change_recovery_account("haxer", "nobody"), fc::exception );
-      change_recovery_account("alice", "sam");
+      REQUIRE_THROW( change_recovery_account( "alice", "nobody" ), fc::exception );
+      REQUIRE_THROW( change_recovery_account( "haxer", "sam" ), fc::exception );
+      REQUIRE_THROW( change_recovery_account( "haxer", "nobody" ), fc::exception );
+      change_recovery_account( "alice", "sam" );
 
       fc::ecc::private_key alice_priv1 = fc::ecc::private_key::regenerate( fc::sha256::hash( "alice_k1" ) );
       fc::ecc::private_key alice_priv2 = fc::ecc::private_key::regenerate( fc::sha256::hash( "alice_k2" ) );
       public_key_type alice_pub1 = public_key_type( alice_priv1.get_public_key() );
 
-      generate_blocks( db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD - fc::seconds( BLOCK_INTERVAL ), true );
+      generate_blocks( now + OWNER_AUTH_RECOVERY_PERIOD - fc::seconds( BLOCK_INTERVAL ), true );
       // cannot request account recovery until recovery account is approved
-      REQUIRE_THROW( request_account_recovery( "sam", sam_private_key, "alice", alice_pub1 ), fc::exception );
+      REQUIRE_THROW( request_account_recovery( "sam", sam_private_owner_key, "alice", alice_pub1 ), fc::exception );
       generate_blocks(1);
       // cannot finish account recovery until requested
       REQUIRE_THROW( recover_account( "alice", alice_priv1, alice_private_owner_key ), fc::exception );
       // do the request
-      request_account_recovery( "sam", sam_private_key, "alice", alice_pub1 );
+      request_account_recovery( "sam", sam_private_owner_key, "alice", alice_pub1 );
       // can't recover with the current owner key
       REQUIRE_THROW( recover_account( "alice", alice_priv1, alice_private_owner_key ), fc::exception );
       // unless we change it!
       change_owner( "alice", alice_private_owner_key, public_key_type( alice_priv2.get_public_key() ) );
       recover_account( "alice", alice_priv1, alice_private_owner_key );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: change_recovery_account_operation" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT RECOVERY SEQUENCE" );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_apply )
+BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: cancel_transfer_from_savings_apply" );
+      BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT RESET SEQUENCE" );
 
-      ACTORS( (alice)(bob) )
-      generate_block();
+      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account reset" );
 
-      fund( "alice", ASSET( "10.000 TESTS" ) );
+      time_point now = db.head_block_time();
 
-      transfer_to_savings_operation save;
-      save.from = "alice";
-      save.to = "alice";
-      save.amount = ASSET( "10.000 TESTS" );
+      ACTORS( (alice)(bob)(chris)(dave) );
+      fund( "alice", 1000 * BLOCKCHAIN_PRECISION );
+      fund_stake( "alice", 1000 * BLOCKCHAIN_PRECISION );
 
-      transfer_from_savings_operation withdraw;
-      withdraw.from = "alice";
-      withdraw.to = "bob";
-      withdraw.request_id = 1;
-      withdraw.amount = ASSET( "3.000 TESTS" );
+      account_create_operation acc_create;       // Creating account bob with alice as reset account
+
+      acc_create.signatory = "alice";
+      acc_create.registrar = "alice";
+      acc_create.recovery_account = "alice";
+      acc_create.reset_account = "alice";
+      acc_create.account_type = PERSONA;
+      acc_create.new_account_name = "bob";
+      acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
+      acc_create.active = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
+      acc_create.posting = authority( 1, generate_private_key( "bob_posting" ).get_public_key(), 1 );
+      acc_create.secure_public_key = generate_private_key( "bob_secure" ).get_public_key();
+      acc_create.connection_public_key = generate_private_key( "bob_connection" ).get_public_key();
+      acc_create.friend_public_key = generate_private_key( "bob_friend" ).get_public_key();
+      acc_create.companion_public_key = generate_private_key( "bob_companion" ).get_public_key();
+      acc_create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      acc_create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      acc_create.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      acc_create.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      acc_create.fee = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( save );
-      tx.operations.push_back( withdraw );
+      tx.operations.push_back( acc_create );
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-      validate_database();
 
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 1 );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
+      const auto& bob_auth = db.get< account_authority_object, by_account >( "bob" );
+      BOOST_REQUIRE( bob_auth.owner == acc_create.owner );
 
+      generate_blocks( now + ( fc::days( bob.reset_account_delay_days ) - BLOCK_INTERVAL ) );
 
-      BOOST_TEST_MESSAGE( "--- Failure when there is no pending request" );
-      cancel_transfer_from_savings_operation op;
-      op.from = "alice";
-      op.request_id = 0;
+      reset_account_operation reset;
 
-      tx.clear();
-      tx.operations.push_back( op );
+      reset.signatory = "alice";
+      reset.reset_account = "alice";
+      reset.account_to_reset = "bob";
+      reset.new_owner_authority = authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 );
+
+      tx.operations.push_back( reset );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // reset not valid yet
+
+      generate_block();
+
+      db.push_transaction( tx, 0 );    // reset now valid
+
+      BOOST_REQUIRE( bob_auth.owner == reset.new_owner_authority );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: normal account reset" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: set new reset account" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      set_reset_account_operation set;
+
+      set.signatory = "bob";
+      set.account = "bob";
+      set.new_reset_account = "chris";
+
+      tx.operations.push_back( set );
+      tx.sign( generate_private_key( "new_key" ), db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+      
+      BOOST_REQUIRE( bob.reset_account == "chris" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: set new reset account" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: additional account reset" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now + ( fc::days( bob.reset_account_delay_days ) - BLOCK_INTERVAL ) );
+
+      reset.signatory = "chris";
+      reset.reset_account = "chris";
+      reset.account_to_reset = "bob";
+      reset.new_owner_authority = authority( 1, generate_private_key( "new_key_1" ).get_public_key(), 1 );
+
+      tx.operations.push_back( reset );
+      tx.sign( chris_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // reset not valid yet
+
+      generate_block();
+
+      db.push_transaction( tx, 0 );    // reset now valid
+
+      BOOST_REQUIRE( bob_auth.owner == reset.new_owner_authority );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: additional account reset" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when setting reset account that does not exist" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      set.new_reset_account = "spudington";
+
+      tx.operations.push_back( set );
+      tx.sign( generate_private_key( "new_key_1" ), db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-      validate_database();
 
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 1 );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when setting reset account that does not exist" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when setting reset account to current reset account" );
 
-      BOOST_TEST_MESSAGE( "--- Success" );
-      op.request_id = 1;
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      set.new_reset_account = "chris";
 
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TMEsavingsBalance == ASSET( "10.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 0 );
-      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).TMEsavingsBalance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
-      validate_database();
+      tx.operations.push_back( set );
+      tx.sign( generate_private_key( "new_key_1" ), db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when setting reset account to current reset account" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT RESET SEQUENCE" );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( decline_voting_rights_authorities )
+BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: decline_voting_rights_authorities" );
+      BOOST_TEST_MESSAGE( "├── Testing: DECLINE VOTING RIGHTS" );
 
-      decline_voting_rights_operation op;
-      op.account = "alice";
+      BOOST_TEST_MESSAGE( "│   ├── Testing: decline voting rights request" );
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_active_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      expected.insert( "alice" );
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( decline_voting_rights_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: decline_voting_rights_apply" );
+      time_point now =  db.head_block_time();
 
       ACTORS( (alice)(bob) );
       generate_block();
-      fund_stake( "alice", ASSET( "10.000 TESTS" ) );
-      fund_stake( "bob", ASSET( "10.000 TESTS" ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       generate_block();
-
-      account_update_proxy_operation proxy;
-      proxy.account = "bob";
-      proxy.proxy = "alice";
-
-      signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( proxy );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
 
       decline_voting_rights_operation op;
+      op.signatory = "alice";
       op.account = "alice";
 
+      signed_transaction tx;
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
-      BOOST_TEST_MESSAGE( "--- success" );
-      tx.clear();
       tx.operations.push_back( op );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& request_idx = db.get_index< decline_voting_rights_request_index >().indices().get< by_account >();
-      auto itr = request_idx.find( db.get_account( "alice" ).id );
-      BOOST_REQUIRE( itr != request_idx.end() );
-      BOOST_REQUIRE( itr->effective_date == db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD );
+      const auto& req_idx = db.get_index< decline_voting_rights_request_index >().indices().get< by_account >();
+      auto req_itr = req_idx.find( "alice" );
 
+      BOOST_REQUIRE( req_itr != req_idx.end() );
+      BOOST_REQUIRE( req_itr->effective_date == now + DECLINE_VOTING_RIGHTS_DURATION );
 
-      BOOST_TEST_MESSAGE( "--- failure revoking voting rights with existing request" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: decline voting rights request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure revoking voting rights with existing request" );
+
       generate_block();
-      tx.clear();
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
+
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure revoking voting rights with existing request" );
 
-      BOOST_TEST_MESSAGE( "--- successs cancelling a request" );
-      op.decline = false;
-      tx.clear();
+      BOOST_TEST_MESSAGE( "│   ├── Testing: success cancelling a request" );
+
+      op.declined = false;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       tx.operations.push_back( op );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      itr = request_idx.find( db.get_account( "alice" ).id );
-      BOOST_REQUIRE( itr == request_idx.end() );
+      req_itr = req_idx.find( "alice" );
+      BOOST_REQUIRE( itr == req_idx.end() );    // Request is now removed
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: success cancelling a request" );
 
-      BOOST_TEST_MESSAGE( "--- failure cancelling a request that doesn't exist" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure cancelling a request that doesn't exist" );
+
       generate_block();
-      tx.clear();
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      
       tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // Can't cancel again
 
-      BOOST_TEST_MESSAGE( "--- check account can vote during waiting period" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure cancelling a request that doesn't exist" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: check account can vote during waiting period" );
+
       op.decline = true;
-      tx.clear();
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       tx.operations.push_back( op );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      generate_blocks( db.head_block_time() + OWNER_AUTH_RECOVERY_PERIOD - fc::seconds( BLOCK_INTERVAL ), true );
-      BOOST_REQUIRE( db.get_account( "alice" ).can_vote );
-      witness_create( "alice", alice_private_owner_key, "foo.bar", alice_private_owner_key.get_public_key(), 0 );
+      generate_blocks( now + DECLINE_VOTING_RIGHTS_DURATION - BLOCK_INTERVAL, true );
+
+      BOOST_REQUIRE( db.get_account( "alice" ).can_vote );   // Alice can still vote
+
+      witness_create( 
+         "alice", 
+         alice_private_owner_key,
+         "details",
+         "url",
+         "json",
+         alice_private_owner_key.get_public_key(),
+         BLOCKCHAIN_PRECISION * 10 );
 
       account_witness_vote_operation witness_vote;
+      witness_vote.signatory = "alice";
       witness_vote.account = "alice";
       witness_vote.witness = "alice";
-      tx.clear();
+      witness_vote.vote_rank = 1;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       tx.operations.push_back( witness_vote );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       comment_operation comment;
+
+      comment.signatory = "alice";
       comment.author = "alice";
       comment.permlink = "test";
       comment.parent_permlink = "test";
       comment.title = "test";
       comment.body = "test";
+      comment.post_type = TEXT_POST;
+      comment.language = "en";
+      comment.privacy = false;
+      comment.reach = TAG_FEED;
+      comment.interface = INIT_ACCOUNT;
+      comment.rating = GENERAL;
+      comment.tags.push_back( "test" );
+      comment.json = "{\"json\":\"valid\"}";
+
       vote_operation vote;
+
+      vote.signatory = "alice";
       vote.voter = "alice";
       vote.author = "alice";
       vote.permlink = "test";
+      vote.interface = INIT_ACCOUNT;
       vote.weight = PERCENT_100;
-      tx.clear();
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       tx.operations.push_back( comment );
       tx.operations.push_back( vote );
+
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
+
+      const auto& comment_idx = db.get_index< comment_index >().indices().get< by_permlink >();
+      const auto& comment_vote_idx = db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
+      const auto& witness_vote_idx = db.get_index< witness_vote_index >().indices().get< by_witness_account >();
+
+      auto comment_itr = comment_idx.find( boost::make_tuple( "alice", "test" ) );
+      auto comment_vote_itr = comment_vote_idx.find( boost::make_tuple( "alice", comment_itr->id ) );
+      auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
+
+      BOOST_REQUIRE( comment_itr->author == "alice" );
+      BOOST_REQUIRE( comment_vote_itr->voter == "alice" );
+      BOOST_REQUIRE( witness_vote_itr->account == "alice" );
+
       validate_database();
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: check account can vote during waiting period" );
 
-      BOOST_TEST_MESSAGE( "--- check account cannot vote after request is processed" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: check account cannot vote after request is processed" );
+
       generate_block();
-      BOOST_REQUIRE( !db.get_account( "alice" ).can_vote );
+      BOOST_REQUIRE( !db.get_account( "alice" ).can_vote );   // Alice can no longer vote
       validate_database();
 
-      itr = request_idx.find( db.get_account( "alice" ).id );
-      BOOST_REQUIRE( itr == request_idx.end() );
+      req_itr = request_idx.find( "alice" );
 
-      const auto& witness_idx = db.get_index< witness_vote_index >().indices().get< by_account_witness >();
-      auto witness_itr = witness_idx.find( boost::make_tuple( db.get_account( "alice" ).id, db.get_witness( "alice" ).id ) );
-      BOOST_REQUIRE( witness_itr == witness_idx.end() );
+      BOOST_REQUIRE( req_itr == request_idx.end() );   // Request no longer exists
 
-      tx.clear();
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
+
+      BOOST_REQUIRE( witness_vote_itr == witness_vote_idx.end() );   // Vote has been removed
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( witness_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      db.get< comment_vote_object, by_comment_voter >( boost::make_tuple( db.get_comment( "alice", string( "test" ) ).id, db.get_account( "alice" ).id ) );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       vote.weight = 0;
-      tx.clear();
+
+      tx.operations.clear();
+      tx.signatures.clear();
+      
       tx.operations.push_back( vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      vote.weight = PERCENT_1 * 50;
-      tx.clear();
+      BOOST_TEST_MESSAGE( "│   ├── Passed: check account cannot vote after request is processed" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: DECLINE VOTING RIGHTS" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+/**
+ * connection_request_operation,
+   connection_accept_operation,
+   account_follow_operation,
+   tag_follow_operation,
+   activity_reward_operation,
+   */
+
+BOOST_AUTO_TEST_CASE( connection_sequence_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: CONNECTION SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: create connection request" );
+
+      time_point now =  db.head_block_time();
+
+      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      generate_block();
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      generate_block();
+
+      connection_request_operation request;
+
+      request.signatory = "alice";
+      request.account = "alice";
+      request.requested_account = "bob";
+      request.connection_type = CONNECTION;
+      request.message = "Hello";
+      request.requested = true;
+
+      signed_transaction tx;
+
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( request );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auto& req_idx = db.get_index< connection_request_index >().indices().get< by_account_req >();
+      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+
+      BOOST_REQUIRE( req_itr != req_idx.end() );
+      BOOST_REQUIRE( req_itr->account == "alice" );
+      BOOST_REQUIRE( req_itr->requested_account == "bob" );
+      BOOST_REQUIRE( req_itr->expiration == now + CONNECTION_REQUEST_DURATION );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: create connection request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: accept connection request" );
+
+      generate_block();
+
+      connection_accept_operation accept;
+
+      accept.signatory = "bob";
+      accept.account = "bob";
+      accept.requesting_account = "alice";
+      accept.connection_type = CONNECTION;
+      accept.connection_id = 
+      accept.message = "Hello";
+      accept.requested = true;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure revoking voting rights with existing request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: success cancelling a request" );
+
+      op.declined = false;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      req_itr = req_idx.find( "alice" );
+      BOOST_REQUIRE( itr == req_idx.end() );    // Request is now removed
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: success cancelling a request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure cancelling a request that doesn't exist" );
+
+      generate_block();
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( op );
+      
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // Can't cancel again
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure cancelling a request that doesn't exist" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: check account can vote during waiting period" );
+
+      op.decline = true;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      generate_blocks( now + DECLINE_VOTING_RIGHTS_DURATION - BLOCK_INTERVAL, true );
+
+      BOOST_REQUIRE( db.get_account( "alice" ).can_vote );   // Alice can still vote
+
+      witness_create( 
+         "alice", 
+         alice_private_owner_key,
+         "details",
+         "url",
+         "json",
+         alice_private_owner_key.get_public_key(),
+         BLOCKCHAIN_PRECISION * 10 );
+
+      account_witness_vote_operation witness_vote;
+      witness_vote.signatory = "alice";
+      witness_vote.account = "alice";
+      witness_vote.witness = "alice";
+      witness_vote.vote_rank = 1;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( witness_vote );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "test";
+      comment.parent_permlink = "test";
+      comment.title = "test";
+      comment.body = "test";
+      comment.post_type = TEXT_POST;
+      comment.language = "en";
+      comment.privacy = false;
+      comment.reach = TAG_FEED;
+      comment.interface = INIT_ACCOUNT;
+      comment.rating = GENERAL;
+      comment.tags.push_back( "test" );
+      comment.json = "{\"json\":\"valid\"}";
+
+      vote_operation vote;
+
+      vote.signatory = "alice";
+      vote.voter = "alice";
+      vote.author = "alice";
+      vote.permlink = "test";
+      vote.interface = INIT_ACCOUNT;
+      vote.weight = PERCENT_100;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( comment );
+      tx.operations.push_back( vote );
+
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auto& comment_idx = db.get_index< comment_index >().indices().get< by_permlink >();
+      const auto& comment_vote_idx = db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
+      const auto& witness_vote_idx = db.get_index< witness_vote_index >().indices().get< by_witness_account >();
+
+      auto comment_itr = comment_idx.find( boost::make_tuple( "alice", "test" ) );
+      auto comment_vote_itr = comment_vote_idx.find( boost::make_tuple( "alice", comment_itr->id ) );
+      auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
+
+      BOOST_REQUIRE( comment_itr->author == "alice" );
+      BOOST_REQUIRE( comment_vote_itr->voter == "alice" );
+      BOOST_REQUIRE( witness_vote_itr->account == "alice" );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: check account can vote during waiting period" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: check account cannot vote after request is processed" );
+
+      generate_block();
+      BOOST_REQUIRE( !db.get_account( "alice" ).can_vote );   // Alice can no longer vote
+      validate_database();
+
+      req_itr = request_idx.find( "alice" );
+
+      BOOST_REQUIRE( req_itr == request_idx.end() );   // Request no longer exists
+
+      auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
+
+      BOOST_REQUIRE( witness_vote_itr == witness_vote_idx.end() );   // Vote has been removed
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( witness_vote );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      vote.weight = 0;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+      
       tx.operations.push_back( vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      proxy.account = "alice";
-      proxy.proxy = "bob";
-      tx.clear();
-      tx.operations.push_back( proxy );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: check account cannot vote after request is processed" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: DECLINE VOTING RIGHTS" );
    }
    FC_LOG_AND_RETHROW()
 }
 
 
 
-   //===========================//
-   // === Network Operations ===//
-   //===========================//
+   //============================//
+   // === Network Operations === //
+   //============================//
 
 
 
@@ -4120,6 +4445,74 @@ BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_authorities )
       op.get_required_active_authorities( auths );
       expected.insert( "bob" );
       BOOST_REQUIRE( auths == expected );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_apply )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "Testing: cancel_transfer_from_savings_apply" );
+
+      ACTORS( (alice)(bob) )
+      generate_block();
+
+      fund( "alice", ASSET( "10.000 TESTS" ) );
+
+      transfer_to_savings_operation save;
+      save.from = "alice";
+      save.to = "alice";
+      save.amount = ASSET( "10.000 TESTS" );
+
+      transfer_from_savings_operation withdraw;
+      withdraw.from = "alice";
+      withdraw.to = "bob";
+      withdraw.request_id = 1;
+      withdraw.amount = ASSET( "3.000 TESTS" );
+
+      signed_transaction tx;
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( save );
+      tx.operations.push_back( withdraw );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+      validate_database();
+
+      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 1 );
+      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
+
+
+      BOOST_TEST_MESSAGE( "--- Failure when there is no pending request" );
+      cancel_transfer_from_savings_operation op;
+      op.from = "alice";
+      op.request_id = 0;
+
+      tx.clear();
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      validate_database();
+
+      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 1 );
+      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
+
+
+      BOOST_TEST_MESSAGE( "--- Success" );
+      op.request_id = 1;
+
+      tx.clear();
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).TMEsavingsBalance == ASSET( "10.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 0 );
+      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).TMEsavingsBalance == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
+      validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
