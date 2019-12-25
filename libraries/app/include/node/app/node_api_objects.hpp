@@ -73,7 +73,6 @@ struct comment_api_obj
       comment_power( o.comment_power ),
       cashout_time( o.cashout_time ),
       cashouts_received( o.cashouts_received ),
-      max_cashout_time( o.max_cashout_time ),
       total_vote_weight( o.total_vote_weight ),
       total_view_weight( o.total_view_weight ),
       total_share_weight( o.total_share_weight ),
@@ -81,7 +80,7 @@ struct comment_api_obj
       total_payout_value( o.total_payout_value ),
       curator_payout_value( o.curator_payout_value ),
       beneficiary_payout_value( o.beneficiary_payout_value ),
-      author_rewards( o.author_rewards ),
+      content_rewards( o.content_rewards ),
       percent_liquid( o.percent_liquid ),
       reward( o.reward ),
       weight( o.weight ),
@@ -158,7 +157,6 @@ struct comment_api_obj
    int128_t                       comment_power;                // Sum of weighted voting power from comments.
    time_point                     cashout_time;                 // 24 hours from the weighted average of vote time
    uint32_t                       cashouts_received;            // Number of times that the comment has received content rewards
-   time_point                     max_cashout_time;
    uint128_t                      total_vote_weight;            // the total weight of votes, used to calculate pro-rata share of curation payouts
    uint128_t                      total_view_weight;            // the total weight of views, used to calculate pro-rata share of curation payouts
    uint128_t                      total_share_weight;           // the total weight of shares, used to calculate pro-rata share of curation payouts
@@ -166,7 +164,7 @@ struct comment_api_obj
    asset                          total_payout_value;           // The total payout this comment has received over time, measured in USD */
    asset                          curator_payout_value;
    asset                          beneficiary_payout_value;
-   int64_t                        author_rewards;
+   asset                          content_rewards;
    int64_t                        percent_liquid;
    uint128_t                      reward;                       // The amount of reward_curve this comment is responsible for in its root post.
    uint128_t                      weight;                       // Used to define the comment curation reward this comment receives.
@@ -290,7 +288,7 @@ struct account_api_obj
       comment_count( a.comment_count ),
       follower_count( a.follower_count ),
       following_count( a.following_count ),
-      lifetime_vote_count( a.lifetime_vote_count ),
+      post_vote_count( a.post_vote_count ),
       post_count( a.post_count ),
       voting_power( a.voting_power ),
       viewing_power( a.viewing_power ),
@@ -390,7 +388,7 @@ struct account_api_obj
    uint32_t                         comment_count;
    uint32_t                         follower_count;
    uint32_t                         following_count;
-   uint32_t                         lifetime_vote_count;
+   uint32_t                         post_vote_count;
    uint32_t                         post_count;
    uint16_t                         voting_power;               // current voting power of this account, falls after every vote, recovers over time.
    uint16_t                         viewing_power;              // current viewing power of this account, falls after every view, recovers over time.
@@ -2160,7 +2158,6 @@ FC_REFLECT( node::app::comment_api_obj,
          (share_power)
          (comment_power)
          (cashout_time)
-         (max_cashout_time)
          (total_vote_weight)
          (total_view_weight)
          (total_share_weight)
@@ -2168,7 +2165,7 @@ FC_REFLECT( node::app::comment_api_obj,
          (total_payout_value)
          (curator_payout_value)
          (beneficiary_payout_value)
-         (author_rewards)
+         (content_rewards)
          (percent_liquid)
          (reward)
          (weight)
@@ -2241,7 +2238,7 @@ FC_REFLECT( node::app::account_api_obj,
          (comment_count)
          (follower_count)
          (following_count)
-         (lifetime_vote_count)
+         (post_vote_count)
          (post_count)
          (voting_power)
          (viewing_power)

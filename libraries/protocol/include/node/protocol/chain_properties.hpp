@@ -47,6 +47,20 @@ namespace node { namespace protocol {
 
       asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                     // The price for top level membership per month.
 
+      uint32_t               author_reward_percent = AUTHOR_REWARD_PERCENT;                 // The percentage of content rewards distributed to post authors.
+
+      uint32_t               vote_reward_percent = VOTE_REWARD_PERCENT;                     // The percentage of content rewards distributed to post voters.
+
+      uint32_t               view_reward_percent = VIEW_REWARD_PERCENT;                     // The percentage of content rewards distributed to post viewers.
+
+      uint32_t               share_reward_percent = SHARE_REWARD_PERCENT;                   // The percentage of content rewards distributed to post sharers.
+
+      uint32_t               comment_reward_percent = COMMENT_REWARD_PERCENT;               // The percentage of content rewards distributed to post commenters.
+
+      uint32_t               storage_reward_percent = STORAGE_REWARD_PERCENT;               // The percentage of content rewards distributed to viewing supernodes.
+
+      uint32_t               moderator_reward_percent = MODERATOR_REWARD_PERCENT;           // The percentage of content rewards distributed to board moderators.
+
       fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;         // The time over which content rewards are distributed
 
       fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;             // Time taken per distribution of content rewards.
@@ -138,6 +152,26 @@ namespace node { namespace protocol {
             "Membership top price must be between $10.00 and $25000.00." );
          FC_ASSERT( membership_top_price.symbol == SYMBOL_USD,
             "Membership top price must be in the USD asset." );
+
+         FC_ASSERT( author_reward_percent >= PERCENT_10_OF_PERCENT_1 && author_reward_percent <= PERCENT_100,
+            "Author reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
+         FC_ASSERT( vote_reward_percent >= PERCENT_10_OF_PERCENT_1 && vote_reward_percent <= PERCENT_100,
+            "Vote reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
+         FC_ASSERT( view_reward_percent >= PERCENT_10_OF_PERCENT_1 && view_reward_percent <= PERCENT_100,
+            "View reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
+         FC_ASSERT( share_reward_percent >= PERCENT_10_OF_PERCENT_1 && share_reward_percent <= PERCENT_100,
+            "Share reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
+         FC_ASSERT( comment_reward_percent >= PERCENT_10_OF_PERCENT_1 && comment_reward_percent <= PERCENT_100,
+            "Comment reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
+         FC_ASSERT( storage_reward_percent >= PERCENT_10_OF_PERCENT_1 && storage_reward_percent <= PERCENT_100,
+            "Storage reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
+         FC_ASSERT( moderator_reward_percent >= PERCENT_10_OF_PERCENT_1 && moderator_reward_percent <= PERCENT_100,
+            "Moderator reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
+
+         FC_ASSERT( author_reward_percent + vote_reward_percent + view_reward_percent + share_reward_percent + 
+            comment_reward_percent + storage_reward_percent + moderator_reward_percent == PERCENT_100,
+            "Content reward percentages must sum to PERCENT_100." );
+
          FC_ASSERT( content_reward_decay_rate >= fc::days(1) && content_reward_decay_rate <= fc::days(365),
             "Content reward decay rate must be between 1 and 365 days." );
          FC_ASSERT( content_reward_interval >= fc::hours(1) && content_reward_interval <= fc::days(7),

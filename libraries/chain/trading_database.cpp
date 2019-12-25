@@ -1397,7 +1397,8 @@ asset database::liquid_exchange( const asset& input, const asset_symbol_type& re
 } FC_CAPTURE_AND_RETHROW( (input)(receive) ) }
 
 
-void database::liquid_exchange( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool, const account_object& int_account)
+void database::liquid_exchange( const asset& input, const account_object& account, 
+   const asset_liquidity_pool_object& pool, const account_object& int_account )
 { try {
    asset total_fees;
    asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
@@ -1457,10 +1458,70 @@ void database::liquid_exchange( const asset& input, const account_object& accoun
 } FC_CAPTURE_AND_RETHROW( (input)(account)(pool)(int_account) ) }
 
 
+void database::liquid_exchange( const asset& input, const account_object& account, 
+   const asset_liquidity_pool_object& pool )
+{ try {
+   asset total_fees;
+   asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
+   uint128_t pr = BLOCKCHAIN_PRECISION;
+   uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
+   uint128_t rb = pool.asset_balance( rec ).amount.value;
+   uint128_t in = input.amount.value;
+
+   if( input.symbol == SYMBOL_COIN )
+   {
+      total_fees = asset( ( input.amount.value * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
+      in -= total_fees.amount.value;
+   }
+
+   uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
+
+   if( input.symbol != SYMBOL_COIN )
+   {
+      total_fees = asset( ( return_amount * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
+      return_amount -= total_fees.amount.value;
+   }
+   
+   asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset pool_fees = total_fees - network_fees - interface_fees;
+   
+   asset return_asset = asset( return_amount, SYMBOL_COIN );
+   
+   adjust_liquid_balance( account.name, -input );
+   pay_network_fees( account, network_fees + interface_fees );
+
+   modify( pool, [&]( asset_liquidity_pool_object& p )
+   {
+      if( input.symbol == p.symbol_a )
+      {
+         p.balance_a += input; 
+         p.balance_b -= return_asset;
+      }
+      else if( input.symbol == p.symbol_b )
+      {
+         p.balance_b += input; 
+         p.balance_a -= return_asset;
+      }
+      if( pool_fees.symbol == p.symbol_a )
+      {
+         p.balance_a += pool_fees;
+      }
+      else if( pool_fees.symbol == p.symbol_b )
+      {
+         p.balance_b += pool_fees;
+      }
+   });
+
+   adjust_liquid_balance( account.name, return_asset );
+
+} FC_CAPTURE_AND_RETHROW( (input)(account)(pool) ) }
+
+
 asset database::liquid_acquire( const asset& receive, const asset_symbol_type& input, bool execute = true, bool apply_fees = true )
 { try {
    FC_ASSERT( receive.symbol != input,
-      "Assets must have different symbols to acquire.");
+      "Assets must have different symbols to acquire." );
 
    asset coin_asset;
 
@@ -1557,7 +1618,8 @@ asset database::liquid_acquire( const asset& receive, const asset_symbol_type& i
 } FC_CAPTURE_AND_RETHROW( (receive)(input) ) }
 
 
-void database::liquid_acquire( const asset& receive, const account_object& account, const asset_liquidity_pool_object& pool, const account_object& int_account)
+void database::liquid_acquire( const asset& receive, const account_object& account, 
+   const asset_liquidity_pool_object& pool, const account_object& int_account )
 { try {
    FC_ASSERT( receive.symbol == pool.symbol_a || receive.symbol == pool.symbol_b,
       "Invalid pool requested for acquisition.");
@@ -1597,6 +1659,74 @@ void database::liquid_acquire( const asset& receive, const account_object& accou
 
    pay_network_fees( account, network_fees );
    pay_fee_share( int_account, interface_fees );
+   
+   modify( pool, [&]( asset_liquidity_pool_object& p )
+   {
+      if( receive.symbol == p.symbol_a )
+      {
+         p.balance_a -= receive;
+         p.balance_b += input_asset;
+      }
+      else if( receive.symbol == p.symbol_a )
+      {
+         p.balance_b -= receive;
+         p.balance_a += input_asset;
+      }
+      if( pool_fees.symbol == p.symbol_a )
+      {
+         p.balance_a += pool_fees;
+      }
+      else if( pool_fees.symbol == p.symbol_b )
+      {
+         p.balance_b += pool_fees;
+      }
+   });
+
+   adjust_liquid_balance( account.name, receive );
+
+} FC_CAPTURE_AND_RETHROW( (receive)(account)(pool) ) }
+
+
+void database::liquid_acquire( const asset& receive, const account_object& account, 
+   const asset_liquidity_pool_object& pool )
+{ try {
+   FC_ASSERT( receive.symbol == pool.symbol_a || receive.symbol == pool.symbol_b,
+      "Invalid pool requested for acquisition.");
+   asset total_fees;
+   asset_symbol_type in = pool.base_price( receive.symbol ).quote.symbol;
+   uint128_t pr = BLOCKCHAIN_PRECISION;
+   uint128_t pr_sq = BLOCKCHAIN_PRECISION * BLOCKCHAIN_PRECISION;
+   uint128_t ib = pool.asset_balance( in ).amount.value;
+   uint128_t rb = pool.asset_balance( receive.symbol ).amount.value;
+   uint128_t re = receive.amount.value;
+
+   if( receive.symbol == SYMBOL_COIN )
+   {
+      total_fees = ( receive * TRADING_FEE_PERCENT ) / PERCENT_100;
+      re += total_fees.amount.value;
+   }
+
+   uint128_t input_amount = ( ( ( pr_sq * ib ) / ( pr - ( ( pr * re ) / rb ) ) ) - ( pr * ib ) ) / pr;
+   asset input_asset = asset( input_amount, in );
+   
+   if( receive.symbol != SYMBOL_COIN )
+   {
+      total_fees = ( input_asset * TRADING_FEE_PERCENT ) / PERCENT_100;
+      input_asset += total_fees;
+   }
+
+   asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset pool_fees = total_fees - network_fees - interface_fees;
+
+   asset liquid = get_liquid_balance( account.name, input_asset.symbol );
+
+   FC_ASSERT( liquid >= input_asset, 
+      "Insufficient Balance to acquire requested amount: ${a}.", ("a", receive) );
+
+   adjust_liquid_balance( account.name , -input_asset );
+
+   pay_network_fees( account, network_fees + interface_fees );
    
    modify( pool, [&]( asset_liquidity_pool_object& p )
    {
@@ -1797,6 +1927,86 @@ void database::liquid_limit_exchange( const asset& input, const price& limit_pri
       pay_fee_share( int_account, interface_fees );
 
       adjust_liquid_balance( account.name , return_asset );    
+   }
+} FC_CAPTURE_AND_RETHROW( (input)(limit_price)(account)(pool) ) }
+
+
+void database::liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
+   const asset_liquidity_pool_object& pool )
+{ try {
+   FC_ASSERT( input.symbol == pool.symbol_a || input.symbol == pool.symbol_b,
+      "Invalid pool requested for acquisition.");
+   asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
+   price current = pool.base_price( limit_price.base.symbol );
+   price lim;
+   if( limit_price.base.symbol == input.symbol )
+   {
+      lim = limit_price;
+   }
+   else if( limit_price.quote.symbol == input.symbol )
+   {
+      lim = ~limit_price;
+   }
+
+   if( current > limit_price )
+   {
+      uint128_t pr = BLOCKCHAIN_PRECISION;
+      uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
+      uint128_t rb = pool.asset_balance( rec ).amount.value;
+      uint128_t in = input.amount.value;
+
+      uint128_t product = ( ib * rb * lim.base.amount.value ) / lim.quote.amount.value;
+      uint128_t limit_amount = approx_sqrt( product ) - in;
+
+      FC_ASSERT( limit_amount >= 0, 
+         "Negative limit amount, limit price above current price.");
+      
+      uint128_t lim_in = std::min( in, limit_amount );
+      asset input_asset = asset( lim_in, input.symbol );
+
+      uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( lim_in + ib ) ) ) ) / pr;
+      
+      asset total_fees = asset( ( return_amount * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
+      return_amount -= total_fees.amount.value;
+      
+      asset return_asset = asset( return_amount, rec );
+      asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+      asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+      asset pool_fees = total_fees - network_fees - interface_fees;
+
+      asset liquid = get_liquid_balance( account.name, input_asset.symbol );
+
+      FC_ASSERT( liquid >= input_asset, 
+         "Insufficient Balance to acquire requested amount: ${a}.", ("a", return_asset) );
+
+      adjust_liquid_balance( account.name , -input_asset );
+      
+      modify( pool, [&]( asset_liquidity_pool_object& p )
+      {
+         if( input.symbol == p.symbol_a )
+         {
+            p.balance_a += input_asset; 
+            p.balance_b -= return_asset;
+         }
+         else if( input.symbol == p.symbol_b )
+         {
+            p.balance_b += input_asset; 
+            p.balance_a -= return_asset;
+         }
+         
+         if( pool_fees.symbol == p.symbol_a )
+         {
+            p.balance_a += pool_fees;
+         }
+         else if( pool_fees.symbol == p.symbol_b )
+         {
+            p.balance_b += pool_fees;
+         }
+      });
+
+      pay_network_fees( account, network_fees + interface_fees );
+
+      adjust_liquid_balance( account.name, return_asset );    
    }
 } FC_CAPTURE_AND_RETHROW( (input)(limit_price)(account)(pool) ) }
 

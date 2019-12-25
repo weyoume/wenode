@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
 
          if( author.max_accepted_payout.valid() )
          {
-            comment_options_operation copt;
+            comment_options copt;
             copt.author = com.author;
             copt.permlink = com.permlink;
             copt.max_accepted_payout = *(author.max_accepted_payout);

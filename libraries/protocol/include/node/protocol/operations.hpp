@@ -56,7 +56,6 @@ namespace node { namespace protocol {
             // Post and Comment operations
 
             comment_operation,
-            comment_options_operation,
             message_operation,
             vote_operation,
             view_operation,

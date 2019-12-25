@@ -5,7 +5,7 @@
 
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
-#include <node/chain/hardfork.hpp>
+//#include <node/chain/hardfork.hpp>
 #include <node/chain/node_objects.hpp>
 
 #include <node/chain/util/reward.hpp>
@@ -14,7 +14,7 @@
 
 #include <fc/crypto/digest.hpp>
 
-#include "../common/database_fixture.hpp"
+#include <tests/common/database_fixture.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -39,7 +39,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT CREATE" );
-      time_point now = db.head_block_time();
 
       account_create_operation op;
       op.registrar = "alice";
@@ -49,21 +48,27 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       flat_set< account_name_type > expected;
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: owner authority" );
+
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: owner authority" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: active authority" );
+
       expected.insert( "alice" );
       op.get_required_active_authorities( auths );
       BOOST_REQUIRE( auths == expected );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: active authority" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: posting authority" );
+
       expected.clear();
       auths.clear();
       op.get_required_posting_authorities( auths );
       BOOST_REQUIRE( auths == expected );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: posting authority" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: persona account creation" );
@@ -98,7 +103,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       op.companion_public_key = priv_key.get_public_key();
       op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( init_account_priv_key, db.get_chain_id() );
       tx.validate();
@@ -116,7 +121,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.created == now );
+      BOOST_REQUIRE( acct.created == now() );
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct_auth.posting == authority( 1, priv_key.get_public_key(), 1 ) );
@@ -124,11 +129,9 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.connection_public_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.friend_public_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.companion_public_key == priv_key.get_public_key() );
-      
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
       BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
       
-
       BOOST_REQUIRE( db.get_staked_balance( "alice", SYMBOL_COIN ) == op.fee );
 
       const asset& init_liquid = db.get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
@@ -161,7 +164,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.created == now );
+      BOOST_REQUIRE( acct.created == now() );
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct_auth.posting == authority( 1, priv_key.get_public_key(), 1 ) );
@@ -169,7 +172,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.connection_public_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.friend_public_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.companion_public_key == priv_key.get_public_key() );
-
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
       BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
 
@@ -207,7 +209,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.created == now );
+      BOOST_REQUIRE( acct.created == now() );
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct_auth.posting == authority( 1, priv_key.get_public_key(), 1 ) );
@@ -282,11 +284,10 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT UPDATE" );
-      time_point now = db.head_block_time();
-
+      
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account posting authority is invalid" );
 
-      ACTORS( (alice)(bob) )
+      ACTORS( (alice)(bob) );
 
       account_update_operation op;
       op.account = "alice";
@@ -298,7 +299,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
 
@@ -313,6 +314,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account posting authority is invalid" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: account update authorities" );
 
       op.posting = authority();
@@ -328,7 +330,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
       tx.operations.push_back( op );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
       db.push_transaction( tx, 0 );
 
@@ -337,75 +339,98 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Passed: account update authorities" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no signature" );
+
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when no signature" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when invalid signature" );
+
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when invalid signature" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when additional irrelevant signature" );
+
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when additional irrelevant signature" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when duplicate signatures" );
+
       tx.signatures.clear();
       tx.sign( active_key, db.get_chain_id() );
       tx.sign( active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_duplicate_sig );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when duplicate signatures" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: success on active key" );
+
       tx.signatures.clear();
       tx.sign( active_key, db.get_chain_id() );    // Single signature with new correct active key
       db.push_transaction( tx, 0 );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: success on active key" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: success on owner key" );
+
       tx.signatures.clear();
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, database::skip_transaction_dupe_check );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: success on owner key" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when updating the owner authority with an active key" );
+
       tx.signatures.clear();
       tx.operations.clear();
       op.owner = authority( 1, active_key.get_public_key(), 1 );    
       tx.operations.push_back( op );
       tx.sign( active_key, db.get_chain_id() );    // Updates owner to active, signed with active instead of owner
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_owner_auth );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when updating the owner authority with an active key" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when owner key and active key are present" );
+
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when owner key and active key are present" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when incorrect signature" );
+
       tx.signatures.clear();
-      tx.sign( alice_post_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0), tx_missing_owner_auth );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when incorrect signature" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when duplicate owner keys are present" );
+
       tx.signatures.clear();
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0), tx_duplicate_sig );
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when duplicate owner keys are present" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: success when updating the owner authority with an owner key" );
+
       tx.signatures.clear();
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
       validate_database();
-      BOOST_TEST_MESSAGE( "│   ├── Testing: success when updating the owner authority with an owner key" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: success when updating the owner authority with an owner key" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account update" );
 
       private_key_type new_private_key = generate_private_key( "aliceownerhunter2" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account update" );
       tx.signatures.clear();
       tx.operations.clear();
 
@@ -418,7 +443,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       op.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
 
       tx.operations.push_back( op );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -430,28 +455,36 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       BOOST_REQUIRE( acct_auth.active == authority( 2, new_private_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct.secure_public_key == new_private_key.get_public_key() );
       validate_database();
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account update" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when updating a non-existent account" );
+
       tx.operations.clear();
       tx.signatures.clear();
+
       op.account = "bob";
       tx.operations.push_back( op );
       tx.sign( new_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception )
       validate_database();
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when updating a non-existent account" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account authority does not exist" );
-      tx.clear();
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       op.account = "alice";
       op.posting = authority();
       op.posting->weight_threshold = 1;
-      op.posting->add_authorities( "dave", 1 );
+      op.posting->add_authorities( "dan", 1 );
       tx.operations.push_back( op );
       tx.sign( new_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
       validate_database();
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account authority does not exist" );
 
       BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT UPDATE" );
@@ -464,11 +497,10 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT MEMBERSHIP" );
-      time_point now = db.head_block_time();
-
+      
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account membership" );
 
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
       fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       account_membership_operation op;
@@ -481,7 +513,7 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -492,7 +524,7 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       BOOST_REQUIRE( acct.membership == STANDARD_MEMBERSHIP );
       BOOST_REQUIRE( acct.membership_interface == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recurring_membership == 1 );
-      BOOST_REQUIRE( acct.membership_expiration == now + fc::days(30) );
+      BOOST_REQUIRE( acct.membership_expiration == now() + fc::days(30) );
 
       validate_database();
 
@@ -528,9 +560,8 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT VOTE EXECUTIVE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account vote executive" );
-
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
       fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -546,7 +577,7 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -612,10 +643,10 @@ BOOST_AUTO_TEST_CASE( account_vote_officer_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT VOTE OFFICER" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account vote officer" );
       
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
       fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -630,7 +661,7 @@ BOOST_AUTO_TEST_CASE( account_vote_officer_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -695,10 +726,10 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT MEMBER REQUEST" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account member request" );
       
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       account_member_request_operation op;
       op.signatory = "alice";
@@ -709,7 +740,7 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -719,7 +750,7 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       BOOST_REQUIRE( req.account == "alice" );
       BOOST_REQUIRE( req.business_account == INIT_ACCOUNT );
       BOOST_REQUIRE( req.message == "Hello" );
-      BOOST_REQUIRE( req.expiration == now + CONNECTION_REQUEST_DURATION );
+      BOOST_REQUIRE( req.expiration == now() + CONNECTION_REQUEST_DURATION );
 
       validate_database();
 
@@ -768,10 +799,10 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT MEMBER INVITE" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account member invite" );
       
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       account_member_invite_operation op;
       op.signatory = "alice";
@@ -791,7 +822,7 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -802,7 +833,7 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       BOOST_REQUIRE( inv.business_account == INIT_ACCOUNT );
       BOOST_REQUIRE( inv.member == "bob" );
       BOOST_REQUIRE( inv.message == "Hello" );
-      BOOST_REQUIRE( inv.expiration == now + CONNECTION_REQUEST_DURATION );
+      BOOST_REQUIRE( inv.expiration == now() + CONNECTION_REQUEST_DURATION );
 
       validate_database();
 
@@ -851,10 +882,10 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT ACCEPT REQUEST" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account accept request" );
       
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
 
@@ -872,7 +903,7 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -907,33 +938,33 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
       tx.signatures.clear();
 
       account_member_request_operation op;
-      op.signatory = "chris";
-      op.account = "chris";
+      op.signatory = "candice";
+      op.account = "candice";
       op.business_account = INIT_ACCOUNT;
       op.message = "Hello";
 
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
-      tx.sign( chris_private_active_key, db.get_chain_id() );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       account_accept_request_operation op;
-      op.signatory = "dave";     // dave is not an officer, and cannot accept requests
-      op.account = "dave";
-      op.member = "chris";
+      op.signatory = "dan";     // dan is not an officer, and cannot accept requests
+      op.account = "dan";
+      op.member = "candice";
       op.business_account = INIT_ACCOUNT;
-      op.encrypted_business_key = chris_public_owner_key;
+      op.encrypted_business_key = candice_public_owner_key;
 
       op.validate();
 
       tx.operations.push_back( op );
-      tx.sign( dave_private_active_key, db.get_chain_id() );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -951,10 +982,10 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT ACCEPT INVITE" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account accept invite" );
       
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
 
@@ -974,7 +1005,7 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1007,14 +1038,15 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
       tx.signatures.clear();
 
       account_accept_invite_operation op;
-      op.signatory = "dave";   // dave has not been invited
-      op.account = "dave";
+
+      op.signatory = "dan";   // dan has not been invited
+      op.account = "dan";
       op.business_account = INIT_ACCOUNT;
 
       op.validate();
 
       tx.operations.push_back( op );
-      tx.sign( dave_private_active_key, db.get_chain_id() );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -1032,10 +1064,10 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT REMOVE MEMBER" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account remove member" );
       
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
 
@@ -1056,7 +1088,7 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1108,10 +1140,10 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT UPDATE LIST" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account update list" );
       
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       account_update_list_operation op;
       op.signatory = "alice";
@@ -1123,7 +1155,7 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       op.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( op );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1166,42 +1198,35 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT WITNESS VOTE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account witness vote" );
    
-      time_point now = db.head_block_time();
-      ACTORS( (alice)(bob)(chris)(dave)(elon)(sam) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(sam) );
 
       fund( "alice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
       fund_stake( "alice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
       fund( "bob", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
       fund_stake( "bob", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
-      fund( "chris", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
-      fund_stake( "chris", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
+      fund( "candice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
 
       private_key_type alice_witness_key = generate_private_key( "alicewitnesscorrecthorsebatterystaple" );
 
       witness_create(
          "alice", 
          alice_private_owner_key, 
-         "details", 
-         "url", 
-         "{\"json\":\"valid\"}", 
          alice_witness_key.get_public_key(), 
          BLOCKCHAIN_PRECISION * 10 
       );
 
-      private_key_type chris_witness_key = generate_private_key( "chriswitnesscorrecthorsebatterystaple" );
+      private_key_type candice_witness_key = generate_private_key( "candicewitnesscorrecthorsebatterystaple" );
 
       witness_create(
-         "chris", 
-         chris_private_owner_key, 
-         "details", 
-         "url", 
-         "{\"json\":\"valid\"}", 
-         chris_witness_key.get_public_key(), 
+         "candice", 
+         candice_private_owner_key, 
+         candice_witness_key.get_public_key(), 
          BLOCKCHAIN_PRECISION * 10 
       );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account witness vote" );
 
       account_witness_vote_operation op;
       op.signatory = "bob";
@@ -1231,22 +1256,22 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: additional witness vote" );
 
-      op.witness = "chris";   // Vote for chris at rank one will move alice to rank two
+      op.witness = "candice";   // Vote for candice at rank one will move alice to rank two
 
       tx.operations.push_back( op );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const witness_vote_object& vote_a = db.get_witness_vote( "bob", "alice" );
-      const witness_vote_object& vote_c = db.get_witness_vote( "bob", "chris" );
+      const witness_vote_object& vote_c = db.get_witness_vote( "bob", "candice" );
       const account_object& acc = db.get_account( "bob" ); 
       const witness_object& witness_a = db.get_witness( "alice" );
-      const witness_object& witness_c = db.get_witness( "chris" );
+      const witness_object& witness_c = db.get_witness( "candice" );
       BOOST_REQUIRE( vote_a.account == "bob" );
       BOOST_REQUIRE( vote_a.witness == "alice" );
       BOOST_REQUIRE( vote_a.vote_rank == 2 );
       BOOST_REQUIRE( vote_c.account == "bob" );
-      BOOST_REQUIRE( vote_c.witness == "chris" );
+      BOOST_REQUIRE( vote_c.witness == "candice" );
       BOOST_REQUIRE( vote_c.vote_rank == 1 );
       BOOST_REQUIRE( acc.witness_vote_count == 2 );
       BOOST_REQUIRE( witness_a.vote_count == 1 );
@@ -1267,9 +1292,9 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
 
       db.push_transaction( tx, 0 );
 
-      const witness_vote_object* vote_ptr = db.find_witness_vote( "bob", "chris" );
+      const witness_vote_object* vote_ptr = db.find_witness_vote( "bob", "candice" );
       const account_object& acc = db.get_account( "bob" );
-      const witness_object& witness = db.get_witness( "chris" );
+      const witness_object& witness = db.get_witness( "candice" );
       BOOST_REQUIRE( vote_ptr == nullptr );
       BOOST_REQUIRE( acc.witness_vote_count == 1 );
       BOOST_REQUIRE( witness.vote_count == 0 );
@@ -1343,23 +1368,23 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
    try
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT UPDATE PROXY" );
-      time_point now = db.head_block_time();
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account update proxy" );
+      
       const dynamic_global_property_object& props = get_dynamic_global_properties();
       price equity_price = props.current_median_equity_price;
 
-      ACTORS( (alice)(bob)(chris)(sam)(dave)(elon) )
+      ACTORS( (alice)(bob)(candice)(sam)(dan)(elon) )
       fund( "alice", 1000 * BLOCKCHAIN_PRECISION );
       fund_stake( "alice", 1000 * BLOCKCHAIN_PRECISION );
       fund( "bob", 3000 * BLOCKCHAIN_PRECISION );
       fund_stake( "bob", 3000 * BLOCKCHAIN_PRECISION );
-      fund( "chris", 3000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "chris", 3000 * BLOCKCHAIN_PRECISION );
+      fund( "candice", 3000 * BLOCKCHAIN_PRECISION );
+      fund_stake( "candice", 3000 * BLOCKCHAIN_PRECISION );
       fund( "sam", 5000 * BLOCKCHAIN_PRECISION );
       fund_stake( "sam", 5000 * BLOCKCHAIN_PRECISION );
-      fund( "dave", 7000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "dave", 7000 * BLOCKCHAIN_PRECISION );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account update proxy" );
+      fund( "dan", 7000 * BLOCKCHAIN_PRECISION );
+      fund_stake( "dan", 7000 * BLOCKCHAIN_PRECISION );
 
       account_update_proxy_operation op;
       op.signatory = "bob";
@@ -1368,7 +1393,7 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
 
       signed_transaction tx;
       tx.operations.push_back( op );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
       db.push_transaction( tx, 0 );    // bob -> alice
@@ -1419,20 +1444,20 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
 
       op.signatory = "sam";
       op.account = "sam";
-      op.proxy = "dave";
+      op.proxy = "dan";
       
       tx.operations.push_back( op );
       tx.sign( sam_private_owner_key, db.get_chain_id() );
 
-      db.push_transaction( tx, 0 );     // bob->sam->dave
+      db.push_transaction( tx, 0 );     // bob->sam->dan
 
       BOOST_REQUIRE( bob.proxy == "sam" );
       BOOST_REQUIRE( *sam.proxied.begin() == "bob" );
       BOOST_REQUIRE( db.get_proxied_voting_power( sam, equity_price ) == db.get_voting_power( bob, equity_price ) );
-      BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( *dave.proxied.begin() == "sam" );
-      BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( db.get_proxied_voting_power( dave, equity_price ) == db.get_voting_power( sam, equity_price ) );
+      BOOST_REQUIRE( sam.proxy == "dan" );
+      BOOST_REQUIRE( *dan.proxied.begin() == "sam" );
+      BOOST_REQUIRE( dan.proxy == PROXY_TO_SELF_ACCOUNT );
+      BOOST_REQUIRE( db.get_proxied_voting_power( dan, equity_price ) == db.get_voting_power( sam, equity_price ) );
       
       validate_database();
 
@@ -1441,7 +1466,7 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: adding a grandchild proxy" );
 
       // alice \
-      // bob->  sam->dave
+      // bob->  sam->dan
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1459,10 +1484,10 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       BOOST_REQUIRE( bob.proxy == "sam" );
       BOOST_REQUIRE( *sam.proxied.size() == 2 );
       BOOST_REQUIRE( db.get_proxied_voting_power( sam, equity_price ) == db.get_voting_power( bob, equity_price ) + db.get_voting_power( alice, equity_price ) );
-      BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( *dave.proxied.begin() == "sam" );
-      BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( db.get_proxied_voting_power( dave, equity_price ) == db.get_voting_power( sam, equity_price ) );
+      BOOST_REQUIRE( sam.proxy == "dan" );
+      BOOST_REQUIRE( *dan.proxied.begin() == "sam" );
+      BOOST_REQUIRE( dan.proxy == PROXY_TO_SELF_ACCOUNT );
+      BOOST_REQUIRE( db.get_proxied_voting_power( dan, equity_price ) == db.get_voting_power( sam, equity_price ) );
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: adding a grandchild proxy" );
@@ -1479,16 +1504,16 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       tx.operations.push_back( op );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
-      db.push_transaction( tx, 0 );    // alice->sam->dave
+      db.push_transaction( tx, 0 );    // alice->sam->dan
 
       BOOST_REQUIRE( alice.proxy == "sam" );
       BOOST_REQUIRE( bob.proxy == PROXY_TO_SELF_ACCOUNT );
       BOOST_REQUIRE( *sam.proxied.begin() == "alice" );
       BOOST_REQUIRE( db.get_proxied_voting_power( sam, equity_price ) == db.get_voting_power( alice, equity_price ) );
-      BOOST_REQUIRE( sam.proxy == "dave" );
-      BOOST_REQUIRE( *dave.proxied.begin() == "sam" );
-      BOOST_REQUIRE( dave.proxy == PROXY_TO_SELF_ACCOUNT );
-      BOOST_REQUIRE( db.get_proxied_voting_power( dave, equity_price ) == db.get_voting_power( sam, equity_price ) );
+      BOOST_REQUIRE( sam.proxy == "dan" );
+      BOOST_REQUIRE( *dan.proxied.begin() == "sam" );
+      BOOST_REQUIRE( dan.proxy == PROXY_TO_SELF_ACCOUNT );
+      BOOST_REQUIRE( db.get_proxied_voting_power( dan, equity_price ) == db.get_voting_power( sam, equity_price ) );
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: removing a grandchild proxy" );
@@ -1505,9 +1530,8 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT RECOVERY SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal request account recovery" );
-      time_point now = db.head_block_time();
-
-      ACTORS( (alice)(bob)(chris)(sam)(dave) );
+      
+      ACTORS( (alice)(bob)(candice)(sam)(dan) );
       fund( "alice", 1000 * BLOCKCHAIN_PRECISION );
       fund_stake( "alice", 1000 * BLOCKCHAIN_PRECISION );
 
@@ -1534,7 +1558,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       signed_transaction tx;
       tx.operations.push_back( acc_create );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1581,7 +1605,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       BOOST_REQUIRE( bob_auth.owner == *acc_update.owner );
 
-      generate_blocks( now + OWNER_UPDATE_LIMIT );
+      generate_blocks( now() + OWNER_UPDATE_LIMIT );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1613,7 +1637,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when bob does not have new requested authority" );
 
-      generate_blocks( now + OWNER_UPDATE_LIMIT + fc::seconds( BLOCK_INTERVAL ) );
+      generate_blocks( now() + OWNER_UPDATE_LIMIT + fc::seconds( BLOCK_INTERVAL ) );
 
       recover.new_owner_authority = authority( 1, generate_private_key( "idontknow" ).get_public_key(), 1 );
 
@@ -1680,7 +1704,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       BOOST_REQUIRE( req_itr->account_to_recover == "bob" );
       BOOST_REQUIRE( req_itr->new_owner_authority == authority( 1, generate_private_key( "expire" ).get_public_key(), 1 ) );
-      BOOST_REQUIRE( req_itr->expires == now + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD );
+      BOOST_REQUIRE( req_itr->expires == now() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD );
       auto expires = req_itr->expires;
       ++req_itr;
       BOOST_REQUIRE( req_itr == request_idx.end() );
@@ -1701,7 +1725,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.signatures.clear();
 
       tx.operations.push_back( recover );
-      tx.set_expiration( now );
+      tx.set_expiration( now() );
       tx.sign( generate_private_key( "expire" ), db.get_chain_id() );
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // Recover won't work, because request expired
@@ -1718,11 +1742,11 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.signatures.clear();
 
       tx.operations.push_back( acc_update );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( generate_private_key( "foo bar" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      generate_blocks( now + ( OWNER_AUTH_RECOVERY_PERIOD - ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD ) );
+      generate_blocks( now() + ( OWNER_AUTH_RECOVERY_PERIOD - ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD ) );
       generate_block();
 
       request.new_owner_authority = authority( 1, generate_private_key( "last key" ).get_public_key(), 1 );
@@ -1731,7 +1755,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.signatures.clear();
 
       tx.operations.push_back( request );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1742,7 +1766,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.signatures.clear();
 
       tx.operations.push_back( recover );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
       tx.sign( generate_private_key( "last key" ), db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // bob_owner key has expired
@@ -1755,7 +1779,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.signatures.clear();
 
       tx.operations.push_back( recover );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( generate_private_key( "foo bar" ), db.get_chain_id() );
       tx.sign( generate_private_key( "last key" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );     // foo bar key has not yet expired
@@ -1774,7 +1798,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
          signed_transaction tx;
          tx.operations.push_back( op );
-         tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( alice_private_owner_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
       };
@@ -1788,7 +1812,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
          signed_transaction tx;
          tx.operations.push_back( op );
-         tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( recent_owner_key, db.get_chain_id() );
          // only Alice -> throw
          REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1810,7 +1834,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
          signed_transaction tx;
          tx.operations.push_back( op );
-         tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( recovery_account_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
       };
@@ -1823,7 +1847,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
          signed_transaction tx;
          tx.operations.push_back( op );
-         tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( old_private_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
       };
@@ -1838,7 +1862,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       fc::ecc::private_key alice_priv2 = fc::ecc::private_key::regenerate( fc::sha256::hash( "alice_k2" ) );
       public_key_type alice_pub1 = public_key_type( alice_priv1.get_public_key() );
 
-      generate_blocks( now + OWNER_AUTH_RECOVERY_PERIOD - fc::seconds( BLOCK_INTERVAL ), true );
+      generate_blocks( now() + OWNER_AUTH_RECOVERY_PERIOD - fc::seconds( BLOCK_INTERVAL ), true );
       // cannot request account recovery until recovery account is approved
       REQUIRE_THROW( request_account_recovery( "sam", sam_private_owner_key, "alice", alice_pub1 ), fc::exception );
       generate_blocks(1);
@@ -1867,9 +1891,8 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account reset" );
 
-      time_point now = db.head_block_time();
+      ACTORS( (alice)(bob)(candice)(dan) );
 
-      ACTORS( (alice)(bob)(chris)(dave) );
       fund( "alice", 1000 * BLOCKCHAIN_PRECISION );
       fund_stake( "alice", 1000 * BLOCKCHAIN_PRECISION );
 
@@ -1896,14 +1919,14 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       signed_transaction tx;
       tx.operations.push_back( acc_create );
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const auto& bob_auth = db.get< account_authority_object, by_account >( "bob" );
       BOOST_REQUIRE( bob_auth.owner == acc_create.owner );
 
-      generate_blocks( now + ( fc::days( bob.reset_account_delay_days ) - BLOCK_INTERVAL ) );
+      generate_blocks( now() + ( fc::days( bob.reset_account_delay_days ) - BLOCK_INTERVAL ) );
 
       reset_account_operation reset;
 
@@ -1933,13 +1956,13 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       set.signatory = "bob";
       set.account = "bob";
-      set.new_reset_account = "chris";
+      set.new_reset_account = "candice";
 
       tx.operations.push_back( set );
       tx.sign( generate_private_key( "new_key" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );
       
-      BOOST_REQUIRE( bob.reset_account == "chris" );
+      BOOST_REQUIRE( bob.reset_account == "candice" );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: set new reset account" );
 
@@ -1948,15 +1971,15 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now + ( fc::days( bob.reset_account_delay_days ) - BLOCK_INTERVAL ) );
+      generate_blocks( now() + ( fc::days( bob.reset_account_delay_days ) - BLOCK_INTERVAL ) );
 
-      reset.signatory = "chris";
-      reset.reset_account = "chris";
+      reset.signatory = "candice";
+      reset.reset_account = "candice";
       reset.account_to_reset = "bob";
       reset.new_owner_authority = authority( 1, generate_private_key( "new_key_1" ).get_public_key(), 1 );
 
       tx.operations.push_back( reset );
-      tx.sign( chris_private_owner_key, db.get_chain_id() );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // reset not valid yet
 
       generate_block();
@@ -1985,7 +2008,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      set.new_reset_account = "chris";
+      set.new_reset_account = "candice";
 
       tx.operations.push_back( set );
       tx.sign( generate_private_key( "new_key_1" ), db.get_chain_id() );
@@ -2006,8 +2029,6 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: decline voting rights request" );
 
-      time_point now =  db.head_block_time();
-
       ACTORS( (alice)(bob) );
       generate_block();
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -2021,7 +2042,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       op.account = "alice";
 
       signed_transaction tx;
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
       tx.operations.push_back( op );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
@@ -2031,7 +2052,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       auto req_itr = req_idx.find( "alice" );
 
       BOOST_REQUIRE( req_itr != req_idx.end() );
-      BOOST_REQUIRE( req_itr->effective_date == now + DECLINE_VOTING_RIGHTS_DURATION );
+      BOOST_REQUIRE( req_itr->effective_date == now() + DECLINE_VOTING_RIGHTS_DURATION );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: decline voting rights request" );
 
@@ -2091,16 +2112,13 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      generate_blocks( now + DECLINE_VOTING_RIGHTS_DURATION - BLOCK_INTERVAL, true );
+      generate_blocks( now() + DECLINE_VOTING_RIGHTS_DURATION - BLOCK_INTERVAL, true );
 
       BOOST_REQUIRE( db.get_account( "alice" ).can_vote );   // Alice can still vote
 
       witness_create( 
          "alice", 
          alice_private_owner_key,
-         "details",
-         "url",
-         "json",
          alice_private_owner_key.get_public_key(),
          BLOCKCHAIN_PRECISION * 10 );
 
@@ -2185,7 +2203,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( witness_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
 
@@ -2207,14 +2225,6 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-/**
- * connection_request_operation,
-   connection_accept_operation,
-   account_follow_operation,
-   tag_follow_operation,
-   activity_reward_operation,
-   */
-
 BOOST_AUTO_TEST_CASE( connection_sequence_test )
 {
    try
@@ -2223,15 +2233,16 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: create connection request" );
 
-      time_point now =  db.head_block_time();
-
-      ACTORS( (alice)(bob)(chris)(dave)(elon) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
       generate_block();
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       generate_block();
+
+      
 
       connection_request_operation request;
 
@@ -2244,24 +2255,29 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
 
       signed_transaction tx;
 
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( request );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const auto& req_idx = db.get_index< connection_request_index >().indices().get< by_account_req >();
       auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      const auto& con_idx = db.get_index< connection_index >().indices().get< by_accounts >();
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", CONNECTION ) );
 
       BOOST_REQUIRE( req_itr != req_idx.end() );
       BOOST_REQUIRE( req_itr->account == "alice" );
       BOOST_REQUIRE( req_itr->requested_account == "bob" );
-      BOOST_REQUIRE( req_itr->expiration == now + CONNECTION_REQUEST_DURATION );
+      BOOST_REQUIRE( req_itr->connection_type == CONNECTION );
+      BOOST_REQUIRE( req_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+      BOOST_REQUIRE( con_itr == con_idx.end() );    // Connection not created yet
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: create connection request" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: accept connection request" );
 
-      generate_block();
+      tx.operations.clear();
+      tx.signatures.clear();
 
       connection_accept_operation accept;
 
@@ -2269,178 +2285,690 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       accept.account = "bob";
       accept.requesting_account = "alice";
       accept.connection_type = CONNECTION;
-      accept.connection_id = 
-      accept.message = "Hello";
-      accept.requested = true;
+      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      accept.encrypted_key = "#supersecretencryptedkeygoeshere";
+      accept.connected = true;
+
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", CONNECTION ) );
+
+      BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
+      BOOST_REQUIRE( con_itr->account_a == "alice" );
+      BOOST_REQUIRE( con_itr->account_b == "bob" );
+      BOOST_REQUIRE( con_itr->connection_type == CONNECTION );
+      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
+      BOOST_REQUIRE( con_itr->connection_id == "eb634e76-f478-49d5-8441-54ae22a4092c" );
+      BOOST_REQUIRE( con_itr->created == now() );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: accept connection request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: match connection request" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      accept.signatory = "alice";
+      accept.account = "alice";
+      accept.requesting_account = "bob";
 
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure revoking voting rights with existing request" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: success cancelling a request" );
-
-      op.declined = false;
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      tx.operations.push_back( op );
+      tx.operations.push_back( accept );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      req_itr = req_idx.find( "alice" );
-      BOOST_REQUIRE( itr == req_idx.end() );    // Request is now removed
+      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", CONNECTION ) );
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: success cancelling a request" );
+      BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
+      BOOST_REQUIRE( con_itr->account_a == "alice" );
+      BOOST_REQUIRE( con_itr->account_b == "bob" );
+      BOOST_REQUIRE( con_itr->connection_type == CONNECTION );
+      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
+      BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
+      BOOST_REQUIRE( con_itr->connection_id == "eb634e76-f478-49d5-8441-54ae22a4092c" );
+      BOOST_REQUIRE( con_itr->created == now() );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure cancelling a request that doesn't exist" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: match connection request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when requesting existing connection type" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( request );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when requesting existing connection type" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when requesting friend connection before request duration" );
+
+      generate_blocks( now() + CONNECTION_REQUEST_DURATION - BLOCK_INTERVAL, true );
+
+      request.connection_type = FRIEND;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( request );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when requesting friend connection before request duration" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: friend connection request" );
 
       generate_block();
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
-      
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // Can't cancel again
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure cancelling a request that doesn't exist" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: check account can vote during waiting period" );
-
-      op.decline = true;
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      tx.operations.push_back( op );
+      tx.operations.push_back( request );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      generate_blocks( now + DECLINE_VOTING_RIGHTS_DURATION - BLOCK_INTERVAL, true );
+      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", FRIEND ) );
 
-      BOOST_REQUIRE( db.get_account( "alice" ).can_vote );   // Alice can still vote
+      BOOST_REQUIRE( req_itr != req_idx.end() );
+      BOOST_REQUIRE( req_itr->account == "alice" );
+      BOOST_REQUIRE( req_itr->requested_account == "bob" );
+      BOOST_REQUIRE( req_itr->connection_type == FRIEND );
+      BOOST_REQUIRE( req_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+      BOOST_REQUIRE( con_itr == con_idx.end() );    // Connection not created yet
 
-      witness_create( 
-         "alice", 
-         alice_private_owner_key,
-         "details",
-         "url",
-         "json",
-         alice_private_owner_key.get_public_key(),
-         BLOCKCHAIN_PRECISION * 10 );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: friend connection request" );
 
-      account_witness_vote_operation witness_vote;
-      witness_vote.signatory = "alice";
-      witness_vote.account = "alice";
-      witness_vote.witness = "alice";
-      witness_vote.vote_rank = 1;
+      BOOST_TEST_MESSAGE( "│   ├── Testing: accept friend connection request" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( witness_vote );
+      accept.signatory = "bob";
+      accept.account = "bob";
+      accept.requesting_account = "alice";
+      accept.connection_type = FRIEND;
+      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      accept.encrypted_key = "#supersecretencryptedkeygoeshere";
+      accept.connected = true;
+
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", FRIEND ) );
+
+      BOOST_REQUIRE( req_itr == req_idx.end() );
+      BOOST_REQUIRE( con_itr->account_a == "alice" );
+      BOOST_REQUIRE( con_itr->account_b == "bob" );
+      BOOST_REQUIRE( con_itr->connection_type == FRIEND );
+      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
+      BOOST_REQUIRE( con_itr->connection_id == "eb634e76-f478-49d5-8441-54ae22a4092c" );
+      BOOST_REQUIRE( con_itr->created == now() );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: accept friend connection request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: match friend connection request" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept.signatory = "alice";
+      accept.account = "alice";
+      accept.requesting_account = "bob";
+      accept.connection_type = FRIEND;
+
+      tx.operations.push_back( accept );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      comment_operation comment;
+      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", FRIEND ) );
 
-      comment.signatory = "alice";
-      comment.author = "alice";
-      comment.permlink = "test";
-      comment.parent_permlink = "test";
-      comment.title = "test";
-      comment.body = "test";
-      comment.post_type = TEXT_POST;
-      comment.language = "en";
-      comment.privacy = false;
-      comment.reach = TAG_FEED;
-      comment.interface = INIT_ACCOUNT;
-      comment.rating = GENERAL;
-      comment.tags.push_back( "test" );
-      comment.json = "{\"json\":\"valid\"}";
+      BOOST_REQUIRE( req_itr == req_idx.end() );
+      BOOST_REQUIRE( con_itr->account_a == "alice" );
+      BOOST_REQUIRE( con_itr->account_b == "bob" );
+      BOOST_REQUIRE( con_itr->connection_type == FRIEND );
+      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
+      BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
+      BOOST_REQUIRE( con_itr->connection_id == "eb634e76-f478-49d5-8441-54ae22a4092c" );
+      BOOST_REQUIRE( con_itr->created == now() );
 
-      vote_operation vote;
+      BOOST_TEST_MESSAGE( "│   ├── Passed: match friend request" );
 
-      vote.signatory = "alice";
-      vote.voter = "alice";
-      vote.author = "alice";
-      vote.permlink = "test";
-      vote.interface = INIT_ACCOUNT;
-      vote.weight = PERCENT_100;
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      tx.operations.push_back( comment );
-      tx.operations.push_back( vote );
-
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      const auto& comment_idx = db.get_index< comment_index >().indices().get< by_permlink >();
-      const auto& comment_vote_idx = db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
-      const auto& witness_vote_idx = db.get_index< witness_vote_index >().indices().get< by_witness_account >();
-
-      auto comment_itr = comment_idx.find( boost::make_tuple( "alice", "test" ) );
-      auto comment_vote_itr = comment_vote_idx.find( boost::make_tuple( "alice", comment_itr->id ) );
-      auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
-
-      BOOST_REQUIRE( comment_itr->author == "alice" );
-      BOOST_REQUIRE( comment_vote_itr->voter == "alice" );
-      BOOST_REQUIRE( witness_vote_itr->account == "alice" );
-
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: check account can vote during waiting period" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: check account cannot vote after request is processed" );
-
-      generate_block();
-      BOOST_REQUIRE( !db.get_account( "alice" ).can_vote );   // Alice can no longer vote
-      validate_database();
-
-      req_itr = request_idx.find( "alice" );
-
-      BOOST_REQUIRE( req_itr == request_idx.end() );   // Request no longer exists
-
-      auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
-
-      BOOST_REQUIRE( witness_vote_itr == witness_vote_idx.end() );   // Vote has been removed
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( witness_vote );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      vote.weight = 0;
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      tx.operations.push_back( vote );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: check account cannot vote after request is processed" );
-
-      BOOST_TEST_MESSAGE( "├── Passed: DECLINE VOTING RIGHTS" );
+      BOOST_TEST_MESSAGE( "├── Passed: CONNECTION SEQUENCE" );
    }
    FC_LOG_AND_RETHROW()
 }
 
+BOOST_AUTO_TEST_CASE( account_follow_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT FOLLOW" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account follow" );
+
+      ACTORS( (alice)(bob) );
+
+      account_follow_operation op;
+
+      op.signatory = "alice";
+      op.follower = "alice";
+      op.following = "bob";
+      op.interface = INIT_ACCOUNT;
+      op.added = true;
+      op.followed = true;
+
+      signed_transaction tx;
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const account_following_object& following_a = db.get_account_following( "alice" );
+      const account_following_object& following_b = db.get_account_following( "bob" );
+
+      BOOST_REQUIRE( following_a.is_following( account_name_type( "bob" ) ) );
+      BOOST_REQUIRE( following_b.is_follower( account_name_type( "alice" ) ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: normal account follow" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: mutual following" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "bob";
+      op.follower = "bob";
+      op.following = "alice";
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( following_a.is_follower( account_name_type( "bob" ) ) );
+      BOOST_REQUIRE( following_b.is_following( account_name_type( "alice" ) ) );
+      BOOST_REQUIRE( following_a.is_mutual( account_name_type( "bob" ) ) );
+      BOOST_REQUIRE( following_b.is_mutual( account_name_type( "alice" ) ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: mutual following" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when following already followed account" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "bob";
+      op.follower = "bob";
+      op.following = "alice";
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when following already followed account" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: unfollowing" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "bob";
+      op.follower = "bob";
+      op.following = "alice";
+      op.added = false;
+      op.followed = true;
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "alice";
+      op.follower = "alice";
+      op.following = "bob";
+      op.added = false;
+      op.followed = true;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( !following_a.is_follower( account_name_type( "bob" ) ) );
+      BOOST_REQUIRE( !following_b.is_following( account_name_type( "alice" ) ) );
+      BOOST_REQUIRE( !following_a.is_following( account_name_type( "bob" ) ) );
+      BOOST_REQUIRE( !following_b.is_follower( account_name_type( "alice" ) ) );
+      BOOST_REQUIRE( !following_a.is_mutual( account_name_type( "bob" ) ) );
+      BOOST_REQUIRE( !following_b.is_mutual( account_name_type( "alice" ) ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: unfollowing" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: filtering" );
+
+      op.signatory = "alice";
+      op.follower = "alice";
+      op.following = "bob";
+      
+      op.added = true;
+      op.followed = false;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const account_following_object& following_a = db.get_account_following( account_name_type( "alice" ) );
+      const account_following_object& following_b = db.get_account_following( account_name_type( "bob" ) );
+
+      BOOST_REQUIRE( following_a.is_filtered( account_name_type( "bob" ) ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: filtering" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT FOLLOW" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: TAG FOLLOW" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: normal tag follow" );
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
+
+      tag_follow_operation op;
+
+      op.signatory = "alice";
+      op.follower = "alice";
+      op.tag = "test";
+      op.interface = INIT_ACCOUNT;
+      op.added = true;
+      op.followed = true;
+
+      signed_transaction tx;
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const account_following_object& following_a = db.get_account_following( "alice" );
+      const tag_following_object& following_t = db.get_tag_following( "test" );
+      
+      BOOST_REQUIRE( following_a.is_following( tag_name_type( "test" ) ) );
+      BOOST_REQUIRE( following_t.is_follower( account_name_type( "alice" ) ) );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: normal tag follow" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when following already followed tag" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when following already followed tag" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: unfollowing" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.added = false;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const account_following_object& following_a = db.get_account_following( "alice" );
+      const tag_following_object& following_t = db.get_tag_following( "test" );
+      
+      BOOST_REQUIRE( !following_a.is_following( tag_name_type( "test" ) ) );
+      BOOST_REQUIRE( !following_t.is_follower( account_name_type( "alice" ) ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: unfollowing" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: TAG FOLLOW" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: ACTIVITY REWARD" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: normal activity reward claim process" );
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "alice", alice_private_owner_key, alice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "bob", bob_private_owner_key, bob_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "candice", candice_private_owner_key, candice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "dan", dan_private_owner_key, dan_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "elon", elon_private_owner_key, elon_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "fred", fred_private_owner_key, fred_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "george", george_private_owner_key, george_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "haz", haz_private_owner_key, haz_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
+      const comment_object& bob_post = comment_create( "bob", bob_private_posting_key, "bobtestpost" );
+      const comment_object& candice_post = comment_create( "candice", candice_private_posting_key, "candicetestpost" );
+
+      vote_operation op;
+
+      op.signatory = "bob";
+      op.voter = "bob";
+      op.author = "alice";
+      op.permlink = "alicetestpost";
+      op.weight = PERCENT_100;
+      op.interface = INIT_ACCOUNT;
+
+      signed_transaction tx;
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( op );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "alice";
+      op.voter = "alice";
+      op.author = "bob";
+      op.permlink = "bobtestpost";
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.voter = "candice";
+      op.author = "alice";
+      op.permlink = "alicetestpost";
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.voter = "dan";
+      
+      tx.operations.push_back( op );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "elon";
+      op.voter = "elon";
+
+      tx.operations.push_back( op );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      view_operation op;
+
+      op.signatory = "bob";
+      op.viewer = "bob";
+      op.author = "alice";
+      op.permlink = "alicetestpost";
+      op.interface = INIT_ACCOUNT;
+      op.supernode = INIT_ACCOUNT;
+      op.viewed = true;
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "alice";
+      op.viewer = "alice";
+      op.author = "candice";
+      op.permlink = "candicetestpost";
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.viewer = "candice";
+      op.author = "alice";
+      op.permlink = "alicetestpost";
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.viewer = "dan";
+
+      tx.operations.push_back( op );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "elon";
+      op.viewer = "elon";
+
+      tx.operations.push_back( op );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      db.update_comment_metrics();     // calculate median values.
+
+      account_witness_vote_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.witness = "bob";
+      op.vote_rank = 1;
+      op.approved = true;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "candice";
+      op.vote_rank = 2;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "dan";
+      op.vote_rank = 3;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "elon";
+      op.vote_rank = 5;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "fred";
+      op.vote_rank = 6;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "george";
+      op.vote_rank = 7;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "haz";
+      op.vote_rank = 8;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "isabelle";
+      op.vote_rank = 9;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "jayme";
+      op.vote_rank = 10;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.witness = "kathryn";
+      op.vote_rank = 11;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      activity_reward_operation activity;
+
+      activity.signatory = "alice";
+      activity.account = "alice";
+      activity.permlink = "alicetestpost";
+      activity.vote_id = bob_post.id._id;
+      activity.view_id = candice_post.id._id;
+      activity.interface = INIT_ACCOUNT;
+
+      tx.operations.push_back( activity );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const reward_fund_object& rfo = db.get_reward_fund();
+      
+      BOOST_REQUIRE( alice.last_activity_reward == now() );
+      BOOST_REQUIRE( rfo.recent_activity_claims == BLOCKCHAIN_PRECISION );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: normal activity reward claim process" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when claiming again" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( activity );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when claiming again" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: ACTIVITY REWARD" );
+   }
+   FC_LOG_AND_RETHROW()
+}
 
 
    //============================//
@@ -2448,7 +2976,2526 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
    //============================//
 
 
+BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: NETWORK OFFICER SEQUENCE" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: network officer creation" );
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "alice", alice_private_owner_key, alice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "bob", bob_private_owner_key, bob_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "candice", candice_private_owner_key, candice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "dan", dan_private_owner_key, dan_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "elon", elon_private_owner_key, elon_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "fred", fred_private_owner_key, fred_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "george", george_private_owner_key, george_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "haz", haz_private_owner_key, haz_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "leonie", leonie_private_owner_key, leonie_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "margot", margot_private_owner_key, margot_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "natalie", natalie_private_owner_key, natalie_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "peter", peter_private_owner_key, peter_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "quentin", quentin_private_owner_key, quentin_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "rachel", rachel_private_owner_key, rachel_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "sam", sam_private_owner_key, sam_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "tim", tim_private_owner_key, tim_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      account_membership_operation op;
+      op.signatory = "alice";
+      op.account = "alice";
+      op.membership_type = STANDARD_MEMBERSHIP;
+      op.months = 1;
+      op.interface = INIT_ACCOUNT;
+      op.validate();
+
+      signed_transaction tx;
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_network_officer_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.officer_type = DEVELOPMENT;
+      op.details = "details";
+      op.url = "url";
+      op.json = "{\"json\":\"valid\"}";
+      op.active = true;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const network_officer_object& officer = db.get_network_officer( "alice" );
+      
+      BOOST_REQUIRE( officer.account == "alice" );
+      BOOST_REQUIRE( officer.officer_type == DEVELOPMENT );
+      BOOST_REQUIRE( officer.active == true );
+      BOOST_REQUIRE( officer.officer_approved == false );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: network officer creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: network officer approval process" );
+
+      network_officer_vote_operation op;    // 20 accounts vote for officer
+
+      op.signatory = "bob";
+      op.account = "bob";
+      op.network_officer = "alice";
+      op.vote_rank = 1;
+      op.approved = true;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.account = "candice";
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.account = "dan";
+
+      tx.operations.push_back( op );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "elon";
+      op.account = "elon";
+
+      tx.operations.push_back( op );
+      tx.sign( elon_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "fred";
+      op.account = "fred";
+
+      tx.operations.push_back( op );
+      tx.sign( fred_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "george";
+      op.account = "george";
+
+      tx.operations.push_back( op );
+      tx.sign( george_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "haz";
+      op.account = "haz";
+
+      tx.operations.push_back( op );
+      tx.sign( haz_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "isabelle";
+      op.account = "isabelle";
+
+      tx.operations.push_back( op );
+      tx.sign( isabelle_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "jayme";
+      op.account = "jayme";
+
+      tx.operations.push_back( op );
+      tx.sign( jayme_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "kathryn";
+      op.account = "kathryn";
+
+      tx.operations.push_back( op );
+      tx.sign( kathryn_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "leonie";
+      op.account = "leonie";
+
+      tx.operations.push_back( op );
+      tx.sign( leonie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "margot";
+      op.account = "margot";
+
+      tx.operations.push_back( op );
+      tx.sign( margot_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "natalie";
+      op.account = "natalie";
+
+      tx.operations.push_back( op );
+      tx.sign( natalie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "olivia";
+      op.account = "olivia";
+
+      tx.operations.push_back( op );
+      tx.sign( olivia_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "peter";
+      op.account = "peter";
+
+      tx.operations.push_back( op );
+      tx.sign( peter_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "quentin";
+      op.account = "quentin";
+
+      tx.operations.push_back( op );
+      tx.sign( quentin_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "rachel";
+      op.account = "rachel";
+
+      tx.operations.push_back( op );
+      tx.sign( rachel_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "sam";
+      op.account = "sam";
+
+      tx.operations.push_back( op );
+      tx.sign( sam_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      op.signatory = "tim";
+      op.account = "tim";
+
+      tx.operations.push_back( op );
+      tx.sign( tim_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "veronica";
+      op.account = "veronica";
+
+      tx.operations.push_back( op );
+      tx.sign( veronica_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const network_officer_object& officer = db.get_network_officer( "alice" );
+      
+      BOOST_REQUIRE( officer.account == "alice" );
+      BOOST_REQUIRE( officer.officer_type == DEVELOPMENT );
+      BOOST_REQUIRE( officer.active == true );
+      BOOST_REQUIRE( officer.officer_approved == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: network officer approval process" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: NETWORK OFFICER SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: EXECUTIVE BOARD SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: executive board creation" );
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica) 
+      (alice2)(bob2)(candice2)(dan2)(elon2)(fred2)(george2)(haz2)(isabelle2)(jayme2)(kathryn2)(leonie2)(margot2)(natalie2)(olivia2)(peter2)(quentin2)(rachel2)(sam2)(tim2)(veronica2));
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "alice", alice_private_owner_key, alice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "bob", bob_private_owner_key, bob_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "candice", candice_private_owner_key, candice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "dan", dan_private_owner_key, dan_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "elon", elon_private_owner_key, elon_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "fred", fred_private_owner_key, fred_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "george", george_private_owner_key, george_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "haz", haz_private_owner_key, haz_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "leonie", leonie_private_owner_key, leonie_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "margot", margot_private_owner_key, margot_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "natalie", natalie_private_owner_key, natalie_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "peter", peter_private_owner_key, peter_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "quentin", quentin_private_owner_key, quentin_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "rachel", rachel_private_owner_key, rachel_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "sam", sam_private_owner_key, sam_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "tim", tim_private_owner_key, tim_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "alice2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "alice2", alice2_private_owner_key, alice2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "bob2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "bob2", bob2_private_owner_key, bob2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "candice2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "candice2", candice2_private_owner_key, candice2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "dan2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "dan2", dan2_private_owner_key, dan2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "elon2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "elon2", elon2_private_owner_key, elon2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "fred2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "fred2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "fred2", fred2_private_owner_key, fred2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "george2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "george2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "george2", george2_private_owner_key, george2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "haz2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "haz2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "haz2", haz2_private_owner_key, haz2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "isabelle2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "isabelle2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "isabelle2", isabelle2_private_owner_key, isabelle2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "jayme2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "jayme2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "jayme2", jayme2_private_owner_key, jayme2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "kathryn2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "kathryn2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "kathryn2", kathryn2_private_owner_key, kathryn2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "leonie2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "leonie2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "leonie2", leonie2_private_owner_key, leonie2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "margot2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "margot2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "margot2", margot2_private_owner_key, margot2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "natalie2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "natalie2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "natalie2", natalie2_private_owner_key, natalie2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "peter2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "peter2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "peter2", peter2_private_owner_key, peter2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "quentin2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "quentin2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "quentin2", quentin2_private_owner_key, quentin2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "rachel2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "rachel2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "rachel2", rachel2_private_owner_key, rachel2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "sam2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "sam2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "sam2", sam2_private_owner_key, sam2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "tim2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "tim2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "tim2", tim2_private_owner_key, tim2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "veronica2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "veronica2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "veronica2", veronica2_private_owner_key, veronica2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      account_create_operation op;
+
+      op.signatory = "alice";
+      op.registrar = "alice";
+      op.new_account_name = "execboard";
+      op.account_type = BUSINESS;
+      op.governance_account = INIT_ACCOUNT;
+      op.business_type = PUBLIC_BUSINESS;
+      op.officer_vote_threshold = BLOCKCHAIN_PRECISION;
+      op.business_public_key = alice_public_posting_key;
+      op.referrer = INIT_ACCOUNT;
+      op.proxy = INIT_ACCOUNT;
+      op.governance_account = INIT_ACCOUNT;
+      op.recovery_account = INIT_ACCOUNT;
+      op.reset_account = INIT_ACCOUNT;
+      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      op.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      op.owner = authority( 1, alice_public_owner_key, 1 );
+      op.active = authority( 2, alice_public_active_key, 2 );
+      op.posting = authority( 1, alice_public_posting_key, 1 );
+      op.secure_public_key = alice_public_posting_key;
+      op.connection_public_key = alice_public_posting_key;
+      op.friend_public_key = alice_public_posting_key;
+      op.companion_public_key = alice_public_posting_key;
+      op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      op.validate();
+
+      signed_transaction tx;
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      fund_stake( "execboard", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "execboard", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      account_membership_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.membership_type = TOP_MEMBERSHIP;
+      op.months = 1;
+      op.interface = INIT_ACCOUNT;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "bob";
+      op.account = "bob";
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.account = "candice";
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.account = "dan";
+
+      tx.operations.push_back( op );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "execboard";
+      op.account = "execboard";
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_network_officer_operation op;
+
+      op.signatory = "bob";
+      op.account = "bob";
+      op.officer_type = DEVELOPMENT;
+      op.details = "details";
+      op.url = "url";
+      op.json = "{\"json\":\"valid\"}";
+      op.active = true;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.account = "candice";
+      op.officer_type = MARKETING;
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.account = "dan";
+      op.officer_type = ADVOCACY;
+
+      tx.operations.push_back( op );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      account_vote_officer_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.officer_account = "bob";
+      op.business_account = "execboard";
+      op.vote_rank = 1;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.officer_account = "candice";
+      op.vote_rank = 2;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.officer_account = "dan";
+      op.vote_rank = 3;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      account_vote_executive_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.executive_account = "bob";
+      op.business_account = "execboard";
+      op.role = CHIEF_DEVELOPMENT_OFFICER;
+      op.vote_rank = 1;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.officer_account = "candice";
+      op.role = CHIEF_MARKETING_OFFICER;
+      op.vote_rank = 1;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.officer_account = "dan";
+      op.role = CHIEF_ADVOCACY_OFFICER;
+      op.vote_rank = 1;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_supernode_operation op;
+
+      op.signatory = "alice";
+      op.account = "execboard";
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_interface_operation op;
+      
+      op.signatory = "alice";
+      op.account = "execboard";
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_governance_operation op;
+      
+      op.signatory = "alice";
+      op.account = "execboard";
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment_create( "alice", alice_private_posting_key, "alicetestpost" );
+
+      account_create_operation op;
+
+      op.signatory = "alice";
+      op.registrar = "execboard";
+      op.new_account_name = "newuser";
+      op.account_type = PERSONA;
+      op.governance_account = "execboard";
+      op.owner = authority( 1, alice_public_owner_key, 1 );
+      op.active = authority( 2, alice_public_active_key, 2 );
+      op.posting = authority( 1, alice_public_posting_key, 1 );
+      op.secure_public_key = alice_public_posting_key;
+      op.connection_public_key = alice_public_posting_key;
+      op.friend_public_key = alice_public_posting_key;
+      op.companion_public_key = alice_public_posting_key;
+      op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+
+      for( auto i = 0; i < 100; i++ )
+      {
+         op.new_account_name = "newuser"+string(i);
+
+         tx.operations.push_back( op );
+         tx.sign( alice_private_owner_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+      }
+
+      view_operation op;
+
+      op.signatory = "newuser";
+      op.viewer = "newuser";
+      op.author = "alice";
+      op.permlink = "alicetestpost";
+      op.supernode = "execboard";
+      op.interface = "execboard";
+      
+      for( auto i = 0; i < 100; i++ )
+      {
+         op.signatory = "newuser"+string(i);
+         op.viewer = "newuser"+string(i);
+
+         tx.operations.push_back( op );
+         tx.sign( alice_private_posting_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+      }
+
+      update_executive_board_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.registrar = "execboard";
+      op.budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      op.details = "details";
+      op.url = "url";
+      op.json = "{\"json\":\"valid\"}";
+      op.active = true;
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const executive_board_object& executive = db.get_executive_board( "execboard" );
+      
+      BOOST_REQUIRE( executive.account == "execboard" );
+      BOOST_REQUIRE( executive.board_approved == false );
+      BOOST_REQUIRE( executive.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: executive board creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: executive board approval process" );
+
+      executive_board_vote_operation op;    // 40 accounts vote for executive board
+
+      op.signatory = "bob";
+      op.account = "bob";
+      op.executive_account = "execboard";
+      op.vote_rank = 1;
+      op.approved = true;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.account = "candice";
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.account = "dan";
+
+      tx.operations.push_back( op );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "elon";
+      op.account = "elon";
+
+      tx.operations.push_back( op );
+      tx.sign( elon_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "fred";
+      op.account = "fred";
+
+      tx.operations.push_back( op );
+      tx.sign( fred_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "george";
+      op.account = "george";
+
+      tx.operations.push_back( op );
+      tx.sign( george_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "haz";
+      op.account = "haz";
+
+      tx.operations.push_back( op );
+      tx.sign( haz_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "isabelle";
+      op.account = "isabelle";
+
+      tx.operations.push_back( op );
+      tx.sign( isabelle_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "jayme";
+      op.account = "jayme";
+
+      tx.operations.push_back( op );
+      tx.sign( jayme_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "kathryn";
+      op.account = "kathryn";
+
+      tx.operations.push_back( op );
+      tx.sign( kathryn_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "leonie";
+      op.account = "leonie";
+
+      tx.operations.push_back( op );
+      tx.sign( leonie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "margot";
+      op.account = "margot";
+
+      tx.operations.push_back( op );
+      tx.sign( margot_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "natalie";
+      op.account = "natalie";
+
+      tx.operations.push_back( op );
+      tx.sign( natalie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "olivia";
+      op.account = "olivia";
+
+      tx.operations.push_back( op );
+      tx.sign( olivia_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "peter";
+      op.account = "peter";
+
+      tx.operations.push_back( op );
+      tx.sign( peter_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "quentin";
+      op.account = "quentin";
+
+      tx.operations.push_back( op );
+      tx.sign( quentin_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "rachel";
+      op.account = "rachel";
+
+      tx.operations.push_back( op );
+      tx.sign( rachel_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "sam";
+      op.account = "sam";
+
+      tx.operations.push_back( op );
+      tx.sign( sam_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      op.signatory = "tim";
+      op.account = "tim";
+
+      tx.operations.push_back( op );
+      tx.sign( tim_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "veronica";
+      op.account = "veronica";
+
+      tx.operations.push_back( op );
+      tx.sign( veronica_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "bob2";
+      op.account = "bob2";
+
+      tx.operations.push_back( op );
+      tx.sign( bob2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice2";
+      op.account = "candice2";
+
+      tx.operations.push_back( op );
+      tx.sign( candice2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan2";
+      op.account = "dan2";
+
+      tx.operations.push_back( op );
+      tx.sign( dan2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "elon2";
+      op.account = "elon2";
+
+      tx.operations.push_back( op );
+      tx.sign( elon2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "fred2";
+      op.account = "fred2";
+
+      tx.operations.push_back( op );
+      tx.sign( fred2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "george2";
+      op.account = "george2";
+
+      tx.operations.push_back( op );
+      tx.sign( george2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "haz2";
+      op.account = "haz2";
+
+      tx.operations.push_back( op );
+      tx.sign( haz2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "isabelle2";
+      op.account = "isabelle2";
+
+      tx.operations.push_back( op );
+      tx.sign( isabelle2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "jayme2";
+      op.account = "jayme2";
+
+      tx.operations.push_back( op );
+      tx.sign( jayme2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "kathryn2";
+      op.account = "kathryn2";
+
+      tx.operations.push_back( op );
+      tx.sign( kathryn2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "leonie2";
+      op.account = "leonie2";
+
+      tx.operations.push_back( op );
+      tx.sign( leonie2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "margot2";
+      op.account = "margot2";
+
+      tx.operations.push_back( op );
+      tx.sign( margot2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "natalie2";
+      op.account = "natalie2";
+
+      tx.operations.push_back( op );
+      tx.sign( natalie2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "olivia2";
+      op.account = "olivia2";
+
+      tx.operations.push_back( op );
+      tx.sign( olivia2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "peter2";
+      op.account = "peter2";
+
+      tx.operations.push_back( op );
+      tx.sign( peter2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "quentin2";
+      op.account = "quentin2";
+
+      tx.operations.push_back( op );
+      tx.sign( quentin2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "rachel2";
+      op.account = "rachel2";
+
+      tx.operations.push_back( op );
+      tx.sign( rachel2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "sam2";
+      op.account = "sam2";
+
+      tx.operations.push_back( op );
+      tx.sign( sam2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      op.signatory = "tim2";
+      op.account = "tim2";
+
+      tx.operations.push_back( op );
+      tx.sign( tim2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "veronica2";
+      op.account = "veronica2";
+
+      tx.operations.push_back( op );
+      tx.sign( veronica2_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const executive_board_object& executive = db.get_executive_board( "execboard" );
+      
+      BOOST_REQUIRE( executive.account == "execboard" );
+      BOOST_REQUIRE( executive.board_approved == true );
+      BOOST_REQUIRE( executive.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: executive board approval process" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: EXECUTIVE BOARD SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: GOVERNANCE ACCOUNT SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: governance account creation" );
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica));
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "alice", alice_private_owner_key, alice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "bob", bob_private_owner_key, bob_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "candice", candice_private_owner_key, candice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "dan", dan_private_owner_key, dan_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "elon", elon_private_owner_key, elon_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "fred", fred_private_owner_key, fred_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "george", george_private_owner_key, george_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "haz", haz_private_owner_key, haz_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "leonie", leonie_private_owner_key, leonie_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "margot", margot_private_owner_key, margot_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "natalie", natalie_private_owner_key, natalie_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "peter", peter_private_owner_key, peter_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "quentin", quentin_private_owner_key, quentin_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "rachel", rachel_private_owner_key, rachel_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "sam", sam_private_owner_key, sam_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "tim", tim_private_owner_key, tim_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      account_create_operation op;
+
+      op.signatory = "alice";
+      op.registrar = "alice";
+      op.new_account_name = "govaccount";
+      op.account_type = BUSINESS;
+      op.governance_account = INIT_ACCOUNT;
+      op.business_type = PUBLIC_BUSINESS;
+      op.officer_vote_threshold = BLOCKCHAIN_PRECISION;
+      op.business_public_key = alice_public_posting_key;
+      op.referrer = INIT_ACCOUNT;
+      op.proxy = INIT_ACCOUNT;
+      op.governance_account = INIT_ACCOUNT;
+      op.recovery_account = INIT_ACCOUNT;
+      op.reset_account = INIT_ACCOUNT;
+      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      op.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      op.owner = authority( 1, alice_public_owner_key, 1 );
+      op.active = authority( 2, alice_public_active_key, 2 );
+      op.posting = authority( 1, alice_public_posting_key, 1 );
+      op.secure_public_key = alice_public_posting_key;
+      op.connection_public_key = alice_public_posting_key;
+      op.friend_public_key = alice_public_posting_key;
+      op.companion_public_key = alice_public_posting_key;
+      op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      op.validate();
+
+      signed_transaction tx;
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      fund_stake( "govaccount", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "govaccount", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      account_membership_operation op;
+
+      op.signatory = "govaccount";
+      op.account = "govaccount";
+      op.membership_type = TOP_MEMBERSHIP;
+      op.months = 1;
+      op.interface = INIT_ACCOUNT;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_governance_operation op;
+      
+      op.signatory = "govaccount";
+      op.account = "govaccount";
+      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const governance_account_object& governance = db.get_governance_account( "govaccount" );
+      
+      BOOST_REQUIRE( governance.account == "govaccount" );
+      BOOST_REQUIRE( governance.account_approved == false );
+      BOOST_REQUIRE( governance.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: governance account creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: governance account approval process" );
+
+      subscribe_governance_operation op;    // 20 accounts subscribe to governance address
+
+      op.signatory = "bob";
+      op.account = "bob";
+      op.governance_account = "govaccount";
+      op.subscribe = true;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.account = "candice";
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.account = "dan";
+
+      tx.operations.push_back( op );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "elon";
+      op.account = "elon";
+
+      tx.operations.push_back( op );
+      tx.sign( elon_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "fred";
+      op.account = "fred";
+
+      tx.operations.push_back( op );
+      tx.sign( fred_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "george";
+      op.account = "george";
+
+      tx.operations.push_back( op );
+      tx.sign( george_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "haz";
+      op.account = "haz";
+
+      tx.operations.push_back( op );
+      tx.sign( haz_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "isabelle";
+      op.account = "isabelle";
+
+      tx.operations.push_back( op );
+      tx.sign( isabelle_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "jayme";
+      op.account = "jayme";
+
+      tx.operations.push_back( op );
+      tx.sign( jayme_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "kathryn";
+      op.account = "kathryn";
+
+      tx.operations.push_back( op );
+      tx.sign( kathryn_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "leonie";
+      op.account = "leonie";
+
+      tx.operations.push_back( op );
+      tx.sign( leonie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "margot";
+      op.account = "margot";
+
+      tx.operations.push_back( op );
+      tx.sign( margot_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "natalie";
+      op.account = "natalie";
+
+      tx.operations.push_back( op );
+      tx.sign( natalie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "olivia";
+      op.account = "olivia";
+
+      tx.operations.push_back( op );
+      tx.sign( olivia_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "peter";
+      op.account = "peter";
+
+      tx.operations.push_back( op );
+      tx.sign( peter_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "quentin";
+      op.account = "quentin";
+
+      tx.operations.push_back( op );
+      tx.sign( quentin_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "rachel";
+      op.account = "rachel";
+
+      tx.operations.push_back( op );
+      tx.sign( rachel_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "sam";
+      op.account = "sam";
+
+      tx.operations.push_back( op );
+      tx.sign( sam_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      op.signatory = "tim";
+      op.account = "tim";
+
+      tx.operations.push_back( op );
+      tx.sign( tim_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "veronica";
+      op.account = "veronica";
+
+      tx.operations.push_back( op );
+      tx.sign( veronica_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const governance_account_object& governance = db.get_governance_account( "govaccount" );
+      
+      BOOST_REQUIRE( governance.account == "govaccount" );
+      BOOST_REQUIRE( governance.account_approved == true );
+      BOOST_REQUIRE( governance.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: governance account approval process" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: GOVERNANCE ACCOUNT SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: SUPERNODE SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: supernode creation" );
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      update_supernode_operation op;
+      
+      op.signatory = "alice";
+      op.account = "alice";
+      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      op.auth_api_endpoint = INIT_AUTH_ENDPOINT;
+      op.node_api_endpoint = INIT_NODE_ENDPOINT;
+      op.notification_api_endpoint = INIT_NOTIFICATION_ENDPOINT;
+      op.ipfs_endpoint = INIT_IPFS_ENDPOINT;
+      op.bittorrent_endpoint = INIT_BITTORRENT_ENDPOINT;
+      op.validate();
+
+      signed_transaction tx;
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const supernode_object& supernode = db.get_supernode( "alice" );
+      
+      BOOST_REQUIRE( supernode.account == "alice" );
+      BOOST_REQUIRE( supernode.daily_active_users == 0 );
+      BOOST_REQUIRE( supernode.monthly_active_users == 0 );
+      BOOST_REQUIRE( supernode.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: supernode creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: supernode viewing process" );
+
+      const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
+
+      view_operation op;
+
+      op.signatory = "bob";
+      op.viewer = "bob";
+      op.author = "alice";
+      op.permlink = "alicetestpost";
+      op.interface = INIT_ACCOUNT;
+      op.supernode = "alice";
+      op.viewed = true;
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+      
+      const supernode_object& supernode = db.get_supernode( "alice" );
+      
+      BOOST_REQUIRE( supernode.account == "alice" );
+      BOOST_REQUIRE( supernode.daily_active_users == PERCENT_100 );
+      BOOST_REQUIRE( supernode.monthly_active_users == PERCENT_100 );
+      BOOST_REQUIRE( supernode.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: supernode viewing process" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: SUPERNODE SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+BOOST_AUTO_TEST_CASE( update_interface_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: INTERFACE SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: interface creation" );
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      account_membership_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.membership_type = TOP_MEMBERSHIP;
+      op.months = 1;
+      op.validate();
+
+      signed_transaction tx;
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_interface_operation op;
+      
+      op.signatory = "alice";
+      op.account = "alice";
+      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      op.auth_api_endpoint = INIT_AUTH_ENDPOINT;
+      op.node_api_endpoint = INIT_NODE_ENDPOINT;
+      op.notification_api_endpoint = INIT_NOTIFICATION_ENDPOINT;
+      op.ipfs_endpoint = INIT_IPFS_ENDPOINT;
+      op.bittorrent_endpoint = INIT_BITTORRENT_ENDPOINT;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const interface_object& interface = db.get_interface( "alice" );
+      
+      BOOST_REQUIRE( interface.account == "alice" );
+      BOOST_REQUIRE( interface.daily_active_users == 0 );
+      BOOST_REQUIRE( interface.monthly_active_users == 0 );
+      BOOST_REQUIRE( interface.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: interface creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when creating without membership" );
+
+      update_interface_operation op;
+      
+      op.signatory = "bob";
+      op.account = "bob";
+      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      op.auth_api_endpoint = INIT_AUTH_ENDPOINT;
+      op.node_api_endpoint = INIT_NODE_ENDPOINT;
+      op.notification_api_endpoint = INIT_NOTIFICATION_ENDPOINT;
+      op.ipfs_endpoint = INIT_IPFS_ENDPOINT;
+      op.bittorrent_endpoint = INIT_BITTORRENT_ENDPOINT;
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );    // Bob is not a member, and cannot create an interface
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when creating without membership" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: supernode viewing process" );
+
+      const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
+
+      view_operation op;
+
+      op.signatory = "bob";
+      op.viewer = "bob";
+      op.author = "alice";
+      op.permlink = "alicetestpost";
+      op.interface = "alice";
+      op.supernode = INIT_ACCOUNT;
+      op.viewed = true;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const interface_object& interface = db.get_interface( "alice" );
+      
+      BOOST_REQUIRE( interface.account == "alice" );
+      BOOST_REQUIRE( interface.daily_active_users == PERCENT_100 );
+      BOOST_REQUIRE( interface.monthly_active_users == PERCENT_100 );
+      BOOST_REQUIRE( interface.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: interface viewing process" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: INTERFACE SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: COMMUNITY ENTERPRISE SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal creation" );
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica));
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "alice", alice_private_owner_key, alice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "bob", bob_private_owner_key, bob_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "candice", candice_private_owner_key, candice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "dan", dan_private_owner_key, dan_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "elon", elon_private_owner_key, elon_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "fred", fred_private_owner_key, fred_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "george", george_private_owner_key, george_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "haz", haz_private_owner_key, haz_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "leonie", leonie_private_owner_key, leonie_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "margot", margot_private_owner_key, margot_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "natalie", natalie_private_owner_key, natalie_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "peter", peter_private_owner_key, peter_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "quentin", quentin_private_owner_key, quentin_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "rachel", rachel_private_owner_key, rachel_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "sam", sam_private_owner_key, sam_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "tim", tim_private_owner_key, tim_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      create_community_enterprise_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      op.proposal_type = FUNDING;
+      op.beneficiaries[ "alice" ] = PERCENT_100;
+      op.milestones.push_back( std::make_pair( "Begin proposal", 50*PERCENT_1 ) );
+      op.milestones.push_back( std::make_pair( "Finish proposal", 50*PERCENT_1 ) );
+      op.details = "details";
+      op.url = "www.url.com";
+      op.json = "{\"json\":\"valid\"}";
+      op.begin = now() + fc::days(8);
+      op.duration = 14;
+      op.daily_budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      op.fee = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      
+      op.validate();
+
+      signed_transaction tx;
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
+      
+      BOOST_REQUIRE( enterprise.creator == "alice" );
+      BOOST_REQUIRE( enterprise.approved_milestones == -1 );
+      BOOST_REQUIRE( enterprise.claimed_milestones == 0 );
+      BOOST_REQUIRE( enterprise.days_paid == 0 );
+      BOOST_REQUIRE( enterprise.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise proposal creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal milestone approval" );
+
+      approve_enterprise_milestone_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.creator = "alice";
+      op.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      op.milestone = 0;
+      op.details = "details";
+      op.vote_rank = 1;
+      op.approved = true;
+      
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "bob";
+      op.account = "bob";
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.account = "candice";
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.account = "dan";
+
+      tx.operations.push_back( op );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "elon";
+      op.account = "elon";
+
+      tx.operations.push_back( op );
+      tx.sign( elon_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "fred";
+      op.account = "fred";
+
+      tx.operations.push_back( op );
+      tx.sign( fred_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "george";
+      op.account = "george";
+
+      tx.operations.push_back( op );
+      tx.sign( george_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "haz";
+      op.account = "haz";
+
+      tx.operations.push_back( op );
+      tx.sign( haz_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "isabelle";
+      op.account = "isabelle";
+
+      tx.operations.push_back( op );
+      tx.sign( isabelle_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "jayme";
+      op.account = "jayme";
+
+      tx.operations.push_back( op );
+      tx.sign( jayme_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "kathryn";
+      op.account = "kathryn";
+
+      tx.operations.push_back( op );
+      tx.sign( kathryn_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "leonie";
+      op.account = "leonie";
+
+      tx.operations.push_back( op );
+      tx.sign( leonie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "margot";
+      op.account = "margot";
+
+      tx.operations.push_back( op );
+      tx.sign( margot_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "natalie";
+      op.account = "natalie";
+
+      tx.operations.push_back( op );
+      tx.sign( natalie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "olivia";
+      op.account = "olivia";
+
+      tx.operations.push_back( op );
+      tx.sign( olivia_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "peter";
+      op.account = "peter";
+
+      tx.operations.push_back( op );
+      tx.sign( peter_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "quentin";
+      op.account = "quentin";
+
+      tx.operations.push_back( op );
+      tx.sign( quentin_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "rachel";
+      op.account = "rachel";
+
+      tx.operations.push_back( op );
+      tx.sign( rachel_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "sam";
+      op.account = "sam";
+
+      tx.operations.push_back( op );
+      tx.sign( sam_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      op.signatory = "tim";
+      op.account = "tim";
+
+      tx.operations.push_back( op );
+      tx.sign( tim_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "veronica";
+      op.account = "veronica";
+
+      tx.operations.push_back( op );
+      tx.sign( veronica_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const witness_schedule_object& witness_schedule = db.get_witness_schedule();
+      db.update_enterprise( enterprise, witness_schedule, props );
+
+      const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
+
+      BOOST_REQUIRE( enterprise.creator == "alice" );
+      BOOST_REQUIRE( enterprise.approved_milestones == 0 );    // initial milestone now approved
+      BOOST_REQUIRE( enterprise.claimed_milestones == 0 );
+      BOOST_REQUIRE( enterprise.days_paid == 0 );
+      BOOST_REQUIRE( enterprise.active == true );
+
+      generate_blocks( BLOCKS_PER_DAY * 8 - 1 );
+
+      BOOST_REQUIRE( enterprise.days_paid == 0 );
+
+      generate_block();
+
+      BOOST_REQUIRE( enterprise.days_paid == 1 );   // Daily budget is paid
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise proposal milestone approval" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise claim milestone" );
+
+      claim_enterprise_milestone_operation op;
+
+      op.signatory = "alice";
+      op.creator = "alice";
+      op.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      op.milestone = 1;
+      op.details = "details";
+      
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const witness_schedule_object& witness_schedule = db.get_witness_schedule();
+      db.update_enterprise( enterprise, witness_schedule, props );
+
+      const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
+
+      BOOST_REQUIRE( enterprise.creator == "alice" );
+      BOOST_REQUIRE( enterprise.approved_milestones == 0 );
+      BOOST_REQUIRE( enterprise.claimed_milestones == 1 );   // next milestone claimed
+      BOOST_REQUIRE( enterprise.days_paid == 0 );
+      BOOST_REQUIRE( enterprise.active == true );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise claim milestone" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal next milestone approval" );
+
+      approve_enterprise_milestone_operation op;
+
+      op.signatory = "alice";
+      op.account = "alice";
+      op.creator = "alice";
+      op.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      op.milestone = 1;
+      op.details = "details";
+      op.vote_rank = 1;
+      op.approved = true;
+      
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "bob";
+      op.account = "bob";
+      op.validate();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "candice";
+      op.account = "candice";
+
+      tx.operations.push_back( op );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "dan";
+      op.account = "dan";
+
+      tx.operations.push_back( op );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "elon";
+      op.account = "elon";
+
+      tx.operations.push_back( op );
+      tx.sign( elon_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "fred";
+      op.account = "fred";
+
+      tx.operations.push_back( op );
+      tx.sign( fred_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "george";
+      op.account = "george";
+
+      tx.operations.push_back( op );
+      tx.sign( george_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "haz";
+      op.account = "haz";
+
+      tx.operations.push_back( op );
+      tx.sign( haz_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "isabelle";
+      op.account = "isabelle";
+
+      tx.operations.push_back( op );
+      tx.sign( isabelle_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "jayme";
+      op.account = "jayme";
+
+      tx.operations.push_back( op );
+      tx.sign( jayme_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "kathryn";
+      op.account = "kathryn";
+
+      tx.operations.push_back( op );
+      tx.sign( kathryn_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "leonie";
+      op.account = "leonie";
+
+      tx.operations.push_back( op );
+      tx.sign( leonie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "margot";
+      op.account = "margot";
+
+      tx.operations.push_back( op );
+      tx.sign( margot_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "natalie";
+      op.account = "natalie";
+
+      tx.operations.push_back( op );
+      tx.sign( natalie_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "olivia";
+      op.account = "olivia";
+
+      tx.operations.push_back( op );
+      tx.sign( olivia_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "peter";
+      op.account = "peter";
+
+      tx.operations.push_back( op );
+      tx.sign( peter_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "quentin";
+      op.account = "quentin";
+
+      tx.operations.push_back( op );
+      tx.sign( quentin_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "rachel";
+      op.account = "rachel";
+
+      tx.operations.push_back( op );
+      tx.sign( rachel_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "sam";
+      op.account = "sam";
+
+      tx.operations.push_back( op );
+      tx.sign( sam_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      op.signatory = "tim";
+      op.account = "tim";
+
+      tx.operations.push_back( op );
+      tx.sign( tim_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      op.signatory = "veronica";
+      op.account = "veronica";
+
+      tx.operations.push_back( op );
+      tx.sign( veronica_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const witness_schedule_object& witness_schedule = db.get_witness_schedule();
+      db.update_enterprise( enterprise, witness_schedule, props );
+
+      const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
+
+      BOOST_REQUIRE( enterprise.creator == "alice" );
+      BOOST_REQUIRE( enterprise.approved_milestones == 1 );    // next milestone now approved
+      BOOST_REQUIRE( enterprise.claimed_milestones == 1 );
+      BOOST_REQUIRE( enterprise.days_paid == 1 );
+      BOOST_REQUIRE( enterprise.active == true );
+
+      generate_blocks( BLOCKS_PER_DAY * 14 - 1 );
+
+      BOOST_REQUIRE( enterprise.days_paid == 13 );
+
+      generate_block();
+
+      BOOST_REQUIRE( enterprise.days_paid == 14 );   // Daily budget is fully completed
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise proposal next milestone approval" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY ENTERPRISE SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
 
 
 
@@ -2458,116 +5505,170 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
 
 
 
-BOOST_AUTO_TEST_CASE( comment_validate )
+BOOST_AUTO_TEST_CASE( comment_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: comment_validate" );
+      BOOST_TEST_MESSAGE( "├── Testing: COMMENT OPERATION" );
 
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no signatures" );
 
-BOOST_AUTO_TEST_CASE( comment_authorities )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: comment_authorities" );
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
-      ACTORS( (alice)(bob) );
-      generate_blocks( 60 / BLOCK_INTERVAL );
+      ACTORS( (alice)(bob)(candice) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( fc::seconds( 60 ).count() / BLOCK_INTERVAL.count() );
 
       comment_operation op;
+
+      op.signatory = "alice";
       op.author = "alice";
       op.permlink = "lorem";
-      op.parent_author = "";
-      op.parent_permlink = "ipsum";
       op.title = "Lorem Ipsum";
       op.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      op.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      op.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      op.board = INIT_BOARD;
+      op.tags.push_back( "test" );
+      op.interface = INIT_ACCOUNT;
+      op.language = "en";
+      op.parent_author = "";
+      op.parent_permlink = "ipsum";
       op.json = "{\"foo\":\"bar\"}";
+      op.comment_price = asset( 0, SYMBOL_COIN );
+      op.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+      op.options = options;
 
       signed_transaction tx;
-      tx.operations.push_back( op );
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when no signatures" );
+      tx.operations.push_back( op );
+   
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_posting_auth );
 
-      BOOST_TEST_MESSAGE( "--- Test failure when duplicate signatures" );
-      tx.sign( alice_post_key, db.get_chain_id() );
-      tx.sign( alice_post_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when no signatures" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when duplicate signatures" );
+
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_duplicate_sig );
 
-      BOOST_TEST_MESSAGE( "--- Test success with post signature" );
-      tx.signatures.clear();
-      tx.sign( alice_post_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when duplicate signatures" );
 
-      BOOST_TEST_MESSAGE( "--- Test failure when signed by an additional signature not in the creator's authority" );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when signed by an additional signature not in the creator's authority" );
+
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_irrelevant_sig );
 
-      BOOST_TEST_MESSAGE( "--- Test failure when signed by a signature not in the creator's authority" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when signed by an additional signature not in the creator's authority" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when signed by a signature not in the creator's authority" );
+
       tx.signatures.clear();
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_posting_auth );
 
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when signed by a signature not in the creator's authority" );
 
-BOOST_AUTO_TEST_CASE( comment_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: comment_apply" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Success posting a root comment" );
 
-      ACTORS( (alice)(bob)(sam) )
-      generate_blocks( 60 / BLOCK_INTERVAL );
-
-      comment_operation op;
-      op.author = "alice";
-      op.permlink = "lorem";
-      op.parent_author = "";
-      op.parent_permlink = "ipsum";
-      op.title = "Lorem Ipsum";
-      op.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
-      op.json = "{\"foo\":\"bar\"}";
-
-      signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-
-      BOOST_TEST_MESSAGE( "--- Test Alice posting a root comment" );
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
 
       BOOST_REQUIRE( alice_comment.author == op.author );
       BOOST_REQUIRE( to_string( alice_comment.permlink ) == op.permlink );
+      BOOST_REQUIRE( to_string( alice_comment.title ) == op.title );
+      BOOST_REQUIRE( to_string( alice_comment.body ) == op.body );
+      BOOST_REQUIRE( to_string( alice_comment.ipfs[0] ) == op.ipfs[0] );
+      BOOST_REQUIRE( to_string( alice_comment.magnet[0] ) == op.magnet[0] );
+      BOOST_REQUIRE( alice_comment.post_type == op.post_type );
+      BOOST_REQUIRE( alice_comment.privacy == op.privacy );
+      BOOST_REQUIRE( alice_comment.reach == op.reach );
+      BOOST_REQUIRE( alice_comment.board == op.board );
+      BOOST_REQUIRE( to_string( alice_comment.tags[0] ) == op.tags[0] );
+      BOOST_REQUIRE( alice_comment.interface == op.interface );
+      BOOST_REQUIRE( alice_comment.rating == op.rating );
+      BOOST_REQUIRE( to_string( alice_comment.language ) == op.language );
       BOOST_REQUIRE( to_string( alice_comment.parent_permlink ) == op.parent_permlink );
-      BOOST_REQUIRE( alice_comment.last_update == db.head_block_time() );
-      BOOST_REQUIRE( alice_comment.created == db.head_block_time() );
-      BOOST_REQUIRE( alice_comment.net_reward.value == 0 );
-      BOOST_REQUIRE( alice_comment.abs_reward.value == 0 );
-      BOOST_REQUIRE( alice_comment.cashout_time == fc::time_point( db.head_block_time() + fc::seconds( CONTENT_REWARD_INTERVAL ) ) );
+      BOOST_REQUIRE( to_string( alice_comment.json ) == op.json );
+      BOOST_REQUIRE( alice_comment.comment_price == op.comment_price );
+      BOOST_REQUIRE( alice_comment.premium_price == op.premium_price );
 
-      #ifndef IS_LOW_MEM
-         BOOST_REQUIRE( to_string( alice_comment.title ) == op.title );
-         BOOST_REQUIRE( to_string( alice_comment.body ) == op.body );
-         //BOOST_REQUIRE( alice_comment.json == op.json );
-      #else
-         BOOST_REQUIRE( to_string( alice_comment.title ) == "" );
-         BOOST_REQUIRE( to_string( alice_comment.body ) == "" );
-         //BOOST_REQUIRE( alice_comment.json == "" );
-      #endif
+      BOOST_REQUIRE( alice_comment.last_update == now() );
+      BOOST_REQUIRE( alice_comment.created == now() );
+      BOOST_REQUIRE( alice_comment.active == now() );
+
+      BOOST_REQUIRE( alice_comment.depth == 0 );
+      BOOST_REQUIRE( alice_comment.children == 0 );
+      BOOST_REQUIRE( alice_comment.net_votes == 0 );
+      BOOST_REQUIRE( alice_comment.view_count == 0 );
+      BOOST_REQUIRE( alice_comment.share_count == 0 );
+
+      BOOST_REQUIRE( alice_comment.net_reward == 0 );
+      BOOST_REQUIRE( alice_comment.vote_power == 0 );
+      BOOST_REQUIRE( alice_comment.view_power == 0 );
+      BOOST_REQUIRE( alice_comment.share_power == 0 );
+      BOOST_REQUIRE( alice_comment.comment_power == 0 );
+      
+      BOOST_REQUIRE( alice_comment.cashout_time == fc::time_point( now() + CONTENT_REWARD_INTERVAL ) );
+      BOOST_REQUIRE( alice_comment.cashouts_received == 0 );
+
+      BOOST_REQUIRE( alice_comment.total_vote_weight == 0 );
+      BOOST_REQUIRE( alice_comment.total_view_weight == 0 );
+      BOOST_REQUIRE( alice_comment.total_share_weight == 0 );
+      BOOST_REQUIRE( alice_comment.total_comment_weight == 0 );
+
+      BOOST_REQUIRE( alice_comment.total_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( alice_comment.curator_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( alice_comment.beneficiary_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( alice_comment.content_rewards.amount.value == 0 );
+      BOOST_REQUIRE( alice_comment.percent_liquid == PERCENT_100 );
+      BOOST_REQUIRE( alice_comment.reward == 0 );
+      BOOST_REQUIRE( alice_comment.weight == 0 );
+      BOOST_REQUIRE( alice_comment.max_weight == 0 );
+
+      BOOST_REQUIRE( alice_comment.author_reward_percent == props.median_props.author_reward_percent );
+      BOOST_REQUIRE( alice_comment.vote_reward_percent == props.median_props.vote_reward_percent );
+      BOOST_REQUIRE( alice_comment.view_reward_percent == props.median_props.view_reward_percent );
+      BOOST_REQUIRE( alice_comment.share_reward_percent == props.median_props.share_reward_percent );
+      BOOST_REQUIRE( alice_comment.comment_reward_percent == props.median_props.comment_reward_percent );
+      BOOST_REQUIRE( alice_comment.storage_reward_percent == props.median_props.storage_reward_percent );
+      BOOST_REQUIRE( alice_comment.moderator_reward_percent == props.median_props.moderator_reward_percent );
+
+      BOOST_REQUIRE( alice_comment.allow_replies == true );
+      BOOST_REQUIRE( alice_comment.allow_votes == true );
+      BOOST_REQUIRE( alice_comment.allow_views == true );
+      BOOST_REQUIRE( alice_comment.allow_shares == true );
+      BOOST_REQUIRE( alice_comment.allow_curation_rewards == true );
+      BOOST_REQUIRE( alice_comment.root == true );
+      BOOST_REQUIRE( alice_comment.deleted == false );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Success posting a root comment" );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test Bob posting a comment on a non-existent comment" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when posting a comment on a non-existent comment" );
+
+      op.signatory = "bob";
       op.author = "bob";
       op.permlink = "ipsum";
       op.parent_author = "alice";
@@ -2576,35 +5677,99 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       tx.signatures.clear();
       tx.operations.clear();
       tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- Test Bob posting a comment on Alice's comment" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when posting a comment on a non-existent comment" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: posting a comment on previous comment" );
+
       op.parent_permlink = "lorem";
 
       tx.signatures.clear();
       tx.operations.clear();
       tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const comment_object& bob_comment = db.get_comment( "bob", string( "ipsum" ) );
 
       BOOST_REQUIRE( bob_comment.author == op.author );
       BOOST_REQUIRE( to_string( bob_comment.permlink ) == op.permlink );
-      BOOST_REQUIRE( bob_comment.parent_author == op.parent_author );
+      BOOST_REQUIRE( to_string( bob_comment.title ) == op.title );
+      BOOST_REQUIRE( to_string( bob_comment.body ) == op.body );
+      BOOST_REQUIRE( to_string( bob_comment.ipfs[0] ) == op.ipfs[0] );
+      BOOST_REQUIRE( to_string( bob_comment.magnet[0] ) == op.magnet[0] );
+      BOOST_REQUIRE( bob_comment.post_type == op.post_type );
+      BOOST_REQUIRE( bob_comment.privacy == op.privacy );
+      BOOST_REQUIRE( bob_comment.reach == op.reach );
+      BOOST_REQUIRE( bob_comment.board == op.board );
+      BOOST_REQUIRE( to_string( bob_comment.tags[0] ) == op.tags[0] );
+      BOOST_REQUIRE( bob_comment.interface == op.interface );
+      BOOST_REQUIRE( bob_comment.rating == op.rating );
+      BOOST_REQUIRE( to_string( bob_comment.language ) == op.language );
       BOOST_REQUIRE( to_string( bob_comment.parent_permlink ) == op.parent_permlink );
-      BOOST_REQUIRE( bob_comment.last_update == db.head_block_time() );
-      BOOST_REQUIRE( bob_comment.created == db.head_block_time() );
-      BOOST_REQUIRE( bob_comment.net_reward.value == 0 );
-      BOOST_REQUIRE( bob_comment.abs_reward.value == 0 );
-      BOOST_REQUIRE( bob_comment.cashout_time == bob_comment.created + CONTENT_REWARD_INTERVAL );
+      BOOST_REQUIRE( to_string( bob_comment.json ) == op.json );
+      BOOST_REQUIRE( bob_comment.comment_price == op.comment_price );
+      BOOST_REQUIRE( bob_comment.premium_price == op.premium_price );
+
+      BOOST_REQUIRE( bob_comment.last_update == now() );
+      BOOST_REQUIRE( bob_comment.created == now() );
+      BOOST_REQUIRE( bob_comment.active == now() );
+
+      BOOST_REQUIRE( bob_comment.depth == 1 );
+      BOOST_REQUIRE( bob_comment.children == 0 );
+      BOOST_REQUIRE( bob_comment.net_votes == 0 );
+      BOOST_REQUIRE( bob_comment.view_count == 0 );
+      BOOST_REQUIRE( bob_comment.share_count == 0 );
+
+      BOOST_REQUIRE( bob_comment.net_reward == 0 );
+      BOOST_REQUIRE( bob_comment.vote_power == 0 );
+      BOOST_REQUIRE( bob_comment.view_power == 0 );
+      BOOST_REQUIRE( bob_comment.share_power == 0 );
+      BOOST_REQUIRE( bob_comment.comment_power == 0 );
+      
+      BOOST_REQUIRE( bob_comment.cashout_time == fc::time_point( now() + CONTENT_REWARD_INTERVAL ) );
+      BOOST_REQUIRE( bob_comment.cashouts_received == 0 );
+
+      BOOST_REQUIRE( bob_comment.total_vote_weight == 0 );
+      BOOST_REQUIRE( bob_comment.total_view_weight == 0 );
+      BOOST_REQUIRE( bob_comment.total_share_weight == 0 );
+      BOOST_REQUIRE( bob_comment.total_comment_weight == 0 );
+
+      BOOST_REQUIRE( bob_comment.total_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( bob_comment.curator_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( bob_comment.beneficiary_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( bob_comment.content_rewards.amount.value == 0 );
+      BOOST_REQUIRE( bob_comment.percent_liquid == PERCENT_100 );
+
+      BOOST_REQUIRE( bob_comment.author_reward_percent == props.median_props.author_reward_percent );
+      BOOST_REQUIRE( bob_comment.vote_reward_percent == props.median_props.vote_reward_percent );
+      BOOST_REQUIRE( bob_comment.view_reward_percent == props.median_props.view_reward_percent );
+      BOOST_REQUIRE( bob_comment.share_reward_percent == props.median_props.share_reward_percent );
+      BOOST_REQUIRE( bob_comment.comment_reward_percent == props.median_props.comment_reward_percent );
+      BOOST_REQUIRE( bob_comment.storage_reward_percent == props.median_props.storage_reward_percent );
+      BOOST_REQUIRE( bob_comment.moderator_reward_percent == props.median_props.moderator_reward_percent );
+
+      BOOST_REQUIRE( bob_comment.allow_replies == true );
+      BOOST_REQUIRE( bob_comment.allow_votes == true );
+      BOOST_REQUIRE( bob_comment.allow_views == true );
+      BOOST_REQUIRE( bob_comment.allow_shares == true );
+      BOOST_REQUIRE( bob_comment.allow_curation_rewards == true );
+      BOOST_REQUIRE( bob_comment.root == false );
+      BOOST_REQUIRE( bob_comment.deleted == false );
       BOOST_REQUIRE( bob_comment.root_comment == alice_comment.id );
+
+      BOOST_REQUIRE( alice_comment.children == 1 );
+
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test Sam posting a comment on Bob's comment" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: posting a comment on previous comment" );
 
-      op.author = "sam";
+      BOOST_TEST_MESSAGE( "│   ├── Testing: posting a comment on additional previous comment" );
+
+      op.signatory = "candice";
+      op.author = "candice";
       op.permlink = "dolor";
       op.parent_author = "bob";
       op.parent_permlink = "ipsum";
@@ -2612,81 +5777,134 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       tx.signatures.clear();
       tx.operations.clear();
       tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_object& sam_comment = db.get_comment( "sam", string( "dolor" ) );
+      const comment_object& candice_comment = db.get_comment( "candice", string( "dolor" ) );
 
-      BOOST_REQUIRE( sam_comment.author == op.author );
-      BOOST_REQUIRE( to_string( sam_comment.permlink ) == op.permlink );
-      BOOST_REQUIRE( sam_comment.parent_author == op.parent_author );
-      BOOST_REQUIRE( to_string( sam_comment.parent_permlink ) == op.parent_permlink );
-      BOOST_REQUIRE( sam_comment.last_update == db.head_block_time() );
-      BOOST_REQUIRE( sam_comment.created == db.head_block_time() );
-      BOOST_REQUIRE( sam_comment.net_reward.value == 0 );
-      BOOST_REQUIRE( sam_comment.abs_reward.value == 0 );
-      BOOST_REQUIRE( sam_comment.cashout_time == sam_comment.created + CONTENT_REWARD_INTERVAL );
-      BOOST_REQUIRE( sam_comment.root_comment == alice_comment.id );
+      BOOST_REQUIRE( candice_comment.author == op.author );
+      BOOST_REQUIRE( to_string( candice_comment.permlink ) == op.permlink );
+      BOOST_REQUIRE( to_string( candice_comment.title ) == op.title );
+      BOOST_REQUIRE( to_string( candice_comment.body ) == op.body );
+      BOOST_REQUIRE( to_string( candice_comment.ipfs[0] ) == op.ipfs[0] );
+      BOOST_REQUIRE( to_string( candice_comment.magnet[0] ) == op.magnet[0] );
+      BOOST_REQUIRE( candice_comment.post_type == op.post_type );
+      BOOST_REQUIRE( candice_comment.privacy == op.privacy );
+      BOOST_REQUIRE( candice_comment.reach == op.reach );
+      BOOST_REQUIRE( candice_comment.board == op.board );
+      BOOST_REQUIRE( to_string( candice_comment.tags[0] ) == op.tags[0] );
+      BOOST_REQUIRE( candice_comment.interface == op.interface );
+      BOOST_REQUIRE( candice_comment.rating == op.rating );
+      BOOST_REQUIRE( to_string( candice_comment.language ) == op.language );
+      BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == op.parent_permlink );
+      BOOST_REQUIRE( to_string( candice_comment.json ) == op.json );
+      BOOST_REQUIRE( candice_comment.comment_price == op.comment_price );
+      BOOST_REQUIRE( candice_comment.premium_price == op.premium_price );
+
+      BOOST_REQUIRE( candice_comment.last_update == now() );
+      BOOST_REQUIRE( candice_comment.created == now() );
+      BOOST_REQUIRE( candice_comment.active == now() );
+
+      BOOST_REQUIRE( candice_comment.depth == 2 );
+      BOOST_REQUIRE( candice_comment.children == 0 );
+      BOOST_REQUIRE( candice_comment.net_votes == 0 );
+      BOOST_REQUIRE( candice_comment.view_count == 0 );
+      BOOST_REQUIRE( candice_comment.share_count == 0 );
+
+      BOOST_REQUIRE( candice_comment.net_reward == 0 );
+      BOOST_REQUIRE( candice_comment.vote_power == 0 );
+      BOOST_REQUIRE( candice_comment.view_power == 0 );
+      BOOST_REQUIRE( candice_comment.share_power == 0 );
+      BOOST_REQUIRE( candice_comment.comment_power == 0 );
+      
+      BOOST_REQUIRE( candice_comment.cashout_time == fc::time_point( now() + CONTENT_REWARD_INTERVAL ) );
+      BOOST_REQUIRE( candice_comment.cashouts_received == 0 );
+
+      BOOST_REQUIRE( candice_comment.total_vote_weight == 0 );
+      BOOST_REQUIRE( candice_comment.total_view_weight == 0 );
+      BOOST_REQUIRE( candice_comment.total_share_weight == 0 );
+      BOOST_REQUIRE( candice_comment.total_comment_weight == 0 );
+
+      BOOST_REQUIRE( candice_comment.total_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( candice_comment.curator_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( candice_comment.beneficiary_payout_value.amount.value == 0 );
+      BOOST_REQUIRE( candice_comment.content_rewards.amount.value == 0 );
+      BOOST_REQUIRE( candice_comment.percent_liquid == PERCENT_100 );
+
+      BOOST_REQUIRE( candice_comment.author_reward_percent == props.median_props.author_reward_percent );
+      BOOST_REQUIRE( candice_comment.vote_reward_percent == props.median_props.vote_reward_percent );
+      BOOST_REQUIRE( candice_comment.view_reward_percent == props.median_props.view_reward_percent );
+      BOOST_REQUIRE( candice_comment.share_reward_percent == props.median_props.share_reward_percent );
+      BOOST_REQUIRE( candice_comment.comment_reward_percent == props.median_props.comment_reward_percent );
+      BOOST_REQUIRE( candice_comment.storage_reward_percent == props.median_props.storage_reward_percent );
+      BOOST_REQUIRE( candice_comment.moderator_reward_percent == props.median_props.moderator_reward_percent );
+
+      BOOST_REQUIRE( candice_comment.allow_replies == true );
+      BOOST_REQUIRE( candice_comment.allow_votes == true );
+      BOOST_REQUIRE( candice_comment.allow_views == true );
+      BOOST_REQUIRE( candice_comment.allow_shares == true );
+      BOOST_REQUIRE( candice_comment.allow_curation_rewards == true );
+      BOOST_REQUIRE( candice_comment.root == false );
+      BOOST_REQUIRE( candice_comment.deleted == false );
+      BOOST_REQUIRE( candice_comment.root_comment == alice_comment.id );
+
+      BOOST_REQUIRE( bob_comment.children == 1 );
+      BOOST_REQUIRE( alice_comment.children == 2 );
+
       validate_database();
 
       generate_blocks( 60 * 5 / BLOCK_INTERVAL + 1 );
 
-      BOOST_TEST_MESSAGE( "--- Test modifying a comment" );
-      const auto& mod_sam_comment = db.get_comment( "sam", string( "dolor" ) );
-      const auto& mod_bob_comment = db.get_comment( "bob", string( "ipsum" ) );
-      const auto& mod_alice_comment = db.get_comment( "alice", string( "lorem" ) );
-      fc::time_point created = mod_sam_comment.created;
+      BOOST_TEST_MESSAGE( "│   ├── Testing: modifying a comment" );
 
-      db.modify( mod_sam_comment, [&]( comment_object& com )
-      {
-         com.net_reward = 10;
-         com.abs_reward = 10;
-      });
-
-      db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& o)
-      {
-         o.total_reward_squared = node::chain::util::evaluate_reward_curve( 10 );
-      });
+      fc::time_point created = candice_comment.created;
 
       tx.signatures.clear();
       tx.operations.clear();
+
       op.title = "foo";
       op.body = "bar";
       op.json = "{\"bar\":\"foo\"}";
       tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( mod_sam_comment.author == op.author );
-      BOOST_REQUIRE( to_string( mod_sam_comment.permlink ) == op.permlink );
-      BOOST_REQUIRE( mod_sam_comment.parent_author == op.parent_author );
-      BOOST_REQUIRE( to_string( mod_sam_comment.parent_permlink ) == op.parent_permlink );
-      BOOST_REQUIRE( mod_sam_comment.last_update == db.head_block_time() );
-      BOOST_REQUIRE( mod_sam_comment.created == created );
-      BOOST_REQUIRE( mod_sam_comment.cashout_time == mod_sam_comment.created + CONTENT_REWARD_INTERVAL );
+      const comment_object& candice_comment = db.get_comment( "candice", string( "dolor" ) );
+
+      BOOST_REQUIRE( candice_comment.author == op.author );
+      BOOST_REQUIRE( to_string( candice_comment.permlink ) == op.permlink );
+      BOOST_REQUIRE( candice_comment.parent_author == op.parent_author );
+      BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == op.parent_permlink );
+      BOOST_REQUIRE( candice_comment.last_update == now() );
+      BOOST_REQUIRE( candice_comment.created == created );
+      BOOST_REQUIRE( candice_comment.cashout_time == candice_comment.created + CONTENT_REWARD_INTERVAL );
+
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test failure posting withing 1 minute" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: modifying a comment" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure posting again within time limit" );
 
       op.permlink = "sit";
       op.parent_author = "";
       op.parent_permlink = "test";
+
       tx.operations.clear();
       tx.signatures.clear();
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+
       tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       generate_blocks( 60 * 5 / BLOCK_INTERVAL );
 
       op.permlink = "amet";
+
       tx.operations.clear();
       tx.signatures.clear();
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+
       tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       validate_database();
@@ -2694,557 +5912,993 @@ BOOST_AUTO_TEST_CASE( comment_apply )
       generate_block();
       db.push_transaction( tx, 0 );
       validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
 
-BOOST_AUTO_TEST_CASE( comment_beneficiaries_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Test Comment Beneficiaries Validate" );
-      comment_options_operation op;
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure posting again within time limit" );
 
-      op.author = "alice";
-      op.permlink = "test";
+      BOOST_TEST_MESSAGE( "│   ├── Testing: more than 100% weight on a single route" );
 
-      BOOST_TEST_MESSAGE( "--- Testing more than 100% weight on a single route" );
-      comment_payout_beneficiaries b;
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), PERCENT_100 + 1 ) );
-      op.extensions.insert( b );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
+      comment_options options;
 
-      BOOST_TEST_MESSAGE( "--- Testing more than 100% total weight" );
-      b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), PERCENT_1 * 75 ) );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "sam" ), PERCENT_1 * 75 ) );
-      op.extensions.clear();
-      op.extensions.insert( b );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), PERCENT_100 + 1 ) );
 
-      BOOST_TEST_MESSAGE( "--- Testing maximum number of routes" );
-      b.beneficiaries.clear();
+      REQUIRE_THROW( options.validate(), fc::assert_exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: more than 100% weight on a single route" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: more than 100% total weight" );
+
+      options.beneficiaries.clear();
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), PERCENT_1 * 75 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "sam" ), PERCENT_1 * 75 ) );
+      
+      REQUIRE_THROW( options.validate(), fc::assert_exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: more than 100% total weight" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: maximum number of routes" );
+
+      options.beneficiaries.clear();
+
       for( size_t i = 0; i < 127; i++ )
       {
-         b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "foo" + fc::to_string( i ) ), 1 ) );
+         options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "foo" + fc::to_string( i ) ), 1 ) );
       }
 
-      op.extensions.clear();
-      std::sort( b.beneficiaries.begin(), b.beneficiaries.end() );
-      op.extensions.insert( b );
-      op.validate();
+      std::sort( options.beneficiaries.begin(), options.beneficiaries.end() );
+      options.validate();
 
-      BOOST_TEST_MESSAGE( "--- Testing one too many routes" );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bar" ), 1 ) );
-      std::sort( b.beneficiaries.begin(), b.beneficiaries.end() );
-      op.extensions.clear();
-      op.extensions.insert( b );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: maximum number of routes" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: one too many routes" );
 
-      BOOST_TEST_MESSAGE( "--- Testing duplicate accounts" );
-      b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( "bob", PERCENT_1 * 2 ) );
-      b.beneficiaries.push_back( beneficiary_route_type( "bob", PERCENT_1 ) );
-      op.extensions.clear();
-      op.extensions.insert( b );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bar" ), 1 ) );
+      std::sort( options.beneficiaries.begin(), options.beneficiaries.end() );
 
-      BOOST_TEST_MESSAGE( "--- Testing incorrect account sort order" );
-      b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( "bob", PERCENT_1 ) );
-      b.beneficiaries.push_back( beneficiary_route_type( "alice", PERCENT_1 ) );
-      op.extensions.clear();
-      op.extensions.insert( b );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
+      REQUIRE_THROW( options.validate(), fc::assert_exception );
 
-      BOOST_TEST_MESSAGE( "--- Testing correct account sort order" );
-      b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( "alice", PERCENT_1 ) );
-      b.beneficiaries.push_back( beneficiary_route_type( "bob", PERCENT_1 ) );
-      op.extensions.clear();
-      op.extensions.insert( b );
-      op.validate();
-   }
-   FC_LOG_AND_RETHROW()
-}
+      BOOST_TEST_MESSAGE( "│   ├── Passed: one too many routes" );
 
-BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Test Comment Beneficiaries" );
-      ACTORS( (alice)(bob)(sam)(dave) )
-      generate_block();
+      BOOST_TEST_MESSAGE( "│   ├── Testing: duplicate accounts" );
 
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) ) );
+      options.beneficiaries.clear();
+      options.beneficiaries.push_back( beneficiary_route_type( "bob", PERCENT_1 * 2 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( "bob", PERCENT_1 ) );
+      
+      REQUIRE_THROW( options.validate(), fc::assert_exception );
 
-      comment_operation comment;
+      BOOST_TEST_MESSAGE( "│   ├── Passed: duplicate accounts" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: incorrect account sort order" );
+
+      options.beneficiaries.clear();
+      options.beneficiaries.push_back( beneficiary_route_type( "bob", PERCENT_1 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( "alice", PERCENT_1 ) );
+      
+      REQUIRE_THROW( options.validate(), fc::assert_exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: incorrect account sort order" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: correct account sort order" );
+
+      options.beneficiaries.clear();
+      options.beneficiaries.push_back( beneficiary_route_type( "alice", PERCENT_1 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( "bob", PERCENT_1 ) );
+      
+      options.validate();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: correct account sort order" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: specifying a non-existent benefactor" );
+
+      options.beneficiaries.clear();
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "doug" ), PERCENT_1 ) );
+
+      options.validate();
+      op.options = options;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+      
+      tx.operations.push_back( op );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: specifying a non-existent benefactor" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: setting when comment has been voted on" );
+
       vote_operation vote;
-      comment_options_operation op;
-      comment_payout_beneficiaries b;
-      signed_transaction tx;
 
-      comment.author = "alice";
-      comment.permlink = "test";
-      comment.parent_permlink = "test";
-      comment.title = "test";
-      comment.body = "foobar";
-
-      tx.operations.push_back( comment );
-      tx.set_expiration( db.head_block_time() + MIN_TRANSACTION_EXPIRATION_LIMIT );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx );
-
-      BOOST_TEST_MESSAGE( "--- Test failure on more than 8 benefactors" );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), PERCENT_1 ) );
-
-      for( size_t i = 0; i < 8; i++ )
-      {
-         b.beneficiaries.push_back( beneficiary_route_type( account_name_type( INIT_ACCOUNT + fc::to_string( i ) ), PERCENT_1 ) );
-      }
-
-      op.author = "alice";
-      op.permlink = "test";
-      op.allow_curation_rewards = false;
-      op.extensions.insert( b );
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), chain::plugin_exception );
-
-
-      BOOST_TEST_MESSAGE( "--- Test specifying a non-existent benefactor" );
-      b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "doug" ), PERCENT_1 ) );
-      op.extensions.clear();
-      op.extensions.insert( b );
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
-
-
-      BOOST_TEST_MESSAGE( "--- Test setting when comment has been voted on" );
-      vote.author = "alice";
-      vote.permlink = "test";
-      vote.voter = "bob";
+      vote.signatory = "alice";
+      vote.voter = "alice";
+      vote.author = "candice";
+      vote.permlink = "dolor";
+      vote.interface = INIT_ACCOUNT;
       vote.weight = PERCENT_100;
 
-      b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), 25 * PERCENT_1 ) );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "sam" ), 50 * PERCENT_1 ) );
-      op.extensions.clear();
-      op.extensions.insert( b );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      tx.clear();
       tx.operations.push_back( vote );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+      validate_database();
+      
+      options.beneficiaries.clear();
+
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), 25 * PERCENT_1 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "alice" ), 50 * PERCENT_1 ) );
+
+      options.validate();
+      op.options = options;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx ), fc::exception );
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: setting when comment has been voted on" );
 
-      BOOST_TEST_MESSAGE( "--- Test success" );
-      tx.clear();
+      BOOST_TEST_MESSAGE( "│   ├── Testing: success when altering beneficiaries before voting" );
+
+      op.signatory = "bob";
+      op.author = "bob";
+      op.permlink = "ipsum";
+      op.parent_author = "alice";
+      op.parent_permlink = "foobar";
+
+      tx.signatures.clear();
+      tx.operations.clear();
+
       tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+      validate_database();
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: success when altering beneficiaries before voting" );
 
-      BOOST_TEST_MESSAGE( "--- Test setting when there are already beneficiaries" );
-      b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "dave" ), 25 * PERCENT_1 ) );
-      op.extensions.clear();
-      op.extensions.insert( b );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when there are already beneficiaries" );
 
+      options.beneficiaries.clear();
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "dan" ), 25 * PERCENT_1 ) );
+      op.options = options;
 
-      BOOST_TEST_MESSAGE( "--- Payout and verify rewards were split properly" );
-      tx.clear();
+      tx.signatures.clear();
+      tx.operations.clear();
+
+      tx.operations.push_back( op );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when there are already beneficiaries" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Payout and verify rewards were split properly" );
+
+      tx.signatures.clear();
+      tx.operations.clear();
+
       tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
+      validate_database();
 
-      generate_blocks( db.get_comment( "alice", string( "test" ) ).cashout_time - BLOCK_INTERVAL );
+      time_point cashout_time = candice_comment.cashout_time;
 
-      db_plugin->debug_update( [=]( database& db )
-      {
-         
-      });
+      generate_blocks( cashout_time - BLOCK_INTERVAL );
+
+      BOOST_REQUIRE( candice_comment.cashouts_received == 0 );
+
+      asset alice_reward = db.get_reward_balance( "alice", SYMBOL_COIN );
+      asset bob_reward = db.get_reward_balance( "bob", SYMBOL_COIN );
+      asset candice_reward = db.get_reward_balance( "candice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_reward.amount == 0 );
+      BOOST_REQUIRE( bob_reward.amount == 0 );
+      BOOST_REQUIRE( candice_reward.amount == 0 );
 
       generate_block();
 
-      BOOST_REQUIRE( db.get_account( "bob" ).TMErewardBalance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).USDrewardBalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).rewardBalanceInTME.amount + db.get_account( "sam" ).rewardBalanceInTME.amount == db.get_comment( "alice", string( "test" ) ).beneficiary_payout_value.amount );
-      BOOST_REQUIRE( ( db.get_account( "alice" ).USDrewardBalance.amount + db.get_account( "alice" ).rewardBalanceInTME.amount ) == db.get_account( "bob" ).rewardBalanceInTME.amount + 2 );
-      BOOST_REQUIRE( ( db.get_account( "alice" ).USDrewardBalance.amount + db.get_account( "alice" ).rewardBalanceInTME.amount ) * 2 == db.get_account( "sam" ).rewardBalanceInTME.amount + 3 );
+      BOOST_REQUIRE( candice_comment.cashouts_received == 1 );
+
+      asset alice_reward = db.get_reward_balance( "alice", SYMBOL_COIN );
+      asset bob_reward = db.get_reward_balance( "bob", SYMBOL_COIN );
+      asset candice_reward = db.get_reward_balance( "candice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_reward.amount > 0 );
+      BOOST_REQUIRE( bob_reward.amount > 0 );
+      BOOST_REQUIRE( candice_reward.amount > 0 );
+
+      BOOST_REQUIRE( bob_reward + candice_reward == alice_reward );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Payout and verify rewards were split properly" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: COMMENT OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( vote_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: vote_validate" );
 
+BOOST_AUTO_TEST_CASE( message_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: MESSAGE OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no connection" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      signed_transaction tx;
+
+      message_operation message;
+
+      message.signatory = "alice";
+      message.sender = "alice";
+      message.recipient = "bob";
+      message.message = "Hello";
+      message.uuid = "6a91e502-1e53-4531-a97a-379ac8a495ff";
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when no connection" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: message success with connection" );
+
+      connection_request_operation request;
+
+      request.signatory = "alice";
+      request.account = "alice";
+      request.requested_account = "bob";
+      request.connection_type = CONNECTION;
+      request.message = "Hello";
+      request.requested = true;
+
+      tx.operations.push_back( request );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      connection_accept_operation accept;
+
+      accept.signatory = "bob";
+      accept.account = "bob";
+      accept.requesting_account = "alice";
+      accept.connection_type = CONNECTION;
+      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      accept.encrypted_key = "#supersecretencryptedkeygoeshere";
+      accept.connected = true;
+
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept.signatory = "alice";
+      accept.account = "alice";
+      accept.requesting_account = "bob";
+      accept.connection_type = CONNECTION;
+      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      accept.encrypted_key = "#supersecretencryptedkeygoeshere";
+      accept.connected = true;
+
+      tx.operations.push_back( accept );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( message );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 ); 
+
+      const auto& message_idx = db.get_index< message_index >().indices().get< by_sender_uuid >();
+      auto message_itr = message_idx.find( std::make_tuple( "alice", "6a91e502-1e53-4531-a97a-379ac8a495ff" ) );
+
+      BOOST_REQUIRE( message_itr != message_idx.end() );
+      BOOST_REQUIRE( message_itr->message == message.message );
+      BOOST_REQUIRE( message_itr->created == now() );
+      
       validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: message success with connection" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: MESSAGE OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( vote_authorities )
-{
-   try
+
+BOOST_AUTO_TEST_CASE( vote_operation_test )
+{ 
+   try 
    {
-      BOOST_TEST_MESSAGE( "Testing: vote_authorities" );
+      BOOST_TEST_MESSAGE( "├── Passed: VOTE OPERATION" );
 
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when voting on a non-existent comment" );
+      
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
-BOOST_AUTO_TEST_CASE( vote_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: vote_apply" );
+      ACTORS( (alice)(bob)(candice)(dan) );
 
-      ACTORS( (alice)(bob)(sam)(dave) )
-      generate_block();
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "alice", ASSET( "10.000 TESTS" ) );
-      validate_database();
-      fund_stake( "bob" , ASSET( "10.000 TESTS" ) );
-      fund_stake( "sam" , ASSET( "10.000 TESTS" ) );
-      fund_stake( "dave" , ASSET( "10.000 TESTS" ) );
-      generate_block();
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       const auto& vote_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
 
-      {
-         const auto& alice = db.get_account( "alice" );
-
-         signed_transaction tx;
-         comment_operation comment_op;
-         comment_op.author = "alice";
-         comment_op.permlink = "foo";
-         comment_op.parent_permlink = "test";
-         comment_op.title = "bar";
-         comment_op.body = "foo bar";
-         tx.operations.push_back( comment_op );
-         tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-
-         BOOST_TEST_MESSAGE( "--- Testing voting on a non-existent comment" );
-
-         tx.operations.clear();
-         tx.signatures.clear();
-
-         vote_operation op;
-         op.voter = "alice";
-         op.author = "bob";
-         op.permlink = "foo";
-         op.weight = PERCENT_100;
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-         REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Testing voting with a weight of 0" );
-
-         op.weight = (int16_t) 0;
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-         REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Testing success" );
-
-         auto old_voting_power = alice.voting_power;
-
-         op.weight = PERCENT_100;
-         op.author = "alice";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-         db.push_transaction( tx, 0 );
-
-         auto& alice_comment = db.get_comment( "alice", string( "foo" ) );
-         auto itr = vote_idx.find( std::make_tuple( alice_comment.id, alice.id ) );
-         int64_t max_vote_denom = ( db.get_dynamic_global_properties().vote_power_reserve_rate * VOTE_REGENERATION_SECONDS ) / (60*60*24);
-
-         BOOST_REQUIRE( alice.voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) / max_vote_denom ) );
-         BOOST_REQUIRE( alice.last_vote_time == db.head_block_time() );
-         BOOST_REQUIRE( alice_comment.net_reward.value == alice.SCORE.amount.value * ( old_voting_power - alice.voting_power ) / PERCENT_100 );
-         BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
-         BOOST_REQUIRE( itr->reward == alice.SCORE.amount.value * ( old_voting_power - alice.voting_power ) / PERCENT_100 );
-         BOOST_REQUIRE( itr != vote_idx.end() );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test reduced power for quick voting" );
-
-         generate_blocks( db.head_block_time() + MIN_VOTE_INTERVAL_SEC );
-
-         old_voting_power = db.get_account( "alice" ).voting_power;
-
-         comment_op.author = "bob";
-         comment_op.permlink = "foo";
-         comment_op.title = "bar";
-         comment_op.body = "foo bar";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( comment_op );
-         tx.sign( bob_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-
-         op.weight = PERCENT_100 / 2;
-         op.voter = "alice";
-         op.author = "bob";
-         op.permlink = "foo";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-
-         const auto& bob_comment = db.get_comment( "bob", string( "foo" ) );
-         itr = vote_idx.find( std::make_tuple( bob_comment.id, alice.id ) );
-
-         BOOST_REQUIRE( db.get_account( "alice" ).voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) * PERCENT_100 / ( 2 * max_vote_denom * PERCENT_100 ) ) );
-         BOOST_REQUIRE( bob_comment.net_reward.value == alice.SCORE.amount.value * ( old_voting_power - db.get_account( "alice" ).voting_power ) / PERCENT_100 );
-         BOOST_REQUIRE( bob_comment.cashout_time == bob_comment.created + CONTENT_REWARD_INTERVAL );
-         BOOST_REQUIRE( itr != vote_idx.end() );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test payout time extension on vote" );
-
-         old_voting_power = db.get_account( "bob" ).voting_power;
-         auto old_abs_reward = db.get_comment( "alice", string( "foo" ) ).abs_reward.value;
-
-         generate_blocks( db.head_block_time() + fc::seconds( ( CONTENT_REWARD_INTERVAL / 2 ) ), true );
-
-         const auto& new_bob = db.get_account( "bob" );
-         const auto& new_alice_comment = db.get_comment( "alice", string( "foo" ) );
-
-         op.weight = PERCENT_100;
-         op.voter = "bob";
-         op.author = "alice";
-         op.permlink = "foo";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-         tx.sign( bob_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-
-         itr = vote_idx.find( std::make_tuple( new_alice_comment.id, new_bob.id ) );
-         uint128_t new_cashout_time = db.head_block_time().sec_since_epoch() + CONTENT_REWARD_INTERVAL;
-
-         BOOST_REQUIRE( new_bob.voting_power == PERCENT_100 - ( ( PERCENT_100 + max_vote_denom - 1 ) / max_vote_denom ) );
-         BOOST_REQUIRE( new_alice_comment.net_reward.value == old_abs_reward + new_bob.SCORE.amount.value * ( old_voting_power - new_bob.voting_power ) / PERCENT_100 );
-         BOOST_REQUIRE( new_alice_comment.cashout_time == new_alice_comment.created + CONTENT_REWARD_INTERVAL );
-         BOOST_REQUIRE( itr != vote_idx.end() );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test negative vote" );
-
-         const auto& new_sam = db.get_account( "sam" );
-         const auto& new_bob_comment = db.get_comment( "bob", string( "foo" ) );
-
-         old_abs_reward = new_bob_comment.abs_reward.value;
-
-         op.weight = -1 * PERCENT_100 / 2;
-         op.voter = "sam";
-         op.author = "bob";
-         op.permlink = "foo";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( sam_private_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-
-         itr = vote_idx.find( std::make_tuple( new_bob_comment.id, new_sam.id ) );
-         new_cashout_time = db.head_block_time().sec_since_epoch() + CONTENT_REWARD_INTERVAL;
-         auto sam_weight /*= ( ( uint128_t( new_sam.SCORE.amount.value ) ) / 400 + 1 ).to_uint64();*/
-                         = ( ( uint128_t( new_sam.SCORE.amount.value ) * ( ( PERCENT_100 + max_vote_denom - 1 ) / ( 2 * max_vote_denom ) ) ) / PERCENT_100 ).to_uint64();
-
-         BOOST_REQUIRE( new_sam.voting_power == PERCENT_100 - ( ( PERCENT_100 + max_vote_denom - 1 ) / ( 2 * max_vote_denom ) ) );
-         BOOST_REQUIRE( new_bob_comment.net_reward.value == old_abs_reward - sam_weight );
-         BOOST_REQUIRE( new_bob_comment.abs_reward.value == old_abs_reward + sam_weight );
-         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CONTENT_REWARD_INTERVAL );
-         BOOST_REQUIRE( itr != vote_idx.end() );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test nested voting on nested comments" );
-
-         old_abs_reward = new_alice_comment.children_abs_reward.value;
-         int64_t regenerated_power = (PERCENT_100 * ( db.head_block_time() - db.get_account( "alice").last_vote_time ).to_seconds() ) / VOTE_REGENERATION_SECONDS;
-         int64_t used_power = ( db.get_account( "alice" ).voting_power + regenerated_power + max_vote_denom - 1 ) / max_vote_denom;
-
-         comment_op.author = "sam";
-         comment_op.permlink = "foo";
-         comment_op.title = "bar";
-         comment_op.body = "foo bar";
-         comment_op.parent_author = "alice";
-         comment_op.parent_permlink = "foo";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( comment_op );
-         tx.sign( sam_private_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-
-         op.weight = PERCENT_100;
-         op.voter = "alice";
-         op.author = "sam";
-         op.permlink = "foo";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-
-         auto new_reward = ( ( fc::uint128_t( db.get_account( "alice" ).SCORE.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
-
-         BOOST_REQUIRE( db.get_comment( "alice", string( "foo" ) ).cashout_time == db.get_comment( "alice", string( "foo" ) ).created + CONTENT_REWARD_INTERVAL );
-
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test increasing vote reward" );
-
-         generate_blocks( db.head_block_time() + MIN_VOTE_INTERVAL_SEC );
-
-         auto new_alice = db.get_account( "alice" );
-         auto alice_bob_vote = vote_idx.find( std::make_tuple( new_bob_comment.id, new_alice.id ) );
-         auto old_vote_reward = alice_bob_vote->reward;
-         auto old_net_reward = new_bob_comment.net_reward.value;
-         old_abs_reward = new_bob_comment.abs_reward.value;
-         used_power = ( ( PERCENT_1 * 25 * ( new_alice.voting_power ) / PERCENT_100 ) + max_vote_denom - 1 ) / max_vote_denom;
-         auto alice_voting_power = new_alice.voting_power - used_power;
-
-         op.voter = "alice";
-         op.weight = PERCENT_1 * 25;
-         op.author = "bob";
-         op.permlink = "foo";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-         alice_bob_vote = vote_idx.find( std::make_tuple( new_bob_comment.id, new_alice.id ) );
-
-         new_reward = ( ( fc::uint128_t( new_alice.SCORE.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
-
-         BOOST_REQUIRE( new_bob_comment.net_reward == old_net_reward - old_vote_reward + new_reward );
-         BOOST_REQUIRE( new_bob_comment.abs_reward == old_abs_reward + new_reward );
-         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CONTENT_REWARD_INTERVAL );
-         BOOST_REQUIRE( alice_bob_vote->reward == new_reward );
-         BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
-         BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
-         BOOST_REQUIRE( db.get_account( "alice" ).voting_power == alice_voting_power );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test decreasing vote reward" );
-
-         generate_blocks( db.head_block_time() + MIN_VOTE_INTERVAL_SEC );
-
-         old_vote_reward = new_reward;
-         old_net_reward = new_bob_comment.net_reward.value;
-         old_abs_reward = new_bob_comment.abs_reward.value;
-         used_power = ( uint64_t( PERCENT_1 ) * 75 * uint64_t( alice_voting_power ) ) / PERCENT_100;
-         used_power = ( used_power + max_vote_denom - 1 ) / max_vote_denom;
-         alice_voting_power -= used_power;
-
-         op.weight = PERCENT_1 * -75;
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-         alice_bob_vote = vote_idx.find( std::make_tuple( new_bob_comment.id, new_alice.id ) );
-
-         new_reward = ( ( fc::uint128_t( new_alice.SCORE.amount.value ) * used_power ) / PERCENT_100 ).to_uint64();
-
-         BOOST_REQUIRE( new_bob_comment.net_reward == old_net_reward - old_vote_reward - new_reward );
-         BOOST_REQUIRE( new_bob_comment.abs_reward == old_abs_reward + new_reward );
-         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CONTENT_REWARD_INTERVAL );
-         BOOST_REQUIRE( alice_bob_vote->reward == -1 * new_reward );
-         BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
-         BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
-         BOOST_REQUIRE( db.get_account( "alice" ).voting_power == alice_voting_power );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test changing a vote to 0 weight (aka: removing a vote)" );
-
-         generate_blocks( db.head_block_time() + MIN_VOTE_INTERVAL_SEC );
-
-         old_vote_reward = alice_bob_vote->reward;
-         old_net_reward = new_bob_comment.net_reward.value;
-         old_abs_reward = new_bob_comment.abs_reward.value;
-
-         op.weight = 0;
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-         alice_bob_vote = vote_idx.find( std::make_tuple( new_bob_comment.id, new_alice.id ) );
-
-         BOOST_REQUIRE( new_bob_comment.net_reward == old_net_reward - old_vote_reward );
-         BOOST_REQUIRE( new_bob_comment.abs_reward == old_abs_reward );
-         BOOST_REQUIRE( new_bob_comment.cashout_time == new_bob_comment.created + CONTENT_REWARD_INTERVAL );
-         BOOST_REQUIRE( alice_bob_vote->reward == 0 );
-         BOOST_REQUIRE( alice_bob_vote->last_update == db.head_block_time() );
-         BOOST_REQUIRE( alice_bob_vote->vote_percent == op.weight );
-         BOOST_REQUIRE( db.get_account( "alice" ).voting_power == alice_voting_power );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test failure when increasing reward within lockout period" );
-
-         generate_blocks( fc::time_point( ( new_bob_comment.cashout_time - UPVOTE_LOCKOUT_TIME ).sec_since_epoch() + BLOCK_INTERVAL ), true );
-
-         op.weight = PERCENT_100;
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-         REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test success when reducing reward within lockout period" );
-
-         op.weight = -1 * PERCENT_100;
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-         validate_database();
-
-         BOOST_TEST_MESSAGE( "--- Test failure with a new vote within lockout period" );
-
-         op.weight = PERCENT_100;
-         op.voter = "dave";
-         tx.operations.clear();
-         tx.signatures.clear();
-         tx.operations.push_back( op );
-         tx.sign( dave_private_key, db.get_chain_id() );
-         REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-         validate_database();
-      }
+      signed_transaction tx;
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.board = INIT_BOARD;
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "ipsum";
+      comment.json = "{\"json\":\"valid\"}";
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+      comment.options = options;
+
+      tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote_operation vote;
+
+      vote.signatory = "bob";
+      vote.voter = "bob";
+      vote.author = "alice";
+      vote.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
+      vote.interface = INIT_ACCOUNT;
+      vote.weight = PERCENT_100;
+
+      tx.operations.push_back( vote );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when voting on a non-existent comment" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when voting with an initial weight of 0" );
+
+      vote.weight = 0;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( vote );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when voting with an initial weight of 0" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful vote with PERCENT_100 weight" );
+
+      auto old_voting_power = bob.voting_power;
+
+      vote.weight = PERCENT_100;
+      vote.permlink = "lorem";
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( vote );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
+
+      auto bob_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+      int64_t max_vote_denom = props.median_props.vote_reserve_rate * ( props.median_props.vote_recharge_time.count() / fc::days(1).count() );
+
+      BOOST_REQUIRE( bob.voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) / max_vote_denom ) );
+      BOOST_REQUIRE( bob.last_vote_time == now() );
+      BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
+      BOOST_REQUIRE( bob_vote_itr != vote_idx.end() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful vote with PERCENT_100 weight" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: negative vote" );
+
+      old_voting_power = candice.voting_power;
+
+      vote.signatory = "candice";
+      vote.voter = "candice";
+      vote.weight = -1 * PERCENT_100;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( vote );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
+
+      BOOST_REQUIRE( candice.voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) / max_vote_denom ) );
+      BOOST_REQUIRE( candice.last_vote_time == now() );
+      BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
+      BOOST_REQUIRE( candice_vote_itr != vote_idx.end() );
+      BOOST_REQUIRE( candice_vote_itr->last_update == now() );
+      BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: negative vote" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: adjusting vote weight" );
+
+      generate_blocks( now() + MIN_VOTE_INTERVAL_SEC );
+
+      vote.weight = PERCENT_1 * 50;
+      
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( vote );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
+
+      BOOST_REQUIRE( candice_vote_itr->last_update == now() );
+      BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: adjusting vote weight" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: changing vote to 0 weight" );
+
+      generate_blocks( now() + MIN_VOTE_INTERVAL_SEC );
+
+      op.weight = 0;
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( vote );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      auto candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
+
+      BOOST_REQUIRE( candice_vote_itr->last_update == now() );
+      BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
+      BOOST_REQUIRE( candice_vote_itr->reward == 0 );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: changing vote to 0 weight" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: VOTE OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( view_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: VIEW OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when viewing a non-existent comment" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      const auto& view_idx = db.get_index< comment_view_index >().indices().get< by_comment_viewer >();
+
+      signed_transaction tx;
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.board = INIT_BOARD;
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "ipsum";
+      comment.json = "{\"json\":\"valid\"}";
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+      comment.options = options;
+
+      tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      view_operation view;
+
+      view.signatory = "bob";
+      view.viewer = "bob";
+      view.author = "alice";
+      view.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
+      view.interface = INIT_ACCOUNT;
+      view.supernode = INIT_ACCOUNT;
+
+      tx.operations.push_back( view );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when viewing a non-existent comment" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful view" );
+
+      auto old_view_power = bob.view_power;
+
+      view.permlink = "lorem";
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( view );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
+
+      auto bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+      int64_t max_view_denom = props.median_props.view_reserve_rate * ( props.median_props.view_recharge_time.count() / fc::days(1).count() );
+
+      BOOST_REQUIRE( bob.view_power == old_view_power - ( ( old_view_power + max_view_denom - 1 ) / max_view_denom ) );
+      BOOST_REQUIRE( bob.last_view_time == now() );
+      BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
+      BOOST_REQUIRE( bob_view_itr != view_idx.end() );
+      BOOST_REQUIRE( bob_view_itr->weight > 0 );
+      BOOST_REQUIRE( bob_view_itr->reward > 0 );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful view" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: removing view" );
+
+      generate_blocks( now() + MIN_VIEW_INTERVAL_SEC );
+
+      view.viewed = false;
+      
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( view );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+
+      BOOST_REQUIRE( bob_view_itr == view_idx.end() );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: removing view" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: VIEW OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( share_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: SHARE OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when sharing a non-existent comment" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      const auto& share_idx = db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
+
+      signed_transaction tx;
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.board = INIT_BOARD;
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "ipsum";
+      comment.json = "{\"json\":\"valid\"}";
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+      comment.options = options;
+
+      tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      share_operation share;
+
+      share.signatory = "bob";
+      share.sharer = "bob";
+      share.author = "alice";
+      share.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
+      share.reach = FOLLOW_FEED;
+      share.interface = INIT_ACCOUNT;
+
+      tx.operations.push_back( share );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when sharing a non-existent comment" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful share to follow feed" );
+
+      auto old_share_power = bob.share_power;
+
+      share.permlink = "lorem";
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( share );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
+
+      auto bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+      int64_t max_share_denom = props.median_props.share_reserve_rate * ( props.median_props.share_recharge_time.count() / fc::days(1).count() );
+
+      BOOST_REQUIRE( bob.share_power == old_share_power - ( ( old_share_power + max_share_denom - 1 ) / max_share_denom ) );
+      BOOST_REQUIRE( bob.last_share_time == now() );
+      BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
+      BOOST_REQUIRE( bob_share_itr != share_idx.end() );
+      BOOST_REQUIRE( bob_share_itr->weight > 0 );
+      BOOST_REQUIRE( bob_share_itr->reward > 0 );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful share to follow feed" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: removing share" );
+
+      generate_blocks( now() + MIN_SHARE_INTERVAL_SEC );
+
+      share.shared = false;
+      
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( share );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto bob_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+
+      BOOST_REQUIRE( bob_share_itr == share_idx.end() );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: removing share" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: SHARE OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: MODERATION TAG OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when moderating a non-existent comment" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      signed_transaction tx;
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.board = INIT_BOARD;
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "ipsum";
+      comment.json = "{\"json\":\"valid\"}";
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+      comment.options = options;
+
+      tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      moderation_tag_operation tag;
+
+      tag.signatory = "bob";
+      tag.moderator =  "bob";
+      tag.author = "alice";
+      tag.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
+      tag.tags.push_back( "nsfw" );
+      tag.rating = MATURE;
+      tag.details = "Post is NSFW";
+      tag.interface = INIT_ACCOUNT;
+      tag.filter = false;
+      tag.applied = true;
+      tag.validate();
+
+      tx.operations.push_back( tag );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when moderating a non-existent comment" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account is not governance account" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tag.permlink = "lorem";
+
+      tx.operations.push_back( tag );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account is not governance account" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful moderation tag" );
+
+      account_membership_operation mem;
+
+      mem.signatory = "bob";
+      mem.account = "bob";
+      mem.membership_type = TOP_MEMBERSHIP;
+      mem.months = 1;
+      mem.interface = INIT_ACCOUNT;
+      mem.validate();
+
+      tx.operations.push_back( mem );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_governance_operation gov;
+      
+      gov.signatory = "bob";
+      gov.account = "bob";
+      gov.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      gov.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      gov.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      gov.validate();
+
+      tx.operations.push_back( gov );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const governance_account_object& governance = db.get_governance_account( "bob" );
+      
+      BOOST_REQUIRE( governance.active == true );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( tag );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
+
+      const auto& tag_idx = db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
+      auto tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+
+      BOOST_REQUIRE( tag_itr != tag_idx.end() );
+      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
+      BOOST_REQUIRE( tag_itr->filter == tag.filter );
+      BOOST_REQUIRE( tag_itr->created == now() );
+   
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful moderation tag" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: removing moderation tag" );
+
+      generate_blocks( now() + MIN_SHARE_INTERVAL_SEC );
+
+      tag.applied = false;
+      
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( tag );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto tag_itr = vote_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+
+      BOOST_REQUIRE( tag_itr == tag_idx.end() );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: removing moderation tag" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: MODERATION TAG OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -3337,7 +6991,7 @@ BOOST_AUTO_TEST_CASE( signature_stripping )
 {
    try
    {
-      // Alice, Bob and Sam all have 2-of-3 multisig on corp.
+      // Alice, Bob and candice all have 2-of-3 multisig on corp.
       // Legitimate tx signed by (Alice, Bob) goes through.
       // Sam shouldn't be able to add or remove signatures to get the transaction to process multiple times.
 
@@ -4644,13 +8298,13 @@ BOOST_AUTO_TEST_CASE( delegate_asset_apply )
       tx.operations.clear();
       tx.signatures.clear();
 
-      comment_operation comment_op;
-      comment_op.author = "alice";
-      comment_op.permlink = "foo";
-      comment_op.parent_permlink = "test";
-      comment_op.title = "bar";
-      comment_op.body = "foo bar";
-      tx.operations.push_back( comment_op );
+      comment_operation comment;
+      comment.author = "alice";
+      comment.permlink = "foo";
+      comment.parent_permlink = "test";
+      comment.title = "bar";
+      comment.body = "foo bar";
+      tx.operations.push_back( comment );
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -4678,7 +8332,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_apply )
 
 
       generate_block();
-      ACTORS( (sam)(dave) )
+      ACTORS( (sam)(dan) )
       generate_block();
 
       fund_stake( "sam", ASSET( "1000.000 TESTS" ) );
@@ -4690,7 +8344,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_apply )
       BOOST_TEST_MESSAGE( "--- Test failure when delegating 0 VESTS" );
       tx.clear();
       op.delegator = "sam";
-      op.delegatee = "dave";
+      op.delegatee = "dan";
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
@@ -4757,7 +8411,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_apply )
       BOOST_REQUIRE( exp_obj->SCORE == samSCORE );
       BOOST_REQUIRE( exp_obj->expiration == db.head_block_time() + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( db.get_account( "sam" ).SCOREDelegated == samSCORE );
-      BOOST_REQUIRE( db.get_account( "dave" ).SCOREreceived == ASSET( "0.000000 VESTS" ) );
+      BOOST_REQUIRE( db.get_account( "dan" ).SCOREreceived == ASSET( "0.000000 VESTS" ) );
       delegation = db.find< asset_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
       BOOST_REQUIRE( delegation == nullptr );
 
@@ -4969,7 +8623,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_validate )
       op.approve = true;
 
       BOOST_TEST_MESSAGE( "--- failure when who is not to or agent" );
-      op.who = "dave";
+      op.who = "dan";
       REQUIRE_THROW( op.validate(), fc::exception );
 
       BOOST_TEST_MESSAGE( "--- success when who is to" );
@@ -5027,7 +8681,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
    try
    {
       BOOST_TEST_MESSAGE( "Testing: escrow_approve_apply" );
-      ACTORS( (alice)(bob)(sam)(dave) )
+      ACTORS( (alice)(bob)(sam)(dan) )
       fund( "alice", 10000 );
 
       escrow_transfer_operation et_op;
@@ -5052,25 +8706,25 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_TEST_MESSAGE( "---failure when to does not match escrow" );
       escrow_approve_operation op;
       op.from = "alice";
-      op.to = "dave";
+      op.to = "dan";
       op.agent = "sam";
-      op.who = "dave";
+      op.who = "dan";
       op.approve = true;
 
       tx.operations.push_back( op );
-      tx.sign( dave_private_key, db.get_chain_id() );
+      tx.sign( dan_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
 
       BOOST_TEST_MESSAGE( "--- failure when agent does not match escrow" );
       op.to = "bob";
-      op.agent = "dave";
+      op.agent = "dan";
 
       tx.operations.clear();
       tx.signatures.clear();
 
       tx.operations.push_back( op );
-      tx.sign( dave_private_key, db.get_chain_id() );
+      tx.sign( dan_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
 
@@ -5346,7 +9000,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
    {
       BOOST_TEST_MESSAGE( "Testing: escrow_dispute_apply" );
 
-      ACTORS( (alice)(bob)(sam)(dave) )
+      ACTORS( (alice)(bob)(sam)(dan) )
       fund( "alice", 10000 );
 
       escrow_transfer_operation et_op;
@@ -5414,7 +9068,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      op.to = "dave";
+      op.to = "dan";
       op.who = "alice";
       tx.operations.clear();
       tx.signatures.clear();
@@ -5437,7 +9091,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_TEST_MESSAGE( "--- failure when agent does not match escrow" );
       op.to = "bob";
       op.who = "alice";
-      op.agent = "dave";
+      op.agent = "dan";
       tx.operations.clear();
       tx.signatures.clear();
       tx.operations.push_back( op );
@@ -5639,7 +9293,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
    {
       BOOST_TEST_MESSAGE( "Testing: escrow_release_apply" );
 
-      ACTORS( (alice)(bob)(sam)(dave) )
+      ACTORS( (alice)(bob)(sam)(dan) )
       fund( "alice", 10000 );
 
       escrow_transfer_operation et_op;
@@ -5710,7 +9364,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
 
       BOOST_TEST_MESSAGE( "--- failure when 'agent' attempt to release non-disputed escrow to not 'to' or 'from'" );
-      op.receiver = "dave";
+      op.receiver = "dan";
 
       tx.clear();
       tx.operations.push_back( op );
@@ -5720,11 +9374,11 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
       BOOST_TEST_MESSAGE( "--- failure when other attempts to release non-disputed escrow to 'to'" );
       op.receiver = et_op.to;
-      op.who = "dave";
+      op.who = "dan";
 
       tx.clear();
       tx.operations.push_back( op );
-      tx.sign( dave_private_key, db.get_chain_id() );
+      tx.sign( dan_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
 
@@ -5733,16 +9387,16 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
       tx.clear();
       tx.operations.push_back( op );
-      tx.sign( dave_private_key, db.get_chain_id() );
+      tx.sign( dan_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
 
       BOOST_TEST_MESSAGE( "--- failure when other attempt to release non-disputed escrow to not 'to' or 'from'" );
-      op.receiver = "dave";
+      op.receiver = "dan";
 
       tx.clear();
       tx.operations.push_back( op );
-      tx.sign( dave_private_key, db.get_chain_id() );
+      tx.sign( dan_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
 
@@ -5766,7 +9420,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
 
       BOOST_TEST_MESSAGE( "--- failure when 'to' attempts to release non-disputed escrow to not 'from'" );
-      op.receiver = "dave";
+      op.receiver = "dan";
 
       tx.clear();
       tx.operations.push_back( op );
@@ -5806,7 +9460,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
 
       BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release non-disputed escrow to not 'from'" );
-      op.receiver = "dave";
+      op.receiver = "dan";
 
       tx.clear();
       tx.operations.push_back( op );
@@ -5879,7 +9533,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       BOOST_TEST_MESSAGE( "--- failure when releasing disputed escrow to an account not 'to' or 'from'" );
       tx.clear();
       op.who = et_op.agent;
-      op.receiver = "dave";
+      op.receiver = "dan";
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -5887,10 +9541,10 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
       BOOST_TEST_MESSAGE( "--- failure when agent does not match escrow" );
       tx.clear();
-      op.who = "dave";
+      op.who = "dan";
       op.receiver = et_op.from;
       tx.operations.push_back( op );
-      tx.sign( dave_private_key, db.get_chain_id() );
+      tx.sign( dan_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
 
@@ -5996,7 +9650,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
       BOOST_TEST_MESSAGE( "--- failure when 'agent' attempt to release non-disputed expired escrow to not 'to' or 'from'" );
       tx.clear();
-      op.receiver = "dave";
+      op.receiver = "dan";
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -6013,7 +9667,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
       BOOST_TEST_MESSAGE( "--- failure when 'to' attempts to release non-disputed expired escrow to not 'from' or 'to'" );
       tx.clear();
-      op.receiver = "dave";
+      op.receiver = "dan";
       tx.operations.push_back( op );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -6052,7 +9706,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
       BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release non-disputed expired escrow to not 'from' or 'to'" );
       tx.clear();
-      op.receiver = "dave";
+      op.receiver = "dan";
       tx.operations.push_back( op );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );

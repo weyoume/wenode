@@ -95,7 +95,7 @@ def run_node_tests( debug_node ):
          acc = rpc.get_accounts( [ acc_name ] )
          #print( acc_name + ',' + acc[0][ 'curation_rewards' ] )
          account_rewards[ acc_name ] = float( acc[0][ 'curation_rewards' ].split( ' ' )[0] )
-         vote_count[ acc_name ] = int( acc[0][ 'lifetime_vote_count' ] )
+         vote_count[ acc_name ] = int( acc[0][ 'post_vote_count' ] )
 
 
 

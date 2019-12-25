@@ -735,47 +735,14 @@ namespace node { namespace protocol {
    //=====================================//
 
 
-   void comment_operation::validate() const
+   void comment_options::validate()const
    {
-      validate_account_name( signatory );
-      validate_account_name( author );
-      validate_account_name( interface );
-      validate_permlink( parent_permlink );
-      validate_permlink( permlink );
-
-      if( board.size() )
-      {
-         validate_board_name( board );
-      }
-
-      FC_ASSERT( fc::is_utf8( body ),
-         "Body not formatted in UTF8" );
-      FC_ASSERT( body.size() + json.size() + title.size() + ipfs.size() + magnet.size(),
-         "Cannot update comment because it does not contain content." );
-      FC_ASSERT( body.size() < MAX_BODY_SIZE,
-         "Comment rejected: Body size is too large." );
-      FC_ASSERT( title.size() < MAX_STRING_LENGTH,
-         "Comment rejected: Title size is too large." );
-      FC_ASSERT( language.size() == 2,
-         "Comment rejected: Title size is too large." );
-
-      for( string item : ipfs )
-      {
-         FC_ASSERT( item.size() == 46 && item[0] == 'Q' && item[1] == 'm',
-            "Comment rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
-      }
-
-      for( auto item : magnet )
-      {
-         FC_ASSERT( item.size() < MAX_BODY_SIZE,
-            "Comment rejected: Magnet size is too large." );
-      }
-
-      for( auto item : tags )
-      {
-         FC_ASSERT( item.size() < MAX_BODY_SIZE,
-            "Comment rejected: Magnet size is too large." );
-      }
+      FC_ASSERT( percent_liquid <= PERCENT_100, 
+         "Percent cannot exceed 100%" );
+      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_USD, 
+         "Max accepted payout must be in USD" );
+      FC_ASSERT( max_accepted_payout.amount.value >= 0, 
+         "Cannot accept less than 0 payout" );
 
       switch( post_type )
       {
@@ -835,6 +802,72 @@ namespace node { namespace protocol {
             FC_ASSERT( false, "Comment rejected: Invalid rating type." );
          }
       }
+
+      uint32_t sum = 0;
+
+      FC_ASSERT( beneficiaries.size(), 
+         "Must specify at least one beneficiary" );
+      FC_ASSERT( beneficiaries.size() < 128, 
+         "Cannot specify more than 127 beneficiaries." ); // Require size serializtion fits in one byte.
+
+      for( size_t i = 1; i < beneficiaries.size(); i++ )
+      {
+         validate_account_name( beneficiaries[i].account );
+         FC_ASSERT( beneficiaries[i].weight <= PERCENT_100, 
+            "Cannot allocate more than 100% of rewards to one account" );
+         sum += beneficiaries[i].weight;
+         FC_ASSERT( sum <= PERCENT_100, 
+            "Cannot allocate more than 100% of rewards to a comment" );
+         FC_ASSERT( beneficiaries[i - 1] < beneficiaries[i], 
+            "Benficiaries must be specified in sorted order (account ascending)" );
+      }
+
+      for( auto& e : extensions )
+         e.visit( comment_options_extension_validate_visitor() );
+   }
+
+   void comment_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( author );
+      validate_account_name( interface );
+      validate_permlink( parent_permlink );
+      validate_permlink( permlink );
+      options.validate();
+
+      if( board.size() )
+      {
+         validate_board_name( board );
+      }
+
+      FC_ASSERT( fc::is_utf8( body ),
+         "Body not formatted in UTF8" );
+      FC_ASSERT( body.size() + json.size() + title.size() + ipfs.size() + magnet.size(),
+         "Cannot update comment because it does not contain content." );
+      FC_ASSERT( body.size() < MAX_BODY_SIZE,
+         "Comment rejected: Body size is too large." );
+      FC_ASSERT( title.size() < MAX_STRING_LENGTH,
+         "Comment rejected: Title size is too large." );
+      FC_ASSERT( language.size() == 2,
+         "Comment rejected: Title size is too large." );
+
+      for( string item : ipfs )
+      {
+         FC_ASSERT( item.size() == 46 && item[0] == 'Q' && item[1] == 'm',
+            "Comment rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      for( auto item : magnet )
+      {
+         FC_ASSERT( item.size() < MAX_BODY_SIZE,
+            "Comment rejected: Magnet size is too large." );
+      }
+
+      for( auto item : tags )
+      {
+         FC_ASSERT( item.size() < MAX_BODY_SIZE,
+            "Comment rejected: Magnet size is too large." );
+      }
       
       FC_ASSERT( json.size() < MAX_BODY_SIZE, 
          "Comment rejected: JSON size is too large." );
@@ -880,50 +913,6 @@ namespace node { namespace protocol {
       }
    };
 
-   void comment_payout_beneficiaries::validate()const
-   {
-      uint32_t sum = 0;
-
-      FC_ASSERT( beneficiaries.size(), 
-         "Must specify at least one beneficiary" );
-      FC_ASSERT( beneficiaries.size() < 128, 
-         "Cannot specify more than 127 beneficiaries." ); // Require size serializtion fits in one byte.
-
-      validate_account_name( beneficiaries[0].account );
-      FC_ASSERT( beneficiaries[0].weight <= PERCENT_100, 
-         "Cannot allocate more than 100% of rewards to one account" );
-      sum += beneficiaries[0].weight;
-      FC_ASSERT( sum <= PERCENT_100, 
-         "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
-
-      for( size_t i = 1; i < beneficiaries.size(); i++ )
-      {
-         validate_account_name( beneficiaries[i].account );
-         FC_ASSERT( beneficiaries[i].weight <= PERCENT_100, 
-            "Cannot allocate more than 100% of rewards to one account" );
-         sum += beneficiaries[i].weight;
-         FC_ASSERT( sum <= PERCENT_100, 
-            "Cannot allocate more than 100% of rewards to a comment" ); // Have to check incrementally to avoid overflow
-         FC_ASSERT( beneficiaries[i - 1] < beneficiaries[i], 
-            "Benficiaries must be specified in sorted order (account ascending)" );
-      }
-   }
-
-   void comment_options_operation::validate()const
-   {
-      validate_account_name( signatory );
-      validate_account_name( author );
-      FC_ASSERT( percent_liquid <= PERCENT_100, 
-         "Percent cannot exceed 100%" );
-      FC_ASSERT( max_accepted_payout.symbol == SYMBOL_USD, 
-         "Max accepted payout must be in USD" );
-      FC_ASSERT( max_accepted_payout.amount.value >= 0, 
-         "Cannot accept less than 0 payout" );
-      validate_permlink( permlink );
-      for( auto& e : extensions )
-         e.visit( comment_options_extension_validate_visitor() );
-   }
-
    void message_operation::validate() const
    {
       validate_account_name( signatory );
@@ -933,8 +922,8 @@ namespace node { namespace protocol {
          "Message must include a message string." );
       FC_ASSERT( message.size() < MAX_STRING_LENGTH,
          "Message is too long." );
-      FC_ASSERT( message_id.size() < MAX_STRING_LENGTH,
-         "Comment rejected: Title size is too large." );
+      FC_ASSERT( uuid.size() < MAX_STRING_LENGTH,
+         "UUID is too long." );
       FC_ASSERT( time > GENESIS_TIME,
          "Message time must be after genesis time." );
    }

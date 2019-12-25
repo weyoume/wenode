@@ -65,6 +65,15 @@ namespace node { namespace chain {
    }
 
    /**
+    * Generates a public key from a specified account name, authority type 
+    * and password using the graphene account authority standard.
+    */
+   inline public_key_type get_key( string name, string type, string password )
+   {
+      return fc::ecc::private_key::regenerate( fc::sha256::hash( std::string( name + type + password ) ) ).get_public_key();
+   }
+
+   /**
     *   @class database
     *   @brief tracks the blockchain state in an extensible manner
     */
@@ -610,6 +619,7 @@ namespace node { namespace chain {
          void update_account_reputations();
 
          asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
+         asset pay_membership_fees( const account_object& member, const asset& payment );
 
          asset claim_activity_reward( const account_object& account, const witness_object& witness );
 
@@ -816,23 +826,27 @@ namespace node { namespace chain {
          bool fill_settle_order( const force_settlement_object& settle, const asset& pays, const asset& receives,
             const price& fill_price, const bool is_maker, const account_name_type& match_interface );
 
-         void liquid_fund( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool);
+         void liquid_fund( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool );
 
          void liquid_withdraw( const asset& input, const asset_symbol_type& receive, 
-            const account_object& account, const asset_liquidity_pool_object& pool);
+            const account_object& account, const asset_liquidity_pool_object& pool );
 
          asset liquid_exchange( const asset& input, const asset_symbol_type& receive, bool execute = true, bool apply_fees = true );
          void liquid_exchange( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool, 
-            const account_object& int_account);
+            const account_object& int_account );
+         void liquid_exchange( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool );
          
          asset liquid_acquire( const asset& receive, const asset_symbol_type& input, bool execute = true, bool apply_fees = true );
          void liquid_acquire( const asset& receive, const account_object& account, const asset_liquidity_pool_object& pool, 
-            const account_object& int_account);
+            const account_object& int_account );
+         void liquid_acquire( const asset& receive, const account_object& account, const asset_liquidity_pool_object& pool );
 
          pair< asset, asset > liquid_limit_exchange( const asset& input, const price& limit_price, 
             const asset_liquidity_pool_object& pool, bool execute = true, bool apply_fees = true );
          void liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
             const asset_liquidity_pool_object& pool, const account_object& int_account );
+         void liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
+            const asset_liquidity_pool_object& pool );
 
          void credit_lend( const asset& input, const account_object& account, const asset_credit_pool_object& pool);
 

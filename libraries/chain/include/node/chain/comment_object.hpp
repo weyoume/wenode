@@ -65,15 +65,15 @@ namespace node { namespace chain {
 
          shared_string                  json;                         // JSON metadata of the post, including Link, and additional interface specific data relating to the post.
 
-         shared_string                  category;
+         shared_string                  category;                     // Permlink of root post that this comment is applied to.
 
          asset                          comment_price;                // The price paid to create a comment
 
          asset                          premium_price;                // The price paid to unlock the post's premium encryption.
 
-         flat_map<account_name_type, flat_map< asset_symbol_type, asset > >  payments_received;    // Map of all transfers received that referenced this comment. 
+         flat_map< account_name_type, flat_map< asset_symbol_type, asset > >  payments_received;    // Map of all transfers received that referenced this comment. 
 
-         bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;
+         bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;  // Vector of beneficiary routes that receive a content reward distribution.
          
          time_point                     last_update;                  // The time the comment was last edited by the author
 
@@ -109,8 +109,6 @@ namespace node { namespace chain {
 
          uint32_t                       cashouts_received = 0;        // Number of times that the comment has received content rewards
 
-         time_point                     max_cashout_time;
-
          uint128_t                      total_vote_weight = 0;        // the total weight of votes, used to calculate pro-rata share of curation payouts
 
          uint128_t                      total_view_weight = 0;        // the total weight of views, used to calculate pro-rata share of curation payouts
@@ -119,13 +117,13 @@ namespace node { namespace chain {
 
          uint128_t                      total_comment_weight = 0;     // the total weight of comments, used to calculate pro-rata share of curation payouts
 
-         asset                          total_payout_value = asset(0, SYMBOL_USD); // The total payout this comment has received over time, measured in USD */
+         asset                          total_payout_value = asset( 0, SYMBOL_USD ); // The total payout this comment has received over time, measured in USD */
 
-         asset                          curator_payout_value = asset(0, SYMBOL_USD);
+         asset                          curator_payout_value = asset( 0, SYMBOL_USD );
 
          asset                          beneficiary_payout_value = asset( 0, SYMBOL_USD );
 
-         share_type                     author_rewards = 0;
+         asset                          content_rewards = asset( 0, SYMBOL_COIN );
 
          share_type                     percent_liquid = PERCENT_100;
 
@@ -135,7 +133,7 @@ namespace node { namespace chain {
 
          uint128_t                      max_weight = 0;               // Used to define relative contribution of this comment to rewards.
 
-         asset                          max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );       // USD value of the maximum payout this post will receive
+         asset                          max_accepted_payout;          // USD value of the maximum payout this post will receive
 
          uint32_t                       author_reward_percent = AUTHOR_REWARD_PERCENT;
 
@@ -1115,7 +1113,6 @@ FC_REFLECT( node::chain::comment_object,
          (comment_power)
          (cashout_time)
          (cashouts_received)
-         (max_cashout_time)
          (total_vote_weight)
          (total_view_weight)
          (total_share_weight)
@@ -1123,7 +1120,7 @@ FC_REFLECT( node::chain::comment_object,
          (total_payout_value)
          (curator_payout_value)
          (beneficiary_payout_value)
-         (author_rewards)
+         (content_rewards)
          (percent_liquid)
          (reward)
          (weight)

@@ -97,8 +97,9 @@ share_type database::pay_voters( const comment_object& c, const share_type& max_
    }
    else if( c.total_vote_weight > 0 )
    {
-      const auto& vote_idx = get_index<comment_vote_index>().indices().get<by_comment_weight_voter>();
+      const auto& vote_idx = get_index< comment_vote_index >().indices().get< by_comment_weight_voter >();
       auto vote_itr = vote_idx.lower_bound( c.id );
+
       while( vote_itr != vote_idx.end() && vote_itr->comment == c.id )
       {
          uint128_t weight( vote_itr->weight );
@@ -106,7 +107,7 @@ share_type database::pay_voters( const comment_object& c, const share_type& max_
          if( claim > 0 )
          {
             unclaimed_rewards -= claim;
-            const auto& voter = get_account(vote_itr->voter);
+            const account_object& voter = get_account( vote_itr->voter );
             asset reward = asset( claim, SYMBOL_COIN );
             adjust_reward_balance( voter.name, reward );
             push_virtual_operation( curation_reward_operation( voter.name, reward, c.author, to_string( c.permlink ) ) );
@@ -138,7 +139,7 @@ share_type database::pay_viewers( const comment_object& c, const share_type& max
    }
    else if( c.total_view_weight > 0 )
    {
-      const auto& view_idx = get_index<comment_view_index>().indices().get<by_comment_weight_viewer>();
+      const auto& view_idx = get_index< comment_view_index >().indices().get< by_comment_weight_viewer >();
       auto view_itr = view_idx.lower_bound( c.id );
       while( view_itr != view_idx.end() && view_itr->comment == c.id )
       {
@@ -147,7 +148,7 @@ share_type database::pay_viewers( const comment_object& c, const share_type& max
          if( claim > 0 )
          {
             unclaimed_rewards -= claim;
-            const auto& viewer = get_account(view_itr->viewer);
+            const account_object& viewer = get_account(view_itr->viewer);
             asset reward = asset( claim, SYMBOL_COIN );
             adjust_reward_balance( viewer.name, reward );
             push_virtual_operation( curation_reward_operation( viewer.name, reward, c.author, to_string( c.permlink ) ) );
@@ -179,7 +180,7 @@ share_type database::pay_sharers( const comment_object& c, const share_type& max
    }
    else if( c.total_share_weight > 0 )
    {
-      const auto& share_idx = get_index<comment_share_index>().indices().get<by_comment_weight_sharer>();
+      const auto& share_idx = get_index< comment_share_index >().indices().get< by_comment_weight_sharer >();
       auto share_itr = share_idx.lower_bound( c.id );
       while( share_itr != share_idx.end() && share_itr->comment == c.id )
       {
@@ -188,7 +189,7 @@ share_type database::pay_sharers( const comment_object& c, const share_type& max
          if( claim > 0 )
          {
             unclaimed_rewards -= claim;
-            const auto& sharer = get_account(share_itr->sharer);
+            const account_object& sharer = get_account( share_itr->sharer );
             asset reward = asset( claim, SYMBOL_COIN );
             adjust_reward_balance( sharer.name, reward );
             push_virtual_operation( curation_reward_operation( sharer.name, reward, c.author, to_string( c.permlink ) ) );
@@ -221,7 +222,7 @@ share_type database::pay_commenters( const comment_object& c, const share_type& 
    }
    else if( c.total_comment_weight > 0 )
    {
-      const auto& comment_idx = get_index<comment_index>().indices().get<by_root>();
+      const auto& comment_idx = get_index< comment_index >().indices().get< by_root >();
       auto comment_itr = comment_idx.lower_bound( c.id );
       while( comment_itr != comment_idx.end() && comment_itr->root_comment == c.id )
       {
@@ -230,7 +231,7 @@ share_type database::pay_commenters( const comment_object& c, const share_type& 
          if( claim > 0 )
          {
             unclaimed_rewards -= claim;
-            const auto& commenter = get_account(comment_itr->author);
+            const account_object& commenter = get_account( comment_itr->author );
             asset reward = asset( claim, SYMBOL_COIN );
             adjust_reward_balance( commenter.name, reward );
             push_virtual_operation( curation_reward_operation( commenter.name, reward, c.author, to_string( c.permlink ) ) );
@@ -262,7 +263,7 @@ share_type database::pay_storage( const comment_object& c, const share_type& max
    }
    else if( c.total_view_weight > 0 )
    {
-      const auto& view_idx = get_index<comment_view_index>().indices().get<by_comment_weight_viewer>();
+      const auto& view_idx = get_index< comment_view_index >().indices().get< by_comment_weight_viewer >();
       auto view_itr = view_idx.lower_bound( c.id );
       while( view_itr != view_idx.end() && view_itr->comment == c.id )
       {
@@ -350,7 +351,7 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
    if( comment.net_reward > 0 )
    {
       fill_comment_reward_context_local_state( ctx, comment );
-      const auto reward_fund = get_reward_fund();
+      const reward_fund_object& reward_fund = get_reward_fund();
       ctx.reward_curve = reward_fund.author_reward_curve;
       ctx.content_constant = reward_fund.content_constant;
       const share_type reward = util::get_comment_reward( ctx );
@@ -392,14 +393,14 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
          asset author_reward = asset( author_tokens, SYMBOL_COIN );
          adjust_reward_balance( author, author_reward );
 
-         adjust_total_payout( comment, asset_to_USD( asset( author_tokens, SYMBOL_COIN ) ), asset_to_USD( asset( total_curation_tokens, SYMBOL_COIN ) ), asset_to_USD( asset( total_beneficiary, SYMBOL_COIN ) ) );
+         adjust_total_payout( comment, asset_to_USD( asset( claimed_reward, SYMBOL_COIN ) ), asset_to_USD( asset( total_curation_tokens, SYMBOL_COIN ) ), asset_to_USD( asset( total_beneficiary, SYMBOL_COIN ) ) );
 
          push_virtual_operation( author_reward_operation( comment.author, to_string( comment.permlink ), author_reward ) );
          push_virtual_operation( comment_reward_operation( comment.author, to_string( comment.permlink ), asset_to_USD( asset( claimed_reward, SYMBOL_COIN ) ) ) );
 
          modify( comment, [&]( comment_object& c )
          {
-            c.author_rewards += author_tokens;
+            c.content_rewards += asset( claimed_reward, SYMBOL_COIN );
          });
 
          modify( get_account( comment.author ), [&]( account_object& a )
@@ -531,7 +532,7 @@ void database::update_comment_metrics()
       return;
 
    auto now = head_block_time();
-   const dynamic_global_property_object& gpo = get_dynamic_global_properties();
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
    const comment_metrics_object& comment_metrics = get_comment_metrics();
    
    // Initialize comment metrics
@@ -568,7 +569,7 @@ void database::update_comment_metrics()
    vector< const comment_object* > comments; 
    comments.reserve( comment_metrics.recent_post_count * 2 );
 
-   const auto& cidx = get_index<comment_index>().indices().get< by_time >();
+   const auto& cidx = get_index< comment_index >().indices().get< by_time >();
    auto current = cidx.lower_bound( true );                                   // Finds first root post in time index
    
    while( current != cidx.end() && (now < (current->created + METRIC_CALC_TIME) ) ) // Iterates over all root posts in last 30 days

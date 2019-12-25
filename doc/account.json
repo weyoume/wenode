@@ -39,7 +39,7 @@
   "last_account_recovery": "1970-01-01T00:00:00",
   "reset_account": "null",
   "comment_count": 0,
-  "lifetime_vote_count": 0,
+  "post_vote_count": 0,
   "post_count": 0,
   "can_vote": true,
   "voting_power": 10000,

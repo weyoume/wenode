@@ -310,13 +310,13 @@ namespace node { namespace chain {
 
          fc::optional < asset_symbol_type > investment;                             // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
-         shared_string                  details;                                    // The proposals's details description. 
+         shared_string                  details;                                    // The proposals's details description.
 
-         shared_string                  url;                                        // The proposals's reference URL. 
+         shared_string                  url;                                        // The proposals's reference URL.
 
-         shared_string                  json;                                       // Json metadata of the proposal. 
+         shared_string                  json;                                       // Json metadata of the proposal.
 
-         time_point                     begin;                                      // Enterprise proposal start time. If the proposal is not approved by the start time, it is rejected. 
+         time_point                     begin;                                      // Enterprise proposal start time. Budget payments begin past this time.
 
          time_point                     end;                                        // Enterprise proposal end time. Determined by start plus remaining interval number of days.
 

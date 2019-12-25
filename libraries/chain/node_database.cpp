@@ -164,10 +164,10 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.name = INIT_ACCOUNT;
       a.account_type = BUSINESS;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = init_public_key;
-      a.connection_public_key = init_public_key;
-      a.friend_public_key = init_public_key;
-      a.companion_public_key = init_public_key;
+      a.secure_public_key = get_key( INIT_ACCOUNT, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_key( INIT_ACCOUNT, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_key( INIT_ACCOUNT, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_key( INIT_ACCOUNT, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_account_update = now;
       a.last_vote_time = now;
@@ -186,11 +186,12 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = INIT_ACCOUNT;
-      auth.owner.add_authority( init_public_key, 1 );
+      auth.owner.add_authority( get_key( INIT_ACCOUNT, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.owner.weight_threshold = 1;
-      auth.active  = auth.owner;
-      auth.posting = auth.active;
+      auth.active.add_authority( get_key( INIT_ACCOUNT, "active", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.active.weight_threshold = 1;
+      auth.posting.add_authority( get_key( INIT_ACCOUNT, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.posting.weight_threshold = 1;
    });
 
    create< account_following_object >( [&]( account_following_object& afo ) 
@@ -204,10 +205,10 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.name = INIT_CEO;
       a.account_type = PROFILE;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = init_public_key;
-      a.connection_public_key = init_public_key;
-      a.friend_public_key = init_public_key;
-      a.companion_public_key = init_public_key;
+      a.secure_public_key = get_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_key( INIT_CEO, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_key( INIT_CEO, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_key( INIT_CEO, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_account_update = now;
       a.last_vote_time = now;
@@ -216,6 +217,8 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.last_transfer_time = now;
       a.last_activity_reward = now;
       a.last_account_recovery = now;
+      a.last_board_created = now;
+      a.last_asset_created = now;
       a.details = INIT_CEO_DETAILS;
       a.url = INIT_CEO_URL;
       a.membership = TOP_MEMBERSHIP;
@@ -225,11 +228,12 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = INIT_CEO;
-      auth.owner.add_authority( init_public_key, 1 );
+      auth.owner.add_authority( get_key( INIT_CEO, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.owner.weight_threshold = 1;
-      auth.active = auth.owner;
-      auth.posting = auth.active;
+      auth.active.add_authority( get_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.active.weight_threshold = 1;
+      auth.posting.add_authority( get_key( INIT_CEO, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.posting.weight_threshold = 1;
    });
 
    create< account_following_object >( [&]( account_following_object& afo ) 
@@ -264,8 +268,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( s.auth_api_endpoint, INIT_AUTH_ENDPOINT );
       from_string( s.notification_api_endpoint, INIT_NOTIFICATION_ENDPOINT );
       from_string( s.ipfs_endpoint, INIT_IPFS_ENDPOINT );
-      from_string( s.bittorrent_endpoint, INIT_BITORRENT_ENDPOINT );
-      
+      from_string( s.bittorrent_endpoint, INIT_BITTORRENT_ENDPOINT );
       s.active = true;
       s.created = now;
       s.last_update_time = now;
@@ -304,6 +307,39 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       i.last_update_time = now;
    });
 
+   create< board_object >( [&]( board_object& bo )
+   {
+      bo.name = INIT_BOARD;
+      bo.founder = INIT_ACCOUNT;
+      bo.board_type = BOARD;
+      bo.board_privacy = OPEN_BOARD;
+      bo.board_public_key = get_key( INIT_BOARD, "board", "board" );
+      bo.created = now;
+      bo.last_board_update = now;
+      bo.last_post = now;
+      bo.last_root_post = now;
+   });
+
+   const board_member_object& new_board_member = create< board_member_object >( [&]( board_member_object& bmo )
+   {
+      bmo.name = INIT_BOARD;
+      bmo.founder = INIT_ACCOUNT;
+      bmo.subscribers.insert( INIT_ACCOUNT );
+      bmo.members.insert( INIT_ACCOUNT );
+      bmo.moderators.insert( INIT_ACCOUNT );
+      bmo.administrators.insert( INIT_ACCOUNT );
+   });
+
+   create< board_moderator_vote_object >( [&]( board_moderator_vote_object& v )
+   {
+      v.moderator = INIT_ACCOUNT;
+      v.account = INIT_ACCOUNT;
+      v.board = INIT_BOARD;
+      v.vote_rank = 1;
+   });
+
+   update_board_moderators( new_board_member );
+
 
    create< account_object >( [&]( account_object& a )
    {
@@ -321,6 +357,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.name = NULL_ACCOUNT;
    });
+
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = NULL_ACCOUNT;
@@ -332,6 +369,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.name = TEMP_ACCOUNT;
    });
+
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = TEMP_ACCOUNT;
@@ -435,7 +473,6 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       create< account_object >( [&]( account_object& a )
       {
          a.name = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
-         a.secure_public_key = init_public_key;
       } );
 
       // Create Core asset balance object for witness
@@ -2506,7 +2543,7 @@ void database::process_validation_rewards()
    asset distributed = asset( 0, SYMBOL_COIN );
 
    while( valid_itr != valid_idx.end() &&
-      valid_itr->height == props.last_irreversible_block_num &&
+      valid_itr->block_height == props.last_irreversible_block_num &&
       valid_itr->commitment_stake.amount >= BLOCKCHAIN_PRECISION ) 
    {
       share_type validation_shares = valid_itr->commitment_stake;  // Get the commitment stake for each witness
@@ -2636,7 +2673,7 @@ void database::process_supernode_rewards()
 
 
 /**
- * Update an network officer;'s voting approval statisitics
+ * Update a network officer's voting approval statisitics
  * and updates its approval if there are
  * sufficient votes from witnesses and other accounts.
  */
@@ -2647,7 +2684,7 @@ void database::update_network_officer( const network_officer_object& network_off
    share_type voting_power = 0;
    uint32_t witness_vote_count = 0;
    share_type witness_voting_power = 0;
-   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_officer_account >();
    auto vote_itr = vote_idx.lower_bound( network_officer.account );
@@ -2935,7 +2972,7 @@ void database::update_governance_account( const governance_account_object& gover
    share_type voting_power = 0;
    uint32_t witness_vote_count = 0;
    share_type witness_voting_power = 0;
-   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& vote_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
    auto vote_itr = vote_idx.lower_bound( governance_account.account );
@@ -3016,7 +3053,7 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
    share_type current_voting_power = 0;
    uint32_t current_witness_approvals = 0;
    share_type current_witness_voting_power = 0;
-   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& approval_idx = get_index< enterprise_approval_index >().indices().get< by_enterprise_id >();
    auto approval_itr = approval_idx.lower_bound( boost::make_tuple( enterprise.creator, enterprise.enterprise_id ) );
@@ -3087,8 +3124,8 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
 
 /**
  * Updates all community enterprise proposals, by checking 
- * if they have sufficient approvals from accounts on the network
- * and witnesses.
+ * if they have sufficient approvals from accounts on 
+ * the network and witnesses.
  * Processes budget payments for all proposals that have milestone approvals.
  */
 void database::process_community_enterprise_fund()
@@ -3114,7 +3151,7 @@ void database::process_community_enterprise_fund()
    while( enterprise_itr != enterprise_idx.end() && 
       rfo.community_fund_balance.amount > 0 )   // Enterprise objects in order of highest total voting power.
    {
-      if( enterprise_itr->approved_milestones >= 0 )  // Processed when they have inital approval.
+      if( enterprise_itr->approved_milestones >= 0 && enterprise_itr->begin > now )  // Processed when they have inital approval and passed begin time.
       {
          const community_enterprise_object& enterprise = *enterprise_itr;
          asset available_budget = std::min( rfo.community_fund_balance, enterprise.daily_budget );
@@ -3143,7 +3180,7 @@ void database::process_community_enterprise_fund()
          asset release_limit = ( enterprise.total_budget() * percent_released ) / PERCENT_100;
          asset to_release = std::min( enterprise.pending_budget, release_limit - enterprise.total_distributed );
          
-         if( to_release.amount > 0)
+         if( to_release.amount > 0 )
          {
             asset distributed = asset( 0, SYMBOL_COIN );
 
@@ -3333,7 +3370,6 @@ void database::initialize_evaluators()
    // Comment Evaluators
 
    _my->_evaluator_registry.register_evaluator< comment_evaluator                        >();
-   _my->_evaluator_registry.register_evaluator< comment_options_evaluator                >();
    _my->_evaluator_registry.register_evaluator< message_evaluator                        >();
    _my->_evaluator_registry.register_evaluator< vote_evaluator                           >();
    _my->_evaluator_registry.register_evaluator< view_evaluator                           >();

@@ -468,8 +468,16 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
-   const account_object& int_account = _db.get_account( o.interface );
-   const interface_object& interface = _db.get_interface( o.interface );
+
+   const account_object* int_account_ptr = nullptr;
+   const interface_object* interface_ptr = nullptr;
+
+   if( o.interface.size() )
+   {
+      int_account_ptr = _db.find_account( o.interface );
+      interface_ptr = _db.find_interface( o.interface );
+   }
+   
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = props.time;
    asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
@@ -537,21 +545,31 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
       break;
    }
 
-   asset total_fees = std::max( asset(0, SYMBOL_USD) , monthly_fee * o.months - carried_fees);   // Applies a discount on new membership if an existing membership is still active.
+   asset total_fees = std::max( asset( 0, SYMBOL_USD ), monthly_fee * o.months - carried_fees);   // Applies a discount on new membership if an existing membership is still active.
 
    FC_ASSERT( liquid >= total_fees, 
       "Account has insufficent liquid balance to pay for the requested membership duration." );
 
-   if( total_fees.amount > 0)
+   if( total_fees.amount > 0 )
    {
-      _db.pay_membership_fees( account, total_fees, int_account );      // Pays splits to interface, premium partners, and network
+      if( int_account_ptr != nullptr )
+      {
+         _db.pay_membership_fees( account, total_fees, *int_account_ptr );      // Pays splits to interface, premium partners, and network
+      }
+      else
+      {
+         _db.pay_membership_fees( account, total_fees );
+      }
    }
 
    _db.modify( account, [&]( account_object& a )
    {
       a.membership = o.membership_type;
       a.membership_expiration = now + fc::days( 30 * o.months );
-      a.membership_interface = o.interface;
+      if( o.interface.size() )
+      {
+         a.membership_interface = o.interface;
+      }
       if( o.recurring )
       {
          a.recurring_membership = o.months;
@@ -1505,7 +1523,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
    }
 
    const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
-   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name ) );
+   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, CONNECTION ) );
 
    if( req_itr == req_idx.end() && acc_itr == acc_idx.end() )      // New connection request 
    {
@@ -1513,34 +1531,42 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
          "Request doesn't exist, user must select to request connection with the account." );
       if( con_itr == con_idx.end() )      // No existing connection object.
       { 
-         FC_ASSERT( o.connection_type == CONNECTION, 
+         FC_ASSERT( o.connection_type == CONNECTION,
             "First connection request must be of standard Connection type before elevation to higher levels." );
 
          _db.create< connection_request_object >( [&]( connection_request_object& cro )
          {
-            cro.requested_account = req_account.name;
             cro.account = account.name;
+            cro.requested_account = req_account.name;
             cro.connection_type = o.connection_type;
             from_string( cro.message, o.message );
             cro.expiration = now + CONNECTION_REQUEST_DURATION;
          });
       }
-      else // Connection object found, requesting type change.
+      else        // Connection object found, requesting level increase.
       {
          const connection_object& connection_obj = *con_itr;
-         FC_ASSERT( o.connection_type != connection_obj.connection_type,
+
+         auto friend_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, FRIEND ) );
+         auto comp_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, COMPANION ) );
+
+         FC_ASSERT( o.connection_type != CONNECTION,
             "Connection of this type already exists, should request a type increase." );
 
-         if( o.connection_type == FRIEND ) 
+         if( o.connection_type == FRIEND )
          {
-            FC_ASSERT( now > ( connection_obj.created + CONNECTION_REQUEST_DURATION ), 
+            FC_ASSERT( friend_itr == con_idx.end(),
+               "Friend level connection already exists." );
+            FC_ASSERT( now > ( connection_obj.created + CONNECTION_REQUEST_DURATION ),
                "Friend Connection must wait one week from first connection." );
          }
-         else if( o.connection_type == COMPANION ) 
+         else if( o.connection_type == COMPANION )
          {
-            FC_ASSERT( connection_obj.connection_type == FRIEND, 
+            FC_ASSERT( friend_itr != con_idx.end(),
                "Companion connection must follow a friend connection." );
-            FC_ASSERT( now > ( connection_obj.created + CONNECTION_REQUEST_DURATION ), 
+               FC_ASSERT( comp_itr == con_idx.end(),
+               "companion level connection already exists." );
+            FC_ASSERT( now > ( friend_itr->created + CONNECTION_REQUEST_DURATION ),
                "Companion Connection must wait one week from Friend connection." );
          }
 
@@ -1701,7 +1727,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
       if( o.connected ) // Connection object found, adding returning acceptance or editing keys.
       {
-         _db.modify( connection_obj, [&]( connection_object& co ) 
+         _db.modify( connection_obj, [&]( connection_object& co )
          {
             if( account_a_name == account.name )    // We're account A
             {
@@ -1713,7 +1739,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
             }
          }); 
       }
-      else  // Connection object is found, and is being unconnected. 
+      else  // Connection object is found, and is being unconnected.
       {
          _db.modify( a_following_set, [&]( account_following_object& afo )
          {
@@ -1783,6 +1809,9 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
    {
       if( o.followed )    // Creating new follow relation
       {
+         FC_ASSERT( !follower_set.is_following( following.name ),
+            "Account is already followed." );
+
          _db.modify( follower_set, [&]( account_following_object& afo ) 
          {
             afo.add_following( following.name );
@@ -1794,16 +1823,6 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
             afo.add_follower( follower.name );
             afo.last_update = now;
          });
-
-         _db.modify( following, [&]( account_object& a ) 
-         {
-            a.follower_count++;
-         });
-
-         _db.modify( follower, [&]( account_object& a ) 
-         {
-            a.following_count++;
-         }); 
       }  
       else    // Creating new filter relation
       {
@@ -1835,18 +1854,8 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
             afo.remove_follower( follower.name );
             afo.last_update = now;
          });
-
-         _db.modify( following, [&]( account_object& a ) 
-         {
-            a.follower_count--;
-         });
-
-         _db.modify( follower, [&]( account_object& a ) 
-         {
-            a.following_count--;
-         });
       }  
-      else        // Unfiltering
+      else    // Unfiltering
       {
          FC_ASSERT( follower_set.is_filtered( following.name ),
             "Cannot unfilter an account that you do not filter." );
@@ -1858,6 +1867,18 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          });
       }
    }
+
+   _db.modify( following, [&]( account_object& a ) 
+   {
+      a.follower_count = following_set.followers.size();
+      a.following_count = following_set.following.size();
+   });
+
+   _db.modify( follower, [&]( account_object& a ) 
+   {
+      a.follower_count = follower_set.followers.size();
+      a.following_count = follower_set.following.size();
+   });
 
    _db.update_account_in_feed( o.follower, o.following );
    _db.update_account_in_feed( o.following, o.follower );
@@ -1887,6 +1908,9 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
       {
          if( o.followed )        // Creating new follow relation
          {
+            FC_ASSERT( !follower_set.is_following( o.tag ),
+               "Tag is already followed." );
+
             _db.modify( follower_set, [&]( account_following_object& afo )
             {
                afo.add_following( o.tag );
@@ -2007,23 +2031,39 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
 
    asset stake = _db.get_staked_balance( o.account, SYMBOL_EQUITY );
 
-   FC_ASSERT( stake >= asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ),
+   FC_ASSERT( stake >= asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ),
       "Account must have at least one equity asset to claim activity reward." );
 
    const comment_metrics_object& comment_metrics = _db.get_comment_metrics();
    const comment_object& comment = _db.get_comment( o.account, o.permlink );
    const comment_view_object& view = _db.get_comment_view( o.account, o.view_id );
    const comment_vote_object& vote = _db.get_comment_vote( o.account, o.vote_id );
+   const comment_object& view_comment = _db.get( comment_id_type( o.view_id ) );
+   const comment_object& vote_comment = _db.get( comment_id_type( o.vote_id ) );
 
-   FC_ASSERT( comment.net_votes >= comment_metrics.median_vote_count,
-      "Referred recent Post should have at least the median number of votes for activity reward." );
-   FC_ASSERT( now < account.last_activity_reward + fc::days(1),
+   FC_ASSERT( comment.id != vote_comment.id,
+      "Created post and voted must must be different comments." );
+   FC_ASSERT( comment.id != view_comment.id,
+      "Created post and voted must must be different comments." );
+   FC_ASSERT( view_comment.id != vote_comment.id,
+      "Viewed post and voted must must be different comments." );
+
+   FC_ASSERT( comment.net_votes >= ( comment_metrics.median_vote_count / 5 ),
+      "Referred recent Post should have at least 20% of median number of votes." );
+   FC_ASSERT( comment.view_count >= ( comment_metrics.median_view_count / 5 ),
+      "Referred recent Post should have at least 20% of median number of views." );
+   FC_ASSERT( comment.vote_power >= ( comment_metrics.median_vote_power / 5 ),
+      "Referred recent Post should have at least 20% of median vote power." );
+   FC_ASSERT( comment.view_power >= ( comment_metrics.median_view_power / 5 ),
+      "Referred recent Post should have at least 20% of median view power." );
+
+   FC_ASSERT( now < ( account.last_activity_reward + fc::days(1) ),
       "Can only claim activity reward once per 24 hours." );
-   FC_ASSERT( now < comment.created + fc::days(1),
+   FC_ASSERT( now < ( comment.created + fc::days(1) ),
       "Referred Recent Post should have been made in the last 24 hours." );
-   FC_ASSERT( now < view.created + fc::days(1),
+   FC_ASSERT( now < ( view.created + fc::days(1) ),
       "Referred Recent View should have been made in the last 24 hours." );
-   FC_ASSERT( now < vote.created + fc::days(1),
+   FC_ASSERT( now < ( vote.created + fc::days(1) ),
       "Referred Recent Vote should have been made in the last 24 hours." );
 
    const auto& vote_idx = _db.get_index< witness_vote_index >().indices().get< by_account_witness >();
@@ -2193,7 +2233,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
- /**
+/**
  * Creates or updates an executive board object for a team of developers and employees.
  * Executive boards enable the issuance of network credit asset for operating a
  * multifaceted development and marketing team for the protocol.
@@ -2246,27 +2286,27 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
 
    const executive_officer_set& officers = b.executive_board;
 
-   if( exec_ptr != nullptr ) // Updating existing Executive board
+   if( exec_ptr != nullptr )      // Updating existing Executive board
    { 
       _db.modify( *exec_ptr, [&]( executive_board_object& ebo )
       {
          ebo.budget = o.budget;
-         if( o.url.size())
+         if( o.url.size() )
          {
             from_string( ebo.url, o.url );
          }
-         if( o.details.size())
+         if( o.details.size() )
          {
             from_string( ebo.details, o.details );
          }
-         if( o.json.size())
+         if( o.json.size() )
          {
             from_string( ebo.json, o.json );
          }
          ebo.active = o.active;
       });
    }
-   else  // create new executive board
+   else         // create new executive board
    {
       // Perform Executive board eligibility checks when creating new board.
       FC_ASSERT( o.active, 
@@ -2289,7 +2329,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
       bool mar_check = false;
       bool adv_check = false;
 
-      if( wso.is_top_witness( executive.name ))
+      if( wso.is_top_witness( executive.name ) )
       {
          wit_check = true;
       }
@@ -2323,7 +2363,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
 
       for( auto name_role : b.executives )
       {
-         if( wso.is_top_witness( name_role.first ))
+         if( wso.is_top_witness( name_role.first ) )
          {
             wit_check = true;
          }
@@ -2400,22 +2440,22 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
       {
          ebo.account = o.executive;
          ebo.budget = o.budget;
-         if( o.url.size())
+         if( o.url.size() )
          {
             from_string( ebo.url, o.url );
          }
-         if( o.details.size())
+         if( o.details.size() )
          {
             from_string( ebo.details, o.details );
          }
-         if( o.json.size())
+         if( o.json.size() )
          {
             from_string( ebo.json, o.json );
          }
          ebo.active = true;
          ebo.created = now;
       });
-   } 
+   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -2509,14 +2549,14 @@ void update_governance_evaluator::do_apply( const update_governance_operation& o
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    time_point now = _db.head_block_time();
-   const account_object& account = _db.get_account(o.account);
+   const account_object& account = _db.get_account( o.account );
    
    FC_ASSERT( account.membership == TOP_MEMBERSHIP,
-      "Account must be a Top level member to create governance account");   
+      "Account must be a Top level member to create governance account" );
 
    const governance_account_object* gov_acc_ptr = _db.find_governance_account( o.account );
 
-   if( gov_acc_ptr != nullptr ) // updating existing governance account
+   if( gov_acc_ptr != nullptr )      // updating existing governance account
    { 
       _db.modify( *gov_acc_ptr, [&]( governance_account_object& gao )
       {
@@ -2535,20 +2575,20 @@ void update_governance_evaluator::do_apply( const update_governance_operation& o
          gao.active = o.active;
       });
    }
-   else  // create new governance account
+   else       // create new governance account
    {
       _db.create< governance_account_object >( [&]( governance_account_object& gao )
       {
          gao.account = o.account;
-         if( o.url.size())
+         if( o.url.size() )
          {
             from_string( gao.url, o.url );
          }
-         if( o.details.size())
+         if( o.details.size() )
          {
             from_string( gao.details, o.details );
          }
-         if( o.json.size())
+         if( o.json.size() )
          {
             from_string( gao.json, o.json );
          }
@@ -2571,6 +2611,8 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
    }
    const account_object& account = _db.get_account( o.account );
    const governance_account_object& gov_account = _db.get_governance_account( o.governance_account );
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   const witness_schedule_object& wso = _db.get_witness_schedule();
    share_type voting_power = _db.get_voting_power( account );
    const auto& gov_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_governance >();
    auto itr = gov_idx.find( boost::make_tuple( o.account, gov_account.account ) );
@@ -2582,7 +2624,7 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
       FC_ASSERT( account.governance_subscriptions < MAX_GOV_ACCOUNTS, 
          "Account has too many governance subscriptions." );
 
-      _db.create< governance_subscription_object >( [&]( governance_subscription_object& gso ) 
+      _db.create< governance_subscription_object >( [&]( governance_subscription_object& gso )
       {
          gso.governance_account = o.governance_account;
          gso.account = o.account;
@@ -2603,71 +2645,12 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
       {
          a.governance_subscriptions--;
       });
+
       _db.remove( *itr );
    }
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
+   _db.update_governance_account( gov_account, wso, props );
 
-void update_interface_evaluator::do_apply( const update_interface_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   if( o.signatory != signed_for )
-   {
-      const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
-      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   const account_object& account = _db.get_account( o.account );
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
-   FC_ASSERT( account.membership != NONE, 
-      "Account must be a member to create an Interface.");
-
-   const interface_object* int_ptr = _db.find_interface( o.account );
-
-   if( int_ptr != nullptr ) // updating existing interface
-   { 
-      _db.modify( *int_ptr, [&]( interface_object& i )
-      { 
-         if( o.url.size())
-         {
-            from_string( i.url, o.url );
-         }
-         if( o.details.size())
-         {
-            from_string( i.details, o.details );
-         }
-         if( o.json.size())
-         {
-            from_string( i.json, o.json );
-         }
-         i.active = o.active;
-         i.decay_weights( props );
-      });
-   }
-   else  // create new interface
-   {
-      _db.create< interface_object >( [&]( interface_object& i )
-      {
-         i.account = o.account;
-         if( o.url.size() )
-         {
-            from_string( i.url, o.url );
-         }
-         if( o.details.size() )
-         {
-            from_string( i.details, o.details );
-         }
-         if( o.json.size() )
-         {
-            from_string( i.json, o.json );
-         }
-         i.active = true;
-         i.created = now;
-         i.last_update_time = now;
-      });
-   } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -2683,42 +2666,42 @@ void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
    }
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
    time_point now = props.time;
-   const account_object& account = _db.get_account( o.account );  
+   const account_object& account = _db.get_account( o.account );
    const supernode_object* sup_ptr = _db.find_supernode( o.account );
 
-   if( sup_ptr != nullptr ) // updating existing supernode
+   if( sup_ptr != nullptr )      // updating existing supernode
    { 
       _db.modify( *sup_ptr, [&]( supernode_object& s )
       { 
-         if( o.url.size())
+         if( o.url.size() )
          {
             from_string( s.url, o.url );
          }
-         if( o.ipfs_endpoint.size())
+         if( o.ipfs_endpoint.size() )
          {
             from_string( s.ipfs_endpoint, o.ipfs_endpoint );
          }
-         if( o.node_api_endpoint.size())
+         if( o.node_api_endpoint.size() )
          {
             from_string( s.node_api_endpoint, o.node_api_endpoint );
          }
-         if( o.notification_api_endpoint.size())
+         if( o.notification_api_endpoint.size() )
          {
             from_string( s.notification_api_endpoint, o.notification_api_endpoint );
          }
-         if( o.auth_api_endpoint.size())
+         if( o.auth_api_endpoint.size() )
          {
             from_string( s.auth_api_endpoint, o.auth_api_endpoint );
          }
-         if( o.bittorrent_endpoint.size())
+         if( o.bittorrent_endpoint.size() )
          {
             from_string( s.bittorrent_endpoint, o.bittorrent_endpoint );
          }
-         if( o.details.size())
+         if( o.details.size() )
          {
             from_string( s.details, o.details );
          }
-         if( o.json.size())
+         if( o.json.size() )
          {
             from_string( s.json, o.json );
          }
@@ -2771,6 +2754,69 @@ void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
          s.last_update_time = now;
          
          s.last_activation_time = now;
+      });
+   } 
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void update_interface_evaluator::do_apply( const update_interface_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   if( o.signatory != signed_for )
+   {
+      const account_business_object& b = _db.get_account_business( signed_for );
+      const account_object& signatory = _db.get_account( o.signatory );
+      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   const account_object& account = _db.get_account( o.account );
+   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   time_point now = props.time;
+   FC_ASSERT( account.membership != NONE, 
+      "Account must be a member to create an Interface.");
+
+   const interface_object* int_ptr = _db.find_interface( o.account );
+
+   if( int_ptr != nullptr ) // updating existing interface
+   { 
+      _db.modify( *int_ptr, [&]( interface_object& i )
+      { 
+         if( o.url.size() )
+         {
+            from_string( i.url, o.url );
+         }
+         if( o.details.size() )
+         {
+            from_string( i.details, o.details );
+         }
+         if( o.json.size() )
+         {
+            from_string( i.json, o.json );
+         }
+         i.active = o.active;
+         i.decay_weights( props );
+      });
+   }
+   else  // create new interface
+   {
+      _db.create< interface_object >( [&]( interface_object& i )
+      {
+         i.account = o.account;
+         if( o.url.size() )
+         {
+            from_string( i.url, o.url );
+         }
+         if( o.details.size() )
+         {
+            from_string( i.details, o.details );
+         }
+         if( o.json.size() )
+         {
+            from_string( i.json, o.json );
+         }
+         i.active = true;
+         i.created = now;
+         i.last_update_time = now;
       });
    } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -2878,7 +2924,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
    }
    else  // Create new community enterprise proposal
    {
-      FC_ASSERT( o.begin  > (now + fc::days(7)), 
+      FC_ASSERT( o.begin  > ( now + fc::days(7) ), 
          "Begin time must be at least 7 days in the future." );
       
       if( o.proposal_type == COMPETITION )
@@ -3065,7 +3111,13 @@ void comment_evaluator::do_apply( const comment_operation& o )
    const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
    auto itr = by_permlink_idx.find( boost::make_tuple( o.author, o.permlink ) );
    const account_object& auth = _db.get_account( o.author );
-   const interface_object& interface = _db.get_interface( o.interface );
+   comment_options options = o.options;
+
+   if( o.interface.size() )
+   {
+      const interface_object& interface = _db.get_interface( o.interface );
+   }
+   
    const board_object* board_ptr = nullptr;
 
    if( o.board.size() )     // Board validity and permissioning checks
@@ -3091,7 +3143,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       
       switch( board.board_type )
       {
-         case BOARD: 
+         case BOARD:
             break;
          case GROUP:
          {
@@ -3119,15 +3171,15 @@ void comment_evaluator::do_apply( const comment_operation& o )
          case OPEN_BOARD:
          case PUBLIC_BOARD:
          {
-            FC_ASSERT( !o.privacy && o.public_key == public_key_type(), 
+            FC_ASSERT( !options.privacy && o.public_key == public_key_type(), 
                "Posts in Open and Public boards should not be encrypted." );
          }
          case PRIVATE_BOARD:
          case EXCLUSIVE_BOARD:
          {
-            FC_ASSERT( o.privacy && o.public_key == board.board_public_key, 
+            FC_ASSERT( options.privacy && o.public_key == board.board_public_key, 
                "Posts in Private and Exclusive Boards must be encrypted with the board public key.");
-            FC_ASSERT( o.reach == board_feed_type, 
+            FC_ASSERT( options.reach == board_feed_type, 
                "Posts in Private and Exclusive Boards should have reach limited to only board level subscribers.");
          }
          break;
@@ -3139,31 +3191,31 @@ void comment_evaluator::do_apply( const comment_operation& o )
       }
    }
 
-   switch( o.reach )
+   switch( options.reach )
    {
       case TAG_FEED:
       case FOLLOW_FEED:
       case MUTUAL_FEED:
       {
-         FC_ASSERT( !o.privacy && o.public_key == public_key_type(), 
+         FC_ASSERT( !options.privacy && o.public_key == public_key_type(), 
             "Follow, Mutual and Tag level posts should not be encrypted." );
       }
       break;
       case CONNECTION_FEED:
       {
-         FC_ASSERT( o.privacy && o.public_key == auth.connection_public_key, 
+         FC_ASSERT( options.privacy && o.public_key == auth.connection_public_key, 
             "Connection level posts must be encrypted with the account's Connection public key." );
       }
       break;
       case FRIEND_FEED:
       {
-         FC_ASSERT( o.privacy && o.public_key == auth.friend_public_key, 
+         FC_ASSERT( options.privacy && o.public_key == auth.friend_public_key, 
             "Connection level posts must be encrypted with the account's Friend public key.");
       }
       break;
       case COMPANION_FEED:
       {
-         FC_ASSERT( o.privacy && o.public_key == auth.companion_public_key, 
+         FC_ASSERT( options.privacy && o.public_key == auth.companion_public_key, 
             "Connection level posts must be encrypted with the account's Companion public key.");
       }
       break;
@@ -3174,7 +3226,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          FC_ASSERT( board_ptr != nullptr, 
             "Board level posts must be made within a valid board.");
-         FC_ASSERT( o.privacy && o.public_key == board_ptr->board_public_key, 
+         FC_ASSERT( options.privacy && o.public_key == board_ptr->board_public_key, 
             "Board level posts must be encrypted with the board public key.");
       }
       break;
@@ -3184,6 +3236,13 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          FC_ASSERT( false, "Invalid Post Reach Type." );
       }
+   }
+
+   for( auto& b : options.beneficiaries )
+   {
+      const account_object* acc = _db.find< account_object, by_name >( b.account );
+      FC_ASSERT( acc != nullptr,
+         "Beneficiary \"${a}\" must exist.", ("a", b.account) );
    }
    
    int128_t reward = 0;
@@ -3292,57 +3351,83 @@ void comment_evaluator::do_apply( const comment_operation& o )
          } 
       }
 
-      _db.modify( auth, [&]( account_object& a ) 
+      _db.modify( auth, [&]( account_object& a )
       {
          if( o.parent_author == ROOT_POST_PARENT )
          {
             a.last_root_post = now;
+            a.post_count++;
          }
          else
          {
             a.commenting_power = new_commenting_power;
+            a.comment_count++;
          }
          a.last_post = now;
-         a.post_count++;
       });
 
-      const auto& new_comment = _db.create< comment_object >( [&]( comment_object& com )
+      const comment_object& new_comment = _db.create< comment_object >( [&]( comment_object& com )
       {
          validate_permlink( o.parent_permlink );
          validate_permlink( o.permlink );
          
          com.author = o.author;
-         com.rating = o.rating;
+         com.rating = options.rating;
          com.board = o.board;
-         com.privacy = o.privacy;
-         com.reach = o.reach;
-         com.post_type = o.post_type;
+         com.privacy = options.privacy;
+         com.reach = options.reach;
+         com.post_type = options.post_type;
          com.author_reputation = auth.author_reputation;
          com.comment_price = o.comment_price;
          com.premium_price = o.premium_price;
          com.public_key = public_key_type( o.public_key );
-         for( auto link : o.ipfs )
+         if( o.interface.size() )
+         {
+            com.interface = o.interface;
+         }
+         for( auto& link : o.ipfs )
          {
             shared_string l;
             from_string( l, link );
             com.ipfs.push_back( l );
          }
-         for( auto link : o.magnet )
+         for( auto& link : o.magnet )
          {
             shared_string l;
             from_string( l, link );
             com.magnet.push_back( l );
          }
+         for( auto& b : options.beneficiaries )
+         {
+            com.beneficiaries.push_back( b );
+         }
+
          from_string( com.language, o.language );
          from_string( com.permlink, o.permlink );
          from_string( com.body, o.body );
          from_string( com.json, o.json );
+
+         com.max_accepted_payout = options.max_accepted_payout;
+         com.percent_liquid = options.percent_liquid;
+         com.allow_replies = options.allow_replies;
+         com.allow_votes = options.allow_votes;
+         com.allow_views = options.allow_views;
+         com.allow_shares = options.allow_shares;
+         com.allow_curation_rewards = options.allow_curation_rewards;
+
          com.last_update = now;
-         com.created = com.last_update;
-         com.active = com.last_update;
+         com.created = now;
+         com.active = now;
          com.last_payout = fc::time_point::min();
-         com.max_cashout_time = fc::time_point::maximum();
+
          com.cashout_time = com.created + props.median_props.content_reward_interval;
+         com.author_reward_percent = props.median_props.author_reward_percent;
+         com.vote_reward_percent = props.median_props.vote_reward_percent;
+         com.view_reward_percent = props.median_props.view_reward_percent;
+         com.share_reward_percent = props.median_props.share_reward_percent;
+         com.comment_reward_percent = props.median_props.comment_reward_percent;
+         com.storage_reward_percent = props.median_props.storage_reward_percent;
+         com.moderator_reward_percent = props.median_props.moderator_reward_percent;
 
          if ( o.parent_author == ROOT_POST_PARENT )     // New Root post
          {
@@ -3366,7 +3451,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
       id = new_comment.id;
 
-      while( parent != nullptr )                 // Increments the children counter on all ancestor comments, and bumps active time.
+      while( parent != nullptr )        // Increments the children counter on all ancestor comments, and bumps active time.
       {
          _db.modify( *parent, [&]( comment_object& p )
          {
@@ -3408,6 +3493,29 @@ void comment_evaluator::do_apply( const comment_operation& o )
    {
       const comment_object& comment = *itr;
 
+      if( options.beneficiaries.size() )
+      {
+         FC_ASSERT( comment.beneficiaries.size() == 0,
+            "Comment already has beneficiaries specified." );
+         FC_ASSERT( comment.net_reward == 0,
+            "Comment must not have been voted on before specifying beneficiaries." );
+      }
+      
+      FC_ASSERT( comment.allow_curation_rewards >= options.allow_curation_rewards,
+         "Curation rewards cannot be re-enabled." );
+      FC_ASSERT( comment.allow_replies >= options.allow_replies,
+         "Replies cannot be re-enabled." );
+      FC_ASSERT( comment.allow_votes >= options.allow_votes,
+         "Voting cannot be re-enabled." );
+      FC_ASSERT( comment.allow_views >= options.allow_views,
+         "Viewing cannot be re-enabled." );
+      FC_ASSERT( comment.allow_shares >= options.allow_shares,
+         "Shares cannot be re-enabled." );
+      FC_ASSERT( comment.max_accepted_payout >= options.max_accepted_payout,
+         "A comment cannot accept a greater payout." );
+      FC_ASSERT( comment.percent_liquid >= options.percent_liquid,
+         "A comment cannot accept a greater percent USD." );
+
       if( !o.deleted )     // Editing post
       {
          feed_types old_reach = comment.reach;
@@ -3416,10 +3524,18 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             com.last_update = now;
             com.active = now;
-            com.rating = o.rating;
+            com.rating = options.rating;
             com.board = o.board;
-            com.privacy = o.privacy;
-            com.reach = o.reach;
+            com.privacy = options.privacy;
+            com.reach = options.reach;
+
+            com.max_accepted_payout = options.max_accepted_payout;
+            com.percent_liquid = options.percent_liquid;
+            com.allow_replies = options.allow_replies;
+            com.allow_votes = options.allow_votes;
+            com.allow_views = options.allow_views;
+            com.allow_shares = options.allow_shares;
+            com.allow_curation_rewards = options.allow_curation_rewards;
 
             strcmp_equal equal;
 
@@ -3455,7 +3571,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             } 
             if( o.language.size() ) 
             {
-               from_string( com.language, o.language);
+               from_string( com.language, o.language );
             }
             if( o.public_key.size() ) 
             {
@@ -3512,10 +3628,13 @@ struct comment_options_extension_visitor
    typedef void result_type;
    const comment_object& _c;
    database& _db;
+
    void operator()( const comment_payout_beneficiaries& cpb ) const
    {
-      FC_ASSERT( _c.beneficiaries.size() == 0, "Comment already has beneficiaries specified." );
-      FC_ASSERT( _c.net_reward == 0, "Comment must not have been voted on before specifying beneficiaries." );
+      FC_ASSERT( _c.beneficiaries.size() == 0,
+         "Comment already has beneficiaries specified." );
+      FC_ASSERT( _c.net_reward == 0,
+         "Comment must not have been voted on before specifying beneficiaries." );
 
       _db.modify( _c, [&]( comment_object& c )
       {
@@ -3528,49 +3647,6 @@ struct comment_options_extension_visitor
       });
    }
 };
-
-
-void comment_options_evaluator::do_apply( const comment_options_operation& o )
-{
-   const account_name_type& signed_for = o.author;
-   if( o.signatory != signed_for )
-   {
-      const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   const account_object& auth = _db.get_account( o.author );
-   const auto& comment = _db.get_comment( o.author, o.permlink );
-
-   if( !o.allow_curation_rewards || !o.allow_votes || o.max_accepted_payout < comment.max_accepted_payout )
-   {
-      FC_ASSERT( comment.net_reward == 0, 
-         "One of the included comment options requires the comment to have no reward allocated to it." );
-   }
-   
-   FC_ASSERT( comment.allow_curation_rewards >= o.allow_curation_rewards, 
-      "Curation rewards cannot be re-enabled." );
-   FC_ASSERT( comment.allow_votes >= o.allow_votes, 
-      "Voting cannot be re-enabled." );
-   FC_ASSERT( comment.max_accepted_payout >= o.max_accepted_payout, 
-      "A comment cannot accept a greater payout." );
-   FC_ASSERT( comment.percent_liquid >= o.percent_liquid, 
-      "A comment cannot accept a greater percent USD." );
-
-   _db.modify( comment, [&]( comment_object& c ) 
-   {
-      c.max_accepted_payout = o.max_accepted_payout;
-      c.percent_liquid = o.percent_liquid;
-      c.allow_votes = o.allow_votes;
-      c.allow_curation_rewards = o.allow_curation_rewards;
-   });
-
-   for( auto& e : o.extensions )
-   {
-      e.visit( comment_options_extension_visitor( comment, _db ) );
-   }
-}
 
 
 void message_evaluator::do_apply( const message_operation& o )
@@ -3590,7 +3666,7 @@ void message_evaluator::do_apply( const message_operation& o )
    account_name_type account_a_name;
    account_name_type account_b_name;
 
-   if(sender.id < recipient.id)        // Connection objects are sorted with lowest ID is account A. 
+   if( sender.id < recipient.id )        // Connection objects are sorted with lowest ID is account A. 
    {
       account_a_name = sender.name;
       account_b_name = recipient.name;
@@ -3608,7 +3684,7 @@ void message_evaluator::do_apply( const message_operation& o )
       "Cannot send message: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
 
    const auto& message_idx = _db.get_index< message_index >().indices().get< by_sender_uuid >();
-   auto message_itr = message_idx.find( boost::make_tuple( sender.name, o.uuid) );
+   auto message_itr = message_idx.find( boost::make_tuple( sender.name, o.uuid ) );
 
    if( message_itr == message_idx.end() )         // Message uuid does not exist, creating new message
    {
@@ -3628,7 +3704,7 @@ void message_evaluator::do_apply( const message_operation& o )
    {
       _db.modify( *message_itr, [&]( message_object& mo )
       {
-         from_string( mo.message, o.message);
+         from_string( mo.message, o.message );
          mo.last_updated = now;
       });
    }
@@ -3675,20 +3751,20 @@ void vote_evaluator::do_apply( const vote_operation& o )
    int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.median_props.vote_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(voter.voting_power + regenerated_power), int64_t(PERCENT_100) );
    
-   FC_ASSERT( current_power > 0, 
+   FC_ASSERT( current_power > 0,
       "Account currently does not have voting power." );
    int16_t abs_weight = abs(o.weight);
    int16_t used_power = (current_power * abs_weight) / PERCENT_100;
    int16_t max_vote_denom = props.median_props.vote_reserve_rate * ( props.median_props.vote_recharge_time.count() / fc::days(1).count() );
    
    FC_ASSERT( max_vote_denom > 0 );
-   used_power = (used_power + max_vote_denom - 1) / max_vote_denom;
+   used_power = ( used_power + max_vote_denom - 1 ) / max_vote_denom;
    FC_ASSERT( used_power <= current_power, 
       "Account does not have enough power to vote." );
 
    int128_t voting_power = _db.get_voting_power( o.voter ).value;    // Gets the user's voting power from their Equity and Staked coin balances
-   int128_t abs_reward = (voting_power * used_power) / PERCENT_100;
-   FC_ASSERT( abs_reward > VOTE_DUST_THRESHOLD || o.weight == 0, 
+   int128_t abs_reward = ( voting_power * used_power ) / PERCENT_100;
+   FC_ASSERT( abs_reward > 0 || o.weight == 0, 
       "Voting weight is too small, please accumulate more voting power." );
    int128_t reward = o.weight < 0 ? -abs_reward : abs_reward; // Determines the sign of abs_reward for upvote and downvote
 
@@ -3705,6 +3781,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
       {
          a.voting_power = current_power - used_power;
          a.last_vote_time = now;
+         a.post_vote_count++;
       });
 
       uint128_t old_power = std::max( uint128_t(comment.vote_power), uint128_t(0));
@@ -3822,12 +3899,6 @@ void vote_evaluator::do_apply( const vote_operation& o )
          "Voter has used the maximum number of vote changes on this comment." );
       FC_ASSERT( itr->vote_percent != o.weight, 
          "You have already voted in a similar way." );
-
-      if( itr->reward < reward )
-      {
-         FC_ASSERT( now < comment.cashout_time - UPVOTE_LOCKOUT_TIME,
-            "Cannot increase payout within last twelve hours before payout." );
-      }
 
       _db.modify( voter, [&]( account_object& a )
       {
@@ -3950,13 +4021,24 @@ void view_evaluator::do_apply( const view_operation& o )
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
-   const supernode_object& supernode = _db.get_supernode( o.supernode );
-   const interface_object& interface = _db.get_interface( o.interface );
+
+   const supernode_object* supernode_ptr = nullptr;
+   const interface_object* interface_ptr = nullptr;
+
+   if( o.supernode.size() )
+   {
+      supernode_ptr = _db.find_supernode( o.supernode );
+   }
+   if( o.interface.size() )
+   {
+      interface_ptr = _db.find_interface( o.interface );
+   }
+
    time_point now = _db.head_block_time();
 
    const auto& comment_view_idx = _db.get_index< comment_view_index >().indices().get< by_comment_viewer >();
    auto itr = comment_view_idx.find( std::make_tuple( comment.id, viewer.name ) );
-   int64_t elapsed_seconds = (now - viewer.last_view_time).to_seconds();
+   int64_t elapsed_seconds = ( now - viewer.last_view_time ).to_seconds();
 
    FC_ASSERT( elapsed_seconds >= MIN_VIEW_INTERVAL_SEC, 
       "Can only view once every ${s} seconds.", ("s", MIN_VIEW_INTERVAL_SEC) );
@@ -3986,24 +4068,30 @@ void view_evaluator::do_apply( const view_operation& o )
       const auto& supernode_view_idx = _db.get_index< comment_view_index >().indices().get< by_supernode_viewer >();
       const auto& interface_view_idx = _db.get_index< comment_view_index >().indices().get< by_interface_viewer >();
 
-      auto supernode_view_itr = comment_view_idx.lower_bound( std::make_tuple( supernode.account, viewer.name ) );
-      auto interface_view_itr = comment_view_idx.lower_bound( std::make_tuple( interface.account, viewer.name ) );
+      if( supernode_ptr != nullptr )
+      {
+         auto supernode_view_itr = comment_view_idx.lower_bound( std::make_tuple( o.supernode, viewer.name ) );
+         if( supernode_view_itr == supernode_view_idx.end() )   // No view exists
+         {
+            _db.adjust_view_weight( *supernode_ptr, vp );    // Adds voting power to the supernode view weight once per day per user. 
+         }
+         else if( ( supernode_view_itr->created + fc::days(1) ) < now )     // Latest view is more than 1 day old
+         {
+            _db.adjust_view_weight( *supernode_ptr, vp );    // Adds voting power to the supernode view weight once per day per user. 
+         }
+      }
+      if( interface_ptr != nullptr )
+      {
+         auto interface_view_itr = comment_view_idx.lower_bound( std::make_tuple( o.interface, viewer.name ) );
 
-      if( supernode_view_itr == supernode_view_idx.end() )   // No view exists
-      {
-         _db.adjust_view_weight( supernode, vp );    // Adds voting power to the supernode view weight once per day per user. 
-      }
-      else if( ( supernode_view_itr->created + fc::days(1) ) < now )     // Latest view is more than 1 day old
-      {
-         _db.adjust_view_weight( supernode, vp );    // Adds voting power to the supernode view weight once per day per user. 
-      }
-      if( interface_view_itr == interface_view_idx.end() )   // No view exists
-      {
-         _db.adjust_interface_users( interface );
-      }
-      else if( ( interface_view_itr->created + fc::days(1) ) < now )    // Latest View is more than 1 day old
-      {
-         _db.adjust_interface_users( interface );
+         if( interface_view_itr == interface_view_idx.end() )   // No view exists
+         {
+            _db.adjust_interface_users( *interface_ptr );
+         }
+         else if( ( interface_view_itr->created + fc::days(1) ) < now )    // Latest View is more than 1 day old
+         {
+            _db.adjust_interface_users( *interface_ptr );
+         }
       }
 
       _db.modify( viewer, [&]( account_object& a )
@@ -4012,7 +4100,7 @@ void view_evaluator::do_apply( const view_operation& o )
          a.last_view_time = now;
       });
 
-      uint128_t old_power = std::max( uint128_t( comment.view_power ), uint128_t(0));  // Record reward value before applying view transaction
+      uint128_t old_power = std::max( uint128_t( comment.view_power ), uint128_t(0) );  // Record reward value before applying view transaction
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -4021,7 +4109,7 @@ void view_evaluator::do_apply( const view_operation& o )
          c.view_count++;
       });
 
-      uint128_t new_power = std::max( uint128_t(comment.view_power), uint128_t(0));   // record new net reward after viewing
+      uint128_t new_power = std::max( uint128_t( comment.view_power ), uint128_t(0) );   // record new net reward after viewing
 
       if( board_ptr != nullptr )
       {
@@ -4037,8 +4125,14 @@ void view_evaluator::do_apply( const view_operation& o )
       {
          cv.viewer = viewer.name;
          cv.comment = comment.id;
-         cv.interface = interface.account;
-         cv.supernode = supernode.account;
+         if( o.interface.size() )
+         {
+            cv.interface = o.interface;
+         }
+         if( o.supernode.size() )
+         {
+            cv.supernode = o.supernode;
+         }
          cv.reward = reward;
          cv.created = now;
 
@@ -4330,8 +4424,13 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
    
    const account_object& moderator = _db.get_account( o.moderator );
    const account_object& author = _db.get_account( o.author );
-   const account_object& interface_acc = _db.get_account( o.interface );
-   const interface_object& interface = _db.get_interface( o.interface );
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      const interface_object& interface = _db.get_interface( o.interface );
+   }
+   
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    const governance_account_object* gov_ptr = _db.find_governance_account( o.moderator );
    const board_object* board_ptr = _db.find_board( comment.board );
@@ -4386,7 +4485,11 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
 
          mto.rating = o.rating;
          from_string( mto.details, o.details );
-         mto.interface = o.interface;
+         if( o.interface.size() )
+         {
+            mto.interface = o.interface;
+         }
+         
          mto.filter = o.filter;
          mto.last_update = now;
          mto.created = now;  
@@ -4404,7 +4507,10 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
             }
             mto.rating = o.rating;
             from_string( mto.details, o.details );
-            mto.interface = o.interface;
+            if( o.interface.size() )
+            {
+               mto.interface = o.interface;
+            }
             mto.filter = o.filter;
             mto.last_update = now;
          });
@@ -5702,8 +5808,6 @@ void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
                   "Account is not within the bid audience." );
                FC_ASSERT( follow_op.following == creative.author,
                   "Follow Transaction following is not the creative's objective author." );
-               FC_ASSERT( follow_op.details == creative.objective,
-                  "Follow Transaction details is not the creative's objective details." );
                FC_ASSERT( follow_op.interface == inventory.provider,
                   "Follow Transaction interface is not the inventory provider." );
                const account_object* acc_ptr = _db.find_account( follow_op.follower );
@@ -6850,8 +6954,13 @@ void limit_order_create_evaluator::do_apply( const limit_order_create_operation&
       "Limit order has to expire after head block time." );
 
    const account_object& owner = _db.get_account( o.owner );
-   const account_object& interface = _db.get_account( o.interface );
-   const interface_object& inter = _db.get_interface( o.interface );
+
+   if( o.interface.size() )
+   {
+      const account_object& interface = _db.get_account( o.interface );
+      const interface_object& inter = _db.get_interface( o.interface );
+   }
+   
    _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
 
    const limit_order_object& order = _db.create< limit_order_object >( [&]( limit_order_object& obj )
@@ -6861,7 +6970,10 @@ void limit_order_create_evaluator::do_apply( const limit_order_create_operation&
       obj.for_sale = o.amount_to_sell.amount;
       obj.sell_price = o.exchange_rate;
       obj.expiration = o.expiration;
-      obj.interface = o.interface;
+      if( o.interface.size() )
+      {
+         obj.interface = o.interface;
+      }
       obj.created = now;
    });
 
@@ -6915,8 +7027,12 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
    FC_ASSERT( owner.loan_default_balance.amount == 0,
       "Account has an outstanding loan default balance. Please expend network credit collateral to recoup losses before opening a new loan." );
 
-   const account_object& interface = _db.get_account( o.interface );
-   const interface_object& inter = _db.get_interface( o.interface );
+   if( o.interface.size() )
+   {
+      const account_object& interface = _db.get_account( o.interface );
+      const interface_object& inter = _db.get_interface( o.interface );
+   }
+
    const asset_object& debt_asset = _db.get_asset( o.amount_to_borrow.symbol );
    const asset_object& collateral_asset = _db.get_asset( o.collateral.symbol );
    const asset_object& position_asset = _db.get_asset( o.exchange_rate.quote.symbol );
@@ -6986,7 +7102,10 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
       moo.position = position;
       moo.position_balance = asset( 0, position.symbol );
       moo.collateralization = collateralization;
-      moo.interface = o.interface;
+      if( o.interface.size() )
+      {
+         moo.interface = o.interface;
+      }
       moo.expiration = o.expiration;
       if( o.stop_loss_price.valid() )
       {
@@ -7350,9 +7469,15 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
    const account_object& account = _db.get_account( o.account );
    const asset_object& first_asset = _db.get_asset( o.amount.symbol );
    const asset_object& second_asset = _db.get_asset( o.receive_asset );
-   const account_object int_account = _db.get_account( o.interface );
-   const interface_object interface = _db.get_interface( o.interface );
 
+   const account_object* int_account_ptr = nullptr;
+
+   if( o.interface.size() )
+   {
+      const account_object* int_account_ptr = _db.find_account( o.interface );
+      const interface_object& interface = _db.get_interface( o.interface );
+   }
+   
    asset_symbol_type symbol_a;
    asset_symbol_type symbol_b;
 
@@ -7371,18 +7496,40 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
 
    if( o.acquire )
    {
-      _db.liquid_acquire( o.amount, account, liquidity_pool, int_account );
+      if( int_account_ptr != nullptr )
+      {
+         _db.liquid_acquire( o.amount, account, liquidity_pool, *int_account_ptr );
+      }
+      else
+      {
+         _db.liquid_acquire( o.amount, account, liquidity_pool );
+      }
    }
    else if( o.limit_price.valid() )
    {
       price limit_price = *o.limit_price;
       FC_ASSERT( limit_price < liquidity_pool.base_price( limit_price.base.symbol ), 
          "Limit price must be lower than current liquidity pool exchange price.");
-      _db.liquid_limit_exchange( o.amount, *o.limit_price, account, liquidity_pool, int_account );
+      
+      if( int_account_ptr != nullptr )
+      {
+         _db.liquid_limit_exchange( o.amount, *o.limit_price, account, liquidity_pool, *int_account_ptr );
+      }
+      else
+      {
+         _db.liquid_limit_exchange( o.amount, *o.limit_price, account, liquidity_pool );
+      }
    }
    else
    {
-      _db.liquid_exchange( o.amount, account, liquidity_pool, int_account );
+      if( int_account_ptr != nullptr )
+      {
+         _db.liquid_exchange( o.amount, account, liquidity_pool, *int_account_ptr );
+      }
+      else
+      {
+         _db.liquid_exchange( o.amount, account, liquidity_pool );
+      }
    }
  
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }

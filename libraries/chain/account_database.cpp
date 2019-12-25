@@ -156,6 +156,36 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
 
 } FC_CAPTURE_AND_RETHROW() }
 
+/**
+ * Pays protocol membership fees, and splits to network contributors
+ * member: The account that is paying to upgrade to a membership level
+ * payment: The asset being received as payment
+ * interface: The owner account of the interface that sold the membership
+ */
+asset database::pay_membership_fees( const account_object& member, const asset& payment )
+{ try {
+   FC_ASSERT( payment.symbol == SYMBOL_USD, 
+      "Payment asset must be denominated in USD asset.");
+
+   const reward_fund_object& reward_fund = get_reward_fund();
+   asset membership_fee = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price * payment;
+
+   asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
+   asset interface_fees = ( membership_fee * INTERFACE_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
+   asset partners_fees = ( membership_fee * PARTNERS_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
+
+   asset network_paid = pay_network_fees( member, network_fees + interface_fees );
+   
+   asset total_fees = network_paid + partners_fees;
+   adjust_liquid_balance( member.name, -total_fees );
+   
+   modify( reward_fund, [&]( reward_fund_object& rfo )
+   {
+      rfo.adjust_premium_partners_fund_balance( partners_fees );    // Adds funds to premium partners fund for distribution to premium creators
+   });
+
+} FC_CAPTURE_AND_RETHROW() }
+
 
 
 /**
@@ -227,11 +257,11 @@ asset database::claim_activity_reward( const account_object& account, const witn
    const reward_fund_object& reward_fund = get_reward_fund();
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    share_type activity_shares = BLOCKCHAIN_PRECISION;
-   if( abo.staked_balance >= 10 * BLOCKCHAIN_PRECISION ) 
+
+   if( abo.staked_balance >= 10 * BLOCKCHAIN_PRECISION )
    {
       activity_shares *= 2;
    }
-
    if( account.membership == STANDARD_MEMBERSHIP )
    {
       activity_shares = (activity_shares * ACTIVITY_BOOST_STANDARD_PERCENT) / PERCENT_100;
@@ -263,18 +293,18 @@ asset database::claim_activity_reward( const account_object& account, const witn
    adjust_pending_supply( -activity_reward );                    // Deduct activity reward from pending supply.
    
    // Update recent activity claims on account
-   modify( account, [&]( account_object& a ) 
+   modify( account, [&]( account_object& a )
    {
       a.recent_activity_claims -= ( a.recent_activity_claims * ( now - a.last_activity_reward ).to_seconds() ) / decay_rate.to_seconds();
-      a.last_activity_reward = now;                // Update activity reward time.
+      a.last_activity_reward = now;                              // Update activity reward time.
       a.recent_activity_claims += BLOCKCHAIN_PRECISION;          // Increments rolling activity average by one claim.
    });
 
-   adjust_reward_balance( account, activity_reward );            // Add activity reward to reward balance of claiming account. 
+   adjust_reward_balance( account.name, activity_reward );            // Add activity reward to reward balance of claiming account. 
 
    uint128_t voting_power = get_voting_power( account.name, equity_price ).value + get_proxied_voting_power( account.name, equity_price ).value;
 
-   modify( witness, [&]( witness_object& w ) 
+   modify( witness, [&]( witness_object& w )
    {
       w.accumulated_activity_stake += voting_power;
       w.decay_weights( now, wso );

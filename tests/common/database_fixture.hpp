@@ -254,11 +254,14 @@ struct database_fixture {
    const witness_object& witness_create(
       const string& owner,
       const private_key_type& owner_key,
-      const string& details,
-      const string& url,
-      const string& json,
       const public_key_type& signing_key,
       const share_type& fee
+   );
+
+   const comment_object& comment_create(
+      const string& author, 
+      const private_key_type& author_key,
+      const string& permlink
    );
 
    void fund( const string& account_name, const asset& amount );
@@ -278,6 +281,8 @@ struct database_fixture {
    const asset& get_savings_balance( const string& account_name, const string& symbol )const;
 
    const asset& get_reward_balance( const string& account_name, const string& symbol )const;
+
+   const time_point& now()const;
 
    void sign( signed_transaction& trx, const fc::ecc::private_key& key );
 

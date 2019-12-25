@@ -67,75 +67,75 @@ namespace node { namespace chain {
 
          account_name_type                membership_interface = NULL_ACCOUNT;   // Account of the last interface to sell a membership to the account.
 
-         uint16_t                         reset_account_delay_days = 7;
+         uint16_t                         reset_account_delay_days = 7;          // Days of inactivity required to enable a reset account operation
          
          uint16_t                         referrer_rewards_percentage = 50 * PERCENT_1; // The percentage of registrar rewards that are directed to the referrer.
          
-         uint32_t                         comment_count = 0;
+         uint32_t                         comment_count = 0;                     // total number of comments on other posts created
 
-         uint32_t                         follower_count = 0;
+         uint32_t                         follower_count = 0;                    // Total number of followers that the account has
 
-         uint32_t                         following_count = 0;
+         uint32_t                         following_count = 0;                   // Total number of accounts that the account follows
 
-         uint32_t                         lifetime_vote_count = 0;
+         uint32_t                         post_vote_count = 0;                   // Total number of posts voted on
 
-         uint32_t                         post_count = 0;
+         uint32_t                         post_count = 0;                        // Total number of root posts created
 
-         uint16_t                         voting_power = PERCENT_100;                 // current voting power of this account, falls after every vote, recovers over time.
+         uint16_t                         voting_power = PERCENT_100;            // current voting power of this account, falls after every vote, recovers over time.
 
-         uint16_t                         viewing_power = PERCENT_100;                // current viewing power of this account, falls after every view, recovers over time.
+         uint16_t                         viewing_power = PERCENT_100;           // current viewing power of this account, falls after every view, recovers over time.
 
-         uint16_t                         sharing_power = PERCENT_100;                // current sharing power of this account, falls after every share, recovers over time.
+         uint16_t                         sharing_power = PERCENT_100;           // current sharing power of this account, falls after every share, recovers over time.
 
-         uint16_t                         commenting_power = PERCENT_100;             // current commenting power of this account, falls after every comment, recovers over time.
+         uint16_t                         commenting_power = PERCENT_100;        // current commenting power of this account, falls after every comment, recovers over time.
 
-         uint8_t                          savings_withdraw_requests = 0;
+         uint8_t                          savings_withdraw_requests = 0;         // Outstanding number of savings withdrawal requests
 
-         uint16_t                         withdraw_routes = 0;
+         uint16_t                         withdraw_routes = 0;                   // Number of staked asset withdrawal routes
 
-         share_type                       posting_rewards = 0;                      // Rewards in core asset earned from author rewards.
+         share_type                       posting_rewards = 0;                   // Rewards in core asset earned from author rewards.
 
-         share_type                       curation_rewards = 0;                     // Rewards in core asset earned from voting, shares, views, and commenting
+         share_type                       curation_rewards = 0;                  // Rewards in core asset earned from voting, shares, views, and commenting
    
-         share_type                       moderation_rewards = 0;                   // Rewards in core asset from moderation rewards. 
+         share_type                       moderation_rewards = 0;                // Rewards in core asset from moderation rewards. 
 
-         share_type                       total_rewards = 0;                        // Rewards in core asset earned from all reward sources.
+         share_type                       total_rewards = 0;                     // Rewards in core asset earned from all reward sources.
 
-         share_type                       author_reputation = 0;                    // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+         share_type                       author_reputation = 0;                 // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
 
          asset                            loan_default_balance = asset(0, SYMBOL_CREDIT);
 
-         share_type                       recent_activity_claims = 0;
+         share_type                       recent_activity_claims = 0;            // Value of activity rewards claimed in last 30 days / BLOCKCHAIN_PRECISION
 
-         uint16_t                         witness_vote_count = 0;
+         uint16_t                         witness_vote_count = 0;                // Number of witnesses voted for.
 
-         uint16_t                         officer_vote_count = 0;                         // Number of network officers that the account has voted for.
+         uint16_t                         officer_vote_count = 0;                // Number of network officers that the account has voted for.
 
-         uint16_t                         executive_board_vote_count = 0;                 // Number of Executive boards that the account has voted for.
+         uint16_t                         executive_board_vote_count = 0;        // Number of Executive boards that the account has voted for.
 
-         uint16_t                         governance_subscriptions = 0;              // Number of governance accounts that the account subscribes to.
+         uint16_t                         governance_subscriptions = 0;          // Number of governance accounts that the account subscribes to.
 
-         uint16_t                         recurring_membership = 0;                  // Amount of months membership should be automatically renewed for on expiration
+         uint16_t                         recurring_membership = 0;              // Amount of months membership should be automatically renewed for on expiration
 
-         time_point                       created;                                   // Time that the account was created.
+         time_point                       created;                               // Time that the account was created.
 
-         time_point                       membership_expiration;                     // Time that the account has its current membership subscription until.
+         time_point                       membership_expiration;                 // Time that the account has its current membership subscription until.
 
-         time_point                       last_account_update;                       // Time that the account's details were last updated.
+         time_point                       last_account_update;                   // Time that the account's details were last updated.
 
-         time_point                       last_vote_time;                            // Time that the account last voted on a comment.
+         time_point                       last_vote_time;                        // Time that the account last voted on a comment.
 
-         time_point                       last_view_time;                            // Time that the account last viewed a post.
+         time_point                       last_view_time;                        // Time that the account last viewed a post.
 
-         time_point                       last_share_time;                           // Time that the account last shared a post.
+         time_point                       last_share_time;                       // Time that the account last shared a post.
 
-         time_point                       last_post;                                 // Time that the user most recently created a comment 
+         time_point                       last_post;                             // Time that the user most recently created a comment 
 
-         time_point                       last_root_post;                            // Time that the account last created a post.
+         time_point                       last_root_post;                        // Time that the account last created a post.
 
-         time_point                       last_transfer_time;                        // Time that the account last sent a transfer or created a trading txn. 
+         time_point                       last_transfer_time;                    // Time that the account last sent a transfer or created a trading txn. 
 
-         time_point                       last_activity_reward;
+         time_point                       last_activity_reward;                  // Time that the account last claimed an activity reward. 
 
          time_point                       last_account_recovery;
 
@@ -957,7 +957,7 @@ namespace node { namespace chain {
 
          account_name_type        account;            // Name of the account
 
-         shared_authority         owner;              // used for backup control, can set owner or active
+         shared_authority         owner;              // used for backup control, can set all other keys
 
          shared_authority         active;             // used for all monetary operations, can set active or posting
 
@@ -1249,9 +1249,9 @@ namespace node { namespace chain {
 
          id_type                           id;
 
-         tag_name_type                     tag;              // Name of the account.
+         tag_name_type                     tag;              // Name of the tag.
 
-         flat_set< account_name_type >     followers;        // Accounts that follow this account. 
+         flat_set< account_name_type >     followers;        // Accounts that follow this tag. 
 
          time_point                        last_update;      // Last time that the tag changed its following sets.
 
@@ -1264,7 +1264,7 @@ namespace node { namespace chain {
             return result;
          };
 
-         bool                              is_follower( const account_name_type& account )
+         bool                              is_follower( const account_name_type& account ) const
          {
             return std::find( followers.begin(), followers.end(), account ) != followers.end();
          };
@@ -1544,7 +1544,7 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_vote_count >,
             composite_key< account_object,
-               member< account_object, uint32_t, &account_object::lifetime_vote_count >,
+               member< account_object, uint32_t, &account_object::post_vote_count >,
                member< account_object, account_id_type, &account_object::id >
             >,
             composite_key_compare< 
@@ -2165,7 +2165,7 @@ FC_REFLECT( node::chain::account_object,
          (comment_count)
          (follower_count)
          (following_count)
-         (lifetime_vote_count)
+         (post_vote_count)
          (post_count)
          (voting_power)
          (viewing_power)

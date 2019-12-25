@@ -38,7 +38,6 @@ DEFINE_EVALUATOR( activity_reward )
 // Post and Comment Evaluators
 
 DEFINE_EVALUATOR( comment )
-DEFINE_EVALUATOR( comment_options )
 DEFINE_EVALUATOR( message )
 DEFINE_EVALUATOR( vote )
 DEFINE_EVALUATOR( view )

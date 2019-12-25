@@ -755,8 +755,6 @@ namespace node { namespace protocol {
 
       account_name_type             following;
 
-      string                        details;              // Json string containing details of the following connection "blog / ignore".
-
       account_name_type             interface;            // Name of the interface account that was used to broadcast the transaction. 
 
       bool                          added = true;         // Set true to add to list, false to remove from list.
@@ -798,8 +796,8 @@ namespace node { namespace protocol {
     * Activity rewards can be claimed by each account 
     * every day for a share of the activity reward pool.
     * To be eligible, accounts need:
-    * 1 - A balance of at least one EQUITY_ASSET.
-    * 2 - A recent comment transaction with an above median number of votes and views for that day.
+    * 1 - A staked balance of at least one EQUITY ASSET.
+    * 2 - A recent comment transaction with at least 20% of the median number of votes and views, and vote and view power on all posts in the last 30 days.
     * 3 - A recent vote transaction.
     * 4 - A recent view transaction.
     * 5 - At least 10 witness votes from their account.
@@ -812,9 +810,9 @@ namespace node { namespace protocol {
 
       string                        permlink;       // Permlink of the users recent post in the last 24h.
 
-      uint32_t                      view_id;        // Recent comment id viewed in the last 24h.
+      uint64_t                      view_id;        // Recent comment id viewed in the last 24h.
 
-      uint32_t                      vote_id;        // Recent comment id voted on in the last 24h.
+      uint64_t                      vote_id;        // Recent comment id voted on in the last 24h.
 
       account_name_type             interface;      // Name of the interface account that was used to broadcast the transaction. 
 
@@ -870,7 +868,7 @@ namespace node { namespace protocol {
 
       account_name_type              network_officer;       // The name of the network officer being voted for.
 
-      uint16_t                       vote_rank;
+      uint16_t                       vote_rank;             // Number of vote rank ordering.
 
       bool                           approved = true;       // True if approving, false if removing vote.
 
@@ -977,7 +975,7 @@ namespace node { namespace protocol {
 
       account_name_type              executive_board;       // The name of the executive board being voted for.
 
-      uint16_t                       vote_rank;
+      uint16_t                       vote_rank;             // Vote preference ranking.
 
       bool                           approved = true;       // True if approving, false if removing vote.
 
@@ -1137,7 +1135,7 @@ namespace node { namespace protocol {
 
       vector< pair < string, uint16_t > >               milestones;          // Ordered vector of release milestone descriptions and percentages of budget value.
 
-      optional < asset_symbol_type >                    investment;          // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+      optional< asset_symbol_type >                     investment;          // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
       string                                            details;             // The proposals's details description. 
 
@@ -1220,6 +1218,46 @@ namespace node { namespace protocol {
    //=====================================//
    // === Post and Comment Operations === //
    //=====================================//
+
+   /**
+    * Authors of posts may not want all of the benefits 
+    * that come from creating a post. 
+    * This operation allows authors to update 
+    * properties associated with their post.
+    * The max_accepted_payout may be decreased, but never increased.
+    * The percent_liquid may be decreased, but never increased.
+    */
+   struct comment_options
+   {
+      post_types                            post_type = TEXT_POST;                  // Type of post being created, text, image, article, video, audio, file, etc.
+
+      feed_types                            reach = TAG_FEED;                       // The extent to which the post will be distributed to account's followers and connections feeds.
+
+      bool                                  privacy = false;                        // True if the post is encrypted. False if it is plaintext.
+
+      rating_types                          rating = GENERAL;                       // User nominated rating as to the maturity of the content, and display sensitivity.
+
+      asset                                 max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );   // USD value of the maximum payout this post will receive.
+      
+      uint16_t                              percent_liquid = PERCENT_100;           // Percentage of reward to keep liquid, remaining received as a staked balance.
+
+      bool                                  allow_replies = true;                   // Allows a post to receive comment replies.
+      
+      bool                                  allow_votes = true;                     // Allows a post to receive votes.
+
+      bool                                  allow_views = true;                     // Allows a post to receive views.
+
+      bool                                  allow_shares = true;                    // Allows a post to receive shares.
+      
+      bool                                  allow_curation_rewards = true;          // allows voters, viewers, sharers, and commenters to recieve curation rewards.
+
+      vector< beneficiary_route_type >      beneficiaries;                          // Vector of accounts that will receive an allocation of content rewards from the post.
+
+      comment_options_extensions_type       extensions;
+
+      void validate()const;
+   };
+
    
    /**
     * Creates a new comment from an author, including
@@ -1236,39 +1274,33 @@ namespace node { namespace protocol {
 
       string                      title;           // content related name of the post, used to find post with search API.
 
-      post_types                  post_type;       // Type of post being created, text, image, article, video, audio, file, etc.
-
       string                      body;            // String containing text for display when the post is opened.
 
       vector< string >            ipfs;            // Vector of Strings containing IPFS file hashes: images, videos, files.
 
       vector< string >            magnet;          // Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
 
-      string                      language;        // String containing the two letter ISO language code of the native language of the author. 
+      string                      language;        // String containing the two letter ISO language code of the native language of the author.
 
       board_name_type             board;           // The name of the board to which the post is uploaded to.
 
-      bool                        privacy;         // True if the post is encrypted. False if it is plaintext.
-
       string                      public_key;      // The public key used to encrypt the post, holders of the private key may decrypt.
 
-      feed_types                  reach;           // The extent to which the post will be distributed to account's followers and connections feeds. 
+      account_name_type           interface;       // Name of the interface application that broadcasted the transaction.
 
-      account_name_type           interface;       // Name of the interface application that broadcasted the transaction. 
-
-      rating_types                rating;          // User nominated rating as to the maturity of the content, and display sensitivity.
-
-      asset                       comment_price;   // Price that is required to comment on the post. 
+      asset                       comment_price;   // Price that is required to comment on the post.
 
       asset                       premium_price;   // Price that is required to unlock premium content.
 
-      account_name_type           parent_author;   // Account that created the post this post is replying to, empty if root post. 
+      account_name_type           parent_author;   // Account that created the post this post is replying to, empty if root post.
 
-      string                      parent_permlink; // permlink of the post this post is replying to, empty if root post. 
+      string                      parent_permlink; // permlink of the post this post is replying to, empty if root post.
 
       vector< string >            tags;            // Set of string tags for sorting the post by.
 
-      string                      json;            // json string of additional interface specific data relating to the post. 
+      string                      json;            // json string of additional interface specific data relating to the post.
+
+      comment_options             options;         // Settings for the post, that effect how the network applies and displays it. 
 
       bool                        deleted = false; // True to delete post, false to create post. 
 
@@ -1282,9 +1314,9 @@ namespace node { namespace protocol {
       beneficiary_route_type() {}
       beneficiary_route_type( const account_name_type& a, const uint16_t& w ) : account( a ), weight( w ){}
 
-      account_name_type account;
+      account_name_type           account;
 
-      uint16_t          weight;
+      uint16_t                    weight;
 
       // For use by std::sort such that the route is sorted first by name (ascending)
       bool operator < ( const beneficiary_route_type& o )const { return account < o.account; }
@@ -1292,45 +1324,16 @@ namespace node { namespace protocol {
 
    struct comment_payout_beneficiaries
    {
-      vector< beneficiary_route_type > beneficiaries;
+      vector< beneficiary_route_type >            beneficiaries;
 
       void validate()const;
    };
 
    typedef static_variant<
-            comment_payout_beneficiaries
-           > comment_options_extension;
+      comment_payout_beneficiaries
+      > comment_options_extension;
 
    typedef flat_set< comment_options_extension > comment_options_extensions_type;
-
-   /**
-    * Authors of posts may not want all of the benefits that come from creating a post. This
-    * operation allows authors to update properties associated with their post.
-    * The max_accepted_payout may be decreased, but never increased.
-    * The percent_liquid may be decreased, but never increased.
-    */
-   struct comment_options_operation : public base_operation
-   {
-      account_name_type           signatory;
-
-      account_name_type           author;
-      
-      string                      permlink;
-
-      asset                       max_accepted_payout;      // USD value of the maximum payout this post will receive
-      
-      uint16_t                    percent_liquid;           // Percentage of reward to keep liquid, remaining received as a staked balance
-      
-      bool                        allow_votes;              // Allows a post to receive votes;
-      
-      bool                        allow_curation_rewards;   // allows voters to recieve curation rewards. Rewards return to reward fund.
-
-      comment_options_extensions_type extensions;
-
-      void validate()const;
-      void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return author; }
-   };
 
 
    /**
@@ -1348,16 +1351,16 @@ namespace node { namespace protocol {
 
       string                        uuid;           // uuidv4 uniquely identifying the message for local storage.
 
-      time_point                    time;           // Time the message was sent.
-
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return sender; }
    };
 
+
    /**
     * Votes for a comment in order to 
-    * allocate content rewards to them
+    * allocate content rewards and 
+    * increase the posts ranked ordering.
     */
    struct vote_operation : public base_operation
    {
@@ -1438,8 +1441,8 @@ namespace node { namespace protocol {
 
 
    /**
-    * Applies a tag to a post for the purposes of filtering from interfaces based on the 
-    * content included in the post. Accounts that list moderator as a board moderator or
+    * Applies a set of tags to a post for filtering from interfaces based on the 
+    * content included in the post. Accounts that list the moderator account as a board moderator or
     * governance account apply the tag to the post for content management.
     * They additionally can suggest a higher rating level if the rating selected
     * by the author was inaccurate. 
@@ -1454,7 +1457,7 @@ namespace node { namespace protocol {
 
       string                      permlink;           // Permlink of the post being tagged.
 
-      flat_set< string >          tags;               // Set of tags to apply to the post for selective interface side filtering.
+      vector< string >            tags;               // Set of tags to apply to the post for selective interface side filtering.
 
       rating_types                rating;             // Newly proposed rating for the post
 
@@ -3835,7 +3838,7 @@ FC_REFLECT( node::protocol::comment_payout_beneficiaries,
 
 FC_REFLECT_TYPENAME( node::protocol::comment_options_extension )
 
-FC_REFLECT( node::protocol::comment_options_operation, 
+FC_REFLECT( node::protocol::comment_options, 
          (author)
          (permlink)
          (max_accepted_payout)
@@ -3850,7 +3853,7 @@ FC_REFLECT( node::protocol::message_operation,
          (sender)
          (recipient)
          (message)
-         (id)
+         (uuid)
          (time)
          );
 

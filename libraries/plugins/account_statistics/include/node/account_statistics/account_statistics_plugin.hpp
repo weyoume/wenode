@@ -63,8 +63,7 @@ struct account_stats_bucket_object : public object< account_stats_bucket_object_
    uint32_t             new_reply_votes = 0;                      ///< New votes on reples
    uint32_t             changed_reply_votes = 0;                  ///< Changed votes for replies
    uint32_t             author_reward_payouts = 0;                ///< Number of author reward payouts
-   share_type           author_rewards = 0;                        ///< total paid for author rewards
-   share_type           author_rewards_payout_USD_value = 0;      ///< USD Value of author rewards at time of payout
+   asset                content_rewards = 0;                        ///< total paid for author rewards
    uint32_t             curation_reward_payouts = 0;              ///< Number of curation reward payouts.
    share_type           curation_rewards = 0;                     ///< paid for curation rewards
    share_type           curation_rewards_payout_USD_value = 0;    ///< USD Value of curation rewards at time of payout
@@ -167,8 +166,8 @@ FC_REFLECT( node::account_statistics::account_stats_bucket_object,
    (new_reply_votes)
    (changed_reply_votes)
    (author_reward_payouts)
-   (author_rewards)
-   (author_rewards_payout_USD_value)
+   (content_rewards)
+   (content_rewards_payout_USD_value)
    (curation_reward_payouts)
    (curation_rewards)
    (curation_rewards_payout_USD_value)

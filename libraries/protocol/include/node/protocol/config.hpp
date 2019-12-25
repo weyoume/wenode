@@ -7,7 +7,7 @@
 #endif
 
 #ifndef GEN_PRIVATE_KEY
-	#define GEN_PRIVATE_KEY 							0
+	#define GEN_PRIVATE_KEY 							1
 #endif
 
 #ifdef IS_TEST_NET
@@ -25,7 +25,7 @@
 #endif // IS LIVE NETWORK
 	
 	#if GEN_PRIVATE_KEY
-		#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountNameownerpassword")))) // accountName + permission + password
+		#define INIT_PRIVATE_KEY            (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountNameownerpassword")))) // accountName + permission + password
 		#define INIT_PUBLIC_KEY_STR         (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
 	#else
 		#define INIT_PUBLIC_KEY_STR             "WYM7sbABVQcfuGVS6bXrnt8DRKi58YUWKWM7bVLTj8xvfZBVKfhoU"
@@ -96,9 +96,6 @@
 #define SET_UPDATE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
 #define ENTERPRISE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)
 
-#define VOTE_CHANGE_LOCKOUT_PERIOD      fc::seconds(1)        // 1 second
-#define UPVOTE_LOCKOUT_TIME             fc::hours(1)          // Can't vote on a post in the last 1 hour before payout.
-
 #define VOTE_RECHARGE_TIME              fc::days(7)           // 7 days to regenerate maximum voting power. Accumulation period of unused transactions for allocating rewards.
 #define VIEW_RECHARGE_TIME              fc::days(7)           // 7 day to regenerate maximum viewing power. Accumulation period of unused transactions for allocating rewards.
 #define SHARE_RECHARGE_TIME             fc::days(7)           // 7 days to regenerate maximum sharing power. Accumulation period of unused transactions for allocating rewards.
@@ -158,8 +155,7 @@
 #define MIN_VOTE_INTERVAL_SEC           1
 #define MIN_VIEW_INTERVAL_SEC           1
 #define MIN_SHARE_INTERVAL_SEC          1
-#define VOTE_DUST_THRESHOLD             (0)
-#define VOTE_CHANGE_LOCKOUT_PERIOD      (60*10) /// 10 minutes
+
 
 #define MIN_ROOT_COMMENT_INTERVAL       (fc::seconds(60)) // 60 seconds
 #define MIN_REPLY_INTERVAL              (fc::seconds(15)) // 15 seconds
@@ -415,14 +411,16 @@
  */
 
 #define INIT_ACCOUNT                    "weyoume"                // The initial Executive Board account, issuer of equity asset. 
+#define INIT_ACCOUNT_PASSWORD           "yourpasswordgoeshere"
 #define INIT_DETAILS                    "WeYouMe is a social media protocol to enable everyone to share information and value freely."   // Details string of init account.
 #define INIT_URL                        "https://www.weyoume.io"
 #define INIT_NODE_ENDPOINT              "https://node.weyoume.io"
 #define INIT_AUTH_ENDPOINT              "https://auth.weyoume.io"
 #define INIT_NOTIFICATION_ENDPOINT      "https://notify.weyoume.io"
 #define INIT_IPFS_ENDPOINT              "https://ipfs.weyoume.io"
-#define INIT_BITORRENT_ENDPOINT         "https://bittorrent.weyoume.io"
+#define INIT_BITTORRENT_ENDPOINT         "https://bittorrent.weyoume.io"
 
 #define INIT_CEO                        "harrison.mclean"               // firstname.lastname of launching Chief Executive Officer
 #define INIT_CEO_DETAILS                "WeYouMe is a social media protocol to enable everyone to share information and value freely."   // Details string of init account.
 #define INIT_CEO_URL                    "https://www.weyoume.io"
+#define INIT_BOARD                      "general"

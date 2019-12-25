@@ -483,9 +483,6 @@ const asset_object& database_fixture::asset_create(
 const witness_object& database_fixture::witness_create(
    const string& owner,
    const private_key_type& owner_key,
-   const string& details,
-   const string& url,
-   const string& json,
    const public_key_type& signing_key,
    const share_type& fee )
 {
@@ -495,9 +492,9 @@ const witness_object& database_fixture::witness_create(
 
       op.signatory = owner;
       op.owner = owner;
-      op.details = details;
-      op.url = url;
-      op.json = json;
+      op.details = "details";
+      op.url = "url";
+      op.json = "{\"json\":\"valid\"}";
       op.block_signing_key = signing_key;
       op.fee = asset( fee, SYMBOL_COIN );
 
@@ -514,33 +511,40 @@ const witness_object& database_fixture::witness_create(
    FC_CAPTURE_AND_RETHROW( (owner)(url) )
 }
 
-const governance_account_object& database_fixture::governance_create(
-   const string& account,
-   const private_key_type& account_key,
-   const string& details,
-   const string& url,
-   const string& json
-   )
+const comment_object& database_fixture::comment_create(
+      const string& author, 
+      const private_key_type& author_key,
+      const string& permlink )
 {
    try
    {
-      update_governance_operation op;
+      comment_operation op;
 
-      op.signatory = account;
-      op.owner = account;
-      op.details = details;
-      op.url = url;
-      op.json = json;
+      op.signatory = author;
+      op.author = author;
+      op.permlink = permlink;
+      op.parent_permlink = permlink;
+      op.title = "test";
+      op.body = "test";
+      op.board = INIT_BOARD;
+      op.post_type = TEXT_POST;
+      op.language = "en";
+      op.privacy = false;
+      op.reach = TAG_FEED;
+      op.interface = INIT_ACCOUNT;
+      op.rating = GENERAL;
+      op.tags.push_back( "test" );
+      op.json = "{\"json\":\"valid\"}";
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.sign( owner_key, db.get_chain_id() );
+      trx.sign( author_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
       trx.operations.clear();
       trx.signatures.clear();
 
-      return db.get_witness( owner );
+      return db.get_comment( boost::make_tuple( author, permlink ) );
    }
    FC_CAPTURE_AND_RETHROW( (owner)(url) )
 }
@@ -656,6 +660,11 @@ const asset& database_fixture::get_savings_balance( const string& account_name, 
 const asset& database_fixture::get_reward_balance( const string& account_name, const string& symbol )const
 {
   return db.get_reward_balance( account_name, symbol );
+}
+
+const time_point& database_fixture::now()const
+{
+  return db.head_block_time();
 }
 
 void database_fixture::sign(signed_transaction& trx, const fc::ecc::private_key& key)
