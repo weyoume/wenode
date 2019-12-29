@@ -276,7 +276,7 @@ struct account_api_obj
       connection_public_key( to_string( a.connection_public_key ) ),
       friend_public_key( to_string( a.friend_public_key ) ),
       companion_public_key( to_string( a.companion_public_key ) ),
-      pinned_comment( a.pinned_comment ),
+      pinned_post( a.pinned_post ),
       proxy( a.proxy ),
       registrar( a.registrar ),
       referrer( a.referrer ),
@@ -375,7 +375,7 @@ struct account_api_obj
    authority                        owner;
    authority                        active;
    authority                        posting;
-   comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
+   comment_id_type                  pinned_post;                        // Post pinned to the top of the account's profile. 
    account_name_type                proxy;                                 // Account that votes on behalf of this account
    vector< account_name_type>       proxied;                               // Accounts that have set this account to be their proxy voter.
    account_name_type                registrar;                             // The name of the account that created the account;
@@ -443,7 +443,7 @@ struct account_concise_api_obj
       connection_public_key( to_string( a.connection_public_key ) ),
       friend_public_key( to_string( a.friend_public_key ) ),
       companion_public_key( to_string( a.companion_public_key ) ),
-      pinned_comment( a.pinned_comment ),
+      pinned_post( a.pinned_post ),
       follower_count( a.follower_count ),
       following_count( a.following_count ),
       total_rewards( a.total_rewards ),
@@ -464,7 +464,7 @@ struct account_concise_api_obj
    string                           connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
    string                           friend_public_key;                     // Key used for encrypting posts for friend level visibility.
    string                           companion_public_key;                  // Key used for encrypting posts for companion level visibility.
-   comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
+   comment_id_type                  pinned_post;                        // Post pinned to the top of the account's profile. 
    uint32_t                         follower_count;                        // Number of account followers.
    uint32_t                         following_count;                       // Number of accounts that the account follows. 
    int64_t                          total_rewards;                         // Rewards in core asset earned from all reward sources.
@@ -939,7 +939,7 @@ struct board_api_obj
       board_public_key( to_string( b.board_public_key ) ),
       json( to_string( b.json ) ),
       json_private( to_string( b.json_private ) ),
-      pinned_comment( b.pinned_comment ),
+      pinned_post( b.pinned_post ),
       subscriber_count( b.subscriber_count ),
       post_count( b.post_count ),
       comment_count( b.comment_count ),
@@ -962,7 +962,7 @@ struct board_api_obj
    string                             board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
    string                             json;                               // Public plaintext json information about the board, its topic and rules.
    string                             json_private;                       // Private ciphertext json information about the board.
-   comment_id_type                    pinned_comment;                     // Post pinned to the top of the board's page. 
+   comment_id_type                    pinned_post;                     // Post pinned to the top of the board's page. 
    uint32_t                           subscriber_count;               // number of accounts that are subscribed to the board
    uint32_t                           post_count;                     // number of posts created in the board
    uint32_t                           comment_count;                  // number of comments on posts in the board
@@ -2225,7 +2225,7 @@ FC_REFLECT( node::app::account_api_obj,
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
-         (pinned_comment)
+         (pinned_post)
          (proxy)
          (proxied)
          (registrar)
@@ -2290,7 +2290,7 @@ FC_REFLECT( node::app::account_concise_api_obj,
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
-         (pinned_comment)
+         (pinned_post)
          (follower_count)
          (following_count)
          (total_rewards)
@@ -2479,7 +2479,7 @@ FC_REFLECT( node::app::board_api_obj,
          (board_public_key)
          (json)
          (json_private)
-         (pinned_comment)
+         (pinned_post)
          (subscriber_count)
          (post_count)
          (comment_count)

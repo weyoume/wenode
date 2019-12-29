@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <node/protocol/types.hpp>
 #include <graphene/net/config.hpp>
 #include <node/protocol/block.hpp>
 
@@ -14,10 +15,10 @@
 #include <fc/exception/exception.hpp>
 #include <fc/io/enum_type.hpp>
 
-
 #include <vector>
 
 namespace graphene { namespace net {
+
   using node::protocol::signed_transaction;
   using node::protocol::block_id_type;
   using node::protocol::transaction_id_type;

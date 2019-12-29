@@ -139,7 +139,7 @@ namespace node { namespace protocol {
 
       authority                          owner;                         // The account authority required for changing the active and posting authorities
 
-      authority                          active;                       // The account authority required for sending payments and trading
+      authority                          active;                        // The account authority required for sending payments and trading
 
       authority                          posting;                       // The account authority required for posting content and voting
 
@@ -198,6 +198,8 @@ namespace node { namespace protocol {
       string                        details;
 
       string                        url;
+
+      string                        pinned_permlink;               // Permlink of the users pinned post.
 
       bool                          deleted = false;
 
@@ -1416,23 +1418,23 @@ namespace node { namespace protocol {
     */
    struct share_operation : public base_operation
    {
-      account_name_type          signatory;
+      account_name_type            signatory;
 
-      account_name_type          sharer;           // Name of the viewing account.
+      account_name_type            sharer;           // Name of the viewing account.
 
-      account_name_type          author;           // Name of the account that created the post being shared.
+      account_name_type            author;           // Name of the account that created the post being shared.
 
-      string                     permlink;         // Permlink to the post being shared.
+      string                       permlink;         // Permlink to the post being shared.
 
-      feed_types                 reach;            // Audience reach selection for share.
+      feed_types                   reach;            // Audience reach selection for share.
 
-      account_name_type          interface;        // Name of the interface account that was used to broadcast the transaction and share the post.
+      account_name_type            interface;        // Name of the interface account that was used to broadcast the transaction and share the post.
 
-      optional<board_name_type>  board;            // Optionally share the post with a new board.
+      optional< board_name_type >  board;            // Optionally share the post with a new board.
 
-      optional<tag_name_type>    tag;              // Optionally share the post with a new tag.
+      optional< tag_name_type >    tag;              // Optionally share the post with a new tag.
 
-      bool                       shared = true;    // True if sharing the post, false if removing share.
+      bool                         shared = true;    // True if sharing the post, false if removing share.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1539,6 +1541,10 @@ namespace node { namespace protocol {
 
       string                      url;               // External reference URL.
 
+      account_name_type           pinned_author;     // Author of the pinned post;
+
+      string                      pinned_permlink;   // Permlink of the pinned post.
+
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
@@ -1555,7 +1561,7 @@ namespace node { namespace protocol {
 
       account_name_type              moderator;         // New moderator account.
 
-      bool                           added = true;      //  True when adding a new moderator, false when removing.
+      bool                           added = true;      // True when adding a new moderator, false when removing.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1722,7 +1728,7 @@ namespace node { namespace protocol {
       bool                           blacklisted = true;    // Set to true to add account to blacklist, set to false to remove from blacklist. 
 
       void validate()const;
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
    };
 

@@ -1,11 +1,10 @@
 
 #pragma once
 
+#include <node/protocol/types.hpp>
 #include <graphene/net/core_messages.hpp>
 #include <graphene/net/message.hpp>
 #include <graphene/net/peer_database.hpp>
-
-#include <node/protocol/types.hpp>
 
 #include <list>
 

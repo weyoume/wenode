@@ -43,7 +43,7 @@ namespace node { namespace chain {
 
          shared_string                      json_private;                       // Private ciphertext json information about the board.
 
-         comment_id_type                    pinned_comment;                     // Post pinned to the top of the board's page. 
+         comment_id_type                    pinned_post;                        // Post pinned to the top of the board's page. 
 
          uint32_t                           subscriber_count = 0;               // number of accounts that are subscribed to the board
 
@@ -83,11 +83,11 @@ namespace node { namespace chain {
     *   |=======================++=================+==================+===================+==================|
     *   |   Request Join        ||       All       |       All        |       All         |     None         |
     *   |=======================++=================+==================+===================+==================|
-    *   |   Remove posts        ||      Mods       |      Mods        |       Mods        |     Mods         |
+    *   |   Moderate posts      ||      Mods       |      Mods        |       Mods        |     Mods         |
     *   |=======================++=================+==================+===================+==================|
     *   |   Update board        ||     Admins      |     Admins       |      Admins       |     Admins       |
     *   |=======================++=================+==================+===================+==================|
-    *   |   Remove+Blacklist    ||     Mods        |     Mods         |      Admins       |     Admins       |
+    *   |   Remove/BL members   ||     Mods        |     Mods         |      Admins       |     Admins       |
     *   |=======================++=================+==================+===================+==================|
     * 
     * 
@@ -114,17 +114,17 @@ namespace node { namespace chain {
 
          board_types                                board_type;                  // Type of board, group, event, or store.
 
-         flat_set < account_name_type >             subscribers;                 // List of accounts that subscribe to the posts made in the board.
+         flat_set< account_name_type >              subscribers;                 // List of accounts that subscribe to the posts made in the board.
 
-         flat_set < account_name_type >             members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
+         flat_set< account_name_type >              members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
  
-         flat_set < account_name_type >             moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
+         flat_set< account_name_type >              moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
 
-         flat_set < account_name_type >             administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
+         flat_set< account_name_type >              administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
 
-         flat_set < account_name_type >             blacklist;                   // Accounts that are not able to post in this board, or request to join.
+         flat_set< account_name_type >              blacklist;                   // Accounts that are not able to post in this board, or request to join.
 
-         flat_map < account_name_type, share_type > mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
+         flat_map< account_name_type, share_type >  mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
 
          share_type                                 total_mod_weight = 0;        // Total of all moderator weights. 
 
@@ -677,7 +677,7 @@ FC_REFLECT( node::chain::board_object,
          (board_public_key)
          (json)
          (json_private)
-         (pinned_comment)
+         (pinned_post)
          (subscriber_count)
          (post_count)
          (comment_count)

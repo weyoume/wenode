@@ -51,7 +51,7 @@ namespace node { namespace chain {
 
          public_key_type                  companion_public_key;                  // Key used for encrypting posts for companion level visibility.
 
-         comment_id_type                  pinned_comment;                        // Post pinned to the top of the account's profile. 
+         comment_id_type                  pinned_post;                        // Post pinned to the top of the account's profile. 
 
          account_name_type                proxy;                                 // Account that votes on behalf of this account
 
@@ -757,17 +757,17 @@ namespace node { namespace chain {
          bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          // Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
             bool fast_check = !( asset_obj.options.flags & white_list );
-            fast_check &= !( whitelisted_assets.size );
-            fast_check &= !( blacklisted_assets.size );
-            fast_check &= !( whitelisted_accounts.size );
-            fast_check &= !( blacklisted_accounts.size );
+            fast_check &= !( whitelisted_assets.size() );
+            fast_check &= !( blacklisted_assets.size() );
+            fast_check &= !( whitelisted_accounts.size() );
+            fast_check &= !( blacklisted_accounts.size() );
 
             if( fast_check )
             {
                return true; // The asset does not require transfer permission, and the account does not use an asset whitelist or blacklist
             }
 
-            if( blacklisted_accounts.size )
+            if( blacklisted_accounts.size() )
             {
                if( blacklisted_accounts.find( name ) != blacklisted_accounts.end() )
                {
@@ -775,7 +775,7 @@ namespace node { namespace chain {
                }
             }
 
-            if( whitelisted_accounts.size )
+            if( whitelisted_accounts.size() )
             {
                if( whitelisted_accounts.find( name ) == whitelisted_accounts.end() )
                {
@@ -783,7 +783,7 @@ namespace node { namespace chain {
                }
             }
 
-            if( blacklisted_assets.size )
+            if( blacklisted_assets.size() )
             {
                if( blacklisted_assets.find( asset_obj.symbol ) != blacklisted_assets.end() )
                {
@@ -791,7 +791,7 @@ namespace node { namespace chain {
                }
             }
 
-            if( whitelisted_assets.size )
+            if( whitelisted_assets.size() )
             {
                if( whitelisted_assets.find( asset_obj.symbol ) == whitelisted_assets.end() )
                {
@@ -799,7 +799,7 @@ namespace node { namespace chain {
                } 
             }
 
-            if( asset_obj.options.blacklist_authorities.size )
+            if( asset_obj.options.blacklist_authorities.size() )
             {
                if( asset_obj.options.blacklist_authorities.find( name ) != asset_obj.options.blacklist_authorities.end() )
                {
@@ -807,11 +807,32 @@ namespace node { namespace chain {
                }
             }
 
-            if( asset_obj.options.whitelist_authorities.size )
+            if( asset_obj.options.whitelist_authorities.size() )
             {
                if( asset_obj.options.whitelist_authorities.find( name ) == asset_obj.options.whitelist_authorities.end() )
                {
                   return false; // The account is not in the asset's whitelist
+               }
+            }
+
+            return true;
+         };
+
+         bool is_authorized_transfer( const account_name_type& name )const 
+         {
+            if( blacklisted_accounts.size() )
+            {
+               if( blacklisted_accounts.find( name ) != blacklisted_accounts.end() )
+               {
+                  return false;  // The account is in the blacklist of the account
+               }
+            }
+
+            if( whitelisted_accounts.size() )
+            {
+               if( whitelisted_accounts.find( name ) == whitelisted_accounts.end() )
+               {
+                  return false;  // The account is not in the whitelist of the account
                }
             }
 
@@ -2152,7 +2173,7 @@ FC_REFLECT( node::chain::account_object,
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
-         (pinned_comment)
+         (pinned_post)
          (proxy)
          (proxied)
          (registrar)

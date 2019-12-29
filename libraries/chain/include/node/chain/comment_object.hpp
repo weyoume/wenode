@@ -393,7 +393,7 @@ namespace node { namespace chain {
 
          board_name_type                board;            // The name of the board to which the post is uploaded to.
 
-         flat_set< tag_name_type >      tags;             // Set of string tags for sorting the post by
+         vector< tag_name_type >        tags;             // Set of string tags for sorting the post by
 
          rating_types                   rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
 

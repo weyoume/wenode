@@ -1,19 +1,16 @@
 //#ifdef IS_TEST_NET
+
 #include <boost/test/unit_test.hpp>
-
+#include <node/chain/node_objects.hpp>
 #include <node/protocol/exceptions.hpp>
-
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
+
 //#include <node/chain/hardfork.hpp>
-#include <node/chain/node_objects.hpp>
 
 #include <node/chain/util/reward.hpp>
-
 #include <node/witness/witness_objects.hpp>
-
 #include <fc/crypto/digest.hpp>
-
 #include <tests/common/database_fixture.hpp>
 
 #include <cmath>
@@ -23,9 +20,9 @@
 using namespace node;
 using namespace node::chain;
 using namespace node::protocol;
-using fc::string;
+using std::string;
 
-BOOST_FIXTURE_TEST_SUITE( operation_tests, clean_database_fixture )
+BOOST_FIXTURE_TEST_SUITE( operation_tests, clean_database_fixture );
 
 
 
@@ -97,10 +94,10 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       op.owner = authority( 1, priv_key.get_public_key(), 1 );
       op.active = authority( 2, priv_key.get_public_key(), 2 );
       op.posting = authority( 1, priv_key.get_public_key(), 1 );
-      op.secure_public_key = priv_key.get_public_key();
-      op.connection_public_key = priv_key.get_public_key();
-      op.friend_public_key = priv_key.get_public_key();
-      op.companion_public_key = priv_key.get_public_key();
+      op.secure_public_key = string( public_key_type( priv_key.get_public_key() ) );
+      op.connection_public_key = string( public_key_type( priv_key.get_public_key() ) );
+      op.friend_public_key = string( public_key_type( priv_key.get_public_key() ) );
+      op.companion_public_key = string( public_key_type( priv_key.get_public_key() ) );
       op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -146,6 +143,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       tx.signatures.clear();
       tx.operations.clear();
+
       op.account_type = PROFILE;
       op.new_account_name = "bob";
       tx.operations.push_back( op );
@@ -168,10 +166,10 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct_auth.posting == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct.secure_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.connection_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.friend_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.companion_public_key == priv_key.get_public_key() );
+      BOOST_REQUIRE( acct.secure_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( acct.connection_public_key == public_key_type( priv_key.get_public_key() ));
+      BOOST_REQUIRE( acct.friend_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( acct.companion_public_key == public_key_type( priv_key.get_public_key() ) );
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
       BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
 
@@ -202,7 +200,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.registrar == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.name == "ionstudios" );
       BOOST_REQUIRE( acct_follow.account == "ionstudios" );
-      BOOST_REQUIRE( acct_bus.name == "ionstudios" );
+      BOOST_REQUIRE( acct_bus.account == "ionstudios" );
       BOOST_REQUIRE( acct_bus.executive_board.CHIEF_EXECUTIVE_OFFICER == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.account_type = BUSINESS );
       BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
@@ -213,10 +211,10 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct_auth.posting == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct.secure_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.connection_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.friend_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.companion_public_key == priv_key.get_public_key() );
+      BOOST_REQUIRE( acct.secure_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( acct.connection_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( acct.friend_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( acct.companion_public_key == public_key_type( priv_key.get_public_key() ) );
 
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
       BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
@@ -291,7 +289,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
 
       account_update_operation op;
       op.account = "alice";
-      op.details = "Shrek is love."
+      op.details = "Shrek is love.";
       op.json = "{\"Shrek\":\"life\"}";
       op.posting = authority();
       op.posting->weight_threshold = 1;
@@ -436,7 +434,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
 
       op.owner = authority( 1, new_private_key.get_public_key(), 1 );
       op.active = authority( 2, new_private_key.get_public_key(), 2 );
-      op.secure_public_key = new_private_key.get_public_key();
+      op.secure_public_key = string( public_key_type( new_private_key.get_public_key() ) );
       op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
       op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
@@ -453,7 +451,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       BOOST_REQUIRE( acct.name == "alice" );
       BOOST_REQUIRE( acct_auth.owner == authority( 1, new_private_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct_auth.active == authority( 2, new_private_key.get_public_key(), 2 ) );
-      BOOST_REQUIRE( acct.secure_public_key == new_private_key.get_public_key() );
+      BOOST_REQUIRE( acct.secure_public_key == public_key_type( new_private_key.get_public_key() ) );
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account update" );
@@ -810,9 +808,9 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       op.business_account = INIT_ACCOUNT;
       op.member = "bob";
       op.message = "Hello";
-      op.encrypted_business_key = alice_public_owner_key;
+      op.encrypted_business_key = string( alice_public_owner_key );
 
-      const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
+      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       db.modify( bus_acc, [&]( account_business_object& b )
       {
@@ -887,44 +885,44 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
+      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       db.modify( bus_acc, [&]( account_business_object& b )
       {
          b.officers[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;    // Add alice to officers
       });
 
-      account_member_request_operation op;
-      op.signatory = "bob";
-      op.account = "bob";
-      op.business_account = INIT_ACCOUNT;
-      op.message = "Hello";
+      account_member_request_operation request;
 
-      op.validate();
+      request.signatory = "bob";
+      request.account = "bob";
+      request.business_account = INIT_ACCOUNT;
+      request.message = "Hello";
+      request.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( request );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_accept_request_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.member = "bob";
-      op.business_account = INIT_ACCOUNT;
-      op.encrypted_business_key = alice_public_owner_key;
+      account_accept_request_operation accept;
 
-      op.validate();
+      accept.signatory = "alice";
+      accept.account = "alice";
+      accept.member = "bob";
+      accept.business_account = INIT_ACCOUNT;
+      accept.encrypted_business_key = string( alice_public_owner_key );
+      accept.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( accept );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
+      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       BOOST_REQUIRE( bus_acc.is_member( "bob" ) );
       
@@ -937,33 +935,32 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_member_request_operation op;
-      op.signatory = "candice";
-      op.account = "candice";
-      op.business_account = INIT_ACCOUNT;
-      op.message = "Hello";
+      account_member_request_operation request;
 
-      op.validate();
+      request.signatory = "candice";
+      request.account = "candice";
+      request.business_account = INIT_ACCOUNT;
+      request.message = "Hello";
+      request.validate();
 
       signed_transaction tx;
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( request );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_accept_request_operation op;
-      op.signatory = "dan";     // dan is not an officer, and cannot accept requests
-      op.account = "dan";
-      op.member = "candice";
-      op.business_account = INIT_ACCOUNT;
-      op.encrypted_business_key = candice_public_owner_key;
+      account_accept_request_operation accept;
 
-      op.validate();
+      accept.signatory = "dan";     // dan is not an officer, and cannot accept requests
+      accept.account = "dan";
+      accept.member = "candice";
+      accept.business_account = INIT_ACCOUNT;
+      accept.encrypted_business_key = string( candice_public_owner_key );
+      accept.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( accept );
       tx.sign( dan_private_active_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -987,44 +984,43 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
+      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       db.modify( bus_acc, [&]( account_business_object& b )
       {
          b.officers[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;    // Add alice to officers
       });
 
-      account_member_invite_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.member = "bob";
-      op.business_account = INIT_ACCOUNT;
-      op.message = "Hello";
-      op.encrypted_business_key = alice_public_owner_key;
+      account_member_invite_operation invite;
 
-      op.validate();
+      invite.signatory = "alice";
+      invite.account = "alice";
+      invite.member = "bob";
+      invite.business_account = INIT_ACCOUNT;
+      invite.message = "Hello";
+      invite.encrypted_business_key = string( alice_public_owner_key );
+      invite.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( invite );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_accept_invite_operation op;
-      op.signatory = "bob";
-      op.account = "bob";
-      op.business_account = INIT_ACCOUNT;
-      
-      op.validate();
+      account_accept_invite_operation accept;
+      accept.signatory = "bob";
+      accept.account = "bob";
+      accept.business_account = INIT_ACCOUNT;
+      accept.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( accept );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
+      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       BOOST_REQUIRE( bus_acc.is_member( "bob" ) );
 
@@ -1069,7 +1065,7 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
+      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       db.modify( bus_acc, [&]( account_business_object& b )
       {
@@ -1093,7 +1089,7 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_business_object& bus_acc = get_account_business( INIT_ACCOUNT );
+      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       BOOST_REQUIRE( !bus_acc.is_member( "bob" ) );    // Bob has been removed
 
@@ -1160,7 +1156,7 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_permission_object& acc_perm = get_account_permissions( "alice" );
+      const account_permission_object& acc_perm = db.get_account_permissions( "alice" );
 
       BOOST_REQUIRE( acc_perm.blacklisted_accounts.find( "bob" ) != acc_perm.blacklisted_accounts.end() );    // Bob has been blacklisted
 
@@ -1180,7 +1176,7 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_permission_object& acc_perm = get_account_permissions( "alice" );
+      const account_permission_object& acc_perm = db.get_account_permissions( "alice" );
 
       BOOST_REQUIRE( acc_perm.blacklisted_accounts.find( "bob" ) == acc_perm.blacklisted_accounts.end() );    // Bob has been removed from blacklist
 
@@ -1335,8 +1331,10 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
       op.witness = "eve";
-      op.approve = true;
+      op.approved = true;
+
       tx.operations.push_back( op );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
@@ -1371,22 +1369,23 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account update proxy" );
       
-      const dynamic_global_property_object& props = get_dynamic_global_properties();
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
       price equity_price = props.current_median_equity_price;
 
       ACTORS( (alice)(bob)(candice)(sam)(dan)(elon) )
-      fund( "alice", 1000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "alice", 1000 * BLOCKCHAIN_PRECISION );
-      fund( "bob", 3000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "bob", 3000 * BLOCKCHAIN_PRECISION );
-      fund( "candice", 3000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "candice", 3000 * BLOCKCHAIN_PRECISION );
-      fund( "sam", 5000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "sam", 5000 * BLOCKCHAIN_PRECISION );
-      fund( "dan", 7000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "dan", 7000 * BLOCKCHAIN_PRECISION );
+      fund( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "candice", asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "sam", asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "sam", asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "dan", asset( 7000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 7000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       account_update_proxy_operation op;
+
       op.signatory = "bob";
       op.account = "bob";
       op.proxy = "alice";
@@ -1482,7 +1481,7 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
 
       BOOST_REQUIRE( alice.proxy == "sam" );
       BOOST_REQUIRE( bob.proxy == "sam" );
-      BOOST_REQUIRE( *sam.proxied.size() == 2 );
+      BOOST_REQUIRE( sam.proxied.size() == 2 );
       BOOST_REQUIRE( db.get_proxied_voting_power( sam, equity_price ) == db.get_voting_power( bob, equity_price ) + db.get_voting_power( alice, equity_price ) );
       BOOST_REQUIRE( sam.proxy == "dan" );
       BOOST_REQUIRE( *dan.proxied.begin() == "sam" );
@@ -1532,8 +1531,8 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal request account recovery" );
       
       ACTORS( (alice)(bob)(candice)(sam)(dan) );
-      fund( "alice", 1000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "alice", 1000 * BLOCKCHAIN_PRECISION );
+      fund( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       account_create_operation acc_create;       // Creating account bob with alice as recovery account
 
@@ -1546,10 +1545,10 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
       acc_create.active = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
       acc_create.posting = authority( 1, generate_private_key( "bob_posting" ).get_public_key(), 1 );
-      acc_create.secure_public_key = generate_private_key( "bob_secure" ).get_public_key();
-      acc_create.connection_public_key = generate_private_key( "bob_connection" ).get_public_key();
-      acc_create.friend_public_key = generate_private_key( "bob_friend" ).get_public_key();
-      acc_create.companion_public_key = generate_private_key( "bob_companion" ).get_public_key();
+      acc_create.secure_public_key = string( public_key_type( generate_private_key( "bob_secure" ).get_public_key() ) );
+      acc_create.connection_public_key = string( public_key_type( generate_private_key( "bob_connection" ).get_public_key() ) );
+      acc_create.friend_public_key = string( public_key_type( generate_private_key( "bob_friend" ).get_public_key() ) );
+      acc_create.companion_public_key = string( public_key_type( generate_private_key( "bob_companion" ).get_public_key() ) );
       acc_create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       acc_create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
       acc_create.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
@@ -1568,18 +1567,18 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       // Changing bob's owner authority
 
       account_update_operation acc_update;
+
       acc_update.signatory = "bob";
       acc_update.account = "bob";
       acc_update.owner = authority( 1, generate_private_key( "bad_key" ).get_public_key(), 1 );
-      acc_update.secure_public_key = generate_private_key( "bob_secure" ).get_public_key();
-      acc_update.connection_public_key = generate_private_key( "bob_connection" ).get_public_key();
-      acc_update.friend_public_key = generate_private_key( "bob_friend" ).get_public_key();
-      acc_update.companion_public_key = generate_private_key( "bob_companion" ).get_public_key();
+      acc_update.secure_public_key = string( public_key_type( generate_private_key( "bob_secure" ).get_public_key() ) );
+      acc_update.connection_public_key = string( public_key_type( generate_private_key( "bob_connection" ).get_public_key() ) );
+      acc_update.friend_public_key = string( public_key_type( generate_private_key( "bob_friend" ).get_public_key() ) );
+      acc_update.companion_public_key = string( public_key_type( generate_private_key( "bob_companion" ).get_public_key() ) );
       acc_update.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       acc_update.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
       acc_update.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
       acc_update.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      acc_update.fee = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1637,7 +1636,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when bob does not have new requested authority" );
 
-      generate_blocks( now() + OWNER_UPDATE_LIMIT + fc::seconds( BLOCK_INTERVAL ) );
+      generate_blocks( now() + OWNER_UPDATE_LIMIT + BLOCK_INTERVAL );
 
       recover.new_owner_authority = authority( 1, generate_private_key( "idontknow" ).get_public_key(), 1 );
 
@@ -1704,8 +1703,9 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       BOOST_REQUIRE( req_itr->account_to_recover == "bob" );
       BOOST_REQUIRE( req_itr->new_owner_authority == authority( 1, generate_private_key( "expire" ).get_public_key(), 1 ) );
-      BOOST_REQUIRE( req_itr->expires == now() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD );
-      auto expires = req_itr->expires;
+      BOOST_REQUIRE( req_itr->expiration == now() + ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD );
+
+      time_point expires = req_itr->expiration;
       ++req_itr;
       BOOST_REQUIRE( req_itr == request_idx.end() );
 
@@ -1726,8 +1726,10 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       tx.operations.push_back( recover );
       tx.set_expiration( now() );
+
       tx.sign( generate_private_key( "expire" ), db.get_chain_id() );
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
+
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // Recover won't work, because request expired
       const auto& owner5 = db.get< account_authority_object, by_account >("bob").owner;
       BOOST_REQUIRE( owner5 == authority( 1, generate_private_key( "foo bar" ).get_public_key(), 1 ) );
@@ -1862,7 +1864,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       fc::ecc::private_key alice_priv2 = fc::ecc::private_key::regenerate( fc::sha256::hash( "alice_k2" ) );
       public_key_type alice_pub1 = public_key_type( alice_priv1.get_public_key() );
 
-      generate_blocks( now() + OWNER_AUTH_RECOVERY_PERIOD - fc::seconds( BLOCK_INTERVAL ), true );
+      generate_blocks( now() + OWNER_AUTH_RECOVERY_PERIOD - BLOCK_INTERVAL, true );
       // cannot request account recovery until recovery account is approved
       REQUIRE_THROW( request_account_recovery( "sam", sam_private_owner_key, "alice", alice_pub1 ), fc::exception );
       generate_blocks(1);
@@ -1893,8 +1895,8 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund( "alice", 1000 * BLOCKCHAIN_PRECISION );
-      fund_stake( "alice", 1000 * BLOCKCHAIN_PRECISION );
+      fund( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       account_create_operation acc_create;       // Creating account bob with alice as reset account
 
@@ -1907,10 +1909,10 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
       acc_create.active = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
       acc_create.posting = authority( 1, generate_private_key( "bob_posting" ).get_public_key(), 1 );
-      acc_create.secure_public_key = generate_private_key( "bob_secure" ).get_public_key();
-      acc_create.connection_public_key = generate_private_key( "bob_connection" ).get_public_key();
-      acc_create.friend_public_key = generate_private_key( "bob_friend" ).get_public_key();
-      acc_create.companion_public_key = generate_private_key( "bob_companion" ).get_public_key();
+      acc_create.secure_public_key = string( public_key_type( generate_private_key( "bob_secure" ).get_public_key() ) );
+      acc_create.connection_public_key = string( public_key_type( generate_private_key( "bob_connection" ).get_public_key() ) );
+      acc_create.friend_public_key = string( public_key_type( generate_private_key( "bob_friend" ).get_public_key() ) );
+      acc_create.companion_public_key = string( public_key_type( generate_private_key( "bob_companion" ).get_public_key() ) );
       acc_create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       acc_create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
       acc_create.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
@@ -2082,7 +2084,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       db.push_transaction( tx, 0 );
 
       req_itr = req_idx.find( "alice" );
-      BOOST_REQUIRE( itr == req_idx.end() );    // Request is now removed
+      BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: success cancelling a request" );
 
@@ -2103,7 +2105,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: check account can vote during waiting period" );
 
-      op.decline = true;
+      op.declined = true;
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2123,6 +2125,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
          BLOCKCHAIN_PRECISION * 10 );
 
       account_witness_vote_operation witness_vote;
+
       witness_vote.signatory = "alice";
       witness_vote.account = "alice";
       witness_vote.witness = "alice";
@@ -2143,14 +2146,20 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       comment.parent_permlink = "test";
       comment.title = "test";
       comment.body = "test";
-      comment.post_type = TEXT_POST;
       comment.language = "en";
-      comment.privacy = false;
-      comment.reach = TAG_FEED;
       comment.interface = INIT_ACCOUNT;
-      comment.rating = GENERAL;
       comment.tags.push_back( "test" );
       comment.json = "{\"json\":\"valid\"}";
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+
+      comment_options options;
+      comment.options = options;
 
       vote_operation vote;
 
@@ -2192,12 +2201,10 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       BOOST_REQUIRE( !db.get_account( "alice" ).can_vote );   // Alice can no longer vote
       validate_database();
 
-      req_itr = request_idx.find( "alice" );
-
-      BOOST_REQUIRE( req_itr == request_idx.end() );   // Request no longer exists
+      auto req_itr = req_idx.find( "alice" );
+      BOOST_REQUIRE( req_itr == req_idx.end() );   // Request no longer exists
 
       auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
-
       BOOST_REQUIRE( witness_vote_itr == witness_vote_idx.end() );   // Vote has been removed
 
       tx.operations.clear();
@@ -2241,8 +2248,6 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       generate_block();
-
-      
 
       connection_request_operation request;
 
@@ -2703,124 +2708,126 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       const comment_object& bob_post = comment_create( "bob", bob_private_posting_key, "bobtestpost" );
       const comment_object& candice_post = comment_create( "candice", candice_private_posting_key, "candicetestpost" );
 
-      vote_operation op;
+      vote_operation vote;
 
-      op.signatory = "bob";
-      op.voter = "bob";
-      op.author = "alice";
-      op.permlink = "alicetestpost";
-      op.weight = PERCENT_100;
-      op.interface = INIT_ACCOUNT;
+      vote.signatory = "bob";
+      vote.voter = "bob";
+      vote.author = "alice";
+      vote.permlink = "alicetestpost";
+      vote.weight = PERCENT_100;
+      vote.interface = INIT_ACCOUNT;
+      vote.validate();
 
       signed_transaction tx;
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "alice";
-      op.voter = "alice";
-      op.author = "bob";
-      op.permlink = "bobtestpost";
+      vote.signatory = "alice";
+      vote.voter = "alice";
+      vote.author = "bob";
+      vote.permlink = "bobtestpost";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.voter = "candice";
-      op.author = "alice";
-      op.permlink = "alicetestpost";
+      vote.signatory = "candice";
+      vote.voter = "candice";
+      vote.author = "alice";
+      vote.permlink = "alicetestpost";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.voter = "dan";
+      vote.signatory = "dan";
+      vote.voter = "dan";
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "elon";
-      op.voter = "elon";
+      vote.signatory = "elon";
+      vote.voter = "elon";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      view_operation op;
+      view_operation view;
 
-      op.signatory = "bob";
-      op.viewer = "bob";
-      op.author = "alice";
-      op.permlink = "alicetestpost";
-      op.interface = INIT_ACCOUNT;
-      op.supernode = INIT_ACCOUNT;
-      op.viewed = true;
+      view.signatory = "bob";
+      view.viewer = "bob";
+      view.author = "alice";
+      view.permlink = "alicetestpost";
+      view.interface = INIT_ACCOUNT;
+      view.supernode = INIT_ACCOUNT;
+      view.viewed = true;
+      view.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( view );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "alice";
-      op.viewer = "alice";
-      op.author = "candice";
-      op.permlink = "candicetestpost";
+      view.signatory = "alice";
+      view.viewer = "alice";
+      view.author = "candice";
+      view.permlink = "candicetestpost";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( view );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.viewer = "candice";
-      op.author = "alice";
-      op.permlink = "alicetestpost";
+      view.signatory = "candice";
+      view.viewer = "candice";
+      view.author = "alice";
+      view.permlink = "alicetestpost";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( view );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.viewer = "dan";
+      view.signatory = "dan";
+      view.viewer = "dan";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( view );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "elon";
-      op.viewer = "elon";
+      view.signatory = "elon";
+      view.viewer = "elon";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( view );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2829,105 +2836,106 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
 
       db.update_comment_metrics();     // calculate median values.
 
-      account_witness_vote_operation op;
+      account_witness_vote_operation wv;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.witness = "bob";
-      op.vote_rank = 1;
-      op.approved = true;
+      wv.signatory = "alice";
+      wv.account = "alice";
+      wv.witness = "bob";
+      wv.vote_rank = 1;
+      wv.approved = true;
+      wv.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "candice";
-      op.vote_rank = 2;
+      wv.witness = "candice";
+      wv.vote_rank = 2;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "dan";
-      op.vote_rank = 3;
+      wv.witness = "dan";
+      wv.vote_rank = 3;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "elon";
-      op.vote_rank = 5;
+      wv.witness = "elon";
+      wv.vote_rank = 5;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "fred";
-      op.vote_rank = 6;
+      wv.witness = "fred";
+      wv.vote_rank = 6;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "george";
-      op.vote_rank = 7;
+      wv.witness = "george";
+      wv.vote_rank = 7;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "haz";
-      op.vote_rank = 8;
+      wv.witness = "haz";
+      wv.vote_rank = 8;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "isabelle";
-      op.vote_rank = 9;
+      wv.witness = "isabelle";
+      wv.vote_rank = 9;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "jayme";
-      op.vote_rank = 10;
+      wv.witness = "jayme";
+      wv.vote_rank = 10;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "kathryn";
-      op.vote_rank = 11;
+      wv.witness = "kathryn";
+      wv.vote_rank = 11;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( wv );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -3070,261 +3078,262 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
       fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
 
-      account_membership_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.membership_type = STANDARD_MEMBERSHIP;
-      op.months = 1;
-      op.interface = INIT_ACCOUNT;
-      op.validate();
+      account_membership_operation membership;
+
+      membership.signatory = "alice";
+      membership.account = "alice";
+      membership.membership_type = STANDARD_MEMBERSHIP;
+      membership.months = 1;
+      membership.interface = INIT_ACCOUNT;
+      membership.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( membership );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_network_officer_operation op;
+      update_network_officer_operation officer;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.officer_type = DEVELOPMENT;
-      op.details = "details";
-      op.url = "url";
-      op.json = "{\"json\":\"valid\"}";
-      op.active = true;
-      op.validate();
+      officer.signatory = "alice";
+      officer.account = "alice";
+      officer.officer_type = DEVELOPMENT;
+      officer.details = "details";
+      officer.url = "url";
+      officer.json = "{\"json\":\"valid\"}";
+      officer.active = true;
+      officer.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( officer );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const network_officer_object& officer = db.get_network_officer( "alice" );
+      const network_officer_object& alice_officer = db.get_network_officer( "alice" );
       
-      BOOST_REQUIRE( officer.account == "alice" );
-      BOOST_REQUIRE( officer.officer_type == DEVELOPMENT );
-      BOOST_REQUIRE( officer.active == true );
-      BOOST_REQUIRE( officer.officer_approved == false );
+      BOOST_REQUIRE( alice_officer.account == "alice" );
+      BOOST_REQUIRE( alice_officer.officer_type == DEVELOPMENT );
+      BOOST_REQUIRE( alice_officer.active == true );
+      BOOST_REQUIRE( alice_officer.officer_approved == false );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: network officer creation" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: network officer approval process" );
 
-      network_officer_vote_operation op;    // 20 accounts vote for officer
+      network_officer_vote_operation vote;    // 20 accounts vote for officer
 
-      op.signatory = "bob";
-      op.account = "bob";
-      op.network_officer = "alice";
-      op.vote_rank = 1;
-      op.approved = true;
-      op.validate();
+      vote.signatory = "bob";
+      vote.account = "bob";
+      vote.network_officer = "alice";
+      vote.vote_rank = 1;
+      vote.approved = true;
+      vote.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.account = "candice";
+      vote.signatory = "candice";
+      vote.account = "candice";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.account = "dan";
+      vote.signatory = "dan";
+      vote.account = "dan";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "elon";
-      op.account = "elon";
+      vote.signatory = "elon";
+      vote.account = "elon";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( elon_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "fred";
-      op.account = "fred";
+      vote.signatory = "fred";
+      vote.account = "fred";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( fred_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "george";
-      op.account = "george";
+      vote.signatory = "george";
+      vote.account = "george";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( george_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "haz";
-      op.account = "haz";
+      vote.signatory = "haz";
+      vote.account = "haz";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( haz_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "isabelle";
-      op.account = "isabelle";
+      vote.signatory = "isabelle";
+      vote.account = "isabelle";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( isabelle_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "jayme";
-      op.account = "jayme";
+      vote.signatory = "jayme";
+      vote.account = "jayme";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( jayme_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "kathryn";
-      op.account = "kathryn";
+      vote.signatory = "kathryn";
+      vote.account = "kathryn";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( kathryn_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "leonie";
-      op.account = "leonie";
+      vote.signatory = "leonie";
+      vote.account = "leonie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( leonie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "margot";
-      op.account = "margot";
+      vote.signatory = "margot";
+      vote.account = "margot";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( margot_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "natalie";
-      op.account = "natalie";
+      vote.signatory = "natalie";
+      vote.account = "natalie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( natalie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "olivia";
-      op.account = "olivia";
+      vote.signatory = "olivia";
+      vote.account = "olivia";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( olivia_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "peter";
-      op.account = "peter";
+      vote.signatory = "peter";
+      vote.account = "peter";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( peter_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "quentin";
-      op.account = "quentin";
+      vote.signatory = "quentin";
+      vote.account = "quentin";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( quentin_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "rachel";
-      op.account = "rachel";
+      vote.signatory = "rachel";
+      vote.account = "rachel";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( rachel_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "sam";
-      op.account = "sam";
+      vote.signatory = "sam";
+      vote.account = "sam";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( sam_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      op.signatory = "tim";
-      op.account = "tim";
+      vote.signatory = "tim";
+      vote.account = "tim";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( tim_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "veronica";
-      op.account = "veronica";
+      vote.signatory = "veronica";
+      vote.account = "veronica";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( veronica_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const network_officer_object& officer = db.get_network_officer( "alice" );
+      const network_officer_object& alice_officer = db.get_network_officer( "alice" );
       
-      BOOST_REQUIRE( officer.account == "alice" );
-      BOOST_REQUIRE( officer.officer_type == DEVELOPMENT );
-      BOOST_REQUIRE( officer.active == true );
-      BOOST_REQUIRE( officer.officer_approved == true );
+      BOOST_REQUIRE( alice_officer.account == "alice" );
+      BOOST_REQUIRE( alice_officer.officer_type == DEVELOPMENT );
+      BOOST_REQUIRE( alice_officer.active == true );
+      BOOST_REQUIRE( alice_officer.officer_approved == true );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: network officer approval process" );
 
@@ -3512,38 +3521,38 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       fund( "veronica2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       witness_create( "veronica2", veronica2_private_owner_key, veronica2_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
 
-      account_create_operation op;
+      account_create_operation create;
 
-      op.signatory = "alice";
-      op.registrar = "alice";
-      op.new_account_name = "execboard";
-      op.account_type = BUSINESS;
-      op.governance_account = INIT_ACCOUNT;
-      op.business_type = PUBLIC_BUSINESS;
-      op.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      op.business_public_key = alice_public_posting_key;
-      op.referrer = INIT_ACCOUNT;
-      op.proxy = INIT_ACCOUNT;
-      op.governance_account = INIT_ACCOUNT;
-      op.recovery_account = INIT_ACCOUNT;
-      op.reset_account = INIT_ACCOUNT;
-      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.owner = authority( 1, alice_public_owner_key, 1 );
-      op.active = authority( 2, alice_public_active_key, 2 );
-      op.posting = authority( 1, alice_public_posting_key, 1 );
-      op.secure_public_key = alice_public_posting_key;
-      op.connection_public_key = alice_public_posting_key;
-      op.friend_public_key = alice_public_posting_key;
-      op.companion_public_key = alice_public_posting_key;
-      op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      op.validate();
+      create.signatory = "alice";
+      create.registrar = "alice";
+      create.new_account_name = "execboard";
+      create.account_type = BUSINESS;
+      create.governance_account = INIT_ACCOUNT;
+      create.business_type = PUBLIC_BUSINESS;
+      create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
+      create.business_public_key = alice_public_posting_key;
+      create.referrer = INIT_ACCOUNT;
+      create.proxy = INIT_ACCOUNT;
+      create.governance_account = INIT_ACCOUNT;
+      create.recovery_account = INIT_ACCOUNT;
+      create.reset_account = INIT_ACCOUNT;
+      create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      create.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      create.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      create.owner = authority( 1, alice_public_owner_key, 1 );
+      create.active = authority( 2, alice_public_active_key, 2 );
+      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.secure_public_key = string( alice_public_posting_key );
+      create.connection_public_key = string( alice_public_posting_key );
+      create.friend_public_key = string( alice_public_posting_key );
+      create.companion_public_key = string( alice_public_posting_key );
+      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( create );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -3553,205 +3562,218 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_membership_operation op;
+      account_membership_operation member;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.membership_type = TOP_MEMBERSHIP;
-      op.months = 1;
-      op.interface = INIT_ACCOUNT;
-      op.validate();
+      member.signatory = "alice";
+      member.account = "alice";
+      member.membership_type = TOP_MEMBERSHIP;
+      member.months = 1;
+      member.interface = INIT_ACCOUNT;
+      member.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( member );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.account = "bob";
+      member.signatory = "bob";
+      member.account = "bob";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( member );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.account = "candice";
+      member.signatory = "candice";
+      member.account = "candice";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( member );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.account = "dan";
+      member.signatory = "dan";
+      member.account = "dan";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( member );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "execboard";
-      op.account = "execboard";
+      member.signatory = "execboard";
+      member.account = "execboard";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( member );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_network_officer_operation op;
+      update_network_officer_operation officer;
 
-      op.signatory = "bob";
-      op.account = "bob";
-      op.officer_type = DEVELOPMENT;
-      op.details = "details";
-      op.url = "url";
-      op.json = "{\"json\":\"valid\"}";
-      op.active = true;
-      op.validate();
+      officer.signatory = "bob";
+      officer.account = "bob";
+      officer.officer_type = DEVELOPMENT;
+      officer.details = "details";
+      officer.url = "url";
+      officer.json = "{\"json\":\"valid\"}";
+      officer.active = true;
+      officer.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( officer );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.account = "candice";
-      op.officer_type = MARKETING;
+      officer.signatory = "candice";
+      officer.account = "candice";
+      officer.officer_type = MARKETING;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( officer );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.account = "dan";
-      op.officer_type = ADVOCACY;
+      officer.signatory = "dan";
+      officer.account = "dan";
+      officer.officer_type = ADVOCACY;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( officer );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_vote_officer_operation op;
+      account_vote_officer_operation vote;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.officer_account = "bob";
-      op.business_account = "execboard";
-      op.vote_rank = 1;
+      vote.signatory = "alice";
+      vote.account = "alice";
+      vote.officer_account = "bob";
+      vote.business_account = "execboard";
+      vote.vote_rank = 1;
+      vote.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.officer_account = "candice";
-      op.vote_rank = 2;
+      vote.officer_account = "candice";
+      vote.vote_rank = 2;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.officer_account = "dan";
-      op.vote_rank = 3;
+      vote.officer_account = "dan";
+      vote.vote_rank = 3;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_vote_executive_operation op;
+      account_vote_executive_operation exec_vote;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.executive_account = "bob";
-      op.business_account = "execboard";
-      op.role = CHIEF_DEVELOPMENT_OFFICER;
-      op.vote_rank = 1;
+      exec_vote.signatory = "alice";
+      exec_vote.account = "alice";
+      exec_vote.executive_account = "bob";
+      exec_vote.business_account = "execboard";
+      exec_vote.role = CHIEF_DEVELOPMENT_OFFICER;
+      exec_vote.vote_rank = 1;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( exec_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.officer_account = "candice";
-      op.role = CHIEF_MARKETING_OFFICER;
-      op.vote_rank = 1;
+      exec_vote.executive_account = "candice";
+      exec_vote.role = CHIEF_MARKETING_OFFICER;
+      exec_vote.vote_rank = 1;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( exec_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.officer_account = "dan";
-      op.role = CHIEF_ADVOCACY_OFFICER;
-      op.vote_rank = 1;
+      exec_vote.executive_account = "dan";
+      exec_vote.role = CHIEF_ADVOCACY_OFFICER;
+      exec_vote.vote_rank = 1;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( exec_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_supernode_operation op;
+      update_supernode_operation supernode;
 
-      op.signatory = "alice";
-      op.account = "execboard";
+      supernode.signatory = "alice";
+      supernode.account = "execboard";
+      supernode.details = "details";
+      supernode.url = "url";
+      supernode.json = "{\"json\":\"valid\"}";
+      supernode.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( supernode );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_interface_operation op;
+      update_interface_operation interface;
       
-      op.signatory = "alice";
-      op.account = "execboard";
+      interface.signatory = "alice";
+      interface.account = "execboard";
+      interface.details = "details";
+      interface.url = "url";
+      interface.json = "{\"json\":\"valid\"}";
+      interface.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( interface );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_governance_operation op;
+      update_governance_operation gov;
       
-      op.signatory = "alice";
-      op.account = "execboard";
+      gov.signatory = "alice";
+      gov.account = "execboard";
+      gov.details = "details";
+      gov.url = "url";
+      gov.json = "{\"json\":\"valid\"}";
+      gov.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( gov );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -3760,27 +3782,28 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
-      account_create_operation op;
+      account_create_operation create;
 
-      op.signatory = "alice";
-      op.registrar = "execboard";
-      op.new_account_name = "newuser";
-      op.account_type = PERSONA;
-      op.governance_account = "execboard";
-      op.owner = authority( 1, alice_public_owner_key, 1 );
-      op.active = authority( 2, alice_public_active_key, 2 );
-      op.posting = authority( 1, alice_public_posting_key, 1 );
-      op.secure_public_key = alice_public_posting_key;
-      op.connection_public_key = alice_public_posting_key;
-      op.friend_public_key = alice_public_posting_key;
-      op.companion_public_key = alice_public_posting_key;
-      op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.signatory = "alice";
+      create.registrar = "execboard";
+      create.new_account_name = "newuser";
+      create.account_type = PERSONA;
+      create.governance_account = "execboard";
+      create.owner = authority( 1, alice_public_owner_key, 1 );
+      create.active = authority( 2, alice_public_active_key, 2 );
+      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.secure_public_key = string( alice_public_posting_key );
+      create.connection_public_key = string( alice_public_posting_key );
+      create.friend_public_key = string( alice_public_posting_key );
+      create.companion_public_key = string( alice_public_posting_key );
+      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.validate();
 
       for( auto i = 0; i < 100; i++ )
       {
-         op.new_account_name = "newuser"+string(i);
+         create.new_account_name = "newuser"+fc::to_string( i );
 
-         tx.operations.push_back( op );
+         tx.operations.push_back( create );
          tx.sign( alice_private_owner_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
 
@@ -3788,21 +3811,22 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
          tx.signatures.clear();
       }
 
-      view_operation op;
+      view_operation view;
 
-      op.signatory = "newuser";
-      op.viewer = "newuser";
-      op.author = "alice";
-      op.permlink = "alicetestpost";
-      op.supernode = "execboard";
-      op.interface = "execboard";
+      view.signatory = "newuser";
+      view.viewer = "newuser";
+      view.author = "alice";
+      view.permlink = "alicetestpost";
+      view.supernode = "execboard";
+      view.interface = "execboard";
+      view.validate();
       
       for( auto i = 0; i < 100; i++ )
       {
-         op.signatory = "newuser"+string(i);
-         op.viewer = "newuser"+string(i);
+         view.signatory = "newuser"+fc::to_string( i );
+         view.viewer = "newuser"+fc::to_string( i );
 
-         tx.operations.push_back( op );
+         tx.operations.push_back( view );
          tx.sign( alice_private_posting_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
 
@@ -3810,18 +3834,19 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
          tx.signatures.clear();
       }
 
-      update_executive_board_operation op;
+      update_executive_board_operation exec;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.registrar = "execboard";
-      op.budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
-      op.details = "details";
-      op.url = "url";
-      op.json = "{\"json\":\"valid\"}";
-      op.active = true;
+      exec.signatory = "alice";
+      exec.account = "alice";
+      exec.executive = "execboard";
+      exec.budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      exec.details = "details";
+      exec.url = "url";
+      exec.json = "{\"json\":\"valid\"}";
+      exec.active = true;
+      exec.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( exec );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -3838,400 +3863,400 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: executive board approval process" );
 
-      executive_board_vote_operation op;    // 40 accounts vote for executive board
+      executive_board_vote_operation eb_vote;    // 40 accounts vote for executive board
 
-      op.signatory = "bob";
-      op.account = "bob";
-      op.executive_account = "execboard";
-      op.vote_rank = 1;
-      op.approved = true;
-      op.validate();
+      eb_vote.signatory = "bob";
+      eb_vote.account = "bob";
+      eb_vote.executive_board = "execboard";
+      eb_vote.vote_rank = 1;
+      eb_vote.approved = true;
+      eb_vote.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.account = "candice";
+      eb_vote.signatory = "candice";
+      eb_vote.account = "candice";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.account = "dan";
+      eb_vote.signatory = "dan";
+      eb_vote.account = "dan";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "elon";
-      op.account = "elon";
+      eb_vote.signatory = "elon";
+      eb_vote.account = "elon";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( elon_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "fred";
-      op.account = "fred";
+      eb_vote.signatory = "fred";
+      eb_vote.account = "fred";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( fred_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "george";
-      op.account = "george";
+      eb_vote.signatory = "george";
+      eb_vote.account = "george";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( george_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "haz";
-      op.account = "haz";
+      eb_vote.signatory = "haz";
+      eb_vote.account = "haz";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( haz_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "isabelle";
-      op.account = "isabelle";
+      eb_vote.signatory = "isabelle";
+      eb_vote.account = "isabelle";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( isabelle_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "jayme";
-      op.account = "jayme";
+      eb_vote.signatory = "jayme";
+      eb_vote.account = "jayme";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( jayme_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "kathryn";
-      op.account = "kathryn";
+      eb_vote.signatory = "kathryn";
+      eb_vote.account = "kathryn";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( kathryn_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "leonie";
-      op.account = "leonie";
+      eb_vote.signatory = "leonie";
+      eb_vote.account = "leonie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( leonie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "margot";
-      op.account = "margot";
+      eb_vote.signatory = "margot";
+      eb_vote.account = "margot";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( margot_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "natalie";
-      op.account = "natalie";
+      eb_vote.signatory = "natalie";
+      eb_vote.account = "natalie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( natalie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "olivia";
-      op.account = "olivia";
+      eb_vote.signatory = "olivia";
+      eb_vote.account = "olivia";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( olivia_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "peter";
-      op.account = "peter";
+      eb_vote.signatory = "peter";
+      eb_vote.account = "peter";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( peter_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "quentin";
-      op.account = "quentin";
+      eb_vote.signatory = "quentin";
+      eb_vote.account = "quentin";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( quentin_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "rachel";
-      op.account = "rachel";
+      eb_vote.signatory = "rachel";
+      eb_vote.account = "rachel";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( rachel_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "sam";
-      op.account = "sam";
+      eb_vote.signatory = "sam";
+      eb_vote.account = "sam";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( sam_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      op.signatory = "tim";
-      op.account = "tim";
+      eb_vote.signatory = "tim";
+      eb_vote.account = "tim";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( tim_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "veronica";
-      op.account = "veronica";
+      eb_vote.signatory = "veronica";
+      eb_vote.account = "veronica";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( veronica_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob2";
-      op.account = "bob2";
+      eb_vote.signatory = "bob2";
+      eb_vote.account = "bob2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( bob2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice2";
-      op.account = "candice2";
+      eb_vote.signatory = "candice2";
+      eb_vote.account = "candice2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( candice2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan2";
-      op.account = "dan2";
+      eb_vote.signatory = "dan2";
+      eb_vote.account = "dan2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( dan2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "elon2";
-      op.account = "elon2";
+      eb_vote.signatory = "elon2";
+      eb_vote.account = "elon2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( elon2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "fred2";
-      op.account = "fred2";
+      eb_vote.signatory = "fred2";
+      eb_vote.account = "fred2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( fred2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "george2";
-      op.account = "george2";
+      eb_vote.signatory = "george2";
+      eb_vote.account = "george2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( george2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "haz2";
-      op.account = "haz2";
+      eb_vote.signatory = "haz2";
+      eb_vote.account = "haz2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( haz2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "isabelle2";
-      op.account = "isabelle2";
+      eb_vote.signatory = "isabelle2";
+      eb_vote.account = "isabelle2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( isabelle2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "jayme2";
-      op.account = "jayme2";
+      eb_vote.signatory = "jayme2";
+      eb_vote.account = "jayme2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( jayme2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "kathryn2";
-      op.account = "kathryn2";
+      eb_vote.signatory = "kathryn2";
+      eb_vote.account = "kathryn2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( kathryn2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "leonie2";
-      op.account = "leonie2";
+      eb_vote.signatory = "leonie2";
+      eb_vote.account = "leonie2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( leonie2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "margot2";
-      op.account = "margot2";
+      eb_vote.signatory = "margot2";
+      eb_vote.account = "margot2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( margot2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "natalie2";
-      op.account = "natalie2";
+      eb_vote.signatory = "natalie2";
+      eb_vote.account = "natalie2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( natalie2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "olivia2";
-      op.account = "olivia2";
+      eb_vote.signatory = "olivia2";
+      eb_vote.account = "olivia2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( olivia2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "peter2";
-      op.account = "peter2";
+      eb_vote.signatory = "peter2";
+      eb_vote.account = "peter2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( peter2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "quentin2";
-      op.account = "quentin2";
+      eb_vote.signatory = "quentin2";
+      eb_vote.account = "quentin2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( quentin2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "rachel2";
-      op.account = "rachel2";
+      eb_vote.signatory = "rachel2";
+      eb_vote.account = "rachel2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( rachel2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "sam2";
-      op.account = "sam2";
+      eb_vote.signatory = "sam2";
+      eb_vote.account = "sam2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( sam2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      op.signatory = "tim2";
-      op.account = "tim2";
+      eb_vote.signatory = "tim2";
+      eb_vote.account = "tim2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( tim2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "veronica2";
-      op.account = "veronica2";
+      eb_vote.signatory = "veronica2";
+      eb_vote.account = "veronica2";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( eb_vote );
       tx.sign( veronica2_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -4346,38 +4371,38 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
 
-      account_create_operation op;
+      account_create_operation create;
 
-      op.signatory = "alice";
-      op.registrar = "alice";
-      op.new_account_name = "govaccount";
-      op.account_type = BUSINESS;
-      op.governance_account = INIT_ACCOUNT;
-      op.business_type = PUBLIC_BUSINESS;
-      op.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      op.business_public_key = alice_public_posting_key;
-      op.referrer = INIT_ACCOUNT;
-      op.proxy = INIT_ACCOUNT;
-      op.governance_account = INIT_ACCOUNT;
-      op.recovery_account = INIT_ACCOUNT;
-      op.reset_account = INIT_ACCOUNT;
-      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.owner = authority( 1, alice_public_owner_key, 1 );
-      op.active = authority( 2, alice_public_active_key, 2 );
-      op.posting = authority( 1, alice_public_posting_key, 1 );
-      op.secure_public_key = alice_public_posting_key;
-      op.connection_public_key = alice_public_posting_key;
-      op.friend_public_key = alice_public_posting_key;
-      op.companion_public_key = alice_public_posting_key;
-      op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      op.validate();
+      create.signatory = "alice";
+      create.registrar = "alice";
+      create.new_account_name = "govaccount";
+      create.account_type = BUSINESS;
+      create.governance_account = INIT_ACCOUNT;
+      create.business_type = PUBLIC_BUSINESS;
+      create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
+      create.business_public_key = alice_public_posting_key;
+      create.referrer = INIT_ACCOUNT;
+      create.proxy = INIT_ACCOUNT;
+      create.governance_account = INIT_ACCOUNT;
+      create.recovery_account = INIT_ACCOUNT;
+      create.reset_account = INIT_ACCOUNT;
+      create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      create.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      create.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      create.owner = authority( 1, alice_public_owner_key, 1 );
+      create.active = authority( 2, alice_public_active_key, 2 );
+      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.secure_public_key = string( alice_public_posting_key );
+      create.connection_public_key = string( alice_public_posting_key );
+      create.friend_public_key = string( alice_public_posting_key );
+      create.companion_public_key = string( alice_public_posting_key );
+      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( create );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -4387,32 +4412,32 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_membership_operation op;
+      account_membership_operation member;
 
-      op.signatory = "govaccount";
-      op.account = "govaccount";
-      op.membership_type = TOP_MEMBERSHIP;
-      op.months = 1;
-      op.interface = INIT_ACCOUNT;
-      op.validate();
+      member.signatory = "govaccount";
+      member.account = "govaccount";
+      member.membership_type = TOP_MEMBERSHIP;
+      member.months = 1;
+      member.interface = INIT_ACCOUNT;
+      member.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( member );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_governance_operation op;
+      update_governance_operation gov;
       
-      op.signatory = "govaccount";
-      op.account = "govaccount";
-      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.validate();
+      gov.signatory = "govaccount";
+      gov.account = "govaccount";
+      gov.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      gov.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      gov.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      gov.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( gov );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -4429,202 +4454,202 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: governance account approval process" );
 
-      subscribe_governance_operation op;    // 20 accounts subscribe to governance address
+      subscribe_governance_operation sub;    // 20 accounts subscribe to governance address
 
-      op.signatory = "bob";
-      op.account = "bob";
-      op.governance_account = "govaccount";
-      op.subscribe = true;
-      op.validate();
+      sub.signatory = "bob";
+      sub.account = "bob";
+      sub.governance_account = "govaccount";
+      sub.subscribe = true;
+      sub.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.account = "candice";
+      sub.signatory = "candice";
+      sub.account = "candice";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.account = "dan";
+      sub.signatory = "dan";
+      sub.account = "dan";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "elon";
-      op.account = "elon";
+      sub.signatory = "elon";
+      sub.account = "elon";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( elon_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "fred";
-      op.account = "fred";
+      sub.signatory = "fred";
+      sub.account = "fred";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( fred_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "george";
-      op.account = "george";
+      sub.signatory = "george";
+      sub.account = "george";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( george_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "haz";
-      op.account = "haz";
+      sub.signatory = "haz";
+      sub.account = "haz";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( haz_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "isabelle";
-      op.account = "isabelle";
+      sub.signatory = "isabelle";
+      sub.account = "isabelle";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( isabelle_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "jayme";
-      op.account = "jayme";
+      sub.signatory = "jayme";
+      sub.account = "jayme";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( jayme_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "kathryn";
-      op.account = "kathryn";
+      sub.signatory = "kathryn";
+      sub.account = "kathryn";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( kathryn_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "leonie";
-      op.account = "leonie";
+      sub.signatory = "leonie";
+      sub.account = "leonie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( leonie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "margot";
-      op.account = "margot";
+      sub.signatory = "margot";
+      sub.account = "margot";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( margot_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "natalie";
-      op.account = "natalie";
+      sub.signatory = "natalie";
+      sub.account = "natalie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( natalie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "olivia";
-      op.account = "olivia";
+      sub.signatory = "olivia";
+      sub.account = "olivia";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( olivia_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "peter";
-      op.account = "peter";
+      sub.signatory = "peter";
+      sub.account = "peter";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( peter_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "quentin";
-      op.account = "quentin";
+      sub.signatory = "quentin";
+      sub.account = "quentin";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( quentin_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "rachel";
-      op.account = "rachel";
+      sub.signatory = "rachel";
+      sub.account = "rachel";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( rachel_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "sam";
-      op.account = "sam";
+      sub.signatory = "sam";
+      sub.account = "sam";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( sam_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      op.signatory = "tim";
-      op.account = "tim";
+      sub.signatory = "tim";
+      sub.account = "tim";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( tim_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "veronica";
-      op.account = "veronica";
+      sub.signatory = "veronica";
+      sub.account = "veronica";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( sub );
       tx.sign( veronica_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -4654,36 +4679,36 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
 
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      update_supernode_operation op;
+      update_supernode_operation supernode;
       
-      op.signatory = "alice";
-      op.account = "alice";
-      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.auth_api_endpoint = INIT_AUTH_ENDPOINT;
-      op.node_api_endpoint = INIT_NODE_ENDPOINT;
-      op.notification_api_endpoint = INIT_NOTIFICATION_ENDPOINT;
-      op.ipfs_endpoint = INIT_IPFS_ENDPOINT;
-      op.bittorrent_endpoint = INIT_BITTORRENT_ENDPOINT;
-      op.validate();
+      supernode.signatory = "alice";
+      supernode.account = "alice";
+      supernode.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      supernode.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      supernode.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      supernode.auth_api_endpoint = INIT_AUTH_ENDPOINT;
+      supernode.node_api_endpoint = INIT_NODE_ENDPOINT;
+      supernode.notification_api_endpoint = INIT_NOTIFICATION_ENDPOINT;
+      supernode.ipfs_endpoint = INIT_IPFS_ENDPOINT;
+      supernode.bittorrent_endpoint = INIT_BITTORRENT_ENDPOINT;
+      supernode.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( supernode );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const supernode_object& supernode = db.get_supernode( "alice" );
+      const supernode_object& alice_supernode = db.get_supernode( "alice" );
       
-      BOOST_REQUIRE( supernode.account == "alice" );
-      BOOST_REQUIRE( supernode.daily_active_users == 0 );
-      BOOST_REQUIRE( supernode.monthly_active_users == 0 );
-      BOOST_REQUIRE( supernode.active == true );
+      BOOST_REQUIRE( alice_supernode.account == "alice" );
+      BOOST_REQUIRE( alice_supernode.daily_active_users == 0 );
+      BOOST_REQUIRE( alice_supernode.monthly_active_users == 0 );
+      BOOST_REQUIRE( alice_supernode.active == true );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: supernode creation" );
 
@@ -4691,29 +4716,30 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
 
       const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
-      view_operation op;
+      view_operation view;
 
-      op.signatory = "bob";
-      op.viewer = "bob";
-      op.author = "alice";
-      op.permlink = "alicetestpost";
-      op.interface = INIT_ACCOUNT;
-      op.supernode = "alice";
-      op.viewed = true;
+      view.signatory = "bob";
+      view.viewer = "bob";
+      view.author = "alice";
+      view.permlink = "alicetestpost";
+      view.interface = INIT_ACCOUNT;
+      view.supernode = "alice";
+      view.viewed = true;
+      view.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( view );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
       
-      const supernode_object& supernode = db.get_supernode( "alice" );
+      const supernode_object& alice_supernode = db.get_supernode( "alice" );
       
-      BOOST_REQUIRE( supernode.account == "alice" );
-      BOOST_REQUIRE( supernode.daily_active_users == PERCENT_100 );
-      BOOST_REQUIRE( supernode.monthly_active_users == PERCENT_100 );
-      BOOST_REQUIRE( supernode.active == true );
+      BOOST_REQUIRE( alice_supernode.account == "alice" );
+      BOOST_REQUIRE( alice_supernode.daily_active_users == PERCENT_100 );
+      BOOST_REQUIRE( alice_supernode.monthly_active_users == PERCENT_100 );
+      BOOST_REQUIRE( alice_supernode.active == true );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: supernode viewing process" );
 
@@ -4735,70 +4761,57 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      account_membership_operation op;
+      account_membership_operation member;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.membership_type = TOP_MEMBERSHIP;
-      op.months = 1;
-      op.validate();
+      member.signatory = "alice";
+      member.account = "alice";
+      member.membership_type = TOP_MEMBERSHIP;
+      member.months = 1;
+      member.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( member );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_interface_operation op;
+      update_interface_operation interface;
       
-      op.signatory = "alice";
-      op.account = "alice";
-      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.auth_api_endpoint = INIT_AUTH_ENDPOINT;
-      op.node_api_endpoint = INIT_NODE_ENDPOINT;
-      op.notification_api_endpoint = INIT_NOTIFICATION_ENDPOINT;
-      op.ipfs_endpoint = INIT_IPFS_ENDPOINT;
-      op.bittorrent_endpoint = INIT_BITTORRENT_ENDPOINT;
-      op.validate();
+      interface.signatory = "alice";
+      interface.account = "alice";
+      interface.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      interface.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      interface.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      interface.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( interface );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const interface_object& interface = db.get_interface( "alice" );
+      const interface_object& alice_interface = db.get_interface( "alice" );
       
-      BOOST_REQUIRE( interface.account == "alice" );
-      BOOST_REQUIRE( interface.daily_active_users == 0 );
-      BOOST_REQUIRE( interface.monthly_active_users == 0 );
-      BOOST_REQUIRE( interface.active == true );
+      BOOST_REQUIRE( alice_interface.account == "alice" );
+      BOOST_REQUIRE( alice_interface.daily_active_users == 0 );
+      BOOST_REQUIRE( alice_interface.monthly_active_users == 0 );
+      BOOST_REQUIRE( alice_interface.active == true );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: interface creation" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when creating without membership" );
-
-      update_interface_operation op;
       
-      op.signatory = "bob";
-      op.account = "bob";
-      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.auth_api_endpoint = INIT_AUTH_ENDPOINT;
-      op.node_api_endpoint = INIT_NODE_ENDPOINT;
-      op.notification_api_endpoint = INIT_NOTIFICATION_ENDPOINT;
-      op.ipfs_endpoint = INIT_IPFS_ENDPOINT;
-      op.bittorrent_endpoint = INIT_BITTORRENT_ENDPOINT;
-      op.validate();
+      interface.signatory = "bob";
+      interface.account = "bob";
+      interface.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      interface.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      interface.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( interface );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );    // Bob is not a member, and cannot create an interface
       
@@ -4808,32 +4821,33 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 
       const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
-      view_operation op;
+      view_operation view;
 
-      op.signatory = "bob";
-      op.viewer = "bob";
-      op.author = "alice";
-      op.permlink = "alicetestpost";
-      op.interface = "alice";
-      op.supernode = INIT_ACCOUNT;
-      op.viewed = true;
+      view.signatory = "bob";
+      view.viewer = "bob";
+      view.author = "alice";
+      view.permlink = "alicetestpost";
+      view.interface = "alice";
+      view.supernode = INIT_ACCOUNT;
+      view.viewed = true;
+      view.validate();
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( view );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const interface_object& interface = db.get_interface( "alice" );
+      const interface_object& alice_interface = db.get_interface( "alice" );
       
-      BOOST_REQUIRE( interface.account == "alice" );
-      BOOST_REQUIRE( interface.daily_active_users == PERCENT_100 );
-      BOOST_REQUIRE( interface.monthly_active_users == PERCENT_100 );
-      BOOST_REQUIRE( interface.active == true );
+      BOOST_REQUIRE( alice_interface.account == "alice" );
+      BOOST_REQUIRE( alice_interface.daily_active_users == PERCENT_100 );
+      BOOST_REQUIRE( alice_interface.monthly_active_users == PERCENT_100 );
+      BOOST_REQUIRE( alice_interface.active == true );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: interface viewing process" );
 
@@ -4937,28 +4951,27 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
 
-      create_community_enterprise_operation op;
+      create_community_enterprise_operation create;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      op.proposal_type = FUNDING;
-      op.beneficiaries[ "alice" ] = PERCENT_100;
-      op.milestones.push_back( std::make_pair( "Begin proposal", 50*PERCENT_1 ) );
-      op.milestones.push_back( std::make_pair( "Finish proposal", 50*PERCENT_1 ) );
-      op.details = "details";
-      op.url = "www.url.com";
-      op.json = "{\"json\":\"valid\"}";
-      op.begin = now() + fc::days(8);
-      op.duration = 14;
-      op.daily_budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
-      op.fee = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      
-      op.validate();
+      create.signatory = "alice";
+      create.creator = "alice";
+      create.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      create.proposal_type = FUNDING;
+      create.beneficiaries[ "alice" ] = PERCENT_100;
+      create.milestones.push_back( std::make_pair( "Begin proposal", 50*PERCENT_1 ) );
+      create.milestones.push_back( std::make_pair( "Finish proposal", 50*PERCENT_1 ) );
+      create.details = "details";
+      create.url = "www.url.com";
+      create.json = "{\"json\":\"valid\"}";
+      create.begin = now() + fc::days(8);
+      create.duration = 14;
+      create.daily_budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      create.fee = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( create );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -4977,218 +4990,216 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal milestone approval" );
 
-      approve_enterprise_milestone_operation op;
+      approve_enterprise_milestone_operation approve;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.creator = "alice";
-      op.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      op.milestone = 0;
-      op.details = "details";
-      op.vote_rank = 1;
-      op.approved = true;
-      
-      op.validate();
+      approve.signatory = "alice";
+      approve.account = "alice";
+      approve.creator = "alice";
+      approve.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      approve.milestone = 0;
+      approve.details = "details";
+      approve.vote_rank = 1;
+      approve.approved = true;
+      approve.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.account = "bob";
-      op.validate();
+      approve.signatory = "bob";
+      approve.account = "bob";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.account = "candice";
+      approve.signatory = "candice";
+      approve.account = "candice";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.account = "dan";
+      approve.signatory = "dan";
+      approve.account = "dan";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "elon";
-      op.account = "elon";
+      approve.signatory = "elon";
+      approve.account = "elon";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( elon_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "fred";
-      op.account = "fred";
+      approve.signatory = "fred";
+      approve.account = "fred";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( fred_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "george";
-      op.account = "george";
+      approve.signatory = "george";
+      approve.account = "george";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( george_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "haz";
-      op.account = "haz";
+      approve.signatory = "haz";
+      approve.account = "haz";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( haz_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "isabelle";
-      op.account = "isabelle";
+      approve.signatory = "isabelle";
+      approve.account = "isabelle";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( isabelle_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "jayme";
-      op.account = "jayme";
+      approve.signatory = "jayme";
+      approve.account = "jayme";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( jayme_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "kathryn";
-      op.account = "kathryn";
+      approve.signatory = "kathryn";
+      approve.account = "kathryn";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( kathryn_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "leonie";
-      op.account = "leonie";
+      approve.signatory = "leonie";
+      approve.account = "leonie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( leonie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "margot";
-      op.account = "margot";
+      approve.signatory = "margot";
+      approve.account = "margot";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( margot_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "natalie";
-      op.account = "natalie";
+      approve.signatory = "natalie";
+      approve.account = "natalie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( natalie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "olivia";
-      op.account = "olivia";
+      approve.signatory = "olivia";
+      approve.account = "olivia";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( olivia_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "peter";
-      op.account = "peter";
+      approve.signatory = "peter";
+      approve.account = "peter";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( peter_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "quentin";
-      op.account = "quentin";
+      approve.signatory = "quentin";
+      approve.account = "quentin";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( quentin_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "rachel";
-      op.account = "rachel";
+      approve.signatory = "rachel";
+      approve.account = "rachel";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( rachel_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "sam";
-      op.account = "sam";
+      approve.signatory = "sam";
+      approve.account = "sam";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( sam_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      op.signatory = "tim";
-      op.account = "tim";
+      approve.signatory = "tim";
+      approve.account = "tim";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( tim_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "veronica";
-      op.account = "veronica";
+      approve.signatory = "veronica";
+      approve.account = "veronica";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( veronica_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -5219,17 +5230,16 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise claim milestone" );
 
-      claim_enterprise_milestone_operation op;
+      claim_enterprise_milestone_operation claim;
 
-      op.signatory = "alice";
-      op.creator = "alice";
-      op.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      op.milestone = 1;
-      op.details = "details";
-      
-      op.validate();
+      claim.signatory = "alice";
+      claim.creator = "alice";
+      claim.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      claim.milestone = 1;
+      claim.details = "details";
+      claim.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( claim );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -5252,218 +5262,216 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal next milestone approval" );
 
-      approve_enterprise_milestone_operation op;
+      approve_enterprise_milestone_operation approve;
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.creator = "alice";
-      op.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      op.milestone = 1;
-      op.details = "details";
-      op.vote_rank = 1;
-      op.approved = true;
-      
-      op.validate();
+      approve.signatory = "alice";
+      approve.account = "alice";
+      approve.creator = "alice";
+      approve.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      approve.milestone = 1;
+      approve.details = "details";
+      approve.vote_rank = 1;
+      approve.approved = true;
+      approve.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.account = "bob";
-      op.validate();
+      approve.signatory = "bob";
+      approve.account = "bob";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "candice";
-      op.account = "candice";
+      approve.signatory = "candice";
+      approve.account = "candice";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "dan";
-      op.account = "dan";
+      approve.signatory = "dan";
+      approve.account = "dan";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "elon";
-      op.account = "elon";
+      approve.signatory = "elon";
+      approve.account = "elon";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( elon_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "fred";
-      op.account = "fred";
+      approve.signatory = "fred";
+      approve.account = "fred";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( fred_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "george";
-      op.account = "george";
+      approve.signatory = "george";
+      approve.account = "george";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( george_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "haz";
-      op.account = "haz";
+      approve.signatory = "haz";
+      approve.account = "haz";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( haz_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "isabelle";
-      op.account = "isabelle";
+      approve.signatory = "isabelle";
+      approve.account = "isabelle";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( isabelle_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "jayme";
-      op.account = "jayme";
+      approve.signatory = "jayme";
+      approve.account = "jayme";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( jayme_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "kathryn";
-      op.account = "kathryn";
+      approve.signatory = "kathryn";
+      approve.account = "kathryn";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( kathryn_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "leonie";
-      op.account = "leonie";
+      approve.signatory = "leonie";
+      approve.account = "leonie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( leonie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "margot";
-      op.account = "margot";
+      approve.signatory = "margot";
+      approve.account = "margot";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( margot_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "natalie";
-      op.account = "natalie";
+      approve.signatory = "natalie";
+      approve.account = "natalie";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( natalie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "olivia";
-      op.account = "olivia";
+      approve.signatory = "olivia";
+      approve.account = "olivia";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( olivia_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "peter";
-      op.account = "peter";
+      approve.signatory = "peter";
+      approve.account = "peter";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( peter_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "quentin";
-      op.account = "quentin";
+      approve.signatory = "quentin";
+      approve.account = "quentin";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( quentin_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "rachel";
-      op.account = "rachel";
+      approve.signatory = "rachel";
+      approve.account = "rachel";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( rachel_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "sam";
-      op.account = "sam";
+      approve.signatory = "sam";
+      approve.account = "sam";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( sam_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      op.signatory = "tim";
-      op.account = "tim";
+      approve.signatory = "tim";
+      approve.account = "tim";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( tim_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "veronica";
-      op.account = "veronica";
+      approve.signatory = "veronica";
+      approve.account = "veronica";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( approve );
       tx.sign( veronica_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -5528,24 +5536,24 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       generate_blocks( fc::seconds( 60 ).count() / BLOCK_INTERVAL.count() );
 
-      comment_operation op;
+      comment_operation comment;
 
-      op.signatory = "alice";
-      op.author = "alice";
-      op.permlink = "lorem";
-      op.title = "Lorem Ipsum";
-      op.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
-      op.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
-      op.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      op.board = INIT_BOARD;
-      op.tags.push_back( "test" );
-      op.interface = INIT_ACCOUNT;
-      op.language = "en";
-      op.parent_author = "";
-      op.parent_permlink = "ipsum";
-      op.json = "{\"foo\":\"bar\"}";
-      op.comment_price = asset( 0, SYMBOL_COIN );
-      op.premium_price = asset( 0, SYMBOL_COIN );
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.board = INIT_BOARD;
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "ipsum";
+      comment.json = "{\"foo\":\"bar\"}";
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
 
@@ -5553,11 +5561,12 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
-      op.options = options;
+      comment.options = options;
+      comment.validate();
 
       signed_transaction tx;
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
    
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_posting_auth );
 
@@ -5594,24 +5603,20 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
 
-      BOOST_REQUIRE( alice_comment.author == op.author );
-      BOOST_REQUIRE( to_string( alice_comment.permlink ) == op.permlink );
-      BOOST_REQUIRE( to_string( alice_comment.title ) == op.title );
-      BOOST_REQUIRE( to_string( alice_comment.body ) == op.body );
-      BOOST_REQUIRE( to_string( alice_comment.ipfs[0] ) == op.ipfs[0] );
-      BOOST_REQUIRE( to_string( alice_comment.magnet[0] ) == op.magnet[0] );
-      BOOST_REQUIRE( alice_comment.post_type == op.post_type );
-      BOOST_REQUIRE( alice_comment.privacy == op.privacy );
-      BOOST_REQUIRE( alice_comment.reach == op.reach );
-      BOOST_REQUIRE( alice_comment.board == op.board );
-      BOOST_REQUIRE( to_string( alice_comment.tags[0] ) == op.tags[0] );
-      BOOST_REQUIRE( alice_comment.interface == op.interface );
-      BOOST_REQUIRE( alice_comment.rating == op.rating );
-      BOOST_REQUIRE( to_string( alice_comment.language ) == op.language );
-      BOOST_REQUIRE( to_string( alice_comment.parent_permlink ) == op.parent_permlink );
-      BOOST_REQUIRE( to_string( alice_comment.json ) == op.json );
-      BOOST_REQUIRE( alice_comment.comment_price == op.comment_price );
-      BOOST_REQUIRE( alice_comment.premium_price == op.premium_price );
+      BOOST_REQUIRE( alice_comment.author == comment.author );
+      BOOST_REQUIRE( to_string( alice_comment.permlink ) == comment.permlink );
+      BOOST_REQUIRE( to_string( alice_comment.title ) == comment.title );
+      BOOST_REQUIRE( to_string( alice_comment.body ) == comment.body );
+      BOOST_REQUIRE( to_string( alice_comment.ipfs[0] ) == comment.ipfs[0] );
+      BOOST_REQUIRE( to_string( alice_comment.magnet[0] ) == comment.magnet[0] );
+      BOOST_REQUIRE( alice_comment.board == comment.board );
+      BOOST_REQUIRE( alice_comment.tags[0] == comment.tags[0] );
+      BOOST_REQUIRE( alice_comment.interface == comment.interface );
+      BOOST_REQUIRE( to_string( alice_comment.language ) == comment.language );
+      BOOST_REQUIRE( to_string( alice_comment.parent_permlink ) == comment.parent_permlink );
+      BOOST_REQUIRE( to_string( alice_comment.json ) == comment.json );
+      BOOST_REQUIRE( alice_comment.comment_price == comment.comment_price );
+      BOOST_REQUIRE( alice_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( alice_comment.last_update == now() );
       BOOST_REQUIRE( alice_comment.created == now() );
@@ -5668,15 +5673,15 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when posting a comment on a non-existent comment" );
 
-      op.signatory = "bob";
-      op.author = "bob";
-      op.permlink = "ipsum";
-      op.parent_author = "alice";
-      op.parent_permlink = "foobar";
+      comment.signatory = "bob";
+      comment.author = "bob";
+      comment.permlink = "ipsum";
+      comment.parent_author = "alice";
+      comment.parent_permlink = "foobar";
 
       tx.signatures.clear();
       tx.operations.clear();
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -5684,34 +5689,30 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: posting a comment on previous comment" );
 
-      op.parent_permlink = "lorem";
+      comment.parent_permlink = "lorem";
 
       tx.signatures.clear();
       tx.operations.clear();
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const comment_object& bob_comment = db.get_comment( "bob", string( "ipsum" ) );
 
-      BOOST_REQUIRE( bob_comment.author == op.author );
-      BOOST_REQUIRE( to_string( bob_comment.permlink ) == op.permlink );
-      BOOST_REQUIRE( to_string( bob_comment.title ) == op.title );
-      BOOST_REQUIRE( to_string( bob_comment.body ) == op.body );
-      BOOST_REQUIRE( to_string( bob_comment.ipfs[0] ) == op.ipfs[0] );
-      BOOST_REQUIRE( to_string( bob_comment.magnet[0] ) == op.magnet[0] );
-      BOOST_REQUIRE( bob_comment.post_type == op.post_type );
-      BOOST_REQUIRE( bob_comment.privacy == op.privacy );
-      BOOST_REQUIRE( bob_comment.reach == op.reach );
-      BOOST_REQUIRE( bob_comment.board == op.board );
-      BOOST_REQUIRE( to_string( bob_comment.tags[0] ) == op.tags[0] );
-      BOOST_REQUIRE( bob_comment.interface == op.interface );
-      BOOST_REQUIRE( bob_comment.rating == op.rating );
-      BOOST_REQUIRE( to_string( bob_comment.language ) == op.language );
-      BOOST_REQUIRE( to_string( bob_comment.parent_permlink ) == op.parent_permlink );
-      BOOST_REQUIRE( to_string( bob_comment.json ) == op.json );
-      BOOST_REQUIRE( bob_comment.comment_price == op.comment_price );
-      BOOST_REQUIRE( bob_comment.premium_price == op.premium_price );
+      BOOST_REQUIRE( bob_comment.author == comment.author );
+      BOOST_REQUIRE( to_string( bob_comment.permlink ) == comment.permlink );
+      BOOST_REQUIRE( to_string( bob_comment.title ) == comment.title );
+      BOOST_REQUIRE( to_string( bob_comment.body ) == comment.body );
+      BOOST_REQUIRE( to_string( bob_comment.ipfs[0] ) == comment.ipfs[0] );
+      BOOST_REQUIRE( to_string( bob_comment.magnet[0] ) == comment.magnet[0] );
+      BOOST_REQUIRE( bob_comment.board == comment.board );
+      BOOST_REQUIRE( bob_comment.tags[0] == comment.tags[0] );
+      BOOST_REQUIRE( bob_comment.interface == comment.interface );
+      BOOST_REQUIRE( to_string( bob_comment.language ) == comment.language );
+      BOOST_REQUIRE( to_string( bob_comment.parent_permlink ) == comment.parent_permlink );
+      BOOST_REQUIRE( to_string( bob_comment.json ) == comment.json );
+      BOOST_REQUIRE( bob_comment.comment_price == comment.comment_price );
+      BOOST_REQUIRE( bob_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( bob_comment.last_update == now() );
       BOOST_REQUIRE( bob_comment.created == now() );
@@ -5768,38 +5769,34 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: posting a comment on additional previous comment" );
 
-      op.signatory = "candice";
-      op.author = "candice";
-      op.permlink = "dolor";
-      op.parent_author = "bob";
-      op.parent_permlink = "ipsum";
+      comment.signatory = "candice";
+      comment.author = "candice";
+      comment.permlink = "dolor";
+      comment.parent_author = "bob";
+      comment.parent_permlink = "ipsum";
 
       tx.signatures.clear();
       tx.operations.clear();
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const comment_object& candice_comment = db.get_comment( "candice", string( "dolor" ) );
 
-      BOOST_REQUIRE( candice_comment.author == op.author );
-      BOOST_REQUIRE( to_string( candice_comment.permlink ) == op.permlink );
-      BOOST_REQUIRE( to_string( candice_comment.title ) == op.title );
-      BOOST_REQUIRE( to_string( candice_comment.body ) == op.body );
-      BOOST_REQUIRE( to_string( candice_comment.ipfs[0] ) == op.ipfs[0] );
-      BOOST_REQUIRE( to_string( candice_comment.magnet[0] ) == op.magnet[0] );
-      BOOST_REQUIRE( candice_comment.post_type == op.post_type );
-      BOOST_REQUIRE( candice_comment.privacy == op.privacy );
-      BOOST_REQUIRE( candice_comment.reach == op.reach );
-      BOOST_REQUIRE( candice_comment.board == op.board );
-      BOOST_REQUIRE( to_string( candice_comment.tags[0] ) == op.tags[0] );
-      BOOST_REQUIRE( candice_comment.interface == op.interface );
-      BOOST_REQUIRE( candice_comment.rating == op.rating );
-      BOOST_REQUIRE( to_string( candice_comment.language ) == op.language );
-      BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == op.parent_permlink );
-      BOOST_REQUIRE( to_string( candice_comment.json ) == op.json );
-      BOOST_REQUIRE( candice_comment.comment_price == op.comment_price );
-      BOOST_REQUIRE( candice_comment.premium_price == op.premium_price );
+      BOOST_REQUIRE( candice_comment.author == comment.author );
+      BOOST_REQUIRE( to_string( candice_comment.permlink ) == comment.permlink );
+      BOOST_REQUIRE( to_string( candice_comment.title ) == comment.title );
+      BOOST_REQUIRE( to_string( candice_comment.body ) == comment.body );
+      BOOST_REQUIRE( to_string( candice_comment.ipfs[0] ) == comment.ipfs[0] );
+      BOOST_REQUIRE( to_string( candice_comment.magnet[0] ) == comment.magnet[0] );
+      BOOST_REQUIRE( candice_comment.board == comment.board );
+      BOOST_REQUIRE( candice_comment.tags[0] == comment.tags[0] );
+      BOOST_REQUIRE( candice_comment.interface == comment.interface );
+      BOOST_REQUIRE( to_string( candice_comment.language ) == comment.language );
+      BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == comment.parent_permlink );
+      BOOST_REQUIRE( to_string( candice_comment.json ) == comment.json );
+      BOOST_REQUIRE( candice_comment.comment_price == comment.comment_price );
+      BOOST_REQUIRE( candice_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( candice_comment.last_update == now() );
       BOOST_REQUIRE( candice_comment.created == now() );
@@ -5853,7 +5850,9 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       validate_database();
 
-      generate_blocks( 60 * 5 / BLOCK_INTERVAL + 1 );
+      generate_blocks( 5 * BLOCKS_PER_MINUTE + 1 );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: posting a comment on additional previous comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: modifying a comment" );
 
@@ -5862,19 +5861,19 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      op.title = "foo";
-      op.body = "bar";
-      op.json = "{\"bar\":\"foo\"}";
-      tx.operations.push_back( op );
+      comment.title = "foo";
+      comment.body = "bar";
+      comment.json = "{\"bar\":\"foo\"}";
+      tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const comment_object& candice_comment = db.get_comment( "candice", string( "dolor" ) );
 
-      BOOST_REQUIRE( candice_comment.author == op.author );
-      BOOST_REQUIRE( to_string( candice_comment.permlink ) == op.permlink );
-      BOOST_REQUIRE( candice_comment.parent_author == op.parent_author );
-      BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == op.parent_permlink );
+      BOOST_REQUIRE( candice_comment.author == comment.author );
+      BOOST_REQUIRE( to_string( candice_comment.permlink ) == comment.permlink );
+      BOOST_REQUIRE( candice_comment.parent_author == comment.parent_author );
+      BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == comment.parent_permlink );
       BOOST_REQUIRE( candice_comment.last_update == now() );
       BOOST_REQUIRE( candice_comment.created == created );
       BOOST_REQUIRE( candice_comment.cashout_time == candice_comment.created + CONTENT_REWARD_INTERVAL );
@@ -5885,25 +5884,25 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure posting again within time limit" );
 
-      op.permlink = "sit";
-      op.parent_author = "";
-      op.parent_permlink = "test";
+      comment.permlink = "sit";
+      comment.parent_author = "";
+      comment.parent_permlink = "test";
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      generate_blocks( 60 * 5 / BLOCK_INTERVAL );
+      generate_blocks( 5 * BLOCKS_PER_MINUTE );
 
-      op.permlink = "amet";
+      comment.permlink = "amet";
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -5994,12 +5993,12 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "doug" ), PERCENT_1 ) );
 
       options.validate();
-      op.options = options;
+      comment.options = options;
 
       tx.operations.clear();
       tx.signatures.clear();
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -6015,6 +6014,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       vote.permlink = "dolor";
       vote.interface = INIT_ACCOUNT;
       vote.weight = PERCENT_100;
+      vote.validate();
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -6030,12 +6030,12 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "alice" ), 50 * PERCENT_1 ) );
 
       options.validate();
-      op.options = options;
+      comment.options = options;
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::exception );
 
@@ -6043,16 +6043,16 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: success when altering beneficiaries before voting" );
 
-      op.signatory = "bob";
-      op.author = "bob";
-      op.permlink = "ipsum";
-      op.parent_author = "alice";
-      op.parent_permlink = "foobar";
+      comment.signatory = "bob";
+      comment.author = "bob";
+      comment.permlink = "ipsum";
+      comment.parent_author = "alice";
+      comment.parent_permlink = "foobar";
 
       tx.signatures.clear();
       tx.operations.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
       validate_database();
@@ -6063,12 +6063,12 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       options.beneficiaries.clear();
       options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "dan" ), 25 * PERCENT_1 ) );
-      op.options = options;
+      comment.options = options;
 
       tx.signatures.clear();
       tx.operations.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::exception );
 
@@ -6288,6 +6288,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
+      comment.validate();
 
       tx.operations.push_back( comment );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -6305,6 +6306,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       vote.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
       vote.interface = INIT_ACCOUNT;
       vote.weight = PERCENT_100;
+      vote.validate();
 
       tx.operations.push_back( vote );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -6390,7 +6392,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: adjusting vote weight" );
 
-      generate_blocks( now() + MIN_VOTE_INTERVAL_SEC );
+      generate_blocks( now() + fc::seconds( MIN_VOTE_INTERVAL_SEC ) );
 
       vote.weight = PERCENT_1 * 50;
       
@@ -6412,9 +6414,9 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: changing vote to 0 weight" );
 
-      generate_blocks( now() + MIN_VOTE_INTERVAL_SEC );
+      generate_blocks( now() + fc::seconds( MIN_VOTE_INTERVAL_SEC ) );
 
-      op.weight = 0;
+      vote.weight = 0;
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -6494,6 +6496,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
+      comment.validate();
 
       tx.operations.push_back( comment );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -6511,6 +6514,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       view.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
       view.interface = INIT_ACCOUNT;
       view.supernode = INIT_ACCOUNT;
+      view.validate();
 
       tx.operations.push_back( view );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -6523,7 +6527,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful view" );
 
-      auto old_view_power = bob.view_power;
+      auto old_viewing_power = bob.viewing_power;
 
       view.permlink = "lorem";
 
@@ -6540,7 +6544,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       auto bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
       int64_t max_view_denom = props.median_props.view_reserve_rate * ( props.median_props.view_recharge_time.count() / fc::days(1).count() );
 
-      BOOST_REQUIRE( bob.view_power == old_view_power - ( ( old_view_power + max_view_denom - 1 ) / max_view_denom ) );
+      BOOST_REQUIRE( bob.viewing_power == old_viewing_power - ( ( old_viewing_power + max_view_denom - 1 ) / max_view_denom ) );
       BOOST_REQUIRE( bob.last_view_time == now() );
       BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( bob_view_itr != view_idx.end() );
@@ -6553,7 +6557,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing view" );
 
-      generate_blocks( now() + MIN_VIEW_INTERVAL_SEC );
+      generate_blocks( now() + fc::seconds( MIN_VIEW_INTERVAL_SEC ) );
 
       view.viewed = false;
       
@@ -6632,6 +6636,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
+      comment.validate();
 
       tx.operations.push_back( comment );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -6661,7 +6666,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful share to follow feed" );
 
-      auto old_share_power = bob.share_power;
+      auto old_sharing_power = bob.sharing_power;
 
       share.permlink = "lorem";
 
@@ -6678,7 +6683,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       auto bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
       int64_t max_share_denom = props.median_props.share_reserve_rate * ( props.median_props.share_recharge_time.count() / fc::days(1).count() );
 
-      BOOST_REQUIRE( bob.share_power == old_share_power - ( ( old_share_power + max_share_denom - 1 ) / max_share_denom ) );
+      BOOST_REQUIRE( bob.sharing_power == old_sharing_power - ( ( old_sharing_power + max_share_denom - 1 ) / max_share_denom ) );
       BOOST_REQUIRE( bob.last_share_time == now() );
       BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( bob_share_itr != share_idx.end() );
@@ -6691,7 +6696,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing share" );
 
-      generate_blocks( now() + MIN_SHARE_INTERVAL_SEC );
+      generate_blocks( now() + fc::seconds( MIN_SHARE_INTERVAL_SEC ) );
 
       share.shared = false;
       
@@ -6702,7 +6707,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto bob_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+      auto bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
 
       BOOST_REQUIRE( bob_share_itr == share_idx.end() );
       
@@ -6768,6 +6773,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
+      comment.validate();
 
       tx.operations.push_back( comment );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -6879,7 +6885,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing moderation tag" );
 
-      generate_blocks( now() + MIN_SHARE_INTERVAL_SEC );
+      generate_blocks( now() + fc::seconds( MIN_SHARE_INTERVAL_SEC ) );
 
       tag.applied = false;
       
@@ -6890,7 +6896,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto tag_itr = vote_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+      auto tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
 
       BOOST_REQUIRE( tag_itr == tag_idx.end() );
       
@@ -6910,7 +6916,2736 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
    //==========================//
 
 
+   
+BOOST_AUTO_TEST_CASE( board_create_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: BOARD CREATE OPERATION" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful board creation" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      const auto& board_idx = db.get_index< board_index >().indices().get< by_name >();
+
+      signed_transaction tx;
+
+      board_create_operation create;
+
+      create.signatory = "alice";
+      create.founder = "alice";
+      create.name = "aliceopenboard";
+      create.board_type = BOARD;
+      create.board_privacy = OPEN_BOARD;
+      create.board_public_key = string( alice_public_posting_key );
+      create.json = "{\"json\":\"valid\"}";
+      create.json_private = "{\"json\":\"valid\"}";
+      create.details = "details";
+      create.url = "www.url.com";
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "aliceopenboard" );
+      BOOST_REQUIRE( board_itr->founder == create.founder );
+      BOOST_REQUIRE( board_itr->name == create.name );
+      BOOST_REQUIRE( board_itr->board_privacy == create.board_privacy );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "bob";
+      create.founder = "bob";
+      create.name = "bobpublicboard";
+      create.board_privacy = PUBLIC_BOARD;
+      create.board_public_key = string( bob_public_posting_key );
+      
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "bobpublicboard" );
+      BOOST_REQUIRE( board_itr->founder == create.founder );
+      BOOST_REQUIRE( board_itr->name == create.name );
+      BOOST_REQUIRE( board_itr->board_privacy == create.board_privacy );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "candice";
+      create.founder = "candice";
+      create.name = "candiceprivateboard";
+      create.board_privacy = PRIVATE_BOARD;
+      create.board_public_key = string( candice_public_posting_key );
+      
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "candiceprivateboard" );
+      BOOST_REQUIRE( board_itr->founder == create.founder );
+      BOOST_REQUIRE( board_itr->name == create.name );
+      BOOST_REQUIRE( board_itr->board_privacy == create.board_privacy );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "dan";
+      create.founder = "dan";
+      create.name = "danexclusiveboard";
+      create.board_privacy = EXCLUSIVE_BOARD;
+      create.board_public_key = string( dan_public_posting_key );
+      
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "danexclusiveboard" );
+      BOOST_REQUIRE( board_itr->founder == create.founder );
+      BOOST_REQUIRE( board_itr->name == create.name );
+      BOOST_REQUIRE( board_itr->board_privacy == create.board_privacy );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful board creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when board created before MIN_BOARD_CREATE_INTERVAL has passed" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now() + MIN_BOARD_CREATE_INTERVAL - BLOCK_INTERVAL );
+
+      create.signatory = "alice";
+      create.founder = "alice";
+      create.name = "mysecondboard";
+      create.board_public_key = string( alice_public_posting_key );
+
+      tx.operations.push_back( create );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board created before MIN_BOARD_CREATE_INTERVAL has passed" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: success after MIN_BOARD_CREATE_INTERVAL has passed" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_block();
+
+      tx.operations.push_back( create );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board created before MIN_BOARD_CREATE_INTERVAL has passed" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when board name already exists" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "elon";
+      create.founder = "elon";
+      create.name = "aliceopenboard";
+
+      tx.operations.push_back( create );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board name already exists" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: BOARD CREATE OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( board_update_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: BOARD UPDATE OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder board update sequence" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      const auto& board_idx = db.get_index< board_index >().indices().get< by_name >();
+
+      signed_transaction tx;
+
+      board_create_operation create;
+
+      create.signatory = "alice";
+      create.founder = "alice";
+      create.name = "aliceopenboard";
+      create.board_type = BOARD;
+      create.board_privacy = OPEN_BOARD;
+      create.board_public_key = string( alice_public_posting_key );
+      create.json = "{\"json\":\"valid\"}";
+      create.json_private = "{\"json\":\"valid\"}";
+      create.details = "details";
+      create.url = "www.url.com";
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "bob";
+      create.founder = "bob";
+      create.name = "bobpublicboard";
+      create.board_privacy = PUBLIC_BOARD;
+      create.board_public_key = string( bob_public_posting_key );
+      
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "candice";
+      create.founder = "candice";
+      create.name = "candiceprivateboard";
+      create.board_privacy = PRIVATE_BOARD;
+      create.board_public_key = string( candice_public_posting_key );
+      
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "dan";
+      create.founder = "dan";
+      create.name = "danexclusiveboard";
+      create.board_privacy = EXCLUSIVE_BOARD;
+      create.board_public_key = string( dan_public_posting_key );
+      
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.board = "aliceopenboard";
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "ipsum";
+      comment.json = "{\"json\":\"valid\"}";
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+      comment.options = options;
+      comment.validate();
+
+      tx.operations.push_back( comment );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "bob";
+      comment.author = "bob";
+      comment.board = "bobpublicboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "candice";
+      comment.author = "candice";
+      comment.board = "candiceprivateboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "dan";
+      comment.author = "dan";
+      comment.board = "danexclusiveboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now() + MIN_BOARD_UPDATE_INTERVAL );
+
+      board_update_operation update;
+
+      update.signatory = "alice";
+      update.account = "alice";
+      update.board = "aliceopenboard";
+      update.board_type = BOARD;
+      update.board_privacy = OPEN_BOARD;
+      update.board_public_key = string( alice_public_posting_key );
+      update.json = "{\"json\":\"valid\"}";
+      update.json_private = "{\"json\":\"valid\"}";
+      update.details = "updated details";
+      update.url = "www.newurl.com";
+      update.pinned_author = "alice";
+      update.pinned_permlink = "lorem";
+      update.validate();
+
+      tx.operations.push_back( update );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "aliceopenboard" );
+      BOOST_REQUIRE( board_itr->founder == update.account );
+      BOOST_REQUIRE( board_itr->name == update.board );
+      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
+      BOOST_REQUIRE( board_itr->details == update.details );
+      BOOST_REQUIRE( board_itr->url == update.url );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update.signatory = "bob";
+      update.account = "bob";
+      update.pinned_author = "bob";
+      update.board = "bobpublicboard";
+      update.board_privacy = PUBLIC_BOARD;
+      update.board_public_key = string( bob_public_posting_key );
+      update.validate();
+
+      tx.operations.push_back( update );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "bobpublicboard" );
+      BOOST_REQUIRE( board_itr->founder == update.account );
+      BOOST_REQUIRE( board_itr->name == update.board );
+      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
+      BOOST_REQUIRE( board_itr->details == update.details );
+      BOOST_REQUIRE( board_itr->url == update.url );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update.signatory = "candice";
+      update.account = "candice";
+      update.pinned_author = "candice";
+      update.board = "candiceprivateboard";
+      update.board_privacy = PRIVATE_BOARD;
+      update.board_public_key = string( candice_public_posting_key );
+      update.validate();
+
+      tx.operations.push_back( update );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "candiceprivateboard" );
+      BOOST_REQUIRE( board_itr->founder == update.account );
+      BOOST_REQUIRE( board_itr->name == update.board );
+      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
+      BOOST_REQUIRE( board_itr->details == update.details );
+      BOOST_REQUIRE( board_itr->url == update.url );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update.signatory = "dan";
+      update.account = "dan";
+      update.pinned_author = "dan";
+      update.board = "danexclusiveboard";
+      update.board_privacy = EXCLUSIVE_BOARD;
+      update.board_public_key = string( dan_public_posting_key );
+      update.validate();
+
+      tx.operations.push_back( update );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "danexclusiveboard" );
+      BOOST_REQUIRE( board_itr->founder == update.account );
+      BOOST_REQUIRE( board_itr->name == update.board );
+      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
+      BOOST_REQUIRE( board_itr->details == update.details );
+      BOOST_REQUIRE( board_itr->url == update.url );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder board update sequence" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when board update before MIN_BOARD_UPDATE_INTERVAL has passed" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now() + MIN_BOARD_UPDATE_INTERVAL - BLOCK_INTERVAL );
+
+      update.details = "even more updated details";
+
+      tx.operations.push_back( update );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board update before MIN_BOARD_UPDATE_INTERVAL has passed" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: success after MIN_BOARD_UPDATE_INTERVAL has passed" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_block();
+
+      tx.operations.push_back( update );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      auto board_itr = board_idx.find( "danexclusiveboard" );
+      BOOST_REQUIRE( board_itr->founder == update.account );
+      BOOST_REQUIRE( board_itr->name == update.board );
+      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
+      BOOST_REQUIRE( board_itr->details == update.details );
+      BOOST_REQUIRE( board_itr->url == update.url );
+      BOOST_REQUIRE( board_itr->created == now() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: success after MIN_BOARD_UPDATE_INTERVAL has passed" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when board name already exists" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "elon";
+      create.founder = "elon";
+      create.name = "aliceopenboard";
+
+      tx.operations.push_back( create );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board name already exists" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: BOARD UPDATE OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( board_management_sequence_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: BOARD MANAGEMENT OPERATION SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder invite members" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      signed_transaction tx;
+
+      board_create_operation create;
+
+      create.signatory = "alice";
+      create.founder = "alice";
+      create.name = "aliceopenboard";
+      create.board_type = BOARD;
+      create.board_privacy = OPEN_BOARD;
+      create.board_public_key = string( alice_public_posting_key );
+      create.json = "{\"json\":\"valid\"}";
+      create.json_private = "{\"json\":\"valid\"}";
+      create.details = "details";
+      create.url = "www.url.com";
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_object& alice_board = db.get_board( "aliceopenboard" );
+      const board_member_object& alice_board_member = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( alice_board.founder == create.founder );
+      BOOST_REQUIRE( alice_board.board_type == create.board_type );
+      BOOST_REQUIRE( alice_board.board_privacy == create.board_privacy );
+      BOOST_REQUIRE( alice_board.board_public_key == create.board_public_key );
+
+      BOOST_REQUIRE( alice_board_member.founder == create.founder );
+      BOOST_REQUIRE( alice_board_member.is_administrator( create.founder ) );
+      BOOST_REQUIRE( alice_board_member.is_moderator( create.founder ) );
+      BOOST_REQUIRE( alice_board_member.is_member( create.founder ) );
+      BOOST_REQUIRE( alice_board_member.is_subscriber( create.founder ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "bob";
+      create.founder = "bob";
+      create.name = "bobpublicboard";
+      create.board_privacy = PUBLIC_BOARD;
+      create.board_public_key = string( bob_public_posting_key );
+
+      tx.operations.push_back( create );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_object& bob_board = db.get_board( "bobpublicboard" );
+      const board_member_object& bob_board_member = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( bob_board.founder == create.founder );
+      BOOST_REQUIRE( bob_board.board_type == create.board_type );
+      BOOST_REQUIRE( bob_board.board_privacy == create.board_privacy );
+      BOOST_REQUIRE( bob_board.board_public_key == create.board_public_key );
+
+      BOOST_REQUIRE( bob_board_member.founder == create.founder );
+      BOOST_REQUIRE( bob_board_member.is_administrator( create.founder ) );
+      BOOST_REQUIRE( bob_board_member.is_moderator( create.founder ) );
+      BOOST_REQUIRE( bob_board_member.is_member( create.founder ) );
+      BOOST_REQUIRE( bob_board_member.is_subscriber( create.founder ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "candice";
+      create.founder = "candice";
+      create.name = "candiceprivateboard";
+      create.board_privacy = PRIVATE_BOARD;
+      create.board_public_key = string( candice_public_posting_key );
+
+      tx.operations.push_back( create );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_object& candice_board = db.get_board( "candiceprivateboard" );
+      const board_member_object& candice_board_member = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( candice_board.founder == create.founder );
+      BOOST_REQUIRE( candice_board.board_type == create.board_type );
+      BOOST_REQUIRE( candice_board.board_privacy == create.board_privacy );
+      BOOST_REQUIRE( candice_board.board_public_key == create.board_public_key );
+
+      BOOST_REQUIRE( candice_board_member.founder == create.founder );
+      BOOST_REQUIRE( candice_board_member.is_administrator( create.founder ) );
+      BOOST_REQUIRE( candice_board_member.is_moderator( create.founder ) );
+      BOOST_REQUIRE( candice_board_member.is_member( create.founder ) );
+      BOOST_REQUIRE( candice_board_member.is_subscriber( create.founder ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      create.signatory = "dan";
+      create.founder = "dan";
+      create.name = "danexclusiveboard";
+      create.board_privacy = EXCLUSIVE_BOARD;
+      create.board_public_key = string( dan_public_posting_key );
+
+      tx.operations.push_back( create );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_object& dan_board = db.get_board( "danexclusiveboard" );
+      const board_member_object& dan_board_member = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( dan_board.founder == create.founder );
+      BOOST_REQUIRE( dan_board.board_type == create.board_type );
+      BOOST_REQUIRE( dan_board.board_privacy == create.board_privacy );
+      BOOST_REQUIRE( dan_board.board_public_key == create.board_public_key );
+
+      BOOST_REQUIRE( dan_board_member.founder == create.founder );
+      BOOST_REQUIRE( dan_board_member.is_administrator( create.founder ) );
+      BOOST_REQUIRE( dan_board_member.is_moderator( create.founder ) );
+      BOOST_REQUIRE( dan_board_member.is_member( create.founder ) );
+      BOOST_REQUIRE( dan_board_member.is_subscriber( create.founder ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( create );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      board_join_invite_operation invite;
+
+      invite.signatory = "alice";
+      invite.account = "alice";
+      invite.member = "elon";
+      invite.board = "aliceopenboard";
+      invite.message = "Hello";
+      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.invited = true;
+      invite.validate();
+
+      tx.operations.push_back( invite );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auto& invite_idx = db.get_index< board_join_invite_index >().indices().get< by_member_board >();
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopenboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.signatory = "bob";
+      invite.account = "bob";
+      invite.board = "bobpublicboard";
+      invite.encrypted_board_key = string( bob_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpublicboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.signatory = "candice";
+      invite.account = "candice";
+      invite.board = "candiceprivateboard";
+      invite.encrypted_board_key = string( candice_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivateboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.signatory = "dan";
+      invite.account = "dan";
+      invite.board = "danexclusiveboard";
+      invite.encrypted_board_key = string( dan_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusiveboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.signatory = "dan";
+      invite.account = "dan";
+      invite.member = "fred";
+      invite.board = "danexclusiveboard";
+      invite.encrypted_board_key = string( dan_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusiveboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder invite members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when non-member sends invites" );
+
+      invite.signatory = "elon";
+      invite.account = "elon";
+      invite.member = "george";
+      invite.board = "aliceopenboard";
+      invite.message = "Hello";
+      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.invited = true;
+
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "haz";
+      invite.board = "bobpublicboard";
+      invite.encrypted_board_key = string( bob_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "isabelle";
+      invite.board = "candiceprivateboard";
+      invite.encrypted_board_key = string( candice_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "jayme";
+      invite.board = "danexclusiveboard";
+      invite.encrypted_board_key = string( dan_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when non-member sends invites" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: board join request" );
+
+      board_join_request_operation request;
+
+      request.signatory = "fred";
+      request.account = "fred";
+      request.board = "aliceopenboard";
+      request.message = "Hello";
+      request.requested = true;
+      request.validate();
+
+      tx.operations.push_back( request );
+      tx.sign( fred_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auto& request_idx = db.get_index< board_join_request_index >().indices().get< by_account_board >();
+
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopenboard" ) );
+      BOOST_REQUIRE( request_itr != request_idx.end() );
+      BOOST_REQUIRE( request_itr->account == request.account );
+      BOOST_REQUIRE( request_itr->board == request.board );
+      BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      request.board = "bobpublicboard";
+   
+      tx.operations.push_back( request );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "bobpublicboard" ) );
+      BOOST_REQUIRE( request_itr != request_idx.end() );
+      BOOST_REQUIRE( request_itr->account == request.account );
+      BOOST_REQUIRE( request_itr->board == request.board );
+      BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      request.board = "candiceprivateboard";
+   
+      tx.operations.push_back( request );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivateboard" ) );
+      BOOST_REQUIRE( request_itr != request_idx.end() );
+      BOOST_REQUIRE( request_itr->account == request.account );
+      BOOST_REQUIRE( request_itr->board == request.board );
+      BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      request.board = "danexclusiveboard";
+   
+      tx.operations.push_back( request );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // No join requests for exclusive board
+
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "danexclusiveboard" ) );
+      BOOST_REQUIRE( request_itr == request_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: board join request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: accept invite by incoming member" );
+
+      board_invite_accept_operation invite_accept;
+
+      invite_accept.signatory = "elon";
+      invite_accept.account = "elon";
+      invite_accept.board = "aliceopenboard";
+      invite_accept.accepted = true;
+      invite_accept.validate();
+
+      tx.operations.push_back( invite_accept );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.is_member( "elon" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopenboard" ) );
+      BOOST_REQUIRE( invite_itr == invite_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite_accept.board = "bobpublicboard";
+
+      tx.operations.push_back( invite_accept );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_b.is_member( "elon" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpublicboard" ) );
+      BOOST_REQUIRE( invite_itr == invite_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite_accept.board = "candiceprivateboard";
+
+      tx.operations.push_back( invite_accept );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_c.is_member( "elon" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivateboard" ) );
+      BOOST_REQUIRE( invite_itr == invite_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite_accept.board = "danexclusiveboard";
+
+      tx.operations.push_back( invite_accept );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_d.is_member( "elon" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusiveboard" ) );
+      BOOST_REQUIRE( invite_itr == invite_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite_accept.signatory = "fred";
+      invite_accept.account = "fred";
+
+      tx.operations.push_back( invite_accept );
+      tx.sign( fred_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_d.is_member( "fred" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusiveboard" ) );
+      BOOST_REQUIRE( invite_itr == invite_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: accept invite by incoming member" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder accept join request" );
+
+      board_join_accept_operation join_accept;
+
+      join_accept.signatory = "alice";
+      join_accept.account = "alice";
+      join_accept.member = "fred";
+      join_accept.board = "aliceopenboard";
+      join_accept.encrypted_board_key = string( alice_public_posting_key );
+      join_accept.accepted = true;
+      join_accept.validate();
+
+      tx.operations.push_back( join_accept );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopenboard" ) );
+      BOOST_REQUIRE( request_itr == request_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      join_accept.signatory = "bob";
+      join_accept.account = "bob";
+      join_accept.board = "bobpublicboard";
+      join_accept.encrypted_board_key = string( bob_public_posting_key );
+
+      tx.operations.push_back( join_accept );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_b.is_member( "fred" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "bobpublicboard" ) );
+      BOOST_REQUIRE( request_itr == request_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      join_accept.signatory = "candice";
+      join_accept.account = "candice";
+      join_accept.board = "candiceprivateboard";
+      join_accept.encrypted_board_key = string( candice_public_posting_key );
+      
+      tx.operations.push_back( join_accept );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_c.is_member( "fred" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivateboard" ) );
+      BOOST_REQUIRE( request_itr == request_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder accept join request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: handling member sending invites" );
+
+      invite.signatory = "elon";
+      invite.account = "elon";
+      invite.member = "george";
+      invite.board = "aliceopenboard";
+      invite.message = "Hello";
+      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.invited = true;
+
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "george", "aliceopenboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "haz";
+      invite.board = "bobpublicboard";
+      invite.encrypted_board_key = string( bob_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "haz", "bobpublicboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "isabelle";
+      invite.board = "candiceprivateboard";
+      invite.encrypted_board_key = string( candice_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Member cannot send invitations
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "jayme";
+      invite.board = "danexclusiveboard";
+      invite.encrypted_board_key = string( dan_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Member cannot send invitations
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: handling member sending invites" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder add moderator" );
+
+      board_add_mod_operation mod;
+
+      mod.signatory = "alice";
+      mod.account = "alice";
+      mod.board = "aliceopenboard";
+      mod.moderator = "elon";
+      mod.added = true;
+      mod.validate();
+
+      tx.operations.push_back( mod );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.is_moderator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.signatory = "bob";
+      mod.account = "bob";
+      mod.board = "bobpublicboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_b.is_moderator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.signatory = "candice";
+      mod.account = "candice";
+      mod.board = "candiceprivateboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_c.is_moderator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.signatory = "dan";
+      mod.account = "dan";
+      mod.board = "danexclusiveboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_d.is_moderator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder add moderator" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder vote moderator" );
+
+      board_vote_mod_operation vote_mod;
+
+      vote_mod.signatory = "alice";
+      vote_mod.account = "alice";
+      vote_mod.board = "aliceopenboard";
+      vote_mod.moderator = "elon";
+      vote_mod.vote_rank = 1;
+      vote_mod.approved = true;
+      vote_mod.validate();
+
+      tx.operations.push_back( vote_mod );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      flat_map< account_name_type, share_type > m = board_member_a.mod_weight;
+      BOOST_REQUIRE( m[ elon.name ] > 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote_mod.signatory = "bob";
+      vote_mod.account = "bob";
+      vote_mod.board = "bobpublicboard";
+
+      tx.operations.push_back( vote_mod );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      m = board_member_b.mod_weight;
+      BOOST_REQUIRE( m[ elon.name ] > 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote_mod.signatory = "candice";
+      vote_mod.account = "candice";
+      vote_mod.board = "candiceprivateboard";
+
+      tx.operations.push_back( vote_mod );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      m = board_member_c.mod_weight;
+      BOOST_REQUIRE( m[ elon.name ] > 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote_mod.signatory = "dan";
+      vote_mod.account = "dan";
+      vote_mod.board = "danexclusiveboard";
+
+      tx.operations.push_back( vote_mod );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      m = board_member_d.mod_weight;
+      BOOST_REQUIRE( m[ elon.name ] > 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder vote moderator" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: handling moderator sending invites and failure when repeated invite" );
+
+      invite.signatory = "elon";
+      invite.account = "elon";
+      invite.member = "george";
+      invite.board = "aliceopenboard";
+      invite.message = "Hello";
+      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.invited = true;
+
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "haz";
+      invite.board = "bobpublicboard";
+      invite.encrypted_board_key = string( bob_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "isabelle";
+      invite.board = "candiceprivateboard";
+      invite.encrypted_board_key = string( candice_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "isabelle", "candiceprivateboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "jayme";
+      invite.board = "danexclusiveboard";
+      invite.encrypted_board_key = string( dan_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Member cannot send invitations
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: handling moderator sending invites and failure when repeated invite" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder add administrator" );
+
+      board_add_admin_operation admin;
+
+      admin.signatory = "alice";
+      admin.account = "alice";
+      admin.board = "aliceopenboard";
+      admin.admin = "elon";
+      admin.added = true;
+      admin.validate();
+
+      tx.operations.push_back( admin );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.is_administrator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      admin.signatory = "bob";
+      admin.account = "bob";
+      admin.board = "bobpublicboard";
+
+      tx.operations.push_back( admin );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_b.is_administrator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      admin.signatory = "candice";
+      admin.account = "candice";
+      admin.board = "candiceprivateboard";
+
+      tx.operations.push_back( admin );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_c.is_administrator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      admin.signatory = "dan";
+      admin.account = "dan";
+      admin.board = "danexclusiveboard";
+
+      tx.operations.push_back( admin );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_d.is_administrator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder add administrator" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: handling administrators sending invites and failure when repeated invite" );
+
+      invite.signatory = "elon";
+      invite.account = "elon";
+      invite.member = "george";
+      invite.board = "aliceopenboard";
+      invite.message = "Hello";
+      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.invited = true;
+
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "haz";
+      invite.board = "bobpublicboard";
+      invite.encrypted_board_key = string( bob_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "isabelle";
+      invite.board = "candiceprivateboard";
+      invite.encrypted_board_key = string( candice_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "jayme";
+      invite.board = "danexclusiveboard";
+      invite.encrypted_board_key = string( dan_public_posting_key );
+   
+      tx.operations.push_back( invite );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto invite_itr = invite_idx.find( boost::make_tuple( "jayme", "danexclusiveboard" ) );
+      BOOST_REQUIRE( invite_itr != invite_idx.end() );
+      BOOST_REQUIRE( invite_itr->account == invite.account );
+      BOOST_REQUIRE( invite_itr->member == invite.member );
+      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: handling moderator sending invites and failure when repeated invite" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment creation handling before becoming members" );
+
+      comment_operation comment;
+
+      comment.signatory = "george";
+      comment.author = "george";
+      comment.permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.board = "aliceopenboard";
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "lorem";
+      comment.json = "{\"json\":\"valid\"}";
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+      comment.options = options;
+      comment.validate();
+
+      tx.operations.push_back( comment );
+      tx.sign( george_private_posting_key, db.get_chain_id() );       // Non-members can create posts in open board
+      db.push_transaction( tx, 0 );
+
+      const comment_object& com = db.get_comment( "george", string( "lorem" ) );
+      BOOST_REQUIRE( com.author == "george" );
+      BOOST_REQUIRE( com.board == "aliceopenboard" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "haz";
+      comment.author = "haz";
+      comment.board = "bobpublicboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "isabelle";
+      comment.author = "isabelle";
+      comment.board = "candiceprivateboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "jayme";
+      comment.author = "jayme";
+      comment.board = "danexclusiveboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.board = "aliceopenboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "bob";
+      comment.author = "bob";
+      comment.board = "bobpublicboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_object& bob_comment = db.get_comment( "bob", string( "lorem" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "candice";
+      comment.author = "candice";
+      comment.board = "candiceprivateboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_object& candice_comment = db.get_comment( "candice", string( "lorem" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "dan";
+      comment.author = "dan";
+      comment.board = "danexclusiveboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_object& dan_comment = db.get_comment( "dan", string( "lorem" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling before becoming members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment vote handling before becoming members" );
+
+      vote_operation vote;
+
+      vote.signatory = "george";
+      vote.voter = "george";
+      vote.author = "alice";
+      vote.permlink = "lorem";
+      vote.weight = PERCENT_100;
+      vote.interface = INIT_ACCOUNT;
+      vote.validate();
+      
+      tx.operations.push_back( vote );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_vote_object& george_vote = db.get_comment_vote( "george", alice_comment.id );
+      BOOST_REQUIRE( george_vote.voter == vote.voter );
+      BOOST_REQUIRE( george_vote.comment == alice_comment.id );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "haz";
+      vote.voter = "haz";
+      vote.author = "bob";
+
+      tx.operations.push_back( vote );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_vote_object& haz_vote = db.get_comment_vote( "haz", bob_comment.id );
+      BOOST_REQUIRE( haz_vote.voter == vote.voter );
+      BOOST_REQUIRE( haz_vote.comment == bob_comment.id );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "isabelle";
+      vote.voter = "isabelle";
+      vote.author = "candice";
+
+      tx.operations.push_back( vote );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot vote on posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "jayme";
+      vote.voter = "jayme";
+      vote.author = "dan";
+
+      tx.operations.push_back( vote );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot vote on posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment vote handling before becoming members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment view handling before becoming members" );
+
+      view_operation view;
+
+      view.signatory = "george";
+      view.viewer = "george";
+      view.author = "alice";
+      view.permlink = "lorem";
+      view.interface = INIT_ACCOUNT;
+      view.supernode = INIT_ACCOUNT;
+      view.viewed = true;
+      view.validate();
+      
+      tx.operations.push_back( view );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_view_object& george_view = db.get_comment_view( "george", alice_comment.id );
+      BOOST_REQUIRE( george_view.viewer == view.viewer );
+      BOOST_REQUIRE( george_view.comment == alice_comment.id );
+      BOOST_REQUIRE( george_view.supernode == view.supernode );
+      BOOST_REQUIRE( george_view.interface == view.interface );
+      BOOST_REQUIRE( george_view.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      view.signatory = "haz";
+      view.viewer = "haz";
+      view.author = "bob";
+
+      tx.operations.push_back( view );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_view_object& haz_view = db.get_comment_view( "haz", bob_comment.id );
+      BOOST_REQUIRE( haz_view.viewer == view.viewer );
+      BOOST_REQUIRE( haz_view.comment == bob_comment.id );
+      BOOST_REQUIRE( haz_view.supernode == view.supernode );
+      BOOST_REQUIRE( haz_view.interface == view.interface );
+      BOOST_REQUIRE( haz_view.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      view.signatory = "isabelle";
+      view.viewer = "isabelle";
+      view.author = "candice";
+
+      tx.operations.push_back( view );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot view posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      view.signatory = "jayme";
+      view.viewer = "jayme";
+      view.author = "dan";
+
+      tx.operations.push_back( view );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot view posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment view handling before becoming members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment share handling before becoming members" );
+
+      share_operation share;
+
+      share.signatory = "george";
+      share.sharer = "george";
+      share.author = "alice";
+      share.permlink = "lorem";
+      share.reach = FOLLOW_FEED;
+      share.interface = INIT_ACCOUNT;
+      share.shared = true;
+      share.validate();
+      
+      tx.operations.push_back( share );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_share_object& george_share = db.get_comment_share( "george", alice_comment.id );
+      BOOST_REQUIRE( george_share.sharer == share.sharer );
+      BOOST_REQUIRE( george_share.comment == alice_comment.id );
+      BOOST_REQUIRE( george_share.interface == share.interface );
+      BOOST_REQUIRE( george_share.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      share.signatory = "haz";
+      share.sharer = "haz";
+      share.author = "bob";
+
+      tx.operations.push_back( share );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_share_object& haz_share = db.get_comment_share( "haz", bob_comment.id );
+      BOOST_REQUIRE( haz_share.sharer == share.sharer );
+      BOOST_REQUIRE( haz_share.comment == bob_comment.id );
+      BOOST_REQUIRE( haz_share.interface == share.interface );
+      BOOST_REQUIRE( haz_share.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      share.signatory = "isabelle";
+      share.sharer = "isabelle";
+      share.author = "candice";
+
+      tx.operations.push_back( share );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot share posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      share.signatory = "jayme";
+      share.sharer = "jayme";
+      share.author = "dan";
+
+      tx.operations.push_back( share );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot share posts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment share handling before becoming members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment creation handling by members" );
+
+      board_invite_accept_operation accept;
+
+      accept.signatory = "george";
+      accept.account = "george";
+      accept.board = "aliceopenboard";
+      accept.accepted = true;
+      accept.validate();
+
+      tx.operations.push_back( accept );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept.signatory = "haz";
+      accept.account = "haz";
+      accept.board = "bobpublicboard";
+
+      tx.operations.push_back( accept );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept.signatory = "isabelle";
+      accept.account = "isabelle";
+      accept.board = "candiceprivateboard";
+
+      tx.operations.push_back( accept );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept.signatory = "jayme";
+      accept.account = "jayme";
+      accept.board = "danexclusiveboard";
+
+      tx.operations.push_back( accept );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now() + MIN_ROOT_COMMENT_INTERVAL );
+
+      comment_operation comment;
+
+      comment.signatory = "george";
+      comment.author = "george";
+      comment.board = "aliceopenboard";
+      comment.permlink = "ipsum";
+
+      tx.operations.push_back( comment );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_object& george_comment = db.get_comment( "george", string( "ipsum" ) );
+      BOOST_REQUIRE( george_comment.author == "george" );
+      BOOST_REQUIRE( george_comment.board == "aliceopenboard" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "haz";
+      comment.author = "haz";
+      comment.board = "bobpublicboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_object& haz_comment = db.get_comment( "haz", string( "ipsum" ) );
+      BOOST_REQUIRE( haz_comment.author == "haz" );
+      BOOST_REQUIRE( haz_comment.board == "bobpublicboard" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "isabelle";
+      comment.author = "isabelle";
+      comment.board = "candiceprivateboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_object& isabelle_comment = db.get_comment( "isabelle", string( "ipsum" ) );
+      BOOST_REQUIRE( isabelle_comment.author == "isabelle" );
+      BOOST_REQUIRE( isabelle_comment.board == "candiceprivateboard" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment.signatory = "jayme";
+      comment.author = "jayme";
+      comment.board = "danexclusiveboard";
+
+      tx.operations.push_back( comment );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_object& jayme_comment = db.get_comment( "jayme", string( "ipsum" ) );
+      BOOST_REQUIRE( jayme_comment.author == "jayme" );
+      BOOST_REQUIRE( jayme_comment.board == "danexclusiveboard" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling by members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment vote handling by members" );
+
+      vote.signatory = "george";
+      vote.voter = "george";
+      vote.author = "george";
+      vote.permlink = "ipsum";
+      
+      tx.operations.push_back( vote );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_vote_object& george_vote = db.get_comment_vote( "george", george_comment.id );
+      BOOST_REQUIRE( george_vote.voter == vote.voter );
+      BOOST_REQUIRE( george_vote.comment == george_comment.id );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "haz";
+      vote.voter = "haz";
+      vote.author = "haz";
+
+      tx.operations.push_back( vote );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_vote_object& haz_vote = db.get_comment_vote( "haz", haz_comment.id );
+      BOOST_REQUIRE( haz_vote.voter == vote.voter );
+      BOOST_REQUIRE( haz_vote.comment == haz_comment.id );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "isabelle";
+      vote.voter = "isabelle";
+      vote.author = "isabelle";
+
+      tx.operations.push_back( vote );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_vote_object& isabelle_vote = db.get_comment_vote( "isabelle", isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_vote.voter == vote.voter );
+      BOOST_REQUIRE( isabelle_vote.comment == isabelle_comment.id );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "jayme";
+      vote.voter = "jayme";
+      vote.author = "jayme";
+
+      tx.operations.push_back( vote );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_vote_object& jayme_vote = db.get_comment_vote( "jayme", jayme_comment.id );
+      BOOST_REQUIRE( jayme_vote.voter == vote.voter );
+      BOOST_REQUIRE( jayme_vote.comment == jayme_comment.id );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment vote handling by members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment view handling by members" );
+
+      view.signatory = "george";
+      view.viewer = "george";
+      view.author = "george";
+      view.permlink = "lorem";
+
+      tx.operations.push_back( view );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_view_object& george_view = db.get_comment_view( "george", george_comment.id );
+      BOOST_REQUIRE( george_view.viewer == view.viewer );
+      BOOST_REQUIRE( george_view.comment == george_comment.id );
+      BOOST_REQUIRE( george_view.supernode == view.supernode );
+      BOOST_REQUIRE( george_view.interface == view.interface );
+      BOOST_REQUIRE( george_view.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      view.signatory = "haz";
+      view.viewer = "haz";
+      view.author = "haz";
+
+      tx.operations.push_back( view );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_view_object& haz_view = db.get_comment_view( "haz", haz_comment.id );
+      BOOST_REQUIRE( haz_view.viewer == view.viewer );
+      BOOST_REQUIRE( haz_view.comment == haz_comment.id );
+      BOOST_REQUIRE( haz_view.supernode == view.supernode );
+      BOOST_REQUIRE( haz_view.interface == view.interface );
+      BOOST_REQUIRE( haz_view.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      view.signatory = "isabelle";
+      view.viewer = "isabelle";
+      view.author = "isabelle";
+
+      tx.operations.push_back( view );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_view_object& isabelle_view = db.get_comment_view( "isabelle", isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_view.viewer == view.viewer );
+      BOOST_REQUIRE( isabelle_view.comment == isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_view.supernode == view.supernode );
+      BOOST_REQUIRE( isabelle_view.interface == view.interface );
+      BOOST_REQUIRE( isabelle_view.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      view.signatory = "jayme";
+      view.viewer = "jayme";
+      view.author = "jayme";
+
+      tx.operations.push_back( view );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_view_object& jayme_view = db.get_comment_view( "jayme", jayme_comment.id );
+      BOOST_REQUIRE( jayme_view.viewer == view.viewer );
+      BOOST_REQUIRE( jayme_view.comment == jayme_comment.id );
+      BOOST_REQUIRE( jayme_view.supernode == view.supernode );
+      BOOST_REQUIRE( jayme_view.interface == view.interface );
+      BOOST_REQUIRE( jayme_view.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment view handling by members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment share handling by members" );
+
+      share_operation share;
+
+      share.signatory = "george";
+      share.sharer = "george";
+      share.author = "george";
+      share.permlink = "ipsum";
+      
+      tx.operations.push_back( share );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_share_object& george_share = db.get_comment_share( "george", george_comment.id );
+      BOOST_REQUIRE( george_share.sharer == share.sharer );
+      BOOST_REQUIRE( george_share.comment == george_comment.id );
+      BOOST_REQUIRE( george_share.interface == share.interface );
+      BOOST_REQUIRE( george_share.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      share.signatory = "haz";
+      share.sharer = "haz";
+      share.author = "haz";
+
+      tx.operations.push_back( share );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_share_object& haz_share = db.get_comment_share( "haz", haz_comment.id );
+      BOOST_REQUIRE( haz_share.sharer == share.sharer );
+      BOOST_REQUIRE( haz_share.comment == haz_comment.id );
+      BOOST_REQUIRE( haz_share.interface == share.interface );
+      BOOST_REQUIRE( haz_share.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      share.signatory = "isabelle";
+      share.sharer = "isabelle";
+      share.author = "isabelle";
+
+      tx.operations.push_back( share );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_share_object& isabelle_share = db.get_comment_share( "isabelle", isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_share.sharer == share.sharer );
+      BOOST_REQUIRE( isabelle_share.comment == isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_share.interface == share.interface );
+      BOOST_REQUIRE( isabelle_share.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      share.signatory = "jayme";
+      share.sharer = "jayme";
+      share.author = "jayme";
+
+      tx.operations.push_back( share );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const comment_share_object& george_share = db.get_comment_share( "george", george_comment.id );
+      BOOST_REQUIRE( george_share.sharer == share.sharer );
+      BOOST_REQUIRE( george_share.comment == george_comment.id );
+      BOOST_REQUIRE( george_share.interface == share.interface );
+      BOOST_REQUIRE( george_share.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment share handling by members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: moderator tag by board moderator" );
+
+      moderation_tag_operation tag;
+
+      tag.signatory = "elon";
+      tag.moderator = "elon";
+      tag.author = "george";
+      tag.permlink = "ipsum";
+      tag.tags.push_back( "nsfw" );
+      tag.rating = MATURE;
+      tag.details = "Post is NSFW";
+      tag.interface = INIT_ACCOUNT;
+      tag.filter = false;
+      tag.applied = true;
+      tag.validate();
+
+      tx.operations.push_back( mod );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auto& tag_idx = db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
+
+      auto tag_itr = tag_idx.find( std::make_tuple( george_comment.id, "elon" ) );
+      BOOST_REQUIRE( tag_itr != tag_idx.end() );
+      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
+      BOOST_REQUIRE( tag_itr->filter == tag.filter );
+      BOOST_REQUIRE( tag_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tag.author = "haz";
+
+      tx.operations.push_back( mod );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto tag_itr = tag_idx.find( std::make_tuple( haz_comment.id, "elon" ) );
+      BOOST_REQUIRE( tag_itr != tag_idx.end() );
+      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
+      BOOST_REQUIRE( tag_itr->filter == tag.filter );
+      BOOST_REQUIRE( tag_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tag.author = "isabelle";
+
+      tx.operations.push_back( mod );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto tag_itr = tag_idx.find( std::make_tuple( isabelle_comment.id, "elon" ) );
+      BOOST_REQUIRE( tag_itr != tag_idx.end() );
+      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
+      BOOST_REQUIRE( tag_itr->filter == tag.filter );
+      BOOST_REQUIRE( tag_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tag.author = "jayme";
+
+      tx.operations.push_back( mod );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto tag_itr = tag_idx.find( std::make_tuple( jayme_comment.id, "elon" ) );
+      BOOST_REQUIRE( tag_itr != tag_idx.end() );
+      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
+      BOOST_REQUIRE( tag_itr->filter == tag.filter );
+      BOOST_REQUIRE( tag_itr->created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: moderator tag by board moderator" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: administrator add moderator" );
+
+      board_add_mod_operation mod;
+
+      mod.signatory = "elon";
+      mod.account = "elon";
+      mod.board = "aliceopenboard";
+      mod.moderator = "fred";
+      mod.added = true;
+      mod.validate();
+
+      tx.operations.push_back( mod );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.is_moderator( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.board = "bobpublicboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_b.is_moderator( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.board = "candiceprivateboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_c.is_moderator( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.board = "danexclusiveboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_d.is_moderator( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: administrator add moderator" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: administrator update board" );
+
+      board_update_operation update;
+
+      update.signatory = "elon";
+      update.account = "elon";
+      update.board = "aliceopenboard";
+      update.board_type = BOARD;
+      update.board_privacy = OPEN_BOARD;
+      update.board_public_key = string( alice_public_posting_key );
+      update.json = "{\"json\":\"valid\"}";
+      update.json_private = "{\"json\":\"valid\"}";
+      update.details = "updated details";
+      update.url = "www.newurl.com";
+      update.pinned_author = "alice";
+      update.pinned_permlink = "lorem";
+      update.validate();
+
+      tx.operations.push_back( update );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_object& alice_board = db.get_board( "aliceopenboard" );
+      BOOST_REQUIRE( alice_board.founder == update.account );
+      BOOST_REQUIRE( alice_board.name == update.board );
+      BOOST_REQUIRE( alice_board.board_privacy == update.board_privacy );
+      BOOST_REQUIRE( alice_board.details == update.details );
+      BOOST_REQUIRE( alice_board.url == update.url );
+      BOOST_REQUIRE( alice_board.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update.pinned_author = "bob";
+      update.board = "bobpublicboard";
+      update.board_privacy = PUBLIC_BOARD;
+      update.board_public_key = string( bob_public_posting_key );
+      update.validate();
+
+      tx.operations.push_back( update );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_object& bob_board = db.get_board( "bobpublicboard" );
+      BOOST_REQUIRE( bob_board.founder == update.account );
+      BOOST_REQUIRE( bob_board.name == update.board );
+      BOOST_REQUIRE( bob_board.board_privacy == update.board_privacy );
+      BOOST_REQUIRE( bob_board.details == update.details );
+      BOOST_REQUIRE( bob_board.url == update.url );
+      BOOST_REQUIRE( bob_board.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update.pinned_author = "candice";
+      update.board = "candiceprivateboard";
+      update.board_privacy = PRIVATE_BOARD;
+      update.board_public_key = string( candice_public_posting_key );
+      update.validate();
+
+      tx.operations.push_back( update );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_object& candice_board = db.get_board( "candiceprivateboard" );
+      BOOST_REQUIRE( candice_board.founder == update.account );
+      BOOST_REQUIRE( candice_board.name == update.board );
+      BOOST_REQUIRE( candice_board.board_privacy == update.board_privacy );
+      BOOST_REQUIRE( candice_board.details == update.details );
+      BOOST_REQUIRE( candice_board.url == update.url );
+      BOOST_REQUIRE( candice_board.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update.pinned_author = "dan";
+      update.board = "danexclusiveboard";
+      update.board_privacy = EXCLUSIVE_BOARD;
+      update.board_public_key = string( dan_public_posting_key );
+      update.validate();
+
+      tx.operations.push_back( update );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_object& dan_board = db.get_board( "danexclusiveboard" );
+      BOOST_REQUIRE( dan_board.founder == update.account );
+      BOOST_REQUIRE( dan_board.name == update.board );
+      BOOST_REQUIRE( dan_board.board_privacy == update.board_privacy );
+      BOOST_REQUIRE( dan_board.details == update.details );
+      BOOST_REQUIRE( dan_board.url == update.url );
+      BOOST_REQUIRE( dan_board.created == now() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: administrator update board" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove moderator" );
+
+      board_add_mod_operation mod;
+
+      mod.signatory = "alice";
+      mod.account = "alice";
+      mod.board = "aliceopenboard";
+      mod.moderator = "fred";
+      mod.added = false;
+      mod.validate();
+
+      tx.operations.push_back( mod );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
+      BOOST_REQUIRE( !board_member_a.is_moderator( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.signatory = "bob";
+      mod.account = "bob";
+      mod.board = "bobpublicboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
+      BOOST_REQUIRE( !board_member_a.is_moderator( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.signatory = "candice";
+      mod.account = "candice";
+      mod.board = "candiceprivateboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
+      BOOST_REQUIRE( !board_member_a.is_moderator( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      mod.signatory = "dan";
+      mod.account = "dan";
+      mod.board = "danexclusiveboard";
+
+      tx.operations.push_back( mod );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
+      BOOST_REQUIRE( !board_member_a.is_moderator( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder remove moderator" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove member" );
+
+      board_remove_member_operation remove;
+
+      remove.signatory = "alice";
+      remove.account = "alice";
+      remove.board = "aliceopenboard";
+      remove.member = "fred";
+      remove.validate();
+
+      tx.operations.push_back( remove );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( !board_member_a.is_member( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      remove.signatory = "bob";
+      remove.account = "bob";
+      remove.board = "bobpublicboard";
+
+      tx.operations.push_back( remove );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( !board_member_b.is_member( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      remove.signatory = "candice";
+      remove.account = "candice";
+      remove.board = "candiceprivateboard";
+
+      tx.operations.push_back( remove );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( !board_member_c.is_member( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      remove.signatory = "dan";
+      remove.account = "dan";
+      remove.board = "danexclusiveboard";
+
+      tx.operations.push_back( remove );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( !board_member_d.is_member( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder remove moderator" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: board subscription" );
+
+      board_subscribe_operation subscribe;
+
+      subscribe.signatory = "elon";
+      subscribe.account = "elon";
+      subscribe.board = "aliceopenboard";
+      subscribe.interface = INIT_ACCOUNT;
+      subscribe.added = true;
+      subscribe.subscribed = true;
+      subscribe.validate();
+
+      tx.operations.push_back( subscribe );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.is_subscriber( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      subscribe.board = "bobpublicboard";
+
+      tx.operations.push_back( subscribe );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_b.is_subscriber( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      subscribe.board = "candiceprivateboard";
+
+      tx.operations.push_back( subscribe );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_c.is_subscriber( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      subscribe.board = "danexclusiveboard";
+
+      tx.operations.push_back( subscribe );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_d.is_subscriber( "elon" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: board subscription" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder blacklist account" );
+
+      board_blacklist_operation blacklist;
+
+      blacklist.signatory = "alice";
+      blacklist.account = "alice";
+      blacklist.member = "fred";
+      blacklist.board = "aliceopenboard";
+      blacklist.validate();
+
+      tx.operations.push_back( blacklist );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.is_blacklisted( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      blacklist.signatory = "bob";
+      blacklist.account = "bob";
+      blacklist.board = "bobpublicboard";
+
+      tx.operations.push_back( blacklist );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_b.is_blacklisted( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      blacklist.signatory = "candice";
+      blacklist.account = "candice";
+      blacklist.board = "candiceprivateboard";
+
+      tx.operations.push_back( blacklist );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_c.is_blacklisted( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      blacklist.signatory = "dan";
+      blacklist.account = "dan";
+      blacklist.board = "danexclusiveboard";
+
+      tx.operations.push_back( blacklist );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_d.is_blacklisted( "fred" ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder blacklist account" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: transfer board ownership" );
+
+      board_transfer_ownership_operation transfer;
+
+      transfer.signatory = "alice";
+      transfer.account = "alice";
+      transfer.board = "aliceopenboard";
+      transfer.new_founder = "elon";
+      transfer.validate();
+
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
+      BOOST_REQUIRE( board_member_a.founder == "elon" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      transfer.signatory = "bob";
+      transfer.account = "bob";
+      transfer.board = "bobpublicboard";
+
+      tx.operations.push_back( transfer );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
+      BOOST_REQUIRE( board_member_b.founder == "elon" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      transfer.signatory = "candice";
+      transfer.account = "candice";
+      transfer.board = "candiceprivateboard";
+
+      tx.operations.push_back( transfer );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
+      BOOST_REQUIRE( board_member_c.founder == "elon" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      transfer.signatory = "dan";
+      transfer.account = "dan";
+      transfer.board = "danexclusiveboard";
+
+      tx.operations.push_back( transfer );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
+      BOOST_REQUIRE( board_member_d.founder == "elon" );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: transfer board ownership" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: BOARD MANAGEMENT OPERATION SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
 
 
 

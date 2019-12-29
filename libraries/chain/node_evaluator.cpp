@@ -400,6 +400,16 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       }
    }
 
+   const comment_object* pinned_post_ptr;
+   if( o.pinned_permlink.size() )
+   {
+      pinned_post_ptr = _db.find_comment( o.account, o.pinned_permlink );
+      FC_ASSERT( pinned_post_ptr != nullptr,
+         "Cannot find valid Pinned Post." );
+      FC_ASSERT( pinned_post_ptr->root == true,
+         "Pinned post must be a root comment." );
+   }
+
    _db.modify( account, [&]( account_object& a )
    {
       if( o.secure_public_key.size() )
@@ -436,6 +446,10 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       if ( o.json_private.size() > 0 )
       {
          from_string( a.json_private, o.json_private );
+      }
+      if( pinned_post_ptr != nullptr )
+      {
+         a.pinned_post = pinned_post_ptr->id;
       }
       a.deleted = o.deleted;
    });
@@ -4433,7 +4447,12 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
    
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    const governance_account_object* gov_ptr = _db.find_governance_account( o.moderator );
-   const board_object* board_ptr = _db.find_board( comment.board );
+
+   const board_object* board_ptr;
+   if( comment.board.size() )
+   {
+      board_ptr = _db.find_board( comment.board );
+   }
 
    if( board_ptr != nullptr || gov_ptr != nullptr )
    {
@@ -4443,53 +4462,54 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
 
       if( board_member_ptr == nullptr )     // no board, must be governance account
       {
-         FC_ASSERT( gov_ptr != nullptr, 
+         FC_ASSERT( gov_ptr != nullptr,
             "Account must be a governance account to create moderation tag." );
-         FC_ASSERT( gov_ptr->account == o.moderator, 
+         FC_ASSERT( gov_ptr->account == o.moderator,
             "Account must be a governance account to create moderation tag." );
       }
       else if( gov_ptr == nullptr )         // not governance account, must be moderator
       {
-         FC_ASSERT( board_member_ptr != nullptr, 
+         FC_ASSERT( board_member_ptr != nullptr,
             "Account must be a board moderator to create moderation tag." );
-         FC_ASSERT( board_member_ptr->is_moderator( o.moderator ), 
+         FC_ASSERT( board_member_ptr->is_moderator( o.moderator ),
             "Account must be a board moderator to create moderation tag." );
       }
       else
       {
-         FC_ASSERT( board_member_ptr->is_moderator( o.moderator ) || gov_ptr->account == o.moderator, 
+         FC_ASSERT( board_member_ptr->is_moderator( o.moderator ) || gov_ptr->account == o.moderator,
             "Account must be a board moderator or governance account to create moderation tag." );
       } 
    }
   
    FC_ASSERT( o.rating >= comment.rating,
       "Moderation Tag rating ${n} should be equal to or greater than author's rating ${r}.", ("n", o.rating)("r", comment.rating) );
+   
    const auto& mod_idx = _db.get_index< moderation_tag_index >().indices().get< by_moderator_comment >();
-   auto itr = mod_idx.find( boost::make_tuple( o.moderator, comment.id ) );
+   auto mod_itr = mod_idx.find( boost::make_tuple( o.moderator, comment.id ) );
    time_point now = _db.head_block_time();
 
-   if( itr != mod_idx.end() )     // Creating new moderation tag.
+   if( mod_itr != mod_idx.end() )     // Creating new moderation tag.
    {
-      FC_ASSERT( o.applied, 
-         "Moderation tag does not exist, Applied should be set to true to create new moderation tag.");
+      FC_ASSERT( o.applied,
+         "Moderation tag does not exist, Applied should be set to true to create new moderation tag." );
 
       _db.create< moderation_tag_object >( [&]( moderation_tag_object& mto )
       {
          mto.moderator = moderator.name;
          mto.comment = comment.id;
          mto.board = comment.board;
+
          for( tag_name_type t : o.tags )
          {
-            mto.tags.insert( t );
+            mto.tags.push_back( t );
          }
-
-         mto.rating = o.rating;
-         from_string( mto.details, o.details );
          if( o.interface.size() )
          {
             mto.interface = o.interface;
          }
-         
+
+         mto.rating = o.rating;
+         from_string( mto.details, o.details );
          mto.filter = o.filter;
          mto.last_update = now;
          mto.created = now;  
@@ -4499,25 +4519,25 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
    {
       if( o.applied )  // Editing existing moderation tag
       {
-         _db.modify( *itr, [&]( moderation_tag_object& mto )
+         _db.modify( *mod_itr, [&]( moderation_tag_object& mto )
          {
             for( tag_name_type t : o.tags )
             {
-               mto.tags.insert( t );
+               mto.tags.push_back( t );
             }
-            mto.rating = o.rating;
-            from_string( mto.details, o.details );
             if( o.interface.size() )
             {
                mto.interface = o.interface;
             }
+            mto.rating = o.rating;
+            from_string( mto.details, o.details );
             mto.filter = o.filter;
             mto.last_update = now;
          });
       }
       else    // deleting moderation tag
       {
-         _db.remove( *itr );
+         _db.remove( *mod_itr );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -4538,7 +4558,8 @@ void board_create_evaluator::do_apply( const board_create_operation& o )
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& founder = _db.get_account( o.founder ); 
+
+   const account_object& founder = _db.get_account( o.founder );
    time_point now = _db.head_block_time();
    FC_ASSERT( now > founder.last_board_created + MIN_BOARD_CREATE_INTERVAL,
       "Founders can only create one board per day." );
@@ -4603,11 +4624,25 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
    }
    const board_object& board = _db.get_board( o.board ); 
    const account_object& account = _db.get_account( o.account );
+
    time_point now = _db.head_block_time();
    FC_ASSERT( now > board.last_board_update + MIN_BOARD_UPDATE_INTERVAL, 
       "Boards can only be updated once per 10 minutes." );
    const board_member_object& board_member = _db.get_board_member( o.board );
-   FC_ASSERT( board_member.is_administrator(account.name), 
+
+   const comment_object* pinned_post_ptr;
+   if( o.pinned_author.size() || o.pinned_permlink.size() )
+   {
+      pinned_post_ptr = _db.find_comment( o.pinned_author, o.pinned_permlink );
+      FC_ASSERT( pinned_post_ptr != nullptr,
+         "Cannot find valid Pinned Post." );
+      FC_ASSERT( pinned_post_ptr->root == true,
+         "Pinned post must be a root comment." );
+      FC_ASSERT( pinned_post_ptr->board == o.board,
+         "Pinned post must be contained within the board." );
+   }
+
+   FC_ASSERT( board_member.is_administrator( account.name ), 
       "Only administrators of the board can update it.");
 
    if( o.board_privacy == OPEN_BOARD )
@@ -4636,6 +4671,11 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
       from_string( bo.url, o.url );
       bo.board_public_key = public_key_type( o.board_public_key );
       bo.last_board_update = now;
+
+      if( pinned_post_ptr != nullptr )
+      {
+         bo.pinned_post = pinned_post_ptr->id;
+      }
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -4736,7 +4776,9 @@ void board_add_mod_evaluator::do_apply( const board_add_mod_operation& o )
    const account_object& moderator = _db.get_account( o.moderator );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
-   FC_ASSERT( board_member.is_member(moderator.name), 
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( board_member.is_member( moderator.name ), 
       "Account: ${a} must be a member before promotion to moderator of Board: ${b}.", ("a", o.moderator)("b", o.board));
    
    if( o.added || o.account != o.moderator )     // Account can remove itself from board administrators.
@@ -4766,13 +4808,15 @@ void board_add_mod_evaluator::do_apply( const board_add_mod_operation& o )
 
    _db.modify( board_member, [&]( board_member_object& bmo )
    {
-      if(o.added)
+      if( o.added )
       {
-         bmo.moderators.insert(moderator.name);
+         bmo.moderators.insert( moderator.name );
+         bmo.last_update = now;
       }
       else 
       {
-         bmo.moderators.erase(moderator.name);
+         bmo.moderators.erase( moderator.name );
+         bmo.last_update = now;
       }
    });
 
@@ -4793,10 +4837,11 @@ void board_add_admin_evaluator::do_apply( const board_add_admin_operation& o )
    const account_object& administrator = _db.get_account( o.admin ); 
    const board_object& board = _db.get_board( o.board ); 
    const board_member_object& board_member = _db.get_board_member( o.board );
+   time_point now = _db.head_block_time();
 
-   FC_ASSERT( board_member.is_member(administrator.name), 
+   FC_ASSERT( board_member.is_member( administrator.name ), 
       "Account: ${a} must be a member before promotion to administrator of Board: ${b}.", ("a", o.admin)("b", o.board));
-   FC_ASSERT( board_member.is_moderator(administrator.name), 
+   FC_ASSERT( board_member.is_moderator( administrator.name ), 
       "Account: ${a} must be a moderator before promotion to administrator of Board: ${b}.", ("a", o.admin)("b", o.board));
 
    if( o.added || account.name != administrator.name )     // Account can remove itself from board administrators.  
@@ -4824,10 +4869,12 @@ void board_add_admin_evaluator::do_apply( const board_add_admin_operation& o )
       if( o.added )
       {
          bmo.administrators.insert( administrator.name );
+         bmo.last_update = now;
       }
       else 
       {
          bmo.administrators.erase( administrator.name );
+         bmo.last_update = now;
       }
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -4850,16 +4897,28 @@ void board_transfer_ownership_evaluator::do_apply( const board_transfer_ownershi
    const board_member_object& board_member = _db.get_board_member( o.board );
 
    FC_ASSERT( board.founder == account.name && board_member.founder == account.name,
-      "Only the founder of the board can transfer ownership.");
+      "Only the founder of the board can transfer ownership." );
+   FC_ASSERT( now > board.last_board_update + MIN_BOARD_UPDATE_INTERVAL, 
+      "Boards can only be updated once per 10 minutes." );
+
+   const account_permission_object& to_account_permissions = _db.get_account_permissions( o.new_founder );
+   const account_permission_object& from_account_permissions = _db.get_account_permissions( o.account );
+
+   FC_ASSERT( to_account_permissions.is_authorized_transfer( o.account ),
+      "Transfer is not authorized, due to recipient account's permisssions" );
+   FC_ASSERT( from_account_permissions.is_authorized_transfer( o.new_founder ),
+      "Transfer is not authorized, due to sender account's permisssions" );
 
    _db.modify( board, [&]( board_object& bo )
    {
       bo.founder = o.new_founder;
+      bo.last_board_update = now;
    });
 
    _db.modify( board_member, [&]( board_member_object& bmo )
    {
       bmo.founder = o.new_founder;
+      bmo.last_update = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -4927,6 +4986,9 @@ void board_join_invite_evaluator::do_apply( const board_join_invite_operation& o
       "Account: ${a} is already a member of the board: ${b}.", ("a", o.member)("b", o.board));
    FC_ASSERT( board_member.is_authorized_invite( account.name ), 
       "Account: ${a} is not authorised to send board: ${b} join invitations.", ("a", o.account)("b", o.board));
+
+   const account_permission_object& to_account_permissions = _db.get_account_permissions( o.member );
+   const account_permission_object& from_account_permissions = _db.get_account_permissions( o.account );
    
    time_point now = _db.head_block_time();
    const auto& key_idx = _db.get_index< board_member_key_index >().indices().get< by_member_board >();
@@ -4937,6 +4999,10 @@ void board_join_invite_evaluator::do_apply( const board_join_invite_operation& o
    {
       FC_ASSERT( o.invited, 
          "Board invite request does not exist, invited should be set to true." );
+      FC_ASSERT( to_account_permissions.is_authorized_transfer( o.account ),
+         "Invite is not authorized, due to recipient account's permisssions" );
+      FC_ASSERT( from_account_permissions.is_authorized_transfer( o.member ),
+         "Invite is not authorized, due to sender account's permisssions" );
 
       _db.create< board_join_invite_object >( [&]( board_join_invite_object& bjio )
       {
@@ -4980,7 +5046,10 @@ void board_join_accept_evaluator::do_apply( const board_join_accept_operation& o
    const account_object& member = _db.get_account( o.member );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
-   FC_ASSERT( !board_member.is_member( member.name ), "Account: ${a} is already a member of the board: ${b}.", ("a", o.member)("b", o.board));
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( !board_member.is_member( member.name ),
+      "Account: ${a} is already a member of the board: ${b}.", ("a", o.member)("b", o.board));
    FC_ASSERT( board_member.is_authorized_invite( account.name ), 
       "Account: ${a} is not authorized to accept join requests to the board: ${b}.", ("a", o.account)("b", o.board));    // Ensure Account is a moderator.
 
@@ -4996,7 +5065,8 @@ void board_join_accept_evaluator::do_apply( const board_join_accept_operation& o
    {
       _db.modify( board_member, [&]( board_member_object& bmo )
       {
-         bmo.members.insert(member.name);
+         bmo.members.insert( member.name );
+         bmo.last_update = now;
       });
       _db.create< board_member_key_object >( [&]( board_member_key_object& bmko )
       {
@@ -5023,11 +5093,13 @@ void board_invite_accept_evaluator::do_apply( const board_invite_accept_operatio
    const account_object& account = _db.get_account( o.account );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
+   time_point now = _db.head_block_time();
+
    FC_ASSERT( !board_member.is_member( account.name ), 
       "Account: ${a} is already a member of the board: ${b}.", ("a", o.account)("b", o.board));
    const auto& inv_idx = _db.get_index< board_join_invite_index >().indices().get< by_member_board >();
    auto itr = inv_idx.find( std::make_tuple( o.account, o.board ) );
-   FC_ASSERT( itr != inv_idx.end(), 
+   FC_ASSERT( itr != inv_idx.end(),
       "Board join invitation does not exist.");   // Ensure Invitation exists
    const board_join_invite_object& invite = *itr;
 
@@ -5039,6 +5111,7 @@ void board_invite_accept_evaluator::do_apply( const board_invite_accept_operatio
       _db.modify( board_member, [&]( board_member_object& bmo )
       {
          bmo.members.insert( account.name );
+         bmo.last_update = now;
       });
    }
    _db.remove( invite );
@@ -5059,6 +5132,7 @@ void board_remove_member_evaluator::do_apply( const board_remove_member_operatio
    const account_object& member = _db.get_account( o.member );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
+   time_point now = _db.head_block_time();
 
    FC_ASSERT( board_member.is_member( member.name ),
       "Account: ${a} is not a member of board: ${b}.", ("a", o.member)("b", o.board));
@@ -5080,6 +5154,7 @@ void board_remove_member_evaluator::do_apply( const board_remove_member_operatio
    _db.modify( board_member, [&]( board_member_object& bmo )
    {
       bmo.members.erase( member.name );
+      bmo.last_update = now;
    });
 
    auto key_itr = key_idx.find( std::make_tuple( o.member, o.board ) );
@@ -5093,7 +5168,6 @@ void board_remove_member_evaluator::do_apply( const board_remove_member_operatio
 
 void board_blacklist_evaluator::do_apply( const board_blacklist_operation& o )
 { try {
-   
    const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
@@ -5106,6 +5180,7 @@ void board_blacklist_evaluator::do_apply( const board_blacklist_operation& o )
    const account_object& member = _db.get_account( o.member );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
+   time_point now = _db.head_block_time();
    
    FC_ASSERT( board_member.is_authorized_blacklist( o.account ), 
       "Account: ${a} is not authorised to add or remove accounts from the blacklist of board: ${b}.", ("a", o.account)("b", o.board)); 
@@ -5128,6 +5203,7 @@ void board_blacklist_evaluator::do_apply( const board_blacklist_operation& o )
       {
          bmo.blacklist.erase( member.name );
       }
+      bmo.last_update = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
