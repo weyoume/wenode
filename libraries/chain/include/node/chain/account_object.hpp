@@ -51,11 +51,11 @@ namespace node { namespace chain {
 
          public_key_type                  companion_public_key;                  // Key used for encrypting posts for companion level visibility.
 
-         comment_id_type                  pinned_post;                        // Post pinned to the top of the account's profile. 
+         comment_id_type                  pinned_post;                           // Post pinned to the top of the account's profile. 
 
          account_name_type                proxy;                                 // Account that votes on behalf of this account
 
-         flat_set< account_name_type>     proxied;                               // Accounts that have set this account to be their proxy voter.
+         flat_set< account_name_type >    proxied;                               // Accounts that have set this account to be their proxy voter.
 
          account_name_type                registrar;                             // The name of the account that created the account;
 

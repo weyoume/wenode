@@ -7,6 +7,9 @@
 #include <fc/utf8.hpp>
 #include <fc/crypto/equihash.hpp>
 
+#include <regex> 
+
+
 namespace node { namespace protocol {
 
    inline void validate_account_name( const string& name )
@@ -47,8 +50,27 @@ namespace node { namespace protocol {
 
    inline void validate_permlink( const string& permlink )
    {
-      FC_ASSERT( permlink.size() < MAX_PERMLINK_LENGTH, "permlink is too long" );
-      FC_ASSERT( fc::is_utf8( permlink ), "permlink not formatted in UTF8" );
+      FC_ASSERT( permlink.size() < MAX_PERMLINK_LENGTH,
+         "permlink is too long" );
+      FC_ASSERT( fc::is_utf8( permlink ),
+         "permlink not formatted in UTF8" );
+   };
+
+   inline void validate_url( const string& url )
+   {
+      std::string pattern = "https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)";
+      std::regex url_regex( pattern );
+      FC_ASSERT( std::regex_match( url, url_regex ),
+         "URL is invalid" );
+   };
+
+   inline void validate_uuidv4( const string& uuidv4 )
+   {
+      std::string pattern = "/^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i";
+      std::regex uuidv4_regex( pattern );
+
+      FC_ASSERT( std::regex_match( uuidv4, uuidv4_regex ),
+         "UUIDV4 is invalid.");
    };
 
    /**
@@ -1762,21 +1784,23 @@ namespace node { namespace protocol {
 
    struct ad_creative_operation : public base_operation 
    {
-      account_name_type           signatory;
+      account_name_type      signatory;
 
-      account_name_type           author;           // Account publishing the ad creative.
+      account_name_type      account;           // Account publishing the ad creative.
 
-      format_types                format_type;       // The type of formatting used for the advertisment, determines the interpretation of the creative.
+      account_name_type      author;            // Author of the objective item referenced.
 
-      string                      creative_id;       // uuidv4 referring to the creative
+      string                 objective;         // The reference of the object being advertised, the link and CTA destination of the creative.
 
-      string                      objective;         // The name of the object being advertised, the link and CTA destination of the creative.
+      string                 creative_id;       // uuidv4 referring to the creative
 
-      string                      creative;          // IPFS link to the Media to be displayed, image or video.
+      string                 creative;          // IPFS link to the Media to be displayed, image or video.
 
-      string                      json;              // json string of creative metadata for display.
+      string                 json;              // json string of creative metadata for display.
 
-      bool                        active = true;     // True if the creative is enabled for active display, false to deactivate.
+      format_types           format_type;       // The type of formatting used for the advertisment, determines the interpretation of the creative.
+
+      bool                   active = true;     // True if the creative is enabled for active display, false to deactivate.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1799,7 +1823,7 @@ namespace node { namespace protocol {
 
       string                           json;              // json metadata for the campaign.
 
-      flat_set<account_name_type>      agents;            // Set of Accounts authorized to create bids for the campaign.
+      vector< account_name_type >      agents;            // Set of Accounts authorized to create bids for the campaign.
 
       account_name_type                interface;         // Interface that facilitated the purchase of the advertising campaign.
 
@@ -1828,9 +1852,7 @@ namespace node { namespace protocol {
 
       string                             json;           // json metadata for the inventory.
 
-      
-
-      flat_set< account_name_type >      agents;         // Set of Accounts authorized to create delivery transactions for the inventory.
+      vector< account_name_type >        agents;         // Set of Accounts authorized to create delivery transactions for the inventory.
 
       bool                               active = true;  // True if the inventory is enabled for display, false to deactivate.
 
@@ -1849,7 +1871,7 @@ namespace node { namespace protocol {
 
       string                             json;           // json metadata for the audience.
 
-      flat_set< account_name_type >      audience;       // List of usernames of viewing accounts.
+      vector< account_name_type >        audience;       // List of usernames of viewing accounts.
 
       bool                               active = true;  // True if the audience is enabled for reference, false to deactivate.
 
@@ -1881,9 +1903,9 @@ namespace node { namespace protocol {
 
       uint32_t                         requested;             // Maximum total metrics requested.
 
-      flat_set< string >               included_audiences;    // List of desired audiences for display acceptance. Will be merged into a combined audience
+      vector< string >                 included_audiences;    // List of desired audiences for display acceptance, accounts must be in inventory audience.
 
-      flat_set< string >               excluded_audiences;    // List of audiences to remove all members from the combined bid audience.
+      vector< string >                 excluded_audiences;    // List of audiences to remove all members from the combined bid audience.
 
       string                           json;                  // json metadata for the combined audience if created.
 
@@ -1901,17 +1923,17 @@ namespace node { namespace protocol {
    {
       account_name_type                  signatory;
 
-      account_name_type                  account;                // Account creating the delivery, must be an agent of the inventory bidded on.
+      account_name_type                  account;             // Account creating the delivery, must be an agent of the inventory bidded on.
 
-      account_name_type                  bidder;                 // Account that created the bid on available supply.
+      account_name_type                  bidder;              // Account that created the bid on available supply.
 
-      string                             bid_id;                 // Bid uuidv4 for referring to the bid.
+      string                             bid_id;              // Bid uuidv4 for referring to the bid.
 
-      asset                              delivery_price;         // Price charged per metric. Must be equal to or less than bid price. [Typically the Price of second highest bidder]
+      asset                              delivery_price;      // Price charged per metric. Must be equal to or less than bid price. [Typically the Price of second highest bidder]
 
-      uint32_t                           delivered;              // Total metrics delivered.
+      uint32_t                           delivered;           // Total metrics delivered.
 
-      flat_set<transaction_id_type>      transactions;           // Delivered metric transactions ids
+      vector< transaction_id_type >      transactions;        // Delivered metric transactions ids
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }

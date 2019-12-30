@@ -98,9 +98,17 @@ namespace node { namespace protocol {
       }
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
-      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
-         "URL size is too large." );
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
 
       if( business_type.valid() )
       {
@@ -163,9 +171,17 @@ namespace node { namespace protocol {
       }
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
-      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
-         "URL size is too large." );
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
 
       if( business_type.valid() )
       {
@@ -424,6 +440,7 @@ namespace node { namespace protocol {
          "Account cannot connect with itself." );
       FC_ASSERT( connection_id.size() <= MAX_STRING_LENGTH,
          "Connection ID is too long." );
+      validate_uuidv4( connection_id );
       FC_ASSERT( encrypted_key.size() <= MAX_STRING_LENGTH,
          "Encrypted Key is too long." );
    }
@@ -479,11 +496,18 @@ namespace node { namespace protocol {
       }
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
-
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
       FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL size is too large." );
-
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
+      
       if( json.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json ), 
@@ -511,9 +535,17 @@ namespace node { namespace protocol {
       FC_ASSERT( url.size() + details.size() + json.size(),
          "Cannot update Executive Board because it does not contain content." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
       FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL size is too large." );
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
       
       if( json.size() > 0 )
       {
@@ -546,10 +578,18 @@ namespace node { namespace protocol {
       validate_account_name( account );
       FC_ASSERT( url.size() + details.size() + json.size(), 
          "Cannot update governance account because it does not contain content." );
-      FC_ASSERT( url.size() <= MAX_URL_LENGTH, 
-         "URL is too long" );
-      FC_ASSERT( details.size() <= MAX_STRING_LENGTH, 
-         "Details are too long" );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
 
       if( json.size() > 0 )
       {
@@ -573,10 +613,18 @@ namespace node { namespace protocol {
       validate_account_name( account );
       FC_ASSERT( url.size() + details.size() + json.size(),
          "Cannot update Interface because it does not contain content." );
-      FC_ASSERT( url.size() <= MAX_URL_LENGTH,
-         "URL is too long" );
-      FC_ASSERT( details.size() <= MAX_STRING_LENGTH,
-         "Details are too long" );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
 
       if( json.size() > 0 )
       {
@@ -594,20 +642,47 @@ namespace node { namespace protocol {
       FC_ASSERT( url.size() + details.size() + json.size() + node_api_endpoint.size(), 
          "Cannot update supernode because it does not contain sufficient content." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
       FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL size is too large." );
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
       FC_ASSERT( node_api_endpoint.size() < MAX_URL_LENGTH,
-         "Node API length is too large." );
+         "Node API endpoint is too long." );
+      if( node_api_endpoint.size() > 0 )
+      {
+         validate_url( node_api_endpoint );
+      }
       FC_ASSERT( notification_api_endpoint.size() < MAX_URL_LENGTH,
-         "Notification API length is too large." );
+         "Notification API endpoint is too long." );
+      if( notification_api_endpoint.size() > 0 )
+      {
+         validate_url( notification_api_endpoint );
+      }
       FC_ASSERT( auth_api_endpoint.size() < MAX_URL_LENGTH,
-         "Auth API length is too large." );
+         "Auth API endpoint is too long." );
+      if( auth_api_endpoint.size() > 0 )
+      {
+         validate_url( auth_api_endpoint );
+      }
       FC_ASSERT( ipfs_endpoint.size() < MAX_URL_LENGTH,
-         "IPFS length is too large." );
+         "IPFS endpoint is too long." );
+      if( ipfs_endpoint.size() > 0 )
+      {
+         validate_url( ipfs_endpoint );
+      }
       FC_ASSERT( bittorrent_endpoint.size() < MAX_URL_LENGTH,
-         "Bittorrent length is too large." );
-
+         "Bittorrent endpoint is too long." );
+      if( bittorrent_endpoint.size() > 0 )
+      {
+         validate_url( bittorrent_endpoint );
+      }
       if( json.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json ), 
@@ -623,10 +698,19 @@ namespace node { namespace protocol {
       validate_account_name( creator );
       FC_ASSERT( enterprise_id.size() < MAX_STRING_LENGTH,
          "Enterprise ID is too long." );
+      validate_uuidv4( enterprise_id );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
-      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
-         "URL size is too large." );
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
       if( json.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json ),
@@ -709,6 +793,7 @@ namespace node { namespace protocol {
       validate_account_name( creator );
       FC_ASSERT( enterprise_id.size() < MAX_STRING_LENGTH,
          "Enterprise ID is too long." );
+      validate_uuidv4( enterprise_id );
       FC_ASSERT( milestone <= PERCENT_100,
          "Milestone percent is too large." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
@@ -722,6 +807,7 @@ namespace node { namespace protocol {
       validate_account_name( creator );
       FC_ASSERT( enterprise_id.size() < MAX_STRING_LENGTH,
          "Enterprise ID is too long." );
+      validate_uuidv4( enterprise_id );
       FC_ASSERT( milestone <= PERCENT_100,
          "Milestone percent is too large." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
@@ -924,8 +1010,6 @@ namespace node { namespace protocol {
          "Message is too long." );
       FC_ASSERT( uuid.size() < MAX_STRING_LENGTH,
          "UUID is too long." );
-      FC_ASSERT( time > GENESIS_TIME,
-         "Message time must be after genesis time." );
    }
 
    void vote_operation::validate() const
@@ -1057,11 +1141,19 @@ namespace node { namespace protocol {
       }
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
-      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
-         "URL size is too large." );
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
       FC_ASSERT( board_public_key.size() < MAX_STRING_LENGTH,
-         "URL size is too large." );
+         "Board public key is too long." );
    }
 
    void board_update_operation::validate() const
@@ -1117,11 +1209,21 @@ namespace node { namespace protocol {
       }
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
-      FC_ASSERT( url.size() < MAX_STRING_LENGTH,
-         "URL size is too large." );
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
       FC_ASSERT( board_public_key.size() < MAX_STRING_LENGTH,
          "Board public key is too long" );
+      FC_ASSERT( fc::is_utf8( board_public_key ),
+         "Board public key is not formatted in UTF8." );
    }
 
    void board_add_mod_operation::validate() const
@@ -1270,6 +1372,8 @@ namespace node { namespace protocol {
       FC_ASSERT( fc::is_utf8( creative_id ),
          "Creative ID must be UTF-8" );
 
+      validate_uuidv4( creative_id );
+
       FC_ASSERT( objective.size(),
          "Creative has no objective." );
       FC_ASSERT( objective.size() <= MAX_STRING_LENGTH,
@@ -1305,6 +1409,8 @@ namespace node { namespace protocol {
          "Campaign has no campaign ID." );
       FC_ASSERT( budget.amount >= 0,
          "Campaign requires a budget greater than or equal to 0." );
+         
+      validate_uuidv4( campaign_id );
 
       if( json.size() > 0 )
       {
@@ -1348,6 +1454,7 @@ namespace node { namespace protocol {
          "Symbol ${symbol} is not a valid symbol", ( "symbol", min_price.symbol ) );
       FC_ASSERT( inventory > 0,
          "Inventory must be greater than zero." );
+      validate_uuidv4( inventory_id );
    
       switch( metric )
       {
@@ -1381,6 +1488,7 @@ namespace node { namespace protocol {
 
       FC_ASSERT( audience_id.size() < MAX_STRING_LENGTH,
          "Audience ID is too long." );
+      validate_uuidv4( audience_id );
    }
 
 
@@ -1397,6 +1505,7 @@ namespace node { namespace protocol {
          "Audience ID must be UTF-8" );
       FC_ASSERT( audience.size(),
          "Audience must include at least one account." );
+      validate_uuidv4( audience_id );
 
       for( auto name : audience )
       {
@@ -1426,6 +1535,7 @@ namespace node { namespace protocol {
          "bid ID is too long." );
       FC_ASSERT( fc::is_utf8( bid_id ),
          "bid ID must be UTF-8" );
+      validate_uuidv4( bid_id );
 
       FC_ASSERT( campaign_id.size(),
          "campaign has no campaign ID." );
@@ -1433,6 +1543,7 @@ namespace node { namespace protocol {
          "campaign ID is too long." );
       FC_ASSERT( fc::is_utf8( campaign_id ),
          "campaign ID must be UTF-8" );
+      validate_uuidv4( campaign_id );
 
       FC_ASSERT( creative_id.size(),
          "campaign has no creative ID." );
@@ -1440,6 +1551,7 @@ namespace node { namespace protocol {
          "creative ID is too long." );
       FC_ASSERT( fc::is_utf8( creative_id ),
          "creative ID must be UTF-8" );
+      validate_uuidv4( creative_id );
 
       FC_ASSERT( inventory_id.size(),
          "inventory has no inventory ID." );
@@ -1447,6 +1559,7 @@ namespace node { namespace protocol {
          "inventory ID is too long." );
       FC_ASSERT( fc::is_utf8( inventory_id ),
          "inventory ID must be UTF-8" );
+      validate_uuidv4( inventory_id );
 
       if( json.size() > 0 )
       {
@@ -1494,6 +1607,7 @@ namespace node { namespace protocol {
          "Delivery has no bid ID." );
       FC_ASSERT( fc::is_utf8( bid_id ),
          "bid ID must be UTF-8" );
+      validate_uuidv4( bid_id );
       FC_ASSERT( delivery_price.amount > 0,
          "Delivery price must be greater than zero." );
       FC_ASSERT( is_valid_symbol( delivery_price.symbol ),
@@ -1543,6 +1657,7 @@ namespace node { namespace protocol {
          "Request ID is too long." );
       FC_ASSERT( request_id.size() > 0,
          "Request ID is required." );
+      validate_uuidv4( request_id );
       FC_ASSERT( expiration > GENESIS_TIME,
          "Expiration time must be after genesis time." );
    }
@@ -1557,6 +1672,7 @@ namespace node { namespace protocol {
          "Request ID is too long." );
       FC_ASSERT( request_id.size() > 0,
          "Request ID is required." );
+      validate_uuidv4( request_id );
    }
 
 
@@ -1569,6 +1685,7 @@ namespace node { namespace protocol {
          "Transfer ID is too long." );
       FC_ASSERT( transfer_id.size() > 0,
          "Transfer ID is required." );
+      validate_uuidv4( transfer_id );
       FC_ASSERT( amount.amount > 0, 
          "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
       FC_ASSERT( is_valid_symbol(amount.symbol), 
@@ -1599,6 +1716,7 @@ namespace node { namespace protocol {
          "Request ID is required." );
       FC_ASSERT( fc::is_utf8( request_id ), 
          "Request ID is not UTF8" );
+      validate_uuidv4( request_id );
       FC_ASSERT( amount.amount > 0, 
          "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
       FC_ASSERT( is_valid_symbol(amount.symbol), 
@@ -1630,6 +1748,7 @@ namespace node { namespace protocol {
          "Request ID is required." );
       FC_ASSERT( fc::is_utf8( request_id ), 
          "Request ID is not UTF8" );
+      validate_uuidv4( request_id );
    }
 
 
@@ -1710,6 +1829,7 @@ namespace node { namespace protocol {
          "Request ID is too long." );
       FC_ASSERT( fc::is_utf8( request_id ), 
          "Request ID is not UTF8" );
+      validate_uuidv4( request_id );
       FC_ASSERT( amount.amount > 0, 
          "Amount must be greater than zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ), 
@@ -1730,6 +1850,7 @@ namespace node { namespace protocol {
          "Request ID is required." );
       FC_ASSERT( fc::is_utf8( request_id ), 
          "Request ID is not UTF8" );
+      validate_uuidv4( request_id );
    }
 
    void delegate_asset_operation::validate()const
@@ -1781,6 +1902,7 @@ namespace node { namespace protocol {
          "Escrow ID is required." );
       FC_ASSERT( fc::is_utf8( escrow_id ), 
          "Escrow ID is not UTF8" );
+      validate_uuidv4( escrow_id );
 
       if( json.size() > 0 )
       {
@@ -1806,6 +1928,7 @@ namespace node { namespace protocol {
          "Escrow ID is required." );
       FC_ASSERT( fc::is_utf8( escrow_id ), 
          "Escrow ID is not UTF8" );
+      validate_uuidv4( escrow_id );
    }
 
    void escrow_dispute_operation::validate()const
@@ -1823,6 +1946,7 @@ namespace node { namespace protocol {
          "Escrow ID is required." );
       FC_ASSERT( fc::is_utf8( escrow_id ),
          "Escrow ID is not UTF8" );
+      validate_uuidv4( escrow_id );
    }
 
    void escrow_release_operation::validate()const
@@ -1847,6 +1971,7 @@ namespace node { namespace protocol {
          "Escrow ID is required." );
       FC_ASSERT( fc::is_utf8( escrow_id ),
          "Escrow ID is not UTF8" );
+      validate_uuidv4( escrow_id );
    }
 
 
@@ -1871,6 +1996,7 @@ namespace node { namespace protocol {
          "Order ID is required." );
       FC_ASSERT( fc::is_utf8( order_id ),
          "Order ID is not UTF8" );
+      validate_uuidv4( order_id );
       FC_ASSERT( expiration > GENESIS_TIME,
          "Expiration time must be greater than genesis time." );
    }
@@ -1885,6 +2011,7 @@ namespace node { namespace protocol {
          "Order ID is required." );
       FC_ASSERT( fc::is_utf8( order_id ),
          "Order ID is not UTF8" );
+      validate_uuidv4( order_id );
    }
 
    void margin_order_create_operation::validate()const
@@ -1911,6 +2038,7 @@ namespace node { namespace protocol {
          "Order ID is required." );
       FC_ASSERT( fc::is_utf8( order_id ),
          "Order ID is not UTF8" );
+      validate_uuidv4( order_id );
       FC_ASSERT( expiration > GENESIS_TIME,
          "Expiration time must be greater than genesis time." );
 
@@ -1952,6 +2080,7 @@ namespace node { namespace protocol {
          "Order ID is required." );
       FC_ASSERT( fc::is_utf8( order_id ),
          "Order ID is not UTF8" );
+      validate_uuidv4( order_id );
 
       if( exchange_rate.valid() )
       {
@@ -2192,18 +2321,21 @@ namespace node { namespace protocol {
             "JSON Metadata not valid JSON." );
       }
 
+      FC_ASSERT( details.size(),
+         "Details are required." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
          "Details are too long." );
-      FC_ASSERT( details.size(),
-         "Details is required." );
       FC_ASSERT( fc::is_utf8( details ), 
-         "Details is not formatted in UTF8." );
-
+         "Details are not formatted in UTF8." );
       FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL size is too large." );
-      FC_ASSERT( fc::is_utf8( url ), 
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
          "URL is not formatted in UTF8." );
-
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
+      
       // There must be no high bits in permissions whose meaning is not known.
       FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
       // The global_settle flag may never be set (this is a permission only)
@@ -2539,16 +2671,18 @@ namespace node { namespace protocol {
 
       FC_ASSERT( details.size() > 0,
          "Witness requires details." );
-      FC_ASSERT( fc::is_utf8( details ),
-         "Details is not valid UTF8." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
          "Details are too long." );
-      FC_ASSERT( url.size() > 0,
-         "Witness requires URL." );
-      FC_ASSERT( fc::is_utf8( url ),
-         "URL is not valid UTF8" );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
       FC_ASSERT( url.size() < MAX_URL_LENGTH,
          "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
 
       if( json.size() > 0 )
       {

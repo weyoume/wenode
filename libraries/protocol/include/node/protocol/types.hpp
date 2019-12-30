@@ -182,10 +182,10 @@ namespace node {
          PREMIUM_FORMAT   = 'premium',   // A premium post, objective is permlink
          PRODUCT_FORMAT   = 'product',   // A product post, objective is permlink
          LINK_FORMAT      = 'link',      // A link to an external webpage, objective is URL
+         ACCOUNT_FORMAT   = 'account',   // An account, objective is account name
          BOARD_FORMAT     = 'board',     // A board, objective is board name
          GROUP_FORMAT     = 'group',     // A group, objective is group board name
          EVENT_FORMAT     = 'event',     // An event, objective is board name
-         ACCOUNT_FORMAT   = 'account',   // An account, objective is account name
          STORE_FORMAT     = 'store',     // A store, objective is store name
          ASSET_FORMAT     = 'asset'      // An asset, objective is asset symbol
       };
@@ -204,7 +204,6 @@ namespace node {
          LIVESTREAM_POST  = 'livestream',  // A post containing a title, a link to a livestreaming video, and up to 1000 characters of description text
          PRODUCT_POST     = 'product',     // A post containing a product title, at least 1 IPFS image of the product, and purchase details to create an escrow order
          LIST_POST        = 'list'         // A post containing a list of at least 2 other posts, a title, and up to 1000 characters of description text
-
       };
 
       // Types of expense metrics for advertising transactions.

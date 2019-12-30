@@ -29,17 +29,17 @@ namespace node { namespace chain {
 
          account_name_type           account;           // Name of the account creating the creative.
 
-         shared_string               creative_id;       // The uuidv4 of the creative for reference
-
-         format_types                format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
-
-         account_name_type           author;            // Name of the account that created the objective.
+         account_name_type           author;            // Name of the author of the objective.
 
          shared_string               objective;         // The name of the object being advertised, the link and CTA destination of the creative.
+
+         shared_string               creative_id;       // The uuidv4 of the creative for reference.
 
          shared_string               creative;          // IPFS link to the Media to be displayed, image or video.
 
          shared_string               json;              // Public plaintext json information about the board, its topic and rules.
+
+         format_types                format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
 
          time_point                  created;           // Time creative was made.
 
@@ -66,9 +66,9 @@ namespace node { namespace chain {
 
          shared_string                    campaign_id;       // uuidv4 to refer to the campaign.
 
-         asset                            budget;            // Total expenditure of the campaign.
+         asset                            budget;            // Total expenditure of the campaign. Campaign is ended when budget reaches zero.
 
-         asset                            total_bids;        // Total amount of expenditure in active bids. Cannot exceed AD_RESERVE_RATIO times the campaign budget.
+         asset                            total_bids;        // Total amount of expenditure in active bids. Cannot the campaign budget.
 
          time_point                       begin;             // Beginning time of the campaign. Bids cannot be created before this time.
 
@@ -129,7 +129,7 @@ namespace node { namespace chain {
 
          shared_string                    json;              // json metadata for the inventory.
 
-         flat_set<account_name_type>      agents;            // Set of Accounts authorized to create delivery transactions for the inventory.
+         flat_set< account_name_type >    agents;            // Set of Accounts authorized to create delivery transactions for the inventory.
          
          time_point                       created;           // Time inventory was created.
 
@@ -231,11 +231,11 @@ namespace node { namespace chain {
 
          uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
          
-         time_point                       created;           // Time audience was created.
+         time_point                       created;           // Time that the bid was created.
 
-         time_point                       last_updated;      // Time audiences's details were last updated or inventory was delivered.
+         time_point                       last_updated;      // Time that the bid's details were last updated or inventory was delivered.
 
-         time_point                       expiration;        // Time audience was created.
+         time_point                       expiration;        // Time that the bid was will expire.
    };
 
    struct by_creative_id;
@@ -248,8 +248,8 @@ namespace node { namespace chain {
             member< ad_creative_object, ad_creative_id_type, &ad_creative_object::id > >,
          ordered_unique< tag< by_latest >,
             composite_key< ad_creative_object,
-               member< ad_creative_object, account_name_type, &ad_creative_object::author>,
-               member< ad_creative_object, time_point, &ad_creative_object::last_updated>,
+               member< ad_creative_object, account_name_type, &ad_creative_object::account >,
+               member< ad_creative_object, time_point, &ad_creative_object::last_updated >,
                member< ad_creative_object, ad_creative_id_type, &ad_creative_object::id >
             >,
             composite_key_compare< 
@@ -260,7 +260,7 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_creative_id >,
             composite_key< ad_creative_object,
-               member< ad_creative_object, account_name_type, &ad_creative_object::author>,
+               member< ad_creative_object, account_name_type, &ad_creative_object::account >,
                member< ad_creative_object, shared_string, &ad_creative_object::creative_id >
             >,
             composite_key_compare< std::less< account_name_type >, strcmp_less >

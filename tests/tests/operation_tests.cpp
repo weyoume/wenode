@@ -3102,7 +3102,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
       officer.account = "alice";
       officer.officer_type = DEVELOPMENT;
       officer.details = "details";
-      officer.url = "url";
+      officer.url = "www.url.com";
       officer.json = "{\"json\":\"valid\"}";
       officer.active = true;
       officer.validate();
@@ -3624,7 +3624,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       officer.account = "bob";
       officer.officer_type = DEVELOPMENT;
       officer.details = "details";
-      officer.url = "url";
+      officer.url = "www.url.com";
       officer.json = "{\"json\":\"valid\"}";
       officer.active = true;
       officer.validate();
@@ -3737,7 +3737,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       supernode.signatory = "alice";
       supernode.account = "execboard";
       supernode.details = "details";
-      supernode.url = "url";
+      supernode.url = "www.url.com";
       supernode.json = "{\"json\":\"valid\"}";
       supernode.validate();
 
@@ -3753,7 +3753,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       interface.signatory = "alice";
       interface.account = "execboard";
       interface.details = "details";
-      interface.url = "url";
+      interface.url = "www.url.com";
       interface.json = "{\"json\":\"valid\"}";
       interface.validate();
 
@@ -3769,7 +3769,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       gov.signatory = "alice";
       gov.account = "execboard";
       gov.details = "details";
-      gov.url = "url";
+      gov.url = "www.url.com";
       gov.json = "{\"json\":\"valid\"}";
       gov.validate();
 
@@ -3841,7 +3841,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       exec.executive = "execboard";
       exec.budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
       exec.details = "details";
-      exec.url = "url";
+      exec.url = "www.url.com";
       exec.json = "{\"json\":\"valid\"}";
       exec.active = true;
       exec.validate();
@@ -9655,6 +9655,468 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
 
 
+   BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: AD OPERATION SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful ad creative creation" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
+
+      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      signed_transaction tx;
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "adcreativepermlink";
+      comment.title = "My Creative post";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.board = INIT_BOARD;
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "adcreativepermlink";
+      comment.json = "{\"json\":\"valid\"}";
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = ARTICLE_POST;
+      options.privacy = false;
+      options.reach = TAG_FEED;
+      options.rating = GENERAL;
+      comment.options = options;
+      comment.validate();
+
+      tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      ad_creative_operation creative;
+
+      creative.signatory = "alice";
+      creative.author = "alice";
+      creative.format_type = STANDARD_FORMAT;
+      creative.creative_id = "8638f626-7c6e-4440-9a67-43ab48939870";
+      creative.objective = "creativepermlink";
+      creative.creative = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      creative.json = "{\"json\":\"valid\"}";
+      creative.active = true;
+      creative.validate();
+
+      tx.operations.push_back( creative );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const ad_creative_object& alice_creative = db.get_ad_creative( "alice", "8638f626-7c6e-4440-9a67-43ab48939870" );
+      BOOST_REQUIRE( alice_creative.objective == creative.objective );
+      BOOST_REQUIRE( alice_creative.creative == creative.creative );
+      BOOST_REQUIRE( alice_creative.format_type == creative.format_type );
+      BOOST_REQUIRE( alice_creative.last_updated == now() );
+      BOOST_REQUIRE( alice_creative.created == now() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful ad creative creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful ad campaign creation" );
+
+      ad_campaign_operation campaign;
+
+      campaign.signatory = "alice";
+      campaign.account = "alice";
+      campaign.campaign_id = "da89d680-e9c4-4ae0-95e5-1f47bd1526a0";
+      campaign.budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      campaign.begin = now();
+      campaign.end = ( now() + fc::days(7) );
+      campaign.json = "{\"json\":\"valid\"}";
+      campaign.interface = INIT_ACCOUNT;
+      campaign.active = true;
+      campaign.validate();
+
+      tx.operations.push_back( campaign );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const ad_campaign_object& alice_campaign = db.get_ad_campaign( "alice", "da89d680-e9c4-4ae0-95e5-1f47bd1526a0" );
+      BOOST_REQUIRE( alice_campaign.budget == campaign.budget );
+      BOOST_REQUIRE( alice_campaign.begin == campaign.begin );
+      BOOST_REQUIRE( alice_campaign.end == campaign.end );
+      BOOST_REQUIRE( alice_campaign.last_updated == now() );
+      BOOST_REQUIRE( alice_campaign.created == now() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful ad campaign creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful ad audience creation" );
+
+      ad_audience_operation audience;
+
+      audience.signatory = "bob";
+      audience.account = "bob";
+      audience.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
+      audience.json = "{\"json\":\"valid\"}";
+      audience.audience.push_back( "candice" );
+      audience.audience.push_back( "dan" );
+      audience.audience.push_back( "elon" );
+      audience.active = true;
+      audience.validate();
+
+      tx.operations.push_back( audience );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const ad_audience_object& bob_audience = db.get_ad_audience( "bob", "0ffe6be9-dcf8-436e-9296-49c83e3d0786" );
+      for( auto a : audience.audience )
+      {
+         BOOST_REQUIRE( bob_audience.is_audience( a ) );
+      }
+      BOOST_REQUIRE( bob_audience.last_updated == now() );
+      BOOST_REQUIRE( bob_audience.created == now() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful ad audience creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when creating inventory without interface" );
+
+      ad_inventory_operation inventory;
+
+      inventory.signatory = "bob";
+      inventory.provider = "bob";
+      inventory.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
+      inventory.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
+      inventory.metric = VIEW_METRIC;
+      inventory.json = "{\"json\":\"valid\"}";
+      inventory.min_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      inventory.inventory = 100;
+      inventory.active = true;
+      inventory.validate();
+
+      tx.operations.push_back( inventory );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Inventory requires an interface
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when creating inventory without interface" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful ad inventory creation" );
+
+      update_interface_operation interface;
+      
+      interface.signatory = "bob";
+      interface.account = "bob";
+      interface.details = "details";
+      interface.url = "www.url.com";
+      interface.json = "{\"json\":\"valid\"}";
+      interface.validate();
+
+      tx.operations.push_back( interface );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      ad_inventory_operation inventory;
+
+      inventory.signatory = "bob";
+      inventory.provider = "bob";
+      inventory.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
+      inventory.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
+      inventory.metric = VIEW_METRIC;
+      inventory.json = "{\"json\":\"valid\"}";
+      inventory.min_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      inventory.inventory = 100;
+      inventory.active = true;
+      inventory.validate();
+
+      tx.operations.push_back( inventory );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const ad_inventory_object& bob_inventory = db.get_ad_inventory( "bob", "19ebee83-fc57-404b-a85e-aa8e7f6bbb66" );
+      BOOST_REQUIRE( bob_inventory.min_price == inventory.min_price );
+      BOOST_REQUIRE( bob_inventory.metric == inventory.metric );
+      BOOST_REQUIRE( bob_inventory.inventory == inventory.inventory );
+      BOOST_REQUIRE( bob_inventory.remaining == inventory.inventory );
+      BOOST_REQUIRE( bob_inventory.last_updated == now() );
+      BOOST_REQUIRE( bob_inventory.created == now() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful ad inventory creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful ad bid creation" );
+
+      ad_bid_operation bid;
+
+      bid.signatory = "alice";
+      bid.bidder = "alice";
+      bid.bid_id = "28bdc74a-097a-40d4-bf49-cc95af3eeec0";
+      bid.account = "alice";
+      bid.campaign_id = "da89d680-e9c4-4ae0-95e5-1f47bd1526a0";
+      bid.creative_id = "8638f626-7c6e-4440-9a67-43ab48939870";
+      bid.provider = "bob";
+      bid.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
+      bid.bid_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      bid.requested = 101;
+      bid.json = "{\"json\":\"valid\"}";
+      bid.expiration = ( now() + fc::days(30) );
+      bid.active = true;
+      bid.validate();
+
+      tx.operations.push_back( bid );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const ad_bid_object& alice_bid = db.get_ad_bid( "alice", "19ebee83-fc57-404b-a85e-aa8e7f6bbb66" );
+      BOOST_REQUIRE( alice_bid.bid_price == bid.bid_price );
+      BOOST_REQUIRE( alice_bid.campaign_id == bid.campaign_id );
+      BOOST_REQUIRE( alice_bid.creative_id == bid.creative_id );
+      BOOST_REQUIRE( alice_bid.inventory_id == bid.inventory_id );
+      BOOST_REQUIRE( alice_bid.account == bid.account );
+      BOOST_REQUIRE( alice_bid.requested == bid.requested );
+      BOOST_REQUIRE( alice_bid.remaining == bid.requested );
+      BOOST_REQUIRE( alice_bid.last_updated == now() );
+      BOOST_REQUIRE( alice_bid.created == now() );
+      BOOST_REQUIRE( alice_bid.expiration == bid.expiration );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful ad bid creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when ad delivery contains no accounts in audience" );
+
+      account_create_operation create;
+
+      create.signatory = "alice";
+      create.registrar = "alice";
+      create.new_account_name = "newuser";
+      create.account_type = PERSONA;
+      create.owner = authority( 1, alice_public_owner_key, 1 );
+      create.active = authority( 2, alice_public_active_key, 2 );
+      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.secure_public_key = string( alice_public_posting_key );
+      create.connection_public_key = string( alice_public_posting_key );
+      create.friend_public_key = string( alice_public_posting_key );
+      create.companion_public_key = string( alice_public_posting_key );
+      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.validate();
+
+      for( auto i = 0; i < 100; i++ )
+      {
+         create.new_account_name = "newuser"+fc::to_string( i );
+         audience.audience.push_back( create.new_account_name );
+
+         tx.operations.push_back( create );
+         tx.sign( alice_private_owner_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+      }
+
+      ad_deliver_operation deliver;
+
+      deliver.signatory = "bob";
+      deliver.account = "bob";
+      deliver.bidder = "alice";
+      deliver.bid_id = "28bdc74a-097a-40d4-bf49-cc95af3eeec0";
+      deliver.delivery_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+   
+      view_operation view;
+
+      view.signatory = "newuser";
+      view.viewer = "newuser";
+      view.author = "alice";
+      view.permlink = "creativepermlink";
+      view.supernode = INIT_ACCOUNT;
+      view.interface = "bob";
+      view.validate();
+      
+      for( auto i = 0; i < 50; i++ )
+      {
+         view.signatory = "newuser"+fc::to_string( i );
+         view.viewer = "newuser"+fc::to_string( i );
+
+         tx.operations.push_back( view );
+         tx.sign( alice_private_posting_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+         deliver.transactions.push_back( tx.id() );      // Add transaction IDs to deliver operation
+
+         tx.operations.clear();
+         tx.signatures.clear();
+      }
+
+      deliver.validate();
+      tx.operations.push_back( deliver );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Accounts are not in audience
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when ad delivery contains no accounts in audience" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful ad delivery" );
+
+      tx.operations.push_back( audience );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );    // Update audience to include new accounts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const ad_audience_object& bob_audience = db.get_ad_audience( "bob", "0ffe6be9-dcf8-436e-9296-49c83e3d0786" );
+      for( auto a : audience.audience )
+      {
+         BOOST_REQUIRE( bob_audience.is_audience( a ) );
+      }
+      BOOST_REQUIRE( bob_audience.audience.size() == 103 );
+      BOOST_REQUIRE( bob_audience.last_updated == now() );
+      BOOST_REQUIRE( bob_audience.created == now() );
+
+      bid.requested = 100;
+
+      tx.operations.push_back( bid );    // Update bid to include new audience accounts
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      deliver.validate();
+      tx.operations.push_back( deliver );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+      deliver.transactions.clear();
+
+      const ad_bid_object& alice_bid = db.get_ad_bid( "alice", "28bdc74a-097a-40d4-bf49-cc95af3eeec0" );
+
+      BOOST_REQUIRE( alice_bid.bid_price == bid.bid_price );
+      BOOST_REQUIRE( alice_bid.campaign_id == bid.campaign_id );
+      BOOST_REQUIRE( alice_bid.creative_id == bid.creative_id );
+      BOOST_REQUIRE( alice_bid.inventory_id == bid.inventory_id );
+      BOOST_REQUIRE( alice_bid.account == bid.account );
+      BOOST_REQUIRE( alice_bid.requested == bid.requested );
+      BOOST_REQUIRE( alice_bid.remaining == 50 );
+      BOOST_REQUIRE( alice_bid.last_updated == now() );
+      BOOST_REQUIRE( alice_bid.expiration == bid.expiration );
+
+      const ad_inventory_object& bob_inventory = db.get_ad_inventory( "bob", "19ebee83-fc57-404b-a85e-aa8e7f6bbb66" );
+      
+      BOOST_REQUIRE( bob_inventory.remaining == 50 );
+      BOOST_REQUIRE( bob_inventory.last_updated == now() );
+
+      const ad_campaign_object& alice_campaign = db.get_ad_campaign( "alice", "da89d680-e9c4-4ae0-95e5-1f47bd1526a0" );
+      
+      BOOST_REQUIRE( alice_campaign.budget == asset( 50*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_campaign.last_updated == now() );
+      BOOST_REQUIRE( alice_campaign.created == now() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful ad delivery" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: ad delivery bid completion" );
+      
+      for( auto i = 50; i < 100; i++ )
+      {
+         view.signatory = "newuser"+fc::to_string( i );
+         view.viewer = "newuser"+fc::to_string( i );
+
+         tx.operations.push_back( view );
+         tx.sign( alice_private_posting_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+         deliver.transactions.push_back( tx.id() );      // Add transaction IDs to deliver operation
+
+         tx.operations.clear();
+         tx.signatures.clear();
+      }
+
+      deliver.validate();
+      tx.operations.push_back( deliver );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const auto& bid_idx = db.get_index< ad_bid_index >().indices().get< by_bid_id >();
+      auto bid_itr = bid_idx.find( boost::make_tuple( "alice", "28bdc74a-097a-40d4-bf49-cc95af3eeec0" ) );
+
+      const auto& cam_idx = db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
+      auto cam_itr = cam_idx.find( boost::make_tuple( "alice", "da89d680-e9c4-4ae0-95e5-1f47bd1526a0" ) );
+
+      const auto& inv_idx = db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
+      auto inv_itr = inv_idx.find( boost::make_tuple( "bob", "19ebee83-fc57-404b-a85e-aa8e7f6bbb66" ) );
+
+      BOOST_REQUIRE( bid_itr == bid_idx.end() );
+      BOOST_REQUIRE( cam_itr == cam_idx.end() );
+      BOOST_REQUIRE( inv_itr == inv_idx.end() );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: ad delivery bid completion" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: AD OPERATION SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
 
 
 
@@ -9662,183 +10124,275 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
    // === Transfer Operations === //
    //=============================//
 
+   /**
+    * transfer_operation,
+      transfer_request_operation,
+      transfer_accept_operation,
+      transfer_recurring_operation,
+      transfer_recurring_request_operation,
+      transfer_recurring_accept_operation,
+      */
 
 
-BOOST_AUTO_TEST_CASE( transfer_validate )
+BOOST_AUTO_TEST_CASE( transfer_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_validate" );
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSFER OPERATION" );
 
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer" );
 
-BOOST_AUTO_TEST_CASE( transfer_authorities )
-{
-   try
-   {
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
-      BOOST_TEST_MESSAGE( "Testing: transfer_authorities" );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
 
-      transfer_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = ASSET( "2.500 TESTS" );
+      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
 
       signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
 
-      BOOST_TEST_MESSAGE( "--- Test failure when no signatures" );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+      transfer_operation transfer;
 
-      BOOST_TEST_MESSAGE( "--- Test failure when signed by a signature not in the account's authority" );
-      tx.sign( alice_post_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when duplicate signatures" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_duplicate_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when signed by an additional signature not in the creator's authority" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test success with witness signature" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( signature_stripping )
-{
-   try
-   {
-      // Alice, Bob and candice all have 2-of-3 multisig on corp.
-      // Legitimate tx signed by (Alice, Bob) goes through.
-      // Sam shouldn't be able to add or remove signatures to get the transaction to process multiple times.
-
-      ACTORS( (alice)(bob)(sam)(corp) )
-      fund( "corp", 10000 );
-
-      account_update_operation update_op;
-      update_op.account = "corp";
-      update_op.active = authority( 2, "alice", 1, "bob", 1, "sam", 1 );
-
-      signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( update_op );
-
-      tx.sign( corp_private_key, db.get_chain_id() );
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.memo = "Hello";
+      transfer.validate();
+      
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      transfer_operation transfer_op;
-      transfer_op.from = "corp";
-      transfer_op.to = "sam";
-      transfer_op.amount = ASSET( "1.000 TESTS" );
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
 
-      tx.operations.push_back( transfer_op );
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful transfer" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no signatures" );
+
+      tx.operations.push_back( transfer );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when no signatures" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when signed by a signature not in the account's active authority" );
+
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when signed by a signature not in the account's active authority" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when duplicate signatures" );
+
+      tx.signatures.clear();
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_duplicate_sig );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when duplicate signatures" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when signed by an additional signature not in the creator's authority" );
+      
+      tx.signatures.clear();
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when signed by an additional signature not in the creator's authority" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when multi-sig signed by insufficient threshold" );
+
+      // Alice, Bob and candice all have 2-of-3 multisig on corp.
+      // Legitimate tx signed by (Alice, Bob) goes through.
+      // Sam shouldn't be able to add or remove signatures to get the transaction to process multiple times.
+
+      account_update_operation update_op;
+
+      update_op.account = "corp";
+      update_op.active = authority( 2, "alice", 1, "bob", 1, "candice", 1 );
+
+      tx.operations.push_back( update_op );
+      tx.sign( corp_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      transfer_operation transfer;
+
+      transfer.signatory = "corp";
+      transfer.from = "corp";
+      transfer.to = "candice";
+
+      tx.operations.push_back( transfer );
 
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       signature_type alice_sig = tx.signatures.back();
+
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when multi-sig signed by insufficient threshold" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when multi-sig signed by too many signatures" );
+
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       signature_type bob_sig = tx.signatures.back();
-      tx.sign( sam_private_key, db.get_chain_id() );
-      signature_type sam_sig = tx.signatures.back();
+
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      signature_type candice_sig = tx.signatures.back();
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when multi-sig signed by too many signatures" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: success when multi-sig signed by 2 of 3 keys" );
 
       tx.signatures.clear();
       tx.signatures.push_back( alice_sig );
       tx.signatures.push_back( bob_sig );
       db.push_transaction( tx, 0 );
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: success when multi-sig signed by 2 of 3 keys" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when multi-sig signature is reused from previous operation" );
+
       tx.signatures.clear();
       tx.signatures.push_back( alice_sig );
-      tx.signatures.push_back( sam_sig );
+      tx.signatures.push_back( candice_sig );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-   }
-   FC_LOG_AND_RETHROW()
-}
 
-BOOST_AUTO_TEST_CASE( transfer_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: transfer_apply" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when multi-sig signature is reused from previous operation" );
 
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: larger transfer amount send" );
 
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET(" 0.000 TESTS" ).amount.value );
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
 
-      signed_transaction tx;
-      transfer_operation op;
-
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = ASSET( "5.000 TESTS" );
-
-      BOOST_TEST_MESSAGE( "--- Test normal transaction" );
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "candice";
+      transfer.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.memo = "Hello";
+      transfer.validate();
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Generating a block" );
-      generate_block();
-
-      const auto& new_alice = db.get_account( "alice" );
-      const auto& new_bob = db.get_account( "bob" );
-
-      BOOST_REQUIRE( new_alice.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test emptying an account" );
-      tx.signatures.clear();
       tx.operations.clear();
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, database::skip_transaction_dupe_check );
-
-      BOOST_REQUIRE( new_alice.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test transferring non-existent funds" );
       tx.signatures.clear();
-      tx.operations.clear();
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
 
-      BOOST_REQUIRE( new_alice.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( new_bob.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance + transfer.amount );
+
       validate_database();
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: larger transfer amount send" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when sending greater than liquid balance" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "candice";
+      transfer.amount = asset( 10000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.memo = "Hello";
+      transfer.validate();
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when sending greater than liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sending exactly entire liquid balance" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "candice";
+      transfer.amount = alice_init_liquid_balance;
+      transfer.memo = "Hello";
+      transfer.validate();
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( alice_liquid_balance.amount == 0 );
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance + transfer.amount );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sending exactly entire liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure transferring with zero liquid balance" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "candice";
+      transfer.amount = asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.memo = "Hello";
+      transfer.validate();
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure transferring with zero liquid balance" );
+
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSFER OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -13368,7 +13922,7 @@ BOOST_AUTO_TEST_CASE( witness_update_authorities )
 
       witness_update_operation op;
       op.owner = "alice";
-      op.url = "foo.bar";
+      op.url = "www.url.com";
       op.fee = ASSET( "1.000 TESTS" );
       op.block_signing_key = signing_key.get_public_key();
 
@@ -13423,7 +13977,7 @@ BOOST_AUTO_TEST_CASE( witness_update_apply )
 
       witness_update_operation op;
       op.owner = "alice";
-      op.url = "foo.bar";
+      op.url = "www.url.com";
       op.fee = ASSET( "1.000 TESTS" );
       op.block_signing_key = signing_key.get_public_key();
       op.props.account_creation_fee = MIN_ACCOUNT_CREATION_FEE;
@@ -13459,7 +14013,7 @@ BOOST_AUTO_TEST_CASE( witness_update_apply )
 
       tx.signatures.clear();
       tx.operations.clear();
-      op.url = "bar.foo";
+      op.url = "www.newurl.com";
       tx.operations.push_back( op );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
 
@@ -13467,7 +14021,7 @@ BOOST_AUTO_TEST_CASE( witness_update_apply )
 
       BOOST_REQUIRE( alice_witness.owner == "alice" );
       BOOST_REQUIRE( alice_witness.created == db.head_block_time() );
-      BOOST_REQUIRE( to_string( alice_witness.url ) == "bar.foo" );
+      BOOST_REQUIRE( to_string( alice_witness.url ) == op.url );
       BOOST_REQUIRE( alice_witness.signing_key == op.block_signing_key );
       BOOST_REQUIRE( alice_witness.props.account_creation_fee == op.props.account_creation_fee );
       BOOST_REQUIRE( alice_witness.props.maximum_block_size == op.props.maximum_block_size );

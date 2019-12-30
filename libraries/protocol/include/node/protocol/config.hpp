@@ -61,8 +61,8 @@
 #define PERCENT_1                       (PERCENT_100/100)             // 1% as percentage integer
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)            // 0.1% as percentage integer
 
-#define GENESIS_TIME                    fc::time_point(fc::microseconds(1577836800000000)) // 1st Jan 2020 network launch time
-#define MINING_TIME                     fc::time_point(fc::microseconds(1577836800000000)) // 1st Jan 2020 network launch time
+#define GENESIS_TIME                    fc::time_point(fc::microseconds(1590242400000000)) // 24th May 2020 network launch time
+#define MINING_TIME                     fc::time_point(fc::microseconds(1590242400000000)) // 24th May 2020 network launch time
 
 #define INIT_COIN_SUPPLY                int64_t(0)                                          // Zero MeCoin preissuance
 #define INIT_EQUITY_SUPPLY              int64_t(10 * MILLION * BLOCKCHAIN_PRECISION)        // 10 Million Supply of WYM.
