@@ -246,7 +246,6 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       vdo.delegator = o.registrar;
       vdo.delegatee = o.new_account_name;
       vdo.amount = o.delegation;
-      vdo.min_delegation_time = now + CREATE_ACCOUNT_DELEGATION_TIME;
    });
    
    _db.create< account_authority_object >( [&]( account_authority_object& auth )
@@ -1466,7 +1465,7 @@ void change_recovery_account_evaluator::do_apply( const change_recovery_account_
 
 
 void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
@@ -1500,7 +1499,8 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
 
       _db.remove( *req_itr );
    } 
-}
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
 
 void connection_request_evaluator::do_apply( const connection_request_operation& o )
 { try {
@@ -1798,6 +1798,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
+
 /**
  * Enables an account to follow another account by adding it to
  * the account's following object. 
@@ -1898,7 +1899,6 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
    _db.update_account_in_feed( o.following, o.follower );
    
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
 
 
 void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
@@ -2023,7 +2023,6 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
    _db.update_tag_in_feed( o.follower, o.tag );
    
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
 
 
 void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
@@ -2786,7 +2785,7 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
    const account_object& account = _db.get_account( o.account );
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
    time_point now = props.time;
-   FC_ASSERT( account.membership != NONE, 
+   FC_ASSERT( account.membership != NONE,
       "Account must be a member to create an Interface.");
 
    const interface_object* int_ptr = _db.find_interface( o.account );
@@ -2831,6 +2830,87 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
          i.active = true;
          i.created = now;
          i.last_update_time = now;
+      });
+   } 
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   if( o.signatory != signed_for )
+   {
+      const account_business_object& b = _db.get_account_business( signed_for );
+      const account_object& signatory = _db.get_account( o.signatory );
+      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   const account_object& account = _db.get_account( o.account );
+   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   time_point now = props.time;
+   asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
+
+   FC_ASSERT( account.membership != NONE, 
+      "Account must be a member to act as a mediator." );
+   
+   const mediator_object* med_ptr = _db.find_mediator( o.account );
+
+   if( med_ptr != nullptr ) // updating existing mediator
+   {
+      const mediator_object& mediator = *med_ptr;
+      asset delta = o.mediator_bond - mediator.mediator_bond;
+
+      FC_ASSERT( liquid >= delta, 
+         "Account has insufficient liquid balance for specified mediator bond." );
+
+      _db.adjust_liquid_balance( o.account, -delta );
+      _db.adjust_pending_supply( delta );
+
+      _db.modify( mediator, [&]( mediator_object& m )
+      { 
+         if( o.url.size() )
+         {
+            from_string( m.url, o.url );
+         }
+         if( o.details.size() )
+         {
+            from_string( m.details, o.details );
+         }
+         if( o.json.size() )
+         {
+            from_string( m.json, o.json );
+         }
+         m.mediator_bond = o.mediator_bond;
+         m.last_update_time = now;
+         m.active = o.active;
+      });
+   }
+   else  // create new mediator
+   {
+      _db.adjust_liquid_balance( o.account, -o.mediator_bond );
+      _db.adjust_pending_supply( o.mediator_bond );
+
+      _db.create< mediator_object >( [&]( mediator_object& m )
+      {
+         m.account = o.account;
+         if( o.url.size() )
+         {
+            from_string( m.url, o.url );
+         }
+         if( o.details.size() )
+         {
+            from_string( m.details, o.details );
+         }
+         if( o.json.size() )
+         {
+            from_string( m.json, o.json );
+         }
+         m.active = true;
+         m.created = now;
+         m.last_update_time = now;
+         m.mediator_bond = o.mediator_bond;
+         m.last_escrow_from = account_name_type();
+         m.last_escrow_id = shared_string();
       });
    } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -2954,6 +3034,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          "Creator has insufficient balance to pay community enterprise proposal fee." );
       _db.adjust_liquid_balance( o.creator, -o.fee );
       const reward_fund_object& reward_fund = _db.get_reward_fund();
+      
       _db.modify( reward_fund, [&]( reward_fund_object& rfo )
       { 
          rfo.adjust_community_fund_balance( o.fee );
@@ -3141,7 +3222,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       FC_ASSERT( board_ptr != nullptr, 
          "Board Name: ${b} not found.", ("b", o.board ));
       const board_object& board = *board_ptr;
-      feed_types board_feed_type = BOARD_FEED;
+      feed_reach_type board_feed_type = BOARD_FEED;
       const board_member_object& board_member = _db.get_board_member( board.name );
 
       if( o.parent_author == ROOT_POST_PARENT )
@@ -3532,7 +3613,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
       if( !o.deleted )     // Editing post
       {
-         feed_types old_reach = comment.reach;
+         feed_reach_type old_reach = comment.reach;
 
          _db.modify( comment, [&]( comment_object& com )
          {
@@ -5954,7 +6035,7 @@ void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
       "Inventory offering has expired.");
 
    uint32_t valid_inventory_count = 0;
-   metric_types metric = inventory.metric;
+   ad_metric_type metric = inventory.metric;
    flat_set< const account_object* > inventory_accounts;
    
    for( transaction_id_type txn : o.transactions )     // Validates the inventory transactions in the delivery
@@ -6226,13 +6307,17 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
          "Unique asset must be transferred as a single unit asset." );
    }
 
+   asset from_liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
+
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions." );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.to, asset_obj ),
       "Transfer is not authorized, due to sender account's asset permisssions." );
+   FC_ASSERT( from_liquid >= o.amount,
+         "Account ${f} does not have sufficient funds for transfer.",("f", o.from) );
 
    const auto& req_idx = _db.get_index< transfer_request_index >().indices().get< by_request_id >();
-   auto req_itr = req_idx.find( boost::make_tuple( to_account.name, o.request_id ) );
+   auto req_itr = req_idx.find( boost::make_tuple( o.to, o.request_id ) );
 
    if( req_itr == req_idx.end() )    // Transfer request does not exist, creating new request.
    {
@@ -6241,8 +6326,8 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
 
       _db.create< transfer_request_object >( [&]( transfer_request_object& tro )
       {
-         tro.to = to_account.name;
-         tro.from = from_account.name;
+         tro.to = o.to;
+         tro.from = o.from;
          from_string( tro.memo, o.memo );
          from_string( tro.request_id, o.request_id );
          tro.amount = o.amount;
@@ -6331,21 +6416,28 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
+   shared_string transfer_id;
+   from_string( transfer_id, o.transfer_id );
 
+   asset from_liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
+   FC_ASSERT( from_liquid >= o.amount,
+      "Account: ${f} does not have sufficient funds for transfer amount.",("f", o.from) );
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions" );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.to, asset_obj ),
       "Transfer is not authorized, due to sender account's asset permisssions" );
-   FC_ASSERT( _db.get_liquid_balance( from_account.name, o.amount.symbol ) >= o.amount,
-      "Account does not have sufficient funds for first transfer." );
-
+   FC_ASSERT( !( o.extensible && o.fill_or_kill ),
+      "Recurring transfer cannot be both extensible and fill or kill." );
+   
    const auto& recurring_idx = _db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
-   auto recurring_itr = recurring_idx.find( boost::make_tuple( from_account.name, o.transfer_id ) );
+   auto recurring_itr = recurring_idx.find( boost::make_tuple( from_account.name, transfer_id ) );
 
    if( recurring_itr == recurring_idx.end() )    // Recurring transfer does not exist, creating new recurring transfer.
    {
       FC_ASSERT( o.active,
          "Recurring transfer does not exist to cancel, set active to true." );
+      FC_ASSERT( o.begin > now,
+         "Begin time must be in the future." );
 
       _db.create< transfer_recurring_object >( [&]( transfer_recurring_object& tro )
       {
@@ -6355,22 +6447,46 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
          from_string( tro.transfer_id, o.transfer_id );
          tro.amount = o.amount;
          tro.begin = o.begin;
-         tro.end = o.end;
+         tro.payments = o.payments;
+         tro.payments_remaining = o.payments;
+         tro.end = o.begin + fc::microseconds( o.interval.count() * ( o.payments - 1 ) );
          tro.interval = o.interval;
          tro.next_transfer = o.begin;
+         tro.extensible = o.extensible;
+         tro.fill_or_kill = o.fill_or_kill;
       });
    }
    else
    {
       if( o.active )
       {
+         int32_t prev_remaining = recurring_itr->payments_remaining;
+         int32_t delta_remaining = o.payments - prev_remaining;
+         int32_t new_remaining = prev_remaining += delta_remaining;
+         time_point next_transfer = recurring_itr->next_transfer;
+         time_point init_begin = recurring_itr->begin;
+         time_point new_end = next_transfer + fc::microseconds( o.interval.count() * ( new_remaining - 1 ) );
+
+         FC_ASSERT( new_end > now,
+            "Cannot change payment schedule to result in a completion time in the past." );
+
+         if( init_begin < now )
+         {
+            FC_ASSERT( o.begin == init_begin,
+               "Cannot change payment begin time after payment has already begun." );
+         }
+
          _db.modify( *recurring_itr, [&]( transfer_recurring_object& tro )
          {
+            tro.interval = o.interval;
             from_string( tro.memo, o.memo );
             tro.amount = o.amount;
+            tro.payments = o.payments;
+            tro.payments_remaining = new_remaining;
             tro.begin = o.begin;
-            tro.end = o.end;
-            tro.interval = o.interval;
+            tro.end = new_end;
+            tro.extensible = o.extensible;
+            tro.fill_or_kill = o.fill_or_kill;
          });
       }
       else
@@ -6398,33 +6514,45 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
+   asset from_liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
+   shared_string request_id;
+   from_string( request_id, o.request_id );
 
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions" );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.to, asset_obj ),
       "Transfer is not authorized, due to sender account's asset permisssions" );
-   FC_ASSERT( _db.get_liquid_balance( from_account.name, o.amount.symbol ) >= o.amount,
+   FC_ASSERT( from_liquid >= o.amount,
       "Account does not have sufficient funds for first transfer." );
+   FC_ASSERT( !( o.extensible && o.fill_or_kill ),
+      "Recurring transfer cannot be both extensible and fill or kill." );
 
    const auto& req_idx = _db.get_index< transfer_recurring_request_index >().indices().get< by_request_id >();
-   auto req_itr = req_idx.find( boost::make_tuple( to_account.name, o.request_id ) );
+   auto req_itr = req_idx.find( boost::make_tuple( o.to, request_id ) );
 
    if( req_itr == req_idx.end() )   // Recurring transfer request does not exist, creating new recurring transfer request.
    {
       FC_ASSERT( o.requested,
          "Recurring transfer request does not exist to cancel, set active to true." );
+      FC_ASSERT( o.begin > now,
+         "Begin time must be in the future." );
+      FC_ASSERT( o.expiration <= o.begin,
+         "Expiration time must be before or equal to begin time." );
 
       _db.create< transfer_recurring_request_object >( [&]( transfer_recurring_request_object& trro )
       {
-         trro.to = to_account.name;
-         trro.from = from_account.name;
+         trro.to = o.to;
+         trro.from = o.from;
          from_string( trro.memo, o.memo );
          from_string( trro.request_id, o.request_id );
          trro.amount = o.amount;
          trro.begin = o.begin;
-         trro.end = o.end;
+         trro.end = o.begin + fc::microseconds( o.interval.count() * ( o.payments - 1 ) );
          trro.interval = o.interval;
-         trro.expiration = now + TRANSFER_REQUEST_DURATION;
+         trro.payments = o.payments;
+         trro.expiration = o.expiration;
+         trro.extensible = o.extensible;
+         trro.fill_or_kill = o.fill_or_kill;
       });
    }
    else
@@ -6435,9 +6563,12 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
          {
             from_string( trro.memo, o.memo );
             trro.amount = o.amount;
+            trro.payments = o.payments;
             trro.begin = o.begin;
-            trro.end = o.end;
+            trro.end = o.begin + fc::microseconds( o.interval.count() * ( o.payments - 1 ) );
             trro.interval = o.interval;
+            trro.extensible = o.extensible;
+            trro.fill_or_kill = o.fill_or_kill;
          });
       }
       else
@@ -6468,12 +6599,13 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
+   asset from_liquid = _db.get_liquid_balance( request.from, request.amount.symbol );
 
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions" );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.to, asset_obj ),
       "Transfer is not authorized, due to sender account's asset permisssions" );
-   FC_ASSERT( _db.get_liquid_balance( request.from, request.amount.symbol ) >= request.amount,
+   FC_ASSERT( from_liquid >= request.amount,
       "Account does not have sufficient funds for first transfer." );
 
    const auto& recurring_idx = _db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
@@ -6491,10 +6623,14 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
          tro.memo = request.memo;
          tro.transfer_id = request.request_id;  // Request id becomes new transfer ID
          tro.amount = request.amount;
+         tro.payments = request.payments;
+         tro.payments_remaining = request.payments;
          tro.begin = request.begin;
          tro.end = request.end;
          tro.interval = request.interval;
          tro.next_transfer = request.begin;
+         tro.extensible = request.extensible;
+         tro.fill_or_kill = request.fill_or_kill;
       });
    }
    else    // Rejecting recurring transfer request.
@@ -6510,7 +6646,7 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
 
 
 void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
@@ -6567,11 +6703,11 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
    {
       a.total_rewards += reward.amount;
    }); 
-}
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.from;
    if( o.signatory != signed_for )
    {
@@ -6624,7 +6760,7 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
          _db.modify( account_balance, [&]( account_balance_object& abo )
          {
             abo.stake_rate = new_stake_rate;
-            abo.next_stake_time = now + fc::seconds( STAKE_WITHDRAW_INTERVAL_SECONDS );
+            abo.next_stake_time = now + STAKE_WITHDRAW_INTERVAL;
             abo.to_stake = o.amount.amount;
             abo.total_staked = 0;
             abo.unstake_rate = 0;
@@ -6634,11 +6770,11 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
          });
       } 
    }
-}
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.from;
    if( o.signatory != signed_for )
    {
@@ -6704,13 +6840,13 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
             abo.to_stake = 0;
             abo.total_staked = 0;
             abo.unstake_rate = new_unstake_rate;
-            abo.next_unstake_time = now + fc::seconds( STAKE_WITHDRAW_INTERVAL_SECONDS );
+            abo.next_unstake_time = now + STAKE_WITHDRAW_INTERVAL;
             abo.to_unstake = o.amount.amount;
             abo.total_unstaked = 0;
          });
       }
    }
-}
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operation& o )
@@ -6782,7 +6918,7 @@ void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operatio
 
 
 void transfer_to_savings_evaluator::do_apply( const transfer_to_savings_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.from;
    if( o.signatory != signed_for )
    {
@@ -6801,10 +6937,12 @@ void transfer_to_savings_evaluator::do_apply( const transfer_to_savings_operatio
 
    _db.adjust_liquid_balance( from, -o.amount );
    _db.adjust_savings_balance( to, o.amount );
-}
+
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
 
 void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.from;
    if( o.signatory != signed_for )
    {
@@ -6814,59 +6952,74 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& to = _db.get_account( o.to ); // Verify to account exists
-   const account_object& from = _db.get_account( o.from );
+   const account_object& to_account = _db.get_account( o.to );
+   const account_object& from_account = _db.get_account( o.from );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( from.savings_withdraw_requests < SAVINGS_WITHDRAW_REQUEST_LIMIT,
+   FC_ASSERT( from_account.savings_withdraw_requests < SAVINGS_WITHDRAW_REQUEST_LIMIT,
       "Account has reached limit for pending withdraw requests." );
+
    const asset& savings = _db.get_savings_balance( o.from, o.amount.symbol );
    FC_ASSERT( savings >= o.amount,
       "Insufficient Savings balance." );
-   _db.adjust_savings_balance( from, -o.amount );
 
-   _db.create< savings_withdraw_object >( [&]( savings_withdraw_object& s )
-   {
-      s.from = o.from;
-      s.to = o.to;
-      s.amount = o.amount;
-      from_string( s.memo, o.memo );
-      from_string( s.request_id, o.request_id);
-      s.complete = now + SAVINGS_WITHDRAW_TIME;
-   });
-
-   _db.modify( from, [&]( account_object& a )
-   {
-      a.savings_withdraw_requests++;
-   });
-}
-
-void cancel_transfer_from_savings_evaluator::do_apply( const cancel_transfer_from_savings_operation& o )
-{
-   const account_name_type& signed_for = o.from;
-   if( o.signatory != signed_for )
-   {
-      const account_object& signatory = _db.get_account( o.signatory );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const account_object& from = _db.get_account( o.from );
    shared_string request_id;
    from_string( request_id, o.request_id );
-   const savings_withdraw_object& swo = _db.get_savings_withdraw( o.from, request_id );
-   _db.adjust_savings_balance( swo.from, swo.amount );
-   _db.remove( swo );
-   
-   _db.modify( from, [&]( account_object& a )
+
+   const auto& savings_idx = _db.get_index< savings_withdraw_index >().indices().get< by_request_id >();
+   auto savings_itr = savings_idx.find( boost::make_tuple( from_account.name, request_id ) );
+
+   if( savings_itr == savings_idx.end() )     // Savings request does not exist
    {
-      a.savings_withdraw_requests--;
-   });
-}
+      FC_ASSERT( o.transferred, 
+         "No Transfer request with the specified id exists to cancel." );
+
+      _db.adjust_savings_balance( o.from, -o.amount );
+
+      _db.create< savings_withdraw_object >( [&]( savings_withdraw_object& s )
+      {
+         s.from = o.from;
+         s.to = o.to;
+         s.amount = o.amount;
+         from_string( s.memo, o.memo );
+         from_string( s.request_id, o.request_id );
+         s.complete = now + SAVINGS_WITHDRAW_TIME;
+      });
+
+      _db.modify( from_account, [&]( account_object& a )
+      {
+         a.savings_withdraw_requests++;
+      });
+   }
+   else      // Savings request exists
+   {
+      const savings_withdraw_object& swo = *savings_itr;
+
+      if( o.transferred )    // Editing transfer request
+      {
+         _db.modify( swo, [&]( savings_withdraw_object& s )
+         {
+            s.to = o.to;
+            s.amount = o.amount;
+            from_string( s.memo, o.memo );
+         });
+      }
+      else     // Cancelling request
+      {
+         _db.adjust_savings_balance( swo.from, swo.amount );
+         _db.remove( swo );
+         
+         _db.modify( from_account, [&]( account_object& a )
+         {
+            a.savings_withdraw_requests--;
+         });
+      }
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
 
 void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.delegator;
    if( o.signatory != signed_for )
    {
@@ -6881,14 +7034,14 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
    const account_object& delegator_account = _db.get_account( o.delegator );
    const account_object& delegatee_account = _db.get_account( o.delegatee );
    time_point now = _db.head_block_time();
-   auto delegation = _db.find< asset_delegation_object, by_delegation >( boost::make_tuple( o.delegator, o.delegatee ) );
+   const asset_delegation_object* delegation_ptr = _db.find_asset_delegation( o.delegator, o.delegatee, o.amount.symbol );
 
    asset available_stake = delegator_balance.get_staked_balance() - delegator_balance.get_delegated_balance() - asset( delegator_balance.to_unstake - delegator_balance.total_unstaked, o.amount.symbol );
 
    const witness_schedule_object& wso = _db.get_witness_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
-   if( delegation == nullptr )          // If delegation doesn't exist, create it
+   if( delegation_ptr == nullptr )          // If delegation doesn't exist, create it
    {
       FC_ASSERT( available_stake >= o.amount, 
          "Account does not have enough stake to delegate." );
@@ -6898,42 +7051,42 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
          ado.delegator = o.delegator;
          ado.delegatee = o.delegatee;
          ado.amount = o.amount;
-         ado.min_delegation_time = now;
       }); 
 
-      _db.adjust_delegated_balance( delegator_account, o.amount);       // increase delegated balance of delegator account
-      _db.adjust_receiving_balance( delegatee_account, o.amount);       // increase receiving balance of delegatee account
+      _db.adjust_delegated_balance( delegator_account, o.amount );       // increase delegated balance of delegator account
+      _db.adjust_receiving_balance( delegatee_account, o.amount );       // increase receiving balance of delegatee account
    }
-   else if( o.amount >= delegation->amount )       // Else if the delegation is increasing
+   else if( o.amount >= delegation_ptr->amount )       // Else if the delegation is increasing
    {
-      asset delta = o.amount - delegation->amount;
+      asset delta = o.amount - delegation_ptr->amount;
 
-      FC_ASSERT( available_stake >= o.amount - delegation->amount, 
+      FC_ASSERT( available_stake >= o.amount - delegation_ptr->amount, 
          "Account does not have enough stake to delegate." );
 
-      _db.adjust_delegated_balance( delegator_account, delta);     // increase delegated balance of delegator account
-      _db.adjust_receiving_balance( delegatee_account, delta);     // increase receiving balance of delegatee account
+      _db.adjust_delegated_balance( delegator_account, delta );     // increase delegated balance of delegator account
+      _db.adjust_receiving_balance( delegatee_account, delta );     // increase receiving balance of delegatee account
 
-      _db.modify( *delegation, [&]( asset_delegation_object& ado )
+      _db.modify( *delegation_ptr, [&]( asset_delegation_object& ado )
       {
          ado.amount = o.amount;
       });
    }
    else        // Else the delegation is decreasing ( delegation->asset > o.amount)
    {
-      asset delta = delegation->amount - o.amount;
+      asset delta = delegation_ptr->amount - o.amount;
 
       if( o.amount.amount == 0 )
       {
-         FC_ASSERT( delegation->amount.amount > 0, 
+         FC_ASSERT( delegation_ptr->amount.amount > 0,
             "Delegation would be set to zero, but it is already zero");
       }
 
       _db.create< asset_delegation_expiration_object >( [&]( asset_delegation_expiration_object& obj )
       {
          obj.delegator = o.delegator;
+         obj.delegatee = o.delegatee;
          obj.amount = delta;
-         obj.expiration = std::max( now + CONTENT_REWARD_INTERVAL, delegation->min_delegation_time );
+         obj.expiration = now + CONTENT_REWARD_INTERVAL;
       });
 
       _db.adjust_delegated_balance( delegator_account, -delta );     // decrease delegated balance of delegator account
@@ -6941,17 +7094,17 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 
       if( o.amount.amount > 0 )
       {
-         _db.modify( *delegation, [&]( asset_delegation_object& ado )
+         _db.modify( *delegation_ptr, [&]( asset_delegation_object& ado )
          {
             ado.amount = o.amount;
          });
       }
       else
       {
-         _db.remove( *delegation );
+         _db.remove( *delegation_ptr );
       }
    }
-}
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 //===========================//
@@ -6961,7 +7114,7 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 
 void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
+   const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
       const account_object& signatory = _db.get_account( o.signatory );
@@ -6970,40 +7123,43 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    time_point now = _db.head_block_time();
-   
-   FC_ASSERT( o.ratification_deadline > now, 
+
+   FC_ASSERT( o.account == o.to || o.account == o.from,
+      "Account must be a party to the escrow transaction to initiate transfer proposal." );
+   FC_ASSERT( o.acceptance_time > now, 
       "The escrow ratification deadline must be after head block time." );
    FC_ASSERT( o.escrow_expiration > now, 
       "The escrow expiration must be after head block time." );
 
-   asset liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
    const account_object& to_account = _db.get_account( o.to );
    const account_object& from_account = _db.get_account( o.from );
-   const account_object& agent_account = _db.get_account( o.agent );
-   asset escrow_total = o.amount + o.fee;
-   
-   FC_ASSERT( liquid >= escrow_total, 
-      "Account cannot cover costs of escrow. Required: ${r} Available: ${a}", ("r",escrow_total)("a",liquid) );
+   asset liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
 
-   _db.adjust_liquid_balance( o.from, -escrow_total );
+   FC_ASSERT( liquid >= o.amount,
+      "Account cannot cover costs of escrow. Required: ${r} Available: ${a}", ("r",o.amount)("a",liquid) );
 
    _db.create< escrow_object >([&]( escrow_object& esc )
    {
       from_string( esc.escrow_id, o.escrow_id );
-      esc.from                   = o.from;
-      esc.to                     = o.to;
-      esc.agent                  = o.agent;
-      esc.ratification_deadline  = o.ratification_deadline;
-      esc.escrow_expiration      = o.escrow_expiration;
-      esc.balance                = o.amount;
-      esc.pending_fee            = o.fee;
+      esc.from = o.from;
+      esc.to = o.to;
+      esc.from_mediator = account_name_type();
+      esc.to_mediator = account_name_type();
+      esc.acceptance_time = o.acceptance_time;
+      esc.escrow_expiration = o.escrow_expiration;
+      esc.payment = o.amount;
+      esc.balance = asset( 0, o.amount.symbol );
+      esc.dispute_release_time = time_point::maximum();
+      esc.approvals[ o.from ] = false;
+      esc.approvals[ o.to ] = false;
    });
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 { try {
-   const account_name_type& signed_for = o.who;
+   const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
       const account_object& signatory = _db.get_account( o.signatory );
@@ -7011,70 +7167,93 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+
    shared_string escrow_id;
    from_string( escrow_id, o.escrow_id );
-   const escrow_object& escrow = _db.get_escrow( o.from, escrow_id );
-   const account_object& from_account = _db.get_account( o.from );
-   const account_object& agent_account = _db.get_account( o.agent );
+
+   const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+
+   const account_object& to_account = _db.get_account( escrow.to );
+   const account_object& from_account = _db.get_account( escrow.from );
+   const account_object& mediator_account = _db.get_account( o.mediator );
+   const mediator_object& mediator_obj = _db.get_mediator( o.mediator );
+
+   asset liquid = _db.get_liquid_balance( o.account, escrow.payment.symbol );
+   // Escrow bond is a percentage paid as security in the event of dispute, and can be forfeited.
+   asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+
+   flat_map< account_name_type, bool > approvals = escrow.approvals;
+
+   FC_ASSERT( !approvals[ o.account ],
+      "Account: ${a} has already approved the escrow.", ("a", o.account ) );
 
    time_point now = _db.head_block_time();
-   FC_ASSERT( escrow.to == o.to, 
-      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to )("e", escrow.to ) );
-   FC_ASSERT( escrow.agent == o.agent, 
-      "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", escrow.agent) );
-   FC_ASSERT( escrow.ratification_deadline >= now, 
-      "The escrow ratification deadline has passed. Escrow can no longer be ratified." );
 
-   bool reject_escrow = !o.approve;
-
-   if( o.who == o.to )
+   if( escrow.disputed )
    {
-      FC_ASSERT( !escrow.to_approved,
-         "Account 'to' (${t}) has already approved the escrow.", ("t", o.to ) );
+      FC_ASSERT( escrow.is_mediator( o.account ),
+         "Account must be an allocated mediator to approve during a dispute." );
+      FC_ASSERT( o.approved,
+         "Mediator cannot select to cancel a disputed escrow" );
+   }
+   else
+   {
+      FC_ASSERT( o.account == escrow.to || o.account == escrow.from || 
+         o.account == escrow.to_mediator || o.account == escrow.from_mediator,
+         "Account must be a party to the escrow transaction to approve." );
+   }
 
-      if( !reject_escrow )
+   if( o.approved )
+   {
+      if( o.account == escrow.from )
       {
-         _db.modify( escrow, [&]( escrow_object& esc )
-         {
-            esc.to_approved = true;
-         });
+         FC_ASSERT( liquid >= escrow.payment + escrow_bond,
+            "Account cannot cover costs of escrow. Required: ${r} Available: ${a}", ("r", escrow_bond)("a",liquid) );
+         _db.adjust_liquid_balance( o.account, -( escrow.payment + escrow_bond ) );
+         _db.adjust_pending_supply( escrow.payment + escrow_bond );
       }
-   }
-   if( o.who == o.agent )
-   {
-      FC_ASSERT( !escrow.agent_approved,
-         "Account 'agent' (${a}) has already approved the escrow.", ("a", o.agent) );
-
-      if( !reject_escrow )
+      else
       {
-         _db.modify( escrow, [&]( escrow_object& esc )
-         {
-            esc.agent_approved = true;
-         });
+         FC_ASSERT( liquid >= escrow_bond,
+            "Account cannot cover costs of escrow. Required: ${r} Available: ${a}", ("r", escrow_bond)("a",liquid) );
+         _db.adjust_liquid_balance( o.account, -escrow_bond );
+         _db.adjust_pending_supply( escrow_bond );
       }
-   }
-
-   if( reject_escrow )
-   {
-      _db.adjust_liquid_balance( o.from, escrow.balance );
-      _db.adjust_liquid_balance( o.from, escrow.pending_fee );
-      _db.remove( escrow );
-   }
-   else if( escrow.to_approved && escrow.agent_approved )
-   {
-      _db.adjust_liquid_balance( o.agent, escrow.pending_fee );
 
       _db.modify( escrow, [&]( escrow_object& esc )
       {
-         esc.pending_fee.amount = 0;
+         esc.approvals[ o.account ] = true;
+         if( o.account == escrow.from )
+         {
+            esc.balance += ( escrow.payment + escrow_bond );
+            esc.from_mediator = o.mediator;     // Adds selected mediator to escrow
+         }
+         else if( o.account == escrow.to )
+         {
+            esc.balance += escrow_bond;
+            esc.to_mediator = o.mediator;      // Adds selected mediator to escrow
+         }
+         else if( o.account == escrow.from_mediator )
+         {
+            esc.balance += escrow_bond;
+         }
+         else if( o.account == escrow.to_mediator )
+         {
+            esc.balance += escrow_bond;
+         }
       });
+   }
+   else       // Any accounts can cancel the escrow and refund all previous payments
+   {
+      _db.release_escrow( escrow );
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
 { try {
-   const account_name_type& signed_for = o.who;
+   const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
       const account_object& signatory = _db.get_account( o.signatory );
@@ -7082,35 +7261,35 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+
    shared_string escrow_id;
    from_string( escrow_id, o.escrow_id );
 
-   const account_object& from = _db.get_account( o.from );
-   const account_object& who = _db.get_account( o.who );
+   const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+
+   const account_object& to_account = _db.get_account( escrow.to );
+   const account_object& from_account = _db.get_account( escrow.from );
+
    time_point now = _db.head_block_time();
-   const escrow_object& e = _db.get_escrow( o.from, escrow_id );
 
-   FC_ASSERT( now < e.escrow_expiration,
+   FC_ASSERT( o.account == escrow.to || o.account == escrow.from,
+      "Account must be either sender or receiver of the escrow transaction to dispute." );
+   FC_ASSERT( now < escrow.escrow_expiration,
       "Disputing the escrow must happen before expiration." );
-   FC_ASSERT( e.to_approved && e.agent_approved,
-      "The escrow must be approved by all parties before a dispute can be raised." );
-   FC_ASSERT( !e.disputed,
+   FC_ASSERT( escrow.is_approved(),
+      "The escrow must be approved by all parties and selected mediators before a dispute can be raised." );
+   FC_ASSERT( !escrow.disputed,
       "The escrow is already under dispute." );
-   FC_ASSERT( e.to == o.to,
-      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to )("e", e.to ) );
-   FC_ASSERT( e.agent == o.agent,
-      "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", e.agent) );
 
-   _db.modify( e, [&]( escrow_object& esc )
-   {
-      esc.disputed = true;
-   });
+   _db.dispute_escrow( escrow );
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
 { try {
-   const account_name_type& signed_for = o.who;
+   const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
       const account_object& signatory = _db.get_account( o.signatory );
@@ -7118,60 +7297,61 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+
    shared_string escrow_id;
    from_string( escrow_id, o.escrow_id );
-   const account_object& from_account = _db.get_account( o.from );
-   const account_object& who = _db.get_account( o.who );
-   const account_object& receiver_account = _db.get_account( o.receiver );
-   time_point now = _db.head_block_time();
-   const escrow_object& e = _db.get_escrow( o.from, escrow_id );
 
-   FC_ASSERT( e.to_approved && e.agent_approved,
-      "Funds cannot be released prior to escrow approval by all accounts." );
-   FC_ASSERT( e.balance >= o.amount,
-      "Release amount exceeds escrow balance. Amount: ${a}, Balance: ${b}", ("a", o.amount)("b", e.balance) );
-   FC_ASSERT( e.to == o.to,
-      "Operation 'to' (${o}) does not match escrow 'to' (${e}).", ("o", o.to )("e", e.to ) );
-   FC_ASSERT( e.agent == o.agent,
-      "Operation 'agent' (${a}) does not match escrow 'agent' (${e}).", ("o", o.agent)("e", e.agent) );
-   FC_ASSERT( o.receiver == e.from || o.receiver == e.to,
-      "Funds must be released to 'from' (${f}) or 'to' (${t})", ("f", e.from)("t", e.to ) );
+   const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+
+   const account_object& to_account = _db.get_account( escrow.to );
+   const account_object& from_account = _db.get_account( escrow.from );
+   const account_object& to_mediator_account = _db.get_account( escrow.to_mediator );
+   const account_object& from_mediator_account = _db.get_account( escrow.from_mediator );
+
+   time_point now = _db.head_block_time();
    
-   if( e.disputed )     // If there is a dispute regardless of expiration, the agent can release funds to either party
+   FC_ASSERT( escrow.is_approved(),
+      "Funds cannot be released prior to escrow approval by all participating accounts." );
+   FC_ASSERT( o.account == escrow.to || o.account == escrow.from || 
+      o.account == escrow.to_mediator || o.account == escrow.from_mediator || escrow.is_mediator( o.account ),
+      "Account must be a participant in the escrow transaction to release funds." );
+   FC_ASSERT( escrow.approvals.at( o.account ) == true,
+      "Account must have approved and deposited an escrow bond with the escrow transaction to release funds." );
+   
+   if( escrow.disputed )  // If there is a dispute, create release percent vote
    {
-      FC_ASSERT( o.who == e.agent,
-         "Only 'agent' (${a}) can release funds in a disputed escrow.", ("a", e.agent) );
+      _db.modify( escrow, [&]( escrow_object& esc )
+      {
+         esc.release_percentages[ o.account ] = o.release_percent;
+      });
    }
    else
    {
-      FC_ASSERT( o.who == e.from || o.who == e.to,
-         "Only 'from' (${f}) and 'to' (${t}) can release funds from a non-disputed escrow", ("f", e.from)("t", e.to ) );
+      FC_ASSERT( o.account == escrow.from || o.account == escrow.to,
+         "Only Sender: ${f} and receiver: ${t} can release funds from a non-disputed escrow",
+         ("f", escrow.from)("t", escrow.to ) );
 
-      if( e.escrow_expiration > now )     // If escrow expires and there is no dispute, either party can release funds to either party.
+      if( escrow.escrow_expiration > now )     // If escrow expires and there is no dispute, either party can release funds to either party.
       {
-         if( o.who == e.from )    // If there is no dispute and escrow has not expired, either party can release funds to the other.
+         if( o.account == escrow.from )    // If there is no dispute and escrow has not expired, either party can release funds to the other.
          {
-            FC_ASSERT( o.receiver == e.to,
-               "Only 'from' (${f}) can release funds to 'to' (${t}).", ("f", e.from)("t", e.to ) );
+            FC_ASSERT( o.release_percent == PERCENT_100,
+               "Release percent should be PERCENT_100 before expiration." );
          }
-         else if( o.who == e.to )
+         else if( o.account == escrow.to )
          {
-            FC_ASSERT( o.receiver == e.from,
-               "Only 'to' (${t}) can release funds to 'from' (${t}).", ("f", e.from)("t", e.to ) );
+            FC_ASSERT( o.release_percent == 0,
+               "Release percent should be 0 before expiration." );
          }
       }
-   }
-   
-   _db.adjust_liquid_balance( o.receiver, o.amount );
 
-   _db.modify( e, [&]( escrow_object& esc )
-   {
-      esc.balance -= o.amount;
-   });
+      _db.modify( escrow, [&]( escrow_object& esc )
+      {
+         esc.release_percentages[ o.account ] = o.release_percent;
+      });
 
-   if( e.balance.amount == 0 )
-   {
-      _db.remove( e );
+      _db.release_escrow( escrow );
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -7235,7 +7415,7 @@ void limit_order_create_evaluator::do_apply( const limit_order_create_operation&
 
 
 void limit_order_cancel_evaluator::do_apply( const limit_order_cancel_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.owner;
    if( o.signatory != signed_for )
    {
@@ -7249,7 +7429,7 @@ void limit_order_cancel_evaluator::do_apply( const limit_order_cancel_operation&
 
    const limit_order_object& limit = _db.get_limit_order( o.owner, order_id );
    _db.cancel_limit_order( limit );
-}
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void margin_order_create_evaluator::do_apply( const margin_order_create_operation& o )
@@ -7387,7 +7567,7 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
 
 
 void margin_order_close_evaluator::do_apply( const margin_order_close_operation& o )
-{
+{ try {
    const account_name_type& signed_for = o.owner;
    if( o.signatory != signed_for )
    {
@@ -7430,7 +7610,7 @@ void margin_order_close_evaluator::do_apply( const margin_order_close_operation&
             "Cancelling close order because it was not filled." );
       }
    }
-}
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void call_order_update_evaluator::do_apply( const call_order_update_operation& o )
@@ -7784,7 +7964,6 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
 
 void liquidity_pool_fund_evaluator::do_apply( const liquidity_pool_fund_operation& o )
 { try {
-   
    const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
    {
@@ -8152,7 +8331,7 @@ void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operat
 //==========================//
 
 
-// The following Asset Evaluators are derived primarily from the Bitshares core codebase with much appreciation.
+// The following Asset Evaluators are inspired by the framework of the Bitshares core codebase with much appreciation.
 // https://bitshares.org
 // https://github.com/bitshares/bitshares-core
 
@@ -9682,7 +9861,8 @@ void custom_evaluator::do_apply( const custom_operation& o )
 { try {
    if( _db.is_producing() )
    {
-      FC_ASSERT( o.data.size() <= 8192, "custom_operation data must be less than 8k" );
+      FC_ASSERT( o.data.size() <= 8192,
+         "custom_operation data must be less than 8k" );
    }  
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -9691,7 +9871,8 @@ void custom_json_evaluator::do_apply( const custom_json_operation& o )
 {
    if( _db.is_producing() )
    {
-      FC_ASSERT( o.json.length() <= 8192, "customJson_operation json must be less than 8k" );
+      FC_ASSERT( o.json.length() <= 8192,
+         "customJson_operation json must be less than 8k" );
    }
       
    std::shared_ptr< custom_operation_interpreter > eval = _db.get_custom_json_evaluator( o.id );

@@ -21,6 +21,8 @@ namespace node { namespace protocol {
 
       fc::microseconds       txn_stake_decay_time = TXN_STAKE_DECAY_TIME;                   // Time over which transaction stake is averaged over
 
+      uint16_t               escrow_bond_percent = ESCROW_BOND_PERCENT;                     // Percentage of an escrow transfer that is deposited for dispute resolution
+
       uint16_t               credit_interest_rate = CREDIT_INTEREST_RATE;                   // The credit interest rate paid to holders of network credit assets.
 
       uint16_t               credit_open_ratio = CREDIT_OPEN_RATIO;                         // The minimum required collateralization ratio for a credit loan to be opened. 
@@ -95,7 +97,7 @@ namespace node { namespace protocol {
 
       uint16_t               enterprise_vote_percent_required = VOTE_THRESHOLD_PERCENT;     // Percentage of total voting power required to approve enterprise milestones. 
 
-      uint16_t               executive_types_amount = EXECUTIVE_TYPES_AMOUNT;               // Number of roles on a business account executive board.
+      uint16_t               executive_role_type_amount = EXECUTIVE_TYPES_AMOUNT;               // Number of roles on a business account executive board.
 
       uint64_t               maximum_asset_whitelist_authorities = MAX_ASSET_WHITELIST_AUTHORITIES;  // The maximum amount of whitelisted or blacklisted authorities for user issued assets 
 
@@ -119,6 +121,8 @@ namespace node { namespace protocol {
             "POW Decay time must be between 1 and 30 days." );
          FC_ASSERT( txn_stake_decay_time >= fc::days(1) && txn_stake_decay_time <= fc::days(30),
             "Transaction Stake Decay time must be between 1 and 30 days." );
+         FC_ASSERT( escrow_bond_percent >= 0 && escrow_bond_percent <= PERCENT_100,
+            "Credit interest rate must be between 0 and PERCENT_100." );
          FC_ASSERT( credit_interest_rate >= 0 && credit_interest_rate <= PERCENT_100,
             "Credit interest rate must be between 0 and PERCENT_100." );
          FC_ASSERT( credit_open_ratio >= PERCENT_100 && credit_open_ratio <= PERCENT_100 * 2,
@@ -210,7 +214,7 @@ namespace node { namespace protocol {
             "Supernode Decay time must be between 1 and 365 days." );
          FC_ASSERT( enterprise_vote_percent_required >= 0 && enterprise_vote_percent_required <= PERCENT_100,
             "Enterprise vote percent required must be between 0 and PERCENT_100." );
-         FC_ASSERT( executive_types_amount >= 10 && executive_types_amount <= 100,
+         FC_ASSERT( executive_role_type_amount >= 10 && executive_role_type_amount <= 100,
             "Executive types amount must be between 10 and 100." );
          FC_ASSERT( maximum_asset_whitelist_authorities >= MAX_ASSET_WHITELIST_AUTHORITIES && 
             maximum_asset_whitelist_authorities <= 10 * MAX_ASSET_WHITELIST_AUTHORITIES,
@@ -265,7 +269,7 @@ FC_REFLECT( node::protocol::chain_properties,
          (comment_curation_decay)
          (supernode_decay_time)
          (enterprise_vote_percent_required)
-         (executive_types_amount)
+         (executive_role_type_amount)
          (maximum_asset_whitelist_authorities)
          (max_stake_intervals)
          (max_unstake_intervals)

@@ -10124,14 +10124,6 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
    // === Transfer Operations === //
    //=============================//
 
-   /**
-    * transfer_operation,
-      transfer_request_operation,
-      transfer_accept_operation,
-      transfer_recurring_operation,
-      transfer_recurring_request_operation,
-      transfer_recurring_accept_operation,
-      */
 
 
 BOOST_AUTO_TEST_CASE( transfer_operation_test )
@@ -10398,6 +10390,1008 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 }
 
 
+BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSFER REQUEST OPERATION SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer request" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
+
+      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      signed_transaction tx;
+
+      transfer_request_operation request;
+
+      request.signatory = "alice";
+      request.to = "alice";
+      request.from = "bob";
+      request.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      request.memo = "Hello";
+      request.request_id = "4d7248b3-c89d-4bce-8e5f-547c75b5628e";
+      request.expiration = now() + fc::days(7);
+      request.requested = true;
+      request.validate();
+      
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( request );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_request_object& req_obj = db.get_transfer_request( "alice", "4d7248b3-c89d-4bce-8e5f-547c75b5628e" );
+
+      BOOST_REQUIRE( req_obj.amount == request.amount );
+      BOOST_REQUIRE( req_obj.to == request.to );
+      BOOST_REQUIRE( req_obj.from == request.from );
+      BOOST_REQUIRE( to_string( req_obj.memo ) == request.memo );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful transfer request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: accept transfer request" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      transfer_accept_operation accept;
+
+      accept.signatory = "bob";
+      accept.from = "bob";
+      accept.to = "alice";
+      accept.request_id = "4d7248b3-c89d-4bce-8e5f-547c75b5628e";
+      accept.accepted = true;
+      accept.validate();
+      
+      tx.operations.push_back( transfer );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance + request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance - request.amount );
+
+      const auto& req_idx = db.get_index< transfer_request_index >().indices().get< by_request_id >();
+      auto req_itr = req_idx.find( boost::make_tuple( "bob", "4d7248b3-c89d-4bce-8e5f-547c75b5628e" ) );
+      BOOST_REQUIRE( req_itr == req_idx.end() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: accept transfer request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when requesting greater than liquid balance" );
+
+      request.amount = asset( 10000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      
+      tx.operations.push_back( request );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when requesting greater than liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: requesting exactly entire liquid balance" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      request.amount = alice_init_liquid_balance;
+      
+      tx.operations.push_back( request );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( alice_liquid_balance.amount == 0 );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: requesting exactly entire liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure requesting transfer with zero liquid balance" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      request.amount = asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      
+      tx.operations.push_back( request );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure requesting transfer with zero liquid balance" );
+
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSFER REQUEST OPERATION SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSFER RECURRING OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer creation and completion" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
+
+      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      signed_transaction tx;
+
+      transfer_recurring_operation transfer;
+
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.transfer_id = "5072f90d-bbd9-4688-99c3-74721f58009c";
+      transfer.memo = "Hello";
+      transfer.begin = now() + fc::minutes(10);
+      transfer.payments = 10;
+      transfer.interval = fc::days(1);
+      transfer.active = true;
+      transfer.extensible = false;
+      transfer.fill_or_kill = false;
+      transfer.validate();
+      
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", "5072f90d-bbd9-4688-99c3-74721f58009c" );
+
+      BOOST_REQUIRE( transfer_obj.from == transfer.from );
+      BOOST_REQUIRE( transfer_obj.to == transfer.to );
+      BOOST_REQUIRE( transfer_obj.amount == transfer.amount );
+      BOOST_REQUIRE( to_string( transfer_obj.memo ) == transfer.memo );
+      BOOST_REQUIRE( transfer_obj.begin == transfer.begin );
+      BOOST_REQUIRE( transfer_obj.payments == transfer.payments );
+      BOOST_REQUIRE( transfer_obj.payments_remaining == transfer.payments );
+      BOOST_REQUIRE( transfer_obj.interval == transfer.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer.begin + transfer.interval );
+
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
+
+      generate_block();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      generate_blocks( transfer_obj.end - BLOCK_INTERVAL );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - 9 * transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + 9 * transfer.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", "5072f90d-bbd9-4688-99c3-74721f58009c" );
+
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 1 );
+
+      generate_block();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - 10 * transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + 10 * transfer.amount );
+
+      const auto& transfer_idx = db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
+      auto transfer_itr = transfer_idx.find( std::make_tuple( "alice", "5072f90d-bbd9-4688-99c3-74721f58009c" ) );
+
+      BOOST_REQUIRE( transfer_itr == transfer_idx.end() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful recurring transfer creation and completion" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful fill or kill cancellation" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      transfer.transfer_id = "e614fa1b-e50d-4f80-90a0-698022170e5d";
+      transfer.amount = alice_init_liquid_balance;
+      transfer.fill_or_kill = true;
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", "e614fa1b-e50d-4f80-90a0-698022170e5d" );
+
+      BOOST_REQUIRE( transfer_obj.from == transfer.from );
+      BOOST_REQUIRE( transfer_obj.to == transfer.to );
+      BOOST_REQUIRE( transfer_obj.amount == transfer.amount );
+      BOOST_REQUIRE( to_string( transfer_obj.memo ) == transfer.memo );
+      BOOST_REQUIRE( transfer_obj.begin == transfer.begin );
+      BOOST_REQUIRE( transfer_obj.payments == transfer.payments );
+      BOOST_REQUIRE( transfer_obj.payments_remaining == transfer.payments );
+      BOOST_REQUIRE( transfer_obj.interval == transfer.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer.begin + transfer.interval );
+      BOOST_REQUIRE( transfer_obj.fill_or_kill == true );
+
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
+
+      generate_block();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      generate_blocks( transfer_obj.begin + transfer_obj.interval - BLOCK_INTERVAL );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", "e614fa1b-e50d-4f80-90a0-698022170e5d" );
+
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 9 );
+
+      generate_block();
+
+      // Fill or kill will cause cancellation
+      const auto& transfer_idx = db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
+      auto transfer_itr = transfer_idx.find( std::make_tuple( "alice", "5072f90d-bbd9-4688-99c3-74721f58009c" ) );
+
+      BOOST_REQUIRE( transfer_itr == transfer_idx.end() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful fill or kill cancellation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when sending greater than liquid balance" );
+
+      transfer.signatory = "candice";
+      transfer.from = "candice";
+      transfer.to = "bob";
+      transfer.transfer_id = "c5a13b05-6b5b-4870-9184-41d96fd99e85";
+      transfer.amount = asset( 10000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      
+      tx.operations.push_back( transfer );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when sending greater than liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sending exactly entire liquid balance" );
+
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      transfer.amount = candice_init_liquid_balance;
+      
+      tx.operations.push_back( transfer );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "candice", "c5a13b05-6b5b-4870-9184-41d96fd99e85" );
+
+      BOOST_REQUIRE( transfer_obj.from == transfer.from );
+      BOOST_REQUIRE( transfer_obj.to == transfer.to );
+      BOOST_REQUIRE( transfer_obj.amount == transfer.amount );
+      BOOST_REQUIRE( to_string( transfer_obj.memo ) == transfer.memo );
+      BOOST_REQUIRE( transfer_obj.begin == transfer.begin );
+      BOOST_REQUIRE( transfer_obj.payments == transfer.payments );
+      BOOST_REQUIRE( transfer_obj.payments_remaining == transfer.payments );
+      BOOST_REQUIRE( transfer_obj.interval == transfer.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer.begin + transfer.interval );
+
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
+
+      generate_block();
+
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      generate_blocks( transfer_obj.begin + transfer_obj.interval - BLOCK_INTERVAL );
+
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "candice", "c5a13b05-6b5b-4870-9184-41d96fd99e85" );
+
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 9 );
+
+      generate_block();
+
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "candice", "c5a13b05-6b5b-4870-9184-41d96fd99e85" );
+
+      // Account does not have enough to make second payment, but transfer is not extensible or fill or kill
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 8 );   
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer_obj.begin + fc::microseconds( 2 * transfer_obj.interval.count() ) );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sending exactly entire liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure transferring with zero liquid balance" );
+
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      transfer.amount = asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.transfer_id = "9d5e1655-ba79-433f-92bd-5615bec0cf9d";
+      
+      tx.operations.push_back( transfer );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure transferring with zero liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer extension" );
+
+      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      transfer.transfer_id = "e614fa1b-e50d-4f80-90a0-698022170e5d";
+      transfer.amount = dan_init_liquid_balance;
+      transfer.extensible = true;
+      transfer.fill_or_kill = false;
+      
+      tx.operations.push_back( transfer );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "dan", "e614fa1b-e50d-4f80-90a0-698022170e5d" );
+
+      BOOST_REQUIRE( transfer_obj.from == transfer.from );
+      BOOST_REQUIRE( transfer_obj.to == transfer.to );
+      BOOST_REQUIRE( transfer_obj.amount == transfer.amount );
+      BOOST_REQUIRE( to_string( transfer_obj.memo ) == transfer.memo );
+      BOOST_REQUIRE( transfer_obj.begin == transfer.begin );
+      BOOST_REQUIRE( transfer_obj.payments == transfer.payments );
+      BOOST_REQUIRE( transfer_obj.payments_remaining == transfer.payments );
+      BOOST_REQUIRE( transfer_obj.interval == transfer.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer.begin + transfer.interval );
+      BOOST_REQUIRE( transfer_obj.extensible == true );
+
+      time_point prev_end = transfer_obj.end;
+
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
+
+      generate_block();
+
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      generate_blocks( transfer_obj.begin + transfer_obj.interval - BLOCK_INTERVAL );
+
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "dan", "e614fa1b-e50d-4f80-90a0-698022170e5d" );
+
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 9 );
+
+      generate_block();
+
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - transfer.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "dan", "e614fa1b-e50d-4f80-90a0-698022170e5d" );
+
+      // Account does not have enough to make second payment, therefore payments remaining stays at 9, and transfer is extended
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 9 );   
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer_obj.begin + fc::microseconds( 2 * transfer_obj.interval.count() ) );
+      BOOST_REQUIRE( transfer_obj.end == prev_end + transfer_obj.interval );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful recurring transfer extension" );
+
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSFER RECURRING OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSFER RECURRING REQUEST OPERATION SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer request" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
+
+      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      signed_transaction tx;
+
+      transfer_recurring_request_operation request;
+
+      request.signatory = "alice";
+      request.from = "alice";
+      request.to = "bob";
+      request.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      request.request_id = "db631874-fc87-4cff-a0da-3a87b069b4c6";
+      request.memo = "Hello";
+      request.begin = now() + fc::days(1);
+      request.payments = 10;
+      request.interval = fc::days(1);
+      request.expiration = now() + fc::days(1);
+      request.requested = true;
+      request.extensible = false;
+      request.fill_or_kill = false;
+      request.validate();
+      
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( request );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_request_object& request_obj = db.get_transfer_recurring_request( "alice", "db631874-fc87-4cff-a0da-3a87b069b4c6" );
+
+      BOOST_REQUIRE( request_obj.from == request.from );
+      BOOST_REQUIRE( request_obj.to == request.to );
+      BOOST_REQUIRE( request_obj.amount == request.amount );
+      BOOST_REQUIRE( to_string( request_obj.memo ) == request.memo );
+      BOOST_REQUIRE( request_obj.begin == request.begin );
+      BOOST_REQUIRE( request_obj.payments == request.payments );
+      BOOST_REQUIRE( request_obj.interval == request.interval );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful recurring transfer request" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: accept recurring transfer request" );
+
+      transfer_recurring_accept_operation accept;
+
+      accept.signatory = "bob";
+      accept.to = "bob";
+      accept.from = "alice";
+      accept.request_id = "db631874-fc87-4cff-a0da-3a87b069b4c6";
+      accept.accepted = true;
+      accept.validate();
+      
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", "db631874-fc87-4cff-a0da-3a87b069b4c6" );
+
+      BOOST_REQUIRE( transfer_obj.from == request.from );
+      BOOST_REQUIRE( transfer_obj.to == request.to );
+      BOOST_REQUIRE( transfer_obj.amount == request.amount );
+      BOOST_REQUIRE( to_string( transfer_obj.memo ) == request.memo );
+      BOOST_REQUIRE( transfer_obj.begin == request.begin );
+      BOOST_REQUIRE( transfer_obj.payments == request.payments );
+      BOOST_REQUIRE( transfer_obj.payments_remaining == request.payments );
+      BOOST_REQUIRE( transfer_obj.interval == request.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == request.begin + request.interval );
+      BOOST_REQUIRE( transfer_obj.extensible == false );
+      BOOST_REQUIRE( transfer_obj.fill_or_kill == false );
+      
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
+
+      generate_block();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      generate_blocks( transfer_obj.end - BLOCK_INTERVAL );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - 9 * request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + 9 * request.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", "db631874-fc87-4cff-a0da-3a87b069b4c6" );
+
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 1 );
+
+      generate_block();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - 10 * request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + 10 * request.amount );
+
+      const auto& transfer_idx = db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
+      auto transfer_itr = transfer_idx.find( std::make_tuple( "alice", "db631874-fc87-4cff-a0da-3a87b069b4c6" ) );
+
+      BOOST_REQUIRE( transfer_itr == transfer_idx.end() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful recurring transfer creation and completion" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful fill or kill cancellation" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      request.request_id = "e614fa1b-e50d-4f80-90a0-698022170e5d";
+      request.amount = alice_init_liquid_balance;
+      request.fill_or_kill = true;
+      request.extensible = false;
+      
+      tx.operations.push_back( request );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_request_object& request_obj = db.get_transfer_recurring_request( "alice", "e614fa1b-e50d-4f80-90a0-698022170e5d" );
+
+      BOOST_REQUIRE( request_obj.from == request.from );
+      BOOST_REQUIRE( request_obj.to == request.to );
+      BOOST_REQUIRE( request_obj.amount == request.amount );
+      BOOST_REQUIRE( to_string( request_obj.memo ) == request.memo );
+      BOOST_REQUIRE( request_obj.begin == request.begin );
+      BOOST_REQUIRE( request_obj.payments == request.payments );
+      BOOST_REQUIRE( request_obj.interval == request.interval );
+
+      accept.signatory = "bob";
+      accept.to = "bob";
+      accept.from = "alice";
+      accept.request_id = "e614fa1b-e50d-4f80-90a0-698022170e5d";
+      accept.accepted = true;
+      
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", "e614fa1b-e50d-4f80-90a0-698022170e5d" );
+
+      BOOST_REQUIRE( transfer_obj.from == request.from );
+      BOOST_REQUIRE( transfer_obj.to == request.to );
+      BOOST_REQUIRE( transfer_obj.amount == request.amount );
+      BOOST_REQUIRE( to_string( transfer_obj.memo ) == request.memo );
+      BOOST_REQUIRE( transfer_obj.begin == request.begin );
+      BOOST_REQUIRE( transfer_obj.payments == request.payments );
+      BOOST_REQUIRE( transfer_obj.payments_remaining == request.payments );
+      BOOST_REQUIRE( transfer_obj.interval == request.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == request.begin + request.interval );
+      BOOST_REQUIRE( transfer_obj.fill_or_kill == true );
+
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
+
+      generate_block();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      generate_blocks( transfer_obj.begin + transfer_obj.interval - BLOCK_INTERVAL );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", "e614fa1b-e50d-4f80-90a0-698022170e5d" );
+
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 9 );
+
+      generate_block();
+
+      // Fill or kill will cause cancellation
+      const auto& transfer_idx = db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
+      auto transfer_itr = transfer_idx.find( std::make_tuple( "alice", "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
+
+      BOOST_REQUIRE( transfer_itr == transfer_idx.end() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful fill or kill cancellation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when requesting greater than liquid balance" );
+
+      request.signatory = "candice";
+      request.from = "candice";
+      request.to = "bob";
+      request.request_id = "c6d1839b-d504-42c5-b9de-92092abbe836";
+      request.amount = asset( 10000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      request.fill_or_kill = false;
+      request.extensible = false;
+      
+      tx.operations.push_back( request );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when requesting greater than liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sending exactly entire liquid balance" );
+
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      request.amount = candice_init_liquid_balance;
+      
+      tx.operations.push_back( request );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept.signatory = "bob";
+      accept.to = "bob";
+      accept.from = "candice";
+      accept.request_id = "c6d1839b-d504-42c5-b9de-92092abbe836";
+      accept.accepted = true;
+      
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "candice", "c6d1839b-d504-42c5-b9de-92092abbe836" );
+
+      BOOST_REQUIRE( transfer_obj.from == request.from );
+      BOOST_REQUIRE( transfer_obj.to == request.to );
+      BOOST_REQUIRE( transfer_obj.amount == request.amount );
+      BOOST_REQUIRE( to_string( transfer_obj.memo ) == request.memo );
+      BOOST_REQUIRE( transfer_obj.begin == request.begin );
+      BOOST_REQUIRE( transfer_obj.payments == request.payments );
+      BOOST_REQUIRE( transfer_obj.payments_remaining == request.payments );
+      BOOST_REQUIRE( transfer_obj.interval == request.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == request.begin + request.interval );
+
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
+
+      generate_block();
+
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      generate_blocks( transfer_obj.begin + transfer_obj.interval - BLOCK_INTERVAL );
+
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "candice", "c6d1839b-d504-42c5-b9de-92092abbe836" );
+
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 9 );
+
+      generate_block();
+
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "candice", "c6d1839b-d504-42c5-b9de-92092abbe836" );
+
+      // Account does not have enough to make second payment, but transfer is not extensible or fill or kill
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 8 );   
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer_obj.begin + fc::microseconds( 2 * transfer_obj.interval.count() ) );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sending exactly entire liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure transferring with zero liquid balance" );
+
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      request.amount = asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      request.request_id = "639d3cdd-7620-4cce-a1b2-6ae359d47a17";
+      
+      tx.operations.push_back( request );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure transferring with zero liquid balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer extension" );
+
+      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      request.signatory = "dan";
+      request.from = "dan";
+      request.request_id = "639d3cdd-7620-4cce-a1b2-6ae359d47a17";
+      request.amount = dan_init_liquid_balance;
+      request.extensible = true;
+      request.fill_or_kill = false;
+      
+      tx.operations.push_back( request );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept.signatory = "bob";
+      accept.to = "bob";
+      accept.from = "dan";
+      accept.request_id = "639d3cdd-7620-4cce-a1b2-6ae359d47a17";
+      accept.accepted = true;
+      
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "dan", "639d3cdd-7620-4cce-a1b2-6ae359d47a17" );
+
+      BOOST_REQUIRE( transfer_obj.from == request.from );
+      BOOST_REQUIRE( transfer_obj.to == request.to );
+      BOOST_REQUIRE( transfer_obj.amount == request.amount );
+      BOOST_REQUIRE( to_string( transfer_obj.memo ) == request.memo );
+      BOOST_REQUIRE( transfer_obj.begin == request.begin );
+      BOOST_REQUIRE( transfer_obj.payments == request.payments );
+      BOOST_REQUIRE( transfer_obj.payments_remaining == request.payments );
+      BOOST_REQUIRE( transfer_obj.interval == request.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == request.begin + request.interval );
+      BOOST_REQUIRE( transfer_obj.extensible == true );
+
+      time_point prev_end = transfer_obj.end;
+
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
+
+      generate_block();
+
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      generate_blocks( transfer_obj.begin + transfer_obj.interval - BLOCK_INTERVAL );
+
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "dan", "639d3cdd-7620-4cce-a1b2-6ae359d47a17" );
+
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 9 );
+
+      generate_block();
+
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "dan", "639d3cdd-7620-4cce-a1b2-6ae359d47a17" );
+
+      // Account does not have enough to make second payment, therefore payments remaining stays at 9, and transfer is extended
+      BOOST_REQUIRE( transfer_obj.payments_remaining == 9 );   
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer_obj.begin + fc::microseconds( 2 * transfer_obj.interval.count() ) );
+      BOOST_REQUIRE( transfer_obj.end == prev_end + transfer_obj.interval );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful recurring transfer extension" );
+
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSFER RECURRING REQUEST OPERATION SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
 
    //============================//
    // === Balance Operations === //
@@ -10405,1315 +11399,871 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
 
 
-BOOST_AUTO_TEST_CASE( claim_reward_balance_validate )
+BOOST_AUTO_TEST_CASE( claim_reward_balance_operation_test )
 {
    try
    {
-      claim_reward_balance_operation op;
-      op.account = "alice";
-      op.TMEreward = ASSET( "0.000 TESTS" );
-      op.USDreward = ASSET( "0.000 USD" );
-      op.reward = ASSET( "0.000000 VESTS" );
+      BOOST_TEST_MESSAGE( "├── Testing: CLAIM REWARD OPERATION" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful reward claim" );
 
-      BOOST_TEST_MESSAGE( "Testing all 0 amounts" );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      BOOST_TEST_MESSAGE( "Testing single reward claims" );
-      op.TMEreward.amount = 1000;
-      op.validate();
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund_reward( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      op.TMEreward.amount = 0;
-      op.USDreward.amount = 1000;
-      op.validate();
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_init_staked_balance = db.get_staked_balance( "alice", SYMBOL_COIN );
+      asset alice_init_reward_balance = db.get_reward_balance( "alice", SYMBOL_COIN );
 
-      op.USDreward.amount = 0;
-      op.reward.amount = 1000;
-      op.validate();
+      signed_transaction tx;
 
-      op.reward.amount = 0;
+      claim_reward_balance_operation claim;
 
+      claim.signatory = "alice";
+      claim.account = "alice";
+      claim.reward = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      claim.validate();
 
-      BOOST_TEST_MESSAGE( "Testing wrong TME symbol" );
-      op.TMEreward = ASSET( "1.000 WRONG" );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
+      tx.operations.push_back( claim );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "Testing wrong USD symbol" );
-      op.TMEreward = ASSET( "1.000 TESTS" );
-      op.USDreward = ASSET( "1.000 WRONG" );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
-
-
-      BOOST_TEST_MESSAGE( "Testing wrong SCORE symbol" );
-      op.USDreward = ASSET( "1.000 USD" );
-      op.reward = ASSET( "1.000000 WRONG" );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
-
-
-      BOOST_TEST_MESSAGE( "Testing a single negative amount" );
-      op.TMEreward.amount = 1000;
-      op.USDreward.amount = -1000;
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( claim_reward_balance_authorities )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: decline_voting_rights_authorities" );
-
-      claim_reward_balance_operation op;
-      op.account = "alice";
-
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_active_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      expected.insert( "alice" );
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( claim_reward_balance_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: claim_reward_balance_apply" );
-      BOOST_TEST_MESSAGE( "--- Setting up test state" );
-
-      ACTORS( (alice) )
-      generate_block();
-
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) ) );
-
-      db_plugin->debug_update( []( database& db )
-      {
-         db.modify( db.get_account( "alice" ), []( account_object& a )
-         {
-            a.TMErewardBalance = ASSET( "10.000 TESTS" );
-            a.USDrewardBalance = ASSET( "10.000 USD" );
-            a.rewardBalance = ASSET( "10.000000 VESTS" );
-            a.rewardBalanceInTME = ASSET( "10.000 TESTS" );
-         });
-      });
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_staked_balance = db.get_staked_balance( "alice", SYMBOL_COIN );
+      asset alice_reward_balance = db.get_reward_balance( "alice", SYMBOL_COIN );
+      
+      BOOST_REQUIRE( alice_liquid_balance + alice_staked_balance + alice_reward_balance == 
+         alice_init_liquid_balance + alice_init_staked_balance + alice_init_reward_balance );
 
       generate_block();
       validate_database();
 
-      auto alice_TME = db.get_account( "alice" ).balance;
-      auto alice_USD = db.get_account( "alice" ).USDbalance;
-      auto alice_SCORE = db.get_account( "alice" ).SCORE;
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful reward claim" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when reward claim is higher than balance" );
+   
+      claim.reward = asset( 1000000* BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
-      BOOST_TEST_MESSAGE( "--- Attempting to claim more TME than exists in the reward balance." );
-
-      claim_reward_balance_operation op;
-      signed_transaction tx;
-
-      op.account = "alice";
-      op.TMEreward = ASSET( "20.000 TESTS" );
-      op.USDreward = ASSET( "0.000 USD" );
-      op.reward = ASSET( "0.000000 VESTS" );
-
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::assert_exception );
-
-
-      BOOST_TEST_MESSAGE( "--- Claiming a partial reward balance" );
-
-      op.TMEreward = ASSET( "0.000 TESTS" );
-      op.reward = ASSET( "5.000000 VESTS" );
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_TME + op.TMEreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).TMErewardBalance == ASSET( "10.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == alice_USD + op.USDreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDrewardBalance == ASSET( "10.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).SCORE == alice_SCORE + op.reward );
-      BOOST_REQUIRE( db.get_account( "alice" ).rewardBalance == ASSET( "5.000000 VESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).rewardBalanceInTME == ASSET( "5.000 TESTS" ) );
-      validate_database();
-
-      alice_SCORE += op.reward;
-
-
-      BOOST_TEST_MESSAGE( "--- Claiming the full reward balance" );
-
-      op.TMEreward = ASSET( "10.000 TESTS" );
-      op.USDreward = ASSET( "10.000 USD" );
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == alice_TME + op.TMEreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).TMErewardBalance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == alice_USD + op.USDreward );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDrewardBalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).SCORE == alice_SCORE + op.reward );
-      BOOST_REQUIRE( db.get_account( "alice" ).rewardBalance == ASSET( "0.000000 VESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).rewardBalanceInTME == ASSET( "0.000 TESTS" ) );
-            validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( stake_asset_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: stake_asset_validate" );
-
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( stake_asset_authorities )
-{
-   try
-   {
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
-
-      BOOST_TEST_MESSAGE( "Testing: stake_asset_authorities" );
-
-      stake_asset_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = ASSET( "2.500 TESTS" );
-
-      signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when no signatures" );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when signed by a signature not in the account's authority" );
-      tx.sign( alice_post_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when duplicate signatures" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_duplicate_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when signed by an additional signature not in the creator's authority" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test success with from signature" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( stake_asset_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: stake_asset_apply" );
-
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
-
-      const auto& props = db.get_dynamic_global_properties();
-
-      BOOST_REQUIRE( alice.balance == ASSET( "10.000 TESTS" ) );
-
-      auto totalSCORE = asset( props.totalSCORE.amount, SYMBOL_SCORE );
-      auto TMEfundForSCOREvalueBalance = asset( props.totalTMEfundForSCORE.amount, SYMBOL_COIN );
-      auto alice_SCORE = alice.SCORE;
-      auto bob_SCORE = bob.SCORE;
-
-      stake_asset_operation op;
-      op.from = "alice";
-      op.to = "";
-      op.amount = ASSET( "7.500 TESTS" );
-
-      signed_transaction tx;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      newSCORE = asset( ( op.amount * ( totalSCORE / TMEfundForSCOREvalueBalance ) ).amount, SYMBOL_SCORE );
-      totalSCORE += newSCORE;
-      TMEfundForSCOREvalueBalance += op.amount;
-      alice_SCORE += newSCORE;
-
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "2.500 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.SCORE.amount.value == alice_SCORE.amount.value );
-      BOOST_REQUIRE( props.totalTMEfundForSCORE.amount.value == TMEfundForSCOREvalueBalance.amount.value );
-      BOOST_REQUIRE( props.totalSCORE.amount.value == totalSCORE.amount.value );
-      validate_database();
-
-      op.to = "bob";
-      op.amount = asset( 2000, SYMBOL_COIN );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      newSCORE = asset( ( op.amount * ( totalSCORE / TMEfundForSCOREvalueBalance ) ).amount, SYMBOL_SCORE );
-      totalSCORE += newSCORE;
-      TMEfundForSCOREvalueBalance += op.amount;
-      bob_SCORE += newSCORE;
-
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "0.500 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.SCORE.amount.value == alice_SCORE.amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.SCORE.amount.value == bob_SCORE.amount.value );
-      BOOST_REQUIRE( props.totalTMEfundForSCORE.amount.value == TMEfundForSCOREvalueBalance.amount.value );
-      BOOST_REQUIRE( props.totalSCORE.amount.value == totalSCORE.amount.value );
-      validate_database();
-
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
-
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "0.500 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.SCORE.amount.value == alice_SCORE.amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.SCORE.amount.value == bob_SCORE.amount.value );
-      BOOST_REQUIRE( props.totalTMEfundForSCORE.amount.value == TMEfundForSCOREvalueBalance.amount.value );
-      BOOST_REQUIRE( props.totalSCORE.amount.value == totalSCORE.amount.value );
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( unstake_asset_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: unstake_asset_validate" );
-
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( unstake_asset_authorities )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: unstake_asset_authorities" );
-
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
-      fund_stake( "alice", 10000 );
-
-      unstake_asset_operation op;
-      op.account = "alice";
-      op.SCORE = ASSET( "0.001000 VESTS" );
-
-      signed_transaction tx;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when no signature." );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
-
-      BOOST_TEST_MESSAGE( "--- Test success with account signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, database::skip_transaction_dupe_check );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with duplicate signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_duplicate_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with additional incorrect signature" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_irrelevant_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with incorrect signature" );
-      tx.signatures.clear();
-      tx.sign( alice_post_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
-
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( unstake_asset_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: unstake_asset_apply" );
-
-      ACTORS( (alice) )
-      generate_block();
-      fund_stake( "alice", ASSET( "10.000 TESTS" ) );
-
-      BOOST_TEST_MESSAGE( "--- Test failure withdrawing negative VESTS" );
-
-      {
-      const auto& alice = db.get_account( "alice" );
-
-      unstake_asset_operation op;
-      op.account = "alice";
-      op.SCORE = asset( -1, SYMBOL_SCORE );
-
-      signed_transaction tx;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::assert_exception );
-
-
-      BOOST_TEST_MESSAGE( "--- Test withdraw of existing VESTS" );
-      op.SCORE = asset( alice.SCORE.amount / 2, SYMBOL_SCORE );
-
-      auto old_SCORE = alice.SCORE;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( alice.SCORE.amount.value == old_SCORE.amount.value );
-      BOOST_REQUIRE( alice.SCOREwithdrawRateInTME.amount.value == ( old_SCORE.amount / ( COIN_UNSTAKE_INTERVALS * 2 ) ).value );
-      BOOST_REQUIRE( alice.to_withdraw.value == op.SCORE.amount.value );
-      BOOST_REQUIRE( alice.next_unstake_time == db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SECONDS );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test changing SCORE TME fund withdrawal" );
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      op.SCORE = asset( alice.SCORE.amount / 3, SYMBOL_SCORE );
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( alice.SCORE.amount.value == old_SCORE.amount.value );
-      BOOST_REQUIRE( alice.SCOREwithdrawRateInTME.amount.value == ( old_SCORE.amount / ( COIN_UNSTAKE_INTERVALS * 3 ) ).value );
-      BOOST_REQUIRE( alice.to_withdraw.value == op.SCORE.amount.value );
-      BOOST_REQUIRE( alice.next_unstake_time == db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SECONDS );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test withdrawing more SCORE than available" );
-      auto old_withdraw_amount = alice.to_withdraw;
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      op.SCORE = asset( alice.SCORE.amount * 2, SYMBOL_SCORE );
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      tx.operations.push_back( claim );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_REQUIRE( alice.SCORE.amount.value == old_SCORE.amount.value );
-      BOOST_REQUIRE( alice.SCOREwithdrawRateInTME.amount.value == ( old_SCORE.amount / ( COIN_UNSTAKE_INTERVALS * 3 ) ).value );
-      BOOST_REQUIRE( alice.next_unstake_time == db.head_block_time() + SCORE_WITHDRAW_INTERVAL_SECONDS );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test withdrawing 0 to reset SCORE TME fund withdraw" );
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.SCORE = asset( 0, SYMBOL_SCORE );
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when reward claim is higher than balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: claiming entire reward balance" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_init_staked_balance = db.get_staked_balance( "alice", SYMBOL_COIN );
+      asset alice_init_reward_balance = db.get_reward_balance( "alice", SYMBOL_COIN );
+
+      claim.reward = alice_init_reward_balance;
+
+      tx.operations.push_back( claim );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( alice.SCORE.amount.value == old_SCORE.amount.value );
-      BOOST_REQUIRE( alice.SCOREwithdrawRateInTME.amount.value == 0 );
-      BOOST_REQUIRE( alice.to_withdraw.value == 0 );
-      BOOST_REQUIRE( alice.next_unstake_time == fc::time_point::maximum() );
+      tx.operations.clear();
+      tx.signatures.clear();
 
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_staked_balance = db.get_staked_balance( "alice", SYMBOL_COIN );
+      asset alice_reward_balance = db.get_reward_balance( "alice", SYMBOL_COIN );
+      
+      BOOST_REQUIRE( alice_liquid_balance + alice_staked_balance == 
+         alice_init_liquid_balance + alice_init_staked_balance + alice_init_reward_balance );
+      BOOST_REQUIRE( alice_reward_balance.amount == 0 );
 
-      BOOST_TEST_MESSAGE( "--- Test cancelling a withdraw when below the account creation fee" );
-      op.SCORE = alice.SCORE;
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
       generate_block();
-      }
-
-      db_plugin->debug_update( [=]( database& db )
-      {
-         auto& wso = db.get_witness_schedule();
-
-         db.modify( wso, [&]( witness_schedule_object& w )
-         {
-            w.median_props.account_creation_fee = ASSET( "10.000 TESTS" );
-         });
-      }, database::skip_witness_signature );
-
-      unstake_asset_operation op;
-      signed_transaction tx;
-      op.account = "alice";
-      op.SCORE = ASSET( "0.000000 VESTS" );
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).SCOREwithdrawRateInTME == ASSET( "0.000000 VESTS" ) );
       validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: claiming entire reward balance" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: CLAIM REWARD OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
+
+
+BOOST_AUTO_TEST_CASE( stake_asset_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: STAKE ASSET OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful asset stake" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice) );
+
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund_reward( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_init_staked_balance = db.get_staked_balance( "alice", SYMBOL_COIN );
+      asset alice_init_reward_balance = db.get_reward_balance( "alice", SYMBOL_COIN );
+
+      signed_transaction tx;
+
+      stake_asset_operation stake;
+
+      stake.signatory = "alice";
+      stake.from = "alice";
+      stake.to = "bob";
+      stake.amount = alice_init_liquid_balance;
+      stake.validate();
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( stake );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const account_balance_object& balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
+      BOOST_REQUIRE( balance.next_stake_time == now() + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
+      BOOST_REQUIRE( balance.total_staked == 0 );
+
+      time_point prev_time = balance.next_stake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL - BLOCK_INTERVAL );
+
+      const account_balance_object& balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
+      BOOST_REQUIRE( balance.next_stake_time == prev_time );
+      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
+      BOOST_REQUIRE( balance.total_staked == 0 );
+
+      generate_block();
+
+      const account_balance_object& balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
+      BOOST_REQUIRE( balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
+      BOOST_REQUIRE( balance.total_staked == alice_init_liquid_balance.amount / 4 );
+
+      prev_time = balance.next_stake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
+      BOOST_REQUIRE( balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
+      BOOST_REQUIRE( balance.total_staked == alice_init_liquid_balance.amount / 2 );
+
+      prev_time = balance.next_stake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
+      BOOST_REQUIRE( balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
+      BOOST_REQUIRE( balance.total_staked == 3 * ( alice_init_liquid_balance.amount / 4 ) );
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( balance.stake_rate == 0 );
+      BOOST_REQUIRE( balance.next_stake_time == fc::time_point::maximum() );
+      BOOST_REQUIRE( balance.to_stake == 0 );
+      BOOST_REQUIRE( balance.total_staked == 0 );
+
+      BOOST_REQUIRE( balance.liquid_balance == 0 );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful asset stake" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: STAKE ASSET OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( unstake_asset_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: UNSTAKE ASSET OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful asset unstake" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice) );
+
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_init_staked_balance = db.get_staked_balance( "alice", SYMBOL_COIN );
+
+      signed_transaction tx;
+
+      unstake_asset_operation unstake;
+
+      unstake.signatory = "alice";
+      unstake.from = "alice";
+      unstake.to = "alice";
+      unstake.amount = alice_init_staked_balance;
+      unstake.validate();
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( unstake );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_unstake_time == now() + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
+      BOOST_REQUIRE( alice_balance.total_unstaked == 0 );
+
+      time_point prev_time = alice_balance.next_unstake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL - BLOCK_INTERVAL );
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time );
+      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
+      BOOST_REQUIRE( alice_balance.total_unstaked == 0 );
+
+      generate_block();
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
+      BOOST_REQUIRE( alice_balance.total_unstaked == alice_init_staked_balance.amount / 4 );
+
+      prev_time = alice_balance.next_unstake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
+      BOOST_REQUIRE( alice_balance.total_unstaked == alice_init_staked_balance.amount / 2 );
+
+      prev_time = alice_balance.next_unstake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
+      BOOST_REQUIRE( alice_balance.total_unstaked == 3 * ( alice_init_staked_balance.amount / 4 ) );
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.unstake_rate == 0 );
+      BOOST_REQUIRE( alice_balance.next_unstake_time == fc::time_point::maximum() );
+      BOOST_REQUIRE( alice_balance.to_unstake == 0 );
+      BOOST_REQUIRE( alice_balance.total_unstaked == 0 );
+      BOOST_REQUIRE( alice_balance.staked_balance == 0 );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful asset unstake" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: asset unstake routes" );
+
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset bob_init_staked_balance = db.get_staked_balance( "bob", SYMBOL_COIN );
+
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset candice_init_staked_balance = db.get_staked_balance( "candice", SYMBOL_COIN );
+
+      unstake_asset_route_operation route;
+
+      route.signatory = "bob";
+      route.from_account = "bob";
+      route.to_account = "candice";
+      route.percent = 50 * PERCENT_1;
+      route.auto_stake = false;
+      route.validate();
+
+      tx.operations.push_back( route );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const auto& route_idx = db.get_index< unstake_asset_route_index >().indices().get< by_withdraw_route >();
+      auto route_itr = route_idx.find( boost::make_tuple( route.from_account, route.to_account ) );
+
+      BOOST_REQUIRE( route_itr != route_idx.end() );
+      BOOST_REQUIRE( route_itr->from_account == route.from_account );
+      BOOST_REQUIRE( route_itr->to_account == route.to_account );
+      BOOST_REQUIRE( route_itr->percent == route.percent );
+
+      unstake.signatory = "bob";
+      unstake.from = "bob";
+      unstake.to = "bob";
+      unstake.amount = bob_init_staked_balance;
+      unstake.validate();
+
+      tx.operations.push_back( unstake );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const account_balance_object& bob_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( bob_balance.unstake_rate == bob_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( bob_balance.next_unstake_time == now() + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( bob_balance.to_unstake == bob_init_staked_balance.amount );
+      BOOST_REQUIRE( bob_balance.total_unstaked == 0 );
+
+      time_point prev_time = bob_balance.next_unstake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL - BLOCK_INTERVAL );
+
+      const account_balance_object& bob_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( bob_balance.unstake_rate == bob_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( bob_balance.next_unstake_time == prev_time );
+      BOOST_REQUIRE( bob_balance.to_unstake == bob_init_staked_balance.amount );
+      BOOST_REQUIRE( bob_balance.total_unstaked == 0 );
+
+      generate_block();
+
+      const account_balance_object& bob_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( bob_balance.unstake_rate == bob_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( bob_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( bob_balance.to_unstake == bob_init_staked_balance.amount );
+      BOOST_REQUIRE( bob_balance.total_unstaked == bob_init_staked_balance.amount / 4 );
+
+      prev_time = bob_balance.next_unstake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& bob_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( bob_balance.unstake_rate == bob_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( bob_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( bob_balance.to_unstake == bob_init_staked_balance.amount );
+      BOOST_REQUIRE( bob_balance.total_unstaked == bob_init_staked_balance.amount / 2 );
+
+      prev_time = bob_balance.next_unstake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& bob_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( bob_balance.unstake_rate == bob_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( bob_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( bob_balance.to_unstake == bob_init_staked_balance.amount );
+      BOOST_REQUIRE( bob_balance.total_unstaked == 3 * ( bob_init_staked_balance.amount / 4 ) );
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      const account_balance_object& bob_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( bob_balance.unstake_rate == 0 );
+      BOOST_REQUIRE( bob_balance.next_unstake_time == fc::time_point::maximum() );
+      BOOST_REQUIRE( bob_balance.to_unstake == 0 );
+      BOOST_REQUIRE( bob_balance.total_unstaked == 0 );
+      BOOST_REQUIRE( bob_balance.staked_balance == 0 );
+      BOOST_REQUIRE( bob_balance.liquid_balance == bob_init_liquid_balance.amount + bob_init_staked_balance.amount / 2 );
+
+      const account_balance_object& candice_balance = db.get_account_balance( "candice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( candice_balance.liquid_balance == candice_init_liquid_balance.amount + bob_init_staked_balance.amount / 2 );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: asset unstake routes" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: UNSTAKE ASSET OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
 
 BOOST_AUTO_TEST_CASE( transfer_to_savings_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_savings_validate" );
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSER TO SAVINGS OPERATION" );
 
-      transfer_to_savings_operation op;
-      op.from = "alice";
-      op.to = "alice";
-      op.amount = ASSET( "1.000 TESTS" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer to own savings" );
 
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
-      BOOST_TEST_MESSAGE( "failure when 'from' is empty" );
-      op.from = "";
-      REQUIRE_THROW( op.validate(), fc::exception );
+      ACTORS( (alice)(bob)(candice) );
 
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      BOOST_TEST_MESSAGE( "failure when 'to' is empty" );
-      op.from = "alice";
-      op.to = "";
-      REQUIRE_THROW( op.validate(), fc::exception );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      BOOST_TEST_MESSAGE( "sucess when 'to' is not empty" );
-      op.to = "bob";
-      op.validate();
-
-
-      BOOST_TEST_MESSAGE( "failure when amount is VESTS" );
-      op.to = "alice";
-      op.amount = ASSET( "1.000 VESTS" );
-      REQUIRE_THROW( op.validate(), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "success when amount is USD" );
-      op.amount = ASSET( "1.000 USD" );
-      op.validate();
-
-
-      BOOST_TEST_MESSAGE( "success when amount is TESTS" );
-      op.amount = ASSET( "1.000 TESTS" );
-      op.validate();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( transfer_to_savings_authorities )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_savings_authorities" );
-
-      transfer_to_savings_operation op;
-      op.from = "alice";
-      op.to = "alice";
-      op.amount = ASSET( "1.000 TESTS" );
-
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_active_authorities( auths );
-      expected.insert( "alice" );
-      BOOST_REQUIRE( auths == expected );
-
-      auths.clear();
-      expected.clear();
-      op.from = "bob";
-      op.get_required_active_authorities( auths );
-      expected.insert( "bob" );
-      BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( transfer_to_savings_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: transfer_to_savings_apply" );
-
-      ACTORS( (alice)(bob) );
-      generate_block();
-
-      fund( "alice", ASSET( "10.000 TESTS" ) );
-      fund( "alice", ASSET( "10.000 USD" ) );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == ASSET( "10.000 USD" ) );
-
-      transfer_to_savings_operation op;
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      
       signed_transaction tx;
 
-      BOOST_TEST_MESSAGE( "--- failure with insufficient funds" );
-      op.from = "alice";
-      op.to = "alice";
-      op.amount = ASSET( "20.000 TESTS" );
+      transfer_to_savings_operation transfer;
 
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "alice";
+      transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.memo = "Hello";
+      transfer.validate();
+
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.liquid_balance == alice_init_liquid_balance.amount - transfer.amount.amount );
+      BOOST_REQUIRE( alice_balance.savings_balance == transfer.amount.amount );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful transfer to own savings" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer to other account's savings" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+
+      transfer.to = "bob";
+
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+      const account_balance_object& bob_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.liquid_balance == alice_init_liquid_balance.amount - transfer.amount.amount );
+      BOOST_REQUIRE( bob_balance.savings_balance == transfer.amount.amount );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful transfer to other account's savings" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure with insufficient liquid funds" );
+
+      transfer.to = "alice";
+      transfer.amount = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       validate_database();
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure with insufficient liquid funds" );
 
-      BOOST_TEST_MESSAGE( "--- failure when transferring to non-existent account" );
-      op.to = "sam";
-      op.amount = ASSET( "1.000 TESTS" );
+      BOOST_TEST_MESSAGE( "├── Passed: TRANSER TO SAVINGS OPERATION" );
 
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- success transferring TME to self" );
-      op.to = "alice";
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TMEsavingsBalance == ASSET( "1.000 TESTS" ) );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- success transferring USD to self" );
-      op.amount = ASSET( "1.000 USD" );
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == ASSET( "9.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDsavingsBalance == ASSET( "1.000 USD" ) );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- success transferring TME to other" );
-      op.to = "bob";
-      op.amount = ASSET( "1.000 TESTS" );
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "8.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).TMEsavingsBalance == ASSET( "1.000 TESTS" ) );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- success transferring USD to other" );
-      op.amount = ASSET( "1.000 USD" );
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == ASSET( "8.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).USDsavingsBalance == ASSET( "1.000 USD" ) );
-      validate_database();
    }
    FC_LOG_AND_RETHROW()
 }
+
 
 BOOST_AUTO_TEST_CASE( transfer_from_savings_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: transfer_from_savings_validate" );
+      BOOST_TEST_MESSAGE( "├── Testing: TRANSER FROM SAVINGS OPERATION" );
 
-      transfer_from_savings_operation op;
-      op.from = "alice";
-      op.request_id = 0;
-      op.to = "alice";
-      op.amount = ASSET( "1.000 TESTS" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer from own savings" );
 
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
-      BOOST_TEST_MESSAGE( "failure when 'from' is empty" );
-      op.from = "";
-      REQUIRE_THROW( op.validate(), fc::exception );
+      ACTORS( (alice)(bob)(candice) );
 
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_savings( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      BOOST_TEST_MESSAGE( "failure when 'to' is empty" );
-      op.from = "alice";
-      op.to = "";
-      REQUIRE_THROW( op.validate(), fc::exception );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_savings( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_savings( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      BOOST_TEST_MESSAGE( "sucess when 'to' is not empty" );
-      op.to = "bob";
-      op.validate();
-
-
-      BOOST_TEST_MESSAGE( "failure when amount is VESTS" );
-      op.to = "alice";
-      op.amount = ASSET( "1.000 VESTS" );
-      REQUIRE_THROW( op.validate(), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "success when amount is USD" );
-      op.amount = ASSET( "1.000 USD" );
-      op.validate();
-
-
-      BOOST_TEST_MESSAGE( "success when amount is TME" );
-      op.amount = ASSET( "1.000 TESTS" );
-      op.validate();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( transfer_from_savings_authorities )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: transfer_from_savings_authorities" );
-
-      transfer_from_savings_operation op;
-      op.from = "alice";
-      op.to = "alice";
-      op.amount = ASSET( "1.000 TESTS" );
-
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_active_authorities( auths );
-      expected.insert( "alice" );
-      BOOST_REQUIRE( auths == expected );
-
-      auths.clear();
-      expected.clear();
-      op.from = "bob";
-      op.get_required_active_authorities( auths );
-      expected.insert( "bob" );
-      BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( transfer_from_savings_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: transfer_from_savings_apply" );
-
-      ACTORS( (alice)(bob) );
-      generate_block();
-
-      fund( "alice", ASSET( "10.000 TESTS" ) );
-      fund( "alice", ASSET( "10.000 USD" ) );
-
-      transfer_to_savings_operation save;
-      save.from = "alice";
-      save.to = "alice";
-      save.amount = ASSET( "10.000 TESTS" );
-
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_init_savings_balance = db.get_savings_balance( "alice", SYMBOL_COIN );
+      
       signed_transaction tx;
-      tx.operations.push_back( save );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      transfer_from_savings_operation transfer;
+
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "alice";
+      transfer.request_id = "e02a03a8-0843-44cb-9700-b2d6d11e24c1";
+      transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.memo = "Hello";
+      transfer.transferred = true;
+      transfer.validate();
+
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      save.amount = ASSET( "10.000 USD" );
-      tx.clear();
-      tx.operations.push_back( save );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when account has insufficient funds" );
-      transfer_from_savings_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = ASSET( "20.000 TESTS" );
-      op.request_id = 0;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure withdrawing to non-existant account" );
-      op.to = "sam";
-      op.amount = ASSET( "1.000 TESTS" );
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- success withdrawing TME to self" );
-      op.to = "alice";
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TMEsavingsBalance == ASSET( "9.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 1 );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
-      BOOST_REQUIRE( to_string( db.get_savings_withdraw( "alice", op.request_id ).memo ) == op.memo );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).request_id == op.request_id );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).amount == op.amount );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).complete == db.head_block_time() + SAVINGS_WITHDRAW_TIME );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- success withdrawing USD to self" );
-      op.amount = ASSET( "1.000 USD" );
-      op.request_id = 1;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDsavingsBalance == ASSET( "9.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 2 );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
-      BOOST_REQUIRE( to_string( db.get_savings_withdraw( "alice", op.request_id ).memo ) == op.memo );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).request_id == op.request_id );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).amount == op.amount );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).complete == db.head_block_time() + SAVINGS_WITHDRAW_TIME );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- failure withdrawing with repeat request id" );
-      op.amount = ASSET( "2.000 TESTS" );
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- success withdrawing TME to other" );
-      op.to = "bob";
-      op.amount = ASSET( "1.000 TESTS" );
-      op.request_id = 3;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TMEsavingsBalance == ASSET( "8.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 3 );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
-      BOOST_REQUIRE( to_string( db.get_savings_withdraw( "alice", op.request_id ).memo ) == op.memo );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).request_id == op.request_id );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).amount == op.amount );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).complete == db.head_block_time() + SAVINGS_WITHDRAW_TIME );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- success withdrawing USD to other" );
-      op.amount = ASSET( "1.000 USD" );
-      op.request_id = 4;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDsavingsBalance == ASSET( "8.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 4 );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).from == op.from );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).to == op.to );
-      BOOST_REQUIRE( to_string( db.get_savings_withdraw( "alice", op.request_id ).memo ) == op.memo );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).request_id == op.request_id );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).amount == op.amount );
-      BOOST_REQUIRE( db.get_savings_withdraw( "alice", op.request_id ).complete == db.head_block_time() + SAVINGS_WITHDRAW_TIME );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- withdraw on timeout" );
-      generate_blocks( db.head_block_time() + SAVINGS_WITHDRAW_TIME - fc::seconds( BLOCK_INTERVAL ), true );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 4 );
-      validate_database();
-
-      generate_block();
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).USDbalance == ASSET( "1.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).USDbalance == ASSET( "1.000 USD" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 0 );
-      validate_database();
-
-
-      BOOST_TEST_MESSAGE( "--- savings withdraw request limit" );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      op.to = "alice";
-      op.amount = ASSET( "0.001 TESTS" );
-
-      for( int i = 0; i < SAVINGS_WITHDRAW_REQUEST_LIMIT; i++ )
-      {
-         op.request_id = i;
-         tx.clear();
-         tx.operations.push_back( op );
-         tx.sign( alice_private_owner_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-         BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == i + 1 );
-      }
-
-      op.request_id = SAVINGS_WITHDRAW_REQUEST_LIMIT;
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == SAVINGS_WITHDRAW_REQUEST_LIMIT );
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: cancel_transfer_from_savings_validate" );
-
-      cancel_transfer_from_savings_operation op;
-      op.from = "alice";
-      op.request_id = 0;
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'from' is empty" );
-      op.from = "";
-      REQUIRE_THROW( op.validate(), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- sucess when 'from' is not empty" );
-      op.from = "alice";
-      op.validate();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_authorities )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: cancel_transfer_from_savings_authorities" );
-
-      cancel_transfer_from_savings_operation op;
-      op.from = "alice";
-
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_active_authorities( auths );
-      expected.insert( "alice" );
-      BOOST_REQUIRE( auths == expected );
-
-      auths.clear();
-      expected.clear();
-      op.from = "bob";
-      op.get_required_active_authorities( auths );
-      expected.insert( "bob" );
-      BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: cancel_transfer_from_savings_apply" );
-
-      ACTORS( (alice)(bob) )
-      generate_block();
-
-      fund( "alice", ASSET( "10.000 TESTS" ) );
-
-      transfer_to_savings_operation save;
-      save.from = "alice";
-      save.to = "alice";
-      save.amount = ASSET( "10.000 TESTS" );
-
-      transfer_from_savings_operation withdraw;
-      withdraw.from = "alice";
-      withdraw.to = "bob";
-      withdraw.request_id = 1;
-      withdraw.amount = ASSET( "3.000 TESTS" );
-
-      signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( save );
-      tx.operations.push_back( withdraw );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-      validate_database();
-
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 1 );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
-
-
-      BOOST_TEST_MESSAGE( "--- Failure when there is no pending request" );
-      cancel_transfer_from_savings_operation op;
-      op.from = "alice";
-      op.request_id = 0;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-      validate_database();
-
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 1 );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
-
-
-      BOOST_TEST_MESSAGE( "--- Success" );
-      op.request_id = 1;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).TMEsavingsBalance == ASSET( "10.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).savings_withdraw_requests == 0 );
-      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).TMEsavingsBalance == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).savings_withdraw_requests == 0 );
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( delegate_asset_validate )
-{
-   try
-   {
-      delegate_asset_operation op;
-
-      op.delegator = "alice";
-      op.delegatee = "bob";
-      op.SCORE = asset( -1, SYMBOL_SCORE );
-      REQUIRE_THROW( op.validate(), fc::assert_exception );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( delegate_asset_authorities )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: delegate_asset_authorities" );
-      signed_transaction tx;
-      ACTORS( (alice)(bob) )
-      fund_stake( "alice", ASSET( "10000.000000 VESTS" ) );
-
-      delegate_asset_operation op;
-      op.SCORE = ASSET( "300.000000 VESTS");
-      op.delegator = "alice";
-      op.delegatee = "bob";
-
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when no signatures" );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
-
-      BOOST_TEST_MESSAGE( "--- Test success with witness signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when duplicate signatures" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      op.delegatee = "sam";
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_duplicate_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when signed by an additional signature not in the creator's authority" );
-      tx.signatures.clear();
-      tx.sign( init_account_priv_key, db.get_chain_id() );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when signed by a signature not in the creator's authority" );
-      tx.signatures.clear();
-      tx.sign( init_account_priv_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( delegate_asset_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: delegate_asset_apply" );
-      signed_transaction tx;
-      ACTORS( (alice)(bob) )
-      generate_block();
-
-      fund_stake( "alice", ASSET( "1000.000 TESTS" ) );
-
-      generate_block();
-
-      db_plugin->debug_update( [=]( database& db )
-      {
-         db.modify( db.get_witness_schedule(), [&]( witness_schedule_object& w )
-         {
-            w.median_props.account_creation_fee = ASSET( "1.000 TESTS" );
-         });
-      });
-
-      generate_block();
-
-      delegate_asset_operation op;
-      op.SCORE = ASSET( "10000000.000000 VESTS");
-      op.delegator = "alice";
-      op.delegatee = "bob";
-
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-      generate_blocks( 1 );
-      const account_object& alice_acc = db.get_account( "alice" );
-      const account_object& bob_acc = db.get_account( "bob" );
-
-      BOOST_REQUIRE( alice_acc.SCOREDelegated == ASSET( "10000000.000000 VESTS"));
-      BOOST_REQUIRE( bob_acc.SCOREreceived == ASSET( "10000000.000000 VESTS"));
-
-      BOOST_TEST_MESSAGE( "--- Test that the delegation object is correct. " );
-      auto delegation = db.find< asset_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
-
-      BOOST_REQUIRE( delegation != nullptr );
-      BOOST_REQUIRE( delegation->delegator == op.delegator);
-      BOOST_REQUIRE( delegation->SCORE  == ASSET( "10000000.000000 VESTS"));
-
-      validate_database();
-      tx.clear();
-      op.SCORE = ASSET( "20000000.000000 VESTS");
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-      generate_blocks(1);
-
-      BOOST_REQUIRE( delegation != nullptr );
-      BOOST_REQUIRE( delegation->delegator == op.delegator);
-      BOOST_REQUIRE( delegation->SCORE == ASSET( "20000000.000000 VESTS"));
-      BOOST_REQUIRE( alice_acc.SCOREDelegated == ASSET( "20000000.000000 VESTS"));
-      BOOST_REQUIRE( bob_acc.SCOREreceived == ASSET( "20000000.000000 VESTS"));
-
-      BOOST_TEST_MESSAGE( "--- Test that effective SCORE is accurate and being applied." );
       tx.operations.clear();
       tx.signatures.clear();
 
-      comment_operation comment;
-      comment.author = "alice";
-      comment.permlink = "foo";
-      comment.parent_permlink = "test";
-      comment.title = "bar";
-      comment.body = "foo bar";
-      tx.operations.push_back( comment );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      const savings_withdraw_object& withdraw = db.get_savings_withdraw( "alice", "e02a03a8-0843-44cb-9700-b2d6d11e24c1" );
+
+      BOOST_REQUIRE( withdraw.from == transfer.from );
+      BOOST_REQUIRE( withdraw.to == transfer.to );
+      BOOST_REQUIRE( to_string( withdraw.memo ) == transfer.memo );
+      BOOST_REQUIRE( to_string( withdraw.request_id ) == transfer.request_id );
+      BOOST_REQUIRE( withdraw.amount == transfer.amount );
+      BOOST_REQUIRE( withdraw.complete == now() + SAVINGS_WITHDRAW_TIME );
+
+      time_point prev_complete = withdraw.complete;
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.savings_balance == alice_init_savings_balance.amount - transfer.amount.amount );
+
+      generate_blocks( now() + SAVINGS_WITHDRAW_TIME - BLOCK_INTERVAL );
+
+      const savings_withdraw_object& withdraw = db.get_savings_withdraw( "alice", "e02a03a8-0843-44cb-9700-b2d6d11e24c1" );
+
+      BOOST_REQUIRE( withdraw.from == transfer.from );
+      BOOST_REQUIRE( withdraw.to == transfer.to );
+      BOOST_REQUIRE( to_string( withdraw.memo ) == transfer.memo );
+      BOOST_REQUIRE( to_string( withdraw.request_id ) == transfer.request_id );
+      BOOST_REQUIRE( withdraw.amount == transfer.amount );
+      BOOST_REQUIRE( withdraw.complete == prev_complete );
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      generate_block();
+
+      const auto& withdraw_idx = db.get_index< savings_withdraw_index >().indices().get< by_request_id >();
+      auto withdraw_itr = withdraw_idx.find( boost::make_tuple( withdraw.from, withdraw.request_id ) );
+
+      BOOST_REQUIRE( withdraw_itr != withdraw_idx.end() );
+
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.savings_balance == alice_init_savings_balance.amount - transfer.amount.amount );
+      BOOST_REQUIRE( alice_balance.liquid_balance == alice_init_liquid_balance.amount + transfer.amount.amount );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful transfer from own savings" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer from savings to another account" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+
+      transfer.to = "bob";
+
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-      tx.signatures.clear();
+
       tx.operations.clear();
-      vote_operation vote_op;
-      vote_op.voter = "bob";
-      vote_op.author = "alice";
-      vote_op.permlink = "foo";
-      vote_op.weight = PERCENT_100;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( vote_op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      auto old_voting_power = bob_acc.voting_power;
+      tx.signatures.clear();
 
+      const account_balance_object& alice_balance = db.get_account_balance( "alice", SYMBOL_COIN );
+      const account_balance_object& bob_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_balance.liquid_balance == alice_init_liquid_balance.amount - transfer.amount.amount );
+      BOOST_REQUIRE( bob_balance.liquid_balance == bob_init_liquid_balance.amount + transfer.amount.amount );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful transfer from savings to another account" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure with insufficient liquid funds" );
+
+      transfer.to = "alice";
+      transfer.amount = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure with insufficient liquid funds" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: TRANSER FROM SAVINGS OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: DELEGATE ASSET OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful asset delegation" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice) );
+
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_init_delegated_balance = db.get_delegated_balance( "alice", SYMBOL_COIN );
+      asset alice_init_receiving_balance = db.get_receiving_balance( "alice", SYMBOL_COIN );
+      share_type alice_init_voting_power = db.get_voting_power( "alice" );
+
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset bob_init_delegated_balance = db.get_delegated_balance( "bob", SYMBOL_COIN );
+      asset bob_init_receiving_balance = db.get_receiving_balance( "bob", SYMBOL_COIN );
+      share_type bob_init_voting_power = db.get_voting_power( "bob" );
+      
+      signed_transaction tx;
+
+      delegate_asset_operation delegate;
+
+      delegate.signatory = "alice";
+      delegate.delegator = "alice";
+      delegate.delegatee = "bob";
+      delegate.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      delegate.validate();
+
+      tx.operations.push_back( delegate );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-      generate_blocks(1);
 
-      const auto& vote_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      auto& alice_comment = db.get_comment( "alice", string( "foo" ) );
-      auto itr = vote_idx.find( std::make_tuple( alice_comment.id, bob_acc.id ) );
-      BOOST_REQUIRE( alice_comment.net_reward.value == bob_acc.effective_SCORE().amount.value * ( old_voting_power - bob_acc.voting_power ) / PERCENT_100 );
-      BOOST_REQUIRE( itr->reward == bob_acc.effective_SCORE().amount.value * ( old_voting_power - bob_acc.voting_power ) / PERCENT_100 );
+      const asset_delegation_object& delegation = db.get_asset_delegation( "alice", "bob", SYMBOL_COIN );
 
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_delegated_balance = db.get_delegated_balance( "alice", SYMBOL_COIN );
+      asset alice_receiving_balance = db.get_receiving_balance( "alice", SYMBOL_COIN );
+      share_type alice_voting_power = db.get_voting_power( "alice" );
 
-      generate_block();
-      ACTORS( (sam)(dan) )
-      generate_block();
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset bob_delegated_balance = db.get_delegated_balance( "bob", SYMBOL_COIN );
+      asset bob_receiving_balance = db.get_receiving_balance( "bob", SYMBOL_COIN );
+      share_type bob_voting_power = db.get_voting_power( "bob" );
 
-      fund_stake( "sam", ASSET( "1000.000 TESTS" ) );
+      BOOST_REQUIRE( delegation.delegator == delegate.delegator );
+      BOOST_REQUIRE( delegation.delegatee == delegate.delegatee );
+      BOOST_REQUIRE( delegation.amount == delegate.amount );
+      BOOST_REQUIRE( alice_delegated_balance == bob_receiving_balance );
+      BOOST_REQUIRE( alice_voting_power == alice_init_voting_power - delegate.amount.amount );
+      BOOST_REQUIRE( bob_voting_power == bob_init_voting_power + delegate.amount.amount );
+      
+      validate_database();
 
-      generate_block();
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful asset delegation" );
 
-      auto samSCORE = db.get_account( "sam" ).SCORE;
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when delegating more than staked balance" );
 
-      BOOST_TEST_MESSAGE( "--- Test failure when delegating 0 VESTS" );
-      tx.clear();
-      op.delegator = "sam";
-      op.delegatee = "dan";
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      delegate.amount = asset( 1000000* BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+
+      tx.operations.push_back( delegate );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
 
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "--- Testing failure delegating more SCORE than account has." );
-      tx.clear();
-      op.SCORE = asset( samSCORE.amount + 1, SYMBOL_SCORE );
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when delegating more than staked balance" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure delegating staked balance that are being unstaked" );
 
-      BOOST_TEST_MESSAGE( "--- Test failure delegating SCORE that are part of a power down" );
-      tx.clear();
-      samSCORE = asset( samSCORE.amount / 2, SYMBOL_SCORE );
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_init_delegated_balance = db.get_delegated_balance( "alice", SYMBOL_COIN );
+      asset alice_init_receiving_balance = db.get_receiving_balance( "alice", SYMBOL_COIN );
+      share_type alice_init_voting_power = db.get_voting_power( "alice" );
+
       unstake_asset_operation withdraw;
-      withdraw.account = "sam";
-      withdraw.SCORE = samSCORE;
+
+      withdraw.signatory = "alice";
+      withdraw.from = "alice";
+      withdraw.to = "alice";
+      withdraw.amount = asset( 90000* BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+
       tx.operations.push_back( withdraw );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tx.clear();
-      op.SCORE = asset( samSCORE.amount + 2, SYMBOL_SCORE );
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      tx.clear();
-      withdraw.SCORE = ASSET( "0.000000 VESTS" );
+      delegate.amount = asset( 90000* BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      
+      tx.operations.push_back( delegate );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      withdraw.amount = asset( 0, SYMBOL_COIN );
+
       tx.operations.push_back( withdraw );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-
-      BOOST_TEST_MESSAGE( "--- Test failure powering down SCORE that are delegated" );
-      samSCORE.amount += 1000;
-      op.SCORE = samSCORE;
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      tx.operations.clear();
+      tx.signatures.clear();
+     
+      tx.operations.push_back( delegate );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tx.clear();
-      withdraw.SCORE = asset( samSCORE.amount, SYMBOL_SCORE );
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure delegating staked balance that are being unstaked" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure powering down stake that is delegated" );
+
+      withdraw.amount = asset( 90000* BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+
       tx.operations.push_back( withdraw );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), fc::assert_exception );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx ), fc::exception );
 
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure powering down stake that is delegated" );
 
-      BOOST_TEST_MESSAGE( "--- Remove a delegation and ensure it is returned after 1 week" );
-      tx.clear();
-      op.SCORE = ASSET( "0.000000 VESTS" );
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Remove a delegation" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_init_delegated_balance = db.get_delegated_balance( "alice", SYMBOL_COIN );
+      asset alice_init_receiving_balance = db.get_receiving_balance( "alice", SYMBOL_COIN );
+      share_type alice_init_voting_power = db.get_voting_power( "alice" );
+
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset bob_init_delegated_balance = db.get_delegated_balance( "bob", SYMBOL_COIN );
+      asset bob_init_receiving_balance = db.get_receiving_balance( "bob", SYMBOL_COIN );
+      share_type bob_init_voting_power = db.get_voting_power( "bob" );
+
+      delegate.amount = asset( 0, SYMBOL_COIN );
+
+      tx.operations.push_back( delegate );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       auto exp_obj = db.get_index< asset_delegation_expiration_index, by_id >().begin();
       auto end = db.get_index< asset_delegation_expiration_index, by_id >().end();
 
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_delegated_balance = db.get_delegated_balance( "alice", SYMBOL_COIN );
+      asset alice_receiving_balance = db.get_receiving_balance( "alice", SYMBOL_COIN );
+      share_type alice_voting_power = db.get_voting_power( "alice" );
+
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset bob_delegated_balance = db.get_delegated_balance( "bob", SYMBOL_COIN );
+      asset bob_receiving_balance = db.get_receiving_balance( "bob", SYMBOL_COIN );
+      share_type bob_voting_power = db.get_voting_power( "bob" );
+
+      const auto& delegation_idx = db.get_index< asset_delegation_index >().indices().get< by_delegation >();
+      auto delegation_itr = delegation_idx.find( boost::make_tuple( "alice", "bob", SYMBOL_COIN ) );
+
+      BOOST_REQUIRE( delegation_itr == delegation_idx.end() );
+
       BOOST_REQUIRE( exp_obj != end );
-      BOOST_REQUIRE( exp_obj->delegator == "sam" );
-      BOOST_REQUIRE( exp_obj->SCORE == samSCORE );
-      BOOST_REQUIRE( exp_obj->expiration == db.head_block_time() + CONTENT_REWARD_INTERVAL );
-      BOOST_REQUIRE( db.get_account( "sam" ).SCOREDelegated == samSCORE );
-      BOOST_REQUIRE( db.get_account( "dan" ).SCOREreceived == ASSET( "0.000000 VESTS" ) );
-      delegation = db.find< asset_delegation_object, by_delegation >( boost::make_tuple( op.delegator, op.delegatee ) );
-      BOOST_REQUIRE( delegation == nullptr );
+      BOOST_REQUIRE( exp_obj->delegator == delegate.delegator );
+      BOOST_REQUIRE( exp_obj->delegatee == delegate.delegatee );
+      BOOST_REQUIRE( exp_obj->amount == alice_init_delegated_balance );
+      BOOST_REQUIRE( exp_obj->expiration == now() + CONTENT_REWARD_INTERVAL );
+      
+      BOOST_REQUIRE( alice_delegated_balance.amount == bob_receiving_balance.amount );
 
       generate_blocks( exp_obj->expiration + BLOCK_INTERVAL );
 
       exp_obj = db.get_index< asset_delegation_expiration_index, by_id >().begin();
       end = db.get_index< asset_delegation_expiration_index, by_id >().end();
 
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_delegated_balance = db.get_delegated_balance( "alice", SYMBOL_COIN );
+      asset alice_receiving_balance = db.get_receiving_balance( "alice", SYMBOL_COIN );
+      share_type alice_voting_power = db.get_voting_power( "alice" );
+
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset bob_delegated_balance = db.get_delegated_balance( "bob", SYMBOL_COIN );
+      asset bob_receiving_balance = db.get_receiving_balance( "bob", SYMBOL_COIN );
+      share_type bob_voting_power = db.get_voting_power( "bob" );
+
       BOOST_REQUIRE( exp_obj == end );
-      BOOST_REQUIRE( db.get_account( "sam" ).SCOREDelegated == ASSET( "0.000000 VESTS" ) );
+      BOOST_REQUIRE( alice_delegated_balance.amount == 0 );
+      BOOST_REQUIRE( bob_receiving_balance.amount == 0 );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Remove a delegation" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: DELEGATE ASSET OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
+
 
 
    //===========================//
@@ -11760,14 +12310,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       BOOST_TEST_MESSAGE( "--- success" );
       op.ratification_deadline = op.escrow_expiration - 100;
       op.validate();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( escrow_transfer_authorities )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: escrow_transfer_authorities" );
 
       escrow_transfer_operation op;
@@ -11794,14 +12337,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_authorities )
       op.get_required_active_authorities( auths );
       expected.insert( "alice" );
       BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( escrow_transfer_apply )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: escrow_transfer_apply" );
 
       ACTORS( (alice)(bob)(sam) )
@@ -11922,14 +12458,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_validate )
       BOOST_TEST_MESSAGE( "--- success when who is agent" );
       op.who = op.agent;
       op.validate();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( escrow_approve_authorities )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: escrow_approve_authorities" );
 
       escrow_approve_operation op;
@@ -11961,14 +12490,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_authorities )
       op.get_required_active_authorities( auths );
       expected.insert( "sam" );
       BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( escrow_approve_apply )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: escrow_approve_apply" );
       ACTORS( (alice)(bob)(sam)(dan) )
       fund( "alice", 10000 );
@@ -11991,9 +12513,10 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       tx.operations.clear();
       tx.signatures.clear();
 
-
       BOOST_TEST_MESSAGE( "---failure when to does not match escrow" );
+
       escrow_approve_operation op;
+
       op.from = "alice";
       op.to = "dan";
       op.agent = "sam";
@@ -12015,7 +12538,6 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       tx.operations.push_back( op );
       tx.sign( dan_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
 
       BOOST_TEST_MESSAGE( "--- success approving to" );
       op.agent = "sam";
@@ -12039,7 +12561,6 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( escrow.to_approved );
       BOOST_REQUIRE( !escrow.agent_approved );
       BOOST_REQUIRE( !escrow.disputed );
-
 
       BOOST_TEST_MESSAGE( "--- failure on repeat approval" );
       tx.signatures.clear();
@@ -12081,7 +12602,6 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( !escrow.agent_approved );
       BOOST_REQUIRE( !escrow.disputed );
 
-
       BOOST_TEST_MESSAGE( "--- success refunding from because of repeal" );
       tx.signatures.clear();
       tx.operations.clear();
@@ -12096,7 +12616,6 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( alice.balance == ASSET( "10.000 TESTS" ) );
       validate_database();
 
-
       BOOST_TEST_MESSAGE( "--- test automatic refund when escrow is not ratified before deadline" );
       tx.operations.clear();
       tx.signatures.clear();
@@ -12109,7 +12628,6 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       REQUIRE_THROW( db.get_escrow( op.from, op.escrow_id ), fc::exception );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
       validate_database();
-
 
       BOOST_TEST_MESSAGE( "--- test ratification expiration when escrow is only approved by to" );
       tx.operations.clear();
@@ -12135,7 +12653,6 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
       validate_database();
 
-
       BOOST_TEST_MESSAGE( "--- test ratification expiration when escrow is only approved by agent" );
       tx.operations.clear();
       tx.signatures.clear();
@@ -12158,7 +12675,6 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       REQUIRE_THROW( db.get_escrow( op.from, op.escrow_id ), fc::exception );
       BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
       validate_database();
-
 
       BOOST_TEST_MESSAGE( "--- success approving escrow" );
       tx.operations.clear();
@@ -12183,42 +12699,38 @@ BOOST_AUTO_TEST_CASE( escrow_approve_apply )
       tx.operations.push_back( op );
       tx.sign( sam_private_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
-      {
-         const auto& escrow = db.get_escrow( op.from, op.escrow_id );
-         BOOST_REQUIRE( escrow.to == "bob" );
-         BOOST_REQUIRE( escrow.agent == "sam" );
-         BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-         BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
-         BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
-         BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-         BOOST_REQUIRE( escrow.to_approved );
-         BOOST_REQUIRE( escrow.agent_approved );
-         BOOST_REQUIRE( !escrow.disputed );
-      }
-
+      
+      const auto& escrow = db.get_escrow( op.from, op.escrow_id );
+      BOOST_REQUIRE( escrow.to == "bob" );
+      BOOST_REQUIRE( escrow.agent == "sam" );
+      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
+      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
+      BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
+      BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.to_approved );
+      BOOST_REQUIRE( escrow.agent_approved );
+      BOOST_REQUIRE( !escrow.disputed );
+      
       BOOST_REQUIRE( db.get_account( "sam" ).balance == et_op.fee );
       validate_database();
-
 
       BOOST_TEST_MESSAGE( "--- ratification expiration does not remove an approved escrow" );
 
       generate_blocks( et_op.ratification_deadline + BLOCK_INTERVAL, true );
-      {
-         const auto& escrow = db.get_escrow( op.from, op.escrow_id );
-         BOOST_REQUIRE( escrow.to == "bob" );
-         BOOST_REQUIRE( escrow.agent == "sam" );
-         BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-         BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
-         BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
-         BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-         BOOST_REQUIRE( escrow.to_approved );
-         BOOST_REQUIRE( escrow.agent_approved );
-         BOOST_REQUIRE( !escrow.disputed );
-      }
 
+      const auto& escrow = db.get_escrow( op.from, op.escrow_id );
+      BOOST_REQUIRE( escrow.to == "bob" );
+      BOOST_REQUIRE( escrow.agent == "sam" );
+      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
+      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
+      BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
+      BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.to_approved );
+      BOOST_REQUIRE( escrow.agent_approved );
+      BOOST_REQUIRE( !escrow.disputed );
+      
       BOOST_REQUIRE( db.get_account( "sam" ).balance == et_op.fee );
       validate_database();
    }
@@ -12246,14 +12758,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_validate )
 
       op.who = "bob";
       op.validate();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( escrow_dispute_authorities )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: escrow_dispute_authorities" );
       escrow_dispute_operation op;
       op.from = "alice";
@@ -12279,14 +12784,7 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_authorities )
       op.get_required_active_authorities( auths );
       expected.insert( "bob" );
       BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
 
-BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
-{
-   try
-   {
       BOOST_TEST_MESSAGE( "Testing: escrow_dispute_apply" );
 
       ACTORS( (alice)(bob)(sam)(dan) )
@@ -12316,7 +12814,6 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-
       BOOST_TEST_MESSAGE( "--- failure when escrow has not been approved" );
       escrow_dispute_operation op;
       op.from = "alice";
@@ -12341,7 +12838,6 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.to_approved );
       BOOST_REQUIRE( !escrow.agent_approved );
       BOOST_REQUIRE( !escrow.disputed );
-
 
       BOOST_TEST_MESSAGE( "--- failure when to does not match escrow" );
       escrow_approve_operation ea_s_op;
@@ -12376,7 +12872,6 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.agent_approved );
       BOOST_REQUIRE( !escrow.disputed );
 
-
       BOOST_TEST_MESSAGE( "--- failure when agent does not match escrow" );
       op.to = "bob";
       op.who = "alice";
@@ -12398,7 +12893,6 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       BOOST_REQUIRE( escrow.agent_approved );
       BOOST_REQUIRE( !escrow.disputed );
 
-
       BOOST_TEST_MESSAGE( "--- failure when escrow is expired" );
       generate_blocks( 2 );
 
@@ -12409,21 +12903,18 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      {
-         const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
-         BOOST_REQUIRE( escrow.to == "bob" );
-         BOOST_REQUIRE( escrow.agent == "sam" );
-         BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-         BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-         BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-         BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-         BOOST_REQUIRE( escrow.to_approved );
-         BOOST_REQUIRE( escrow.agent_approved );
-         BOOST_REQUIRE( !escrow.disputed );
-      }
-
+      
+      const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
+      BOOST_REQUIRE( escrow.to == "bob" );
+      BOOST_REQUIRE( escrow.agent == "sam" );
+      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
+      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
+      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
+      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
+      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.to_approved );
+      BOOST_REQUIRE( escrow.agent_approved );
+      BOOST_REQUIRE( !escrow.disputed );
 
       BOOST_TEST_MESSAGE( "--- success disputing escrow" );
       et_op.escrow_id = 1;
@@ -12448,22 +12939,19 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       tx.operations.push_back( op );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
-      {
-         const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
-         BOOST_REQUIRE( escrow.to == "bob" );
-         BOOST_REQUIRE( escrow.agent == "sam" );
-         BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-         BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-         BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-         BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-         BOOST_REQUIRE( escrow.to_approved );
-         BOOST_REQUIRE( escrow.agent_approved );
-         BOOST_REQUIRE( escrow.disputed );
-      }
-
-
+      
+      const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
+      BOOST_REQUIRE( escrow.to == "bob" );
+      BOOST_REQUIRE( escrow.agent == "sam" );
+      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
+      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
+      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
+      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
+      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.to_approved );
+      BOOST_REQUIRE( escrow.agent_approved );
+      BOOST_REQUIRE( escrow.disputed );
+      
       BOOST_TEST_MESSAGE( "--- failure when escrow is already under dispute" );
       tx.operations.clear();
       tx.signatures.clear();
@@ -12471,20 +12959,18 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_apply )
       tx.operations.push_back( op );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      {
-         const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
-         BOOST_REQUIRE( escrow.to == "bob" );
-         BOOST_REQUIRE( escrow.agent == "sam" );
-         BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-         BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-         BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-         BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-         BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-         BOOST_REQUIRE( escrow.to_approved );
-         BOOST_REQUIRE( escrow.agent_approved );
-         BOOST_REQUIRE( escrow.disputed );
-      }
+      
+      const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
+      BOOST_REQUIRE( escrow.to == "bob" );
+      BOOST_REQUIRE( escrow.agent == "sam" );
+      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
+      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
+      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
+      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
+      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.to_approved );
+      BOOST_REQUIRE( escrow.agent_approved );
+      BOOST_REQUIRE( escrow.disputed );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -12501,45 +12987,32 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
       op.agent = "sam";
       op.receiver = "bob";
 
-
       BOOST_TEST_MESSAGE( "--- failure when TME < 0" );
       op.TMEamount.amount = -1;
       REQUIRE_THROW( op.validate(), fc::exception );
-
 
       BOOST_TEST_MESSAGE( "--- failure when USD < 0" );
       op.TMEamount.amount = 0;
       op.USDamount.amount = -1;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-
       BOOST_TEST_MESSAGE( "--- failure when TME == 0 and USD == 0" );
       op.USDamount.amount = 0;
       REQUIRE_THROW( op.validate(), fc::exception );
 
-
       BOOST_TEST_MESSAGE( "--- failure when USD is not USD symbol" );
       op.USDamount = ASSET( "1.000 TESTS" );
       REQUIRE_THROW( op.validate(), fc::exception );
-
 
       BOOST_TEST_MESSAGE( "--- failure when TME is not TME symbol" );
       op.USDamount.symbol = SYMBOL_USD;
       op.TMEamount = ASSET( "1.000 USD" );
       REQUIRE_THROW( op.validate(), fc::exception );
 
-
       BOOST_TEST_MESSAGE( "--- success" );
       op.TMEamount.symbol = SYMBOL_COIN;
       op.validate();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( escrow_release_authorities )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: escrow_release_authorities" );
       escrow_release_operation op;
       op.from = "alice";
@@ -12572,14 +13045,7 @@ BOOST_AUTO_TEST_CASE( escrow_release_authorities )
       expected.insert( "sam" );
       op.get_required_active_authorities( auths );
       BOOST_REQUIRE( auths == expected );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( escrow_release_apply )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: escrow_release_apply" );
 
       ACTORS( (alice)(bob)(sam)(dan) )
@@ -12600,7 +13066,6 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
 
       BOOST_TEST_MESSAGE( "--- failure releasing funds prior to approval" );
       escrow_release_operation op;
@@ -13044,15 +13509,6 @@ BOOST_AUTO_TEST_CASE( escrow_release_apply )
 
 
 
-BOOST_AUTO_TEST_CASE( limit_order_create_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: limit_order_create_validate" );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
 BOOST_AUTO_TEST_CASE( limit_order_create_authorities )
 {
    try
@@ -13094,14 +13550,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_authorities )
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
 
       validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
 
-BOOST_AUTO_TEST_CASE( limit_order_create_apply )
-{
-   try
-   {
       BOOST_TEST_MESSAGE( "Testing: limit_order_create_apply" );
 
       set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) ) );
@@ -13383,14 +13832,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
       BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
       BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "954.500 USD" ).amount.value );
       validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( limit_order_create_authorities )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: limit_order_create_authorities" );
 
       ACTORS( (alice)(bob) )
@@ -13428,14 +13870,7 @@ BOOST_AUTO_TEST_CASE( limit_order_create_authorities )
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
 
       validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( limit_order_create_apply )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: limit_order_create_apply" );
 
       set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) ) );
@@ -13721,15 +14156,6 @@ BOOST_AUTO_TEST_CASE( limit_order_create_apply )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( limit_order_cancel_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: limit_order_cancel_validate" );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
 BOOST_AUTO_TEST_CASE( limit_order_cancel_authorities )
 {
    try
@@ -13782,14 +14208,7 @@ BOOST_AUTO_TEST_CASE( limit_order_cancel_authorities )
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
 
       validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( limit_order_cancel_apply )
-{
-   try
-   {
+   
       BOOST_TEST_MESSAGE( "Testing: limit_order_cancel_apply" );
 
       ACTORS( (alice) )
@@ -13897,17 +14316,6 @@ BOOST_AUTO_TEST_CASE( account_bandwidth )
    //=====================================//
 
 
-
-BOOST_AUTO_TEST_CASE( witness_update_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: withness_update_validate" );
-
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
 
 BOOST_AUTO_TEST_CASE( witness_update_authorities )
 {

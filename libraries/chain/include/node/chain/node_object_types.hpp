@@ -83,6 +83,7 @@ enum object_type
    governance_subscription_object_type,
    supernode_object_type,
    interface_object_type,
+   mediator_object_type,
    community_enterprise_object_type,
    enterprise_approval_object_type,
 
@@ -209,6 +210,7 @@ class governance_account_object;
 class governance_subscription_object;
 class supernode_object;
 class interface_object;
+class mediator_object;
 class community_enterprise_object;
 class enterprise_approval_object;
 
@@ -334,6 +336,7 @@ typedef oid< governance_account_object              > governance_account_id_type
 typedef oid< governance_subscription_object         > governance_subscription_id_type;
 typedef oid< supernode_object                       > supernode_id_type;
 typedef oid< interface_object                       > interface_id_type;
+typedef oid< mediator_object                        > mediator_id_type;
 typedef oid< community_enterprise_object            > community_enterprise_id_type;
 typedef oid< enterprise_approval_object             > enterprise_approval_id_type;
 
@@ -533,6 +536,7 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (governance_subscription_object_type)
          (supernode_object_type)
          (interface_object_type)
+         (mediator_object_type)
          (community_enterprise_object_type)
          (enterprise_approval_object_type)
 

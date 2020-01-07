@@ -5,11 +5,10 @@
 #include <node/protocol/config.hpp>
 
 #include <node/chain/database.hpp>
-#include <node/chain/hardfork.hpp>
+//#include <node/chain/hardfork.hpp>
 #include <node/chain/index.hpp>
 #include <node/chain/operation_notification.hpp>
-#include <node/chain/account_object.hpp>
-#include <node/chain/comment_object.hpp>
+#include <node/chain/node_objects.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <fc/thread/thread.hpp>
@@ -92,7 +91,7 @@ struct operation_visitor
 
    void remove_tag( const tag_object& tag )const
    {
-      _db.remove(tag);
+      _db.remove( tag );
 
       const auto& idx = _db.get_index<author_tag_stats_index>().indices().get<by_author_tag_posts>();
       auto itr = idx.lower_bound( boost::make_tuple(tag.author,tag.tag) );
@@ -107,12 +106,12 @@ struct operation_visitor
 
    const tag_stats_object& get_stats( const string& tag )const
    {
-      const auto& stats_idx = _db.get_index<tag_stats_index>().indices().get<by_tag>();
+      const auto& stats_idx = _db.get_index< tag_stats_index >().indices().get< by_tag >();
       auto itr = stats_idx.find( tag );
       if( itr != stats_idx.end() )
          return *itr;
 
-      return _db.create<tag_stats_object>( [&]( tag_stats_object& stats )
+      return _db.create< tag_stats_object >( [&]( tag_stats_object& stats )
       {
          stats.tag = tag;
       });
@@ -135,23 +134,21 @@ struct operation_visitor
             {
                break;
             }  
-            if( to_string(tag) == "" )
+            if( string(tag) == "" )
             {
                continue;
             }
                
-            lower_tags.insert( fc::to_lower( to_string(tag) ) );
+            lower_tags.insert( fc::to_lower( string(tag) ) );
          }
       }
 
       if( c.board.size() )
       {    
-         if( to_string( c.board ) == "" )
+         if( string( c.board ) != "" )
          {
-            continue;
+            lower_tags.insert( fc::to_lower( string( c.board ) ) );
          }
-            
-         lower_tags.insert( fc::to_lower( to_string( c.board ) ) );
       }
       
       lower_tags.insert( string() );      // add the universal null string tag
@@ -170,14 +167,14 @@ struct operation_visitor
 
       if( comment.cashout_time != fc::time_point::maximum() || comment.deleted )
       {
-         _db.modify( current, [&]( tag_object& obj ) 
+         _db.modify( current, [&]( tag_object& obj )
          {
             obj.active            = comment.active;
             obj.rating            = comment.rating;
             obj.privacy           = comment.privacy;
             obj.author_reputation = comment.author_reputation;
             obj.cashout           = _db.calculate_discussion_payout_time( comment );
-            obj.net_reward        = comment.net_reward.value;
+            obj.net_reward        = comment.net_reward;
             obj.net_votes         = comment.net_votes;
             obj.view_count        = comment.view_count;
             obj.share_count       = comment.share_count;
@@ -188,6 +185,7 @@ struct operation_visitor
             obj.comment_power     = comment.comment_power;
             obj.sort              = sort;
          });
+
          add_stats( current, stats );
       } 
       else 
@@ -209,14 +207,14 @@ struct operation_visitor
          parent = _db.get_comment( comment.parent_author, comment.parent_permlink ).id;
       }
          
-      const auto& tag_obj = _db.create<tag_object>( [&]( tag_object& obj )
+      const auto& tag_obj = _db.create< tag_object >( [&]( tag_object& obj )
       {
          obj.tag               = tag;
          obj.board             = board;
          obj.comment           = comment.id;
          obj.privacy           = comment.privacy;
          obj.rating            = comment.rating;
-         obj.language          = comment.language;
+         obj.language          = to_string( comment.language );
          obj.author_reputation = comment.author_reputation;
          obj.parent            = parent;
          obj.created           = comment.created;
@@ -233,14 +231,14 @@ struct operation_visitor
          obj.share_power       = comment.share_power;
          obj.comment_power     = comment.comment_power;
 
-         obj.net_reward        = comment.net_reward.value;
+         obj.net_reward        = comment.net_reward;
          obj.author            = author;
          obj.sort              = sort;
       });
+
       add_stats( tag_obj, get_stats( tag ) );
 
-
-      const auto& idx = _db.get_index<author_tag_stats_index>().indices().get<by_author_tag_posts>();
+      const auto& idx = _db.get_index< author_tag_stats_index >().indices().get<by_author_tag_posts>();
       auto itr = idx.lower_bound( boost::make_tuple(author,tag) );
       if( itr != idx.end() && itr->author == author && itr->tag == tag )
       {
@@ -251,7 +249,7 @@ struct operation_visitor
       }
       else
       {
-         _db.create<author_tag_stats_object>( [&]( author_tag_stats_object& stats )
+         _db.create< author_tag_stats_object >( [&]( author_tag_stats_object& stats )
          {
             stats.author        = author;
             stats.tag           = tag;
@@ -274,13 +272,13 @@ struct operation_visitor
  * Comment Rank (CR): Varies the weight of the post score by the comment score.
  * Each sorting parameter should be between -100 and +100.
  */
-   template< double LF, double EF, double REPF, double AF, double VR, double VIR, double SR, double CR >
+   template< int16_t LF, int16_t EF, int16_t REPF, int16_t AF, int16_t VR, int16_t VIR, int16_t SR, int16_t CR >
    double calculate_total_post_score( const comment_object& c, const comment_metrics_object& m )const 
    {
-      double weighted_vote_power = double(c.vote_power) * ( 1 - ( EF / 100 ) ) + double(c.vote_count) * double(m.average_vote_power) * ( EF / 100 );
-      double weighted_view_power = double(c.view_power) * ( 1 - ( EF / 100 ) ) + double(c.view_count) * double(m.average_view_power) * ( EF / 100 );
-      double weighted_share_power = double(c.share_power) * ( 1 - ( EF / 100 ) ) + double(c.share_count) * double(m.average_share_power) * ( EF / 100 );
-      double weighted_comment_power = double(c.comment_power) * ( 1 - ( EF / 100 ) ) + double(c.comment_count) * double(m.average_comment_power) * ( EF / 100 );
+      double weighted_vote_power = double(c.vote_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.vote_count) * double(m.average_vote_power) * ( double(EF) / 100 );
+      double weighted_view_power = double(c.view_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.view_count) * double(m.average_view_power) * ( double(EF) / 100 );
+      double weighted_share_power = double(c.share_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.share_count) * double(m.average_share_power) * ( double(EF) / 100 );
+      double weighted_comment_power = double(c.comment_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.comment_count) * double(m.average_comment_power) * ( double(EF) / 100 );
 
       int vote_sign = 0;
       if( weighted_vote_power > 0 ) 
@@ -297,10 +295,10 @@ struct operation_visitor
       double share_score = log2( weighted_share_power + 1 ) * m.vote_share_ratio;
       double comment_score = log2( weighted_comment_power + 1 ) * m.vote_comment_ratio;
 
-      double base_post_score = vote_score * ( VR / 100 ) + view_score * ( VIR / 100 ) + share_score * ( SR / 100 ) + comment_score * ( CR / 100 );
-      double post_score = base_post_score * ( 1 + double( ( 10 * c.author_reputation ) / BLOCKCHAIN_PRECISION ) * ( REPF / 100 ) );
-      double activity_weighted_time = double(c.created.sec_since_epoch()) * ( 1 - ( AF / 100 ) ) + double(c.active.sec_since_epoch()) * ( AF / 100 );
-      return post_score * ( 1 - ( LF / 100 ) ) + ( activity_weighted_time / 3600 ) * ( LF / 100 );
+      double base_post_score = vote_score * ( double(VR) / 100 ) + view_score * ( double(VIR) / 100 ) + share_score * ( double(SR) / 100 ) + comment_score * ( double(CR) / 100 );
+      double post_score = base_post_score * ( 1 + double( ( 10 * c.author_reputation ) / BLOCKCHAIN_PRECISION ) * ( double(REPF) / 100 ) );
+      double activity_weighted_time = double(c.created.sec_since_epoch()) * ( 1 - ( double(AF) / 100 ) ) + double(c.active.sec_since_epoch()) * ( double(AF) / 100 );
+      return post_score * ( 1 - ( double(LF) / 100 ) ) + ( activity_weighted_time / 3600 ) * ( LF / 100 );
    }
 
    /**
@@ -1045,7 +1043,7 @@ struct operation_visitor
    */
 
 
-   inline sort_options build_sort_options( const comment_object& c, const comment_metrics_object& m )
+   sort_options build_sort_options( const comment_object& c, const comment_metrics_object& m ) const
    {
       sort_options sort;
 
@@ -1120,7 +1118,7 @@ struct operation_visitor
 
    /** finds tags that have been added or removed or updated */
    void update_tags( const comment_object& c, const comment_metrics_object& m, bool parse_tags = false )const
-   { try {
+   {
       sort_options sort = build_sort_options( c, m );
 
       const auto& comment_idx = _db.get_index< tag_index >().indices().get< by_comment >();
@@ -1154,7 +1152,7 @@ struct operation_visitor
             }
             else
             {
-               existing_boards[tag->board] = tag;
+               existing_boards[ tag->board ] = tag;
             }
          }
 
@@ -1162,8 +1160,8 @@ struct operation_visitor
          {
             for( const auto& tag : meta.tags )   // Add tag for each combination of board and tag, including universal tag and universal board.
             {
-               auto existing_tag = existing_tags.find(tag);
-               auto existing_board = existing_boards.find(board);
+               auto existing_tag = existing_tags.find( tag );
+               auto existing_board = existing_boards.find( board );
 
                if( existing_tag == existing_tags.end() || existing_board == existing_boards.end() )
                {
@@ -1171,7 +1169,7 @@ struct operation_visitor
                }
                else
                {
-                  update_tag( *existing->second, c, sort );
+                  update_tag( *existing_tag->second, c, sort );
                }
             }
          }
@@ -1196,36 +1194,39 @@ struct operation_visitor
       {
          update_tags( _db.get_comment( c.parent_author, c.parent_permlink ), _db.get_comment_metrics(), false );
       }
-
-   } FC_CAPTURE_LOG_AND_RETHROW( (c) ) }
+   }
 
 
    void update_account_votes( const comment_object& c, const vote_operation& op )const
-   { try {
+   {
       const auto& metrics_idx = _db.get_index< account_curation_metrics_index >().indices().get< by_account >();
       comment_metadata meta = filter_tags( c );
       auto metrics_itr = metrics_idx.find( op.voter );
+      
       if( metrics_itr != metrics_idx.end() )
       {
          const account_curation_metrics_object& metrics = *metrics_itr;
 
-         metrics.author_votes[ c.author ]++;
-
-         for( const auto& board : meta.boards )
+         _db.modify( metrics, [&]( account_curation_metrics_object& a )
          {
-            if( board != board_name_type() )
-            {
-               metrics.board_votes[ board ]++;
-            }
-         }
+            a.author_votes[ c.author ]++;
 
-         for( const auto& tag : meta.tags )  
-         {
-            if( tag != tag_name_type() )
+            for( board_name_type board : meta.boards )
             {
-               metrics.tag_votes[ tag ]++;
+               if( board != board_name_type() )
+               {
+                  a.board_votes[ board ]++;
+               }
             }
-         }
+
+            for( tag_name_type tag : meta.tags )  
+            {
+               if( tag != tag_name_type() )
+               {
+                  a.tag_votes[ tag ]++;
+               }
+            }
+         });
       }
       else
       {
@@ -1234,7 +1235,7 @@ struct operation_visitor
             obj.account = op.voter;
             obj.author_votes[ c.author ]++;
 
-            for( const auto& board : meta.boards )
+            for( board_name_type board : meta.boards )
             {
                if( board != board_name_type() )
                {
@@ -1242,7 +1243,7 @@ struct operation_visitor
                }
             }
 
-            for( const auto& tag : meta.tags )  
+            for( tag_name_type tag : meta.tags )  
             {
                if( tag != tag_name_type() )
                {
@@ -1251,11 +1252,11 @@ struct operation_visitor
             }
          });
       }
-   } FC_CAPTURE_LOG_AND_RETHROW( (c) ) }
+   }
 
 
    void update_account_views( const comment_object& c, const view_operation& op )const
-   { try {
+   {
       const auto& metrics_idx = _db.get_index< account_curation_metrics_index >().indices().get< by_account >();
       comment_metadata meta = filter_tags( c );
       auto metrics_itr = metrics_idx.find( op.viewer );
@@ -1263,23 +1264,26 @@ struct operation_visitor
       {
          const account_curation_metrics_object& metrics = *metrics_itr;
 
-         metrics.author_views[ c.author ]++;
-
-         for( const auto& board : meta.boards )
+         _db.modify( metrics, [&]( account_curation_metrics_object& a )
          {
-            if( board != board_name_type() )
-            {
-               metrics.board_views[ board ]++;
-            }
-         }
+            a.author_views[ c.author ]++;
 
-         for( const auto& tag : meta.tags )  
-         {
-            if( tag != tag_name_type() )
+            for( board_name_type board : meta.boards )
             {
-               metrics.tag_views[ tag ]++;
+               if( board != board_name_type() )
+               {
+                  a.board_views[ board ]++;
+               }
             }
-         }
+
+            for( tag_name_type tag : meta.tags )  
+            {
+               if( tag != tag_name_type() )
+               {
+                  a.tag_views[ tag ]++;
+               }
+            }
+         });
       }
       else
       {
@@ -1288,7 +1292,7 @@ struct operation_visitor
             obj.account = op.viewer;
             obj.author_views[ c.author ]++;
 
-            for( const auto& board : meta.boards )
+            for( board_name_type board : meta.boards )
             {
                if( board != board_name_type() )
                {
@@ -1296,7 +1300,7 @@ struct operation_visitor
                }
             }
 
-            for( const auto& tag : meta.tags )  
+            for( tag_name_type tag : meta.tags )  
             {
                if( tag != tag_name_type() )
                {
@@ -1305,35 +1309,39 @@ struct operation_visitor
             }
          });
       }
-   } FC_CAPTURE_LOG_AND_RETHROW( (c) ) }
+   }
 
 
    void update_account_shares( const comment_object& c, const share_operation& op )const
-   { try {
+   {
       const auto& metrics_idx = _db.get_index< account_curation_metrics_index >().indices().get< by_account >();
       comment_metadata meta = filter_tags( c );
       auto metrics_itr = metrics_idx.find( op.sharer );
+      
       if( metrics_itr != metrics_idx.end() )
       {
          const account_curation_metrics_object& metrics = *metrics_itr;
 
-         metrics.author_shares[ c.author ]++;
-
-         for( const auto& board : meta.boards )
+         _db.modify( metrics, [&]( account_curation_metrics_object& a )
          {
-            if( board != board_name_type() )
-            {
-               metrics.board_shares[ board ]++;
-            }
-         }
+            a.author_shares[ c.author ]++;
 
-         for( const auto& tag : meta.tags )  
-         {
-            if( tag != tag_name_type() )
+            for( board_name_type board : meta.boards )
             {
-               metrics.tag_shares[ tag ]++;
+               if( board != board_name_type() )
+               {
+                  a.board_shares[ board ]++;
+               }
             }
-         }
+
+            for( tag_name_type tag : meta.tags )  
+            {
+               if( tag != tag_name_type() )
+               {
+                  a.tag_shares[ tag ]++;
+               }
+            }
+         });
       }
       else
       {
@@ -1342,7 +1350,7 @@ struct operation_visitor
             obj.account = op.sharer;
             obj.author_shares[ c.author ]++;
 
-            for( const auto& board : meta.boards )
+            for( board_name_type board : meta.boards )
             {
                if( board != board_name_type() )
                {
@@ -1350,7 +1358,7 @@ struct operation_visitor
                }
             }
 
-            for( const auto& tag : meta.tags )  
+            for( tag_name_type tag : meta.tags )  
             {
                if( tag != tag_name_type() )
                {
@@ -1359,15 +1367,15 @@ struct operation_visitor
             }
          });
       }
-   } FC_CAPTURE_LOG_AND_RETHROW( (c) ) }
+   }
 
 
    void update_account_adjacency( const account_following_object& f )const
-   { try {
+   {
       time_point now = _db.head_block_time();
 
-      const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
-      const auto& adjacency_idx = _db.get_index< account_adjacency_index >().indices().get< by_account_pair >();
+      const auto& following_idx = _db.get_index< chain::account_following_index >().indices().get< chain::by_account >();
+      const auto& adjacency_idx = _db.get_index< tags::account_adjacency_index >().indices().get< tags::by_account_pair >();
 
       for( auto name : f.followers )
       {
@@ -1536,17 +1544,17 @@ struct operation_visitor
             }
          }
       }
-   } FC_CAPTURE_LOG_AND_RETHROW( (c) ) }
+   }
 
 
    void update_board_adjacency( const board_member_object& m )const
-   { try {
+   {
       time_point now = _db.head_block_time();
-      const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
+      const auto& following_idx = _db.get_index< chain::account_following_index >().indices().get< chain::by_account >();
       const auto& member_idx = _db.get_index< board_member_index >().indices().get< by_name >();
       const auto& adjacency_idx = _db.get_index< board_adjacency_index >().indices().get< by_board_pair >();
 
-      for( auto name : m.subscribers )
+      for( account_name_type name : m.subscribers )
       {
          auto follow_itr = following_idx.find( name );
          const account_following_object& acc_following = *follow_itr;
@@ -1594,14 +1602,14 @@ struct operation_visitor
             }
          }
       } 
-   } FC_CAPTURE_LOG_AND_RETHROW( (c) ) }
+   }
 
 
    void update_tag_adjacency( const tag_following_object& t )const
-   { try {
+   {
       time_point now = _db.head_block_time();
-      const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
-      const auto& tag_idx = _db.get_index< tag_following_index >().indices().get< by_tag >();
+      const auto& following_idx = _db.get_index< chain::account_following_index >().indices().get< chain::by_account >();
+      const auto& tag_idx = _db.get_index< chain::tag_following_index >().indices().get< chain::by_tag >();
       const auto& adjacency_idx = _db.get_index< tag_adjacency_index >().indices().get< by_tag_pair >();
 
       for( auto name : t.followers )
@@ -1652,12 +1660,12 @@ struct operation_visitor
             }
          }
       } 
-   } FC_CAPTURE_LOG_AND_RETHROW( (c) ) }
+   }
 
 
    const peer_stats_object& get_or_create_peer_stats( account_id_type voter, account_id_type peer )const
    {
-      const auto& peeridx = _db.get_index<peer_stats_index>().indices().get<by_voter_peer>();
+      const auto& peeridx = _db.get_index< peer_stats_index >().indices().get< by_voter_peer >();
       auto itr = peeridx.find( boost::make_tuple( voter, peer ) );
       if( itr == peeridx.end() )
       {
@@ -1722,13 +1730,13 @@ struct operation_visitor
       auto itr = voteidx.lower_bound( boost::make_tuple( comment_id_type(c.id), account_id_type() ) );
       while( itr != voteidx.end() && itr->comment == c.id )
       {
-         update_indirect_vote( voter.id, itr->voter, (itr->vote_percent > 0)  == (vote > 0) );
+         update_indirect_vote( voter.id, author.id, (itr->vote_percent > 0) == (vote > 0) );
          ++itr;
       }
    }
 
-   flat_set<comment_id_type> get_recommendations( const account_name_type& account )const
-   { try {
+   flat_set< comment_id_type > get_recommendations( const account_name_type& account )const
+   {
       const auto& acc_obj = _db.get_account( account );
       const auto& following_obj = _db.get_account_following( account );
       flat_set< comment_id_type > selected;    
@@ -1780,109 +1788,115 @@ struct operation_visitor
             tags[ tag.first ] += tag.second * 10;
          }
 
-         vector< pair < account_name_type, share_type > > top_authors;
-         vector< pair < board_name_type, share_type > > top_boards;
-         vector< pair < tag_name_type, share_type > > top_tags;
+         vector< pair < account_name_type, share_type > > ranked_authors;
+         vector< pair < board_name_type, share_type > > ranked_boards;
+         vector< pair < tag_name_type, share_type > > ranked_tags;
 
-         top_authors.reserve( authors.size() );
-         top_board.reserve( boards.size() );
-         top_tags.reserve( tags.size() );
+         ranked_authors.reserve( authors.size() );
+         ranked_boards.reserve( boards.size() );
+         ranked_tags.reserve( tags.size() );
 
          for( auto author : authors )
          {
-            top_authors.push_back( std::make_pair( author.first, author.second ) );
+            ranked_authors.push_back( std::make_pair( author.first, author.second ) );
          }
          for( auto board : boards )
          {
-            top_boards.push_back( std::make_pair( board.first, board.second ) );
+            ranked_boards.push_back( std::make_pair( board.first, board.second ) );
          }
          for( auto tag : tags )
          {
-            top_tags.push_back( std::make_pair( tag.first, tag.second ) );
+            ranked_tags.push_back( std::make_pair( tag.first, tag.second ) );
          }
 
-         std::sort( top_boards.begin(), top_boards.end(), [&]( auto a, auto b )
+         std::sort( ranked_boards.begin(), ranked_boards.end(), [&]( auto a, auto b )
          {
             return a.second < b.second;
          });
 
-         std::sort( top_tags.begin(), top_tags.end(), [&]( auto a, auto b )
+         std::sort( ranked_tags.begin(), ranked_tags.end(), [&]( auto a, auto b )
          {
             return a.second < b.second;
          });
 
-         std::sort( top_authors.begin(), top_authors.end(), [&]( auto a, auto b )
+         std::sort( ranked_authors.begin(), ranked_authors.end(), [&]( auto a, auto b )
          {
             return a.second < b.second;
          });
 
-         if( top_boards.size() > 10 )
-         {
-            top_boards = std::vector( top_boards.begin(), top_boards.begin() + 10 );
-         }
+         vector< account_name_type > top_authors;
+         vector< board_name_type > top_boards;
+         vector< tag_name_type > top_tags;
 
-         if( top_tags.size() > 10 )
-         {
-            top_tags = std::vector( top_tags.begin(), top_tags.begin() + 10 );
-         }
+         top_authors.reserve( 10 );
+         top_boards.reserve( 10 );
+         ranked_tags.reserve( 10 );
 
-         if( top_authors.size() > 10 )
+         for( auto i = 0; i < 10; i++ )
          {
-            top_authors = std::vector( top_authors.begin(), top_authors.begin() + 10 );
+            top_authors.push_back( ranked_authors[ i ].first );
+         }
+         for( auto i = 0; i < 10; i++ )
+         {
+            top_boards.push_back( ranked_boards[ i ].first );
+         }
+         for( auto i = 0; i < 10; i++ )
+         {
+            top_tags.push_back( ranked_tags[ i ].first );
          }
 
          // Retrieves all hybrid tag indexes for getting posts from each tag and board.
 
-         const auto& view_idx = _db.get_index<comment_view_index>().indices().get<by_viewer_comment>();
-         const auto& blog_idx = _db.get_index<blog_index>().indices().get<by_new_account_blog>();
-         const auto& author_vote_idx = _db.get_index<tag_index>().indices().get<by_author_net_votes>();
-         const auto& author_view_idx = _db.get_index<tag_index>().indices().get<by_author_view_count>();
-         const auto& author_share_idx = _db.get_index<tag_index>().indices().get<by_author_share_count>();
-         const auto& author_comment_idx = _db.get_index<tag_index>().indices().get<by_author_children>();
+         const auto& view_idx = _db.get_index< comment_view_index >().indices().get< by_viewer_comment >();
+         const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
+         const auto& author_vote_idx = _db.get_index< tag_index >().indices().get< by_author_net_votes >();
+         const auto& author_view_idx = _db.get_index< tag_index >().indices().get< by_author_view_count >();
+         const auto& author_share_idx = _db.get_index< tag_index >().indices().get< by_author_share_count >();
+         const auto& author_comment_idx = _db.get_index< tag_index >().indices().get< by_author_children >();
 
-         const auto& popular_rapid_idx = _db.get_index<tag_index>().indices().get<by_parent_popular_rapid>();
-         const auto& popular_top_idx = _db.get_index<tag_index>().indices().get<by_parent_popular_top>();
-         const auto& viral_rapid_idx = _db.get_index<tag_index>().indices().get<by_parent_viral_rapid>();
-         const auto& viral_top_idx = _db.get_index<tag_index>().indices().get<by_parent_viral_top>();
-         const auto& discussion_rapid_idx = _db.get_index<tag_index>().indices().get<by_parent_discussion_rapid>();
-         const auto& discussion_top_idx = _db.get_index<tag_index>().indices().get<by_parent_discussion_top>();
-         const auto& prominent_rapid_idx = _db.get_index<tag_index>().indices().get<by_parent_prominent_rapid>();
-         const auto& prominent_top_idx = _db.get_index<tag_index>().indices().get<by_parent_prominent_top>();
-         const auto& conversation_rapid_idx = _db.get_index<tag_index>().indices().get<by_parent_conversation_rapid>();
-         const auto& conversation_top_idx = _db.get_index<tag_index>().indices().get<by_parent_conversation_top>();
-         const auto& discourse_rapid_idx = _db.get_index<tag_index>().indices().get<by_parent_discourse_rapid>();
-         const auto& discourse_top_idx = _db.get_index<tag_index>().indices().get<by_parent_discourse_top>();
+         const auto& popular_rapid_idx = _db.get_index< tag_popular_sort_index >().indices().get< by_parent_popular_rapid >();
+         const auto& popular_top_idx = _db.get_index< tag_popular_sort_index >().indices().get< by_parent_popular_top >();
+         const auto& viral_rapid_idx = _db.get_index< tag_viral_sort_index >().indices().get< by_parent_viral_rapid >();
+         const auto& viral_top_idx = _db.get_index< tag_viral_sort_index >().indices().get< by_parent_viral_top >();
+         const auto& discussion_rapid_idx = _db.get_index< tag_discussion_sort_index >().indices().get< by_parent_discussion_rapid >();
+         const auto& discussion_top_idx = _db.get_index< tag_discussion_sort_index >().indices().get< by_parent_discussion_top >();
+         const auto& prominent_rapid_idx = _db.get_index< tag_prominent_sort_index >().indices().get< by_parent_prominent_rapid >();
+         const auto& prominent_top_idx = _db.get_index< tag_prominent_sort_index >().indices().get< by_parent_prominent_top >();
+         const auto& conversation_rapid_idx = _db.get_index< tag_conversation_sort_index >().indices().get< by_parent_conversation_rapid >();
+         const auto& conversation_top_idx = _db.get_index< tag_conversation_sort_index >().indices().get< by_parent_conversation_top >();
+         const auto& discourse_rapid_idx = _db.get_index< tag_discourse_sort_index >().indices().get< by_parent_discourse_rapid >();
+         const auto& discourse_top_idx = _db.get_index< tag_discourse_sort_index >().indices().get< by_parent_discourse_top >();
 
-         const auto& account_a_adjacency_idx = _db.get_index<account_adjacency_index>().indices().get<by_account_a_adjacent>();
-         const auto& account_b_adjacency_idx = _db.get_index<account_adjacency_index>().indices().get<by_account_b_adjacent>();
-         const auto& board_a_adjacency_idx = _db.get_index<board_adjacency_index>().indices().get<by_board_a_adjacent>();
-         const auto& board_b_adjacency_idx = _db.get_index<board_adjacency_index>().indices().get<by_board_b_adjacent>();
-         const auto& tag_a_adjacency_idx = _db.get_index<tag_adjacency_index>().indices().get<by_tag_a_adjacent>();
-         const auto& tag_b_adjacency_idx = _db.get_index<tag_adjacency_index>().indices().get<by_tag_b_adjacent>();
+         const auto& account_a_adjacency_idx = _db.get_index< account_adjacency_index >().indices().get< by_account_a_adjacent >();
+         const auto& account_b_adjacency_idx = _db.get_index< account_adjacency_index >().indices().get< by_account_b_adjacent >();
+         const auto& board_a_adjacency_idx = _db.get_index< board_adjacency_index >().indices().get< by_board_a_adjacent >();
+         const auto& board_b_adjacency_idx = _db.get_index< board_adjacency_index >().indices().get< by_board_b_adjacent >();
+         const auto& tag_a_adjacency_idx = _db.get_index< tag_adjacency_index >().indices().get< by_tag_a_adjacent >();
+         const auto& tag_b_adjacency_idx = _db.get_index< tag_adjacency_index >().indices().get< by_tag_b_adjacent >();
 
-         vector<account_name_type> related_authors;
-         vector<board_name_type> related_boards;
-         vector<tag_name_type> related_tags;
+         vector< account_name_type > related_authors;
+         vector< board_name_type > related_boards;
+         vector< tag_name_type > related_tags;
 
          related_authors.reserve( top_authors.size() );
-         related_board.reserve( top_boards.size() );
+         related_boards.reserve( top_boards.size() );
          related_tags.reserve( top_tags.size() );
 
          // Add related unfollowed authors for each of the top authors, according to how many followers and connections in common they have.
          for( auto author : top_authors )
          {
-            auto account_a_adjacency_itr = account_a_adjacency_idx.lower_bound( author.first );
-            auto account_b_adjacency_itr = account_b_adjacency_idx.lower_bound( author.first );
-            while( ( account_a_adjacency_itr->account_a == author.first && 
+            auto account_a_adjacency_itr = account_a_adjacency_idx.lower_bound( author );
+            auto account_b_adjacency_itr = account_b_adjacency_idx.lower_bound( author );
+            while( ( account_a_adjacency_itr->account_a == author && 
                account_a_adjacency_itr != account_a_adjacency_idx.end() ) || 
-               ( account_b_adjacency_itr->account_b == author.first &&
+               ( account_b_adjacency_itr->account_b == author &&
                account_b_adjacency_itr != account_b_adjacency_idx.end() ) )
             {
                share_type adj_a = 0;
                account_name_type related_acc_a;
                share_type adj_b = 0;
                account_name_type related_acc_b;
-               while( account_a_adjacency_itr->account_a == author.first && 
+               while( account_a_adjacency_itr->account_a == author && 
                   account_a_adjacency_itr != account_a_adjacency_idx.end() && 
                   related_acc_a == account_name_type() )
                {
@@ -1896,7 +1910,7 @@ struct operation_visitor
                      related_acc_a = account_a_adjacency_itr->account_b;
                   }
                }
-               while( account_b_adjacency_itr->account_b == author.first && 
+               while( account_b_adjacency_itr->account_b == author && 
                   account_b_adjacency_itr != account_b_adjacency_idx.end() && 
                   related_acc_b == account_name_type() )
                {
@@ -1926,19 +1940,19 @@ struct operation_visitor
          // Add related unfollowed boards for each of the top boards, according to how many followers and connections in common they have.
          for( auto board : top_boards )
          {
-            auto board_a_adjacency_itr = board_a_adjacency_idx.lower_bound( board.first );
-            auto board_b_adjacency_itr = board_b_adjacency_idx.lower_bound( board.first );
+            auto board_a_adjacency_itr = board_a_adjacency_idx.lower_bound( board );
+            auto board_b_adjacency_itr = board_b_adjacency_idx.lower_bound( board );
 
-            while( ( board_a_adjacency_itr->board_a == board.first && 
+            while( ( board_a_adjacency_itr->board_a == board && 
                board_a_adjacency_itr != board_a_adjacency_idx.end() ) || 
-               ( board_b_adjacency_itr->board_b == board.first &&
+               ( board_b_adjacency_itr->board_b == board &&
                board_b_adjacency_itr != board_b_adjacency_idx.end() ) )
             {
                share_type adj_a = 0;
                board_name_type related_board_a;
                share_type adj_b = 0;
                board_name_type related_board_b;
-               while( board_a_adjacency_itr->board_a == board.first && 
+               while( board_a_adjacency_itr->board_a == board && 
                   board_a_adjacency_itr != board_a_adjacency_idx.end() && 
                   related_board_a == board_name_type() )
                {
@@ -1952,7 +1966,7 @@ struct operation_visitor
                      related_board_a = board_a_adjacency_itr->board_b;
                   }
                }
-               while( board_b_adjacency_itr->board_b == board.first && 
+               while( board_b_adjacency_itr->board_b == board && 
                   board_b_adjacency_itr != board_b_adjacency_idx.end() && 
                   related_board_b == board_name_type() )
                {
@@ -1982,12 +1996,12 @@ struct operation_visitor
          // Add related unfollowed tags for each of the top tags, according to how many followers and connections in common they have.
          for( auto tag : top_tags )
          {
-            auto tag_a_adjacency_itr = tag_a_adjacency_idx.lower_bound( tag.first );
-            auto tag_b_adjacency_itr = tag_b_adjacency_idx.lower_bound( tag.first );
+            auto tag_a_adjacency_itr = tag_a_adjacency_idx.lower_bound( tag );
+            auto tag_b_adjacency_itr = tag_b_adjacency_idx.lower_bound( tag );
 
-            while( ( tag_a_adjacency_itr->tag_a == tag.first && 
+            while( ( tag_a_adjacency_itr->tag_a == tag && 
                tag_a_adjacency_itr != tag_a_adjacency_idx.end() ) || 
-               ( tag_b_adjacency_itr->tag_b == tag.first &&
+               ( tag_b_adjacency_itr->tag_b == tag &&
                tag_b_adjacency_itr != tag_b_adjacency_idx.end() ) )
             {
                share_type adj_a = 0;
@@ -1995,7 +2009,7 @@ struct operation_visitor
                share_type adj_b = 0;
                tag_name_type related_tag_b;
 
-               while( tag_a_adjacency_itr->tag_a == tag.first && 
+               while( tag_a_adjacency_itr->tag_a == tag && 
                   tag_a_adjacency_itr != tag_a_adjacency_idx.end() && 
                   related_tag_a == tag_name_type() )
                {
@@ -2010,7 +2024,7 @@ struct operation_visitor
                   }
                }
 
-               while( tag_b_adjacency_itr->tag_b == tag.first && 
+               while( tag_b_adjacency_itr->tag_b == tag && 
                   tag_b_adjacency_itr != tag_b_adjacency_idx.end() && 
                   related_tag_b == tag_name_type() )
                {
@@ -2038,25 +2052,25 @@ struct operation_visitor
             }
          }
 
-         vector<account_name_type> total_authors;
-         vector<board_name_type> total_boards;
-         vector<tag_name_type> total_tags;
+         vector< account_name_type> total_authors;
+         vector< board_name_type> total_boards;
+         vector< tag_name_type> total_tags;
 
          total_authors.reserve( top_authors.size() + related_authors.size());
-         total_board.reserve( top_boards.size() + related_boards.size() );
+         total_boards.reserve( top_boards.size() + related_boards.size() );
          total_tags.reserve( top_tags.size() + related_tags.size() );
 
          for( auto author : top_authors )
          {
-            total_authors.push_back( author.first );
+            total_authors.push_back( author );
          }
          for( auto board : top_boards )
          {
-            total_boards.push_back( board.first );
+            total_boards.push_back( board );
          }
          for( auto tag : top_tags )
          {
-            total_tags.push_back( tag.first );
+            total_tags.push_back( tag );
          }
          for( auto author : related_authors )
          {
@@ -2087,7 +2101,7 @@ struct operation_visitor
 
             auto author_vote_itr = author_vote_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
-            while( author_vote_itr != author_vote_idx.end() && author_vote_itr->account == author && count < 2 )
+            while( author_vote_itr != author_vote_idx.end() && author_vote_itr->author == author && count < 2 )
             {
                if( view_idx.find( boost::make_tuple( account, author_vote_itr->comment ) ) == view_idx.end() )     
                {
@@ -2099,7 +2113,7 @@ struct operation_visitor
 
             auto author_view_itr = author_view_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
-            while( author_view_itr != author_view_idx.end() && author_view_itr->account == author && count < 2 )
+            while( author_view_itr != author_view_idx.end() && author_view_itr->author == author && count < 2 )
             {
                if( view_idx.find( boost::make_tuple( account, author_view_itr->comment ) ) == view_idx.end() )     
                {
@@ -2111,7 +2125,7 @@ struct operation_visitor
 
             auto author_share_itr = author_share_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
-            while( author_share_itr != author_share_idx.end() && author_share_itr->account == author && count < 2 )
+            while( author_share_itr != author_share_idx.end() && author_share_itr->author == author && count < 2 )
             {
                if( view_idx.find( boost::make_tuple( account, author_share_itr->comment ) ) == view_idx.end() )     
                {
@@ -2123,7 +2137,7 @@ struct operation_visitor
 
             auto author_comment_itr = author_comment_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
-            while( author_comment_itr != author_comment_idx.end() && author_comment_itr->account == author && count < 2 )
+            while( author_comment_itr != author_comment_idx.end() && author_comment_itr->author == author && count < 2 )
             {
                if( view_idx.find( boost::make_tuple( account, author_comment_itr->comment ) ) == view_idx.end() )     
                {
@@ -2383,7 +2397,7 @@ struct operation_visitor
          }
       }
       return selected;
-   } FC_CAPTURE_LOG_AND_RETHROW( (c) ) }
+   }
 
 
    /**
@@ -2400,15 +2414,17 @@ struct operation_visitor
 
       if( recommendation_itr != recommendation_idx.end() )
       {
-         if( ( now - recommendation_itr->last_updated ) >= fc::hours(1) )   // Fully reload recommendations up to once per hour
+         const account_recommendations_object& rec = *recommendation_itr;
+
+         if( ( now - rec.last_updated ) >= fc::hours(1) )   // Fully reload recommendations up to once per hour
          {
-            _db.modify( *recommendation_itr, [&]( account_recommendations_object& o )
+            _db.modify( rec, [&]( account_recommendations_object& o )
             {
                o.recommended_posts = get_recommendations( account );
                o.last_updated = now;
             });
          }
-         else if( remove_comment && recommendation_itr->recommended_posts.find( c.id ) )    // Remove post from recommendations when viewed
+         else if( remove_comment && rec.recommended_posts.find( c.id ) != rec.recommended_posts.end() )    // Remove post from recommendations when viewed
          {
             _db.modify( *recommendation_itr, [&]( account_recommendations_object& o )
             {
@@ -2557,6 +2573,17 @@ tags_plugin::tags_plugin( application* app )
 {
    chain::database& db = database();
    add_plugin_index< tag_index                        >(db);
+   add_plugin_index< tag_quality_sort_index           >(db);
+   add_plugin_index< tag_votes_sort_index             >(db);
+   add_plugin_index< tag_views_sort_index             >(db);
+   add_plugin_index< tag_shares_sort_index            >(db);
+   add_plugin_index< tag_comments_sort_index          >(db);
+   add_plugin_index< tag_popular_sort_index           >(db);
+   add_plugin_index< tag_viral_sort_index             >(db);
+   add_plugin_index< tag_discussion_sort_index        >(db);
+   add_plugin_index< tag_prominent_sort_index         >(db);
+   add_plugin_index< tag_conversation_sort_index      >(db);
+   add_plugin_index< tag_discourse_sort_index         >(db);
    add_plugin_index< tag_stats_index                  >(db);
    add_plugin_index< peer_stats_index                 >(db);
    add_plugin_index< account_curation_metrics_index   >(db);
@@ -2591,6 +2618,6 @@ void tags_plugin::plugin_startup()
 {
 }
 
-} } /// node::tags
+} } // node::tags
 
-DEFINE_PLUGIN( tags, node::tags::tags_plugin )
+DEFINE_PLUGIN( tags, node::tags::tags_plugin );

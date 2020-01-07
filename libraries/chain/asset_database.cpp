@@ -110,7 +110,7 @@ void database::process_asset_staking()
          }
          else
          {
-            abo.next_unstake_time += fc::seconds( STAKE_WITHDRAW_INTERVAL_SECONDS );
+            abo.next_unstake_time += STAKE_WITHDRAW_INTERVAL;
          }
       });
    }
@@ -165,7 +165,7 @@ void database::process_asset_staking()
          }
          else
          {
-            abo.next_stake_time += fc::seconds( STAKE_WITHDRAW_INTERVAL_SECONDS );
+            abo.next_stake_time += STAKE_WITHDRAW_INTERVAL;
          }
       });
    }
@@ -183,60 +183,115 @@ void database::process_recurring_transfers()
       const transfer_recurring_object& transfer = *transfer_itr;
       asset liquid = get_liquid_balance( transfer.from, transfer.amount.symbol );
 
-      if( liquid >= transfer.amount )
+      if( liquid >= transfer.amount )    // Account has sufficient funds to pay
       {
          adjust_liquid_balance( transfer.from, -transfer.amount );
          adjust_liquid_balance( transfer.to, transfer.amount );
+
+         modify( transfer, [&]( transfer_recurring_object& tro )
+         {
+            tro.next_transfer += tro.interval;
+            tro.payments_remaining--;
+         });
+
+         if( transfer.payments_remaining == 0 )
+         {
+            remove( transfer );
+         }
       }
-      modify( transfer, [&]( transfer_recurring_object& tro )
+      else     // Account cannot make the payment
       {
-         tro.next_transfer+= tro.interval;
-      });
+         if( transfer.fill_or_kill )     // Fill or kill causes transfer to be cancelled if payment cannot be made.
+         {
+            remove( transfer );
+         }
+         else if( transfer.extensible )   // Extensible recurring transfer is extended if a payment is missed.
+         {
+            modify( transfer, [&]( transfer_recurring_object& tro )
+            {
+               tro.next_transfer += tro.interval;
+               tro.end += tro.interval;
+            });
+         }
+         else if( transfer.payments_remaining > 1 )    // Payments are remaining, not extensible, so payment is not extended
+         {
+            modify( transfer, [&]( transfer_recurring_object& tro )
+            {
+               tro.next_transfer += tro.interval;
+               tro.payments_remaining--;
+            });
+         }
+         else     // No payments remaining
+         {
+            remove( transfer );
+         }
+      }
    }
 }
 
 void database::process_savings_withdraws()
 {
-  const auto& idx = get_index< savings_withdraw_index >().indices().get< by_complete_from_rid >();
-  auto itr = idx.begin();
-  time_point now = head_block_time();
-  while( itr != idx.end() ) 
-  {
-     if( itr->complete > now )
-     {
-        break;
-     }
-        
-     adjust_liquid_balance( itr->to , itr->amount );
+   const auto& idx = get_index< savings_withdraw_index >().indices().get< by_complete_from_request_id >();
+   auto itr = idx.begin();
+   time_point now = head_block_time();
 
-     modify( get_account( itr->from ), [&]( account_object& a )
-     {
-        a.savings_withdraw_requests--;
-     });
+   while( itr != idx.end() )
+   {
+      if( itr->complete > now )
+      {
+         break;
+      }
+      
+      adjust_liquid_balance( itr->to , itr->amount );
 
-     push_virtual_operation( fill_transfer_from_savings_operation( itr->from, itr->to, itr->amount, itr->request_id, to_string( itr->memo) ) );
+      modify( get_account( itr->from ), [&]( account_object& a )
+      {
+         a.savings_withdraw_requests--;
+      });
 
-     remove( *itr );
-     itr = idx.begin();
-  }
+      push_virtual_operation( 
+         fill_transfer_from_savings_operation( 
+         itr->from, 
+         itr->to, 
+         itr->amount, 
+         to_string( itr->request_id ), 
+         to_string( itr->memo )
+         ) 
+      );
+
+      remove( *itr );
+      itr = idx.begin();
+   }
 }
 
 
-void database::expire_escrow_ratification()
+void database::process_escrow_transfers()
 {
-   const auto& escrow_idx = get_index< escrow_index >().indices().get< by_ratification_deadline >();
-   auto escrow_itr = escrow_idx.lower_bound( false );
+   const auto& escrow_acc_idx = get_index< escrow_index >().indices().get< by_acceptance_time >();
+   auto escrow_acc_itr = escrow_acc_idx.lower_bound( false );
+   time_point now = head_block_time();
 
-   while( escrow_itr != escrow_idx.end() && !escrow_itr->is_approved() && escrow_itr->ratification_deadline <= head_block_time() )
+   while( escrow_acc_itr != escrow_acc_idx.end() && 
+      !escrow_acc_itr->is_approved() && 
+      escrow_acc_itr->acceptance_time <= now )
    {
-      const auto& old_escrow = *escrow_itr;
-      ++escrow_itr;
+      const escrow_object& old_escrow = *escrow_acc_itr;
+      ++escrow_acc_itr;
 
-      const auto& from_account = get_account( old_escrow.from );
-      adjust_liquid_balance( from_account, old_escrow.balance);
-      adjust_liquid_balance( from_account, old_escrow.pending_fee );
+      release_escrow( old_escrow );
+   }
 
-      remove( old_escrow );
+   const auto& escrow_dis_idx = get_index< escrow_index >().indices().get< by_dispute_release_time >();
+   auto escrow_dis_itr = escrow_dis_idx.lower_bound( true );
+
+   while( escrow_dis_itr != escrow_dis_idx.end() && 
+      escrow_dis_itr->disputed && 
+      escrow_dis_itr->dispute_release_time <= now )
+   {
+      const escrow_object& old_escrow = *escrow_acc_itr;
+      ++escrow_acc_itr;
+
+      release_escrow( old_escrow );
    }
 }
 
@@ -1080,9 +1135,9 @@ share_type database::get_voting_power( const account_object& a )const
 
 share_type database::get_voting_power( const account_name_type& a )const
 {
-   const account_balance_object* coin_ptr = find_account_balance(a, SYMBOL_COIN);
-   const account_balance_object* equity_ptr = find_account_balance(a, SYMBOL_EQUITY);
-   price equity_coin_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   const account_balance_object* coin_ptr = find_account_balance( a, SYMBOL_COIN );
+   const account_balance_object* equity_ptr = find_account_balance( a, SYMBOL_EQUITY );
+   price equity_coin_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    share_type voting_power = 0;
    if( coin_ptr != nullptr )
    {
@@ -1174,7 +1229,7 @@ void database::update_expired_feeds()
    const auto head_time = head_block_time();
    const auto next_maint_time = get_dynamic_global_properties().next_maintenance_time;
 
-   const auto& idx = get_index<asset_bitasset_data_index>().indices().get<by_feed_expiration>();
+   const auto& idx = get_index< asset_bitasset_data_index >().indices().get< by_feed_expiration >();
    auto itr = idx.begin();
    while( itr != idx.end() && itr->feed_is_expired( head_time ) ) // update feeds, check margin calls for each asset whose feed is expired
    {
@@ -1216,6 +1271,7 @@ void database::update_expired_feeds()
    } 
 }
 
+
 void database::update_core_exchange_rates()
 {
    const auto& idx = get_index<asset_bitasset_data_index>().indices().get<by_cer_update>();
@@ -1224,15 +1280,15 @@ void database::update_core_exchange_rates()
       for( auto itr = idx.rbegin(); itr->need_to_update_cer(); itr = idx.rbegin() )
       {
          const asset_bitasset_data_object& bitasset = *itr;
-         const asset_object& asset = get_asset ( bitasset.symbol );
+         const asset_object& asset = get_asset( bitasset.symbol );
          if( asset.options.core_exchange_rate != bitasset.current_feed.core_exchange_rate )
          {
-            modify( asset, [&bitasset]( asset_object& ao )
+            modify( asset, [&]( asset_object& ao )
             {
                ao.options.core_exchange_rate = bitasset.current_feed.core_exchange_rate;
             });
          }
-         modify( bitasset, []( asset_bitasset_data_object& abdo )
+         modify( bitasset, [&]( asset_bitasset_data_object& abdo )
          {
             abdo.asset_cer_updated = false;
             abdo.feed_cer_updated = false;
@@ -1241,17 +1297,176 @@ void database::update_core_exchange_rates()
    }
 }
 
+
 void database::update_maintenance_flag( bool new_maintenance_flag )
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   modify(props, [&]( dynamic_global_property_object& dpo )
+   modify( props, [&]( dynamic_global_property_object& dpo )
    {
       auto maintenance_flag = dynamic_global_property_object::maintenance_flag;
-      dpo.dynamic_flags =
-           (dpo.dynamic_flags & ~maintenance_flag)
-         | (new_maintenance_flag ? maintenance_flag : 0);
-   } );
+
+      dpo.dynamic_flags = ( dpo.dynamic_flags & ~maintenance_flag ) | ( new_maintenance_flag ? maintenance_flag : 0 );
+   });
+
    return;
 }
+
+
+void database::dispute_escrow( const escrow_object& escrow )
+{ try {
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+
+   const auto& mediator_idx = get_index< mediator_index >().indices().get< by_virtual_position >();
+   auto mediator_itr = mediator_idx.begin();
+
+   vector< account_name_type > top_mediators;
+   vector< account_name_type > shuffled_mediators;
+   flat_set< account_name_type > allocated_mediators;
+
+   // Increment all mediators virtual position by their mediation stake balance.
+   while( mediator_itr != mediator_idx.end() )
+   {
+      if( mediator_itr->active )
+      {
+         modify( *mediator_itr, [&]( mediator_object& m )
+         {
+            m.mediation_virtual_position += m.mediator_bond.amount.value;
+         });
+      }
+      ++mediator_itr;
+   }
+
+   auto mediator_itr = mediator_idx.begin();
+
+   // Select top position mediators
+   while( mediator_itr != mediator_idx.end() && top_mediators.size() < ( 10 * ESCROW_DISPUTE_MEDIATOR_AMOUNT ) )
+   {
+      if( mediator_itr->active )
+      {
+         top_mediators.push_back( mediator_itr->account );
+      }
+      ++mediator_itr;
+   }
+
+   shuffled_mediators = shuffle_accounts( top_mediators );   // Get a random ordered vector of mediator names
+
+   for( auto i = 0; i < ESCROW_DISPUTE_MEDIATOR_AMOUNT; i++ )
+   {
+      allocated_mediators.insert( shuffled_mediators[ i ] );
+
+      const mediator_object& mediator = get_mediator( shuffled_mediators[ i ] );
+      modify( mediator, [&]( mediator_object& m )
+      {
+         m.mediation_virtual_position = 0;
+         m.last_escrow_id = escrow.escrow_id;
+      });
+   }
+
+   modify( escrow, [&]( escrow_object& esc )
+   {
+      esc.disputed = true;
+      esc.mediators = allocated_mediators;
+      esc.dispute_release_time = now + ESCROW_DISPUTE_DURATION;
+   });
+
+} FC_CAPTURE_AND_RETHROW() }
+
+/**
+ * Selects the median release percentage in the escrow
+ * and divides the payment between the TO and FROM accounts.
+ * Fofeits security bonds based on the difference between median
+ * and individual votes to create an incentive to reach 
+ * cooperative consensus between the mediators about the
+ * escrow details. 
+ * All voters receive a split of all forfeited bonds, distributing funds
+ * as a net profit to accounts the voted closest to the median.
+ */
+void database::release_escrow( const escrow_object& escrow )
+{ try {
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+
+   if( escrow.is_approved() )
+   {
+      vector< uint16_t > release_percentages;
+      uint16_t median_release = PERCENT_100;
+
+      for( auto p : escrow.release_percentages )
+      {
+         release_percentages.push_back( p.second );
+      }
+
+      size_t offset = release_percentages.size()/2;
+
+      std::nth_element( release_percentages.begin(), release_percentages.begin()+offset, release_percentages.end(),
+      []( uint16_t a, uint16_t b )
+      {
+         return a < b;
+      });
+
+      median_release = release_percentages[ offset ];
+
+      asset to_share = ( escrow.payment * median_release ) / PERCENT_100;
+      asset from_share = escrow.payment - to_share;
+      asset balance = escrow.balance;
+
+      adjust_liquid_balance( escrow.to, to_share );
+      balance -= to_share;
+      adjust_liquid_balance( escrow.from, from_share );
+      balance -= from_share;
+
+      if( escrow.disputed )
+      {
+         for( auto a : escrow.release_percentages )     // Refund escrow bonds, minus loss from vote differential
+         {
+            int16_t delta = abs( median_release - a.second );
+            asset escrow_bond_return = asset( ( escrow_bond.amount * ( PERCENT_100 - delta ) ) / PERCENT_100, escrow_bond.symbol );
+            balance -= escrow_bond_return;
+            adjust_liquid_balance( a.first, escrow_bond_return );
+         }
+         asset escrow_split = asset( balance.amount / escrow.release_percentages.size(), balance.symbol );
+         for( auto a : escrow.release_percentages )     // Distribute remaining balance evenly between voters
+         {
+            balance -= escrow_split;
+            adjust_liquid_balance( a.first, escrow_split );
+         }
+      }
+      else
+      {
+         for( auto a : escrow.approvals )     // Refund escrow bonds to all approving accounts
+         {
+            if( a.second == true )
+            {
+               balance -= escrow_bond;
+               adjust_liquid_balance( a.first, escrow_bond );
+            }
+         }
+      }
+
+      adjust_liquid_balance( escrow.from, balance );   // Return remaining balance to FROM. 
+   }
+   else      // Escrow is being released before being approved, all accounts refunded
+   {
+      for( auto a : escrow.approvals )
+      {
+         if( a.second == true )
+         {
+            if( a.first == escrow.from )
+            {
+               adjust_liquid_balance( a.first, escrow.payment + escrow_bond );
+            }
+            else
+            {
+               adjust_liquid_balance( a.first, escrow_bond );
+            }
+         }
+      }
+   }
+
+   adjust_pending_supply( -escrow.balance );
+   remove( escrow );
+
+} FC_CAPTURE_AND_RETHROW() }
 
 } } //node::chain

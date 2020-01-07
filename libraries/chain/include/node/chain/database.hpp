@@ -236,6 +236,9 @@ namespace node { namespace chain {
          const account_balance_object& get_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const;
          const account_balance_object* find_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const;
 
+         const asset_delegation_object& get_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const;
+         const asset_delegation_object* find_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const;
+
          const account_permission_object& get_account_permissions( const account_name_type& account )const;
          const account_permission_object* find_account_permissions( const account_name_type& account )const;
 
@@ -268,6 +271,9 @@ namespace node { namespace chain {
 
          const interface_object& get_interface( const account_name_type& account )const;
          const interface_object* find_interface( const account_name_type& account )const;
+
+         const mediator_object& get_mediator( const account_name_type& account )const;
+         const mediator_object* find_mediator( const account_name_type& account )const;
 
          const governance_account_object& get_governance_account( const account_name_type& name )const;
          const governance_account_object* find_governance_account( const account_name_type& name )const;
@@ -344,6 +350,9 @@ namespace node { namespace chain {
          const transfer_request_object& get_transfer_request( const account_name_type& name, const shared_string& request_id )const;
          const transfer_request_object* find_transfer_request( const account_name_type& name, const shared_string& request_id )const;
 
+         const transfer_recurring_object& get_transfer_recurring( const account_name_type& name, const shared_string& transfer_id )const;
+         const transfer_recurring_object* find_transfer_recurring( const account_name_type& name, const shared_string& transfer_id )const;
+
          const transfer_recurring_request_object& get_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const;
          const transfer_recurring_request_object* find_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const;
 
@@ -404,6 +413,8 @@ namespace node { namespace chain {
           *  past 128 blocks, not including the current block.
           */
          uint32_t witness_participation_rate()const;
+
+         vector< account_name_type > shuffle_accounts( vector< account_name_type > accounts ) const;
 
          void                                   add_checkpoints( const flat_map<uint32_t,block_id_type>& checkpts );
          const flat_map<uint32_t,block_id_type> get_checkpoints()const { return _checkpoints; }
@@ -630,7 +641,7 @@ namespace node { namespace chain {
 
          void update_network_officer_votes(const account_object& account );
          void update_network_officer_votes(const account_object& account, const account_name_type& officer, 
-            network_officer_types officer_type, uint16_t vote_rank );
+            network_officer_role_type officer_type, uint16_t vote_rank );
 
          void update_executive_board_votes(const account_object& account );
          void update_executive_board_votes(const account_object& account, const account_name_type& executive, uint16_t vote_rank );
@@ -644,7 +655,7 @@ namespace node { namespace chain {
 
          void update_account_executive_votes( const account_object& account, const account_name_type& business );
          void update_account_executive_votes( const account_object& account, const account_name_type& business, const account_object& executive,
-            executive_types role, uint16_t input_vote_rank );
+            executive_role_type role, uint16_t input_vote_rank );
 
          void update_account_officer_votes( const account_object& account, const account_name_type& business );
          void update_account_officer_votes( const account_object& account, const account_name_type& business, const account_object& officer, uint16_t input_vote_rank );
@@ -685,7 +696,7 @@ namespace node { namespace chain {
 
          void add_comment_to_feeds( const comment_object& comment );
 
-         void share_comment_to_feeds( const account_name_type& sharer, const feed_types& reach, const comment_object& comment );
+         void share_comment_to_feeds( const account_name_type& sharer, const feed_reach_type& reach, const comment_object& comment );
 
          void share_comment_to_board( const account_name_type& sharer, 
             const board_name_type& board, const comment_object& comment );
@@ -721,7 +732,7 @@ namespace node { namespace chain {
 
          void process_savings_withdraws();
 
-         void expire_escrow_ratification();
+         void process_escrow_transfers();
 
          void update_median_liquidity();
          
@@ -736,6 +747,10 @@ namespace node { namespace chain {
          void update_core_exchange_rates();
          
          void update_maintenance_flag( bool new_maintenance_flag );
+
+         void dispute_escrow( const escrow_object& escrow );
+
+         void release_escrow( const escrow_object& escrow );
 
          void adjust_liquid_balance( const account_name_type& a, const asset& delta );
          void adjust_liquid_balance( const account_object& a, const asset& delta );

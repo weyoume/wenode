@@ -61,8 +61,17 @@ namespace detail {
     */
    struct sort_set
    {
-      sort_set( const double& active = 0, const double& rapid = 0, const double& standard = 0, const double& top = 0, const double& elite = 0 ):
-         active(active),rapid(rapid),standard(standard),top(top),elite(elite), 
+      sort_set( 
+         const double& active, 
+         const double& rapid, 
+         const double& standard, 
+         const double& top, 
+         const double& elite ):
+         active(active),
+         rapid(rapid),
+         standard(standard),
+         top(top),
+         elite(elite){}
       
       sort_set(){}
 
@@ -86,39 +95,56 @@ namespace detail {
     */
    struct sort_options
    {
-      sort_options( const sort_set& quality = sort_set(), const sort_set& votes = sort_set(), const sort_set& views = sort_set(), 
-         const sort_set& shares = sort_set(), const sort_set& comments = sort_set(), const sort_set& popular = sort_set(), 
-         const sort_set& viral = sort_set(), const sort_set& discussion = sort_set(), const sort_set& prominent = sort_set(),
-         const sort_set& conversation = sort_set(), const sort_set& discourse = sort_set() ):
-         quality(quality),votes(votes),views(views),shares(shares),comments(comments),popular(popular),
-         viral(viral),discussion(discussion),prominent(prominent),conversation(conversation),discourse(discourse),
+      sort_options( 
+         const sort_set& quality, 
+         const sort_set& votes, 
+         const sort_set& views, 
+         const sort_set& shares, 
+         const sort_set& comments, 
+         const sort_set& popular, 
+         const sort_set& viral, 
+         const sort_set& discussion, 
+         const sort_set& prominent,
+         const sort_set& conversation, 
+         const sort_set& discourse ):
+         quality(quality),
+         votes(votes),
+         views(views),
+         shares(shares),
+         comments(comments),
+         popular(popular),
+         viral(viral),
+         discussion(discussion),
+         prominent(prominent),
+         conversation(conversation),
+         discourse(discourse){}
       
       sort_options(){}
 
-      sort_set quality;
+      sort_set quality = sort_set();
 
-      sort_set votes;
+      sort_set votes = sort_set();
 
-      sort_set views;
+      sort_set views = sort_set();
 
-      sort_set shares;
+      sort_set shares = sort_set();
 
-      sort_set comments;
+      sort_set comments = sort_set();
 
-      sort_set popular;
+      sort_set popular = sort_set();
 
-      sort_set viral;
+      sort_set viral = sort_set();
 
-      sort_set discussion;
+      sort_set discussion = sort_set();
 
-      sort_set prominent;
+      sort_set prominent = sort_set();
 
-      sort_set conversation;
+      sort_set conversation = sort_set();
 
-      sort_set discourse;
+      sort_set discourse = sort_set();
    };
    
-}
+}    // ::detail
 
 
 /**
@@ -141,7 +167,7 @@ class tag_object : public object< tag_object_type, tag_object >
          c( *this );
       }
 
-      tag_object() {}
+      tag_object(){}
 
       id_type                    id;
 
@@ -165,7 +191,7 @@ class tag_object : public object< tag_object_type, tag_object >
 
       bool                       privacy;                      // Privacy type of the post.
 
-      rating_types               rating;                       // Content severity rating from the author. 
+      post_rating_type           rating;                       // Content severity rating from the author. 
 
       string                     language;                     // Two letter language string for the language of the content.
 
@@ -190,12 +216,121 @@ class tag_object : public object< tag_object_type, tag_object >
       int128_t                   comment_power = 0;            // Sum of weighted voting power from comments.
 
       bool                       is_post()const { return parent == comment_id_type(); }
+
+      double                     quality_active()const { return sort.quality.active; }
+
+      double                     quality_rapid()const { return sort.quality.rapid; }
+
+      double                     quality_standard()const { return sort.quality.standard; }
+
+      double                     quality_top()const { return sort.quality.top; }
+
+      double                     quality_elite()const { return sort.quality.elite; }
+
+      double                     votes_active()const { return sort.votes.active; }
+
+      double                     votes_rapid()const { return sort.votes.rapid; }
+
+      double                     votes_standard()const { return sort.votes.standard; }
+
+      double                     votes_top()const { return sort.votes.top; }
+
+      double                     votes_elite()const { return sort.votes.elite; }
+
+      double                     views_active()const { return sort.views.active; }
+
+      double                     views_rapid()const { return sort.views.rapid; }
+
+      double                     views_standard()const { return sort.views.standard; }
+
+      double                     views_top()const { return sort.views.top; }
+
+      double                     views_elite()const { return sort.views.elite; }
+
+      double                     shares_active()const { return sort.shares.active; }
+
+      double                     shares_rapid()const { return sort.shares.rapid; }
+
+      double                     shares_standard()const { return sort.shares.standard; }
+
+      double                     shares_top()const { return sort.shares.top; }
+
+      double                     shares_elite()const { return sort.shares.elite; }
+
+      double                     comments_active()const { return sort.comments.active; }
+
+      double                     comments_rapid()const { return sort.comments.rapid; }
+
+      double                     comments_standard()const { return sort.comments.standard; }
+
+      double                     comments_top()const { return sort.comments.top; }
+
+      double                     comments_elite()const { return sort.comments.elite; }
+
+      double                     popular_active()const { return sort.popular.active; }
+
+      double                     popular_rapid()const { return sort.popular.rapid; }
+
+      double                     popular_standard()const { return sort.popular.standard; }
+
+      double                     popular_top()const { return sort.popular.top; }
+
+      double                     popular_elite()const { return sort.popular.elite; }
+
+      double                     viral_active()const { return sort.viral.active; }
+
+      double                     viral_rapid()const { return sort.viral.rapid; }
+
+      double                     viral_standard()const { return sort.viral.standard; }
+
+      double                     viral_top()const { return sort.viral.top; }
+
+      double                     viral_elite()const { return sort.viral.elite; }
+
+      double                     discussion_active()const { return sort.discussion.active; }
+
+      double                     discussion_rapid()const { return sort.discussion.rapid; }
+
+      double                     discussion_standard()const { return sort.discussion.standard; }
+
+      double                     discussion_top()const { return sort.discussion.top; }
+
+      double                     discussion_elite()const { return sort.discussion.elite; }
+
+      double                     prominent_active()const { return sort.prominent.active; }
+
+      double                     prominent_rapid()const { return sort.prominent.rapid; }
+
+      double                     prominent_standard()const { return sort.prominent.standard; }
+
+      double                     prominent_top()const { return sort.prominent.top; }
+
+      double                     prominent_elite()const { return sort.prominent.elite; }
+
+      double                     conversation_active()const { return sort.conversation.active; }
+
+      double                     conversation_rapid()const { return sort.conversation.rapid; }
+
+      double                     conversation_standard()const { return sort.conversation.standard; }
+
+      double                     conversation_top()const { return sort.conversation.top; }
+
+      double                     conversation_elite()const { return sort.conversation.elite; }
+
+      double                     discourse_active()const { return sort.discourse.active; }
+
+      double                     discourse_rapid()const { return sort.discourse.rapid; }
+
+      double                     discourse_standard()const { return sort.discourse.standard; }
+
+      double                     discourse_top()const { return sort.discourse.top; }
+
+      double                     discourse_elite()const { return sort.discourse.elite; }
 };
 
 typedef oid< tag_object > tag_id_type;
 
 struct by_tag;
-struct by_cashout;                // all posts regardless of depth
 struct by_net_reward;             // all comments regardless of depth
 struct by_comment;
 struct by_parent_created;
@@ -214,13 +349,11 @@ struct by_parent_share_power;
 struct by_parent_comment_power;    
 
 struct by_author_parent_created;
-struct by_author_comment;
 struct by_author_net_votes;
 struct by_author_view_count;
 struct by_author_share_count;
 struct by_author_children;
 struct by_reward_fund_net_reward;
-
 
 //========== Sorting Indexes ==========// 
 
@@ -302,14 +435,6 @@ typedef multi_index_container<
          >,
          composite_key_compare< std::less< comment_id_type >, std::less< tag_id_type > >
       >,
-      ordered_unique< tag< by_author_comment >,
-            composite_key< tag_object,
-               member< tag_object, account_id_type, &tag_object::author >,
-               member< tag_object, comment_id_type, &tag_object::comment >,
-               member< tag_object, tag_id_type, &tag_object::id >
-            >,
-            composite_key_compare< std::less< account_id_type >, std::less< comment_id_type >, std::less< tag_id_type > >
-      >,
       ordered_unique< tag< by_parent_created >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
@@ -335,7 +460,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, uint128_t, &tag_object::net_reward >,
+               member< tag_object, int128_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< uint128_t >, std::less< tag_id_type > >
@@ -375,7 +500,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, int32_t, &tag_object::children >,
+               member< tag_object, uint32_t, &tag_object::children >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
@@ -420,20 +545,11 @@ typedef multi_index_container<
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
       >,
-      ordered_unique< tag< by_cashout >,
-            composite_key< tag_object,
-               member< tag_object, board_name_type, &tag_object::board >,
-               member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, time_point, &tag_object::cashout >,
-               member< tag_object, tag_id_type, &tag_object::id >
-            >,
-            composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less< time_point >, std::less< tag_id_type > >
-      >,
       ordered_unique< tag< by_net_reward >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, uint128_t, &tag_object::net_reward >,
+               member< tag_object, int128_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::greater< uint128_t >, std::less< tag_id_type > >
@@ -483,7 +599,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, account_id_type, &tag_object::author >,
-               member< tag_object, int32_t, &tag_object::children >,
+               member< tag_object, uint32_t, &tag_object::children >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<account_id_type>, std::greater< int32_t >, std::less< tag_id_type > >
@@ -493,20 +609,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                const_mem_fun< tag_object, bool, &tag_object::is_post >,
-               member< tag_object, int64_t, &tag_object::net_reward >,
+               member< tag_object, int128_t, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less< bool >,std::greater< int64_t >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_index;
 
-      // =========== Quality Indexes ========== //
+// =========== Quality Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_quality_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.quality.active >,
+               const_mem_fun< tag_object, double, &tag_object::quality_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -516,7 +639,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.quality.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::quality_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -526,7 +649,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.quality.standard >,
+               const_mem_fun< tag_object, double, &tag_object::quality_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -536,7 +659,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.quality.top >,
+               const_mem_fun< tag_object, double, &tag_object::quality_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -546,20 +669,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.quality.elite >,
+               const_mem_fun< tag_object, double, &tag_object::quality_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_quality_sort_index;
 
-      // =========== Votes Indexes ========== //
+// =========== Votes Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_votes_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.votes.active >,
+               const_mem_fun< tag_object, double, &tag_object::votes_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -569,7 +699,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.votes.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::votes_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -579,7 +709,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.votes.standard >,
+               const_mem_fun< tag_object, double, &tag_object::votes_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -589,7 +719,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.votes.top >,
+               const_mem_fun< tag_object, double, &tag_object::votes_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -599,20 +729,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.votes.elite >,
+               const_mem_fun< tag_object, double, &tag_object::votes_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_votes_sort_index;
 
-      // =========== Views Indexes ========== //
+// =========== Views Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_views_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.views.active >,
+               const_mem_fun< tag_object, double, &tag_object::views_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -622,7 +759,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.views.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::views_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -632,7 +769,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.views.standard >,
+               const_mem_fun< tag_object, double, &tag_object::views_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -642,7 +779,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.views.top >,
+               const_mem_fun< tag_object, double, &tag_object::views_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -652,20 +789,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.views.elite >,
+               const_mem_fun< tag_object, double, &tag_object::views_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_views_sort_index;
 
-      // =========== Shares Indexes ========== //
+// =========== Shares Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_shares_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.shares.active >,
+               const_mem_fun< tag_object, double, &tag_object::shares_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -675,7 +819,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.shares.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::shares_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -685,7 +829,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.shares.standard >,
+               const_mem_fun< tag_object, double, &tag_object::shares_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -695,7 +839,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.shares.top >,
+               const_mem_fun< tag_object, double, &tag_object::shares_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -705,20 +849,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.shares.elite >,
+               const_mem_fun< tag_object, double, &tag_object::shares_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_shares_sort_index;
 
-      // =========== Comments Indexes ========== //
+// =========== Comments Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_comments_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.comments.active >,
+               const_mem_fun< tag_object, double, &tag_object::comments_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -728,7 +879,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.comments.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::comments_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -738,7 +889,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.comments.standard >,
+               const_mem_fun< tag_object, double, &tag_object::comments_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -748,7 +899,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.comments.top >,
+               const_mem_fun< tag_object, double, &tag_object::comments_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -758,20 +909,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.comments.elite >,
+               const_mem_fun< tag_object, double, &tag_object::comments_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_comments_sort_index;
 
-      // =========== Popular Indexes ========== //
+// =========== Popular Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_popular_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.popular.active >,
+               const_mem_fun< tag_object, double, &tag_object::popular_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -781,7 +939,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.popular.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::popular_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -791,7 +949,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.popular.standard >,
+               const_mem_fun< tag_object, double, &tag_object::popular_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -801,7 +959,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.popular.top >,
+               const_mem_fun< tag_object, double, &tag_object::popular_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -811,20 +969,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.popular.elite >,
+               const_mem_fun< tag_object, double, &tag_object::popular_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_popular_sort_index;
 
-      // =========== Viral Indexes ========== //
+// =========== Viral Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_viral_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.viral.active >,
+               const_mem_fun< tag_object, double, &tag_object::viral_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -834,7 +999,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.viral.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::viral_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -844,7 +1009,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.viral.standard >,
+               const_mem_fun< tag_object, double, &tag_object::viral_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -854,7 +1019,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.viral.top >,
+               const_mem_fun< tag_object, double, &tag_object::viral_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -864,20 +1029,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.viral.elite >,
+               const_mem_fun< tag_object, double, &tag_object::viral_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_viral_sort_index;
 
-      // =========== Discussion Indexes ========== //
+// =========== Discussion Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_discussion_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discussion.active >,
+               const_mem_fun< tag_object, double, &tag_object::discussion_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -887,7 +1059,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discussion.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::discussion_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -897,7 +1069,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discussion.standard >,
+               const_mem_fun< tag_object, double, &tag_object::discussion_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -907,7 +1079,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discussion.top >,
+               const_mem_fun< tag_object, double, &tag_object::discussion_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -917,20 +1089,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discussion.elite >,
+               const_mem_fun< tag_object, double, &tag_object::discussion_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_discussion_sort_index;
 
-      // =========== Prominent Indexes ========== //
+// =========== Prominent Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_prominent_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.prominent.active >,
+               const_mem_fun< tag_object, double, &tag_object::prominent_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -940,7 +1119,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.prominent.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::prominent_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -950,7 +1129,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.prominent.standard >,
+               const_mem_fun< tag_object, double, &tag_object::prominent_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -960,7 +1139,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.prominent.top >,
+               const_mem_fun< tag_object, double, &tag_object::prominent_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -970,20 +1149,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.prominent.elite >,
+               const_mem_fun< tag_object, double, &tag_object::prominent_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_prominent_sort_index;
 
-      // =========== Conversation Indexes ========== //
+// =========== Conversation Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_conversation_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.conversation.active >,
+               const_mem_fun< tag_object, double, &tag_object::conversation_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -993,7 +1179,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.conversation.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::conversation_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -1003,7 +1189,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.conversation.standard >,
+               const_mem_fun< tag_object, double, &tag_object::conversation_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -1013,7 +1199,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.conversation.top >,
+               const_mem_fun< tag_object, double, &tag_object::conversation_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -1023,20 +1209,27 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.conversation.elite >,
+               const_mem_fun< tag_object, double, &tag_object::conversation_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
+      >
+   >,
+   allocator< tag_object >
+> tag_conversation_sort_index;
 
-      // =========== Discourse Indexes ========== //
+// =========== Discourse Index ========== //
 
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
       ordered_unique< tag< by_parent_discourse_active >,
             composite_key< tag_object,
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discourse.active >,
+               const_mem_fun< tag_object, double, &tag_object::discourse_active >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -1046,7 +1239,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discourse.rapid >,
+               const_mem_fun< tag_object, double, &tag_object::discourse_rapid >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -1056,7 +1249,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discourse.standard >,
+               const_mem_fun< tag_object, double, &tag_object::discourse_standard >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -1066,7 +1259,7 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discourse.top >,
+               const_mem_fun< tag_object, double, &tag_object::discourse_top >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
@@ -1076,15 +1269,15 @@ typedef multi_index_container<
                member< tag_object, board_name_type, &tag_object::board >,
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
-               member< tag_object, double, &tag_object::sort.discourse.elite >,
+               const_mem_fun< tag_object, double, &tag_object::discourse_elite >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< board_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< double >, std::less< tag_id_type > >
-      >,
-      
+      >
    >,
    allocator< tag_object >
-> tag_index;
+> tag_discourse_sort_index;
+
 
 /**
  *  The purpose of this index is to quickly identify how popular various
@@ -1166,7 +1359,7 @@ typedef multi_index_container<
       ordered_unique< tag< by_share_power >,
          composite_key< tag_stats_object,
             member< tag_stats_object, int128_t, &tag_stats_object::share_power >,
-            member< tag_stats_object, tag_name_type, &tag_stats_object::tag >,
+            member< tag_stats_object, tag_name_type, &tag_stats_object::tag >
          >,
          composite_key_compare< std::greater< int128_t >, std::less< tag_name_type > >
       >,
@@ -1176,14 +1369,15 @@ typedef multi_index_container<
             member< tag_stats_object, tag_name_type, &tag_stats_object::tag >
          >,
          composite_key_compare< std::greater< int128_t >, std::less< tag_name_type > >
-      >,
+      >
   >,
   allocator< tag_stats_object >
 > tag_stats_index;
 
 
 /**
- * Measures an account's accumulated votes, views and shares according to specified authors, boards, and tags.
+ * Measures an account's accumulated votes, views and 
+ * shares according to specified authors, boards, and tags.
  * Used for generating and sorting post recommendations.
  */
 class account_curation_metrics_object : public object< account_curation_metrics_object_type, account_curation_metrics_object >
@@ -1228,7 +1422,7 @@ typedef multi_index_container<
    account_curation_metrics_object,
    indexed_by<
       ordered_unique< tag< by_id >, member< account_curation_metrics_object, account_curation_metrics_id_type, &account_curation_metrics_object::id > >,
-      ordered_unique< tag< by_account >, member< account_curation_metrics_object, account_name_type, &account_curation_metrics_object::account > >,
+      ordered_unique< tag< by_account >, member< account_curation_metrics_object, account_name_type, &account_curation_metrics_object::account > >
    >,
    allocator< account_curation_metrics_object >
 > account_curation_metrics_index;
@@ -1477,7 +1671,7 @@ typedef multi_index_container<
    account_recommendations_object,
    indexed_by<
       ordered_unique< tag< by_id >, member< account_recommendations_object, account_recommendations_id_type, &account_recommendations_object::id > >,
-      ordered_unique< tag< by_account >, member< account_recommendations_object, account_name_type, &account_recommendations_object::account > >,
+      ordered_unique< tag< by_account >, member< account_recommendations_object, account_name_type, &account_recommendations_object::account > >
    >,
    allocator< account_recommendations_object >
 > account_recommendations_index;
@@ -1516,23 +1710,23 @@ class peer_stats_object : public object< peer_stats_object_type, peer_stats_obje
 
       void update_rank()
       {
-          auto direct         = float( direct_positive_votes ) / direct_votes;
-          auto indirect       = float( indirect_positive_votes ) / indirect_votes;
-          auto direct_order   = log( direct_votes );
-          auto indirect_order = log( indirect_votes );
+         auto direct         = float( direct_positive_votes ) / direct_votes;
+         auto indirect       = float( indirect_positive_votes ) / indirect_votes;
+         auto direct_order   = log( direct_votes );
+         auto indirect_order = log( indirect_votes );
 
-          if( !(direct_positive_votes+indirect_positive_votes) ){
-            direct_order *= -1;
-            indirect_order *= -1;
-          }
+         if( !(direct_positive_votes+indirect_positive_votes) ){
+         direct_order *= -1;
+         indirect_order *= -1;
+         }
 
-          direct *= direct;
-          indirect *= indirect;
+         direct *= direct;
+         indirect *= indirect;
 
-          direct *= direct_order * 10;
-          indirect *= indirect_order;
+         direct *= direct_order * 10;
+         indirect *= indirect_order;
 
-          rank = direct + indirect;
+         rank = direct + indirect;
       }
 };
 
@@ -1717,6 +1911,17 @@ FC_REFLECT( node::tags::tag_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_quality_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_votes_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_views_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_shares_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_comments_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_popular_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_viral_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_discussion_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_prominent_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_conversation_sort_index );
+CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_discourse_sort_index );
 
 FC_REFLECT( node::tags::tag_stats_object,
          (id)

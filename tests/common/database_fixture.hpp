@@ -244,7 +244,7 @@ struct database_fixture {
       const string& symbol,
       const string& issuer,
       const private_key_type& issuer_key,
-      const string& asset_type,
+      const asset_property_type& asset_type,
       const string& details,
       const string& url,
       const string& json,
@@ -269,6 +269,10 @@ struct database_fixture {
    void transfer( const string& from, const string& to, const asset& amount );
 
    void fund_stake( const string& from, const asset& amount );
+
+   void fund_reward( const string& from, const asset& amount );
+
+   void fund_savings( const string& from, const asset& amount );
 
    void stake( const string& from, const asset& amount );
    

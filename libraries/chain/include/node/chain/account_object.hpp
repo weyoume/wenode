@@ -39,9 +39,9 @@ namespace node { namespace chain {
 
          shared_string                    url;                                   // Account's external reference URL.
 
-         account_types                    account_type;                          // Type of account, persona, profile or business.
+         account_identity_type            account_type;                          // Type of account, persona, profile or business.
 
-         membership_types                 membership;                            // Level of account membership.
+         membership_tier_type                 membership;                            // Level of account membership.
 
          public_key_type                  secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
 
@@ -203,13 +203,13 @@ namespace node { namespace chain {
 
          account_name_type                               account;                    // Username of the business account, lowercase letters only.
 
-         business_types                                  business_type;              // Type of business account, controls authorizations for transactions of different types.
+         business_structure_type                                  business_type;              // Type of business account, controls authorizations for transactions of different types.
 
          public_key_type                                 business_public_key;        // Public key of the business account for internal message encryption. 
 
          executive_officer_set                           executive_board;            // Set of highest voted executive accounts for each role.
 
-         flat_map< account_name_type, pair< executive_types, share_type > >  executives;   // Set of all executive names.    
+         flat_map< account_name_type, pair< executive_role_type, share_type > >  executives;   // Set of all executive names.    
 
          flat_map< account_name_type, share_type >       officers;                   // Set of all officers in the business, and their supporting voting power.
 
@@ -635,7 +635,7 @@ namespace node { namespace chain {
 
          account_name_type                       executive_account;     // Name of the executive account 
 
-         executive_types                         role;                  // Role voted in favor of.
+         executive_role_type                         role;                  // Role voted in favor of.
 
          uint16_t                                vote_rank;             // The rank of the executive vote.
    };
@@ -1162,11 +1162,11 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_following( const tag_name_type& tag )
+         void                              add_following( const tag_name_type& t )
          {
-            if( !is_following( tag ) )
+            if( !is_following( t ) )
             {
-               followed_tags.insert( tag );
+               followed_tags.insert( t );
             }
          }
 
@@ -1178,11 +1178,11 @@ namespace node { namespace chain {
             }
          }
 
-         void                              remove_following( const tag_name_type& tag )
+         void                              remove_following( const tag_name_type& t )
          {
-            if( is_following( tag ) )
+            if( is_following( t ) )
             {
-               followed_tags.erase( tag );
+               followed_tags.erase( t );
             }
          }
 
@@ -1222,19 +1222,19 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_filtered( const tag_name_type& tag )
+         void                              add_filtered( const tag_name_type& t )
          {
-            if( !is_filtered( tag ) )
+            if( !is_filtered( t ) )
             {
-               filtered_tags.insert( tag );
+               filtered_tags.insert( t );
             }
          }
 
-         void                              remove_filtered( const tag_name_type& tag )
+         void                              remove_filtered( const tag_name_type& t )
          {
-            if( is_filtered( tag ) )
+            if( is_filtered( t ) )
             {
-               filtered_tags.erase( tag );
+               filtered_tags.erase( t );
             }
          }
 
@@ -1325,7 +1325,7 @@ namespace node { namespace chain {
 
          account_name_type      requested_account;  
 
-         connection_types       connection_type;
+         connection_tier_type       connection_type;
 
          shared_string          message;
 
@@ -1354,7 +1354,7 @@ namespace node { namespace chain {
 
          encrypted_keypair_type       encrypted_key_b;          // B's private connection key, encrypted with the public secure key of account A.
 
-         connection_types             connection_type;          // The connection level shared in this object
+         connection_tier_type             connection_type;          // The connection level shared in this object
 
          shared_string                connection_id;            // Unique uuidv4 for the connection, for local storage of decryption key.
 
@@ -1396,7 +1396,10 @@ namespace node { namespace chain {
 
          asset                  amount;
 
-         time_point             min_delegation_time;
+         asset_symbol_type      symbol()const
+         {
+            return amount.symbol;
+         }
    };
 
 
@@ -1415,9 +1418,16 @@ namespace node { namespace chain {
 
          account_name_type      delegator;
 
+         account_name_type      delegatee;
+
          asset                  amount;
 
          time_point             expiration;
+
+         asset_symbol_type      symbol()const
+         {
+            return amount.symbol;
+         }
    };
 
 
@@ -1638,7 +1648,7 @@ namespace node { namespace chain {
          ordered_unique< tag< by_business_role_executive >,
             composite_key< account_executive_vote_object,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
-               member< account_executive_vote_object, executive_types, &account_executive_vote_object::role >,
+               member< account_executive_vote_object, executive_role_type, &account_executive_vote_object::role >,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::executive_account >,
                member< account_executive_vote_object, account_executive_vote_id_type, &account_executive_vote_object::id >
             >
@@ -1655,15 +1665,15 @@ namespace node { namespace chain {
             composite_key< account_executive_vote_object,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::account >,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
-               member< account_executive_vote_object, executive_types, &account_executive_vote_object::role >,
+               member< account_executive_vote_object, executive_role_type, &account_executive_vote_object::role >,
                member< account_executive_vote_object, uint16_t, &account_executive_vote_object::vote_rank >
             >
          >,
-         ordered_unique< tag< by_account_business_role_rank >,
+         ordered_unique< tag< by_business_account_role_rank >,
             composite_key< account_executive_vote_object,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::account >,
-               member< account_executive_vote_object, executive_types, &account_executive_vote_object::role >,
+               member< account_executive_vote_object, executive_role_type, &account_executive_vote_object::role >,
                member< account_executive_vote_object, uint16_t, &account_executive_vote_object::vote_rank >
             >
          >,
@@ -1671,7 +1681,7 @@ namespace node { namespace chain {
             composite_key< account_executive_vote_object,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::account >,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
-               member< account_executive_vote_object, executive_types, &account_executive_vote_object::role >,
+               member< account_executive_vote_object, executive_role_type, &account_executive_vote_object::role >,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::executive_account >
             >
          >
@@ -1835,6 +1845,7 @@ namespace node { namespace chain {
 
    struct by_last_owner_update;
    struct by_owner_symbol;
+   struct by_owner;
    struct by_maintenance_flag;
    struct by_symbol_stake;
    struct by_symbol_liquid;
@@ -2007,9 +2018,10 @@ namespace node { namespace chain {
          ordered_unique< tag< by_delegation >,
             composite_key< asset_delegation_object,
                member< asset_delegation_object, account_name_type, &asset_delegation_object::delegator >,
-               member< asset_delegation_object, account_name_type, &asset_delegation_object::delegatee >
+               member< asset_delegation_object, account_name_type, &asset_delegation_object::delegatee >,
+               const_mem_fun< asset_delegation_object, asset_symbol_type, &asset_delegation_object::symbol >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
+            composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::less< asset_symbol_type > >
          >
       >,
       allocator< asset_delegation_object >
@@ -2134,25 +2146,25 @@ namespace node { namespace chain {
             composite_key< connection_object,
                member<connection_object, account_name_type, &connection_object::account_a >,
                member<connection_object, account_name_type, &connection_object::account_b >,
-               member<connection_object, connection_types, &connection_object::connection_type >
+               member<connection_object, connection_tier_type, &connection_object::connection_type >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::greater< connection_types > >
+            composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::greater< connection_tier_type > >
          >,
          ordered_unique< tag<by_account_a>,
             composite_key< connection_object,
                member<connection_object, account_name_type, &connection_object::account_a >,
-               member<connection_object, connection_types, &connection_object::connection_type >,
+               member<connection_object, connection_tier_type, &connection_object::connection_type >,
                member< connection_object, connection_id_type, &connection_object::id > 
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< connection_types >, std::less<connection_id_type > >
+            composite_key_compare< std::less< account_name_type >, std::greater< connection_tier_type >, std::less<connection_id_type > >
          >,
          ordered_unique< tag<by_account_b>,
             composite_key< connection_object,
                member<connection_object, account_name_type, &connection_object::account_b >,
-               member<connection_object, connection_types, &connection_object::connection_type >,
+               member<connection_object, connection_tier_type, &connection_object::connection_type >,
                member< connection_object, connection_id_type, &connection_object::id > 
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< connection_types >, std::less<connection_id_type > >
+            composite_key_compare< std::less< account_name_type >, std::greater< connection_tier_type >, std::less<connection_id_type > >
          >
       >,
       allocator< connection_object >
@@ -2406,7 +2418,6 @@ FC_REFLECT( node::chain::asset_delegation_object,
          (delegator)
          (delegatee)
          (amount)
-         (min_delegation_time)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_delegation_object, node::chain::asset_delegation_index );

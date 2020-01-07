@@ -35,7 +35,7 @@ namespace node { namespace chain {
 
          bool                           officer_approved = false;    // True when the network officer has received sufficient voting approval to earn funds.
 
-         network_officer_types          officer_type;                // The type of network officer that the account serves as. 
+         network_officer_role_type          officer_type;                // The type of network officer that the account serves as. 
 
          shared_string                  details;                     // The officer's details description. 
 
@@ -70,7 +70,7 @@ namespace node { namespace chain {
 
          account_name_type              network_officer;       // The name of the network officer being voted for.
 
-         network_officer_types          officer_type;          // the type of network officer that is being voted for.
+         network_officer_role_type      officer_type;          // the type of network officer that is being voted for.
 
          uint16_t                       vote_rank;             // the ranking of the vote for the officer.
    };
@@ -278,6 +278,40 @@ namespace node { namespace chain {
          }
    };
 
+   class mediator_object : public object< mediator_object_type, mediator_object >
+   {
+      public:
+         template< typename Constructor, typename Allocator >
+         mediator_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                        id;
+
+         account_name_type              account;                         // The name of the account that owns the mediator.
+
+         bool                           active = true;                   // True if the mediator is active, set false to deactivate.
+
+         shared_string                  details;                         // The mediator's details description.
+
+         shared_string                  url;                             // The mediator's reference URL.
+
+         shared_string                  json;                            // Json metadata of the mediator.
+
+         asset                          mediator_bond;                   // Core Asset staked in mediation bond for selection.
+
+         uint128_t                      mediation_virtual_position = 0;  // Quantitative ranking of selection for mediation.
+
+         account_name_type              last_escrow_from;                // The sender of the most recently allocated escrow
+
+         shared_string                  last_escrow_id;                  // Escrow uuidv4 of the most recently allocated escrow.
+
+         time_point                     created;                         // The time the mediator was created.
+
+         time_point                     last_update_time;                // The time the mediator was last updated.
+   };
+
 
    class community_enterprise_object : public object< community_enterprise_object_type, community_enterprise_object >
    {
@@ -296,7 +330,7 @@ namespace node { namespace chain {
 
          bool                           active = true;                              // True if the project is active, set false to deactivate.
 
-         proposal_types                 proposal_type;                              // The type of proposal, determines release schedule.
+         proposal_distribution_type     proposal_type;                              // The type of proposal, determines release schedule.
 
          flat_map< account_name_type, uint16_t > beneficiaries;                     // Map of account names and percentages of budget value.
 
@@ -417,19 +451,19 @@ namespace node { namespace chain {
             member< network_officer_object, account_name_type, &network_officer_object::account > >,
          ordered_unique< tag< by_type_vote_count >,
             composite_key< network_officer_object,
-               member< network_officer_object, network_officer_types, &network_officer_object::officer_type >,
+               member< network_officer_object, network_officer_role_type, &network_officer_object::officer_type >,
                member< network_officer_object, uint32_t, &network_officer_object::vote_count >,
                member< network_officer_object, network_officer_id_type, &network_officer_object::id >
             >,
-            composite_key_compare< std::less< network_officer_types >, std::greater< uint32_t >, std::less< network_officer_id_type > >
+            composite_key_compare< std::less< network_officer_role_type >, std::greater< uint32_t >, std::less< network_officer_id_type > >
          >,
          ordered_unique< tag< by_type_voting_power >,
             composite_key< network_officer_object,
-               member< network_officer_object, network_officer_types, &network_officer_object::officer_type >,
+               member< network_officer_object, network_officer_role_type, &network_officer_object::officer_type >,
                member< network_officer_object, share_type, &network_officer_object::voting_power >,
                member< network_officer_object, network_officer_id_type, &network_officer_object::id >
             >,
-            composite_key_compare< std::less< network_officer_types >, std::greater< share_type >, std::less< network_officer_id_type > >
+            composite_key_compare< std::less< network_officer_role_type >, std::greater< share_type >, std::less< network_officer_id_type > >
          >
       >,
       allocator< network_officer_object >
@@ -453,7 +487,7 @@ namespace node { namespace chain {
          ordered_unique< tag<by_account_type_rank>,
             composite_key< network_officer_vote_object,
                member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
-               member<network_officer_vote_object, network_officer_types, &network_officer_vote_object::officer_type >,
+               member<network_officer_vote_object, network_officer_role_type, &network_officer_vote_object::officer_type >,
                member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
             >
          >,
@@ -624,7 +658,6 @@ namespace node { namespace chain {
       allocator< supernode_object >
    > supernode_index;
 
-   
 
    typedef multi_index_container <
       interface_object,
@@ -650,6 +683,26 @@ namespace node { namespace chain {
       >,
       allocator< interface_object >
    > interface_index;
+
+   struct by_virtual_position;
+
+   typedef multi_index_container <
+      mediator_object,
+      indexed_by <
+         ordered_unique< tag< by_id >,
+            member< mediator_object, mediator_id_type, &mediator_object::id > >,
+         ordered_unique< tag< by_account >,
+            member< mediator_object, account_name_type, &mediator_object::account > >,
+         ordered_unique< tag< by_virtual_position >,
+            composite_key< mediator_object,
+               member< mediator_object, uint128_t, &mediator_object::mediation_virtual_position >,
+               member< mediator_object, mediator_id_type, &mediator_object::id >
+            >,
+            composite_key_compare< std::greater< uint128_t >, std::less< mediator_id_type > >
+         >
+      >,
+      allocator< mediator_object >
+   > mediator_index;
 
    struct by_creator;
    struct by_enterprise_id;
@@ -883,6 +936,21 @@ FC_REFLECT( node::chain::interface_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::interface_object, node::chain::interface_index );
+
+FC_REFLECT( node::chain::mediator_object,
+         (id)
+         (account)
+         (active)
+         (details)
+         (url)
+         (json)
+         (created)
+         (mediation_bond)
+         (mediation_virtual_position)
+         (last_update_time)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::mediator_object, node::chain::mediator_index );
 
 FC_REFLECT( node::chain::community_enterprise_object,
          (id)

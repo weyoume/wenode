@@ -39,13 +39,13 @@ namespace node { namespace chain {
 
          vector< shared_string >        magnet;                       // String containing a bittorrent magnet link to a file swarm.
 
-         post_types                     post_type;                    // The type of post that is being created, image, text, article, video etc. 
+         post_format_type                     post_type;                    // The type of post that is being created, image, text, article, video etc. 
 
          bool                           privacy;                      // True if the post is encrypted. False if it is plaintext.
 
          public_key_type                public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
 
-         feed_types                     reach;                        // The reach of the post across followers, connections, friends and companions
+         feed_reach_type                     reach;                        // The reach of the post across followers, connections, friends and companions
 
          board_name_type                board;                        // The name of the board to which the post is uploaded to. Null string if no board. 
 
@@ -53,7 +53,7 @@ namespace node { namespace chain {
 
          account_name_type              interface;                    // Name of the interface account that was used to broadcast the transaction and view the post.
 
-         rating_types                   rating;                       // User nominated rating as to the maturity of the content, and display sensitivity. 
+         post_rating_type                   rating;                       // User nominated rating as to the maturity of the content, and display sensitivity. 
 
          shared_string                  language;                     // String containing a two letter language code that the post is broadcast in.
 
@@ -167,11 +167,15 @@ namespace node { namespace chain {
          {
             if( comment_price.amount > 0 )
             {
-               if( payments_received[ name ].size() )
+               if( payments_received.find( name ) != payments_received.end() )
                {
-                  if( payments_received[ name ][ comment_price.symbol ].amount > 0 )
+                  flat_map< asset_symbol_type, asset > payments = payments_received.at( name );
+
+                  if( payments.find( comment_price.symbol ) != payments.end() )
                   {
-                     if( payments_received[ name ][ comment_price.symbol ] >= comment_price )
+                     asset comment_payment = payments.at( comment_price.symbol );
+
+                     if( comment_payment >= comment_price )
                      {
                         return true;    // comment price payment received.
                      }
@@ -220,7 +224,7 @@ namespace node { namespace chain {
 
          comment_id_type                             comment;               // ID of comment being shared
 
-         feed_types                                  feed_type;             // Type of feed, follow, connection, board, tag etc. 
+         feed_reach_type                             feed_type;             // Type of feed, follow, connection, board, tag etc. 
 
          flat_map< account_name_type, time_point >   shared_by;             // Map of the times that accounts that have shared the comment.
 
@@ -263,7 +267,7 @@ namespace node { namespace chain {
 
          flat_map< account_name_type, time_point >   shared_by;     // Map of the times that accounts that have shared the comment in the blog.
 
-         blog_types                blog_type;             // Account, Board, or Tag blog
+         blog_reach_type           blog_type;             // Account, Board, or Tag blog
 
          account_name_type         first_shared_by;       // First account that shared the comment with the account, board or tag. 
 
@@ -304,7 +308,7 @@ namespace node { namespace chain {
 
          time_point              created;            // Time the vote was created
 
-         int8_t                  num_changes = 0;    
+         int8_t                  num_changes = 0;    // Number of times the vote has been adjusted
    };
 
 
@@ -395,7 +399,7 @@ namespace node { namespace chain {
 
          vector< tag_name_type >        tags;             // Set of string tags for sorting the post by
 
-         rating_types                   rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
+         post_rating_type               rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
 
          shared_string                  details;          // Explaination as to what rule the post is in contravention of and why it was tagged.
 
@@ -666,13 +670,13 @@ namespace node { namespace chain {
          ordered_unique< tag< by_new_account_type >,
             composite_key< feed_object,
                member< feed_object, account_name_type, &feed_object::account >,
-               member< feed_object, feed_types, &feed_object::feed_type >,
+               member< feed_object, feed_reach_type, &feed_object::feed_type >,
                member< feed_object, time_point, &feed_object::feed_time >,
                member< feed_object, feed_id_type, &feed_object::id >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
-               std::less< feed_types >, 
+               std::less< feed_reach_type >, 
                std::greater< time_point >,   // Newest feeds first
                std::less< feed_id_type > 
             >
@@ -680,13 +684,13 @@ namespace node { namespace chain {
          ordered_unique< tag< by_old_account_type >,
             composite_key< feed_object,
                member< feed_object, account_name_type, &feed_object::account >,
-               member< feed_object, feed_types, &feed_object::feed_type >,
+               member< feed_object, feed_reach_type, &feed_object::feed_type >,
                member< feed_object, time_point, &feed_object::feed_time >,
                member< feed_object, feed_id_type, &feed_object::id >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
-               std::less< feed_types >, 
+               std::less< feed_reach_type >, 
                std::less< time_point >,     // Oldest feeds first
                std::less< feed_id_type > 
             >
@@ -719,12 +723,12 @@ namespace node { namespace chain {
             composite_key< feed_object,
                member< feed_object, account_name_type, &feed_object::account >,
                member< feed_object, comment_id_type, &feed_object::comment >,
-               member< feed_object, feed_types, &feed_object::feed_type >,
+               member< feed_object, feed_reach_type, &feed_object::feed_type >,
                member< feed_object, feed_id_type, &feed_object::id >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
-               std::less< feed_types >, 
+               std::less< feed_reach_type >, 
                std::less< comment_id_type >, 
                std::less< feed_id_type > 
             >

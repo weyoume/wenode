@@ -48,23 +48,31 @@ namespace node { namespace chain {
 
          id_type                     id;
 
-         account_name_type           from;              // Sending account to transfer asset from.
+         account_name_type           from;                  // Sending account to transfer asset from.
       
-         account_name_type           to;                // Recieving account to transfer asset to.
+         account_name_type           to;                    // Recieving account to transfer asset to.
       
-         asset                       amount;            // The amount of asset to transfer for each payment interval.
+         asset                       amount;                // The amount of asset to transfer for each payment interval.
 
-         shared_string               transfer_id;       // uuidv4 of the request transaction.
+         shared_string               transfer_id;           // uuidv4 of the request transaction.
 
-         shared_string               memo;              // The memo is plain-text, encryption on the memo is advised.
+         shared_string               memo;                  // The memo is plain-text, encryption on the memo is advised.
 
-         time_point                  begin;             // Starting time of the first payment.
+         time_point                  begin;                 // Starting time of the first payment.
 
-         time_point                  end;               // Ending time of the recurring payment. 
+         uint32_t                    payments;              // Number of payments to process in total.
 
-         fc::microseconds            interval;          // Microseconds between each transfer event.
+         uint32_t                    payments_remaining;    // Number of payments processed so far.
+
+         fc::microseconds            interval;              // Microseconds between each transfer event.
+
+         time_point                  end;                   // Ending time of the recurring payment. 
    
-         time_point                  next_transfer;     // Time of the next transfer.    
+         time_point                  next_transfer;         // Time of the next transfer.    
+
+         bool                        extensible;            // True if the payment duration should be extended in the event a payment is missed.
+
+         bool                        fill_or_kill;          // True if the payment should be cancelled if a payment is missed.
    };
 
 
@@ -91,11 +99,17 @@ namespace node { namespace chain {
 
          time_point                  begin;             // Starting time of the first payment.
 
-         time_point                  end;               // Ending time of the recurring payment. 
+         uint32_t                    payments;          // Number of payments to process in total.
 
          fc::microseconds            interval;          // Microseconds between each transfer event.
 
+         time_point                  end;               // Ending time of the recurring payment. 
+
          time_point                  expiration;        // time that the request expires. 
+
+         bool                        extensible;        // True if the payment duration should be extended in the event a payment is missed.
+
+         bool                        fill_or_kill;      // True if the payment should be cancelled if a payment is missed.
 
          asset                       total_payment()
          {
@@ -418,9 +432,20 @@ namespace node { namespace chain {
                 std::make_pair( sell_price.quote.symbol, sell_price.base.symbol );
          }
 
-         asset_symbol_type debt_asset()const { return debt.symbol; } 
-         asset_symbol_type position_asset()const { return position.symbol; } 
-         asset_symbol_type collateral_asset()const { return collateral.symbol; } 
+         asset_symbol_type debt_asset()const
+         { 
+            return debt.symbol;
+         }
+
+         asset_symbol_type position_asset()const 
+         { 
+            return position.symbol; 
+         }
+
+         asset_symbol_type collateral_asset()const
+         { 
+            return collateral.symbol; 
+         } 
 
          asset                amount_for_sale()const   
          { 
@@ -448,11 +473,20 @@ namespace node { namespace chain {
             }
          }
 
-         asset_symbol_type    sell_asset()const    { return sell_price.base.symbol; }
+         asset_symbol_type    sell_asset()const
+         { 
+            return sell_price.base.symbol; 
+         }
 
-         asset_symbol_type    receive_asset()const { return sell_price.quote.symbol; }
+         asset_symbol_type    receive_asset()const
+         { 
+            return sell_price.quote.symbol; 
+         }
 
-         double               real_price()const { return sell_price.to_real(); }
+         double               real_price()const
+         { 
+            return sell_price.to_real(); 
+         }
    };
 
 
@@ -467,32 +501,85 @@ namespace node { namespace chain {
 
          escrow_object(){}
 
-         id_type                id;
+         id_type                                   id;
 
-         shared_string          escrow_id;
+         account_name_type                         from;                   // Account sending funds
 
-         account_name_type      from;
+         account_name_type                         to;                     // Account receiving funds
 
-         account_name_type      to;
+         account_name_type                         from_mediator;          // Representative of the sending account
 
-         account_name_type      agent;
+         account_name_type                         to_mediator;            // Representative of the receiving account
 
-         time_point             ratification_deadline;
+         asset                                     payment;                // Total payment to be transferred
 
-         time_point             escrow_expiration;
+         asset                                     balance;                // Current funds deposited in the escrow
 
-         asset                  balance;
+         shared_string                             escrow_id;              // uuidv4 referring to the escrow payment
 
-         asset                  pending_fee;
+         shared_string                             memo;                   // Details of the transaction for reference. 
+
+         shared_string                             json;                   // Additonal JSON object attribute details.
+
+         time_point                                acceptance_time;        // time that the transfer must be approved by
+
+         time_point                                escrow_expiration;      // Time that the escrow is able to be claimed by either TO or FROM
+
+         time_point                                dispute_release_time;   // Time that the balance is distributed to median release percentage
+
+         flat_set< account_name_type >             mediators;              // Set of accounts able to mediate the dispute
+
+         flat_map< account_name_type, uint16_t >   release_percentages;    // Declared release percentages of all accounts
+
+         flat_map< account_name_type, bool >       approvals;              // Map of account approvals, paid into balance
+
+         bool                                      disputed = false;       // True when escrow is in dispute
+
+         bool                                      from_approved()const
+         {
+            return approvals.at( from );
+         };
      
-         bool                   to_approved = false;
+         bool                                      to_approved()const
+         {
+            return approvals.at( to );
+         };
 
-         bool                   agent_approved = false;
+         bool                                      from_mediator_approved()const
+         {
+            if( from_mediator != account_name_type() )
+            {
+               return approvals.at( from_mediator );
+            }
+            else
+            {
+               return false;
+            }
+         };
 
-         bool                   disputed = false;
+         bool                                      to_mediator_approved()const
+         {
+            if( to_mediator != account_name_type() )
+            {
+               return approvals.at( to_mediator );
+            }
+            else
+            {
+               return false;
+            }
+         };
 
-         bool                   is_approved()const { return to_approved && agent_approved; }
+         bool                                      is_approved()const
+         { 
+            return from_approved() && to_approved() && from_mediator_approved() && to_mediator_approved();
+         };
+
+         bool                                      is_mediator( const account_name_type& account )const  
+         {
+            return std::find( mediators.begin(), mediators.end(), account ) != mediators.end();
+         };
    };
+
 
    class savings_withdraw_object : public object< savings_withdraw_object_type, savings_withdraw_object >
    {
@@ -501,7 +588,6 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          savings_withdraw_object( Constructor&& c, allocator< Allocator > a )
-            :memo( a )
          {
             c( *this );
          }
@@ -520,6 +606,7 @@ namespace node { namespace chain {
          
          time_point              complete;
    };
+
 
    /**
     * A route to send unstaked assets.
@@ -548,6 +635,7 @@ namespace node { namespace chain {
          bool                auto_stake = false;    // Automatically stake the asset on the receiving account
    };
 
+
    class decline_voting_rights_request_object : public object< decline_voting_rights_request_object_type, decline_voting_rights_request_object >
    {
       public:
@@ -566,6 +654,7 @@ namespace node { namespace chain {
          time_point          effective_date;
    };
 
+
    enum curve_id
    {
       quadratic,                   // Returns the square of the reward, with a constant added
@@ -574,6 +663,7 @@ namespace node { namespace chain {
       square_root,                 // returns exactly the square root of reward
       convergent_semi_quadratic    // Returns an amount converging to the reward, to the power of 1.5, which decays over the time period specified
    };
+
 
    class reward_fund_object : public object< reward_fund_object_type, reward_fund_object >
    {
@@ -810,6 +900,7 @@ namespace node { namespace chain {
    struct by_price;
    
    struct by_account;
+   
    typedef multi_index_container<
       limit_order_object,
       indexed_by<
@@ -938,9 +1029,10 @@ namespace node { namespace chain {
 
    struct by_from_id;
    struct by_to;
-   struct by_agent;
-   struct by_ratification_deadline;
-   struct by_USDbalance;
+   struct by_acceptance_time;
+   struct by_dispute_release_time;
+   struct by_balance;
+
    typedef multi_index_container<
       escrow_object,
       indexed_by<
@@ -958,21 +1050,23 @@ namespace node { namespace chain {
                member< escrow_object, escrow_id_type, &escrow_object::id >
             >
          >,
-         ordered_unique< tag< by_agent >,
-            composite_key< escrow_object,
-               member< escrow_object, account_name_type,  &escrow_object::agent >,
-               member< escrow_object, escrow_id_type, &escrow_object::id >
-            >
-         >,
-         ordered_unique< tag< by_ratification_deadline >,
+         ordered_unique< tag< by_acceptance_time >,
             composite_key< escrow_object,
                const_mem_fun< escrow_object, bool, &escrow_object::is_approved >,
-               member< escrow_object, time_point, &escrow_object::ratification_deadline >,
+               member< escrow_object, time_point, &escrow_object::acceptance_time >,
                member< escrow_object, escrow_id_type, &escrow_object::id >
             >,
             composite_key_compare< std::less< bool >, std::less< time_point >, std::less< escrow_id_type > >
          >,
-         ordered_unique< tag< by_USDbalance >,
+         ordered_unique< tag< by_dispute_release_time >,
+            composite_key< escrow_object,
+               member< escrow_object, bool, &escrow_object::disputed >,
+               member< escrow_object, time_point, &escrow_object::dispute_release_time >,
+               member< escrow_object, escrow_id_type, &escrow_object::id >
+            >,
+            composite_key_compare< std::less< bool >, std::less< time_point >, std::less< escrow_id_type > >
+         >,
+         ordered_unique< tag< by_balance >,
             composite_key< escrow_object,
                member< escrow_object, asset, &escrow_object::balance >,
                member< escrow_object, escrow_id_type, &escrow_object::id >
@@ -983,14 +1077,15 @@ namespace node { namespace chain {
       allocator< escrow_object >
    > escrow_index;
 
-   struct by_from_rid;
+   struct by_request_id;
    struct by_to_complete;
-   struct by_complete_from_rid;
+   struct by_complete_from_request_id;
+
    typedef multi_index_container<
       savings_withdraw_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< savings_withdraw_object, savings_withdraw_id_type, &savings_withdraw_object::id > >,
-         ordered_unique< tag< by_from_rid >,
+         ordered_unique< tag< by_request_id >,
             composite_key< savings_withdraw_object,
                member< savings_withdraw_object, account_name_type,  &savings_withdraw_object::from >,
                member< savings_withdraw_object, shared_string, &savings_withdraw_object::request_id >
@@ -1004,7 +1099,7 @@ namespace node { namespace chain {
                member< savings_withdraw_object, savings_withdraw_id_type, &savings_withdraw_object::id >
             >
          >,
-         ordered_unique< tag< by_complete_from_rid >,
+         ordered_unique< tag< by_complete_from_request_id >,
             composite_key< savings_withdraw_object,
                member< savings_withdraw_object, time_point,  &savings_withdraw_object::complete >,
                member< savings_withdraw_object, account_name_type,  &savings_withdraw_object::from >,
@@ -1018,6 +1113,7 @@ namespace node { namespace chain {
 
    struct by_account;
    struct by_effective_date;
+
    typedef multi_index_container<
       decline_voting_rights_request_object,
       indexed_by<

@@ -40,8 +40,8 @@ namespace node { namespace app {
    struct vote_state
    {
       string         voter;
-      uint64_t       weight = 0;
-      int64_t        reward = 0;
+      uint128_t      weight = 0;
+      int128_t       reward = 0;
       int16_t        percent = 0;
       time_point     time;
    };
@@ -49,16 +49,16 @@ namespace node { namespace app {
    struct view_state
    {
       string         viewer;
-      uint64_t       weight = 0;
-      int64_t        reward = 0;
+      uint128_t      weight = 0;
+      int128_t       reward = 0;
       time_point     time;
    };
 
    struct share_state
    {
       string         sharer;
-      uint64_t       weight = 0;
-      int64_t        reward = 0;
+      uint128_t      weight = 0;
+      int128_t       reward = 0;
       time_point     time;
    };
 
@@ -76,8 +76,8 @@ namespace node { namespace app {
    {
       string         author;
       string         permlink;
-      uint64_t       weight = 0;
-      int64_t        reward = 0;
+      uint128_t      weight = 0;
+      int128_t       reward = 0;
       int16_t        percent = 0;
       time_point     time;
    };
@@ -86,8 +86,8 @@ namespace node { namespace app {
    {
       string         author;
       string         permlink;
-      uint64_t       weight = 0;
-      int64_t        reward = 0;
+      uint128_t      weight = 0;
+      int128_t       reward = 0;
       time_point     time;
    };
 
@@ -95,8 +95,8 @@ namespace node { namespace app {
    {
       string         author;
       string         permlink;
-      uint64_t       weight = 0;
-      int64_t        reward = 0;
+      uint128_t      weight = 0;
+      int128_t       reward = 0;
       time_point     time;
    };
 
@@ -231,7 +231,7 @@ namespace node { namespace app {
 
       account_following_api_obj                         following;
       connection_state                                  connections;
-      map< string, account_balance_api_obj >            balances;
+      balance_state                                     balances;
       order_state                                       orders;
       business_account_state                            business;
       key_state                                         keychain;
@@ -240,7 +240,6 @@ namespace node { namespace app {
       board_state                                       boards;
       network_state                                     network;
       account_ad_state                                  active_ads; 
-      vector< pair< string, uint32_t > >                active_tags;
       vector< pair< account_name_type, uint32_t > >     top_shared;
       account_permission_api_obj                        permissions;
       vector< pair< tag_name_type, uint32_t > >         tags_usage;
@@ -250,7 +249,7 @@ namespace node { namespace app {
    struct extended_board : public board_api_obj
    {
       extended_board(){}
-      extended_board( const board_object& b, const database& db ):board_api_obj( b, db ){}
+      extended_board( const board_object& b ):board_api_obj( b ){}
 
       vector< account_name_type >                       subscribers;                 // List of accounts that subscribe to the posts made in the board.
       vector< account_name_type >                       members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
@@ -266,7 +265,7 @@ namespace node { namespace app {
    struct extended_asset : public asset_api_obj
    {
       extended_asset(){}
-      extended_asset( const asset_object& a, const database& db ):asset_api_obj( a, db ){}
+      extended_asset( const asset_object& a ):asset_api_obj( a ){}
 
       int64_t                                  total_supply;              // The total outstanding supply of the asset
       int64_t                                  liquid_supply;             // The current liquid supply of the asset
@@ -280,9 +279,9 @@ namespace node { namespace app {
       int64_t                                  accumulated_fees;          // Amount of Fees that have accumulated to be paid to the asset issuer. Denominated in this asset.
       int64_t                                  fee_pool;                  // Amount of core asset available to pay fees. Denominated in the core asset.
       bitasset_data_api_obj                    bitasset;
-      equity_data_api_obj >                    equity; 
-      credit_data_api_obj >                    credit;
-      credit_pool_api_obj >                    credit_pool;
+      equity_data_api_obj                      equity; 
+      credit_data_api_obj                      credit;
+      credit_pool_api_obj                      credit_pool;
       map< string, liquidity_pool_api_obj >    liquidity_pools;
    };
 
@@ -291,6 +290,11 @@ namespace node { namespace app {
       vector< message_api_obj >                                inbox;
       vector< message_api_obj >                                outbox;
       map< account_name_type, vector< message_api_obj > >      conversations;
+   };
+
+   struct balance_state
+   {
+      map< asset_symbol_type, account_balance_api_obj >       balances;
    };
 
    struct key_state
@@ -322,8 +326,8 @@ namespace node { namespace app {
 
    struct market_credit_loans
    {
-      credit_loan_api_obj                     loan_bids;
-      credit_loan_api_obj                     loan_asks;
+      vector<credit_loan_api_obj>             loan_bids;
+      vector<credit_loan_api_obj>             loan_asks;
    };
 
    struct market_state
@@ -334,7 +338,7 @@ namespace node { namespace app {
       vector< liquidity_pool_api_obj >        liquidity_pools;
       vector< credit_pool_api_obj >           credit_pools;
       market_credit_loans                     credit_loans;
-   }
+   };
 
    struct account_ad_state
    {
@@ -360,7 +364,7 @@ namespace node { namespace app {
    struct ad_bid_state : public ad_bid_api_obj
    {
       ad_bid_state(){}
-      ad_bid_state( const ad_bid_object& a, const database& db ):ad_bid_api_obj( a, db ){}
+      ad_bid_state( const ad_bid_object& a ):ad_bid_api_obj( a ){}
 
       ad_creative_api_obj                     creative;
       ad_campaign_api_obj                     campaign;
@@ -594,7 +598,6 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          (boards)
          (network)
          (active_ads)
-         (active_tags)
          (top_shared)
          (permissions)
          (tags_usage)

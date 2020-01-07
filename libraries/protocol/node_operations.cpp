@@ -607,34 +607,6 @@ namespace node { namespace protocol {
       validate_account_name( governance_account );
    }
 
-   void update_interface_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      FC_ASSERT( url.size() + details.size() + json.size(),
-         "Cannot update Interface because it does not contain content." );
-      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details are too long." );
-      FC_ASSERT( fc::is_utf8( details ), 
-         "Details are not formatted in UTF8." );
-      FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL is too long." );
-      FC_ASSERT( fc::is_utf8( url ),
-         "URL is not formatted in UTF8." );
-      if( url.size() > 0 )
-      {
-         validate_url( url );
-      }
-
-      if( json.size() > 0 )
-      {
-         FC_ASSERT( fc::is_utf8( json ), 
-            "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ), 
-            "JSON Metadata not valid JSON." );
-      }
-   }
-
    void update_supernode_operation::validate() const
    {
       validate_account_name( signatory );
@@ -690,6 +662,67 @@ namespace node { namespace protocol {
          FC_ASSERT( fc::json::is_valid( json ), 
             "JSON Metadata not valid JSON." );
       }
+   }
+
+   void update_interface_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( url.size() + details.size() + json.size(),
+         "Cannot update Interface because it does not contain content." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+   void update_mediator_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      FC_ASSERT( url.size() + details.size() + json.size(),
+         "Cannot update Interface because it does not contain content." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( mediator_bond.symbol == SYMBOL_COIN,
+         "Mediation bond must be denominated in core asset." );
+      FC_ASSERT( mediator_bond.amount >= BLOCKCHAIN_PRECISION,
+         "Mediation bond must be at least 1 unit of core asset." );
    }
 
    void create_community_enterprise_operation::validate() const
@@ -1686,22 +1719,20 @@ namespace node { namespace protocol {
       FC_ASSERT( transfer_id.size() > 0,
          "Transfer ID is required." );
       validate_uuidv4( transfer_id );
-      FC_ASSERT( amount.amount > 0, 
+      FC_ASSERT( amount.amount > 0,
          "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-      FC_ASSERT( is_valid_symbol(amount.symbol), 
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
          "Memo is too large" );
-      FC_ASSERT( fc::is_utf8( memo ), 
+      FC_ASSERT( fc::is_utf8( memo ),
          "Memo is not UTF8" );
       FC_ASSERT( begin > GENESIS_TIME,
          "Begin time must be after genesis time." );
-      FC_ASSERT( end > GENESIS_TIME,
-         "End time must be after genesis time." );
-      FC_ASSERT( end > begin,
-         "End time must be after begin time." );
       FC_ASSERT( interval > fc::hours(1),
          "Interval time must be at least one hour." );
+      FC_ASSERT( payments > 0,
+         "Payments must be greater than 1." );
    }
 
 
@@ -1714,25 +1745,21 @@ namespace node { namespace protocol {
          "Request ID is too long." );
       FC_ASSERT( request_id.size() > 0,
          "Request ID is required." );
-      FC_ASSERT( fc::is_utf8( request_id ), 
+      FC_ASSERT( fc::is_utf8( request_id ),
          "Request ID is not UTF8" );
       validate_uuidv4( request_id );
-      FC_ASSERT( amount.amount > 0, 
+      FC_ASSERT( amount.amount > 0,
          "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-      FC_ASSERT( is_valid_symbol(amount.symbol), 
+      FC_ASSERT( is_valid_symbol(amount.symbol),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
          "Memo is too large" );
-      FC_ASSERT( fc::is_utf8( memo ), 
+      FC_ASSERT( fc::is_utf8( memo ),
          "Memo is not UTF8" );
       FC_ASSERT( begin > GENESIS_TIME,
          "Begin time must be after genesis time." );
-      FC_ASSERT( end > GENESIS_TIME,
-         "End time must be after genesis time." );
-      FC_ASSERT( end > begin,
-         "End time must be after begin time." );
-      FC_ASSERT( interval > fc::hours(1),
-         "Interval time must be at least one hour." );
+      FC_ASSERT( interval > fc::minutes(1),
+         "Interval time must be at least one minute." );
       FC_ASSERT( expiration > GENESIS_TIME,
          "Expiration time must be after genesis time." );
    }
@@ -1746,7 +1773,7 @@ namespace node { namespace protocol {
          "Request ID is too long." );
       FC_ASSERT( request_id.size() > 0,
          "Request ID is required." );
-      FC_ASSERT( fc::is_utf8( request_id ), 
+      FC_ASSERT( fc::is_utf8( request_id ),
          "Request ID is not UTF8" );
       validate_uuidv4( request_id );
    }
@@ -1840,19 +1867,6 @@ namespace node { namespace protocol {
          "Memo is not UTF8" );
    }
 
-   void cancel_transfer_from_savings_operation::validate()const 
-   {
-      validate_account_name( signatory );
-      validate_account_name( from );
-      FC_ASSERT( request_id.size() < MAX_STRING_LENGTH,
-         "Request ID is too long." );
-      FC_ASSERT( request_id.size() > 0,
-         "Request ID is required." );
-      FC_ASSERT( fc::is_utf8( request_id ), 
-         "Request ID is not UTF8" );
-      validate_uuidv4( request_id );
-   }
-
    void delegate_asset_operation::validate()const
    {
       validate_account_name( signatory );
@@ -1875,27 +1889,23 @@ namespace node { namespace protocol {
    void escrow_transfer_operation::validate()const
    {
       validate_account_name( signatory );
+      validate_account_name( account );
       validate_account_name( from );
       validate_account_name( to );
-      validate_account_name( agent );
-      FC_ASSERT( is_valid_symbol(fee.symbol),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
+      
       FC_ASSERT( is_valid_symbol(amount.symbol),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( fee.amount >= 0,
-         "Fee must be greater than or equal to zero." );
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( from != agent && to != agent,
-         "Agent account must be a third party" );
-      FC_ASSERT( ratification_deadline > GENESIS_TIME,
-         "Ratification deadline must be after genesis time." );
+      FC_ASSERT( from != to,
+         "From and To must not be the same account" );
+      FC_ASSERT( acceptance_time > GENESIS_TIME,
+         "Acceptance time must be after genesis time." );
       FC_ASSERT( escrow_expiration > GENESIS_TIME,
          "Escrow expiration must be after genesis time." );
-      FC_ASSERT( ratification_deadline < escrow_expiration,
-         "Ratification deadline must be before escrow expiration" );
-      FC_ASSERT( amount.symbol == fee.symbol,
-      "Fee Asset must be identical to escrow payment asset.");
+      FC_ASSERT( acceptance_time < escrow_expiration,
+         "Acceptance time must be before escrow expiration" );
+
       FC_ASSERT( escrow_id.size() < MAX_STRING_LENGTH,
          "Escrow ID is too long." );
       FC_ASSERT( escrow_id.size() > 0,
@@ -1903,6 +1913,11 @@ namespace node { namespace protocol {
       FC_ASSERT( fc::is_utf8( escrow_id ), 
          "Escrow ID is not UTF8" );
       validate_uuidv4( escrow_id );
+
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ),
+         "Memo is not UTF8" );
 
       if( json.size() > 0 )
       {
@@ -1916,12 +1931,15 @@ namespace node { namespace protocol {
    void escrow_approve_operation::validate()const
    {
       validate_account_name( signatory );
-      validate_account_name( from );
-      validate_account_name( to );
-      validate_account_name( agent );
-      validate_account_name( who );
-      FC_ASSERT( who == to || who == agent, 
-         "To Account or Agent Account must approve escrow." );
+      validate_account_name( account );
+      validate_account_name( mediator );
+      validate_account_name( escrow_from );
+
+      FC_ASSERT( mediator != account,
+         "Mediator and Account must not be the same account" );
+      FC_ASSERT( mediator != escrow_from,
+         "Mediator and Escrow From must not be the same account" );
+      
       FC_ASSERT( escrow_id.size() < MAX_STRING_LENGTH,
          "Escrow ID is too long." );
       FC_ASSERT( escrow_id.size() > 0,
@@ -1934,12 +1952,9 @@ namespace node { namespace protocol {
    void escrow_dispute_operation::validate()const
    {
       validate_account_name( signatory );
-      validate_account_name( from );
-      validate_account_name( to );
-      validate_account_name( agent );
-      validate_account_name( who );
-      FC_ASSERT( who == from || who == to,
-         "From Account or To Account must approve dispute." );
+      validate_account_name( account );
+      validate_account_name( escrow_from );
+      
       FC_ASSERT( escrow_id.size() < MAX_STRING_LENGTH,
          "Escrow ID is too long." );
       FC_ASSERT( escrow_id.size() > 0,
@@ -1952,19 +1967,12 @@ namespace node { namespace protocol {
    void escrow_release_operation::validate()const
    {
       validate_account_name( signatory );
-      validate_account_name( from );
-      validate_account_name( to );
-      validate_account_name( agent );
-      validate_account_name( who );
-      validate_account_name( receiver );
-      FC_ASSERT( who == from || who == to || who == agent,
-         "Who must be from or to or agent" );
-      FC_ASSERT( receiver == from || receiver == to,
-         "Receiver must be from or to" );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( amount.amount > 0,
-         "Amount cannot be greater than zero" );
+      validate_account_name( account );
+      validate_account_name( escrow_from );
+      
+      FC_ASSERT( release_percent >= 0 && release_percent <= PERCENT_100,
+         "Release percent must be between 0 and PERCENT_100." );
+         
       FC_ASSERT( escrow_id.size() < MAX_STRING_LENGTH,
          "Escrow ID is too long." );
       FC_ASSERT( escrow_id.size() > 0,

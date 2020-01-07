@@ -1977,23 +1977,6 @@ annotated_signed_transaction wallet_api::transfer_from_savings( string from, uin
    return my->sign_transaction( tx, broadcast );
 }
 
-/**
- *  @param request_id the id used in transfer_from_savings
- *  @param from the account that initiated the transfer
- */
-annotated_signed_transaction wallet_api::cancel_transfer_from_savings( string from, uint32_t request_id, bool broadcast  )
-{
-   FC_ASSERT( !is_locked() );
-   cancel_transfer_from_savings_operation op;
-   op.from = from;
-   op.request_id = request_id;
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-}
-
 annotated_signed_transaction wallet_api::stake_asset(string from, string to, asset amount, bool broadcast )
 {
    FC_ASSERT( !is_locked() );

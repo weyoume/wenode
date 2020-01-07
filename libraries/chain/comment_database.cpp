@@ -754,7 +754,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
 
    if( board_member_ptr != nullptr )
    {
-      feed_types feed_type = BOARD_FEED;
+      feed_reach_type feed_type = BOARD_FEED;
 
       switch( board_member_ptr->board_type )
       {
@@ -986,7 +986,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
  * account following object.
  */
 void database::share_comment_to_feeds( const account_name_type& sharer, 
-   const feed_types& reach, const comment_object& comment )
+   const feed_reach_type& reach, const comment_object& comment )
 { try {
    time_point now = head_block_time();
    const comment_id_type& comment_id = comment.id;
@@ -1205,7 +1205,7 @@ void database::share_comment_to_board( const account_name_type& sharer,
    const comment_id_type& comment_id = comment.id;
    const board_member_object& board_member = get_board_member( board );
    const auto& feed_idx = get_index< feed_index >().indices().get< by_account_comment_type >();
-   feed_types feed_type = BOARD_FEED;
+   feed_reach_type feed_type = BOARD_FEED;
 
    switch( board_member.board_type )
    {
@@ -1503,7 +1503,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
    {
       const comment_id_type& comment_id = blog_itr->comment;
       const comment_object& comment = get( comment_id );
-      feed_types reach = comment.reach;
+      feed_reach_type reach = comment.reach;
       
       switch( reach )
       {
@@ -1824,7 +1824,7 @@ void database::update_board_in_feed( const account_name_type& account, const boa
    auto blog_itr = blog_idx.lower_bound( board );
    auto blog_end = blog_idx.upper_bound( board );
    const board_member_object& board_member = get_board_member( board );
-   feed_types feed_type = BOARD_FEED;
+   feed_reach_type feed_type = BOARD_FEED;
 
    switch( board_member.board_type )
    {

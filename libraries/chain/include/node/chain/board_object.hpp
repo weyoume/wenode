@@ -29,9 +29,9 @@ namespace node { namespace chain {
 
          account_name_type                  founder;                            // The account that created the board, able to add and remove administrators.
 
-         board_types                        board_type;                         // Type of board, persona, profile or business.
+         board_structure_type               board_type;                         // Type of board, persona, profile or business.
 
-         board_privacy_types                board_privacy;                      // Board privacy level, open, public, private, or exclusive
+         board_privacy_type                 board_privacy;                      // Board privacy level, open, public, private, or exclusive
 
          public_key_type                    board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
@@ -110,9 +110,9 @@ namespace node { namespace chain {
 
          account_name_type                          founder;                     // Name of the founding account of the board. Has full permissions.
 
-         board_privacy_types                        board_privacy;               // Privacy setting of board, determines transaction authorization. 
+         board_privacy_type                         board_privacy;               // Privacy setting of board, determines transaction authorization. 
 
-         board_types                                board_type;                  // Type of board, group, event, or store.
+         board_structure_type                       board_type;                  // Type of board, group, event, or store.
 
          flat_set< account_name_type >              subscribers;                 // List of accounts that subscribe to the posts made in the board.
 

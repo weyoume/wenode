@@ -133,57 +133,57 @@ namespace node { namespace protocol {
     */
    struct account_create_operation : public base_operation
    {
-      account_name_type                  signatory;
+      account_name_type                      signatory;
 
-      account_name_type                  registrar;                     // Account registering the new account, usually an interface.
+      account_name_type                      registrar;                     // Account registering the new account, usually an interface.
 
-      account_name_type                  new_account_name;              // The name of the new account.
+      account_name_type                      new_account_name;              // The name of the new account.
 
-      account_types                      account_type;                  // the type of account being created, persona, profile, business, anonymous.
+      account_identity_type                  account_type;                  // the type of account being created, persona, profile, business, anonymous.
 
-      account_name_type                  referrer;                      // the account that lead to the creation of the new account, by way of referral link.
+      account_name_type                      referrer;                      // the account that lead to the creation of the new account, by way of referral link.
 
-      account_name_type                  proxy;                         // Account that the new account will delegate its voting power to.
+      account_name_type                      proxy;                         // Account that the new account will delegate its voting power to.
 
-      account_name_type                  governance_account;            // Account that will be the governance account of the new account. Required for business and profile accounts.
+      account_name_type                      governance_account;            // Account that will be the governance account of the new account. Required for business and profile accounts.
 
-      account_name_type                  recovery_account;              // Account that can execute a recovery operation, in the event that the owner key is compromised. 
+      account_name_type                      recovery_account;              // Account that can execute a recovery operation, in the event that the owner key is compromised. 
 
-      account_name_type                  reset_account;                 // Account that has the ability to execute a reset operation after 60 days of inactivity.
+      account_name_type                      reset_account;                 // Account that has the ability to execute a reset operation after 60 days of inactivity.
 
-      string                             details;                       // The account's details string.
+      string                                 details;                       // The account's details string.
 
-      string                             url;                           // The account's selected personal URL. 
+      string                                 url;                           // The account's selected personal URL. 
 
-      string                             json;                          // The JSON string of public profile information
+      string                                 json;                          // The JSON string of public profile information
 
-      string                             json_private;                  // The JSON string of encrypted profile information
+      string                                 json_private;                  // The JSON string of encrypted profile information
 
-      authority                          owner;                         // The account authority required for changing the active and posting authorities
+      authority                              owner;                         // The account authority required for changing the active and posting authorities
 
-      authority                          active;                        // The account authority required for sending payments and trading
+      authority                              active;                        // The account authority required for sending payments and trading
 
-      authority                          posting;                       // The account authority required for posting content and voting
+      authority                              posting;                       // The account authority required for posting content and voting
 
-      string                             secure_public_key;             // The secure encryption key for conntent only visible ot this account. 
+      string                                 secure_public_key;             // The secure encryption key for conntent only visible ot this account. 
 
-      string                             connection_public_key;         // The connection public key used for encrypting Connection level content
+      string                                 connection_public_key;         // The connection public key used for encrypting Connection level content
 
-      string                             friend_public_key;             // The connection public key used for encrypting Friend level content
+      string                                 friend_public_key;             // The connection public key used for encrypting Friend level content
 
-      string                             companion_public_key;          // The connection public key used for encrypting Companion level content
+      string                                 companion_public_key;          // The connection public key used for encrypting Companion level content
 
-      optional< business_types >         business_type;                 // The type of business account being created
+      optional< business_structure_type >    business_type;                 // The type of business account being created
 
-      optional< share_type >             officer_vote_threshold;        // The voting power required to be an active officer
+      optional< share_type >                 officer_vote_threshold;        // The voting power required to be an active officer
 
-      optional< string >                 business_public_key;           // The public key used for encrypted business content.
+      optional< string >                     business_public_key;           // The public key used for encrypted business content.
 
-      asset                              fee;                           // At least min account creation fee for stake on the new account.
+      asset                                  fee;                           // At least min account creation fee for stake on the new account.
 
-      asset                              delegation;                    // Initial amount delegated to the new account
+      asset                                  delegation;                    // Initial amount delegated to the new account
 
-      extensions_type                    extensions;
+      extensions_type                        extensions;
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -195,39 +195,39 @@ namespace node { namespace protocol {
     */
    struct account_update_operation : public base_operation
    {
-      account_name_type             signatory;
+      account_name_type                      signatory;
 
-      account_name_type             account;
+      account_name_type                      account;
 
-      optional< authority >         owner;                     // Creates a new owner authority for the account, changing the key and account auths required to sign transactions. 
+      optional< authority >                  owner;                     // Creates a new owner authority for the account, changing the key and account auths required to sign transactions. 
 
-      optional< authority >         active;
+      optional< authority >                  active;
 
-      optional< authority >         posting;
+      optional< authority >                  posting;
 
-      string                        secure_public_key;
+      string                                 secure_public_key;
 
-      string                        connection_public_key;
+      string                                 connection_public_key;
 
-      string                        friend_public_key;
+      string                                 friend_public_key;
 
-      string                        companion_public_key;
+      string                                 companion_public_key;
 
-      string                        json;
+      string                                 json;
 
-      string                        json_private;
+      string                                 json_private;
 
-      string                        details;
+      string                                 details;
 
-      string                        url;
+      string                                 url;
 
-      string                        pinned_permlink;               // Permlink of the users pinned post.
+      string                                 pinned_permlink;               // Permlink of the users pinned post.
 
-      bool                          deleted = false;
+      bool                                   deleted = false;
 
-      optional< business_types >    business_type;               
+      optional< business_structure_type >    business_type;               
 
-      optional< share_type >        officer_vote_threshold;
+      optional< share_type >                 officer_vote_threshold;
 
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
@@ -276,7 +276,7 @@ namespace node { namespace protocol {
 
       account_name_type      account;
 
-      membership_types       membership_type;
+      membership_tier_type   membership_type;
 
       uint16_t               months;
 
@@ -303,7 +303,7 @@ namespace node { namespace protocol {
 
       account_name_type            executive_account;     // Name of executive being voted for.
 
-      executive_types              role;                  // Role of the executive.
+      executive_role_type          role;                  // Role of the executive.
 
       uint16_t                     vote_rank;             // Rank of voting preference
 
@@ -723,7 +723,7 @@ namespace node { namespace protocol {
 
       account_name_type             requested_account;              // Account that is being requested to connect
 
-      connection_types              connection_type;                // Type of connection level
+      connection_tier_type              connection_type;                // Type of connection level
 
       string                        message;                        // Message attached to the request, encrypted with recipient's secure public key.
 
@@ -754,7 +754,7 @@ namespace node { namespace protocol {
 
       string                        connection_id;         // Unique uuidv4 for the connection, for local storage of decryption key.
 
-      connection_types              connection_type;       // Type of connection level.
+      connection_tier_type              connection_type;       // Type of connection level.
 
       string                        encrypted_key;         // The private connection key of the user, encrypted with the public secure key of the requesting account.
 
@@ -864,7 +864,7 @@ namespace node { namespace protocol {
 
       account_name_type             account;           // Name of the member's account
 
-      network_officer_types         officer_type;      // The type of network officer that the account serves as. 
+      network_officer_role_type         officer_type;      // The type of network officer that the account serves as. 
 
       string                        details;           // Information about the network officer and their work
 
@@ -1061,33 +1061,6 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates or updates an interface object for an application developer.
-    * Enables an application to provide advertising inventory on the 
-    * advertising exchange, in return for payments from advertisers, and
-    * to earn a share of fees generated from memberships, trading fees,
-    * premium content sales, and marketplace fees. 
-    */
-   struct update_interface_operation : public base_operation
-   {
-      account_name_type             signatory;
-
-      account_name_type             account;           // Name of the member's account
-
-      string                        details;           // Information about the interface, and what they are offering to users
-
-      string                        url;               // The interfaces's URL
-
-      string                        json;              // Additonal information about the interface.
-
-      bool                          active = true;     // Set true to activate the interface, false to deactivate. 
-         
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return account; }
-      void validate() const;
-   };
-
-
-   /**
     * Creates or updates a supernode object for an infrastructure provider.
     * Supernodes are required to:
     * 1 - Have a minimum stake of 1 Equity and 100 Coin ( 10 Equity and 1000 Coin receive doubled reward share ).
@@ -1138,6 +1111,62 @@ namespace node { namespace protocol {
 
 
    /**
+    * Creates or updates an interface object for an application developer.
+    * Enables an application to provide advertising inventory on the 
+    * advertising exchange, in return for payments from advertisers, and
+    * to earn a share of fees generated from memberships, trading fees,
+    * premium content sales, and marketplace fees. 
+    */
+   struct update_interface_operation : public base_operation
+   {
+      account_name_type             signatory;
+
+      account_name_type             account;           // Name of the member's account
+
+      string                        details;           // Information about the interface, and what they are offering to users
+
+      string                        url;               // The interfaces's URL
+
+      string                        json;              // Additonal information about the interface.
+
+      bool                          active = true;     // Set true to activate the interface, false to deactivate. 
+         
+      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+      void validate() const;
+   };
+
+
+
+   /**
+    * Creates or updates a mediator object for marketplace escrow facilitator.
+    * Enables a community member or business to provide escrow mediation 
+    * services to marketplace participants, acting to resolve disputes
+    * in escrow transfers, and earn marketplace fees from services rendered. 
+    */
+   struct update_mediator_operation : public base_operation
+   {
+      account_name_type             signatory;
+
+      account_name_type             account;           // Name of the member's account
+
+      string                        details;           // Information about the mediator, and what they are offering to users
+
+      string                        url;               // The mediator's URL
+
+      string                        json;              // Additonal information about the mediator.
+
+      asset                         mediator_bond;     // Amount of Core asset to stake in the mediation pool. 
+
+      bool                          active = true;     // Set true to activate the mediator, false to deactivate. 
+         
+      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+      void validate() const;
+   };
+
+
+   /**
     * Creates a new community enterprise proposal, which provides funding 
     * to projects that work to benefit the network by either 
     * distributing payments based on milestone completion, 
@@ -1153,7 +1182,7 @@ namespace node { namespace protocol {
 
       string                                            enterprise_id;       // UUIDv4 referring to the proposal. 
 
-      proposal_types                                    proposal_type;       // The type of proposal, determines release schedule
+      proposal_distribution_type                                    proposal_type;       // The type of proposal, determines release schedule
 
       flat_map< account_name_type, uint16_t >           beneficiaries;       // Set of account names and percentages of budget value. Should not include the null account.
 
@@ -1253,13 +1282,13 @@ namespace node { namespace protocol {
     */
    struct comment_options
    {
-      post_types                            post_type = TEXT_POST;                  // Type of post being created, text, image, article, video, audio, file, etc.
+      post_format_type                      post_type = TEXT_POST;                  // Type of post being created, text, image, article, video, audio, file, etc.
 
-      feed_types                            reach = TAG_FEED;                       // The extent to which the post will be distributed to account's followers and connections feeds.
+      feed_reach_type                       reach = TAG_FEED;                       // The extent to which the post will be distributed to account's followers and connections feeds.
 
       bool                                  privacy = false;                        // True if the post is encrypted. False if it is plaintext.
 
-      rating_types                          rating = GENERAL;                       // User nominated rating as to the maturity of the content, and display sensitivity.
+      post_rating_type                      rating = GENERAL;                       // User nominated rating as to the maturity of the content, and display sensitivity.
 
       asset                                 max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );   // USD value of the maximum payout this post will receive.
       
@@ -1448,7 +1477,7 @@ namespace node { namespace protocol {
 
       string                       permlink;         // Permlink to the post being shared.
 
-      feed_types                   reach;            // Audience reach selection for share.
+      feed_reach_type              reach;            // Audience reach selection for share.
 
       account_name_type            interface;        // Name of the interface account that was used to broadcast the transaction and share the post.
 
@@ -1483,7 +1512,7 @@ namespace node { namespace protocol {
 
       vector< string >            tags;               // Set of tags to apply to the post for selective interface side filtering.
 
-      rating_types                rating;             // Newly proposed rating for the post
+      post_rating_type            rating;             // Newly proposed rating for the post
 
       string                      details;            // String explaining the reason for the tag to the author
 
@@ -1521,9 +1550,9 @@ namespace node { namespace protocol {
 
       board_name_type             name;              // Name of the board.
 
-      board_types                 board_type;        // Type of board to create.
+      board_structure_type        board_type;        // Type of board to create.
 
-      board_privacy_types         board_privacy;     // Type of board to create.
+      board_privacy_type          board_privacy;     // Type of board to create.
 
       string                      board_public_key;  // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
@@ -1549,9 +1578,9 @@ namespace node { namespace protocol {
 
       board_name_type             board;             // Name of the board.
 
-      board_types                 board_type;        // Type of board to create.
+      board_structure_type        board_type;        // Type of board to create.
 
-      board_privacy_types         board_privacy;     // Type of board to create.
+      board_privacy_type          board_privacy;     // Type of board to create.
 
       string                      board_public_key;  // Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
@@ -1798,7 +1827,7 @@ namespace node { namespace protocol {
 
       string                 json;              // json string of creative metadata for display.
 
-      format_types           format_type;       // The type of formatting used for the advertisment, determines the interpretation of the creative.
+      ad_format_type         format_type;       // The type of formatting used for the advertisment, determines the interpretation of the creative.
 
       bool                   active = true;     // True if the creative is enabled for active display, false to deactivate.
 
@@ -1844,7 +1873,7 @@ namespace node { namespace protocol {
 
       string                             audience_id;    // uuidv4 referring to audience object containing usernames of desired accounts in interface's audience.
 
-      metric_types                       metric;         // Type of expense metric used.
+      ad_metric_type                     metric;         // Type of expense metric used.
 
       asset                              min_price;      // Minimum bidding price per metric.
 
@@ -2022,23 +2051,27 @@ namespace node { namespace protocol {
    {
       account_name_type           signatory;
 
-      account_name_type           from;           // Sending account to transfer asset from.
+      account_name_type           from;                   // Sending account to transfer asset from.
       
-      account_name_type           to;             // Recieving account to transfer asset to.
+      account_name_type           to;                     // Recieving account to transfer asset to.
       
-      asset                       amount;         // The amount of asset to transfer for each payment interval.
+      asset                       amount;                 // The amount of asset to transfer for each payment interval.
 
-      string                      transfer_id;    // uuidv4 of the transfer for reference. 
+      string                      transfer_id;            // uuidv4 of the transfer for reference. 
 
-      time_point                  begin;          // Starting time of the first payment.
+      time_point                  begin;                  // Starting time of the first payment.
 
-      time_point                  end;            // Ending time of the recurring payment. 
+      uint32_t                    payments;               // Number of payments to process in total.
 
-      fc::microseconds            interval;       // Microseconds between each transfer event.
+      fc::microseconds            interval;               // Microseconds between each transfer event.
 
-      string                      memo;           // The memo is plain-text, encryption on the memo is advised. 
+      string                      memo;                   // The memo is plain-text, encryption on the memo is advised. 
 
-      bool                        active = true;  // true if recurring payment is active, false to cancel.
+      bool                        extensible = false;     // True if the payment duration should be extended in the event a payment is missed.
+
+      bool                        fill_or_kill = false;   // True if the payment should be cancelled if a payment is missed.
+
+      bool                        active = true;          // true if recurring payment is active, false to cancel.
 
       void              validate()const;
       void              get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2053,25 +2086,29 @@ namespace node { namespace protocol {
    {
       account_name_type            signatory;
 
-      account_name_type            to;                 // Account requesting the transfer.
+      account_name_type            to;                     // Account requesting the transfer.
       
-      account_name_type            from;               // Account that is being requested to accept the transfer.
+      account_name_type            from;                   // Account that is being requested to accept the transfer.
       
-      asset                        amount;             // The amount of asset to transfer.
+      asset                        amount;                 // The amount of asset to transfer.
 
-      string                       request_id;         // uuidv4 of the request transaction, becomes transfer id when accepted.
+      string                       request_id;             // uuidv4 of the request transaction, becomes transfer id when accepted.
 
-      time_point                   begin;              // Starting time of the first payment.
+      time_point                   begin;                  // Starting time of the first payment.
 
-      time_point                   end;                // Ending time of the recurring payment. 
+      uint32_t                     payments;               // Number of payments to process in total.
 
-      fc::microseconds             interval;           // Microseconds between each transfer event.
+      fc::microseconds             interval;               // Microseconds between each transfer event.
 
-      string                       memo;               // The memo is plain-text, encryption on the memo is advised. 
+      string                       memo;                   // The memo is plain-text, encryption on the memo is advised. 
 
-      time_point                   expiration;         // time that the request expires.
+      time_point                   expiration;             // time that the request expires.
 
-      bool                         requested = true;   // True to send the request, false to cancel an existing request. 
+      bool                         extensible = false;     // True if the payment duration should be extended in the event a payment is missed.
+
+      bool                         fill_or_kill = false;   // True if the payment should be cancelled if a payment is missed.
+
+      bool                         requested = true;       // True to send the request, false to cancel an existing request. 
 
       void              validate()const;
       void              get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2206,29 +2243,17 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      from;
+      account_name_type      from;                 // Account to transfer savings balance from
 
-      string                 request_id;
+      string                 request_id;           // uuidv4 referring to the transfer
 
-      account_name_type      to;
+      account_name_type      to;                   // Account to recive the savings withdrawal
 
-      asset                  amount;
+      asset                  amount;               // Amount of asset to transfer from savings
 
-      string                 memo;
+      string                 memo;                 // Description of transfer
 
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return from; }
-      void validate() const;
-   };
-
-
-   struct cancel_transfer_from_savings_operation : public base_operation 
-   {
-      account_name_type     signatory;
-
-      account_name_type     from;
-
-      string                request_id;
+      bool                   transferred = true;   // True if the transfer is accepted, false to cancel transfer
 
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return from; }
@@ -2264,129 +2289,169 @@ namespace node { namespace protocol {
 
 
    /**
-    *  The purpose of this operation is to enable someone to send money contingently to
-    *  another individual. The funds leave the *from* account and go into a temporary balance
-    *  where they are held until *from* releases it to *to* or *to* refunds it to *from*.
-    *  In the event of a dispute the *agent* can divide the funds between the to/from account.
-    *  Disputes can be raised any time before or on the dispute deadline time, after the escrow
-    *  has been approved by all parties. 
-    *  This operation only creates a proposed escrow transfer. Both the *agent* and *to* must
-    *  agree to the terms of the arrangement by approving the escrow.
-    *  The escrow agent is paid the fee on approval of all parties. It is up to the escrow agent
-    *  to determine the fee. 
-    *  Escrow transactions are uniquely identified by 'from' and 'escrow_id', the 'escrow_id' 
-    *  is defined by the sender.  
+    * Creates a proposed escrow transfer between FROM and TO.
+    * TO, TO_MEDIATOR, FROM, FROM_MEDIATOR
+    * must approve an escrow transaction for it to be valid.
+    * when approving an Escrow, each account must deposit a bond 
+    * of 10% of amount into the escrow as security against sybil attacks, 
+    * which is forfeited in the event of 
+    * a dispute ruling againt the individual.
+    * 
+    * Escrow transactions are uniquely identified by the FROM account and an ESCROW_ID uuidv4.
+    * 
+    * The purpose of this operation is to enable someone to send money contingently to
+    * another account for a marketplace transaction.
+    * The funds leave the FROM account when approved and go into a temporary balance
+    * where they are held until FROM releases it to TO or TO refunds it to FROM.
+    * 
+    * If a product or service is not delivered, or a refund is requested but not released,
+    * Disputes can be raised any time before or on the dispute deadline time, after the escrow
+    * has been approved by all parties.
+    * 
+    * In the event of a dispute:
+    * 
+    * 1 - A set of 5 additional mediators are assigned to the escrow by the protocol to be
+    * an impartial jury for the resolution of the dispute. 
+    * 2 - Each additional mediator approves assignment, and deposits 10% of the amount in dispute.
+    * 3 - All accounts that have approved the escrow must vote to release the funds
+    * according to a specifed percentage.
+    * 4 - After 7 days, the median release percentage is selected and enacted. 
+    * 5 - Accounts that did not vote to release funds forfeit their security bond to the dispute pool.
+    * 6 - Accounts forfeit a percentage of thier security bond depending on the difference 
+    * between their final voted release percentage and the median voted release percentage.
+    * 7 - The dispute pool of all forfeited funds is divded equally between all accounts
+    * that voted to release funds.
     */
    struct escrow_transfer_operation : public base_operation
    {
       account_name_type      signatory;
 
-      account_name_type      from;
+      account_name_type      account;                 // Account creating the transaction to initate the escrow
 
-      account_name_type      to;
+      account_name_type      from;                    // Account sending funds for a purchase
 
-      account_name_type      agent;
+      account_name_type      to;                      // Account receiving funds from a purchase
 
-      string                 escrow_id;
+      string                 escrow_id;               // uuidv4 referring to the escrow transaction
 
-      asset                  amount;
+      asset                  amount;                  // Amount of the asset to be transferred upon success
 
-      asset                  fee;
+      time_point             acceptance_time;         // Time that the escrow proposal must be approved before
 
-      time_point             ratification_deadline;
+      time_point             escrow_expiration;       // time after which balance can be claimed by FROM or TO freely.
 
-      time_point             escrow_expiration;
+      string                 memo;                    // Details of the transaction for reference. 
 
-      string                 json;
+      string                 json;                    // Additonal JSON object attribute details.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return from; }
+      const account_name_type& get_creator_name() const { return account; }
    };
 
 
    /**
-    *  The agent and to accounts must approve an escrow transaction for it to be valid on
-    *  the blockchain. Once a party approves the escrow, the cannot revoke their approval.
-    *  Subsequent escrow approve operations, regardless of the approval, will be rejected.
+    * The TO, TO_MEDIATOR, FROM, FROM_MEDIATOR
+    * must approve an escrow transaction for it to be valid.
+    * 
+    * Approving accounts must lock in 10% of the escrow amount as a security bond.
+    * Once a party approves the escrow, the cannot revoke their approval.
+    * 
+    * In the event of a dispute, all assigned mediators must approve the escrow
+    * to be able to vote on its resolution and release of funds.
     */
    struct escrow_approve_operation : public base_operation
    {
       account_name_type      signatory;
 
-      account_name_type      who; // Either to or agent can approve the escrow
+      account_name_type      account;            // Account creating the transaction to approve the escrow.
 
-      account_name_type      from;
+      account_name_type      mediator;           // Nominated mediator to join the escrow for potential dispute resolution.
 
-      account_name_type      to;
+      account_name_type      escrow_from;        // The account sending funds into the escrow.
 
-      account_name_type      agent;
+      string                 escrow_id;          // uuidv4 referring to the escrow being approved.
 
-      string                 escrow_id;
-
-      bool                   approve = true;
+      bool                   approved = true;    // Set true to approve escrow, false to reject the escrow. All accounts must approve before activation.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return who; }
+      const account_name_type& get_creator_name() const { return account; }
    };
 
 
    /**
-    *  If either the sender or receiver of an escrow payment has an issue, they can
-    *  raise it for dispute. Once a payment is in dispute, the agent has authority over
-    *  who gets what.
+    * If either the sender or receiver of an escrow payment has an issue, 
+    * they can raise it for dispute. 
+    * 
+    * Once a payment is in dispute, 
+    * a team of mediators are appointed and 
+    * deposit a security bond before being able 
+    * to vote on the resolution of the dispute. 
     */
    struct escrow_dispute_operation : public base_operation
    {
       account_name_type      signatory;
 
-      account_name_type      who;
+      account_name_type      account;        // Account creating the transaction to dispute the escrow and raise it for resolution
 
-      account_name_type      from;
+      account_name_type      escrow_from;    // The account sending funds into the escrow.
 
-      account_name_type      to;
-
-      account_name_type      agent;
-
-      string                 escrow_id;
+      string                 escrow_id;      // uuidv4 referring to the escrow being disputed.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return who; }
+      const account_name_type& get_creator_name() const { return account; }
    };
 
 
    /**
-    *  This operation can be used by anyone associated with the escrow transfer to
-    *  release funds if they have permission.
+    * This operation can be used by anyone associated with the 
+    * escrow transfer to release funds if they have permission.
     *
-    *  The permission scheme is as follows:
-    *  If there is no dispute and escrow has not expired, either party can release funds to the other.
-    *  If escrow expires and there is no dispute, either party can release funds to either party.
-    *  If there is a dispute regardless of expiration, the agent can release funds to either party, according to prior agreements.
+    * The permission scheme is as follows:
+    * 
+    * If there is no dispute and escrow has not expired:
+    *  
+    * - Either party can release funds to the other.
+    * - All security bonds are refunded and released.
+    * 
+    * If escrow expires and there is no dispute:
+    * 
+    * - Either party can release funds to either party.
+    * - All security bonds are refunded and released.
+    * 
+    * If there is a dispute (before expiration):
+    * 
+    * - All approving accounts can broadcast release percentage votes.
+    * - Funds are distributed 7 days after the dispute is raised.
+    * 
+    * The escrow will use the median release vote to 
+    * determine the amount to be transmitted to the TO account
+    * and the remaining perentage will be transmitted to the FROM account.
+    * The difference between the median vote 
+    * and each approving account's release vote
+    * is deducted as a percentage from each account's security bond 
+    * and equally distributed to all other accounts that voted to release funds.
+    * 
+    * 100% of the security bond is foreited from accounts 
+    * that fail to vote within 7 days after approving the escrow. 
     */
    struct escrow_release_operation : public base_operation
    {
       account_name_type        signatory;
 
-      account_name_type        from;       // The escrow "from" account.
+      account_name_type        account;           // The account creating the operation to release the funds.
 
-      account_name_type        to;         // The escrow "to" account.
+      account_name_type        escrow_from;       // The escrow FROM account.
 
-      account_name_type        agent;      // The escrow "agent" account.
+      string                   escrow_id;         // uuidv4 referring to the escrow.
 
-      account_name_type        who;        // The account that is attempting to release the funds, determines the valid "receiver" account options.
-
-      account_name_type        receiver;   // The account that should receive funds [ From | To ].
-
-      string                   escrow_id;
-
-      asset                    amount = asset( 0, SYMBOL_COIN );       // the amount of the balance asset to release to "receiver".
+      uint16_t                 release_percent;   // percentage of escrow to release to the TO Account / remaining will be refunded to FROM account
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return who; }
+      const account_name_type& get_creator_name() const { return account; }
    };
 
 
@@ -2896,7 +2961,7 @@ namespace node { namespace protocol {
       
       asset_symbol_type               symbol;                       // The ticker symbol of this asset.
 
-      asset_types                     asset_type;                   // The type of the asset.
+      asset_property_type                     asset_type;                   // The type of the asset.
 
       asset                           coin_liquidity;               // Amount of COIN asset to inject into the Coin liquidity pool.  
 
@@ -4239,12 +4304,6 @@ FC_REFLECT( node::protocol::transfer_from_savings_operation,
          (to)
          (amount)
          (memo) 
-         );
-
-FC_REFLECT( node::protocol::cancel_transfer_from_savings_operation, 
-         (signatory)
-         (from)
-         (request_id) 
          );
 
 FC_REFLECT( node::protocol::delegate_asset_operation, 

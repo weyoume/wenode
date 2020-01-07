@@ -307,6 +307,16 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       i.last_update_time = now;
    });
 
+   create< mediator_object >( [&]( mediator_object& i )
+   {
+      i.account = INIT_ACCOUNT;
+      from_string( i.url, INIT_URL );
+      from_string( i.details, INIT_DETAILS );
+      i.active = true;
+      i.created = now;
+      i.last_update_time = now;
+   });
+
    create< board_object >( [&]( board_object& bo )
    {
       bo.name = INIT_BOARD;
@@ -391,6 +401,8 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.options.core_exchange_rate.base.symbol = SYMBOL_COIN;
       a.options.core_exchange_rate.quote.amount = 1;
       a.options.core_exchange_rate.quote.symbol = SYMBOL_COIN;
+      a.options.unstake_intervals = 4;
+      a.options.stake_intervals = 0;
    });
 
    create< asset_dynamic_data_object >( []( asset_dynamic_data_object& a )
@@ -415,7 +427,6 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.options.core_exchange_rate.quote.symbol = SYMBOL_EQUITY;
       a.options.unstake_intervals = 0;
       a.options.stake_intervals = 4;
-
    });
 
    create< asset_dynamic_data_object >( []( asset_dynamic_data_object& a )
@@ -439,6 +450,8 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.options.core_exchange_rate.base.symbol = SYMBOL_COIN;
       a.options.core_exchange_rate.quote.amount = 1;
       a.options.core_exchange_rate.quote.symbol = SYMBOL_USD;
+      a.options.unstake_intervals = 4;
+      a.options.stake_intervals = 0;
    });
 
    create< asset_bitasset_data_object >( [&]( asset_bitasset_data_object& a )
@@ -460,6 +473,8 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.options.core_exchange_rate.base.symbol = SYMBOL_COIN;
       a.options.core_exchange_rate.quote.amount = 1;
       a.options.core_exchange_rate.quote.symbol = SYMBOL_CREDIT;
+      a.options.unstake_intervals = 4;
+      a.options.stake_intervals = 0;
    });
 
    create< asset_dynamic_data_object >([](asset_dynamic_data_object& a) 
@@ -498,7 +513,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
          {
             w.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
             w.signing_key = init_public_key;
-            w.schedule = witness_object::top_miner;
+            w.schedule = witness_object::none;
          });
       }
    }
@@ -1008,6 +1023,16 @@ const account_balance_object* database::find_account_balance( const account_name
    return find< account_balance_object, by_owner_symbol >( boost::make_tuple( owner, symbol ) );
 }
 
+const asset_delegation_object& database::get_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const
+{ try {
+	return get< asset_delegation_object, by_delegation >( boost::make_tuple( delegator, delegatee, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (delegator)(delegatee)(symbol) ) }
+
+const asset_delegation_object* database::find_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const
+{
+   return find< asset_delegation_object, by_delegation >( boost::make_tuple( delegator, delegatee, symbol ) );
+}
+
 const account_permission_object& database::get_account_permissions( const account_name_type& account )const
 { try {
 	return get< account_permission_object, by_account >( account );
@@ -1116,6 +1141,16 @@ const interface_object& database::get_interface( const account_name_type& accoun
 const interface_object* database::find_interface( const account_name_type& account )const
 {
    return find< interface_object, by_account >( account );
+}
+
+const mediator_object& database::get_mediator( const account_name_type& account )const
+{ try {
+	return get< mediator_object, by_account >( account );
+} FC_CAPTURE_AND_RETHROW( (account) ) }
+
+const mediator_object* database::find_mediator( const account_name_type& account )const
+{
+   return find< mediator_object, by_account >( account );
 }
 
 const governance_account_object& database::get_governance_account( const account_name_type& account )const
@@ -1362,6 +1397,16 @@ const transfer_request_object* database::find_transfer_request( const account_na
    return find< transfer_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
 }
 
+const transfer_recurring_object& database::get_transfer_recurring( const account_name_type& name, const shared_string& transfer_id )const
+{ try {
+   return get< transfer_recurring_object, by_transfer_id >( boost::make_tuple( name, transfer_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(transfer_id) ) }
+
+const transfer_recurring_object* database::find_transfer_recurring( const account_name_type& name, const shared_string& transfer_id )const
+{
+   return find< transfer_recurring_object, by_transfer_id >( boost::make_tuple( name, transfer_id ) );
+}
+
 const transfer_recurring_request_object& database::get_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const
 { try {
    return get< transfer_recurring_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
@@ -1404,12 +1449,12 @@ const call_order_object* database::find_call_order( const account_name_type& nam
 
 const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
 { try {
-   return get< savings_withdraw_object, by_from_rid >( boost::make_tuple( owner, request_id ) );
+   return get< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
 } FC_CAPTURE_AND_RETHROW( (owner)(request_id) ) }
 
 const savings_withdraw_object* database::find_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
 {
-   return find< savings_withdraw_object, by_from_rid >( boost::make_tuple( owner, request_id ) );
+   return find< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
 }
 
 const reward_fund_object& database::get_reward_fund() const
@@ -1449,6 +1494,51 @@ const time_point database::calculate_discussion_payout_time( const comment_objec
 {
    return comment.cashout_time;
 }
+
+/**
+ * Returns a Shuffled copy of a specified vector of accounts
+ * High performance random generator using 256 bits of internal state.
+ * http://xorshift.di.unimi.it/
+ */
+vector< account_name_type > database::shuffle_accounts( vector< account_name_type > accounts )const
+{
+   vector< account_name_type > set = accounts;
+   auto now_hi = uint64_t( head_block_time().time_since_epoch().count() ) << 32;
+   for( uint32_t i = 0; i < accounts.size(); ++i )
+   {
+      uint64_t k = now_hi +      uint64_t(i)*26857571057736338717ULL;
+      uint64_t l = now_hi >> 1 + uint64_t(i)*95198191871878293511ULL;
+      uint64_t m = now_hi >> 2 + uint64_t(i)*58919729024841961988ULL;
+      uint64_t n = now_hi >> 3 + uint64_t(i)*27137164109707054410ULL;
+      
+      k ^= (l >> 7);
+      l ^= (m << 9);
+      m ^= (n >> 5);
+      n ^= (k << 3);
+
+      k*= 14226572565896741612ULL;
+      l*= 91985878658736871034ULL;
+      m*= 30605588311672529089ULL;
+      n*= 43069213742576315243ULL;
+
+      k ^= (l >> 2);
+      l ^= (m << 4);
+      m ^= (n >> 1);
+      n ^= (k << 9);
+
+      k*= 79477756532752495704ULL;
+      l*= 94908025588282034792ULL;
+      m*= 26941980616458623416ULL;
+      n*= 31902236862011382134ULL;
+
+      uint64_t rand = (k ^ l) ^ (m ^ n) ; 
+      uint32_t max = set.size() - i;
+
+      uint32_t j = i + rand % max;
+      std::swap( set[i], set[j] );
+   }
+   return set;
+};
 
 uint32_t database::witness_participation_rate()const
 {
@@ -2078,11 +2168,11 @@ void database::update_business_account( const account_business_object& business,
    const auto& bus_executive_vote_idx = get_index< account_executive_vote_index >().indices().get< by_business_role_executive >();
 
    flat_map< account_name_type, share_type > officers;
-   flat_map< account_name_type, flat_map< executive_types, share_type > > exec_map;
-   vector< pair< account_name_type, pair< executive_types, share_type > > > role_rank;
-   uint16_t exec_number = props.median_props.executive_types_amount;
+   flat_map< account_name_type, flat_map< executive_role_type, share_type > > exec_map;
+   vector< pair< account_name_type, pair< executive_role_type, share_type > > > role_rank;
+   uint16_t exec_number = props.median_props.executive_role_type_amount;
    role_rank.reserve( exec_number * officers.size() );
-   flat_map< account_name_type, pair< executive_types, share_type > > executives;
+   flat_map< account_name_type, pair< executive_role_type, share_type > > executives;
    executive_officer_set exec_set;
 
    auto bus_officer_vote_itr = bus_officer_vote_idx.lower_bound( business.account );
@@ -2118,7 +2208,7 @@ void database::update_business_account( const account_business_object& business,
       }
    }
 
-   flat_map< executive_types, share_type > role_map;
+   flat_map< executive_role_type, share_type > role_map;
    auto bus_executive_vote_itr = bus_executive_vote_idx.lower_bound( business.account );
 
    while( bus_executive_vote_itr != bus_executive_vote_idx.end() && 
@@ -2156,10 +2246,10 @@ void database::update_business_account( const account_business_object& business,
 
    while( !exec_set.allocated && role_rank_itr != role_rank.end() )
    {
-      pair< account_name_type, pair< executive_types, share_type > > rank = *role_rank_itr;
+      pair< account_name_type, pair< executive_role_type, share_type > > rank = *role_rank_itr;
       
       account_name_type executive = rank.first;
-      executive_types role = rank.second.first;
+      executive_role_type role = rank.second.first;
       share_type votes = rank.second.second;
 
       switch( role )
@@ -3363,6 +3453,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< subscribe_governance_evaluator           >();
    _my->_evaluator_registry.register_evaluator< update_supernode_evaluator               >();
    _my->_evaluator_registry.register_evaluator< update_interface_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< update_mediator_evaluator                >();
    _my->_evaluator_registry.register_evaluator< create_community_enterprise_evaluator    >();
    _my->_evaluator_registry.register_evaluator< claim_enterprise_milestone_evaluator     >();
    _my->_evaluator_registry.register_evaluator< approve_enterprise_milestone_evaluator   >();
@@ -3418,7 +3509,6 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< unstake_asset_route_evaluator            >();
    _my->_evaluator_registry.register_evaluator< transfer_to_savings_evaluator            >();
    _my->_evaluator_registry.register_evaluator< transfer_from_savings_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< cancel_transfer_from_savings_evaluator   >();
    _my->_evaluator_registry.register_evaluator< delegate_asset_evaluator                 >();
    
    // Escrow Evaluators
@@ -3536,6 +3626,7 @@ void database::initialize_indexes()
    add_core_index< governance_subscription_index           >(*this);
    add_core_index< supernode_index                         >(*this);
    add_core_index< interface_index                         >(*this);
+   add_core_index< mediator_index                          >(*this);
    add_core_index< community_enterprise_index              >(*this);
    add_core_index< enterprise_approval_index               >(*this);
 
@@ -3857,7 +3948,7 @@ void database::_apply_block( const signed_block& next_block )
    process_comment_cashout();
    
    account_recovery_processing();
-   expire_escrow_ratification();
+   process_escrow_transfers();
    process_decline_voting_rights();
    process_hardforks();
 
@@ -5158,7 +5249,6 @@ void database::validate_invariants()const
    {
       const escrow_object& escrow = *escrow_itr;
       asset_checksum[ escrow.balance.symbol ] -= escrow.balance;
-      asset_checksum[ escrow.pending_fee.symbol ] -= escrow.pending_fee;
       ++escrow_itr;
    }
 

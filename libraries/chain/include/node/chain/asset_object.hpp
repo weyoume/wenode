@@ -29,7 +29,7 @@ namespace node { namespace chain {
 
          asset_symbol_type                     symbol;                 // Consensus enforced unique Ticker symbol string for this asset. 
 
-         asset_types                           asset_type;             // The type of the asset.
+         asset_property_type                   asset_type;             // The type of the asset.
          
          account_name_type                     issuer;                 // name of the account which issued this asset.
 

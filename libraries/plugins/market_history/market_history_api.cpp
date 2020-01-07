@@ -18,7 +18,7 @@ class market_history_api_impl
       order_book get_order_book( string buy_symbol, string sell_symbol, uint32_t limit ) const;
       vector< market_trade > get_trade_history( string buy_symbol, string sell_symbol, time_point start, time_point end, uint32_t limit ) const;
       vector< market_trade > get_recent_trades( string buy_symbol, string sell_symbol, uint32_t limit ) const;
-      vector< market_duration_object > get_market_history( string buy_symbol, string sell_symbol, 
+      vector< candle_stick > get_market_history( string buy_symbol, string sell_symbol, 
          uint32_t seconds, time_point start, time_point end ) const;
 
       flat_set< uint32_t > get_market_history_durations() const;
@@ -31,8 +31,8 @@ market_ticker market_history_api_impl::get_ticker( string buy_symbol, string sel
    market_ticker result;
 
    auto db = app.chain_database();
-   const asset_object& buy_asset = db.get_asset( asset_symbol_type( buy_symbol ) );
-   const asset_object& sell_asset = db.get_asset( asset_symbol_type( sell_symbol ) );
+   const asset_object& buy_asset = db->get_asset( asset_symbol_type( buy_symbol ) );
+   const asset_object& sell_asset = db->get_asset( asset_symbol_type( sell_symbol ) );
    asset_symbol_type symbol_a;
    asset_symbol_type symbol_b;
    if( buy_asset.id < sell_asset.id )
@@ -56,7 +56,7 @@ market_ticker market_history_api_impl::get_ticker( string buy_symbol, string sel
 
    if( current_itr != duration_idx.end() )
    {
-      price current_price = current_itr->close_price_real( asset_symbol_type( sell_symbol ) );
+      double current_price = current_itr->close_price_real( asset_symbol_type( sell_symbol ) );
       result.last_price = current_price;
    }
    else
@@ -107,12 +107,12 @@ market_ticker market_history_api_impl::get_ticker( string buy_symbol, string sel
    order_book orders = get_order_book( buy_symbol, sell_symbol, 1 );    // Get top orders for bid and ask
    if( orders.bids.size() )
    {
-      result.highest_bid = orders.bids[0].price;
+      result.highest_bid = orders.bids[0].order_price.to_real();
    }
       
    if( orders.asks.size() )
    {
-      result.lowest_ask = orders.asks[0].price;
+      result.lowest_ask = orders.asks[0].order_price.to_real();
    }
       
    auto volume = get_volume( buy_symbol, sell_symbol );
@@ -402,11 +402,11 @@ market_history_api::market_history_api( const node::app::api_context& ctx )
 
 void market_history_api::on_api_startup() {}
 
-market_ticker market_history_api::get_ticker() const
+market_ticker market_history_api::get_ticker( string buy_symbol, string sell_symbol ) const
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
-      return my->get_ticker();
+      return my->get_ticker( buy_symbol, sell_symbol );
    });
 }
 
@@ -414,7 +414,7 @@ market_volume market_history_api::get_volume( string buy_symbol, string sell_sym
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
-      return my->get_volume();
+      return my->get_volume( buy_symbol, sell_symbol );
    });
 }
 
@@ -422,7 +422,7 @@ order_book market_history_api::get_order_book( string buy_symbol, string sell_sy
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
-      return my->get_order_book( limit );
+      return my->get_order_book( buy_symbol, sell_symbol, limit );
    });
 }
 
@@ -430,7 +430,7 @@ std::vector< market_trade > market_history_api::get_trade_history( string buy_sy
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
-      return my->get_trade_history( start, end, limit );
+      return my->get_trade_history( buy_symbol, sell_symbol, start, end, limit );
    });
 }
 
@@ -438,7 +438,7 @@ std::vector< market_trade > market_history_api::get_recent_trades( string buy_sy
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
-      return my->get_recent_trades( limit );
+      return my->get_recent_trades( buy_symbol, sell_symbol, limit );
    });
 }
 
@@ -446,7 +446,7 @@ std::vector< candle_stick > market_history_api::get_market_history( string buy_s
 {
    return my->app.chain_database()->with_read_lock( [&]()
    {
-      return my->get_market_history( seconds, start, end );
+      return my->get_market_history( buy_symbol, sell_symbol, seconds, start, end );
    });
 }
 

@@ -49,6 +49,7 @@ namespace node { namespace protocol {
             subscribe_governance_operation,
             update_supernode_operation,
             update_interface_operation,
+            update_mediator_operation,
             create_community_enterprise_operation,
             claim_enterprise_milestone_operation,
             approve_enterprise_milestone_operation,
@@ -104,7 +105,6 @@ namespace node { namespace protocol {
             unstake_asset_route_operation,
             transfer_to_savings_operation,
             transfer_from_savings_operation,
-            cancel_transfer_from_savings_operation,
             delegate_asset_operation,
 
             // Escrow Operations

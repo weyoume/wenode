@@ -96,7 +96,7 @@ struct market_duration_object : public object< market_duration_object_type, mark
 
    asset                volume_b;          // The exchanged amount of asset B.
 
-   price open_price_real( asset_symbol_type base )const 
+   double open_price_real( asset_symbol_type base )const 
    {
       if( base == symbol_a )
       {
@@ -104,10 +104,10 @@ struct market_duration_object : public object< market_duration_object_type, mark
       }
       else
       {
-         return ~open_price.to_real();
+         return (~open_price).to_real();
       }
    }
-   price high_price_real( asset_symbol_type base )const 
+   double high_price_real( asset_symbol_type base )const 
    {
       if( base == symbol_a )
       {
@@ -115,10 +115,10 @@ struct market_duration_object : public object< market_duration_object_type, mark
       }
       else
       {
-         return ~high_price.to_real();
+         return (~high_price).to_real();
       }
    }
-   price low_price_real( asset_symbol_type base )const 
+   double low_price_real( asset_symbol_type base )const 
    {
       if( base == symbol_a )
       {
@@ -126,10 +126,10 @@ struct market_duration_object : public object< market_duration_object_type, mark
       }
       else
       {
-         return ~low_price.to_real();
+         return (~low_price).to_real();
       }
    }
-   price close_price_real( asset_symbol_type base )const 
+   double close_price_real( asset_symbol_type base )const 
    {
       if( base == symbol_a )
       {
@@ -137,7 +137,7 @@ struct market_duration_object : public object< market_duration_object_type, mark
       }
       else
       {
-         return ~close_price.to_real();
+         return (~close_price).to_real();
       }
    }
 };
@@ -157,6 +157,16 @@ struct order_history_object : public object< order_history_object_type, order_hi
    fc::time_point                       time;
 
    protocol::fill_order_operation       op;
+
+   asset_symbol_type                    symbol_a() const 
+   {
+      return op.symbol_a;
+   }
+
+   asset_symbol_type                    symbol_b() const 
+   {
+      return op.symbol_b;
+   }
 };
 
 typedef oid< order_history_object > order_history_id_type;
@@ -201,7 +211,7 @@ typedef multi_index_container<
       ordered_unique< tag< by_duration >,
          composite_key< market_duration_object,
             member< market_duration_object, uint32_t, &market_duration_object::seconds >,
-            member< market_duration_object, time_point, &market_duration_object::open >
+            member< market_duration_object, time_point, &market_duration_object::open_time >
          >,
          composite_key_compare< std::less< uint32_t >, std::less< fc::time_point > >
       >
@@ -218,8 +228,8 @@ typedef multi_index_container<
       ordered_non_unique< tag< by_time >, member< order_history_object, time_point, &order_history_object::time > >,
       ordered_unique< tag< by_old_asset_pair >,
          composite_key< order_history_object,
-            member< order_history_object, asset_symbol_type, &order_history_object::op.symbol_a >,
-            member< order_history_object, asset_symbol_type, &order_history_object::op.symbol_b >,
+            const_mem_fun< order_history_object, asset_symbol_type, &order_history_object::symbol_a >,
+            const_mem_fun< order_history_object, asset_symbol_type, &order_history_object::symbol_b >,
             member< order_history_object, time_point, &order_history_object::time >,
             member< order_history_object, order_history_id_type, &order_history_object::id >
          >,
@@ -232,8 +242,8 @@ typedef multi_index_container<
       >,
       ordered_unique< tag< by_new_asset_pair >,
          composite_key< order_history_object,
-            member< order_history_object, asset_symbol_type, &order_history_object::op.symbol_a >,
-            member< order_history_object, asset_symbol_type, &order_history_object::op.symbol_b >,
+            const_mem_fun< order_history_object, asset_symbol_type, &order_history_object::symbol_a >,
+            const_mem_fun< order_history_object, asset_symbol_type, &order_history_object::symbol_b >,
             member< order_history_object, time_point, &order_history_object::time >,
             member< order_history_object, order_history_id_type, &order_history_object::id >
          >,

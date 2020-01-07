@@ -39,7 +39,7 @@ namespace node { namespace chain {
 
          shared_string               json;              // Public plaintext json information about the board, its topic and rules.
 
-         format_types                format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
+         ad_format_type                format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
 
          time_point                  created;           // Time creative was made.
 
@@ -117,7 +117,7 @@ namespace node { namespace chain {
 
          shared_string                    inventory_id;      // uuidv4 to refer to the inventory.
 
-         metric_types                     metric;            // Type of expense metric used.
+         ad_metric_type                     metric;            // Type of expense metric used.
 
          shared_string                    audience_id;       // ad audience_id, containing a set of usernames of viewing accounts in their userbase.
 
@@ -225,7 +225,7 @@ namespace node { namespace chain {
 
          asset                            bid_price;         // Price offered per metric. Asset symbol must be the same as the inventory price.
 
-         metric_types                     metric;            // Type of expense metric used.
+         ad_metric_type                     metric;            // Type of expense metric used.
 
          uint32_t                         requested;         // Maximum total metrics requested.
 
@@ -332,11 +332,11 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_metric >,
             composite_key< ad_inventory_object,
-               member< ad_inventory_object, metric_types, &ad_inventory_object::metric >,
+               member< ad_inventory_object, ad_metric_type, &ad_inventory_object::metric >,
                member< ad_inventory_object, asset, &ad_inventory_object::min_price >,
                member< ad_inventory_object, ad_inventory_id_type, &ad_inventory_object::id >
             >,
-            composite_key_compare< std::less< metric_types >, std::less< asset >, std::less< ad_inventory_id_type > >
+            composite_key_compare< std::less< ad_metric_type >, std::less< asset >, std::less< ad_inventory_id_type > >
          > 
       >,
       allocator< ad_inventory_object >
@@ -431,13 +431,13 @@ namespace node { namespace chain {
          ordered_unique< tag< by_provider_metric_price >,
             composite_key< ad_bid_object,
                member< ad_bid_object, account_name_type, &ad_bid_object::provider >,
-               member< ad_bid_object, metric_types, &ad_bid_object::metric >,
+               member< ad_bid_object, ad_metric_type, &ad_bid_object::metric >,
                member< ad_bid_object, asset, &ad_bid_object::bid_price >,
                member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
             >,
             composite_key_compare<
                std::less< account_name_type >,
-               std::less< metric_types >,
+               std::less< ad_metric_type >,
                std::greater< asset >,
                std::less< ad_bid_id_type >
             >

@@ -416,7 +416,7 @@ void database::update_network_officer_votes( const account_object& account )
    const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    auto vote_itr = vote_idx.lower_bound( account.name );
 
-   flat_map< network_officer_types, uint16_t > vote_rank;
+   flat_map< network_officer_role_type, uint16_t > vote_rank;
    vote_rank[ DEVELOPMENT ] = 1;
    vote_rank[ MARKETING ] = 1;
    vote_rank[ ADVOCACY ] = 1;
@@ -446,12 +446,12 @@ void database::update_network_officer_votes( const account_object& account )
  * at a specified vote number.
  */
 void database::update_network_officer_votes( const account_object& account, const account_name_type& network_officer, 
-   network_officer_types officer_type, uint16_t input_vote_rank )
+   network_officer_role_type officer_type, uint16_t input_vote_rank )
 {
    const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    auto vote_itr = vote_idx.lower_bound( account.name );
 
-   flat_map< network_officer_types, uint16_t > vote_rank;
+   flat_map< network_officer_role_type, uint16_t > vote_rank;
    vote_rank[ DEVELOPMENT ] = 1;
    vote_rank[ MARKETING ] = 1;
    vote_rank[ ADVOCACY ] = 1;
@@ -708,7 +708,7 @@ void database::update_account_executive_votes( const account_object& account, co
    const auto& vote_idx = get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
 
-   flat_map< executive_types, uint16_t >vote_rank;
+   flat_map< executive_role_type, uint16_t >vote_rank;
    vote_rank[ CHIEF_EXECUTIVE_OFFICER ] = 1;
    vote_rank[ CHIEF_OPERATING_OFFICER ] = 1;
    vote_rank[ CHIEF_FINANCIAL_OFFICER ] = 1;
@@ -743,12 +743,12 @@ void database::update_account_executive_votes( const account_object& account, co
  * at a specified vote number.
  */
 void database::update_account_executive_votes( const account_object& account, const account_name_type& business, const account_object& executive,
-   executive_types role, uint16_t input_vote_rank )
+   executive_role_type role, uint16_t input_vote_rank )
 {
    const auto& vote_idx = get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
 
-   flat_map< executive_types, uint16_t >vote_rank;
+   flat_map< executive_role_type, uint16_t >vote_rank;
    vote_rank[ CHIEF_EXECUTIVE_OFFICER ] = 1;
    vote_rank[ CHIEF_OPERATING_OFFICER ] = 1;
    vote_rank[ CHIEF_FINANCIAL_OFFICER ] = 1;

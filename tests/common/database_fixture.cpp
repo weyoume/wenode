@@ -226,10 +226,10 @@ const account_object& database_fixture::account_create(
       op.owner = authority( 1, key, 1 );
       op.active = authority( 1, key, 1 );
       op.posting = authority( 1, post_key, 1 );
-      op.secure_public_key = key;
-      op.connection_public_key = key;
-      op.friend_public_key = key;
-      op.companion_public_key = key;
+      op.secure_public_key = string( key );
+      op.connection_public_key = string( key );
+      op.friend_public_key = string( key );
+      op.companion_public_key = string( key );
       op.fee = asset( fee, SYMBOL_COIN );
       op.delegation = asset( 0, SYMBOL_COIN );
       
@@ -252,7 +252,6 @@ const account_object& database_fixture::account_create(
 const account_object& database_fixture::account_create(
    const string& name,
    const public_key_type& owner_key,
-   const public_key_type& active_key,
    const public_key_type& posting_key
 )
 {
@@ -264,8 +263,8 @@ const account_object& database_fixture::account_create(
          INIT_ACCOUNT,
          init_account_priv_key,
          std::max( db.get_witness_schedule().median_props.account_creation_fee.amount, share_type( 100 ) ),
-         key,
-         post_key,
+         owner_key,
+         posting_key,
          "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.",
          "https://en.wikipedia.org/wiki/Loch_Ness_Monster",
          "{\"cookie_price\":\"3.50 MUSD\"}" );
@@ -313,10 +312,10 @@ const account_object& database_fixture::profile_create(
       op.owner = authority( 1, key, 1 );
       op.active = authority( 1, key, 1 );
       op.posting = authority( 1, post_key, 1 );
-      op.secure_public_key = key;
-      op.connection_public_key = key;
-      op.friend_public_key = key;
-      op.companion_public_key = key;
+      op.secure_public_key = string( key );
+      op.connection_public_key = string( key );
+      op.friend_public_key = string( key );
+      op.companion_public_key = string( key );
       op.fee = asset( fee, SYMBOL_COIN );
       op.delegation = asset( 0, SYMBOL_COIN );
       
@@ -368,10 +367,10 @@ const account_object& database_fixture::business_create(
       op.owner = authority( 1, key, 1 );
       op.active = authority( 1, key, 1 );
       op.posting = authority( 1, post_key, 1 );
-      op.secure_public_key = key;
-      op.connection_public_key = key;
-      op.friend_public_key = key;
-      op.companion_public_key = key;
+      op.secure_public_key = string( key );
+      op.connection_public_key = string( key );
+      op.friend_public_key = string( key );
+      op.companion_public_key = string( key );
       op.fee = asset( fee, SYMBOL_COIN );
       op.delegation = asset( 0, SYMBOL_COIN );
       op.business_type = PUBLIC_BUSINESS;
@@ -414,7 +413,7 @@ const board_object& database_fixture::board_create(
       op.name = name;
       op.board_type = BOARD;
       op.board_privacy = OPEN_BOARD;
-      op.board_public_key = board_key;
+      op.board_public_key = string( board_key );
       op.json = json;
       op.json_private = json;
       op.details = details;
@@ -440,7 +439,7 @@ const asset_object& database_fixture::asset_create(
    const string& symbol,
    const string& issuer,
    const private_key_type& issuer_key,
-   const string& asset_type,
+   const asset_property_type& asset_type,
    const string& details,
    const string& url,
    const string& json,
@@ -460,7 +459,6 @@ const asset_object& database_fixture::asset_create(
       op.credit_liquidity = asset( liquidity, SYMBOL_CREDIT );
       op.common_options.display_symbol = symbol;
       op.common_options.json = json;
-      op.common_options.json_private = json;
       op.common_options.details = details;
       op.common_options.url = url;
       
@@ -473,11 +471,11 @@ const asset_object& database_fixture::asset_create(
       trx.operations.clear();
       trx.signatures.clear();
 
-      const board_object& board = db.get_board( name );
+      const asset_object& asset = db.get_asset( symbol );
 
-      return board;
+      return asset;
    }
-   FC_CAPTURE_AND_RETHROW( (name)(founder) )
+   FC_CAPTURE_AND_RETHROW()
 }
 
 const witness_object& database_fixture::witness_create(
@@ -495,7 +493,7 @@ const witness_object& database_fixture::witness_create(
       op.details = "details";
       op.url = "url";
       op.json = "{\"json\":\"valid\"}";
-      op.block_signing_key = signing_key;
+      op.block_signing_key = string( signing_key );
       op.fee = asset( fee, SYMBOL_COIN );
 
       trx.operations.push_back( op );
@@ -508,7 +506,7 @@ const witness_object& database_fixture::witness_create(
 
       return db.get_witness( owner );
    }
-   FC_CAPTURE_AND_RETHROW( (owner)(url) )
+   FC_CAPTURE_AND_RETHROW( (owner) )
 }
 
 const comment_object& database_fixture::comment_create(
@@ -527,12 +525,12 @@ const comment_object& database_fixture::comment_create(
       op.title = "test";
       op.body = "test";
       op.board = INIT_BOARD;
-      op.post_type = TEXT_POST;
+      op.options.post_type = TEXT_POST;
       op.language = "en";
-      op.privacy = false;
-      op.reach = TAG_FEED;
+      op.options.privacy = false;
+      op.options.reach = TAG_FEED;
       op.interface = INIT_ACCOUNT;
-      op.rating = GENERAL;
+      op.options.rating = GENERAL;
       op.tags.push_back( "test" );
       op.json = "{\"json\":\"valid\"}";
 
@@ -544,21 +542,9 @@ const comment_object& database_fixture::comment_create(
       trx.operations.clear();
       trx.signatures.clear();
 
-      return db.get_comment( boost::make_tuple( author, permlink ) );
+      return db.get_comment( author, permlink );
    }
-   FC_CAPTURE_AND_RETHROW( (owner)(url) )
-}
-
-void database_fixture::fund(
-   const string& account_name,
-   const share_type& amount
-   )
-{
-   try
-   {
-      transfer( GENESIS_ACCOUNT_BASE_NAME, account_name, amount );
-
-   } FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
+   FC_CAPTURE_AND_RETHROW( (author)(permlink) )
 }
 
 void database_fixture::fund(
@@ -576,42 +562,19 @@ void database_fixture::fund(
    FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
 
-void database_fixture::transfer(
-   const string& from,
-   const string& to,
-   const share_type& amount )
+void database_fixture::fund_stake(
+   const string& account_name,
+   const asset& amount
+   )
 {
    try
    {
-      transfer_operation op;
-      op.from = from;
-      op.to = to;
-      op.amount = amount;
-      op.memo = "Memo: ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-
-      trx.operations.push_back( op );
-      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.validate();
-      db.push_transaction( trx, ~0 );
-      trx.operations.clear();
-   } FC_CAPTURE_AND_RETHROW( (from)(to)(amount) )
-}
-
-void database_fixture::stake( const string& from, const share_type& amount )
-{
-   try
-   {
-      stake_asset_operation op;
-      op.from = from;
-      op.to = "";
-      op.amount = asset( amount, SYMBOL_COIN );
-
-      trx.operations.push_back( op );
-      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.validate();
-      db.push_transaction( trx, ~0 );
-      trx.operations.clear();
-   } FC_CAPTURE_AND_RETHROW( (from)(amount) )
+      db_plugin->debug_update( [=]( database& db)
+      {
+         db.adjust_staked_balance( account_name, amount );
+      }, default_skip );
+   }
+   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
 
 void database_fixture::fund_stake(
@@ -623,7 +586,22 @@ void database_fixture::fund_stake(
    {
       db_plugin->debug_update( [=]( database& db)
       {
-         db.adjust_staked_balance( account_name, amount );
+         db.adjust_reward_balance( account_name, amount );
+      }, default_skip );
+   }
+   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
+}
+
+void database_fixture::fund_savings(
+   const string& account_name,
+   const asset& amount
+   )
+{
+   try
+   {
+      db_plugin->debug_update( [=]( database& db)
+      {
+         db.adjust_savings_balance( account_name, amount );
       }, default_skip );
    }
    FC_CAPTURE_AND_RETHROW( (account_name)(amount) )

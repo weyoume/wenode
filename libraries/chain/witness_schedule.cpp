@@ -279,9 +279,9 @@ void update_median_witness_props( database& db )
 
    std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
    {
-      return a->props.executive_types_amount < b->props.executive_types_amount;
+      return a->props.executive_role_type_amount < b->props.executive_role_type_amount;
    });
-   new_props.executive_types_amount = active[ offset ]->props.executive_types_amount;
+   new_props.executive_role_type_amount = active[ offset ]->props.executive_role_type_amount;
 
    std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
    {
@@ -318,47 +318,6 @@ void update_median_witness_props( database& db )
    });
 }
 
-// Shuffle current producer sets
-// High performance random generator using 256 bits of internal state.
-// http://xorshift.di.unimi.it/
-vector< account_name_type > shuffle_producers( database& db, vector< account_name_type >& producer_set )  
-{
-   auto now_hi = uint64_t(db.head_block_time().time_since_epoch().count()) << 32;
-   for( uint32_t i = 0; i < producer_set.size(); ++i )
-   {
-      uint64_t k = now_hi +      uint64_t(i)*26857571057736338717ULL;
-      uint64_t l = now_hi >> 1 + uint64_t(i)*95198191871878293511ULL;
-      uint64_t m = now_hi >> 2 + uint64_t(i)*58919729024841961988ULL;
-      uint64_t n = now_hi >> 3 + uint64_t(i)*27137164109707054410ULL;
-      
-      k ^= (l >> 7);
-      l ^= (m << 9);
-      m ^= (n >> 5);
-      n ^= (k << 3);
-
-      k*= 14226572565896741612ULL;
-      l*= 91985878658736871034ULL;
-      m*= 30605588311672529089ULL;
-      n*= 43069213742576315243ULL;
-
-      k ^= (l >> 2);
-      l ^= (m << 4);
-      m ^= (n >> 1);
-      n ^= (k << 9);
-
-      k*= 79477756532752495704ULL;
-      l*= 94908025588282034792ULL;
-      m*= 26941980616458623416ULL;
-      n*= 31902236862011382134ULL;
-
-      uint64_t rand = (k ^ l) ^ (m ^ n) ; 
-      uint32_t max = producer_set.size() - i;
-
-      uint32_t j = i + rand % max;
-      std::swap( producer_set[i], producer_set[j] );
-   }
-}
-
 void update_witness_schedule( database& db )
 {
    if( (db.head_block_num() % TOTAL_PRODUCERS) == 0 ) //  wso.next_shuffle_block_num 
@@ -387,7 +346,7 @@ void update_witness_schedule( database& db )
       flat_set< witness_id_type > top_witnesses;
       top_witnesses.reserve( wso.dpos_witness_producers );
                  
-      const auto& widx = db.get_index<witness_index>().indices().get<by_voting_power>();
+      const auto& widx = db.get_index< witness_index >().indices().get< by_voting_power >();
       for( auto itr = widx.begin();
          itr != widx.end() && top_witnesses.size() < max_witnesses;
          ++itr )
@@ -395,7 +354,7 @@ void update_witness_schedule( database& db )
          if( itr->signing_key == public_key_type() )
             continue;
          top_witnesses.insert( itr->id );
-         active_witnesses.push_back( itr->owner);
+         active_witnesses.push_back( itr->owner );
          db.modify( *itr, [&]( witness_object& wo ) 
          { 
             wo.schedule = witness_object::top_witness; 
@@ -548,7 +507,7 @@ void update_witness_schedule( database& db )
       if( reset_miner_virtual_time )
       {
          new_miner_virtual_time = fc::uint128();
-         reset_miner_virtual_schedule_time(db);
+         reset_miner_virtual_schedule_time( db );
       }
 
       size_t active_producers = active_witnesses.size() + active_miners.size();
@@ -638,8 +597,8 @@ void update_witness_schedule( database& db )
          });
       }
 
-      vector< account_name_type > shuffled_witnesses = shuffle_producers( db, active_witnesses ); // Shuffle the active witnesses
-      vector< account_name_type > shuffled_miners = shuffle_producers( db, active_miners ); // Shuffle the active miners
+      vector< account_name_type > shuffled_witnesses = db.shuffle_accounts( active_witnesses );     // Shuffle the active witnesses
+      vector< account_name_type > shuffled_miners = db.shuffle_accounts( active_miners );     // Shuffle the active miners
       size_t expected_active_producers = std::min( size_t( TOTAL_PRODUCERS ), widx.size()+ midx.size() );
 
       for( size_t i = shuffled_witnesses.size(); i < max_witnesses; i++ )

@@ -54,42 +54,6 @@ enum withdraw_route_type
    all
 };
 
-enum sort_time
-{
-   NO_TIME          = 'none',
-   ACTIVE_TIME      = 'active',
-   RAPID_TIME       = 'rapid',
-   STANDARD_TIME    = 'standard',
-   TOP_TIME         = 'top',
-   ELITE_TIME       = 'elite'
-};
-
-enum sort_type
-{
-   NO_SORT             = 'none',
-   VOTES_SORT          = 'votes',
-   VIEWS_SORT          = 'views',
-   SHARES_SORT         = 'shares',
-   COMMENTS_SORT       = 'comments',
-   QUALITY_SORT        = 'quality',
-   POPULAR_SORT        = 'popular',
-   VIRAL_SORT          = 'viral',
-   DISCUSSION_SORT     = 'discussion',
-   PROMINENT_SORT      = 'prominent',
-   CONVERSATION_SORT   = 'conversation',
-   DISCOURSE_SORT      = 'discourse'
-};
-
-enum post_time_type
-{
-   ALL_TIME         = 'all',
-   LAST_HOUR        = 'hour',
-   LAST_DAY         = 'day',
-   LAST_WEEK        = 'week',
-   LAST_MONTH       = 'month',
-   LAST_YEAR        = 'year'
-};
-
 class database_api_impl;
 
 /**
@@ -339,11 +303,11 @@ class database_api
 
       vector< witness_api_obj >                       get_witnesses_by_mining_power( string from, uint32_t limit )const;
 
-      vector< network_officers_api_obj >              get_development_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_development_officers_by_voting_power( string from, uint32_t limit )const;
 
-      vector< network_officers_api_obj >              get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
 
-      vector< network_officers_api_obj >              get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
 
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
@@ -439,7 +403,7 @@ class database_api
 
       vector< tag_api_obj >                get_top_tags( string after_tag, uint32_t limit )const;
 
-      vector< pair< string,uint32_t > >    get_tags_used_by_author( string author )const;
+      vector< pair< tag_name_type, uint32_t > >   get_tags_used_by_author( string author )const;
 
 
       //=====================//
@@ -465,8 +429,6 @@ class database_api
 
       vector< discussion >                 get_discussions_by_active( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_cashout( const discussion_query& query )const;
-
       vector< discussion >                 get_discussions_by_votes( const discussion_query& query )const;
 
       vector< discussion >                 get_discussions_by_views( const discussion_query& query )const;
@@ -490,8 +452,6 @@ class database_api
       vector< discussion >                 get_discussions_by_recommended( const discussion_query& query )const;
 
       vector< discussion >                 get_discussions_by_comments( const discussion_query& query )const;
-      
-      vector< discussion >                 get_discussions_by_author_before_date( string author, string start_permlink, time_point before_date, uint32_t limit )const;
 
 
       //===============//
@@ -509,7 +469,6 @@ class database_api
       void on_api_startup();
 
    private:
-      void set_pending_payout( discussion& d )const;
       void set_url( discussion& d )const;
       discussion get_discussion( comment_id_type, uint32_t truncate_body = 0 )const;
 
@@ -558,30 +517,6 @@ FC_REFLECT_ENUM( node::app::withdraw_route_type,
          (incoming)
          (outgoing)
          (all)
-         );
-
-FC_REFLECT_ENUM( node::app::sort_time,
-         (NO_TIME)
-         (ACTIVE_TIME)
-         (RAPID_TIME)
-         (STANDARD_TIME)
-         (TOP_TIME)
-         (ELITE_TIME)
-         );
-
-FC_REFLECT_ENUM( node::app::sort_type,
-         (NO_SORT)
-         (VOTES_SORT)
-         (VIEWS_SORT)
-         (SHARES_SORT)
-         (COMMENTS_SORT)
-         (QUALITY_SORT)
-         (POPULAR_SORT)
-         (VIRAL_SORT)
-         (DISCUSSION_SORT)
-         (PROMINENT_SORT)
-         (CONVERSATION_SORT)
-         (DISCOURSE_SORT)
          );
 
 FC_REFLECT( node::app::discussion_query,
@@ -745,7 +680,6 @@ FC_API( node::app::database_api,
          (get_discussions_by_index)
          (get_discussions_by_created)
          (get_discussions_by_active)
-         (get_discussions_by_cashout)
          (get_discussions_by_votes)
          (get_discussions_by_views)
          (get_discussions_by_shares)
@@ -755,5 +689,4 @@ FC_API( node::app::database_api,
          (get_discussions_by_recommended)
          (get_discussions_by_comments)
          (get_replies_by_last_update)
-         (get_discussions_by_author_before_date)
          );

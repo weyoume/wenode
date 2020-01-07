@@ -7,9 +7,7 @@
 #include <node/chain/node_objects.hpp>
 #include <node/chain/transaction_object.hpp>
 #include <node/chain/witness_objects.hpp>
-
 #include <node/tags/tags_plugin.hpp>
-
 #include <node/witness/witness_objects.hpp>
 
 namespace node { namespace app {
@@ -39,16 +37,14 @@ struct comment_api_obj
       author( o.author ),
       permlink( to_string( o.permlink ) ),
       title( to_string( o.title ) ),
-      post_type( to_string( o.post_type ) ),
+      post_type( post_format_values[ o.post_type ] ),
       privacy( o.privacy ),
-      public_key( to_string( o.public_key ) ),
-      reach( to_string( o.reach ) ),
+      public_key( o.public_key ),
+      reach( feed_reach_values[ o.reach ] ),
       board( o.board ),
       body( to_string( o.body ) ),
-      ipfs( to_string( o.ipfs ) ),
-      magnet( to_string( o.magnet ) ),
       interface( o.interface ),
-      rating( to_string( o.rating ) ),
+      rating( post_rating_values[ o.rating ] ),
       language( to_string( o.language ) ),
       root_comment( o.root_comment ),
       parent_author( o.parent_author ),
@@ -60,7 +56,7 @@ struct comment_api_obj
       created( o.created ),
       active( o.active ),
       last_payout( o.last_payout ),
-      author_reputation( o.author_reputation ),
+      author_reputation( o.author_reputation.value ),
       depth( o.depth ),
       children( o.children ),
       net_votes( o.net_votes ),
@@ -81,7 +77,7 @@ struct comment_api_obj
       curator_payout_value( o.curator_payout_value ),
       beneficiary_payout_value( o.beneficiary_payout_value ),
       content_rewards( o.content_rewards ),
-      percent_liquid( o.percent_liquid ),
+      percent_liquid( o.percent_liquid.value ),
       reward( o.reward ),
       weight( o.weight ),
       max_weight( o.max_weight ),
@@ -98,21 +94,32 @@ struct comment_api_obj
       allow_shares( o.allow_shares ),
       allow_curation_rewards( o.allow_curation_rewards ),
       root( o.root ),
-      deleted( o.deleted ),
+      deleted( o.deleted )
       {
+         for( auto i : o.ipfs )
+         {
+            ipfs.push_back( to_string( i ) );
+         }
+         for( auto m : o.magnet )
+         {
+            magnet.push_back( to_string( m ) );
+         }
          for( auto tag: o.tags )
          {
             tags.push_back( tag );
          }
          for( auto pr: o.payments_received )
          {
-            payments_received.push_back( std::make_pair(pr.first, pr.second.second) );
+            for( auto as : pr.second )
+            {
+               payments_received.push_back( std::make_pair( pr.first, as.second ) );
+            }
          }
          for( auto& route : o.beneficiaries )
          {
             beneficiaries.push_back( route );
          }
-      },
+      }
       
    comment_api_obj(){}
 
@@ -122,13 +129,13 @@ struct comment_api_obj
    string                         title;                        // Name of the post for reference.
    string                         post_type;                    // The type of post that is being created, image, text, article, video etc. 
    bool                           privacy;                      // True if the post is encrypted. False if it is plaintext.
-   string                         public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
+   public_key_type                public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
    string                         reach;                        // The reach of the post across followers, connections, friends and companions
    board_name_type                board;                        // The name of the board to which the post is uploaded to. Null string if no board. 
    vector< tag_name_type >        tags;                         // Set of string tags for sorting the post by.
    string                         body;                         // String containing text for display when the post is opened.
-   string                         ipfs;                         // String containing a display image or video file as an IPFS file hash.
-   string                         magnet;                       // String containing a bittorrent magnet link to a file swarm.
+   vector< string >               ipfs;                         // String containing a display image or video file as an IPFS file hash.
+   vector< string >               magnet;                       // String containing a bittorrent magnet link to a file swarm.
    account_name_type              interface;                    // Name of the interface account that was used to broadcast the transaction and view the post.
    string                         rating;                       // User nominated rating as to the maturity of the content, and display sensitivity. 
    string                         language;                     // String containing a two letter language code that the post is broadcast in.
@@ -189,16 +196,16 @@ struct comment_api_obj
 
 struct blog_api_obj
 {
-   blog_api_obj( const chain::blog_object& o, const chain::database& db ):
+   blog_api_obj( const chain::blog_object& o ):
       id( o.id ),
       account( o.account ),
       board( o.board ),
       tag( o.tag ),
       comment( o.comment ),
-      blog_type( to_string( o.blog_type ) ),
+      blog_type( blog_reach_values[ o.blog_type ] ),
       first_shared_by( o.first_shared_by ),
       shares( o.shares ),
-      blog_time( o.blog_time ),
+      blog_time( o.blog_time )
       {
          for( auto s : o.shared_by )
          {
@@ -223,14 +230,14 @@ struct blog_api_obj
 
 struct feed_api_obj
 {
-   feed_api_obj( const chain::feed_object& o, const chain::database& db ):
+   feed_api_obj( const chain::feed_object& o ):
       id( o.id ),
       account( o.account ),
       comment( o.comment ),
-      feed_type( to_string( o.feed_type ) ),
+      feed_type( feed_reach_values[ o.feed_type ] ),
       first_shared_by( o.first_shared_by ),
       shares( o.shares ),
-      feed_time( o.feed_time ),
+      feed_time( o.feed_time )
       {
          for( auto s : o.shared_by )
          {
@@ -238,13 +245,19 @@ struct feed_api_obj
          }
          for( auto b : o.boards )
          {
-            boards[ b.first ][b.second.first] = b.second.second;
+            for( auto s : b.second )
+            {
+               boards[ b.first ][ s.first ] = s.second;
+            }
          }
          for( auto t : o.tags )
          {
-            tags[ t.first ][ t.second.first ] = t.second.second;
+            for( auto s : t.second )
+            {
+               tags[ t.first ][ s.first ] = s.second;
+            }
          }
-      },
+      }
 
    feed_api_obj(){}
 
@@ -263,19 +276,19 @@ struct feed_api_obj
 
 struct account_api_obj
 {
-   account_api_obj( const chain::account_object& a, const chain::database& db ):
+   account_api_obj( const chain::account_object& a, const database& db ):
       id( a.id ),
       name( a.name ),
       details( to_string( a.details ) ),
       json( to_string( a.json ) ),
       json_private( to_string( a.json_private ) ),
       url( to_string( a.url ) ),
-      account_type( to_string( a.account_type ) ),
-      membership( to_string( a.membership ) ),
-      secure_public_key( to_string( a.secure_public_key ) ),
-      connection_public_key( to_string( a.connection_public_key ) ),
-      friend_public_key( to_string( a.friend_public_key ) ),
-      companion_public_key( to_string( a.companion_public_key ) ),
+      account_type( account_identity_values[ a.account_type ] ),
+      membership( membership_tier_values[ a.membership ] ),
+      secure_public_key( a.secure_public_key ),
+      connection_public_key( a.connection_public_key ),
+      friend_public_key( a.friend_public_key ),
+      companion_public_key( a.companion_public_key ),
       pinned_post( a.pinned_post ),
       proxy( a.proxy ),
       registrar( a.registrar ),
@@ -296,13 +309,13 @@ struct account_api_obj
       commenting_power( a.commenting_power ),
       savings_withdraw_requests( a.savings_withdraw_requests ),
       withdraw_routes( a.withdraw_routes ),
-      posting_rewards( a.posting_rewards ),
-      curation_rewards( a.curation_rewards ),
-      moderation_rewards( a.moderation_rewards ),
-      total_rewards( a.total_rewards ),
-      author_reputation( a.author_reputation ),
+      posting_rewards( a.posting_rewards.value ),
+      curation_rewards( a.curation_rewards.value ),
+      moderation_rewards( a.moderation_rewards.value ),
+      total_rewards( a.total_rewards.value ),
+      author_reputation( a.author_reputation.value ),
       loan_default_balance( a.loan_default_balance ),
-      recent_activity_claims( a.recent_activity_claims),
+      recent_activity_claims( a.recent_activity_claims.value ),
       witness_vote_count( a.witness_vote_count ),
       officer_vote_count( a.officer_vote_count ),
       executive_board_vote_count( a.executive_board_vote_count ),
@@ -324,7 +337,7 @@ struct account_api_obj
       mined( a.mined ),
       revenue_share( a.revenue_share ),
       can_vote( a.can_vote ),
-      deleted( a.deleted ),
+      deleted( a.deleted )
       {
          const auto& auth = db.get< account_authority_object, by_account >( name );
          owner = authority( auth.owner );
@@ -338,8 +351,8 @@ struct account_api_obj
 
             if( forum_bandwidth != nullptr )
             {
-               average_bandwidth = forum_bandwidth->average_bandwidth;
-               lifetime_bandwidth = forum_bandwidth->lifetime_bandwidth;
+               average_bandwidth = (forum_bandwidth->average_bandwidth).value;
+               lifetime_bandwidth = (forum_bandwidth->lifetime_bandwidth).value;
                last_bandwidth_update = forum_bandwidth->last_bandwidth_update;
             }
 
@@ -347,8 +360,8 @@ struct account_api_obj
 
             if( market_bandwidth != nullptr )
             {
-               average_market_bandwidth = market_bandwidth->average_bandwidth;
-               lifetime_market_bandwidth = market_bandwidth->lifetime_bandwidth;
+               average_market_bandwidth = (market_bandwidth->average_bandwidth).value;
+               lifetime_market_bandwidth = (market_bandwidth->lifetime_bandwidth).value;
                last_market_bandwidth_update = market_bandwidth->last_bandwidth_update;
             }
          }
@@ -356,7 +369,7 @@ struct account_api_obj
          {
             proxied.push_back( name );
          }
-      },
+      }
 
    account_api_obj(){}
 
@@ -368,10 +381,10 @@ struct account_api_obj
    string                           url;                                   // Account's external reference URL.
    string                           account_type;                          // Type of account, persona, profile or business.
    string                           membership;                            // Level of account membership.
-   string                           secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
-   string                           connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
-   string                           friend_public_key;                     // Key used for encrypting posts for friend level visibility.
-   string                           companion_public_key;                  // Key used for encrypting posts for companion level visibility.
+   public_key_type                  secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
+   public_key_type                  connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
+   public_key_type                  friend_public_key;                     // Key used for encrypting posts for friend level visibility.
+   public_key_type                  companion_public_key;                  // Key used for encrypting posts for companion level visibility.
    authority                        owner;
    authority                        active;
    authority                        posting;
@@ -421,6 +434,13 @@ struct account_api_obj
    time_point                       last_account_recovery;
    time_point                       last_board_created;
    time_point                       last_asset_created;
+   time_point                       last_owner_update;
+   int64_t                          average_bandwidth;
+   int64_t                          lifetime_bandwidth;
+   time_point                       last_bandwidth_update;
+   int64_t                          average_market_bandwidth;
+   int64_t                          lifetime_market_bandwidth;
+   time_point                       last_market_bandwidth_update;
    bool                             mined;
    bool                             revenue_share;
    bool                             can_vote;
@@ -430,25 +450,25 @@ struct account_api_obj
 
 struct account_concise_api_obj
 {
-   account_concise_api_obj( const chain::account_object& a, const chain::database& db ):
+   account_concise_api_obj( const chain::account_object& a ):
       id( a.id ),
       name( a.name ),
       details( to_string( a.details ) ),
       json( to_string( a.json ) ),
       json_private( to_string( a.json_private ) ),
       url( to_string( a.url ) ),
-      account_type( to_string( a.account_type ) ),
-      membership( to_string( a.membership ) ),
-      secure_public_key( to_string( a.secure_public_key ) ),
-      connection_public_key( to_string( a.connection_public_key ) ),
-      friend_public_key( to_string( a.friend_public_key ) ),
-      companion_public_key( to_string( a.companion_public_key ) ),
+      account_type( account_identity_values[ a.account_type ] ),
+      membership( membership_tier_values[ a.membership ] ),
+      secure_public_key( a.secure_public_key ),
+      connection_public_key( a.connection_public_key ),
+      friend_public_key( a.friend_public_key ),
+      companion_public_key( a.companion_public_key ),
       pinned_post( a.pinned_post ),
       follower_count( a.follower_count ),
       following_count( a.following_count ),
-      total_rewards( a.total_rewards ),
-      author_reputation( a.author_reputation ),
-      created( a.created ),
+      total_rewards( a.total_rewards.value ),
+      author_reputation( a.author_reputation.value ),
+      created( a.created ){}
       
    account_concise_api_obj(){}
 
@@ -460,10 +480,10 @@ struct account_concise_api_obj
    string                           url;                                   // Account's external reference URL.
    string                           account_type;                          // Type of account, persona, profile or business.
    string                           membership;                            // Level of account membership.
-   string                           secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
-   string                           connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
-   string                           friend_public_key;                     // Key used for encrypting posts for friend level visibility.
-   string                           companion_public_key;                  // Key used for encrypting posts for companion level visibility.
+   public_key_type                  secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
+   public_key_type                  connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
+   public_key_type                  friend_public_key;                     // Key used for encrypting posts for friend level visibility.
+   public_key_type                  companion_public_key;                  // Key used for encrypting posts for companion level visibility.
    comment_id_type                  pinned_post;                        // Post pinned to the top of the account's profile. 
    uint32_t                         follower_count;                        // Number of account followers.
    uint32_t                         following_count;                       // Number of accounts that the account follows. 
@@ -475,27 +495,27 @@ struct account_concise_api_obj
 
 struct account_balance_api_obj
 {
-   account_balance_api_obj( const chain::account_balance_object& b, const chain::database& db ):
+   account_balance_api_obj( const chain::account_balance_object& b ):
       id( b.id ),
       owner( b.owner ),
       symbol( b.symbol ),
-      liquid_balance( b.liquid_balance ),
-      staked_balance( b.staked_balance ),
-      reward_balance( b.reward_balance ),
-      savings_balance( b.savings_balance ),
-      delegated_balance( b.delegated_balance ),
-      receiving_balance( b.receiving_balance ),
-      total_balance( b.total_balance ),
-      stake_rate( b.stake_rate ),
+      liquid_balance( b.liquid_balance.value ),
+      staked_balance( b.staked_balance.value ),
+      reward_balance( b.reward_balance.value ),
+      savings_balance( b.savings_balance.value ),
+      delegated_balance( b.delegated_balance.value ),
+      receiving_balance( b.receiving_balance.value ),
+      total_balance( b.total_balance.value ),
+      stake_rate( b.stake_rate.value ),
       next_stake_time( b.next_stake_time ),
-      to_stake( b.to_stake ),
-      total_staked( b.total_staked ),
-      unstake_rate( b.unstake_rate ),
+      to_stake( b.to_stake.value ),
+      total_staked( b.total_staked.value ),
+      unstake_rate( b.unstake_rate.value ),
       next_unstake_time( b.next_unstake_time ),
-      to_unstake( b.to_unstake ),
-      total_unstaked( b.total_unstaked ),
+      to_unstake( b.to_unstake.value ),
+      total_unstaked( b.total_unstaked.value ),
       last_interest_time( b.last_interest_time ),
-      maintenance_flag( b.maintenance_flag ),
+      maintenance_flag( b.maintenance_flag ){}
 
    account_balance_api_obj(){}
 
@@ -524,20 +544,20 @@ struct account_balance_api_obj
 
 struct account_business_api_obj
 {
-   account_business_api_obj( const chain::account_business_object& a, const chain::database& db ):
+   account_business_api_obj( const chain::account_business_object& a ):
       id( a.id ),
       account( a.account ),
-      business_type( to_string( a.business_type ) ),
+      business_type( business_structure_values[ a.business_type ] ),
       executive_board( a.executive_board ),
-      officer_vote_threshold( a.officer_vote_threshold ),
+      officer_vote_threshold( a.officer_vote_threshold.value )
       {
          for( auto name : a.executives )
          {
-            executives.push_back( std::make_pair( name.first, std::make_pair( to_string( name.second.first ), name.second.second ) ) );
+            executives.push_back( std::make_pair( name.first, std::make_pair( executive_role_values[ name.second.first ] , name.second.second.value ) ) );
          }
          for( auto name : a.officers )
          {
-            officers.push_back( std::make_pair( name.first, name.second.first ) );
+            officers.push_back( std::make_pair( name.first, name.second.value ) );
          }
          for( auto name : a.members )
          {
@@ -568,7 +588,7 @@ struct account_business_api_obj
    string                                                          business_type;              // Type of business account, controls authorizations for transactions of different types.
    executive_officer_set                                           executive_board;            // Set of highest voted executive accounts for each role.
    vector< pair< account_name_type, pair< string, int64_t > > >    executives;                 // Set of all executive names.    
-   vector< pair< account_name_type, int64_t>>                      officers;                   // Set of all officers in the business, and their supporting voting power.
+   vector< pair< account_name_type, int64_t > >                    officers;                   // Set of all officers in the business, and their supporting voting power.
    vector< account_name_type >                                     members;                    // Set of all members of the business.
    int64_t                                                         officer_vote_threshold;     // Amount of voting power required for an officer to be active. 
    vector<asset_symbol_type >                                      equity_assets;              // Set of equity assets that offer dividends and voting power over the business account's structure
@@ -580,10 +600,10 @@ struct account_business_api_obj
 
 struct account_following_api_obj
 {
-   account_following_api_obj( const chain::account_following_object& a, const chain::database& db ):
+   account_following_api_obj( const chain::account_following_object& a ):
       id( a.id ),
       account( a.account ),
-      last_update( a.last_update ),
+      last_update( a.last_update )
       { 
          for( auto name : a.followers )
          {
@@ -615,7 +635,7 @@ struct account_following_api_obj
          }
          for( auto tag : a.followed_tags )
          {
-            followed_tags.push_back( tags );
+            followed_tags.push_back( tag );
          }
          for( auto name : a.filtered )
          {
@@ -652,8 +672,8 @@ struct account_following_api_obj
 
 struct account_permission_api_obj
 {
-   account_permission_api_obj( const chain::account_permission_object& a, const chain::database& db ):
-      id( a.id ),
+   account_permission_api_obj( const chain::account_permission_object& a ):
+      id( a.id )
       {
          whitelisted_accounts.reserve( a.whitelisted_accounts.size() );
          for( auto name : a.whitelisted_accounts )
@@ -675,38 +695,41 @@ struct account_permission_api_obj
          {
             blacklisted_assets.push_back( name );
          }
-      },
+      }
+
    account_permission_api_obj(){}
 
+
+   account_permission_id_type               id;
    account_name_type                        account;                       // Name of the account with permissions set.
    vector< account_name_type >              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
    vector< account_name_type >              blacklisted_accounts;          // List of accounts that are not able to recieve transfers from this account.
    vector< asset_symbol_type >              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
    vector< asset_symbol_type >              blacklisted_assets;            // List of assets that the account has blacklisted against incoming transfers.
-}
+};
 
 
 struct message_api_obj
 {
-   message_api_obj( const chain::message_object& m, const chain::database& db ):
+   message_api_obj( const chain::message_object& m ):
       id( m.id ),
       sender( m.sender ),
       recipient( m.recipient ),
-      sender_public_key( to_string( m.sender_public_key ) ),
-      recipient_public_key( to_string ( m.recipient_public_key ) ),
+      sender_public_key( m.sender_public_key ),
+      recipient_public_key( m.recipient_public_key ),
       message( to_string( m.message ) ),
       json( to_string( m.json ) ),
       uuid( to_string( m.uuid ) ),
       created( m.created ),
-      last_updated( m.last_updated ),
+      last_updated( m.last_updated ){}
 
    message_api_obj(){}
 
    message_id_type         id;
    account_name_type       sender;                   // Name of the message sender.
    account_name_type       recipient;                // Name of the intended message recipient.
-   string                  sender_public_key;        // Public secure key of the sender.
-   string                  recipient_public_key;     // Public secure key of the recipient.
+   public_key_type         sender_public_key;        // Public secure key of the sender.
+   public_key_type         recipient_public_key;     // Public secure key of the recipient.
    string                  message;                  // Encrypted private message ciphertext.
    string                  json;                     // Encrypted Message metadata.
    string                  uuid;                     // uuidv4 uniquely identifying the message for local storage.
@@ -717,19 +740,19 @@ struct message_api_obj
 
 struct connection_api_obj
 {
-   connection_api_obj( const chain::connection_object& c, const chain::database& db ):
+   connection_api_obj( const chain::connection_object& c ):
       id( c.id ),
       account_a( c.account_a ),
       encrypted_key_a( c.encrypted_key_a ),
       account_b( c.account_b ),
       encrypted_key_b( c.encrypted_key_b ),
-      connection_type( to_string( c.connection_type ) ),
+      connection_type( connection_tier_values[ c.connection_type ] ),
       connection_id( to_string( c.connection_id ) ),
       connection_strength( c.connection_strength ),
       consecutive_days( c.consecutive_days ),
       last_message_time_a( c.last_message_time_a ),
       last_message_time_b( c.last_message_time_b ),
-      created( c.created ),
+      created( c.created ){}
 
    connection_api_obj(){}
 
@@ -750,13 +773,13 @@ struct connection_api_obj
 
 struct connection_request_api_obj
 {
-   connection_request_api_obj( const chain::connection_request_object& c, const chain::database& db ):
+   connection_request_api_obj( const chain::connection_request_object& c ):
       id( c.id ),
       account( c.account ),
       requested_account( c.requested_account ),
-      connection_type( to_string( c.connection_type ) ),
+      connection_type( connection_tier_values[ c.connection_type ] ),
       message( to_string( c.message ) ),
-      expiration( c.expiration ),
+      expiration( c.expiration ){}
 
    connection_request_api_obj(){}
 
@@ -770,12 +793,12 @@ struct connection_request_api_obj
 
 struct account_request_api_obj
 {
-   account_request_api_obj( const chain::account_member_request_object& o, const chain::database& db ):
+   account_request_api_obj( const chain::account_member_request_object& o ):
       id( o.id ),
       account( o.account ),
       business_account( o.business_account ),
       message( to_string( o.message ) ),
-      expiration( o.expiration ),
+      expiration( o.expiration ){}
 
    account_request_api_obj(){}
 
@@ -788,17 +811,17 @@ struct account_request_api_obj
 
 struct account_invite_api_obj
 {
-   account_invite_api_obj( const chain::account_member_invite_object& o, const chain::database& db ):
+   account_invite_api_obj( const chain::account_member_invite_object& o ):
       id( o.id ),
       account( o.account ),
       business_account( o.business_account ),
       member( o.member ),
       message( to_string( o.message ) ),
-      expiration( o.expiration ),
+      expiration( o.expiration ){}
 
    account_invite_api_obj(){}
 
-   account_member_request_id_type          id;                 
+   account_member_invite_id_type           id;                 
    account_name_type                       account;             
    account_name_type                       business_account; 
    account_name_type                       member;      
@@ -809,12 +832,12 @@ struct account_invite_api_obj
 
 struct board_request_api_obj
 {
-   board_request_api_obj( const chain::board_join_request_object& o, const chain::database& db ):
+   board_request_api_obj( const chain::board_join_request_object& o ):
       id( o.id ),
       account( o.account ),
       board( o.board),
       message( to_string( o.message ) ),
-      expiration( o.expiration ),
+      expiration( o.expiration ){}
 
    board_request_api_obj(){}
 
@@ -828,17 +851,17 @@ struct board_request_api_obj
 
 struct board_invite_api_obj
 {
-   board_invite_api_obj( const chain::board_join_invite_object& o, const chain::database& db ):
+   board_invite_api_obj( const chain::board_join_invite_object& o ):
       id( o.id ),
       account( o.account ),
       board( o.board ),
       member( o.member ),
       message( to_string( o.message ) ),
-      expiration( o.expiration ),
+      expiration( o.expiration ){}
 
    board_invite_api_obj(){}
 
-   account_member_request_id_type          id;                 
+   board_join_invite_id_type               id;                 
    account_name_type                       account;             
    board_name_type                         board; 
    account_name_type                       member;      
@@ -849,14 +872,14 @@ struct board_invite_api_obj
 
 struct transfer_request_api_obj
 {
-   transfer_request_api_obj( const chain::transfer_request_object& o, const chain::database& db ):
+   transfer_request_api_obj( const chain::transfer_request_object& o ):
       id( o.id ),
       to( o.to ),
       from( o.from ),
       amount( o.amount ),
       request_id( to_string( o.request_id ) ),
       memo( to_string( o.memo ) ),
-      expiration( o.expiration ),
+      expiration( o.expiration ){}
 
    transfer_request_api_obj(){}
 
@@ -872,7 +895,7 @@ struct transfer_request_api_obj
 
 struct transfer_recurring_api_obj
 {
-   transfer_recurring_api_obj( const chain::transfer_recurring_object& o, const chain::database& db ):
+   transfer_recurring_api_obj( const chain::transfer_recurring_object& o ):
       id( o.id ),
       from( o.from ),
       to( o.to ),
@@ -882,7 +905,7 @@ struct transfer_recurring_api_obj
       begin( o.begin ),
       end( o.end ),
       interval( o.interval ),
-      next_transfer( o.next_transfer ),
+      next_transfer( o.next_transfer ){}
 
    transfer_recurring_api_obj(){}
 
@@ -901,7 +924,7 @@ struct transfer_recurring_api_obj
 
 struct transfer_recurring_request_api_obj
 {
-   transfer_recurring_api_obj( const chain::transfer_recurring_request_object& o, const chain::database& db ):
+   transfer_recurring_request_api_obj( const chain::transfer_recurring_request_object& o ):
       id( o.id ),
       from( o.from ),
       to( o.to ),
@@ -911,32 +934,32 @@ struct transfer_recurring_request_api_obj
       begin( o.begin ),
       end( o.end ),
       interval( o.interval ),
-      expiration( o.next_transfer ),
+      expiration( o.expiration ){}
 
-   transfer_recurring_api_obj(){}
+   transfer_recurring_request_api_obj(){}
 
-   transfer_recurring_id_type        id;
-   account_name_type                 from;              // Sending account to transfer asset from.
-   account_name_type                 to;                // Recieving account to transfer asset to.
-   asset                             amount;            // The amount of asset to transfer for each payment interval.
-   string                            request_id;        // uuidv4 of the request transaction.
-   string                            memo;              // The memo is plain-text, encryption on the memo is advised.
-   time_point                        begin;             // Starting time of the first payment.
-   time_point                        end;               // Ending time of the recurring payment. 
-   fc::microseconds                  interval;          // Microseconds between each transfer event.
-   time_point                        expiration;        // time that the request expires.
+   transfer_recurring_request_id_type     id;
+   account_name_type                      from;              // Sending account to transfer asset from.
+   account_name_type                      to;                // Recieving account to transfer asset to.
+   asset                                  amount;            // The amount of asset to transfer for each payment interval.
+   string                                 request_id;        // uuidv4 of the request transaction.
+   string                                 memo;              // The memo is plain-text, encryption on the memo is advised.
+   time_point                             begin;             // Starting time of the first payment.
+   time_point                             end;               // Ending time of the recurring payment. 
+   fc::microseconds                       interval;          // Microseconds between each transfer event.
+   time_point                             expiration;        // time that the request expires.
 };
 
 
 struct board_api_obj
 {
-   board_api_obj( const chain::board_object& b, const chain::database& db ):
+   board_api_obj( const chain::board_object& b ):
       id( b.id ),
       name( b.name ),
       founder( b.founder ),
-      board_type( to_string( b.board_type ) ),
-      board_privacy( to_string( b.board_privacy ) ),
-      board_public_key( to_string( b.board_public_key ) ),
+      board_type( board_structure_values[ b.board_type ] ),
+      board_privacy( board_privacy_values[ b.board_privacy ] ),
+      board_public_key( b.board_public_key ),
       json( to_string( b.json ) ),
       json_private( to_string( b.json_private ) ),
       pinned_post( b.pinned_post ),
@@ -950,16 +973,16 @@ struct board_api_obj
       created( b.created ),
       last_board_update( b.last_board_update ),
       last_post( b.last_post ),
-      last_root_post( b.last_root_post ),
+      last_root_post( b.last_root_post ){}
 
-      board_api_obj(){}
+   board_api_obj(){}
 
    board_id_type                      id;
    board_name_type                    name;                               // Name of the board, lowercase letters, numbers and hyphens only.
    account_name_type                  founder;                            // The account that created the board, able to add and remove administrators.
    string                             board_type;                         // Type of board, persona, profile or business.
    string                             board_privacy;                      // Board privacy level, open, public, private, or exclusive
-   string                             board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
+   public_key_type                    board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
    string                             json;                               // Public plaintext json information about the board, its topic and rules.
    string                             json_private;                       // Private ciphertext json information about the board.
    comment_id_type                    pinned_post;                     // Post pinned to the top of the board's page. 
@@ -979,10 +1002,10 @@ struct board_api_obj
 
 struct tag_following_api_obj
 {
-   tag_following_api_obj( const chain::tag_following_object& t, const chain::database& db ):
+   tag_following_api_obj( const chain::tag_following_object& t ):
       id( t.id ),
       tag( t.tag ),
-      last_update( t.last_update ),
+      last_update( t.last_update )
       {
          followers.reserve( t.followers.size() );
          for( auto name : t.followers )
@@ -1002,16 +1025,16 @@ struct tag_following_api_obj
 
 struct moderation_tag_api_obj
 {
-   moderation_tag_api_obj( const chain::moderation_tag_object& m, const chain::database& db ) :
+   moderation_tag_api_obj( const chain::moderation_tag_object& m ) :
       id( m.id ),
       moderator( m.moderator ),
       comment( m.comment ),
       board( m.board ),
-      rating( to_string( m.rating ) ),
+      rating( post_rating_values[ m.rating ] ),
       details( to_string( m.details ) ),
       filter( m.filter ),
       last_update( m.last_update ),
-      created( m.created ),
+      created( m.created )
       {
          for( auto tag : m.tags )
          {
@@ -1035,24 +1058,24 @@ struct moderation_tag_api_obj
 
 struct asset_api_obj
 {
-   asset_api_obj( const chain::asset_object& a, const chain::database& db ):
+   asset_api_obj( const chain::asset_object& a ):
       id( a.id ),
       symbol( a.symbol ),
-      asset_type( to_string( a.asset_type ) ),
+      asset_type( asset_property_values[ a.asset_type ] ),
       issuer( a.issuer ),
       created( a.created ),
-      display_symbol( to_string( a.options.display_symbol) ),
-      details( to_string( a.options.details) ),
-      json( to_string( a.options.json ) ),
-      url( to_string( a.options.url ) ),
-      max_supply( a.options.max_supply ),
+      display_symbol( a.options.display_symbol ),
+      details( a.options.details ),
+      json( a.options.json ),
+      url( a.options.url ),
+      max_supply( a.options.max_supply.value ),
       stake_intervals( a.options.stake_intervals ),
       unstake_intervals( a.options.unstake_intervals ),
       market_fee_percent( a.options.market_fee_percent ),
       market_fee_share_percent( a.options.market_fee_share_percent ),
       issuer_permissions( a.options.issuer_permissions ),
       flags( a.options.flags ),
-      core_exchange_rate( a.options.core_exchange_rate ),
+      core_exchange_rate( a.options.core_exchange_rate )
       {
          for( auto auth : a.options.whitelist_authorities )
          {
@@ -1064,11 +1087,11 @@ struct asset_api_obj
          }
          for( auto market : a.options.whitelist_markets )
          {
-            whitelist_markets.push_back( auth );
+            whitelist_markets.push_back( market );
          }
          for( auto market : a.options.blacklist_markets )
          {
-            blacklist_markets.push_back( auth );
+            blacklist_markets.push_back( market );
          }
       }
 
@@ -1079,7 +1102,7 @@ struct asset_api_obj
    string                          asset_type;                            // The type of the asset.
    account_name_type               issuer;                                // name of the account which issued this asset.
    time_point                      created;                               // Time that the asset was created. 
-   string                          display_symbol;                        // Non-consensus display name for interface reference.
+   asset_symbol_type               display_symbol;                        // Non-consensus display name for interface reference.
    string                          details;                               // Data that describes the purpose of this asset.
    string                          json;                                  // Additional JSON metadata of this asset.
    string                          url;                                   // Reference URL for the asset. 
@@ -1101,14 +1124,14 @@ struct asset_api_obj
 
 struct bitasset_data_api_obj
 {
-   bitasset_data_api_obj( const chain::asset_bitasset_data_object& b, const chain::database& db ):
+   bitasset_data_api_obj( const chain::asset_bitasset_data_object& b ):
       id( b.id ),
       symbol( b.symbol ),
       issuer( b.issuer ),
       backing_asset( b.backing_asset ),
       current_feed( b.current_feed ),
       current_feed_publication_time( current_feed_publication_time ),
-      force_settled_volume( b.force_settled_volume ),
+      force_settled_volume( b.force_settled_volume.value ),
       settlement_price( b.settlement_price ),
       settlement_fund( b.settlement_fund ),
       asset_cer_updated( b.asset_cer_updated ),
@@ -1117,7 +1140,7 @@ struct bitasset_data_api_obj
       minimum_feeds( b.options.minimum_feeds ),
       force_settlement_delay( b.options.force_settlement_delay ),
       force_settlement_offset_percent( b.options.force_settlement_offset_percent ),
-      maximum_force_settlement_volume( b.options.maximum_force_settlement_volume ),
+      maximum_force_settlement_volume( b.options.maximum_force_settlement_volume )
       {
          for( auto feed: b.feeds )
          {
@@ -1150,7 +1173,7 @@ struct bitasset_data_api_obj
 
 struct equity_data_api_obj
 {
-   equity_data_api_obj( const chain::asset_equity_data_object& e, const chain::database& db ):
+   equity_data_api_obj( const chain::asset_equity_data_object& e ):
       id( e.id ),
       dividend_asset( e.dividend_asset ),
       dividend_pool( e.dividend_pool ),
@@ -1163,12 +1186,12 @@ struct equity_data_api_obj
       staked_voting_rights( e.options.staked_voting_rights ),
       savings_voting_rights( e.options.savings_voting_rights ),
       min_active_time( e.options.min_active_time ),
-      min_balance( e.options.min_balance ),
+      min_balance( e.options.min_balance.value ),
       min_witnesses( e.options.min_witnesses ),
       boost_balance( e.options.boost_balance ),
       boost_activity( e.options.boost_activity ),
       boost_witnesses( e.options.boost_witnesses ),
-      boost_top( e.options.boost_top ),
+      boost_top( e.options.boost_top ){}
 
    equity_data_api_obj(){}
 
@@ -1195,7 +1218,7 @@ struct equity_data_api_obj
 
 struct credit_data_api_obj
 {
-   credit_data_api_obj( const asset_credit_data_object& c, const database& db ):
+   credit_data_api_obj( const asset_credit_data_object& c ):
       id( c.id ),
       buyback_asset( c.buyback_asset ),
       buyback_pool( c.buyback_pool ),
@@ -1210,7 +1233,7 @@ struct credit_data_api_obj
       staked_variable_interest_rate( c.options.staked_variable_interest_rate ),
       savings_fixed_interest_rate( c.options.savings_fixed_interest_rate ),
       savings_variable_interest_rate( c.options.savings_variable_interest_rate ),
-      var_interest_range( c.options.var_interest_range ),
+      var_interest_range( c.options.var_interest_range ){}
 
    credit_data_api_obj(){}
 
@@ -1233,7 +1256,7 @@ struct credit_data_api_obj
 
 struct liquidity_pool_api_obj
 {
-   liquidity_pool_api_obj( const chain::asset_liquidity_pool_object& p, const database& db ):
+   liquidity_pool_api_obj( const chain::asset_liquidity_pool_object& p ):
       id( p.id ),
       issuer( p.issuer ),
       symbol_a( p.symbol_a ),
@@ -1243,7 +1266,7 @@ struct liquidity_pool_api_obj
       balance_b( p.balance_b ),
       balance_liquid( p.balance_liquid ),
       hour_median_price( p.hour_median_price ),
-      day_median_price( p.day_median_price ),
+      day_median_price( p.day_median_price )
       {
          bip::deque< price, allocator< price > > feeds = p.price_history;
          for( auto feed : feeds )
@@ -1271,7 +1294,7 @@ struct liquidity_pool_api_obj
 
 struct credit_pool_api_obj
 {
-   credit_pool_api_obj( const chain::asset_credit_pool_object& p, const database& db ):
+   credit_pool_api_obj( const chain::asset_credit_pool_object& p ):
       id( p.id ),
       issuer( p.issuer ),
       base_symbol( p.base_symbol ),
@@ -1279,8 +1302,8 @@ struct credit_pool_api_obj
       base_balance( p.base_balance ),
       borrowed_balance( p.borrowed_balance ),
       credit_balance( p.credit_balance ),
-      last_interest_rate( p.last_interest_rate ),
-      last_price( p.last_price ),
+      last_interest_rate( p.last_interest_rate.value ),
+      last_price( p.last_price ){}
 
    credit_pool_api_obj(){}
 
@@ -1293,20 +1316,20 @@ struct credit_pool_api_obj
    asset                             credit_balance;         // Balance of the credit asset redeemable for an increasing amount of base asset.
    int64_t                           last_interest_rate;     // The most recently calculated interest rate when last compounded. 
    price                             last_price;             // The last price that assets were lent or withdrawn at. 
-}
+};
 
 struct limit_order_api_obj
 {
-   limit_order_api_obj( chain::limit_order_object& o, database& db ):
+   limit_order_api_obj( const chain::limit_order_object& o ):
       id( o.id ),
       created( o.created ),
       expiration( o.expiration ),
       seller( o.seller ),
       order_id( to_string( o.order_id ) ),
-      for_sale( o.for_sale ),
+      for_sale( o.for_sale.value ),
       sell_price( o.sell_price ),
       interface( o.interface ),
-      real_price( o.real_price() ),
+      real_price( o.real_price() ){}
 
    limit_order_api_obj(){}
 
@@ -1324,7 +1347,7 @@ struct limit_order_api_obj
 
 struct margin_order_api_obj
 {
-   margin_order_api_obj( chain::margin_order_object& o, database& db ):
+   margin_order_api_obj( const chain::margin_order_object& o ):
       id( o.id ),
       owner( o.owner ),
       order_id( to_string( o.order_id ) ),
@@ -1335,18 +1358,18 @@ struct margin_order_api_obj
       interest( o.interest ),
       position( o.position ),
       position_balance( o.position_balance ),
-      collateralization( o.collateralization ),
+      collateralization( o.collateralization.value ),
       interface( o.interface ),
       created( o.created ),
       expiration( o.expiration ),
       unrealized_value( o.unrealized_value ),
-      last_interest_rate( o.last_interest_rate ),
+      last_interest_rate( o.last_interest_rate.value ),
       liquidating( o.liquidating ),
       stop_loss_price( o.stop_loss_price ),
       take_profit_price( o.take_profit_price ),
       limit_stop_loss_price( o.limit_stop_loss_price ),
       limit_take_profit_price( o.limit_take_profit_price ),
-      real_price( o.real_price() ),
+      real_price( o.real_price() ){}
       
    margin_order_api_obj(){}
 
@@ -1377,15 +1400,15 @@ struct margin_order_api_obj
 
 struct call_order_api_obj
 {
-   call_order_api_obj( chain::call_order_object& o, database& db ):
+   call_order_api_obj( const chain::call_order_object& o ):
       id( o.id ),
       borrower( o.borrower ),
       collateral( o.collateral ),
       debt( o.debt ),
       call_price( o.call_price ),
-      target_collateral_ratio( o.target_collateral_ratio ),
+      target_collateral_ratio( *o.target_collateral_ratio ),
       interface( o.interface ),
-      real_price( o.real_price() ),
+      real_price( o.real_price() ){}
 
    call_order_api_obj(){}
 
@@ -1401,7 +1424,7 @@ struct call_order_api_obj
 
 struct credit_loan_api_obj
 {
-   credit_loan_api_obj( chain::credit_loan_object& o, database& db ):
+   credit_loan_api_obj( const chain::credit_loan_object& o ):
       id( o.id ),
       owner( o.owner ),
       loan_id( to_string( o.loan_id ) ),
@@ -1412,9 +1435,9 @@ struct credit_loan_api_obj
       liquidation_price( o.liquidation_price ),
       symbol_a( o.symbol_a ),
       symbol_b( o.symbol_b ),
-      last_interest_rate( o.last_interest_rate ),
+      last_interest_rate( o.last_interest_rate.value ),
       created( o.created ),
-      last_updated( o.last_updated ),
+      last_updated( o.last_updated ){}
    
    credit_loan_api_obj(){}
 
@@ -1435,11 +1458,11 @@ struct credit_loan_api_obj
 
 struct credit_collateral_api_obj
 {
-   credit_collateral_api_obj( chain::credit_loan_object& o, database& db ):
+   credit_collateral_api_obj( const chain::credit_collateral_object& o ):
       id( o.id ),
       owner( o.owner ),
       symbol( o.symbol ),
-      collateral( o.collateral ),
+      collateral( o.collateral ){}
 
    credit_collateral_api_obj(){}
 
@@ -1455,10 +1478,10 @@ struct owner_authority_history_api_obj
       id( o.id ),
       account( o.account ),
       previous_owner_authority( authority( o.previous_owner_authority ) ),
-      last_valid_time( o.last_valid_time ),
+      last_valid_time( o.last_valid_time ){}
    
 
-   owner_authority_history_api_obj() {}
+   owner_authority_history_api_obj(){}
 
    owner_authority_history_id_type      id;
    account_name_type                    account;
@@ -1473,8 +1496,7 @@ struct account_recovery_request_api_obj
       id( o.id ),
       account_to_recover( o.account_to_recover ),
       new_owner_authority( authority( o.new_owner_authority ) ),
-      expiration( o.expiration )
-   {}
+      expiration( o.expiration ){}
 
    account_recovery_request_api_obj() {}
 
@@ -1492,10 +1514,9 @@ struct savings_withdraw_api_obj
       from( o.from ),
       to( o.to ),
       memo( to_string( o.memo ) ),
-      request_id( o.request_id ),
+      request_id( to_string( o.request_id ) ),
       amount( o.amount ),
-      complete( o.complete )
-   {}
+      complete( o.complete ){}
 
    savings_withdraw_api_obj() {}
 
@@ -1514,7 +1535,7 @@ struct witness_api_obj
       id( w.id ),
       owner( w.owner ),
       active( w.active ),
-      schedule( to_string( w.schedule ) ),
+      schedule( w.schedule ),
       last_confirmed_block_num( w.last_confirmed_block_num ),
       details( to_string( w.details ) ),
       url( to_string( w.url ) ),
@@ -1526,13 +1547,13 @@ struct witness_api_obj
       last_commit_height( w.last_commit_height ),
       last_commit_id( w.last_commit_id ),
       total_blocks( w.total_blocks ),
-      voting_power( w.voting_power ),
+      voting_power( w.voting_power.value ),
       vote_count( w.vote_count ),
-      mining_power( w.mining_power ),
+      mining_power( w.mining_power.value ),
       mining_count( w.mining_count ),
       last_mining_update( w.last_mining_update ),
       last_pow_time( w.last_pow_time ),
-      recent_txn_stake_weight( w.recent_txn_stake_weight ),
+      recent_txn_stake_weight( w.recent_txn_stake_weight.value ),
       last_txn_stake_weight_update( w.last_txn_stake_weight_update ),
       accumulated_activity_stake( w.accumulated_activity_stake ),
       total_missed( w.total_missed ),
@@ -1547,14 +1568,14 @@ struct witness_api_obj
       last_work( w.last_work ),
       running_version( w.running_version ),
       hardfork_version_vote( w.hardfork_version_vote ),
-      hardfork_time_vote( w.hardfork_time_vote ),
+      hardfork_time_vote( w.hardfork_time_vote ){}
 
-   witness_api_obj() {}
+   witness_api_obj(){}
 
    witness_id_type              id;
    account_name_type            owner;                            // The name of the account that has authority over this witness.
    bool                         active;                           // True if the witness is actively seeking to produce blocks, set false to deactivate the witness and remove from production.
-   string                       schedule;                         // How the witness was scheduled the last time it was scheduled.
+   witness_object::witness_schedule_type        schedule;         // How the witness was scheduled the last time it was scheduled.
    uint64_t                     last_confirmed_block_num;         // Number of the last block that was successfully produced by this witness. 
    string                       details;                          // Witness or miner's details, explaining who they are, machine specs, capabilties.
    string                       url;                              // The witnesses or miners URL explaining their details.
@@ -1593,20 +1614,20 @@ struct witness_api_obj
 
 struct network_officer_api_obj
 {
-   network_officer_api_obj( const chain::network_officer_object& o, database& db ):
+   network_officer_api_obj( const chain::network_officer_object& o ):
       id( o.id ),
       account( o.account ),
       active( o.active ),
       officer_approved( o.officer_approved ),
-      officer_type( to_string( o.officer_type ) ),
+      officer_type( network_officer_role_values[ o.officer_type ] ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
       created( o.created ),
       vote_count( o.vote_count ),
-      voting_power( o.voting_power ),
+      voting_power( o.voting_power.value ),
       witness_vote_count( o.witness_vote_count ),
-      witness_voting_power( o.witness_voting_power ),
+      witness_voting_power( o.witness_voting_power.value ){}
       
    network_officer_api_obj(){}
 
@@ -1628,7 +1649,7 @@ struct network_officer_api_obj
 
 struct executive_board_api_obj
 {
-   executive_board_api_obj( const chain::executive_board_object& o, database& db ):
+   executive_board_api_obj( const chain::executive_board_object& o ):
       id( o.id ),
       account( o.account ),
       active( o.active ),
@@ -1639,9 +1660,9 @@ struct executive_board_api_obj
       json( to_string( o.json ) ),
       created( o.created ),
       vote_count( o.vote_count ),
-      voting_power( o.voting_power ),
+      voting_power( o.voting_power.value ),
       witness_vote_count( o.witness_vote_count ),
-      witness_voting_power( o.witness_voting_power ),
+      witness_voting_power( o.witness_voting_power.value ){}
 
    executive_board_api_obj(){}
 
@@ -1663,7 +1684,7 @@ struct executive_board_api_obj
 
 struct governance_account_api_obj
 {
-   governance_account_api_obj( const chain::governance_account_object& o, database& db ):
+   governance_account_api_obj( const chain::governance_account_object& o ):
       id( o.id ),
       account( o.account ),
       active( o.active ),
@@ -1673,9 +1694,9 @@ struct governance_account_api_obj
       json( to_string( o.json ) ),
       created( o.created ),
       subscriber_count( o.subscriber_count ),
-      subscriber_power( o.subscriber_power ),
+      subscriber_power( o.subscriber_power.value ),
       witness_subscriber_count( o.witness_subscriber_count ),
-      witness_subscriber_power( o.witness_subscriber_power ),
+      witness_subscriber_power( o.witness_subscriber_power.value ){}
 
    governance_account_api_obj(){}
 
@@ -1696,7 +1717,7 @@ struct governance_account_api_obj
 
 struct supernode_api_obj
 {
-   supernode_api_obj( const chain::supernode_object& o, database& db ):
+   supernode_api_obj( const chain::supernode_object& o ):
       id( o.id ),
       account( o.account ),
       active( o.active ),
@@ -1712,9 +1733,9 @@ struct supernode_api_obj
       storage_rewards( o.storage_rewards ),
       daily_active_users( o.daily_active_users / PERCENT_100 ),
       monthly_active_users( o.monthly_active_users / PERCENT_100 ),
-      recent_view_weight( o.recent_view_weight ),
+      recent_view_weight( o.recent_view_weight.value ),
       last_update_time( o.last_update_time ),
-      last_activation_time( o.last_activation_time ),
+      last_activation_time( o.last_activation_time ){}
    
    supernode_api_obj(){}
 
@@ -1741,7 +1762,7 @@ struct supernode_api_obj
 
 struct interface_api_obj
 {
-   interface_api_obj( const chain::interface_object& o, database& db ):
+   interface_api_obj( const chain::interface_object& o ):
       id( o.id ),
       account( o.account ),
       active( o.active ),
@@ -1751,7 +1772,7 @@ struct interface_api_obj
       created( o.created ),
       daily_active_users( o.daily_active_users / PERCENT_100 ),
       monthly_active_users( o.monthly_active_users / PERCENT_100 ),
-      last_update_time( o.last_update_time ),
+      last_update_time( o.last_update_time ){}
    
    interface_api_obj(){}
 
@@ -1770,15 +1791,15 @@ struct interface_api_obj
 
 struct community_enterprise_api_obj
 {
-   community_enterprise_api_obj( const chain::community_enterprise_object& o, const database& db ):
+   community_enterprise_api_obj( const chain::community_enterprise_object& o ):
       id( o.id ),
       creator( o.creator ),
-      enterprise_id( o.enterprise_id ),
+      enterprise_id( to_string( o.enterprise_id ) ),
       active( o.active ),
-      proposal_type( to_string( o.proposal_type ) ),
+      proposal_type( proposal_distribution_values[ o.proposal_type ] ),
       approved_milestones( o.approved_milestones ),
       claimed_milestones( o.claimed_milestones ),
-      investment( o.investment ),
+      investment( *o.investment ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
@@ -1791,26 +1812,26 @@ struct community_enterprise_api_obj
       total_distributed( o.total_distributed ),
       days_paid( o.days_paid ),
       total_approvals( o.total_approvals ),
-      total_voting_power( o.total_voting_power ),
+      total_voting_power( o.total_voting_power.value ),
       total_witness_approvals( o.total_witness_approvals ),
-      total_witness_voting_power( o.total_witness_voting_power ),
+      total_witness_voting_power( o.total_witness_voting_power.value ),
       current_approvals( o.current_approvals ),
-      current_voting_power( o.current_voting_power ),
+      current_voting_power( o.current_voting_power.value ),
       current_witness_approvals( o.current_witness_approvals ),
-      current_witness_voting_power( o.current_witness_voting_power ),
-      created( o.created ),
+      current_witness_voting_power( o.current_witness_voting_power.value ),
+      created( o.created )
       {
-         for( auto beneificiary : o.beneficiaries )
+         for( auto beneficiary : o.beneficiaries )
          {
             beneficiaries[ beneficiary.first ] = beneficiary.second;
          }
          for( auto milestone : o.milestones )
          {
-            milestones.push_back( std::make_pair( to_string( milestone.first ), milestone.second ) ),
+            milestones.push_back( std::make_pair( to_string( milestone.first ), milestone.second ) );
          }
          for( auto milestone : o.milestone_history )
          {
-            milestone_history.push_back( to_string( milestone ) ),
+            milestone_history.push_back( to_string( milestone ) );
          }
       }
 
@@ -1852,18 +1873,18 @@ struct community_enterprise_api_obj
 
 struct ad_creative_api_obj
 {
-   ad_creative_api_obj( const chain::ad_creative_object& o, const database& db ):
+   ad_creative_api_obj( const chain::ad_creative_object& o ):
       id( o.id ),
       account( o.account ),
       creative_id( to_string( o.creative_id ) ),
-      format_type( to_string( o.format_type ) ),
+      format_type( ad_format_values[ o.format_type ] ),
       author( o.author ),
       objective( to_string( o.objective ) ),
       creative( to_string( o.creative ) ),
       json( to_string( o.json ) ),
       created( o.created ),
       last_updated( o.last_updated ),
-      active( o.active ),
+      active( o.active ){}
 
    ad_creative_api_obj(){}
 
@@ -1883,10 +1904,10 @@ struct ad_creative_api_obj
 
 struct ad_campaign_api_obj
 {
-   ad_campaign_api_obj( const chain::ad_campaign_object& o, const database& db ):
+   ad_campaign_api_obj( const chain::ad_campaign_object& o ):
       id( o.id ),
       account( o.account ),
-      campaign_id( to_string( campaign_id ) ),
+      campaign_id( to_string( o.campaign_id ) ),
       budget( o.budget ),
       total_bids( o.total_bids ),
       begin( o.begin ),
@@ -1895,7 +1916,7 @@ struct ad_campaign_api_obj
       interface( o.interface ),
       created( o.created ),
       last_updated( o.last_updated ),
-      active( o.active ),
+      active( o.active )
       {
          for( auto agent : o.agents )
          {
@@ -1923,11 +1944,11 @@ struct ad_campaign_api_obj
 
 struct ad_inventory_api_obj
 {
-   ad_inventory_api_obj( const chain::ad_inventory_object& o, const database& db ):
+   ad_inventory_api_obj( const chain::ad_inventory_object& o ):
       id( o.id ),
       provider( o.provider ),
       inventory_id( to_string( o.inventory_id ) ),
-      metric( to_string( o.metric ) ),
+      metric( ad_metric_values[ o.metric ] ),
       audience_id( to_string( o.audience_id ) ),
       min_price( o.min_price ),
       inventory( o.inventory ),
@@ -1936,13 +1957,13 @@ struct ad_inventory_api_obj
       created( o.created ),
       last_updated( o.last_updated ),
       expiration( o.expiration ),
-      active( o.active ),
+      active( o.active )
       {
          for( auto agent : o.agents )
          {
             agents.push_back( agent );
          }
-      },
+      }
    
    ad_inventory_api_obj(){}
 
@@ -1965,20 +1986,20 @@ struct ad_inventory_api_obj
 
 struct ad_audience_api_obj
 {
-   ad_audience_api_obj( const chain::ad_audience_object& o, const database& db ):
+   ad_audience_api_obj( const chain::ad_audience_object& o ):
       id( o.id ),
       account( o.account ),
       audience_id( to_string( o.audience_id ) ),
       json( to_string( o.json ) ),
       created( o.created ),
       last_updated( o.last_updated ),
-      active( o.active ),
+      active( o.active )
       {
          for( auto aud : o.audience )
          {
             audience.push_back( aud );
          }
-      },
+      }
 
    ad_audience_api_obj(){}
 
@@ -1995,7 +2016,7 @@ struct ad_audience_api_obj
 
 struct ad_bid_api_obj
 {
-   ad_bid_api_obj( const chain::ad_bid_object& o, const database& db ):
+   ad_bid_api_obj( const chain::ad_bid_object& o ):
       id( o.id ),
       bidder( o.bidder ),
       bid_id( to_string( o.bid_id ) ),
@@ -2010,7 +2031,7 @@ struct ad_bid_api_obj
       remaining( o.remaining ),
       created( o.created ),
       last_updated( o.last_updated ),
-      expiration( o.expiration ),
+      expiration( o.expiration ){}
 
    ad_bid_api_obj(){}
 
@@ -2034,7 +2055,7 @@ struct ad_bid_api_obj
 
 struct tag_api_obj
 {
-   tag_api_obj( const tags::tag_stats_object& o, const chain::database& db ):
+   tag_api_obj( const tags::tag_stats_object& o ):
       id( o.id ),
       tag( o.tag ),
       total_payout( o.total_payout ),
@@ -2047,7 +2068,7 @@ struct tag_api_obj
       vote_power( o.vote_power ),
       view_power( o.view_power ),
       share_power( o.share_power ),
-      comment_power( o.comment_power ),
+      comment_power( o.comment_power ){}
 
    tag_api_obj() {}
 
@@ -2079,7 +2100,8 @@ struct signed_block_api_obj : public signed_block
          transaction_ids.push_back( tx.id() );
       } 
    }
-   signed_block_api_obj() {}
+
+   signed_block_api_obj(){}
 
    block_id_type                     block_id;
    public_key_type                   signing_key;
@@ -2106,9 +2128,9 @@ struct dynamic_global_property_api_obj : public dynamic_global_property_object
    }
 
    dynamic_global_property_api_obj( const dynamic_global_property_object& gpo ) :
-      dynamic_global_property_object( gpo ) {}
+      dynamic_global_property_object( gpo ){}
 
-   dynamic_global_property_api_obj() {}
+   dynamic_global_property_api_obj(){}
 
    uint32_t    current_reserve_ratio = 0;
    uint64_t    average_block_size = 0;

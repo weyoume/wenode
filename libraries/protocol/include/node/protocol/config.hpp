@@ -143,9 +143,9 @@
 #define MAX_MEMO_SIZE                   2048
 #define MAX_PROXY_RECURSION_DEPTH       4
 #define COIN_UNSTAKE_INTERVALS          4
-#define STAKE_WITHDRAW_INTERVAL_SECONDS (60*60*24*7) /// 1 week per interval
+#define STAKE_WITHDRAW_INTERVAL         fc::days(7)     // 1 week per stake withdrawal interval
 #define MAX_WITHDRAW_ROUTES             10
-#define SAVINGS_WITHDRAW_TIME        		(fc::days(3))
+#define SAVINGS_WITHDRAW_TIME           (fc::days(3))
 #define SAVINGS_WITHDRAW_REQUEST_LIMIT  (100)
 #define MAX_ASSET_STAKE_INTERVALS       (104)          // Maximum weeks that an asset can stake over.
 #define MAX_ASSET_UNSTAKE_INTERVALS     (104)          // Maximum weeks that an asset can unstake over.
@@ -278,6 +278,10 @@
 #define ACTIVITY_BOOST_STANDARD_PERCENT        (125 * PERCENT_1) // Boost activty reward by 25%
 #define ACTIVITY_BOOST_MID_PERCENT             (150 * PERCENT_1) // Boost activty reward by 50%
 #define ACTIVITY_BOOST_TOP_PERCENT             (200 * PERCENT_1) // Boost activty reward by 100%
+
+#define ESCROW_BOND_PERCENT                    (10 * PERCENT_1)  // require bond of 10% of escrow payment value
+#define ESCROW_DISPUTE_DURATION                fc::days(7)       // 7 days of mediation time required before release of funds. 
+#define ESCROW_DISPUTE_MEDIATOR_AMOUNT         5                 // 5 Random top mediators added to dispute for resolution.  
 
 #define MIN_PAYOUT_USD                         (asset( BLOCKCHAIN_PRECISION / 100 , SYMBOL_USD)) // Minimum payout of $0.01 USD worth of rewards.
 #define AD_RESERVE_RATIO                       (10)      // Advertising bids outstanding cannot exceed 10 times the campaign budget. 

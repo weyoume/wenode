@@ -112,14 +112,23 @@ namespace node { namespace protocol {
    struct fill_transfer_from_savings_operation : public virtual_operation
    {
       fill_transfer_from_savings_operation() {}
-      fill_transfer_from_savings_operation( const account_name_type& f, const account_name_type& t, const asset& a, const uint32_t r, const string& m )
-         :from(f), to(t), amount(a), request_id(r), memo(m) {}
+      fill_transfer_from_savings_operation( 
+         const account_name_type& f, 
+         const account_name_type& t, 
+         const asset& a, 
+         const string& r, 
+         const string& m ):
+         from(f), 
+         to(t), 
+         amount(a), 
+         request_id(r), 
+         memo(m){}
 
-      account_name_type from;
-      account_name_type to;
-      asset             amount;
-      string            request_id;
-      string            memo;
+      account_name_type    from;
+      account_name_type    to;
+      asset                amount;
+      string               request_id;
+      string               memo;
    };
 
    struct hardfork_operation : public virtual_operation

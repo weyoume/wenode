@@ -172,6 +172,8 @@ namespace node { namespace protocol {
       return p1.key_data != p2.key_data;
    }
 
+   // Encrypted Keypair Type
+
    bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
    {
       return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) == std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
