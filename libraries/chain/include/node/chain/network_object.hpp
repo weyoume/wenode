@@ -227,16 +227,16 @@ namespace node { namespace chain {
 
          share_type                     recent_view_weight = 0;      // The rolling 7 day average of daily accumulated voting power of viewers. 
 
-         time_point                     last_update_time;            // The time the file weight and active users was last decayed.
+         time_point                     last_updated;            // The time the file weight and active users was last decayed.
 
          time_point                     last_activation_time;        // The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
 
          void                           decay_weights( const dynamic_global_property_object& props )
          {
-            recent_view_weight -= ( ( recent_view_weight * ( props.time - last_update_time ).to_seconds() ) / props.median_props.supernode_decay_time.to_seconds() );
-            daily_active_users -= ( ( daily_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(1).to_seconds() );
-            monthly_active_users -= ( ( monthly_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(30).to_seconds() );
-            last_update_time = props.time;
+            recent_view_weight -= ( ( recent_view_weight * ( props.time - last_updated ).to_seconds() ) / props.median_props.supernode_decay_time.to_seconds() );
+            daily_active_users -= ( ( daily_active_users * ( props.time - last_updated ).to_seconds() ) / fc::days(1).to_seconds() );
+            monthly_active_users -= ( ( monthly_active_users * ( props.time - last_updated ).to_seconds() ) / fc::days(30).to_seconds() );
+            last_updated = props.time;
          }
    };
 
@@ -268,13 +268,13 @@ namespace node { namespace chain {
 
          uint64_t                       monthly_active_users = 0;     // The average number of accounts (X percent 100) that have signed a transaction from the interface in the prior 30 days.
 
-         time_point                     last_update_time;             // The time the user counts were last updated.
+         time_point                     last_updated;             // The time the user counts were last updated.
 
          void                           decay_weights( const dynamic_global_property_object& props )
          {
-            daily_active_users -= ( ( daily_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(1).to_seconds() );
-            monthly_active_users -= ( ( monthly_active_users * ( props.time - last_update_time ).to_seconds() ) / fc::days(30).to_seconds() );
-            last_update_time = props.time;
+            daily_active_users -= ( ( daily_active_users * ( props.time - last_updated ).to_seconds() ) / fc::days(1).to_seconds() );
+            monthly_active_users -= ( ( monthly_active_users * ( props.time - last_updated ).to_seconds() ) / fc::days(30).to_seconds() );
+            last_updated = props.time;
          }
    };
 
@@ -309,7 +309,7 @@ namespace node { namespace chain {
 
          time_point                     created;                         // The time the mediator was created.
 
-         time_point                     last_update_time;                // The time the mediator was last updated.
+         time_point                     last_updated;                // The time the mediator was last updated.
    };
 
 
@@ -916,7 +916,7 @@ FC_REFLECT( node::chain::supernode_object,
          (daily_active_users)
          (monthly_active_users)
          (recent_view_weight)
-         (last_update_time)
+         (last_updated)
          (last_activation_time)
          );
 
@@ -932,7 +932,7 @@ FC_REFLECT( node::chain::interface_object,
          (created)
          (daily_active_users)
          (monthly_active_users)
-         (last_update_time)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::interface_object, node::chain::interface_index );
@@ -947,7 +947,7 @@ FC_REFLECT( node::chain::mediator_object,
          (created)
          (mediation_bond)
          (mediation_virtual_position)
-         (last_update_time)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::mediator_object, node::chain::mediator_index );

@@ -357,4 +357,19 @@ namespace node { namespace protocol {
          FC_CAPTURE_AND_RETHROW( (*this) )
       }
 
+      // settlement price is in debt/collateral
+      price price_feed::max_short_squeeze_price()const
+      {
+         return settlement_price * ratio_type( COLLATERAL_RATIO_DENOM, maximum_short_squeeze_ratio );
+      }
+
+      price price_feed::maintenance_collateralization()const
+      {
+         if( settlement_price.is_null() )
+         {
+            return price();
+         }  
+         return ~settlement_price * ratio_type( maintenance_collateral_ratio, COLLATERAL_RATIO_DENOM );
+      }
+
 } } // node::protocol

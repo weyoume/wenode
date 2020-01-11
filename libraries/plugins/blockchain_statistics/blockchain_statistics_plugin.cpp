@@ -175,7 +175,7 @@ struct operation_process
       });
    }
 
-   void operator()( const limit_order_create_operation& op )const
+   void operator()( const limit_order_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
@@ -188,14 +188,6 @@ struct operation_process
       _db.modify( _bucket, [&]( bucket_object& b )
       {
          b.limit_orders_filled += 2;
-      });
-   }
-
-   void operator()( const limit_order_cancel_operation& op )const
-   {
-      _db.modify( _bucket, [&]( bucket_object& b )
-      {
-         b.limit_orders_cancelled++;
       });
    }
 };

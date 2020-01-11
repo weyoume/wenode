@@ -890,8 +890,6 @@ namespace node { namespace chain {
 
          time_point              last_interest_time;         // Last time that interest was compounded.
 
-         bool                    maintenance_flag = false;   // Whether need to process this balance object in maintenance interval
-
          asset get_liquid_balance()const { return asset(liquid_balance, symbol); }
 
          asset get_reward_balance()const { return asset(reward_balance, symbol); }
@@ -913,8 +911,6 @@ namespace node { namespace chain {
             assert(delta.symbol == symbol);
             liquid_balance += delta.amount;
             total_balance += delta.amount;
-            if( delta.symbol == SYMBOL_COIN ) // CORE asset
-               maintenance_flag = true;
          }
 
          void account_balance_object::adjust_reward_balance(const asset& delta)
@@ -922,8 +918,6 @@ namespace node { namespace chain {
             assert(delta.symbol == symbol);
             reward_balance += delta.amount;
             total_balance += delta.amount;
-            if( delta.symbol == SYMBOL_COIN ) // CORE asset
-               maintenance_flag = true;
          }
 
          void account_balance_object::adjust_staked_balance(const asset& delta)
@@ -931,8 +925,6 @@ namespace node { namespace chain {
             assert(delta.symbol == symbol);
             staked_balance += delta.amount;
             total_balance += delta.amount;
-            if( delta.symbol == SYMBOL_COIN ) // CORE asset
-               maintenance_flag = true;
          }
 
          void account_balance_object::adjust_savings_balance(const asset& delta)
@@ -940,24 +932,18 @@ namespace node { namespace chain {
             assert(delta.symbol == symbol);
             savings_balance += delta.amount;
             total_balance += delta.amount;
-            if( delta.symbol == SYMBOL_COIN ) // CORE asset
-               maintenance_flag = true;
          }
 
          void account_balance_object::adjust_delegated_balance(const asset& delta)
          {
             assert(delta.symbol == symbol);
             delegated_balance += delta.amount;
-            if( delta.symbol == SYMBOL_COIN ) // CORE asset
-               maintenance_flag = true;
          }
 
          void account_balance_object::adjust_receiving_balance(const asset& delta)
          {
             assert(delta.symbol == symbol);
             receiving_balance += delta.amount;
-            if( delta.symbol == SYMBOL_COIN ) // CORE asset
-               maintenance_flag = true;
          }
    };
 
@@ -1366,7 +1352,7 @@ namespace node { namespace chain {
 
          time_point                   last_message_time_b;      // Time since the account B last sent a message.
 
-         time_point                   last_update_time;         // Time the connection keys were last updated. 
+         time_point                   last_updated;         // Time the connection keys were last updated. 
 
          time_point                   created;                  // Time the connection was created. 
 
@@ -1846,7 +1832,6 @@ namespace node { namespace chain {
    struct by_last_owner_update;
    struct by_owner_symbol;
    struct by_owner;
-   struct by_maintenance_flag;
    struct by_symbol_stake;
    struct by_symbol_liquid;
    struct by_symbol;
@@ -1930,9 +1915,6 @@ namespace node { namespace chain {
                std::less< time_point >,
                std::less< account_balance_id_type >
             >
-         >,
-         ordered_non_unique< tag<by_maintenance_flag>,
-            member< account_balance_object, bool, &account_balance_object::maintenance_flag > 
          >
       >,
       allocator< account_balance_object >
@@ -2340,7 +2322,6 @@ FC_REFLECT( node::chain::account_balance_object,
          (to_unstake)
          (total_unstaked)
          (last_interest_time)
-         (maintenance_flag)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_balance_object, node::chain::account_balance_index );
@@ -2407,7 +2388,7 @@ FC_REFLECT( node::chain::connection_object,
          (consecutive_days)
          (last_message_time_a)
          (last_message_time_b)
-         (last_update_time)
+         (last_updated)
          (created)
          );
 

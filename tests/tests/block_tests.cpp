@@ -499,7 +499,7 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
       signed_transaction ptx;
 
       db.get_account( GENESIS_ACCOUNT_BASE_NAME );
-      // transfer from committee account to Sam account
+      // transfer from account to Sam account
       transfer( GENESIS_ACCOUNT_BASE_NAME, "sam", 100000 );
 
       generate_block(skip_flags);

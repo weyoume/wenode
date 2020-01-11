@@ -10,6 +10,8 @@
 
 namespace node { namespace chain {
    /**
+    * A Tradeable digital asset.
+    * 
     * Assets have a globally unique symbol name that controls how they are traded and an issuer who
     * has authority over the parameters of the asset.
     * Multiple types of asset are available, each with different properties and capabilities.
@@ -240,7 +242,7 @@ namespace node { namespace chain {
 
          price                                         current_maintenance_collateralization;   // Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
 
-         share_type                                    force_settled_volume;                    // This is the volume of this asset which has been force-settled this maintanence interval
+         share_type                                    force_settled_volume;                    // This is the volume of this asset which has been force-settled this 24h interval
          
          /**
           *  In the event of a black swan, the swan price is saved in the settlement price, and all margin positions
@@ -257,7 +259,7 @@ namespace node { namespace chain {
 
          bool                                          feed_cer_updated = false;                // Track whether core exchange rate in current feed has updated
 
-         share_type                                    max_force_settlement_volume( share_type total_supply )const    // Calculate the maximum force settlement volume per maintenance interval, given the current share supply     
+         share_type                                    max_force_settlement_volume( share_type total_supply )const    // Calculate the maximum force settlement volume per 24h interval, given the current share supply     
          {
             if( options.maximum_force_settlement_volume == 0 )
             {
@@ -301,9 +303,8 @@ namespace node { namespace chain {
           * It may update the current_feed_publication_time, current_feed and
           * current_maintenance_collateralization member variables.
           * @param current_time the current time to use in the calculations
-          * @param next_maintenance_time the next chain maintenance time
           */
-         void update_median_feeds( time_point current_time, time_point next_maintenance_time );
+         void update_median_feeds( time_point current_time );
    };
 
 

@@ -597,10 +597,6 @@ void database::adjust_liquid_balance( const account_name_type& a, const asset& d
          abo.owner = a;
          abo.symbol = delta.symbol;
          abo.liquid_balance = delta.amount;
-         if( delta.symbol == SYMBOL_COIN )
-         {
-            abo.maintenance_flag = true;
-         }
       });
       modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
       {
@@ -670,10 +666,6 @@ void database::adjust_staked_balance( const account_name_type& a, const asset& d
          abo.owner = a;
          abo.symbol = delta.symbol;
          abo.staked_balance = delta.amount;
-         if( delta.symbol == SYMBOL_COIN )
-         {
-            abo.maintenance_flag = true;
-         }
       });
       modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
       {
@@ -743,10 +735,6 @@ void database::adjust_savings_balance( const account_name_type& a, const asset& 
          abo.owner = a;
          abo.symbol = delta.symbol;
          abo.savings_balance = delta.amount;
-         if( delta.symbol == SYMBOL_COIN )
-         {
-            abo.maintenance_flag = true;
-         }
       });
       modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
       {
@@ -816,10 +804,6 @@ void database::adjust_reward_balance( const account_name_type& a, const asset& d
          abo.owner = a;
          abo.symbol = delta.symbol;
          abo.reward_balance = delta.amount;
-         if( delta.symbol == SYMBOL_COIN )
-         {
-            abo.maintenance_flag = true;
-         }
       });
       modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
       {
@@ -889,10 +873,6 @@ void database::adjust_delegated_balance( const account_name_type& a, const asset
          abo.owner = a;
          abo.symbol = delta.symbol;
          abo.delegated_balance = delta.amount;
-         if( delta.symbol == SYMBOL_COIN )
-         {
-            abo.maintenance_flag = true;
-         }
       });
       modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
       {
@@ -962,10 +942,6 @@ void database::adjust_receiving_balance( const account_name_type& a, const asset
          abo.owner = a;
          abo.symbol = delta.symbol;
          abo.receiving_balance = delta.amount;
-         if( delta.symbol == SYMBOL_COIN )
-         {
-            abo.maintenance_flag = true;
-         }
       });
       modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
       {
@@ -1225,9 +1201,8 @@ string database::to_pretty_string( const asset& a )const
 
 
 void database::update_expired_feeds()
-{
+{ try {
    const auto head_time = head_block_time();
-   const auto next_maint_time = get_dynamic_global_properties().next_maintenance_time;
 
    const auto& idx = get_index< asset_bitasset_data_index >().indices().get< by_feed_expiration >();
    auto itr = idx.begin();
@@ -1239,9 +1214,9 @@ void database::update_expired_feeds()
       const asset_object* asset_ptr = nullptr;
       
       auto old_median_feed = bitasset.current_feed;
-      modify( bitasset, [head_time,next_maint_time,&update_cer]( asset_bitasset_data_object& abdo )
+      modify( bitasset, [head_time,&update_cer]( asset_bitasset_data_object& abdo )
       {
-         abdo.update_median_feeds( head_time, next_maint_time );
+         abdo.update_median_feeds( head_time );
          if( abdo.need_to_update_cer() )
          {
             update_cer = true;
@@ -1269,12 +1244,101 @@ void database::update_expired_feeds()
          }
       }
    } 
-}
+} FC_CAPTURE_AND_RETHROW() }
+
+
+void database::process_bids( const asset_bitasset_data_object& bad )
+{ try {
+   if( bad.current_feed.settlement_price.is_null() )       // Asset must have settlement price
+   {
+      return;
+   } 
+
+   const asset_object& to_revive = get_asset( bad.symbol ); 
+   const asset_dynamic_data_object& bdd = get_dynamic_data( bad.symbol );
+
+   const auto& bid_idx = get_index< collateral_bid_index >().indices().get< by_price >();
+   const auto start = bid_idx.lower_bound( boost::make_tuple( bad.symbol, price::max( bad.options.short_backing_asset, bad.symbol ) ) );
+
+   share_type covered = 0;
+
+   auto bid_itr = start;
+   // Count existing bids and determine if enough bids have been made to 
+   // Revive asset, entire supply should be covered.
+
+   while( covered < bdd.total_supply && 
+      bid_itr != bid_idx.end() && 
+      bid_itr->debt.symbol == bad.symbol )
+   {
+      const collateral_bid_object& bid = *bid_itr;
+
+      asset debt_in_bid = bid.debt;
+
+      if( debt_in_bid.amount > bdd.total_supply )
+      {
+         debt_in_bid.amount = bdd.total_supply;
+      }
+         
+      asset total_collateral = debt_in_bid * bad.settlement_price;
+
+      total_collateral += bid.collateral;
+
+      price call_price = price( debt_in_bid, total_collateral );
+
+      if( ~call_price >= bad.current_feed.settlement_price )
+      {
+         break;
+      }
+
+      covered += debt_in_bid.amount;
+      ++bid_itr;
+   }
+
+   if( covered < bdd.total_supply ) 
+   {
+      return;   // Supply not yet covered
+   }
+   else
+   {
+      const auto end = bid_itr;
+      share_type to_cover = bdd.total_supply;
+      share_type remaining_fund = bad.settlement_fund;
+      for( bid_itr = start; bid_itr != end; )
+      {
+         const collateral_bid_object& bid = *bid_itr;
+         ++bid_itr;
+         asset debt_in_bid = bid.debt;
+         if( debt_in_bid.amount > bdd.total_supply )
+         {
+            debt_in_bid.amount = bdd.total_supply;
+         }
+
+         share_type debt = debt_in_bid.amount;
+         share_type collateral = ( debt_in_bid * bad.settlement_price ).amount;
+
+         if( debt >= to_cover )
+         {
+            debt = to_cover;
+            collateral = remaining_fund;
+         }
+         to_cover -= debt;
+         remaining_fund -= collateral;
+         execute_bid( bid, debt, collateral, bad.current_feed );
+      }
+
+      FC_ASSERT( remaining_fund == 0, 
+         "Settlement fund not completely allocated by bids." );
+      FC_ASSERT( to_cover == 0,
+         "Asset debt not completely covered by bids." );
+
+      cancel_bids_and_revive_mpa( to_revive, bad );
+   }
+} FC_CAPTURE_AND_RETHROW() }
 
 
 void database::update_core_exchange_rates()
 {
-   const auto& idx = get_index<asset_bitasset_data_index>().indices().get<by_cer_update>();
+   const auto& idx = get_index< asset_bitasset_data_index >().indices().get< by_cer_update >();
    if( idx.begin() != idx.end() )
    {
       for( auto itr = idx.rbegin(); itr->need_to_update_cer(); itr = idx.rbegin() )
@@ -1295,20 +1359,6 @@ void database::update_core_exchange_rates()
          });
       }
    }
-}
-
-
-void database::update_maintenance_flag( bool new_maintenance_flag )
-{
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   modify( props, [&]( dynamic_global_property_object& dpo )
-   {
-      auto maintenance_flag = dynamic_global_property_object::maintenance_flag;
-
-      dpo.dynamic_flags = ( dpo.dynamic_flags & ~maintenance_flag ) | ( new_maintenance_flag ? maintenance_flag : 0 );
-   });
-
-   return;
 }
 
 
@@ -1367,6 +1417,7 @@ void database::dispute_escrow( const escrow_object& escrow )
    {
       esc.disputed = true;
       esc.mediators = allocated_mediators;
+      esc.last_updated = now;
       esc.dispute_release_time = now + ESCROW_DISPUTE_DURATION;
    });
 

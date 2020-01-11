@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE( mh_test )
       auto fill_order_a_time = db.head_block_time();
       auto time_a = fc::time_point( ( fill_order_a_time.time_since_epoch() / 15 ) * 15 );
 
-      limit_order_create_operation op;
+      limit_order_operation op;
       op.owner = "alice";
       op.amount_to_sell = ASSET( "1.000 USD" );
       op.min_to_receive = ASSET( "2.000 TESTS" );

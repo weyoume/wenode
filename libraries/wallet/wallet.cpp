@@ -2139,26 +2139,13 @@ vector<extended_limit_order> wallet_api::get_open_orders( string owner )
 annotated_signed_transaction wallet_api::create_order(  string owner, uint32_t order_id, asset amount_to_sell, asset min_to_receive, bool fill_or_kill, uint32_t expiration_sec, bool broadcast )
 {
    FC_ASSERT( !is_locked() );
-   limit_order_create_operation op;
+   limit_order_operation op;
    op.owner = owner;
    op.orderid = order_id;
    op.amount_to_sell = amount_to_sell;
    op.min_to_receive = min_to_receive;
    op.fill_or_kill = fill_or_kill;
    op.expiration = expiration_sec ? (fc::time_point::now() + fc::seconds(expiration_sec)) : fc::time_point::maximum();
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-}
-
-annotated_signed_transaction wallet_api::cancel_order( string owner, uint32_t orderid, bool broadcast ) {
-   FC_ASSERT( !is_locked() );
-   limit_order_cancel_operation op;
-   op.owner = owner;
-   op.orderid = orderid;
 
    signed_transaction tx;
    tx.operations.push_back( op );

@@ -498,7 +498,6 @@ namespace node {
          global_settle        = 0x20,    // allow the bitasset issuer to force a global settlement -- this may be set in permissions, but not flags
          disable_confidential = 0x40,    // allow the asset to be used with confidential transactions
          witness_fed_asset    = 0x80,    // allow the asset to be fed by witnesses
-         committee_fed_asset  = 0x100    // allow the asset to be fed by the committee
       };
 
       const static uint32_t ASSET_ISSUER_PERMISSION_MASK =
@@ -509,8 +508,7 @@ namespace node {
             | disable_force_settle
             | global_settle
             | disable_confidential
-            | witness_fed_asset
-            | committee_fed_asset;
+            | witness_fed_asset;
             
       const static uint32_t UIA_ASSET_ISSUER_PERMISSION_MASK =
             charge_market_fee

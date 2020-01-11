@@ -4857,6 +4857,81 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 }
 
 
+BOOST_AUTO_TEST_CASE( update_mediator_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: MEDIATOR SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: mediator creation" );
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      signed_transaction tx;
+
+      account_membership_operation member;
+
+      member.signatory = "alice";
+      member.account = "alice";
+      member.membership_type = TOP_MEMBERSHIP;
+      member.months = 1;
+      member.validate();
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( member );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_mediator_operation mediator;
+      
+      mediator.signatory = "alice";
+      mediator.account = "alice";
+      mediator.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      mediator.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      mediator.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      mediator.mediator_bond = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      mediator.validate();
+
+      tx.operations.push_back( mediator );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const mediator_object& alice_mediator = db.get_mediator( "alice" );
+      
+      BOOST_REQUIRE( alice_mediator.account == "alice" );
+      BOOST_REQUIRE( alice_mediator.mediator_bond == mediator.mediator_bond );
+      BOOST_REQUIRE( alice_mediator.created == now() );
+      BOOST_REQUIRE( alice_mediator.last_updated == now() );
+      BOOST_REQUIRE( alice_mediator.active == true );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: mediator creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when creating without membership" );
+      
+      mediator.signatory = "bob";
+      mediator.account = "bob";
+
+      tx.operations.push_back( mediator );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );    // Bob is not a member, and cannot create a mediator
+      
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when creating without membership" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: MEDIATOR SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
 BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 {
    try
@@ -12276,1227 +12351,961 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: escrow_transfer_validate" );
+      BOOST_TEST_MESSAGE( "├── Testing: ESCROW TRANSFER OPERATION SEQUENCE" );
 
-      escrow_transfer_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = ASSET( "1.000 TESTS" );
-      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17";
-      op.agent = "sam";
-      op.fee = ASSET( "0.100 TESTS" );
-      op.json = "";
-      op.ratification_deadline = db.head_block_time() + 100;
-      op.escrow_expiration = db.head_block_time() + 200;
+      BOOST_TEST_MESSAGE( "│   ├── Testing: creation of escrow transfer proposal" );
 
-      BOOST_TEST_MESSAGE( "--- failure when amount < 0" );
-      op.amount.amount = -100;
-      REQUIRE_THROW( op.validate(), fc::exception );
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
-      BOOST_TEST_MESSAGE( "--- failure when fee < 0" );
-      op.amount.amount = 1000;
-      op.fee.amount = -100;
-      REQUIRE_THROW( op.validate(), fc::exception );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
-      BOOST_TEST_MESSAGE( "--- failure when ratification deadline == escrow expiration" );
-      op.fee.amount = 100;
-      op.ratification_deadline = op.escrow_expiration;
-      REQUIRE_THROW( op.validate(), fc::exception );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      BOOST_TEST_MESSAGE( "--- failure when ratification deadline > escrow expiration" );
-      op.ratification_deadline = op.escrow_expiration + 100;
-      REQUIRE_THROW( op.validate(), fc::exception );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      BOOST_TEST_MESSAGE( "--- success" );
-      op.ratification_deadline = op.escrow_expiration - 100;
-      op.validate();
-   
-      BOOST_TEST_MESSAGE( "Testing: escrow_transfer_authorities" );
-
-      escrow_transfer_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.USDamount = ASSET( "1.000 USD" );
-      op.TMEamount = ASSET( "1.000 TESTS" );
-      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17"
-      op.agent = "sam";
-      op.fee = ASSET( "0.100 TESTS" );
-      op.json = "";
-      op.ratification_deadline = db.head_block_time() + 100;
-      op.escrow_expiration = db.head_block_time() + 200;
-
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_active_authorities( auths );
-      expected.insert( "alice" );
-      BOOST_REQUIRE( auths == expected );
-   
-      BOOST_TEST_MESSAGE( "Testing: escrow_transfer_apply" );
-
-      ACTORS( (alice)(bob)(sam) )
-
-      fund( "alice", 10000 );
-
-      escrow_transfer_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.USDamount = ASSET( "1.000 USD" );
-      op.TMEamount = ASSET( "1.000 TESTS" );
-      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17"
-      op.agent = "sam";
-      op.fee = ASSET( "0.100 TESTS" );
-      op.json = "";
-      op.ratification_deadline = db.head_block_time() + 100;
-      op.escrow_expiration = db.head_block_time() + 200;
-
-      BOOST_TEST_MESSAGE( "--- failure when from cannot cover USD amount" );
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
       signed_transaction tx;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- falure when from cannot cover amount + fee" );
-      op.USDamount.amount = 0;
-      op.TMEamount.amount = 10000;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      escrow_transfer_operation transfer;
 
-      BOOST_TEST_MESSAGE( "--- failure when ratification deadline is in the past" );
-      op.TMEamount.amount = 1000;
-      op.ratification_deadline = db.head_block_time() - 200;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      transfer.signatory = "alice";
+      transfer.account = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17";
+      transfer.json = "{\"json\":\"valid\"}";
+      transfer.memo = "Hello";
+      transfer.acceptance_time = now() + fc::days(1);
+      transfer.escrow_expiration = now() + fc::days(8);
+      transfer.validate();
 
-      BOOST_TEST_MESSAGE( "--- failure when expiration is in the past" );
-      op.escrow_expiration = db.head_block_time() - 100;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_TEST_MESSAGE( "--- success" );
-      op.ratification_deadline = db.head_block_time() + 100;
-      op.escrow_expiration = db.head_block_time() + 200;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      auto alice_TMEbalance = alice.balance - op.TMEamount - op.fee;
-      auto alice_USDbalance = alice.USDbalance - op.USDamount;
-      auto bob_TMEbalance = bob.balance;
-      auto bob_USDbalance = bob.USDbalance;
-      auto sam_TMEbalance = sam.balance;
-      auto sam_USDbalance = sam.USDbalance;
-
+      tx.operations.push_back( transfer );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& escrow = db.get_escrow( op.from, op.escrow_id );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      BOOST_REQUIRE( escrow.escrow_id == op.escrow_id );
-      BOOST_REQUIRE( escrow.from == op.from );
-      BOOST_REQUIRE( escrow.to == op.to );
-      BOOST_REQUIRE( escrow.agent == op.agent );
-      BOOST_REQUIRE( escrow.ratification_deadline == op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == op.USDamount );
-      BOOST_REQUIRE( escrow.TMEbalance == op.TMEamount );
-      BOOST_REQUIRE( escrow.pending_fee == op.fee );
-      BOOST_REQUIRE( !escrow.to_approved );
-      BOOST_REQUIRE( !escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-      BOOST_REQUIRE( alice.balance == alice_TMEbalance );
-      BOOST_REQUIRE( alice.USDbalance == alice_USDbalance );
-      BOOST_REQUIRE( bob.balance == bob_TMEbalance );
-      BOOST_REQUIRE( bob.USDbalance == bob_USDbalance );
-      BOOST_REQUIRE( sam.balance == sam_TMEbalance );
-      BOOST_REQUIRE( sam.USDbalance == sam_USDbalance );
+      const escrow_object& escrow = db.get_escrow( "alice", "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" );
+
+      BOOST_REQUIRE( escrow.to == transfer.to );
+      BOOST_REQUIRE( escrow.from == transfer.from );
+      BOOST_REQUIRE( escrow.payment == transfer.amount );
+      BOOST_REQUIRE( escrow.acceptance_time == transfer.acceptance_time );
+      BOOST_REQUIRE( escrow.escrow_expiration == transfer.escrow_expiration );
+      BOOST_REQUIRE( escrow.balance.amount == 0 );
+      BOOST_REQUIRE( escrow.is_approved() == false );
 
       validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
 
-BOOST_AUTO_TEST_CASE( escrow_approve_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: escrow_approve_validate" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: creation of escrow transfer proposal" );
 
-      escrow_approve_operation op;
+      BOOST_TEST_MESSAGE( "│   ├── Testing: approval of escrow transfer proposal" );
 
-      op.from = "alice";
-      op.to = "bob";
-      op.agent = "sam";
-      op.who = "bob";
-      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17"
-      op.approve = true;
+      account_membership_operation member;
 
-      BOOST_TEST_MESSAGE( "--- failure when who is not to or agent" );
-      op.who = "dan";
-      REQUIRE_THROW( op.validate(), fc::exception );
+      member.signatory = "candice";
+      member.account = "candice";
+      member.membership_type = TOP_MEMBERSHIP;
+      member.months = 1;
+      member.validate();
 
-      BOOST_TEST_MESSAGE( "--- success when who is to" );
-      op.who = op.to;
-      op.validate();
+      tx.operations.push_back( member );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
 
-      BOOST_TEST_MESSAGE( "--- success when who is agent" );
-      op.who = op.agent;
-      op.validate();
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_mediator_operation mediator;
+      
+      mediator.signatory = "candice";
+      mediator.account = "candice";
+      mediator.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      mediator.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      mediator.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      mediator.mediator_bond = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      mediator.validate();
+
+      tx.operations.push_back( mediator );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      member.signatory = "dan";
+      member.account = "dan";
+
+      tx.operations.push_back( member );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+      
+      mediator.signatory = "dan";
+      mediator.account = "dan";
+
+      tx.operations.push_back( mediator );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const mediator_object& candice_mediator = db.get_mediator( "candice" );
+      const mediator_object& dan_mediator = db.get_mediator( "dan" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+
+      escrow_approve_operation approve;
+
+      approve.signatory = "alice";
+      approve.account = "alice";
+      approve.mediator = "candice";
+      approve.escrow_from = "alice";
+      approve.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17";
+      approve.approved = true;
+      approve.validate();
+
+      tx.operations.push_back( approve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "bob";
+      approve.account = "bob";
+      approve.mediator = "dan";
+
+      tx.operations.push_back( approve );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "candice";
+      approve.account = "candice";
+      approve.mediator = "candice";
+
+      tx.operations.push_back( approve );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "dan";
+      approve.account = "dan";
+      approve.mediator = "dan";
+
+      tx.operations.push_back( approve );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const escrow_object& escrow = db.get_escrow( "alice", "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" );
+
+      asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+
+      BOOST_REQUIRE( escrow.to == "bob" );
+      BOOST_REQUIRE( escrow.from == "alice" );
+      BOOST_REQUIRE( escrow.to_mediator == "dan" );
+      BOOST_REQUIRE( escrow.from_mediator == "candice" );
+      BOOST_REQUIRE( escrow.payment == transfer.amount );
+      BOOST_REQUIRE( escrow.acceptance_time == transfer.acceptance_time );
+      BOOST_REQUIRE( escrow.escrow_expiration == transfer.escrow_expiration );
+      BOOST_REQUIRE( escrow.balance == escrow.payment + 4 * escrow_bond );
+      BOOST_REQUIRE( escrow.from_approved() == true );
+      BOOST_REQUIRE( escrow.to_approved() == true );
+      BOOST_REQUIRE( escrow.from_mediator_approved() == true );
+      BOOST_REQUIRE( escrow.to_mediator_approved() == true );
+      BOOST_REQUIRE( escrow.is_approved() == true );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - ( transfer.amount + escrow_bond ) ) );
+      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - escrow_bond ) );
+      BOOST_REQUIRE( candice_liquid_balance == ( candice_init_liquid_balance - escrow_bond ) );
+      BOOST_REQUIRE( dan_liquid_balance == ( dan_init_liquid_balance - escrow_bond ) );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: approval of escrow transfer proposal" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: standard release of escrow funds by FROM account" );
+
+      escrow_release_operation release;
+
+      release.signatory = "alice";
+      release.account = "alice";
+      release.escrow_from = "alice";
+      release.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17";
+      release.release_percent = PERCENT_100;
+      release.validate();
+
+      tx.operations.push_back( release );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - transfer.amount ) );
+      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance + transfer.amount ) );
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance );
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
+
+      const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
+      auto escrow_itr = escrow_idx.find( std::make_tuple( "alice", "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" ) );
+
+      BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
+      BOOST_REQUIRE( candice_mediator.last_escrow_from == transfer.from );
+      BOOST_REQUIRE( candice_mediator.last_escrow_id == transfer.escrow_id );
+      BOOST_REQUIRE( dan_mediator.last_escrow_from == transfer.from );
+      BOOST_REQUIRE( dan_mediator.last_escrow_id == transfer.escrow_id );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: standard release of escrow funds by FROM account" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when from account has insufficient balance" );
+
+      transfer.signatory = "elon";
+      transfer.account = "elon";
+      transfer.from = "elon";
+      transfer.to = "fred";
+      transfer.escrow_id = "01eee083-5680-4740-ada3-46adda0994bd";
+
+      tx.operations.push_back( transfer );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when from account has insufficient balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when to and from are the same account" );
+
+      transfer.signatory = "elon";
+      transfer.account = "elon";
+      transfer.from = "elon";
+      transfer.to = "elon";
+
+      tx.operations.push_back( transfer );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when to and from are the same account" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when account is not To or From" );
+
+      transfer.signatory = "elon";
+      transfer.account = "elon";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      
+      tx.operations.push_back( transfer );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when account is not To or From" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure trying to repeal after approval" );
+
+      transfer.signatory = "alice";
+      transfer.account = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "alice";
+      approve.account = "alice";
+      approve.mediator = "candice";
+      approve.escrow_from = "alice";
+      approve.escrow_id = "01eee083-5680-4740-ada3-46adda0994bd";
+      approve.approved = true;
+
+      tx.operations.push_back( approve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const escrow_object& escrow = db.get_escrow( "alice", "01eee083-5680-4740-ada3-46adda0994bd" );
+
+      BOOST_REQUIRE( escrow.to == transfer.to );
+      BOOST_REQUIRE( escrow.from == transfer.from );
+      BOOST_REQUIRE( escrow.to_mediator == "dan" );
+      BOOST_REQUIRE( escrow.from_mediator == "candice" );
+      BOOST_REQUIRE( escrow.payment == transfer.amount );
+      BOOST_REQUIRE( escrow.acceptance_time == transfer.acceptance_time );
+      BOOST_REQUIRE( escrow.escrow_expiration == transfer.escrow_expiration ); 
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.approved = false;
+
+      tx.operations.push_back( approve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure trying to repeal after approval" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Success refunding repealed escrow" );
+
+      approve.signatory = "bob";
+      approve.account = "bob";
+      approve.mediator = "dan";
+      approve.escrow_from = "alice";
+      approve.escrow_id = "01eee083-5680-4740-ada3-46adda0994bd";
+      approve.approved = false;
+
+      tx.operations.push_back( approve );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
+      auto escrow_itr = escrow_idx.find( std::make_tuple( "alice", "01eee083-5680-4740-ada3-46adda0994bd" ) );
+
+      BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Success refunding repealed escrow" );
    
-      BOOST_TEST_MESSAGE( "Testing: escrow_approve_authorities" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Automatic refund when escrow is not approved before deadline" );
 
-      escrow_approve_operation op;
-
-      op.from = "alice";
-      op.to = "bob";
-      op.agent = "sam";
-      op.who = "bob";
-      op.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17"
-      op.approve = true;
-
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_active_authorities( auths );
-      expected.insert( "bob" );
-      BOOST_REQUIRE( auths == expected );
-
-      expected.clear();
-      auths.clear();
-
-      op.who = "sam";
-      op.get_required_active_authorities( auths );
-      expected.insert( "sam" );
-      BOOST_REQUIRE( auths == expected );
-   
-      BOOST_TEST_MESSAGE( "Testing: escrow_approve_apply" );
-      ACTORS( (alice)(bob)(sam)(dan) )
-      fund( "alice", 10000 );
-
-      escrow_transfer_operation et_op;
-      et_op.from = "alice";
-      et_op.to = "bob";
-      et_op.agent = "sam";
-      et_op.TMEamount = ASSET( "1.000 TESTS" );
-      et_op.fee = ASSET( "0.100 TESTS" );
-      et_op.json = "";
-      et_op.ratification_deadline = db.head_block_time() + 100;
-      et_op.escrow_expiration = db.head_block_time() + 200;
-
-      signed_transaction tx;
-      tx.operations.push_back( et_op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      BOOST_TEST_MESSAGE( "---failure when to does not match escrow" );
-
-      escrow_approve_operation op;
-
-      op.from = "alice";
-      op.to = "dan";
-      op.agent = "sam";
-      op.who = "dan";
-      op.approve = true;
-
-      tx.operations.push_back( op );
-      tx.sign( dan_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when agent does not match escrow" );
-      op.to = "bob";
-      op.agent = "dan";
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      tx.operations.push_back( op );
-      tx.sign( dan_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_TEST_MESSAGE( "--- success approving to" );
-      op.agent = "sam";
-      op.who = "bob";
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      transfer.signatory = "alice";
+      transfer.account = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.escrow_id = "8ebbd965-739a-48dd-abeb-67d0363fdae8";
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto& escrow = db.get_escrow( op.from, op.escrow_id );
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( !escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-
-      BOOST_TEST_MESSAGE( "--- failure on repeat approval" );
-      tx.signatures.clear();
-
-      tx.set_expiration( db.head_block_time() + BLOCK_INTERVAL );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( !escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-
-
-      BOOST_TEST_MESSAGE( "--- failure trying to repeal after approval" );
-      tx.signatures.clear();
       tx.operations.clear();
-
-      op.approve = false;
-
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.100 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( !escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-
-      BOOST_TEST_MESSAGE( "--- success refunding from because of repeal" );
       tx.signatures.clear();
-      tx.operations.clear();
 
-      op.who = op.agent;
+      const escrow_object& escrow = db.get_escrow( "alice", "8ebbd965-739a-48dd-abeb-67d0363fdae8" );
 
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      BOOST_REQUIRE( escrow.to == transfer.to );
+      BOOST_REQUIRE( escrow.from == transfer.from );
+      BOOST_REQUIRE( escrow.payment == transfer.amount );
+      BOOST_REQUIRE( escrow.acceptance_time == transfer.acceptance_time );
+      BOOST_REQUIRE( escrow.escrow_expiration == transfer.escrow_expiration ); 
 
-      REQUIRE_THROW( db.get_escrow( op.from, op.escrow_id ), fc::exception );
-      BOOST_REQUIRE( alice.balance == ASSET( "10.000 TESTS" ) );
+      generate_blocks( transfer.acceptance_time + BLOCK_INTERVAL );
+
+      const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
+      auto escrow_itr = escrow_idx.find( std::make_tuple( "alice", "8ebbd965-739a-48dd-abeb-67d0363fdae8" ) );
+
+      BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
+
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- test automatic refund when escrow is not ratified before deadline" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( et_op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Automatic refund when escrow is not approved before deadline" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when releasing unapproved escrow" );
+
+      transfer.signatory = "alice";
+      transfer.account = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      generate_blocks( et_op.ratification_deadline + BLOCK_INTERVAL, true );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      REQUIRE_THROW( db.get_escrow( op.from, op.escrow_id ), fc::exception );
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
+      release.signatory = "alice";
+      release.account = "alice";
+      release.escrow_from = "alice";
+      release.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      release.release_percent = 0;
+
+      tx.operations.push_back( release );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- test ratification expiration when escrow is only approved by to" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      et_op.ratification_deadline = db.head_block_time() + 100;
-      et_op.escrow_expiration = db.head_block_time() + 200;
-      tx.operations.push_back( et_op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when releasing unapproved escrow" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Success editing unapproved escrow" );
+
+      transfer.signatory = "alice";
+      transfer.account = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.amount = asset( 1001 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
-      op.who = op.to;
-      op.approve = true;
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
 
-      generate_blocks( et_op.ratification_deadline + BLOCK_INTERVAL, true );
+      const escrow_object& escrow = db.get_escrow( "alice", "98351a27-d0d7-456a-b732-4fb414a0e639" );
 
-      REQUIRE_THROW( db.get_escrow( op.from, op.escrow_id ), fc::exception );
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
+      BOOST_REQUIRE( escrow.to == transfer.to );
+      BOOST_REQUIRE( escrow.from == transfer.from );
+      BOOST_REQUIRE( escrow.payment == transfer.amount );
+      BOOST_REQUIRE( escrow.acceptance_time == transfer.acceptance_time );
+      BOOST_REQUIRE( escrow.escrow_expiration == transfer.escrow_expiration ); 
+
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- test ratification expiration when escrow is only approved by agent" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      et_op.ratification_deadline = db.head_block_time() + 100;
-      et_op.escrow_expiration = db.head_block_time() + 200;
-      tx.operations.push_back( et_op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Success editing unapproved escrow" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when non-particpant account attempts to approve" );
+
+      approve.signatory = "elon";
+      approve.account = "elon";
+      approve.mediator = "candice";
+      approve.escrow_from = "alice";
+      approve.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      approve.approved = true;
+
+      tx.operations.push_back( approve );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
-      op.who = op.agent;
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      generate_blocks( et_op.ratification_deadline + BLOCK_INTERVAL, true );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      REQUIRE_THROW( db.get_escrow( op.from, op.escrow_id ), fc::exception );
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "10.000 TESTS" ) );
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- success approving escrow" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      et_op.ratification_deadline = db.head_block_time() + 100;
-      et_op.escrow_expiration = db.head_block_time() + 200;
-      tx.operations.push_back( et_op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when when non-particpant account attempts to approve" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when approving with an invalid mediator" );
+
+      approve.signatory = "alice";
+      approve.account = "alice";
+      approve.mediator = "elon";   // Elon is not a mediator
+      approve.escrow_from = "alice";
+      approve.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      approve.approved = true;
+
+      tx.operations.push_back( approve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
-      op.who = op.to;
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       tx.operations.clear();
       tx.signatures.clear();
-      op.who = op.agent;
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-      
-      const auto& escrow = db.get_escrow( op.from, op.escrow_id );
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-      
-      BOOST_REQUIRE( db.get_account( "sam" ).balance == et_op.fee );
+
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- ratification expiration does not remove an approved escrow" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when approving with an invalid mediator" );
 
-      generate_blocks( et_op.ratification_deadline + BLOCK_INTERVAL, true );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when releasing approved escrow back to self without dispute" );
 
-      const auto& escrow = db.get_escrow( op.from, op.escrow_id );
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == ASSET( "0.000 USD" ) );
-      BOOST_REQUIRE( escrow.TMEbalance == ASSET( "1.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-      
-      BOOST_REQUIRE( db.get_account( "sam" ).balance == et_op.fee );
+      approve.signatory = "alice";
+      approve.account = "alice";
+      approve.mediator = "candice";
+      approve.escrow_from = "alice";
+      approve.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      approve.approved = true;
+
+      tx.operations.push_back( approve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "bob";
+      approve.account = "bob";
+      approve.mediator = "dan";
+
+      tx.operations.push_back( approve );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "candice";
+      approve.account = "candice";
+      approve.mediator = "candice";
+
+      tx.operations.push_back( approve );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "dan";
+      approve.account = "dan";
+      approve.mediator = "dan";
+
+      tx.operations.push_back( approve );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      release.signatory = "alice";
+      release.account = "alice";
+      release.escrow_from = "alice";
+      release.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      release.release_percent = 0;      // FROM must release with PERCENT_100 before dispute
+
+      tx.operations.push_back( release );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      release.signatory = "bob";
+      release.account = "bob";
+      release.escrow_from = "alice";
+      release.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      release.release_percent = PERCENT_100;      // TO must release with 0 before dispute
+
+      tx.operations.push_back( release );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
 
-BOOST_AUTO_TEST_CASE( escrow_dispute_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: escrow_dispute_validate" );
-      escrow_dispute_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.agent = "alice";
-      op.who = "alice";
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when releasing approved escrow back to self without dispute" );
 
-      BOOST_TEST_MESSAGE( "failure when who is not from or to" );
-      op.who = "sam";
-      REQUIRE_THROW( op.validate(), fc::exception );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when editing approved escrow" );
 
-      BOOST_TEST_MESSAGE( "success" );
-      op.who = "alice";
-      op.validate();
-
-      op.who = "bob";
-      op.validate();
-   
-      BOOST_TEST_MESSAGE( "Testing: escrow_dispute_authorities" );
-      escrow_dispute_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.who = "alice";
-
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_active_authorities( auths );
-      expected.insert( "alice" );
-      BOOST_REQUIRE( auths == expected );
-
-      auths.clear();
-      expected.clear();
-      op.who = "bob";
-      op.get_required_active_authorities( auths );
-      expected.insert( "bob" );
-      BOOST_REQUIRE( auths == expected );
-
-      BOOST_TEST_MESSAGE( "Testing: escrow_dispute_apply" );
-
-      ACTORS( (alice)(bob)(sam)(dan) )
-      fund( "alice", 10000 );
-
-      escrow_transfer_operation et_op;
-      et_op.from = "alice";
-      et_op.to = "bob";
-      et_op.agent = "sam";
-      et_op.TMEamount = ASSET( "1.000 TESTS" );
-      et_op.fee = ASSET( "0.100 TESTS" );
-      et_op.ratification_deadline = db.head_block_time() + BLOCK_INTERVAL;
-      et_op.escrow_expiration = db.head_block_time() + 2 * BLOCK_INTERVAL;
-
-      escrow_approve_operation ea_b_op;
-      ea_b_op.from = "alice";
-      ea_b_op.to = "bob";
-      ea_b_op.agent = "sam";
-      ea_b_op.who = "bob";
-      ea_b_op.approve = true;
-
-      signed_transaction tx;
-      tx.operations.push_back( et_op );
-      tx.operations.push_back( ea_b_op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_TEST_MESSAGE( "--- failure when escrow has not been approved" );
-      escrow_dispute_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.agent = "sam";
-      op.who = "bob";
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-      BOOST_REQUIRE( escrow.pending_fee == et_op.fee );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( !escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-
-      BOOST_TEST_MESSAGE( "--- failure when to does not match escrow" );
-      escrow_approve_operation ea_s_op;
-      ea_s_op.from = "alice";
-      ea_s_op.to = "bob";
-      ea_s_op.agent = "sam";
-      ea_s_op.who = "sam";
-      ea_s_op.approve = true;
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( ea_s_op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      op.to = "dan";
-      op.who = "alice";
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-
-      BOOST_TEST_MESSAGE( "--- failure when agent does not match escrow" );
-      op.to = "bob";
-      op.who = "alice";
-      op.agent = "dan";
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
-
-      BOOST_TEST_MESSAGE( "--- failure when escrow is expired" );
-      generate_blocks( 2 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      op.agent = "sam";
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      transfer.signatory = "alice";
+      transfer.account = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
       
-      const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
-      BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( escrow.agent_approved );
-      BOOST_REQUIRE( !escrow.disputed );
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- success disputing escrow" );
-      et_op.escrow_id = 1;
-      et_op.ratification_deadline = db.head_block_time() + BLOCK_INTERVAL;
-      et_op.escrow_expiration = db.head_block_time() + 2 * BLOCK_INTERVAL;
-      ea_b_op.escrow_id = et_op.escrow_id;
-      ea_s_op.escrow_id = et_op.escrow_id;
+      validate_database();
 
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( et_op );
-      tx.operations.push_back( ea_b_op );
-      tx.operations.push_back( ea_s_op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      tx.sign( sam_private_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when editing approved escrow" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Successfully disputing approved escrow" );
+
+      account_create_operation create;
+
+      create.signatory = "alice";
+      create.registrar = "alice";
+      create.new_account_name = "newuser";
+      create.account_type = PERSONA;
+      create.governance_account = INIT_ACCOUNT;
+      create.owner = authority( 1, alice_public_owner_key, 1 );
+      create.active = authority( 1, alice_public_active_key, 1 );
+      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.secure_public_key = string( alice_public_posting_key );
+      create.connection_public_key = string( alice_public_posting_key );
+      create.friend_public_key = string( alice_public_posting_key );
+      create.companion_public_key = string( alice_public_posting_key );
+      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.validate();
+
+      for( auto i = 0; i < 100; i++ )
+      {
+         create.new_account_name = "newuser"+fc::to_string( i );
+
+         tx.operations.push_back( create );
+         tx.sign( alice_private_owner_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+
+         fund( "newuser"+fc::to_string( i ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund_stake( "newuser"+fc::to_string( i ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+         member.signatory = "newuser"+fc::to_string( i );
+         member.account = "newuser"+fc::to_string( i );
+
+         tx.operations.push_back( member );
+         tx.sign( alice_private_active_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+
+         mediator.signatory = "newuser"+fc::to_string( i );
+         mediator.account = "newuser"+fc::to_string( i );
+
+         tx.operations.push_back( mediator );
+         tx.sign( alice_private_active_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+      }
+
+      escrow_dispute_operation dispute;
+
+      dispute.signatory = "alice";
+      dispute.account = "alice";
+      dispute.escrow_from = "alice";
+      dispute.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+
+      tx.operations.push_back( dispute );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
-      op.escrow_id = et_op.escrow_id;
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-      
-      const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
+
+      const escrow_object& escrow = db.get_escrow( "alice", "98351a27-d0d7-456a-b732-4fb414a0e639" );
+
+      asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+
       BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( escrow.agent_approved );
-      BOOST_REQUIRE( escrow.disputed );
-      
-      BOOST_TEST_MESSAGE( "--- failure when escrow is already under dispute" );
+      BOOST_REQUIRE( escrow.from == "alice" );
+      BOOST_REQUIRE( escrow.to_mediator == "dan" );
+      BOOST_REQUIRE( escrow.from_mediator == "candice" );
+      BOOST_REQUIRE( escrow.payment == transfer.amount );
+      BOOST_REQUIRE( escrow.acceptance_time == transfer.acceptance_time );
+      BOOST_REQUIRE( escrow.escrow_expiration == transfer.escrow_expiration );
+      BOOST_REQUIRE( escrow.dispute_release_time == now() + ESCROW_DISPUTE_DURATION );
+      BOOST_REQUIRE( escrow.balance == escrow.payment + 4 * escrow_bond );
+      BOOST_REQUIRE( escrow.from_approved() == true );
+      BOOST_REQUIRE( escrow.to_approved() == true );
+      BOOST_REQUIRE( escrow.from_mediator_approved() == true );
+      BOOST_REQUIRE( escrow.to_mediator_approved() == true );
+      BOOST_REQUIRE( escrow.is_approved() == true );
+      BOOST_REQUIRE( escrow.disputed == true );
+      BOOST_REQUIRE( escrow.mediators.size() == ESCROW_DISPUTE_MEDIATOR_AMOUNT );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Successfully disputing approved escrow" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when escrow is already disputed" );
+
+      dispute.signatory = "bob";
+      dispute.account = "bob";
+      dispute.escrow_from = "alice";
+      dispute.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+
+      tx.operations.push_back( dispute );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
       tx.operations.clear();
       tx.signatures.clear();
-      op.who = "bob";
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when escrow is already disputed" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Dispute resolution mediators approving transfer" );
+
+      for( account_name_type m : escrow.mediators )
+      {
+         approve.signatory = m;
+         approve.account = m;
+         approve.mediator = m;
+
+         tx.operations.push_back( approve );
+         tx.sign( alice_private_active_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+
+         flat_map< account_name_type, bool > approvals = escrow.approvals;
+
+         BOOST_REQUIRE( approvals[ m ] == true );
+      }
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Dispute resolution mediators approving transfer" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Sucessful fund release from dispute" );
+
+      release.signatory = "alice";
+      release.account = "alice";
+      release.escrow_from = "alice";
+      release.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      release.release_percent = 0;
+
+      tx.operations.push_back( release );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      release.signatory = "bob";
+      release.account = "bob";
+      release.release_percent = PERCENT_100;
+
+      tx.operations.push_back( release );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      release.signatory = "candice";
+      release.account = "candice";
+      release.release_percent = 25 * PERCENT_1;
+
+      tx.operations.push_back( release );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      release.signatory = "dan";
+      release.account = "dan";
+      release.release_percent = 75 * PERCENT_1;
+
+      tx.operations.push_back( release );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      for( account_name_type m : escrow.mediators )
+      {
+         release.signatory = m;
+         release.account = m;
+         release.release_percent = 10 * PERCENT_1;
+
+         tx.operations.push_back( release );
+         tx.sign( alice_private_active_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+
+         flat_map< account_name_type, uint16_t > release_percentages = escrow.release_percentages;
+
+         BOOST_REQUIRE( release_percentages[ m ] == release.release_percent );
+      }
+
+      const escrow_object& escrow = db.get_escrow( "alice", "98351a27-d0d7-456a-b732-4fb414a0e639" );
+
+      generate_blocks( escrow.dispute_release_time + BLOCK_INTERVAL );
+
+      const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
+      auto escrow_itr = escrow_idx.find( std::make_tuple( "alice", "98351a27-d0d7-456a-b732-4fb414a0e639" ) );
+
+      BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
+      BOOST_REQUIRE( candice_mediator.last_escrow_from == transfer.from );
+      BOOST_REQUIRE( candice_mediator.last_escrow_id == transfer.escrow_id );
+      BOOST_REQUIRE( dan_mediator.last_escrow_from == transfer.from );
+      BOOST_REQUIRE( dan_mediator.last_escrow_id == transfer.escrow_id );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Sucessful fund release from dispute" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when disputing after escrow expiration" );
+
+      transfer.signatory = "alice";
+      transfer.account = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.escrow_id = "efab7764-63af-4e6a-95e4-b4dd7c23e40b";
       
-      const auto& escrow = db.get_escrow( et_op.from, et_op.escrow_id );
+      tx.operations.push_back( transfer );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "alice";
+      approve.account = "alice";
+      approve.mediator = "candice";
+      approve.escrow_from = "alice";
+      approve.escrow_id = "efab7764-63af-4e6a-95e4-b4dd7c23e40b";
+      approve.approved = true;
+
+      tx.operations.push_back( approve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "bob";
+      approve.account = "bob";
+      approve.mediator = "dan";
+
+      tx.operations.push_back( approve );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "candice";
+      approve.account = "candice";
+      approve.mediator = "candice";
+
+      tx.operations.push_back( approve );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "dan";
+      approve.account = "dan";
+      approve.mediator = "dan";
+
+      tx.operations.push_back( approve );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( transfer.escrow_expiration + BLOCK_INTERVAL );
+
+      const escrow_object& escrow = db.get_escrow( "alice", "efab7764-63af-4e6a-95e4-b4dd7c23e40b" );
+
+      asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+
       BOOST_REQUIRE( escrow.to == "bob" );
-      BOOST_REQUIRE( escrow.agent == "sam" );
-      BOOST_REQUIRE( escrow.ratification_deadline == et_op.ratification_deadline );
-      BOOST_REQUIRE( escrow.escrow_expiration == et_op.escrow_expiration );
-      BOOST_REQUIRE( escrow.USDbalance == et_op.USDamount );
-      BOOST_REQUIRE( escrow.TMEbalance == et_op.TMEamount );
-      BOOST_REQUIRE( escrow.pending_fee == ASSET( "0.000 TESTS" ) );
-      BOOST_REQUIRE( escrow.to_approved );
-      BOOST_REQUIRE( escrow.agent_approved );
-      BOOST_REQUIRE( escrow.disputed );
-   }
-   FC_LOG_AND_RETHROW()
-}
+      BOOST_REQUIRE( escrow.from == "alice" );
+      BOOST_REQUIRE( escrow.to_mediator == "dan" );
+      BOOST_REQUIRE( escrow.from_mediator == "candice" );
+      BOOST_REQUIRE( escrow.payment == transfer.amount );
+      BOOST_REQUIRE( escrow.acceptance_time == transfer.acceptance_time );
+      BOOST_REQUIRE( escrow.escrow_expiration == transfer.escrow_expiration );
+      BOOST_REQUIRE( escrow.dispute_release_time == now() + ESCROW_DISPUTE_DURATION );
+      BOOST_REQUIRE( escrow.balance == escrow.payment + 4 * escrow_bond );
+      BOOST_REQUIRE( escrow.from_approved() == true );
+      BOOST_REQUIRE( escrow.to_approved() == true );
+      BOOST_REQUIRE( escrow.from_mediator_approved() == true );
+      BOOST_REQUIRE( escrow.to_mediator_approved() == true );
+      BOOST_REQUIRE( escrow.is_approved() == true );
 
-BOOST_AUTO_TEST_CASE( escrow_release_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: escrow release validate" );
-      escrow_release_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.who = "alice";
-      op.agent = "sam";
-      op.receiver = "bob";
+      dispute.signatory = "bob";
+      dispute.account = "bob";
+      dispute.escrow_from = "alice";
+      dispute.escrow_id = "efab7764-63af-4e6a-95e4-b4dd7c23e40b";
 
-      BOOST_TEST_MESSAGE( "--- failure when TME < 0" );
-      op.TMEamount.amount = -1;
-      REQUIRE_THROW( op.validate(), fc::exception );
+      tx.operations.push_back( dispute );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- failure when USD < 0" );
-      op.TMEamount.amount = 0;
-      op.USDamount.amount = -1;
-      REQUIRE_THROW( op.validate(), fc::exception );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "--- failure when TME == 0 and USD == 0" );
-      op.USDamount.amount = 0;
-      REQUIRE_THROW( op.validate(), fc::exception );
+      validate_database();
 
-      BOOST_TEST_MESSAGE( "--- failure when USD is not USD symbol" );
-      op.USDamount = ASSET( "1.000 TESTS" );
-      REQUIRE_THROW( op.validate(), fc::exception );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when disputing after escrow expiration" );
 
-      BOOST_TEST_MESSAGE( "--- failure when TME is not TME symbol" );
-      op.USDamount.symbol = SYMBOL_USD;
-      op.TMEamount = ASSET( "1.000 USD" );
-      REQUIRE_THROW( op.validate(), fc::exception );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Release to self after escrow expiration" );
 
-      BOOST_TEST_MESSAGE( "--- success" );
-      op.TMEamount.symbol = SYMBOL_COIN;
-      op.validate();
-   
-      BOOST_TEST_MESSAGE( "Testing: escrow_release_authorities" );
-      escrow_release_operation op;
-      op.from = "alice";
-      op.to = "bob";
-      op.who = "alice";
+      release.signatory = "alice";
+      release.account = "alice";
+      release.escrow_from = "alice";
+      release.escrow_id = "efab7764-63af-4e6a-95e4-b4dd7c23e40b";
+      release.release_percent = 0;
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
-
-      op.get_required_owner_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.get_required_posting_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.who = "bob";
-      auths.clear();
-      expected.clear();
-      expected.insert( "bob" );
-      op.get_required_active_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-
-      op.who = "sam";
-      auths.clear();
-      expected.clear();
-      expected.insert( "sam" );
-      op.get_required_active_authorities( auths );
-      BOOST_REQUIRE( auths == expected );
-   
-      BOOST_TEST_MESSAGE( "Testing: escrow_release_apply" );
-
-      ACTORS( (alice)(bob)(sam)(dan) )
-      fund( "alice", 10000 );
-
-      escrow_transfer_operation et_op;
-      et_op.from = "alice";
-      et_op.to = "bob";
-      et_op.agent = "sam";
-      et_op.TMEamount = ASSET( "1.000 TESTS" );
-      et_op.fee = ASSET( "0.100 TESTS" );
-      et_op.ratification_deadline = db.head_block_time() + BLOCK_INTERVAL;
-      et_op.escrow_expiration = db.head_block_time() + 2 * BLOCK_INTERVAL;
-
-      signed_transaction tx;
-      tx.operations.push_back( et_op );
-
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      tx.operations.push_back( release );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_TEST_MESSAGE( "--- failure releasing funds prior to approval" );
-      escrow_release_operation op;
-      op.from = et_op.from;
-      op.to = et_op.to;
-      op.agent = et_op.agent;
-      op.who = et_op.from;
-      op.receiver = et_op.to;
-      op.TMEamount = ASSET( "0.100 TESTS" );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
+      auto escrow_itr = escrow_idx.find( std::make_tuple( "alice", "efab7764-63af-4e6a-95e4-b4dd7c23e40b" ) );
 
-      escrow_approve_operation ea_b_op;
-      ea_b_op.from = "alice";
-      ea_b_op.to = "bob";
-      ea_b_op.agent = "sam";
-      ea_b_op.who = "bob";
+      BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
+      BOOST_REQUIRE( candice_mediator.last_escrow_from == transfer.from );
+      BOOST_REQUIRE( candice_mediator.last_escrow_id == transfer.escrow_id );
+      BOOST_REQUIRE( dan_mediator.last_escrow_from == transfer.from );
+      BOOST_REQUIRE( dan_mediator.last_escrow_id == transfer.escrow_id );
 
-      escrow_approve_operation ea_s_op;
-      ea_s_op.from = "alice";
-      ea_s_op.to = "bob";
-      ea_s_op.agent = "sam";
-      ea_s_op.who = "sam";
+      validate_database();
 
-      tx.clear();
-      tx.operations.push_back( ea_b_op );
-      tx.operations.push_back( ea_s_op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Release to self after escrow expiration" );
 
-      BOOST_TEST_MESSAGE( "--- failure when 'agent' attempts to release non-disputed escrow to 'to'" );
-      op.who = et_op.agent;
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE("--- failure when 'agent' attempts to release non-disputed escrow to 'from' " );
-      op.receiver = et_op.from;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'agent' attempt to release non-disputed escrow to not 'to' or 'from'" );
-      op.receiver = "dan";
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when other attempts to release non-disputed escrow to 'to'" );
-      op.receiver = et_op.to;
-      op.who = "dan";
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( dan_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE("--- failure when other attempts to release non-disputed escrow to 'from' " );
-      op.receiver = et_op.from;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( dan_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when other attempt to release non-disputed escrow to not 'to' or 'from'" );
-      op.receiver = "dan";
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( dan_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'to' attemtps to release non-disputed escrow to 'to'" );
-      op.receiver = et_op.to;
-      op.who = et_op.to;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE("--- failure when 'to' attempts to release non-dispured escrow to 'agent' " );
-      op.receiver = et_op.agent;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'to' attempts to release non-disputed escrow to not 'from'" );
-      op.receiver = "dan";
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- success release non-disputed escrow to 'to' from 'from'" );
-      op.receiver = et_op.from;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_escrow( op.from, op.escrow_id ).TMEbalance == ASSET( "0.900 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.000 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release non-disputed escrow to 'from'" );
-      op.receiver = et_op.from;
-      op.who = et_op.from;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE("--- failure when 'from' attempts to release non-disputed escrow to 'agent'" );
-      op.receiver = et_op.agent;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release non-disputed escrow to not 'from'" );
-      op.receiver = "dan";
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- success release non-disputed escrow to 'from' from 'to'" );
-      op.receiver = et_op.to;
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_escrow( op.from, op.escrow_id ).TMEbalance == ASSET( "0.800 TESTS" ) );
-      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.100 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when releasing more USD than available" );
-      op.TMEamount = ASSET( "1.000 TESTS" );
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_TEST_MESSAGE( "--- failure when releasing less TME than available" );
-      op.TMEamount = ASSET( "0.000 TESTS" );
-      op.USDamount = ASSET( "1.000 USD" );
-
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'to' attempts to release disputed escrow" );
-      escrow_dispute_operation ed_op;
-      ed_op.from = "alice";
-      ed_op.to = "bob";
-      ed_op.agent = "sam";
-      ed_op.who = "alice";
-
-      tx.clear();
-      tx.operations.push_back( ed_op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.clear();
-      op.from = et_op.from;
-      op.receiver = et_op.from;
-      op.who = et_op.to;
-      op.TMEamount = ASSET( "0.100 TESTS" );
-      op.USDamount = ASSET( "0.000 USD" );
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release disputed escrow" );
-      tx.clear();
-      op.receiver = et_op.to;
-      op.who = et_op.from;
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when releasing disputed escrow to an account not 'to' or 'from'" );
-      tx.clear();
-      op.who = et_op.agent;
-      op.receiver = "dan";
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when agent does not match escrow" );
-      tx.clear();
-      op.who = "dan";
-      op.receiver = et_op.from;
-      tx.operations.push_back( op );
-      tx.sign( dan_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- success releasing disputed escrow with agent to 'to'" );
-      tx.clear();
-      op.receiver = et_op.to;
-      op.who = et_op.agent;
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.200 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).TMEbalance == ASSET( "0.700 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- success releasing disputed escrow with agent to 'from'" );
-      tx.clear();
-      op.receiver = et_op.from;
-      op.who = et_op.agent;
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.100 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).TMEbalance == ASSET( "0.600 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'to' attempts to release disputed expired escrow" );
-      generate_blocks( 2 );
-
-      tx.clear();
-      op.receiver = et_op.from;
-      op.who = et_op.to;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release disputed expired escrow" );
-      tx.clear();
-      op.receiver = et_op.to;
-      op.who = et_op.from;
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- success releasing disputed expired escrow with agent" );
-      tx.clear();
-      op.receiver = et_op.from;
-      op.who = et_op.agent;
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.200 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).TMEbalance == ASSET( "0.500 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- success deleting escrow when balances are both zero" );
-      tx.clear();
-      op.TMEamount = ASSET( "0.500 TESTS" );
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.700 TESTS" ) );
-      REQUIRE_THROW( db.get_escrow( et_op.from, et_op.escrow_id ), fc::exception );
-
-
-      tx.clear();
-      et_op.ratification_deadline = db.head_block_time() + BLOCK_INTERVAL;
-      et_op.escrow_expiration = db.head_block_time() + 2 * BLOCK_INTERVAL;
-      tx.operations.push_back( et_op );
-      tx.operations.push_back( ea_b_op );
-      tx.operations.push_back( ea_s_op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-      generate_blocks( 2 );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'agent' attempts to release non-disputed expired escrow to 'to'" );
-      tx.clear();
-      op.receiver = et_op.to;
-      op.who = et_op.agent;
-      op.TMEamount = ASSET( "0.100 TESTS" );
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'agent' attempts to release non-disputed expired escrow to 'from'" );
-      tx.clear();
-      op.receiver = et_op.from;
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'agent' attempt to release non-disputed expired escrow to not 'to' or 'from'" );
-      tx.clear();
-      op.receiver = "dan";
-      tx.operations.push_back( op );
-      tx.sign( sam_private_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'to' attempts to release non-dispured expired escrow to 'agent'" );
-      tx.clear();
-      op.who = et_op.to;
-      op.receiver = et_op.agent;
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'to' attempts to release non-disputed expired escrow to not 'from' or 'to'" );
-      tx.clear();
-      op.receiver = "dan";
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- success release non-disputed expired escrow to 'to' from 'to'" );
-      tx.clear();
-      op.receiver = et_op.to;
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.300 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).TMEbalance == ASSET( "0.900 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- success release non-disputed expired escrow to 'from' from 'to'" );
-      tx.clear();
-      op.receiver = et_op.from;
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "8.700 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).TMEbalance == ASSET( "0.800 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release non-disputed expired escrow to 'agent'" );
-      tx.clear();
-      op.who = et_op.from;
-      op.receiver = et_op.agent;
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- failure when 'from' attempts to release non-disputed expired escrow to not 'from' or 'to'" );
-      tx.clear();
-      op.receiver = "dan";
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-
-      BOOST_TEST_MESSAGE( "--- success release non-disputed expired escrow to 'to' from 'from'" );
-      tx.clear();
-      op.receiver = et_op.to;
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "bob" ).balance == ASSET( "0.400 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).TMEbalance == ASSET( "0.700 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- success release non-disputed expired escrow to 'from' from 'from'" );
-      tx.clear();
-      op.receiver = et_op.from;
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "8.800 TESTS" ) );
-      BOOST_REQUIRE( db.get_escrow( et_op.from, et_op.escrow_id ).TMEbalance == ASSET( "0.600 TESTS" ) );
-
-
-      BOOST_TEST_MESSAGE( "--- success deleting escrow when balances are zero on non-disputed escrow" );
-      tx.clear();
-      op.TMEamount = ASSET( "0.600 TESTS" );
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_account( "alice" ).balance == ASSET( "9.400 TESTS" ) );
-      REQUIRE_THROW( db.get_escrow( et_op.from, et_op.escrow_id ), fc::exception );
+      BOOST_TEST_MESSAGE( "├── Passed: ESCROW TRANSFER OPERATION SEQUENCE" );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -13509,805 +13318,1235 @@ BOOST_AUTO_TEST_CASE( escrow_release_validate )
 
 
 
-BOOST_AUTO_TEST_CASE( limit_order_create_authorities )
+BOOST_AUTO_TEST_CASE( limit_order_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: limit_order_create_authorities" );
+      BOOST_TEST_MESSAGE( "├── Testing: LIMIT ORDER" );
 
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: creation of limit order" );
 
-      limit_order_create_operation op;
-      op.owner = "alice";
-      op.amount_to_sell = ASSET( "1.000 TESTS" );
-      op.min_to_receive = ASSET( "1.000 USD" );
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
-      signed_transaction tx;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
-      BOOST_TEST_MESSAGE( "--- Test failure when no signature." );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      BOOST_TEST_MESSAGE( "--- Test success with account signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, database::skip_transaction_dupe_check );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      BOOST_TEST_MESSAGE( "--- Test failure with duplicate signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_duplicate_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with additional incorrect signature" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_irrelevant_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with incorrect signature" );
-      tx.signatures.clear();
-      tx.sign( alice_post_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
-
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "Testing: limit_order_create_apply" );
-
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) ) );
-
-      ACTORS( (alice)(bob) )
-      fund( "alice", 1000000 );
-      fund( "bob", 1000000 );
-      convert( "bob", ASSET("1000.000 TESTS" ) );
-
-      const auto& limit_order_idx = db.get_index< limit_order_index >().indices().get< by_account >();
-
-      BOOST_TEST_MESSAGE( "--- Test failure when account does not have required funds" );
-      limit_order_create_operation op;
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      
       signed_transaction tx;
 
-      op.owner = "bob";
-      op.orderid = 1;
-      op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.min_to_receive = ASSET( "10.000 USD" );
-      op.fill_or_kill = false;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      limit_order_operation limit;
+
+      limit.signatory = "alice";
+      limit.owner = "alice";
+      limit.order_id = "db35cabd-2aee-41b1-84ab-7372c4b6f8e5";
+      limit.amount_to_sell = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      limit.exchange_rate = price( asset( 1, SYMBOL_COIN ), asset( 1, SYMBOL_USD ) );
+      limit.expiration = now() + fc::days( 30 );
+      limit.interface = INIT_ACCOUNT;
+      limit.fill_or_kill = false;
+      limit.opened = true;
+      limit.validate();
+
+      tx.operations.push_back( limit );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const limit_order_object& alice_order = db.get_limit_order( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" );
+
+      BOOST_REQUIRE( alice_order.seller == limit.owner );
+      BOOST_REQUIRE( alice_order.for_sale == limit.amount_to_sell.amount );
+      BOOST_REQUIRE( alice_order.sell_price == limit.exchange_rate );
+      BOOST_REQUIRE( alice_order.interface == limit.interface );
+      BOOST_REQUIRE( alice_order.expiration == limit.expiration );
+      BOOST_REQUIRE( alice_order.amount_for_sale() == limit.amount_to_sell );
+      BOOST_REQUIRE( alice_order.amount_to_receive() == limit.amount_to_sell * limit.exchange_rate );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: creation of limit order" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account does not have required funds" );
+
+      limit.order_id = "6bb04e7a-d350-4dba-90c0-08b58712160a";
+      limit.amount_to_sell = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      
+      tx.operations.push_back( limit );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "100.0000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test failure when amount to receive is 0" );
-
-      op.owner = "alice";
-      op.min_to_receive = ASSET( "0.000 USD" );
       tx.operations.clear();
       tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account does not have required funds" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when amount to sell is 0" );
+
+      limit.order_id = "6bb04e7a-d350-4dba-90c0-08b58712160a";
+      limit.amount_to_sell = asset( 0, SYMBOL_COIN );
+      limit.exchange_rate = price( asset( 1, SYMBOL_COIN ), asset( 1, SYMBOL_USD ) );
+      
+      tx.operations.push_back( limit );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test failure when amount to sell is 0" );
-
-      op.amount_to_sell = ASSET( "0.000 TESTS" );
-      op.min_to_receive = ASSET( "10.000 USD" ) ;
       tx.operations.clear();
       tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when amount to sell is 0" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when fill or kill order is not filled" );
+
+      limit.order_id = "6bb04e7a-d350-4dba-90c0-08b58712160a";
+      limit.amount_to_sell = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      limit.exchange_rate = price( asset( 1, SYMBOL_COIN ), asset( 1, SYMBOL_USD ) );
+      limit.fill_or_kill = true;
+      
+      tx.operations.push_back( limit );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test success creating limit order that will not be filled" );
-
-      op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.min_to_receive = ASSET( "15.000 USD" );
       tx.operations.clear();
       tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when fill or kill order is not filled" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing limit order fully, but the new order partially" );
+
+      limit.signatory = "bob";
+      limit.owner = "bob";
+      limit.order_id = "10f11157-9460-4505-b346-28e5b9ed77ed";
+      limit.amount_to_sell = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      limit.exchange_rate = price( asset( 1, SYMBOL_USD ), asset( 1, SYMBOL_COIN ) );
+      limit.expiration = now() + fc::days( 30 );
+      limit.interface = INIT_ACCOUNT;
+      limit.fill_or_kill = false;
+      limit.validate();
+
+      tx.operations.push_back( limit );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto limit_order = limit_order_idx.find( std::make_tuple( "alice", op.orderid ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == op.owner );
-      BOOST_REQUIRE( limit_order->orderid == op.orderid );
-      BOOST_REQUIRE( limit_order->for_sale == op.amount_to_sell.amount );
-      BOOST_REQUIRE( limit_order->sell_price == price( op.amount_to_sell / op.min_to_receive ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test failure creating limit order with duplicate id" );
-
-      op.amount_to_sell = ASSET( "20.000 TESTS" );
       tx.operations.clear();
       tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      limit_order = limit_order_idx.find( std::make_tuple( "alice", op.orderid ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == op.owner );
-      BOOST_REQUIRE( limit_order->orderid == op.orderid );
-      BOOST_REQUIRE( limit_order->for_sale == 10000 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), op.min_to_receive ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
+      const limit_order_object& bob_order = db.get_limit_order( "bob", "10f11157-9460-4505-b346-28e5b9ed77ed" );
+
+      BOOST_REQUIRE( bob_order.seller == limit.owner );
+      BOOST_REQUIRE( bob_order.sell_price == limit.exchange_rate );
+      BOOST_REQUIRE( bob_order.interface == limit.interface );
+      BOOST_REQUIRE( bob_order.expiration == limit.expiration );
+      BOOST_REQUIRE( bob_order.amount_for_sale() == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( bob_order.amount_to_receive() == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      const auto& limit_idx = db.get_index< limit_order_index >().indices().get< by_account >();
+      auto limit_itr = limit_idx.find( std::make_tuple( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) );
+
+      BOOST_REQUIRE( limit_itr == limit_idx.end() );
+      
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test sucess killing an order that will not be filled" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Filling existing limit order fully, but the new order partially" );
 
-      op.orderid = 2;
-      op.fill_or_kill = true;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing limit order and the new order fully" );
 
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
+      limit.signatory = "candice";
+      limit.owner = "candice";
+      limit.order_id = "ad3cf087-bf74-41d8-9ff5-6e302fff2446";
+      limit.amount_to_sell = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      limit.exchange_rate = price( asset( 1, SYMBOL_COIN ), asset( 1, SYMBOL_USD ) );
+      limit.expiration = now() + fc::days( 30 );
+      limit.interface = INIT_ACCOUNT;
+      limit.fill_or_kill = false;
+      limit.validate();
 
-      BOOST_TEST_MESSAGE( "--- Test having a partial match to limit order" );
-      // Alice has order for 15 USD at a price of 2:3
-      // Fill 5 TME for 7.5 USD
-
-      op.owner = "bob";
-      op.orderid = 1;
-      op.amount_to_sell = ASSET( "7.500 USD" );
-      op.min_to_receive = ASSET( "5.000 TESTS" );
-      op.fill_or_kill = false;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      tx.operations.push_back( limit );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto recent_ops = get_last_operations( 1 );
-      auto fill_order_op = recent_ops[0].get< fill_order_operation >();
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      limit_order = limit_order_idx.find( std::make_tuple( "alice", 1 ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == "alice" );
-      BOOST_REQUIRE( limit_order->orderid == op.orderid );
-      BOOST_REQUIRE( limit_order->for_sale == 5000 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "10.000 TESTS" ), ASSET( "15.000 USD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "7.500 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "992.500 USD" ).amount.value );
-      BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
-      BOOST_REQUIRE( fill_order_op.open_orderid == 1 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == ASSET( "5.000 TESTS").amount.value );
-      BOOST_REQUIRE( fill_order_op.current_owner == "bob" );
-      BOOST_REQUIRE( fill_order_op.current_orderid == 1 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == ASSET( "7.500 USD" ).amount.value );
+      const auto& limit_idx = db.get_index< limit_order_index >().indices().get< by_account >();
+      auto limit_itr = limit_idx.find( std::make_tuple( "candice", "ad3cf087-bf74-41d8-9ff5-6e302fff2446" ) );
+
+      BOOST_REQUIRE( limit_itr == limit_idx.end() );
+
       validate_database();
 
-      BOOST_TEST_MESSAGE( "--- Test filling an existing order fully, but the new order partially" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Filling existing limit order and the new order fully" );
 
-      op.amount_to_sell = ASSET( "15.000 USD" );
-      op.min_to_receive = ASSET( "10.000 TESTS" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      limit_order = limit_order_idx.find( std::make_tuple( "bob", 1 ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == "bob" );
-      BOOST_REQUIRE( limit_order->orderid == 1 );
-      BOOST_REQUIRE( limit_order->for_sale.value == 7500 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "15.000 USD" ), ASSET( "10.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "15.000 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "977.500 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test filling an existing order and new order fully" );
-
-      op.owner = "alice";
-      op.orderid = 3;
-      op.amount_to_sell = ASSET( "5.000 TESTS" );
-      op.min_to_receive = ASSET( "7.500 USD" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 3 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", 1 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "985.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "22.500 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "15.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "977.500 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is better." );
-
-      op.owner = "alice";
-      op.orderid = 4;
-      op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.min_to_receive = ASSET( "11.000 USD" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      op.owner = "bob";
-      op.orderid = 4;
-      op.amount_to_sell = ASSET( "12.000 USD" );
-      op.min_to_receive = ASSET( "10.000 TESTS" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      limit_order = limit_order_idx.find( std::make_tuple( "bob", 4 ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order_idx.find(std::make_tuple( "alice", 4 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == "bob" );
-      BOOST_REQUIRE( limit_order->orderid == 4 );
-      BOOST_REQUIRE( limit_order->for_sale.value == 1000 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "12.000 USD" ), ASSET( "10.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "975.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "33.500 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "25.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "965.500 USD" ).amount.value );
-      validate_database();
-
-      limit_order_cancel_operation can;
-      can.owner = "bob";
-      can.orderid = 4;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( can );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is worse." );
-
-      auto props = db.get_dynamic_global_properties();
-      auto start_USD = props.current_USD_supply;
-
-      op.owner = "alice";
-      op.orderid = 5;
-      op.amount_to_sell = ASSET( "20.000 TESTS" );
-      op.min_to_receive = ASSET( "22.000 USD" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      op.owner = "bob";
-      op.orderid = 5;
-      op.amount_to_sell = ASSET( "12.000 USD" );
-      op.min_to_receive = ASSET( "10.000 TESTS" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      limit_order = limit_order_idx.find( std::make_tuple( "alice", 5 ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order_idx.find(std::make_tuple( "bob", 5 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == "alice" );
-      BOOST_REQUIRE( limit_order->orderid == 5 );
-      BOOST_REQUIRE( limit_order->for_sale.value == 9091 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "20.000 TESTS" ), ASSET( "22.000 USD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "955.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "45.500 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "954.500 USD" ).amount.value );
-      validate_database();
-   
-      BOOST_TEST_MESSAGE( "Testing: limit_order_create_authorities" );
-
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
-
-      limit_order_create_operation op;
-      op.owner = "alice";
-      op.amount_to_sell = ASSET( "1.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) );
-
-      signed_transaction tx;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when no signature." );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
-
-      BOOST_TEST_MESSAGE( "--- Test success with account signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, database::skip_transaction_dupe_check );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with duplicate signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_duplicate_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with additional incorrect signature" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_irrelevant_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with incorrect signature" );
-      tx.signatures.clear();
-      tx.sign( alice_post_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
-
-      validate_database();
-   
-      BOOST_TEST_MESSAGE( "Testing: limit_order_create_apply" );
-
-      set_price_feed( price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) ) );
-
-      ACTORS( (alice)(bob) )
-      fund( "alice", 1000000 );
-      fund( "bob", 1000000 );
-      convert( "bob", ASSET("1000.000 TESTS" ) );
-
-      const auto& limit_order_idx = db.get_index< limit_order_index >().indices().get< by_account >();
-
-      BOOST_TEST_MESSAGE( "--- Test failure when account does not have required funds" );
-      limit_order_create_operation op;
-      signed_transaction tx;
-
-      op.owner = "bob";
-      op.orderid = 1;
-      op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) );
-      op.fill_or_kill = false;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "0.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "100.0000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test failure when price is 0" );
-
-      op.owner = "alice";
-      op.exchange_rate = price( ASSET( "0.000 TESTS" ), ASSET( "1.000 USD" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test failure when amount to sell is 0" );
-
-      op.amount_to_sell = ASSET( "0.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "1000.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test success creating limit order that will not be filled" );
-
-      op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.exchange_rate = price( ASSET( "2.000 TESTS" ), ASSET( "3.000 USD" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      auto limit_order = limit_order_idx.find( std::make_tuple( "alice", op.orderid ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == op.owner );
-      BOOST_REQUIRE( limit_order->orderid == op.orderid );
-      BOOST_REQUIRE( limit_order->for_sale == op.amount_to_sell.amount );
-      BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test failure creating limit order with duplicate id" );
-
-      op.amount_to_sell = ASSET( "20.000 TESTS" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      limit_order = limit_order_idx.find( std::make_tuple( "alice", op.orderid ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == op.owner );
-      BOOST_REQUIRE( limit_order->orderid == op.orderid );
-      BOOST_REQUIRE( limit_order->for_sale == 10000 );
-      BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test sucess killing an order that will not be filled" );
-
-      op.orderid = 2;
-      op.fill_or_kill = true;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test having a partial match to limit order" );
-      // Alice has order for 15 USD at a price of 2:3
-      // Fill 5 TME for 7.5 USD
-
-      op.owner = "bob";
-      op.orderid = 1;
-      op.amount_to_sell = ASSET( "7.500 USD" );
-      op.exchange_rate = price( ASSET( "3.000 USD" ), ASSET( "2.000 TESTS" ) );
-      op.fill_or_kill = false;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      auto recent_ops = get_last_operations( 1 );
-      auto fill_order_op = recent_ops[0].get< fill_order_operation >();
-
-      limit_order = limit_order_idx.find( std::make_tuple( "alice", 1 ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == "alice" );
-      BOOST_REQUIRE( limit_order->orderid == op.orderid );
-      BOOST_REQUIRE( limit_order->for_sale == 5000 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "2.000 TESTS" ), ASSET( "3.000 USD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", op.orderid ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "7.500 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "5.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "992.500 USD" ).amount.value );
-      BOOST_REQUIRE( fill_order_op.open_owner == "alice" );
-      BOOST_REQUIRE( fill_order_op.open_orderid == 1 );
-      BOOST_REQUIRE( fill_order_op.open_pays.amount.value == ASSET( "5.000 TESTS").amount.value );
-      BOOST_REQUIRE( fill_order_op.current_owner == "bob" );
-      BOOST_REQUIRE( fill_order_op.current_orderid == 1 );
-      BOOST_REQUIRE( fill_order_op.current_pays.amount.value == ASSET( "7.500 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test filling an existing order fully, but the new order partially" );
-
-      op.amount_to_sell = ASSET( "15.000 USD" );
-      op.exchange_rate = price( ASSET( "3.000 USD" ), ASSET( "2.000 TESTS" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      limit_order = limit_order_idx.find( std::make_tuple( "bob", 1 ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == "bob" );
-      BOOST_REQUIRE( limit_order->orderid == 1 );
-      BOOST_REQUIRE( limit_order->for_sale.value == 7500 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "3.000 USD" ), ASSET( "2.000 TESTS" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 1 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "990.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "15.000 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "977.500 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test filling an existing order and new order fully" );
-
-      op.owner = "alice";
-      op.orderid = 3;
-      op.amount_to_sell = ASSET( "5.000 TESTS" );
-      op.exchange_rate = price( ASSET( "2.000 TESTS" ), ASSET( "3.000 USD" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 3 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "bob", 1 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "985.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "22.500 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "15.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "977.500 USD" ).amount.value );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is better." );
-
-      op.owner = "alice";
-      op.orderid = 4;
-      op.amount_to_sell = ASSET( "10.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.100 USD" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      op.owner = "bob";
-      op.orderid = 4;
-      op.amount_to_sell = ASSET( "12.000 USD" );
-      op.exchange_rate = price( ASSET( "1.200 USD" ), ASSET( "1.000 TESTS" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      limit_order = limit_order_idx.find( std::make_tuple( "bob", 4 ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order_idx.find(std::make_tuple( "alice", 4 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == "bob" );
-      BOOST_REQUIRE( limit_order->orderid == 4 );
-      BOOST_REQUIRE( limit_order->for_sale.value == 1000 );
-      BOOST_REQUIRE( limit_order->sell_price == op.exchange_rate );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "975.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "33.500 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "25.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "965.500 USD" ).amount.value );
-      validate_database();
-
-      limit_order_cancel_operation can;
-      can.owner = "bob";
-      can.orderid = 4;
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( can );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_TEST_MESSAGE( "--- Test filling limit order with better order when partial order is worse." );
-
-      auto props = db.get_dynamic_global_properties();
-      auto start_USD = props.current_USD_supply;
-
-      op.owner = "alice";
-      op.orderid = 5;
-      op.amount_to_sell = ASSET( "20.000 TESTS" );
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.100 USD" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      op.owner = "bob";
-      op.orderid = 5;
-      op.amount_to_sell = ASSET( "12.000 USD" );
-      op.exchange_rate = price( ASSET( "1.200 USD" ), ASSET( "1.000 TESTS" ) );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      limit_order = limit_order_idx.find( std::make_tuple( "alice", 5 ) );
-      BOOST_REQUIRE( limit_order != limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order_idx.find(std::make_tuple( "bob", 5 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( limit_order->seller == "alice" );
-      BOOST_REQUIRE( limit_order->orderid == 5 );
-      BOOST_REQUIRE( limit_order->for_sale.value == 9091 );
-      BOOST_REQUIRE( limit_order->sell_price == price( ASSET( "1.000 TESTS" ), ASSET( "1.100 USD" ) ) );
-      BOOST_REQUIRE( limit_order->get_market() == std::make_pair( SYMBOL_USD, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "955.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "45.500 USD" ).amount.value );
-      BOOST_REQUIRE( bob.balance.amount.value == ASSET( "35.909 TESTS" ).amount.value );
-      BOOST_REQUIRE( bob.USDbalance.amount.value == ASSET( "954.500 USD" ).amount.value );
-      validate_database();
+      BOOST_TEST_MESSAGE( "├── Testing: LIMIT ORDER" );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( limit_order_cancel_authorities )
+
+
+BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: limit_order_cancel_authorities" );
+      BOOST_TEST_MESSAGE( "├── Testing: MARGIN ORDER" );
 
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Creation sequence of margin order" );
 
-      limit_order_create_operation c;
-      c.owner = "alice";
-      c.orderid = 1;
-      c.amount_to_sell = ASSET( "1.000 TESTS" );
-      c.min_to_receive = ASSET( "1.000 USD" );
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
+
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      fund( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_stake( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      
       signed_transaction tx;
-      tx.operations.push_back( c );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
 
-      limit_order_cancel_operation op;
-      op.owner = "alice";
-      op.orderid = 1;
+      liquidity_pool_fund_operation fund;
+
+      asset_symbol_type coin_usd_symbol = string(LIQUITY_ASSET_PREFIX)+string(SYMBOL_COIN)+string(".")+string(SYMBOL_USD);
+
+      fund.signatory = "elon";
+      fund.account = "elon";
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      fund.pair_asset = coin_usd_symbol;
+      fund.validate();
+
+      tx.operations.push_back( fund );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
-      tx.operations.push_back( op );
 
-      BOOST_TEST_MESSAGE( "--- Test failure when no signature." );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
 
-      BOOST_TEST_MESSAGE( "--- Test success with account signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, database::skip_transaction_dupe_check );
+      tx.operations.push_back( fund );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
 
-      BOOST_TEST_MESSAGE( "--- Test failure with duplicate signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_duplicate_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with additional incorrect signature" );
+      tx.operations.clear();
       tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_irrelevant_sig );
 
-      BOOST_TEST_MESSAGE( "--- Test failure with incorrect signature" );
+      asset_symbol_type coin_credit_symbol = string(LIQUITY_ASSET_PREFIX)+string(SYMBOL_COIN)+string(".")+string(SYMBOL_CREDIT);
+
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      fund.pair_asset = coin_credit_symbol;
+
+      tx.operations.push_back( fund );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
       tx.signatures.clear();
-      tx.sign( alice_post_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
 
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+
+      tx.operations.push_back( fund );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      credit_pool_lend_operation lend;
+
+      lend.signatory = "elon";
+      lend.account = "elon";
+      lend.amount = asset( 500000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      lend.validate();
+
+      tx.operations.push_back( lend );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      lend.signatory = "elon";
+      lend.account = "elon";
+      lend.amount = asset( 500000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+
+      tx.operations.push_back( lend );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      credit_pool_collateral_operation collateral;
+
+      collateral.signatory = "alice";
+      collateral.account = "alice";
+      collateral.amount = asset( 50000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      collateral.validate();
+
+      tx.operations.push_back( collateral );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      collateral.signatory = "bob";
+      collateral.account = "bob";
+
+      tx.operations.push_back( collateral );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      collateral.signatory = "candice";
+      collateral.account = "candice";
+
+      tx.operations.push_back( collateral );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      margin_order_operation margin;
+
+      margin.signatory = "alice";
+      margin.owner = "alice";
+      margin.order_id = "db35cabd-2aee-41b1-84ab-7372c4b6f8e5";
+      margin.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      margin.amount_to_borrow = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      margin.exchange_rate = price( asset( 1, SYMBOL_USD ), asset( 1, SYMBOL_COIN ) );    // Buying Coin at $1.00
+      margin.expiration = now() + fc::days( 30 );
+      margin.interface = INIT_ACCOUNT;
+      margin.fill_or_kill = false;
+      margin.opened = true;
+      margin.force_close = false;
+      margin.validate();
+
+      tx.operations.push_back( margin );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const margin_order_object& alice_order = db.get_margin_order( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" );
+
+      BOOST_REQUIRE( alice_order.owner == margin.owner );
+      BOOST_REQUIRE( alice_order.collateral == margin.collateral );
+      BOOST_REQUIRE( alice_order.debt == margin.amount_to_borrow );
+      BOOST_REQUIRE( alice_order.debt_balance == margin.amount_to_borrow );
+      BOOST_REQUIRE( alice_order.sell_price == margin.exchange_rate );
+      BOOST_REQUIRE( alice_order.position == margin.amount_to_borrow * margin.exchange_rate );
+      BOOST_REQUIRE( alice_order.interface == margin.interface );
+      BOOST_REQUIRE( alice_order.position_balance.amount == 0 );
+      BOOST_REQUIRE( alice_order.interest.amount == 0 );
+      BOOST_REQUIRE( alice_order.expiration == margin.expiration );
+      BOOST_REQUIRE( alice_order.amount_for_sale() == margin.amount_to_borrow );
+      BOOST_REQUIRE( alice_order.amount_to_receive() == margin.amount_to_borrow * margin.exchange_rate );
+      BOOST_REQUIRE( alice_order.liquidating == false );
+      BOOST_REQUIRE( alice_order.created == now() );
+      BOOST_REQUIRE( !alice_order.filled() );
+
+      const credit_collateral_object& alice_collateral = db.get_collateral( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_collateral.collateral == asset( 40000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
       validate_database();
-   
-      BOOST_TEST_MESSAGE( "Testing: limit_order_cancel_apply" );
 
-      ACTORS( (alice) )
-      fund( "alice", 10000 );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Creation of margin order" );
 
-      const auto& limit_order_idx = db.get_index< limit_order_index >().indices().get< by_account >();
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when account does not have required collateral" );
 
-      BOOST_TEST_MESSAGE( "--- Test cancel non-existent order" );
-
-      limit_order_cancel_operation op;
-      signed_transaction tx;
-
-      op.owner = "alice";
-      op.orderid = 5;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      margin.order_id = "6bb04e7a-d350-4dba-90c0-08b58712160a";
+      margin.collateral = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      
+      tx.operations.push_back( margin );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      BOOST_TEST_MESSAGE( "--- Test cancel order" );
+      validate_database();
 
-      limit_order_create_operation create;
-      create.owner = "alice";
-      create.orderid = 5;
-      create.amount_to_sell = ASSET( "5.000 TESTS" );
-      create.min_to_receive = ASSET( "7.500 USD" );
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( create );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when account does not have required collateral" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when amount to borrow is 0" );
+
+      margin.order_id = "6bb04e7a-d350-4dba-90c0-08b58712160a";
+      margin.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      margin.amount_to_borrow = asset( 0, SYMBOL_USD );
+      
+      tx.operations.push_back( margin );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when amount to sell is 0" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when fill or kill order is not filled" );
+
+      margin.order_id = "6bb04e7a-d350-4dba-90c0-08b58712160a";
+      margin.amount_to_borrow = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      margin.fill_or_kill = true;
+      
+      tx.operations.push_back( margin );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when fill or kill order is not filled" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing margin order fully, but the new order partially" );
+
+      margin.signatory = "bob";
+      margin.owner = "bob";
+      margin.order_id = "10f11157-9460-4505-b346-28e5b9ed77ed";
+      margin.amount_to_borrow = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      margin.exchange_rate = price( asset( 1, SYMBOL_COIN ), asset( 1, SYMBOL_USD ) );    // Selling Coin at $1.00
+      margin.fill_or_kill = false;
+
+      tx.operations.push_back( margin );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 5 ) ) != limit_order_idx.end() );
+      const margin_order_object& bob_order = db.get_margin_order( "bob", "10f11157-9460-4505-b346-28e5b9ed77ed" );
 
-      tx.operations.clear();
-      tx.signatures.clear();
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      BOOST_REQUIRE( bob_order.owner == margin.owner );
+      BOOST_REQUIRE( bob_order.collateral == margin.collateral );
+      BOOST_REQUIRE( bob_order.debt == asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( bob_order.debt_balance == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( bob_order.sell_price == margin.exchange_rate );
+      BOOST_REQUIRE( bob_order.position == asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( bob_order.interface == margin.interface );
+      BOOST_REQUIRE( bob_order.position_balance == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( bob_order.expiration == margin.expiration );
+      BOOST_REQUIRE( bob_order.amount_for_sale() == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( bob_order.amount_to_receive() == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( bob_order.liquidating == false );
+      BOOST_REQUIRE( bob_order.created == now() );
+      BOOST_REQUIRE( !bob_order.filled() );
+
+      const margin_order_object& alice_order = db.get_margin_order( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" );
+
+      BOOST_REQUIRE( alice_order.debt == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.debt_balance.amount == 0 );
+      BOOST_REQUIRE( alice_order.collateral == margin.collateral );
+      BOOST_REQUIRE( alice_order.position == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_order.position_balance == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_order.amount_for_sale().amount == 0 );
+      BOOST_REQUIRE( alice_order.amount_to_receive().amount == 0 );
+      BOOST_REQUIRE( alice_order.liquidating == false );
+      BOOST_REQUIRE( alice_order.last_updated == now() );
+      BOOST_REQUIRE( alice_order.filled() );
+
+      const credit_collateral_object& bob_collateral = db.get_collateral( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( bob_collateral.collateral == asset( 40000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      const credit_collateral_object& alice_collateral = db.get_collateral( "alice", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_collateral.collateral == asset( 40000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Filling existing margin order fully, but the new order partially" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Closing filled order at higher price" );
+
+      margin.signatory = "alice";
+      margin.owner = "alice";
+      margin.order_id = "db35cabd-2aee-41b1-84ab-7372c4b6f8e5";
+      margin.amount_to_borrow = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      margin.exchange_rate = price( asset( 15, SYMBOL_USD ), asset( 10, SYMBOL_COIN ) );   // Selling Coin at $1.50
+      margin.opened = false;
+      margin.force_close = false;
+
+      tx.operations.push_back( margin );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( limit_order_idx.find( std::make_tuple( "alice", 5 ) ) == limit_order_idx.end() );
-      BOOST_REQUIRE( alice.balance.amount.value == ASSET( "10.000 TESTS" ).amount.value );
-      BOOST_REQUIRE( alice.USDbalance.amount.value == ASSET( "0.000 USD" ).amount.value );
+      const margin_order_object& alice_order = db.get_margin_order( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" );
+
+      BOOST_REQUIRE( alice_order.debt == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.debt_balance.amount == 0 );
+      BOOST_REQUIRE( alice_order.position == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_order.position_balance == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_order.collateral == margin.collateral );
+      BOOST_REQUIRE( alice_order.amount_for_sale() == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_order.amount_to_receive() == asset( 1500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.liquidating == true );
+      BOOST_REQUIRE( alice_order.last_updated == now() );
+      BOOST_REQUIRE( alice_order.filled() );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Closing filled order at higher price" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing margin orders" );
+
+      margin.signatory = "candice";
+      margin.owner = "candice";
+      margin.order_id = "60790f19-2046-4b7e-98ef-bab36153a945";
+      margin.amount_to_borrow = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      margin.exchange_rate = price( asset( 15, SYMBOL_USD ), asset( 10, SYMBOL_COIN ) );   // Buying Coin at $1.50
+      margin.opened = true;
+      
+      tx.operations.push_back( margin );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const margin_order_object& candice_order = db.get_margin_order( "candice", "60790f19-2046-4b7e-98ef-bab36153a945" );
+
+      BOOST_REQUIRE( candice_order.debt == asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( candice_order.position == candice_order.debt * candice_order.sell_price );
+      BOOST_REQUIRE( candice_order.collateral == margin.collateral );
+      BOOST_REQUIRE( candice_order.liquidating == false );
+      BOOST_REQUIRE( candice_order.last_updated == now() );
+      BOOST_REQUIRE( candice_order.filled() );   // Filled from liquidity pool 
+
+      const auto& margin_idx = db.get_index< margin_order_index >().indices().get< by_account >();
+      auto margin_itr = margin_idx.find( std::make_tuple( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) );
+
+      BOOST_REQUIRE( margin_itr == margin_idx.end() );
+
+      auto margin_itr = margin_idx.find( std::make_tuple( "bob", "10f11157-9460-4505-b346-28e5b9ed77ed" ) );
+
+      BOOST_REQUIRE( margin_itr == margin_idx.end() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Filling existing margin orders" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Force closing filled remaining margin order" );
+
+      margin.signatory = "candice";
+      margin.owner = "candice";
+      margin.order_id = "60790f19-2046-4b7e-98ef-bab36153a945";
+      margin.amount_to_borrow = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      margin.exchange_rate = price( asset( 15, SYMBOL_USD ), asset( 10, SYMBOL_COIN ) );
+      margin.opened = false;
+      margin.force_close = true;   // Liquidate to pools
+
+      tx.operations.push_back( margin );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      auto margin_itr = margin_idx.find( std::make_tuple( "candice", "60790f19-2046-4b7e-98ef-bab36153a945" ) );
+
+      BOOST_REQUIRE( margin_itr == margin_idx.end() );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Closing filled order at higher price" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: MARGIN ORDER" );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_bandwidth )
+
+
+BOOST_AUTO_TEST_CASE( call_order_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_bandwidth" );
-      ACTORS( (alice)(bob) )
+      BOOST_TEST_MESSAGE( "├── Testing: CALL ORDER" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: creation of call order" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
+
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      witness_create( "alice", alice_private_owner_key, alice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      witness_create( "bob", bob_private_owner_key, bob_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      witness_create( "candice", candice_private_owner_key, candice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      witness_create( "dan", dan_private_owner_key, dan_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+      
+      signed_transaction tx;
+
+      asset_publish_feed_operation feed;
+
+      feed.signatory = "alice";
+      feed.publisher = "alice";
+      feed.symbol = SYMBOL_USD;
+      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(1,SYMBOL_COIN) );
+      feed.feed.core_exchange_rate = price( asset(1,SYMBOL_USD),asset(1,SYMBOL_COIN) );
+      feed.validate();
+
+      tx.operations.push_back( feed );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "bob";
+      feed.publisher = "bob";
+
+      tx.operations.push_back( feed );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "candice";
+      feed.publisher = "candice";
+
+      tx.operations.push_back( feed );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "dan";
+      feed.publisher = "dan";
+
+      tx.operations.push_back( feed );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      call_order_operation call;
+
+      call.signatory = "alice";
+      call.owner = "alice";
+      call.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      call.debt = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );     // 200% Collateralization
+      call.interface = INIT_ACCOUNT;
+      call.validate();
+
+      tx.operations.push_back( call );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const call_order_object& alice_order = db.get_call_order( "alice", SYMBOL_USD );
+
+      BOOST_REQUIRE( alice_order.borrower == call.owner );
+      BOOST_REQUIRE( alice_order.collateral == call.collateral );
+      BOOST_REQUIRE( alice_order.debt == call.debt );
+      BOOST_REQUIRE( alice_order.call_price == price( asset( 1, call.collateral.symbol ), asset( 1, call.debt.symbol ) ) );
+      BOOST_REQUIRE( alice_order.interface == call.interface );
+      BOOST_REQUIRE( alice_order.created == now() );
+      BOOST_REQUIRE( alice_order.last_updated == now() );
+      BOOST_REQUIRE( alice_order.amount_for_sale() == call.collateral );
+      BOOST_REQUIRE( alice_order.amount_to_receive() == call.debt );
+      BOOST_REQUIRE( alice_order.collateralization() == price( call.collateral, call.debt ) );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: creation of call order" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: updating call order to cover some of the debt position" );
+
+      call.collateral = asset( 800 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      call.debt = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );    
+      
+      tx.operations.push_back( call );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const call_order_object& alice_order = db.get_call_order( "alice", SYMBOL_USD );
+
+      BOOST_REQUIRE( alice_order.borrower == call.owner );
+      BOOST_REQUIRE( alice_order.collateral == call.collateral );
+      BOOST_REQUIRE( alice_order.debt == call.debt );
+      BOOST_REQUIRE( alice_order.call_price == price( asset( 1, call.collateral.symbol ), asset( 1, call.debt.symbol ) ) );
+      BOOST_REQUIRE( alice_order.interface == call.interface );
+      BOOST_REQUIRE( alice_order.last_updated == now() );
+      BOOST_REQUIRE( alice_order.amount_for_sale() == call.collateral );
+      BOOST_REQUIRE( alice_order.amount_to_receive() == call.debt );
+      BOOST_REQUIRE( alice_order.collateralization() == price( call.collateral, call.debt ) );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: updating call order to cover some of the debt position" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account does not have required funds" );
+
+      call.collateral = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      
+      tx.operations.push_back( call );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account does not have required funds" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account does not claim collateral when closing position" );
+
+      call.collateral = asset( 800 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      call.debt = asset( 0, SYMBOL_USD );
+      
+      tx.operations.push_back( call );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account does not claim collateral when closing position" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account removes collateral without closing debt position" );
+
+      call.collateral = asset( 0, SYMBOL_COIN );
+      call.debt = asset( 400, SYMBOL_USD );
+      
+      tx.operations.push_back( call );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account removes collateral without closing debt position" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when debt and collateral amount is 0" );
+
+      call.signatory = "bob";
+      call.owner = "bob";
+      call.collateral = asset( 0, SYMBOL_COIN );
+      call.debt = asset( 0, SYMBOL_USD );
+      
+      tx.operations.push_back( call );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when debt and collateral amount is 0" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when insufficient collateral for specified debt" );
+
+      call.collateral = asset( 1000, SYMBOL_COIN );
+      call.debt = asset( 1000, SYMBOL_USD );
+      
+      tx.operations.push_back( call );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when insufficient collateral for specified debt" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Margin calling existing order" );
+
+      limit_order_operation limit;
+
+      limit.signatory = "bob";
+      limit.owner = "bob";
+      limit.order_id = "94b21fb9-5053-4a4d-ba96-b78d312dc054";
+      limit.amount_to_sell = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      limit.exchange_rate = price( asset( 1, SYMBOL_USD ), asset( 1, SYMBOL_COIN ) );   // Buying Coin at $1.00
+      limit.expiration = now() + fc::days( 30 );
+      limit.interface = INIT_ACCOUNT;
+      limit.fill_or_kill = false;
+      limit.opened = true;
+      limit.validate();
+
+      tx.operations.push_back( limit );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const limit_order_object& bob_order = db.get_limit_order( "bob", "94b21fb9-5053-4a4d-ba96-b78d312dc054" );
+
+      BOOST_REQUIRE( bob_order.seller == limit.owner );
+      BOOST_REQUIRE( bob_order.sell_price == limit.exchange_rate );
+      BOOST_REQUIRE( bob_order.interface == limit.interface );
+      BOOST_REQUIRE( bob_order.expiration == limit.expiration );
+      BOOST_REQUIRE( bob_order.amount_for_sale() == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( bob_order.amount_to_receive() == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      tx.operations.push_back( call );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      feed.signatory = "alice";
+      feed.publisher = "alice";
+      feed.symbol = SYMBOL_USD;
+      feed.feed.settlement_price = price( asset(75,SYMBOL_USD),asset(100,SYMBOL_COIN) );   // Settlement price of $0.75
+      feed.feed.core_exchange_rate = price( asset(75,SYMBOL_USD),asset(100,SYMBOL_COIN) );
+
+      tx.operations.push_back( feed );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "bob";
+      feed.publisher = "bob";
+
+      tx.operations.push_back( feed );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "candice";
+      feed.publisher = "candice";
+
+      tx.operations.push_back( feed );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "dan";
+      feed.publisher = "dan";
+
+      tx.operations.push_back( feed );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auto& call_idx = db.get_index< call_order_index >().indices().get< by_account >();
+      auto call_itr = call_idx.find( std::make_tuple( "alice", SYMBOL_USD ) );
+
+      BOOST_REQUIRE( call_itr == call_idx.end() );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Margin calling existing order" );
+
+      BOOST_TEST_MESSAGE( "├── Testing: CALL ORDER" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+
+BOOST_AUTO_TEST_CASE( bid_collateral_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: BID COLLATERAL" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: creation of collateral bid after black swan event" );
+
+      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
+
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      witness_create( "alice", alice_private_owner_key, alice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      witness_create( "bob", bob_private_owner_key, bob_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      witness_create( "candice", candice_private_owner_key, candice_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      witness_create( "dan", dan_private_owner_key, dan_public_owner_key, BLOCKCHAIN_PRECISION * 10 );
+      
+      signed_transaction tx;
+
+      asset_publish_feed_operation feed;     // Begin by triggering a black swan event on the USD asset
+
+      feed.signatory = "alice";
+      feed.publisher = "alice";
+      feed.symbol = SYMBOL_USD;
+      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(1,SYMBOL_COIN) );   // init settlement price of 1:1
+      feed.feed.core_exchange_rate = price( asset(1,SYMBOL_USD),asset(1,SYMBOL_COIN) );
+      feed.validate();
+
+      tx.operations.push_back( feed );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "bob";
+      feed.publisher = "bob";
+
+      tx.operations.push_back( feed );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "candice";
+      feed.publisher = "candice";
+
+      tx.operations.push_back( feed );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "dan";
+      feed.publisher = "dan";
+
+      tx.operations.push_back( feed );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      call_order_operation call;    // Spread of collateralized call orders
+
+      call.signatory = "alice";
+      call.owner = "alice";
+      call.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 2x collateralization
+      call.debt = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      call.interface = INIT_ACCOUNT;
+      call.validate();
+
+      tx.operations.push_back( call );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      call.signatory = "bob";
+      call.owner = "bob";
+      call.collateral = asset( 15000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );   // 3x collateralization
+      call.debt = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+
+      tx.operations.push_back( call );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      call.signatory = "candice";
+      call.owner = "candice";
+      call.collateral = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 4x collateralization
+      call.debt = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+
+      tx.operations.push_back( call );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      call.signatory = "dan";
+      call.owner = "dan";
+      call.collateral = asset( 25000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 5x collateralization
+      call.debt = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+
+      tx.operations.push_back( call );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      feed.signatory = "alice";
+      feed.publisher = "alice";
+      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(2,SYMBOL_COIN) );   // New settlement price of 1:2
+      feed.feed.core_exchange_rate = price( asset(1,SYMBOL_USD),asset(2,SYMBOL_COIN) );   // Collateral value falls 50%
+
+      tx.operations.push_back( feed );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "bob";
+      feed.publisher = "bob";
+
+      tx.operations.push_back( feed );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "candice";
+      feed.publisher = "candice";
+
+      tx.operations.push_back( feed );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "dan";
+      feed.publisher = "dan";
+
+      tx.operations.push_back( feed );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      limit_order_operation limit;
+
+      limit.signatory = "alice";
+      limit.owner = "alice";
+      limit.order_id = "88d551cd-0dc2-46f1-a09c-7d0cd477b550";
+      limit.amount_to_sell = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      limit.exchange_rate = price( asset( 1, SYMBOL_USD ), asset( 3, SYMBOL_COIN ) );   // USD sell order at 1:3, within SQR
+      limit.expiration = now() + fc::days( 30 );
+      limit.interface = INIT_ACCOUNT;
+      limit.fill_or_kill = false;
+      limit.opened = true;
+
+      tx.operations.push_back( limit );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const asset_bitasset_data_object& bitasset = db.get_bitasset_data( SYMBOL_USD );
+
+      BOOST_REQUIRE( bitasset.has_settlement() );     // Bitasset has now undergone a black swan event
+
+      bid_collateral_operation bid;
+
+      bid.signatory = "alice";
+      bid.bidder = "alice";
+      bid.collateral = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      bid.debt = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      bid.validate();
+
+      tx.operations.push_back( bid );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const collateral_bid_object& alice_col_bid = db.get_collateral_bid( "alice", SYMBOL_USD );
+
+      BOOST_REQUIRE( alice_col_bid.bidder == bid.bidder );
+      BOOST_REQUIRE( alice_col_bid.collateral == bid.collateral );
+      BOOST_REQUIRE( alice_col_bid.debt == bid.debt );
+      BOOST_REQUIRE( alice_col_bid.created == now() );
+      BOOST_REQUIRE( alice_col_bid.last_updated == now() );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: creation of collateral bid after black swan event" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account does not have required funds" );
+
+      bid.signatory = "bob";
+      bid.bidder = "bob";
+      bid.collateral = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      bid.debt = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      
+      tx.operations.push_back( bid );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account does not have required funds" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when collateral is 0" );
+
+      bid.signatory = "bob";
+      bid.bidder = "bob";
+      bid.collateral = asset( 0, SYMBOL_COIN );
+      bid.debt = asset( 20000, SYMBOL_USD );
+      
+      tx.operations.push_back( bid );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when collateral is 0" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when debt and collateral amount is 0" );
+
+      bid.signatory = "bob";
+      bid.bidder = "bob";
+      bid.collateral = asset( 0, SYMBOL_COIN );
+      bid.debt = asset( 0, SYMBOL_USD );
+      
+      tx.operations.push_back( bid );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when debt and collateral amount is 0" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Reviving asset with additional collateral bids" );
+
+      bid.signatory = "bob";
+      bid.bidder = "bob";
+      bid.collateral = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      bid.debt = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+
+      tx.operations.push_back( bid );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const collateral_bid_object& bob_col_bid = db.get_collateral_bid( "bob", SYMBOL_USD );
+
+      BOOST_REQUIRE( bob_col_bid.bidder == bid.bidder );
+      BOOST_REQUIRE( bob_col_bid.collateral == bid.collateral );
+      BOOST_REQUIRE( bob_col_bid.debt == bid.debt );
+      BOOST_REQUIRE( bob_col_bid.created == now() );
+      BOOST_REQUIRE( bob_col_bid.last_updated == now() );
+      
+      generate_blocks( BITASSET_BLOCK_INTERVAL + 1 );
+
+      BOOST_REQUIRE( bitasset.has_settlement() );  // Requires price feed before revival
+
+      generate_blocks( BITASSET_BLOCK_INTERVAL - 1 );
+
+      feed.signatory = "alice";
+      feed.publisher = "alice";
+      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(2,SYMBOL_COIN) );   // New settlement price of 1:2
+      feed.feed.core_exchange_rate = price( asset(1,SYMBOL_USD),asset(2,SYMBOL_COIN) );   // Collateral value falls 50%
+
+      tx.operations.push_back( feed );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "bob";
+      feed.publisher = "bob";
+
+      tx.operations.push_back( feed );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "candice";
+      feed.publisher = "candice";
+
+      tx.operations.push_back( feed );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      feed.signatory = "dan";
+      feed.publisher = "dan";
+
+      tx.operations.push_back( feed );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( !bitasset.current_feed.settlement_price.is_valid() );  // Requires price feed before revival
+
       generate_block();
-      fund_stake( "alice", ASSET( "10.000 TESTS" ) );
-      fund( "alice", ASSET( "10.000 TESTS" ) );
-      fund_stake( "bob", ASSET( "10.000 TESTS" ) );
 
-      generate_block();
-      db.skip_transaction_delta_check = false;
+      BOOST_REQUIRE( !bitasset.has_settlement() );  // Asset is now revived.
 
-      BOOST_TEST_MESSAGE( "--- Test first tx in block" );
+      validate_database();
 
-      signed_transaction tx;
-      transfer_operation op;
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Reviving asset with additional collateral bids" );
 
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = ASSET( "1.000 TESTS" );
-
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      db.push_transaction( tx, 0 );
-
-      auto last_bandwidth_update = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).last_bandwidth_update;
-      auto average_bandwidth = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).average_bandwidth;
-      BOOST_REQUIRE( last_bandwidth_update == db.head_block_time() );
-      BOOST_REQUIRE( average_bandwidth == fc::raw::pack_size( tx ) * 10 * BANDWIDTH_PRECISION );
-      auto total_bandwidth = average_bandwidth;
-
-      BOOST_TEST_MESSAGE( "--- Test second tx in block" );
-
-      op.amount = ASSET( "0.100 TESTS" );
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      db.push_transaction( tx, 0 );
-
-      last_bandwidth_update = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).last_bandwidth_update;
-      average_bandwidth = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).average_bandwidth;
-      BOOST_REQUIRE( last_bandwidth_update == db.head_block_time() );
-      BOOST_REQUIRE( average_bandwidth == total_bandwidth + fc::raw::pack_size( tx ) * 10 * BANDWIDTH_PRECISION );
+      BOOST_TEST_MESSAGE( "├── Testing: BID COLLATERAL" );
    }
    FC_LOG_AND_RETHROW()
 }
+
+
+
+   //=========================//
+   // === Pool Operations === //
+   //=========================//
+
+
+
+
+   //==========================//
+   // === Asset Operations === //
+   //==========================//
+
 
 
 
@@ -14651,6 +14890,59 @@ BOOST_AUTO_TEST_CASE( feed_publish_apply )
 }
 
 */
+
+BOOST_AUTO_TEST_CASE( account_bandwidth )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "Testing: account_bandwidth" );
+      ACTORS( (alice)(bob) )
+      generate_block();
+      fund_stake( "alice", ASSET( "10.000 TESTS" ) );
+      fund( "alice", ASSET( "10.000 TESTS" ) );
+      fund_stake( "bob", ASSET( "10.000 TESTS" ) );
+
+      generate_block();
+      db.skip_transaction_delta_check = false;
+
+      BOOST_TEST_MESSAGE( "--- Test first tx in block" );
+
+      signed_transaction tx;
+      transfer_operation op;
+
+      op.from = "alice";
+      op.to = "bob";
+      op.amount = ASSET( "1.000 TESTS" );
+
+      tx.operations.push_back( op );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      auto last_bandwidth_update = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).last_bandwidth_update;
+      auto average_bandwidth = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).average_bandwidth;
+      BOOST_REQUIRE( last_bandwidth_update == db.head_block_time() );
+      BOOST_REQUIRE( average_bandwidth == fc::raw::pack_size( tx ) * 10 * BANDWIDTH_PRECISION );
+      auto total_bandwidth = average_bandwidth;
+
+      BOOST_TEST_MESSAGE( "--- Test second tx in block" );
+
+      op.amount = ASSET( "0.100 TESTS" );
+      tx.clear();
+      tx.operations.push_back( op );
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+
+      db.push_transaction( tx, 0 );
+
+      last_bandwidth_update = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).last_bandwidth_update;
+      average_bandwidth = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).average_bandwidth;
+      BOOST_REQUIRE( last_bandwidth_update == db.head_block_time() );
+      BOOST_REQUIRE( average_bandwidth == total_bandwidth + fc::raw::pack_size( tx ) * 10 * BANDWIDTH_PRECISION );
+   }
+   FC_LOG_AND_RETHROW()
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()

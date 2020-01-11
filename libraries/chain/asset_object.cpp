@@ -8,7 +8,7 @@
 
 namespace node { namespace chain {
 
-void asset_bitasset_data_object::update_median_feeds( time_point current_time, time_point next_maintenance_time )
+void asset_bitasset_data_object::update_median_feeds( time_point current_time )
 {
    current_feed_publication_time = current_time;
    vector<std::reference_wrapper<const price_feed>> current_feeds;

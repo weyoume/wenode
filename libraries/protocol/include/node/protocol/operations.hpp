@@ -116,11 +116,9 @@ namespace node { namespace protocol {
 
             // Trading Operations
 
-            limit_order_create_operation,
-            limit_order_cancel_operation,
-            margin_order_create_operation,
-            margin_order_close_operation,
-            call_order_update_operation,
+            limit_order_operation,
+            margin_order_operation,
+            call_order_operation,
             bid_collateral_operation,
 
             // Pool Operations

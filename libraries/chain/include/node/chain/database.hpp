@@ -8,6 +8,7 @@
 #include <node/chain/fork_database.hpp>
 #include <node/chain/block_log.hpp>
 #include <node/chain/operation_notification.hpp>
+#include <node/chain/node_objects.hpp>
 
 #include <node/protocol/protocol.hpp>
 
@@ -171,7 +172,6 @@ namespace node { namespace chain {
          chain_id_type                          get_chain_id()const;
          const dynamic_global_property_object&  get_dynamic_global_properties()const;
          time_point                             head_block_time()const;
-         time_point                             next_maintenance_time()const;
          uint32_t                               head_block_num()const;
          block_id_type                          head_block_id()const;
          const witness_schedule_object&         get_witness_schedule()const;
@@ -347,6 +347,15 @@ namespace node { namespace chain {
          const limit_order_object& get_limit_order(  const account_name_type& owner, const shared_string& order_id )const;
          const limit_order_object* find_limit_order( const account_name_type& owner, const shared_string& order_id )const;
 
+         const margin_order_object& get_margin_order( const account_name_type& name, const shared_string& margin_id )const;
+         const margin_order_object* find_margin_order( const account_name_type& name, const shared_string& margin_id )const;
+
+         const call_order_object& get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const call_order_object* find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
+
+         const collateral_bid_object& get_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const collateral_bid_object* find_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const;
+
          const transfer_request_object& get_transfer_request( const account_name_type& name, const shared_string& request_id )const;
          const transfer_request_object* find_transfer_request( const account_name_type& name, const shared_string& request_id )const;
 
@@ -355,12 +364,6 @@ namespace node { namespace chain {
 
          const transfer_recurring_request_object& get_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const;
          const transfer_recurring_request_object* find_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const;
-
-         const call_order_object& get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
-         const call_order_object* find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
-
-         const margin_order_object& get_margin_order( const account_name_type& name, const shared_string& margin_id )const;
-         const margin_order_object* find_margin_order( const account_name_type& name, const shared_string& margin_id )const;
 
          const savings_withdraw_object& get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const;
          const savings_withdraw_object* find_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const;
@@ -742,11 +745,13 @@ namespace node { namespace chain {
 
          void update_expired_feeds();
 
+         void process_bitassets();
+
+         void process_bids( const asset_bitasset_data_object& bad );
+
          void clear_expired_delegations();
          
          void update_core_exchange_rates();
-         
-         void update_maintenance_flag( bool new_maintenance_flag );
 
          void dispute_escrow( const escrow_object& escrow );
 
@@ -891,7 +896,7 @@ namespace node { namespace chain {
 
          void cancel_bid(const collateral_bid_object& bid, bool create_virtual_op);
 
-         void execute_bid( const collateral_bid_object& bid, share_type debt_covered, 
+         void execute_bid( const collateral_bid_object& bid, share_type debt, 
             share_type collateral_from_fund, const price_feed& current_feed );
 
          void cancel_settle_order(const force_settlement_object& order, bool create_virtual_op );

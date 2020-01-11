@@ -45,8 +45,6 @@ namespace node { namespace chain {
          account_name_type      current_producer;                                         // The account name of the current block producing witness or miner. 
 
          time_point             time;                                                     // Current blockchain time in microseconds;
-
-         time_point             next_maintenance_time;                                    // Time in microseconds of the next maintenance period.
          
          chain_properties       median_props;                                             // Median properties object as desginated by the active block producers.               
 
@@ -65,22 +63,6 @@ namespace node { namespace chain {
          fc::uint128_t          recent_slots_filled;                                      // parameter used to compute witness participation.
 
          uint8_t                participation_count = 0;                                  // Divide by 128 to compute participation percentage
-
-         uint32_t               dynamic_flags = 0;
-
-         enum dynamic_flag_bits
-         {
-            /**
-             * If maintenance_flag is set, then the head block is a
-             * maintenance block.  This means
-             * get_time_slot(1) - head_block_time() will have a gap
-             * due to maintenance duration.
-             *
-             * This flag answers the question, "Was maintenance
-             * performed in the last call to apply_block()?"
-             */
-            maintenance_flag = 0x01
-         };
    };
 
    typedef multi_index_container<
@@ -104,7 +86,6 @@ FC_REFLECT( node::chain::dynamic_global_property_object,
          (last_committed_block_id)
          (current_producer)
          (time)
-         (next_maintenance_time)
          (median_props)
          (accumulated_network_revenue)
          (current_median_equity_price)
@@ -114,7 +95,6 @@ FC_REFLECT( node::chain::dynamic_global_property_object,
          (current_aslot)
          (recent_slots_filled)
          (participation_count)
-         (dynamic_flags)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::dynamic_global_property_object, node::chain::dynamic_global_property_index );

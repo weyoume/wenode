@@ -120,12 +120,8 @@ namespace node { namespace chain {
    };
 
    /**
-    *  @brief An offer to sell a amount of a asset at a specified exchange rate by a certain time.
-    *  @ingroup object
-    *  @ingroup protocol
-    *  @ingroup market
-    *
-    *  This limit_order_objects are indexed by @ref expiration and is automatically deleted on the first block after expiration.
+    * An offer to sell a amount of a asset at a 
+    * specified exchange rate by a certain time.
     */
    class limit_order_object : public object< limit_order_object_type, limit_order_object >
    {
@@ -140,19 +136,21 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         time_point             created;           // Time that the order was created.
-
-         time_point             expiration;        // Expiration time of the order.
-
          account_name_type      seller;            // Selling account name of the trading order.
 
          shared_string          order_id;          // UUIDv4 of the order for each account.
 
-         share_type             for_sale;          // asset symbol is sell_price.base.symbol
+         share_type             for_sale;          // asset symbol is sell_price.base.symbol.
 
          price                  sell_price;        // Base price is the asset being sold.
 
-         account_name_type      interface;         // The interface account that created the order
+         account_name_type      interface;         // The interface account that created the order.
+
+         time_point             created;           // Time that the order was created.
+
+         time_point             last_updated;  // Time that the order was last modified.
+
+         time_point             expiration;        // Expiration time of the order.
 
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
@@ -161,21 +159,38 @@ namespace node { namespace chain {
                 std::make_pair( sell_price.quote.symbol, sell_price.base.symbol );
          }
 
-         asset                amount_for_sale()const   { return asset( for_sale, sell_price.base.symbol ); }
+         asset                amount_for_sale()const 
+         { 
+            return asset( for_sale, sell_price.base.symbol ); 
+         }
 
-         asset                amount_to_receive()const { return amount_for_sale() * sell_price; }
+         asset                amount_to_receive()const 
+         { 
+            return amount_for_sale() * sell_price; 
+         }
 
-         asset_symbol_type    sell_asset()const    { return sell_price.base.symbol; }
+         asset_symbol_type    sell_asset()const 
+         { 
+            return sell_price.base.symbol; 
+         }
 
-         asset_symbol_type    receive_asset()const { return sell_price.quote.symbol; }
+         asset_symbol_type    receive_asset()const 
+         { 
+            return sell_price.quote.symbol; 
+         }
 
-         double               real_price()const { return sell_price.to_real(); }
+         double               real_price()const 
+         { 
+            return sell_price.to_real(); 
+         }
    };
 
    /**
-    * @class call_order_object
-    * @brief tracks debt and call price information
-    * There should only be one call_order_object per asset pair per account.
+    * Creates an object that holds a debt position to issue
+    * a market issued asset backed by collateral.
+    * Enables a market issued asset to access the call order as a 
+    * repurchase order if the call price falls below the 
+    * market collateralization requirement.
     */
    class call_order_object : public object< call_order_object_type, call_order_object >
    {
@@ -200,7 +215,14 @@ namespace node { namespace chain {
 
          account_name_type       interface;                   // The interface account that created the order
 
-         double                  real_price()const { return call_price.to_real(); }
+         time_point              created;                     // Time that the order was created.
+
+         time_point              last_updated;                // Time that the order was last modified.
+
+         double                  real_price()const 
+         { 
+            return call_price.to_real(); 
+         }
 
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
@@ -258,13 +280,16 @@ namespace node { namespace chain {
 
          account_name_type      interface;         // The interface account that created the order
 
+         time_point             created;           // Time that the settlement was created.
+
+         time_point             last_updated;      // Time that the settlement was last modified.
+
          asset_symbol_type      settlement_asset_symbol()const
          { return balance.symbol; }
    };
 
    /**
-    * @class collateral_bid_object
-    * @brief bids of collateral for debt after a black swan
+    * Collateral bids of collateral for debt after a black swan
     * There should only be one collateral_bid_object per asset per account, and
     * only for smartcoin assets that have a global settlement_price.
     */
@@ -279,15 +304,25 @@ namespace node { namespace chain {
 
          id_type               id;
 
-         account_name_type     bidder;      // Bidding Account name
+         account_name_type     bidder;           // Bidding Account name.
 
-         price                 inv_swan_price;  // Collateral / Debt
+         asset                 collateral;       // Collateral bidded to obtain debt from a global settlement.
 
-         asset get_additional_collateral()const { return inv_swan_price.base; }
+         asset                 debt;             // Debt requested for bid.
 
-         asset get_debt_covered()const { return inv_swan_price.quote; }
+         time_point            last_updated;     // Time that the bid was last adjusted.
 
-         asset_symbol_type debt_type()const { return inv_swan_price.quote.symbol; } 
+         time_point            created;          // Time that the bid was created.
+
+         price                 inv_swan_price()const
+         {
+            return price( collateral, debt );    // Collateral / Debt.
+         }
+
+         asset_symbol_type debt_type()const 
+         { 
+            return debt.symbol;
+         } 
    };
 
 
@@ -307,11 +342,15 @@ namespace node { namespace chain {
 
          id_type                    id;
 
-         account_name_type          owner;         // Collateral owners account name.
+         account_name_type          owner;               // Collateral owners account name.
 
-         asset_symbol_type          symbol;        // Asset symbol being collateralized. 
+         asset_symbol_type          symbol;              // Asset symbol being collateralized. 
 
-         asset                      collateral;    // Asset balance that is being locked in for loan backing for loan or margin orders.  
+         asset                      collateral;          // Asset balance that is being locked in for loan backing for loan or margin orders.
+
+         time_point                 created;             // Time that collateral was created.
+
+         time_point                 last_updated;        // Time that the order was last modified.
    };
 
 
@@ -519,7 +558,7 @@ namespace node { namespace chain {
 
          shared_string                             memo;                   // Details of the transaction for reference. 
 
-         shared_string                             json;                   // Additonal JSON object attribute details.
+         shared_string                             json;                   // Additonal JSON object attribute details
 
          time_point                                acceptance_time;        // time that the transfer must be approved by
 
@@ -532,6 +571,10 @@ namespace node { namespace chain {
          flat_map< account_name_type, uint16_t >   release_percentages;    // Declared release percentages of all accounts
 
          flat_map< account_name_type, bool >       approvals;              // Map of account approvals, paid into balance
+
+         time_point                                created;                // Time that the order was created
+
+         time_point                                last_updated;           // Time that the order was last updated, approved, or disputed
 
          bool                                      disputed = false;       // True when escrow is in dispute
 
@@ -944,7 +987,7 @@ namespace node { namespace chain {
          ordered_non_unique< tag< by_expiration >, member< margin_order_object, time_point, &margin_order_object::expiration > >,
          ordered_unique< tag< by_price >,
             composite_key< margin_order_object,
-               const_mem_fun< margin_order_object, bool, &margin_order_object::filled>,
+               const_mem_fun< margin_order_object, bool, &margin_order_object::filled >,
                member< margin_order_object, price, &margin_order_object::sell_price >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
@@ -959,38 +1002,38 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag<by_debt>,
             composite_key< margin_order_object,
-               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::debt_asset>,
-               member< margin_order_object, margin_order_id_type, &margin_order_object::id>
+               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::debt_asset >,
+               member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
             composite_key_compare< std::less<asset_symbol_type>, std::less<margin_order_id_type> >
          >,
          ordered_unique< tag<by_position>,
             composite_key< margin_order_object,
-               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::position_asset>,
-               member< margin_order_object, margin_order_id_type, &margin_order_object::id>
+               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::position_asset >,
+               member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
             composite_key_compare< std::less<asset_symbol_type>, std::less<margin_order_id_type> >
          >,
          ordered_unique< tag<by_collateral>,
             composite_key< margin_order_object,
-               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::collateral_asset>,
-               member< margin_order_object, margin_order_id_type, &margin_order_object::id>
+               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::collateral_asset >,
+               member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
             composite_key_compare< std::less<asset_symbol_type>, std::less<margin_order_id_type> >
          >,
          ordered_unique< tag<by_debt_collateral_position>,
             composite_key< margin_order_object,
-               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::debt_asset>,
-               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::collateral_asset>,
-               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::position_asset>,
-               member< margin_order_object, margin_order_id_type, &margin_order_object::id>
+               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::debt_asset >,
+               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::collateral_asset >,
+               const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::position_asset >,
+               member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
             composite_key_compare< std::less<asset_symbol_type>, std::less<asset_symbol_type>, std::less<asset_symbol_type>, std::less<margin_order_id_type> >
          >,
          ordered_unique< tag<by_collateralization>,
             composite_key< margin_order_object,
-               member< margin_order_object, share_type, &margin_order_object::collateralization>,
-               member< margin_order_object, margin_order_id_type, &margin_order_object::id>
+               member< margin_order_object, share_type, &margin_order_object::collateralization >,
+               member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
             composite_key_compare< std::less<share_type>, std::less<margin_order_id_type> >
          >
@@ -1211,14 +1254,15 @@ namespace node { namespace chain {
             member< collateral_bid_object, collateral_bid_id_type, &collateral_bid_object::id > >,
          ordered_unique< tag<by_account>,
             composite_key< collateral_bid_object,
-               const_mem_fun< collateral_bid_object, asset_symbol_type, &collateral_bid_object::debt_type>,
-               member< collateral_bid_object, account_name_type, &collateral_bid_object::bidder>
+               member< collateral_bid_object, account_name_type, &collateral_bid_object::bidder>,
+               const_mem_fun< collateral_bid_object, asset_symbol_type, &collateral_bid_object::debt_type>
+               
             >
          >,
          ordered_unique< tag<by_price>,
             composite_key< collateral_bid_object,
                const_mem_fun< collateral_bid_object, asset_symbol_type, &collateral_bid_object::debt_type>,
-               member< collateral_bid_object, price, &collateral_bid_object::inv_swan_price >,
+               const_mem_fun< collateral_bid_object, price, &collateral_bid_object::inv_swan_price >,
                member< collateral_bid_object, collateral_bid_id_type, &collateral_bid_object::id >
             >,
             composite_key_compare< std::less<asset_symbol_type>, std::greater<price>, std::less<collateral_bid_id_type> >
@@ -1455,7 +1499,8 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::force_settlement_object, node::chain::for
 FC_REFLECT( node::chain::collateral_bid_object, 
          (id)
          (bidder)
-         (inv_swan_price)
+         (collateral)
+         (debt)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::collateral_bid_object, node::chain::collateral_bid_index );

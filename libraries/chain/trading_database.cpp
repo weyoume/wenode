@@ -1021,17 +1021,19 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
    FC_ASSERT( order.amount_for_sale().symbol == pays.symbol );
    FC_ASSERT( pays.symbol != receives.symbol );
 
-   const account_object& seller = get_account(order.seller);
-   const asset_object& recv_asset = get_asset(receives.symbol);
-   const auto& fee_asset_dyn_data = get_dynamic_data(receives.symbol);
+   const account_object& seller = get_account( order.seller );
+   const asset_object& recv_asset = get_asset( receives.symbol );
+   const asset_dynamic_data_object& fee_asset_dyn_data = get_dynamic_data( receives.symbol );
+   time_point now = head_block_time();
+
    asset issuer_fees = asset( 0, receives.symbol );
    asset trading_fees = asset( 0, receives.symbol );
    asset fees_paid = asset( 0, receives.symbol );
 
    if( !is_maker )  // Pay fees if we are taker order
    {
-      issuer_fees = pay_issuer_fees(seller, recv_asset, receives);      // fees paid to issuer of the asset
-      trading_fees = pay_trading_fees(seller, receives, match_interface, order.interface );      // fees paid to the protocol, and interfaces
+      issuer_fees = pay_issuer_fees( seller, recv_asset, receives );      // fees paid to issuer of the asset
+      trading_fees = pay_trading_fees( seller, receives, match_interface, order.interface );      // fees paid to the protocol, and interfaces
       fees_paid = issuer_fees + trading_fees;
    }
 
@@ -1049,7 +1051,8 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
    {
       modify( order, [&]( limit_order_object& b ) 
       {
-         b.for_sale -= pays.amount; 
+         b.for_sale -= pays.amount;
+         b.last_updated = now;
       });
 
       if( cull_if_small )
@@ -1073,16 +1076,18 @@ bool database::fill_margin_order( const margin_order_object& order, const asset&
    FC_ASSERT( order.amount_for_sale().symbol == pays.symbol );
    FC_ASSERT( pays.symbol != receives.symbol );
 
-   const account_object& seller = get_account(order.owner);
-   const asset_object& recv_asset = get_asset(receives.symbol);
+   const account_object& seller = get_account( order.owner );
+   const asset_object& recv_asset = get_asset( receives.symbol );
+   time_point now = head_block_time();
+
    asset issuer_fees = asset( 0, receives.symbol );
    asset trading_fees = asset( 0, receives.symbol );
    asset fees_paid = asset( 0, receives.symbol );
 
    if( !is_maker )  // Pay fees if we are taker order
    {
-      issuer_fees = pay_issuer_fees(seller, recv_asset, receives);      // fees paid to issuer of the asset
-      trading_fees = pay_trading_fees(seller, receives, match_interface, order.interface );      // fees paid to the protocol, and interfaces
+      issuer_fees = pay_issuer_fees( seller, recv_asset, receives );      // fees paid to issuer of the asset
+      trading_fees = pay_trading_fees( seller, receives, match_interface, order.interface );      // fees paid to the protocol, and interfaces
       fees_paid = issuer_fees + trading_fees;
    }
 
@@ -1100,6 +1105,7 @@ bool database::fill_margin_order( const margin_order_object& order, const asset&
          m.debt_balance -= pays; 
          m.position_balance += delta;
       }
+      m.last_updated = now;
    });
 
    if( cull_if_small )
@@ -1124,6 +1130,7 @@ bool database::fill_call_order( const call_order_object& order, const asset& pay
    FC_ASSERT( order.collateral.amount >= pays.amount );
    const account_object& seller = get_account( order.borrower );
    const asset_object& recv_asset = get_asset( receives.symbol );
+   time_point now = head_block_time();
    asset issuer_fees;
    asset trading_fees;
    asset fees_paid = asset( 0, pays.symbol );
@@ -1149,6 +1156,7 @@ bool database::fill_call_order( const call_order_object& order, const asset& pay
          collateral_freed = o.amount_for_sale();
          o.collateral.amount = 0;
       }
+      o.last_updated = now;
    });
 
    if( !global_settle )
@@ -1179,6 +1187,7 @@ bool database::fill_settle_order( const force_settlement_object& settle, const a
    FC_ASSERT( pays.symbol != receives.symbol );
    const asset_object& rec_asset = get_asset(receives.symbol);
    const account_object& owner = get_account( settle.owner );
+   time_point now = head_block_time();
    bool filled = false;
 
    auto issuer_fees = pay_issuer_fees(rec_asset, receives);
@@ -1190,7 +1199,9 @@ bool database::fill_settle_order( const force_settlement_object& settle, const a
       modify(settle, [&]( force_settlement_object& s )
       {
          s.balance -= pays;
+         s.last_updated = now;
       });
+
       filled = false;
    } 
    else 
@@ -2085,7 +2096,7 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
       {
          return false;
       }
-      if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * props.market_max_credit_ratio ) / PERCENT_100 )
+      if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * props.median_props.market_max_credit_ratio ) / PERCENT_100 )
       {
          return false;
       }
@@ -2108,12 +2119,26 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
 
 /**
  * Checks whether a proposed margin position has sufficient liquidity to the 
- * core asset, and whether the debt asset has greater outstanding debt
- * than 50% of the liquidity pool has available in exchange for the core asset.
+ * core asset, whether the credit asset has sufficient liquidity to the core asset,
+ * and whether the debt asset has greater outstanding debt
+ * than market_max_credit_ratio (50%) of the amount that the liquidity pool 
+ * has available in exchange for the core asset.
+ * 
+ * Margin Check Objective:
+ * 
+ * Ensure that the margin order system is fully solvent and can be liquidated with only liquidity pool reserves.
+ * 
+ * 1 - Prevent Position asset from becoming too squeezed in the event of a liquidation.
+ * 2 - Prevent Debt asset from becoming too depressed in the event of a liquidation.
+ * 3 - Prevent Collateral asset from becoming too depressed in the event of a liquidation.
+ * 4 - Ensure sufficient pool balances to support a full liquidation of an order 10 times the requested size.
+ * 5 - Ensure that no assets accumulate margin debt in excess of the total available Coin liquidity for the debt.
+ * 6 - Ensure sufficient liquidity for Coin in the credit asset liquidity pool.
  */
 bool database::margin_check( const asset& debt, const asset& position, const asset& collateral, const asset_credit_pool_object& credit_pool)
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const asset_liquidity_pool_object& credit_asset_pool = get_liquidity_pool( SYMBOL_COIN, SYMBOL_CREDIT );  //  Credit : Coin Liquidity pool
    asset collateral_coin = collateral;
    asset position_coin = position;
    asset debt_coin = debt;
@@ -2122,7 +2147,7 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
    FC_ASSERT( debt.symbol == credit_pool.base_symbol,
       "Incorrect credit pool for requested debt asset." );
 
-   if( collateral.symbol != SYMBOL_COIN )
+   if( collateral.symbol != SYMBOL_COIN )    // Coin derived from sale of 10 times collateral amount
    {
       const asset_liquidity_pool_object& col_pool = get_liquidity_pool( collateral.symbol );
       collateral_coin = liquid_exchange( 10 * collateral, SYMBOL_COIN, false, false );
@@ -2132,7 +2157,7 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
       collateral_coin = 10 * collateral;
    }
 
-   if( position.symbol != SYMBOL_COIN )
+   if( position.symbol != SYMBOL_COIN )      // Coin derived from sale of 10 times position amount
    {
       const asset_liquidity_pool_object& position_pool = get_liquidity_pool( position.symbol );
       position_coin = liquid_exchange( 10 * position, SYMBOL_COIN, false, false );
@@ -2142,19 +2167,23 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
       position_coin = 10 * position;
    }
    
-   if( debt.symbol != SYMBOL_COIN )
+   if( debt.symbol != SYMBOL_COIN )     // Coin cost of acquiring 10 times debt amount
    {
-      const asset_liquidity_pool_object& debt_pool = get_liquidity_pool( debt.symbol );
-      if( debt_pool.asset_balance( debt.symbol ) >= 10 * debt )
+      const asset_liquidity_pool_object& debt_pool = get_liquidity_pool( debt.symbol );   // Debt : Coin Liquidity pool
+
+      if( debt_pool.asset_balance( debt.symbol ) >= 10 * debt )   
       {
          debt_coin = liquid_acquire( 10 * debt, SYMBOL_COIN, false, false );
       }
-      else
+      else       // Pool does not have enough debt asset 
       {
          return false;
       }
-      if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * props.market_max_credit_ratio ) / PERCENT_100 )
+      
+      if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * props.median_props.market_max_credit_ratio ) / PERCENT_100 )
       {
+         // If too much debt is outstanding on the specified debt asset, compared with available liquidity to Coin
+         // Prevent margin liquidations from running out of available debt asset liquidity
          return false;
       }
    }
@@ -2163,15 +2192,21 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
       debt_coin = 10 * debt;
    }
 
-   if( ( collateral_coin + position_coin ) <= debt_coin )
+   if( credit_asset_pool.asset_balance( SYMBOL_COIN ) >= 10 * debt_coin )  // Not enough coin to cover cost of debt with credit 
    {
-      return false;
+      if( ( collateral_coin + position_coin ) >= debt_coin )    // Order 10 times requested would be insolvent due to illiquidity
+      {
+         return true;     // Requested margin order passes all credit checks 
+      }
+      else        
+      {
+         return false;
+      }
    }
    else
    {
-      return true;
+      return false;
    }
-
 } FC_CAPTURE_AND_RETHROW( (debt)(position)(collateral)(credit_pool) ) }
 
 
@@ -2191,8 +2226,8 @@ void database::process_credit_updates()
    {
       const asset_object& debt_asset = get_asset( loan_itr->debt_asset() );
       const asset_credit_pool_object& credit_pool = get_credit_pool( loan_itr->debt_asset(), false );
-      uint16_t fixed = props.credit_min_interest;
-      uint16_t variable = props.credit_variable_interest;
+      uint16_t fixed = props.median_props.credit_min_interest;
+      uint16_t variable = props.median_props.credit_variable_interest;
       share_type interest_rate = credit_pool.interest_rate( fixed, variable );
       asset total_interest = asset( 0, debt_asset.symbol );
 
@@ -2209,7 +2244,7 @@ void database::process_credit_updates()
          {
             const credit_loan_object& loan = *loan_itr;
 
-            asset max_debt = ( loan.collateral * col_debt_price * props.credit_liquidation_ratio ) / PERCENT_100;
+            asset max_debt = ( loan.collateral * col_debt_price * props.median_props.credit_liquidation_ratio ) / PERCENT_100;
             price liquidation_price = price( loan.collateral, max_debt );
             asset interest = ( loan.debt * interest_rate * ( now - loan.last_updated ).to_seconds() ) / ( fc::days(365).to_seconds() * PERCENT_100 );
             total_interest += interest;
@@ -2259,8 +2294,8 @@ void database::process_margin_updates()
    {
       const asset_object& debt_asset = get_asset( margin_itr->debt_asset() );
       const asset_credit_pool_object& credit_pool = get_credit_pool( margin_itr->debt_asset(), false );
-      uint16_t fixed = props.credit_min_interest;
-      uint16_t variable = props.credit_variable_interest;
+      uint16_t fixed = props.median_props.credit_min_interest;
+      uint16_t variable = props.median_props.credit_variable_interest;
       share_type interest_rate = credit_pool.interest_rate( fixed, variable );
       asset total_interest = asset( 0, debt_asset.symbol );
 
@@ -2342,7 +2377,7 @@ void database::process_margin_updates()
                   m.last_updated = now;
                });
 
-               if( margin.collateralization < props.margin_liquidation_ratio ||
+               if( margin.collateralization < props.median_props.margin_liquidation_ratio ||
                   pos_debt_price <= margin.stop_loss_price ||
                   pos_debt_price >= margin.take_profit_price )  
                {
@@ -2353,6 +2388,7 @@ void database::process_margin_updates()
                   modify( margin, [&]( margin_order_object& m )
                   {
                      m.liquidating = true;
+                     m.last_updated = now;
                      m.sell_price = ~m.limit_stop_loss_price;   // If price falls below limit stop loss, reverse order and sell at limit price
                   });
                   apply_order( margin );
@@ -2362,6 +2398,7 @@ void database::process_margin_updates()
                   modify( margin, [&]( margin_order_object& m )
                   {
                      m.liquidating = true;
+                     m.last_updated = now;
                      m.sell_price = ~m.limit_take_profit_price;  // If price rises above take profit, reverse order and sell at limit price
                   });
                   apply_order( margin );
@@ -2459,18 +2496,20 @@ void database::clear_expired_transactions()
  * All margin positions are force closed at the swan price
  * Collateral received goes into a force-settlement fund
  * No new margin positions can be created for this asset
- * Force settlement happens without delay at the swan price, deducting from force-settlement fund
+ * Force settlement happens without delay at the swan price, 
+ * deducting from force-settlement fund
  * No more asset updates may be issued.
 */
 void database::globally_settle_asset( const asset_object& mia, const price& settlement_price )
 { try {
-   const asset_bitasset_data_object& bitasset = get_bitasset_data(mia.symbol);
-   FC_ASSERT( !bitasset.has_settlement(), "black swan already occurred, it should not happen again" );
+   const asset_bitasset_data_object& bitasset = get_bitasset_data( mia.symbol );
+   FC_ASSERT( !bitasset.has_settlement(),
+      "Black swan already occurred, it should not happen again" );
 
    const asset_symbol_type& backing_asset = bitasset.backing_asset;
-   const asset_object& backing_asset_object = get_asset(backing_asset);
+   const asset_object& backing_asset_object = get_asset( backing_asset );
    asset collateral_gathered = asset( 0, backing_asset);
-   const asset_dynamic_data_object& mia_dyn = get_dynamic_data(mia.symbol);
+   const asset_dynamic_data_object& mia_dyn = get_dynamic_data( mia.symbol );
    auto original_mia_supply = mia_dyn.total_supply;
 
    const auto& call_price_index = get_index< call_order_index >().indices().get< by_price >();
@@ -2503,24 +2542,28 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
 
 } FC_CAPTURE_AND_RETHROW( (mia)(settlement_price) ) }
 
-void database::revive_bitasset( const asset_object& bitasset ) 
+void database::revive_bitasset( const asset_object& bitasset )
 { try {
    FC_ASSERT( bitasset.is_market_issued(),
       "Asset must be a market issued asset." );
-   const asset_bitasset_data_object& bad = get_bitasset_data(bitasset.symbol);
+   const asset_bitasset_data_object& bad = get_bitasset_data( bitasset.symbol );
+
    FC_ASSERT( bad.has_settlement(),
       "Asset must have a settlement price before it can be revived.");
    const asset_dynamic_data_object& bdd = get_dynamic_data( bitasset.symbol );
+
    FC_ASSERT( !bad.current_feed.settlement_price.is_null(),
       "Settlement price cannot be null to revive asset." );
 
    if( bdd.total_supply > 0 )    // Create + execute a "bid" with 0 additional collateral
    {
-      const collateral_bid_object& pseudo_bid = create< collateral_bid_object >([&]( collateral_bid_object& bid ) 
+      const collateral_bid_object& pseudo_bid = create< collateral_bid_object >([&]( collateral_bid_object& bid )
       {
          bid.bidder = bitasset.issuer;
-         bid.inv_swan_price = asset(0, bad.backing_asset) / asset( bdd.total_supply, bitasset.symbol );
+         bid.collateral = asset( 0, bad.backing_asset );
+         bid.debt = asset( bdd.total_supply, bitasset.symbol );
       });
+
       execute_bid( pseudo_bid, bdd.total_supply, bad.settlement_fund.amount, bad.current_feed );
    } 
    else
@@ -2540,12 +2583,13 @@ void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const a
       "Asset must have a settlement price before it can be revived." );
    
    const auto& bid_idx = get_index< collateral_bid_index >().indices().get< by_price >();
-   auto itr = bid_idx.lower_bound( boost::make_tuple( bitasset.symbol, price::max( bad.backing_asset, bitasset.symbol ) ) );
-   while( itr != bid_idx.end() && itr->inv_swan_price.quote.symbol == bitasset.symbol )
+   auto bid_itr = bid_idx.lower_bound( boost::make_tuple( bitasset.symbol, price::max( bad.backing_asset, bitasset.symbol ) ) );
+
+   while( bid_itr != bid_idx.end() && bid_itr->inv_swan_price.quote.symbol == bitasset.symbol )
    {
-      const collateral_bid_object& bid = *itr;
-      ++itr;
-      cancel_bid( bid , true );    // cancel remaining bids
+      const collateral_bid_object& bid = *bid_itr;
+      ++bid_itr;
+      cancel_bid( bid, true );    // cancel remaining bids
    }
 
    modify( bad, [&]( asset_bitasset_data_object& obj )
@@ -2558,46 +2602,52 @@ void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const a
 
 void database::cancel_bid( const collateral_bid_object& bid, bool create_virtual_op )
 {
-   const account_object& bidder_account = get_account(bid.bidder);
-   adjust_liquid_balance(bidder_account, bid.inv_swan_price.base);
+   const account_object& bidder_account = get_account( bid.bidder );
+
+   adjust_liquid_balance( bid.bidder, bid.collateral );
 
    if( create_virtual_op )
    {
       bid_collateral_operation vop;
       vop.bidder = bid.bidder;
-      vop.additional_collateral = bid.inv_swan_price.base;
-      vop.debt_covered = asset( 0, bid.inv_swan_price.quote.symbol );
+      vop.collateral = bid.collateral;
+      vop.debt = asset( 0, bid.debt.symbol );
       push_virtual_operation( vop );
    }
    remove( bid );
 }
 
-
-void database::execute_bid( const collateral_bid_object& bid, share_type debt_covered, share_type collateral_from_fund, const price_feed& current_feed )
+/**
+ * Converts a processed collateral bid into a call order
+ * with the requested debt and collateral values, plus collateral dispursed from
+ * the settlement fund of the bitasset.
+ */
+void database::execute_bid( const collateral_bid_object& bid, share_type debt, 
+   share_type collateral_from_fund, const price_feed& current_feed )
 {
    create< call_order_object >( [&]( call_order_object& call )
    {
       call.borrower = bid.bidder;
-      call.collateral = bid.inv_swan_price.base.amount + collateral_from_fund;
-      call.debt = debt_covered;
+      call.collateral = asset( bid.collateral.amount + collateral_from_fund, bid.collateral.symbol );
+      call.debt = asset( debt, bid.debt.symbol );
+
       // bid.inv_swan_price is in collateral / debt
-      call.call_price = price( asset( 1, bid.inv_swan_price.base.symbol ), asset( 1, bid.inv_swan_price.quote.symbol ) );
+      call.call_price = price( asset( 1, bid.collateral.symbol ), asset( 1, bid.debt.symbol ) );
    });
 
    push_virtual_operation( 
       execute_bid_operation( bid.bidder, 
-      asset( bid.inv_swan_price.base.amount + collateral_from_fund, bid.inv_swan_price.base.symbol ),
-      asset( debt_covered, bid.inv_swan_price.quote.symbol ) ) 
+      asset( bid.collateral.amount + collateral_from_fund, bid.collateral.symbol ),
+      asset( debt, bid.debt.symbol ) ) 
    );
 
    remove( bid );
 }
 
 
-void database::cancel_settle_order(const force_settlement_object& order, bool create_virtual_op)
+void database::cancel_settle_order( const force_settlement_object& order, bool create_virtual_op )
 {
-   const account_object& account_object = get_account(order.owner);
-   adjust_liquid_balance( account_object, order.balance );
+   adjust_liquid_balance( order.owner, order.balance );
 
    if( create_virtual_op )
    {
@@ -2639,6 +2689,7 @@ void database::close_margin_order( const margin_order_object& order )
    asset collateral_sold;
    const asset_credit_pool_object& credit_pool = get_credit_pool( order.debt_asset(), false );
    const credit_collateral_object& coll_balance = get_collateral( owner.name, order.collateral_asset() );
+   time_point now = head_block_time();
 
    if( order.position_balance.amount > 0 )   // Position contained in loan
    {
@@ -2663,6 +2714,7 @@ void database::close_margin_order( const margin_order_object& order )
       modify( coll_balance, [&]( credit_collateral_object& c )
       {
          c.collateral += returned_collateral;
+         c.last_updated = now;
       });
    }
    else   // Order is net negative
@@ -2711,6 +2763,7 @@ void database::close_margin_order( const margin_order_object& order )
          modify( coll_balance, [&]( credit_collateral_object& c )
          {
             c.collateral += returned_collateral;
+            c.last_updated = now;
          });
       }
    }
@@ -2777,12 +2830,12 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
    }
 
    auto limit_index = get_index < limit_order_index >();
-   const auto& limit_price_index = limit_index.indices().get<by_price>();
+   const auto& limit_price_index = limit_index.indices().get< by_price >();
 
-   auto max_price = price::max( mia.symbol, bitasset.backing_asset ); // looking for limit orders selling the most USD for the least CORE
-   auto min_price = bitasset.current_feed.max_short_squeeze_price(); // stop when limit orders are selling too little USD for too much CORE
+   auto max_price = price::max( mia.symbol, bitasset.backing_asset );      // looking for limit orders selling the most USD for the least CORE
+   auto min_price = bitasset.current_feed.max_short_squeeze_price();       // stop when limit orders are selling too little USD for too much CORE
 
-   auto limit_itr = limit_price_index.lower_bound( max_price );     // NOTE limit_price_index is sorted from greatest to least
+   auto limit_itr = limit_price_index.lower_bound( max_price );            // limit_price_index is sorted from greatest to least
    auto limit_end = limit_price_index.upper_bound( min_price );
 
    if( limit_itr == limit_end ) 
@@ -2790,9 +2843,9 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
      return false; 
    }
 
-   auto call_index = get_index<call_order_index>();
-   const auto& call_price_index = call_index.indices().get<by_price>();
-   const auto& call_collateral_index = call_index.indices().get<by_collateral>();
+   auto call_index = get_index< call_order_index >();
+   const auto& call_price_index = call_index.indices().get< by_price >();
+   const auto& call_collateral_index = call_index.indices().get< by_collateral >();
 
    auto call_min = price::min( bitasset.backing_asset, mia.symbol );
    auto call_max = price::max( bitasset.backing_asset, mia.symbol );
@@ -2811,19 +2864,21 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
    auto head_time = head_block_time();
    auto head_num = head_block_num();
 
-   while( !check_for_blackswan( mia, enable_black_swan, &bitasset ) && limit_itr != limit_end && ( call_collateral_itr != call_collateral_end ) )
+   while( !check_for_blackswan( mia, enable_black_swan, &bitasset ) && 
+      limit_itr != limit_end && 
+      ( call_collateral_itr != call_collateral_end ) )
    {
       bool filled_call = false;
 
       const call_order_object& call_order = *call_collateral_itr;
 
-      if( ( bitasset.current_maintenance_collateralization < call_order.collateralization() )) 
+      if( ( bitasset.current_maintenance_collateralization < call_order.collateralization() ) ) 
       {
          return margin_called;
       }
          
       const limit_order_object& limit_order = *limit_itr;
-      price match_price  = limit_order.sell_price;
+      price match_price = limit_order.sell_price;
       
       margin_called = true;
 
@@ -2833,7 +2888,7 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
          elog( "black swan detected on asset ${symbol} (${id}) at block ${b}", ("id",mia.symbol)("symbol",mia.symbol)("b",head_num) );
          edump((enable_black_swan));
          FC_ASSERT( enable_black_swan );
-         globally_settle_asset(mia, bitasset.current_feed.settlement_price );
+         globally_settle_asset( mia, bitasset.current_feed.settlement_price );
          return true;
       }
 
@@ -2888,71 +2943,95 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
  */
 bool database::check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_bitasset_data_object* bitasset_ptr )
 {
-   if( !mia.is_market_issued() ) return false;
+   if( !mia.is_market_issued() )       // Asset must be market issued
+   {
+      return false;
+   } 
 
    const asset_bitasset_data_object& bitasset = ( bitasset_ptr ? *bitasset_ptr : get_bitasset_data(mia.symbol));
-   if( bitasset.has_settlement() ) return true;     // already force settled
+   if( bitasset.has_settlement() )
+   {
+      return true;     // already force settled
+   }
    auto settle_price = bitasset.current_feed.settlement_price;
-   if( settle_price.is_null() ) return false;      // no feed
+
+   if( settle_price.is_null() )
+   {
+      return false;      // no feed
+   } 
 
    const call_order_object* call_ptr = nullptr; // place holder for the call order with least collateral ratio
 
    asset_symbol_type debt_asset_symbol = mia.symbol;
    auto call_min = price::min( bitasset.backing_asset, debt_asset_symbol );
 
-   const auto& call_collateral_index = get_index<call_order_index>().indices().get<by_collateral>();
+   const auto& call_collateral_index = get_index< call_order_index >().indices().get< by_collateral >();
    auto call_itr = call_collateral_index.lower_bound( call_min );
    if( call_itr == call_collateral_index.end() ) // no call order
+   {
       return false;
+   }   
    call_ptr = &(*call_itr);
     
-    if( call_ptr->debt_type() != debt_asset_symbol ) // no call order
-      return false;
+   if( call_ptr->debt_type() != debt_asset_symbol ) 
+   {
+      return false; // no call order
+   }
 
    price highest = settle_price;
    
    highest = bitasset.current_feed.max_short_squeeze_price();
 
-   const auto& limit_index = get_index<limit_order_index>();
-   const auto& limit_price_index = limit_index.indices().get<by_price>();
+   const auto& limit_index = get_index< limit_order_index >();
+   const auto& limit_price_index = limit_index.indices().get< by_price >();
 
    // looking for limit orders selling the most USD for the least CORE
-   auto highest_possible_bid = price::max( mia.symbol, bitasset.backing_asset );
+   price highest_possible_bid = price::max( mia.symbol, bitasset.backing_asset );
+
    // stop when limit orders are selling too little USD for too much CORE
-   auto lowest_possible_bid  = price::min( mia.symbol, bitasset.backing_asset );
+   price lowest_possible_bid  = price::min( mia.symbol, bitasset.backing_asset );
 
    FC_ASSERT( highest_possible_bid.base.symbol == lowest_possible_bid.base.symbol );
-   // NOTE limit_price_index is sorted from greatest to least
+   // limit_price_index is sorted from greatest to least
+
    auto limit_itr = limit_price_index.lower_bound( highest_possible_bid );
    auto limit_end = limit_price_index.upper_bound( lowest_possible_bid );
 
-   if( limit_itr != limit_end ) {
+   if( limit_itr != limit_end ) 
+   {
       FC_ASSERT( highest.base.symbol == limit_itr->sell_price.base.symbol );
       highest = std::max( limit_itr->sell_price, highest );
    }
 
-   auto least_collateral = call_ptr->collateralization();
-   if( ~least_collateral >= highest  ) 
+   price least_collateral = call_ptr->collateralization();
+
+   if( ~least_collateral >= highest  )    // Least collateralized order's Inverse Swan price is great than Max short squeeze price
    {
       wdump( (*call_ptr) );
       elog( "Black Swan detected on asset ${symbol} (${id}) at block ${b}: \n"
             "   Least collateralized call: ${lc}  ${~lc}\n"
-         //  "   Highest Bid:               ${hb}  ${~hb}\n"
+            "   Highest Bid:               ${hb}  ${~hb}\n"
             "   Settle Price:              ${~sp}  ${sp}\n"
             "   Max:                       ${~h}  ${h}\n",
          ("id",mia.id)("symbol",mia.symbol)("b",head_block_num())
          ("lc",least_collateral.to_real())("~lc",(~least_collateral).to_real())
-         //  ("hb",limit_itr->sell_price.to_real())("~hb",(~limit_itr->sell_price).to_real())
+         ("hb",limit_itr->sell_price.to_real())("~hb",(~limit_itr->sell_price).to_real())
          ("sp",settle_price.to_real())("~sp",(~settle_price).to_real())
          ("h",highest.to_real())("~h",(~highest).to_real()) );
       edump((enable_black_swan));
 
-      FC_ASSERT( enable_black_swan, "Black swan was detected during a margin update which is not allowed to trigger a blackswan" );
+      FC_ASSERT( enable_black_swan, 
+         "Black swan was detected during a margin update which is not allowed to trigger a blackswan" );
+
       if( ~least_collateral <= settle_price )
-         // global settle at feed price if possible
-         globally_settle_asset(mia, settle_price );
+      {
+         globally_settle_asset( mia, settle_price );     // global settle at feed price if possible
+      }
       else
-         globally_settle_asset(mia, ~least_collateral );
+      {
+         globally_settle_asset( mia, ~least_collateral );
+      }
+         
       return true;
    } 
    return false;

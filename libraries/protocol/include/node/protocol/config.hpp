@@ -95,7 +95,7 @@
 #define VOTE_THRESHOLD_AMOUNT                 (5)                       // Enterprise proposals require 10% of network voting power to approve milestones.
 #define SET_UPDATE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
 #define ENTERPRISE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)
-
+#define BITASSET_BLOCK_INTERVAL               (BLOCKS_PER_DAY)          // Updates the settlement volume on bitassets and processes collateral bids
 #define VOTE_RECHARGE_TIME              fc::days(7)           // 7 days to regenerate maximum voting power. Accumulation period of unused transactions for allocating rewards.
 #define VIEW_RECHARGE_TIME              fc::days(7)           // 7 day to regenerate maximum viewing power. Accumulation period of unused transactions for allocating rewards.
 #define SHARE_RECHARGE_TIME             fc::days(7)           // 7 days to regenerate maximum sharing power. Accumulation period of unused transactions for allocating rewards.
@@ -403,7 +403,6 @@
 #define TEMP_ACCOUNT                    "temp"                   // Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
 #define PROXY_TO_SELF_ACCOUNT           ""                       // Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
 #define ROOT_POST_PARENT                (account_name_type())    // Represents the canonical root post parent account
-#define COMMITTEE_ACCOUNT               "committee"              // Represents the committee members
 #define COMMUNITY_ACCOUNT               "community"              // Represents the Community Enterprise Fund
 #define EXECUTIVE_ACCOUNT               "executive"              // Represents the Executive Board
 #define DEVELOPMENT_ACCOUNT             "development"            // Represents the Development Team
@@ -422,7 +421,7 @@
 #define INIT_AUTH_ENDPOINT              "https://auth.weyoume.io"
 #define INIT_NOTIFICATION_ENDPOINT      "https://notify.weyoume.io"
 #define INIT_IPFS_ENDPOINT              "https://ipfs.weyoume.io"
-#define INIT_BITTORRENT_ENDPOINT         "https://bittorrent.weyoume.io"
+#define INIT_BITTORRENT_ENDPOINT        "https://bittorrent.weyoume.io"
 
 #define INIT_CEO                        "harrison.mclean"               // firstname.lastname of launching Chief Executive Officer
 #define INIT_CEO_DETAILS                "WeYouMe is a social media protocol to enable everyone to share information and value freely."   // Details string of init account.

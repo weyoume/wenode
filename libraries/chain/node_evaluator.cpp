@@ -1695,7 +1695,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          from_string( co.connection_id, o.connection_id );
          co.last_message_time_a = now;
          co.last_message_time_b = now;
-         co.last_update_time = now;
+         co.last_updated = now;
          co.created = now;
       });
 
@@ -2764,7 +2764,7 @@ void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
          }
          s.active = true;
          s.created = now;
-         s.last_update_time = now;
+         s.last_updated = now;
          
          s.last_activation_time = now;
       });
@@ -2829,7 +2829,7 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
          }
          i.active = true;
          i.created = now;
-         i.last_update_time = now;
+         i.last_updated = now;
       });
    } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -2881,7 +2881,7 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
             from_string( m.json, o.json );
          }
          m.mediator_bond = o.mediator_bond;
-         m.last_update_time = now;
+         m.last_updated = now;
          m.active = o.active;
       });
    }
@@ -2907,7 +2907,7 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
          }
          m.active = true;
          m.created = now;
-         m.last_update_time = now;
+         m.last_updated = now;
          m.mediator_bond = o.mediator_bond;
          m.last_escrow_from = account_name_type();
          m.last_escrow_id = shared_string();
@@ -3034,7 +3034,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          "Creator has insufficient balance to pay community enterprise proposal fee." );
       _db.adjust_liquid_balance( o.creator, -o.fee );
       const reward_fund_object& reward_fund = _db.get_reward_fund();
-      
+
       _db.modify( reward_fund, [&]( reward_fund_object& rfo )
       { 
          rfo.adjust_community_fund_balance( o.fee );
@@ -5308,7 +5308,7 @@ void board_subscribe_evaluator::do_apply( const board_subscribe_operation& o )
    if( o.subscribed )   // Adding subscription 
    {
       FC_ASSERT( board_member.is_authorized_interact( account.name ), 
-         "Account: ${a} is not authorized to subscribe to the board ${b}. Become a member first.",("a", account.name)("b", o.board));
+         "Account: ${a} is not authorized to subscribe to the board ${b}.",("a", account.name)("b", o.board));
       FC_ASSERT( !board_member.is_subscriber( account.name ), 
          "Account: ${a} is already subscribed to the board ${b}.",("a", account.name)("b", o.board));
    }
@@ -7138,22 +7138,47 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
    FC_ASSERT( liquid >= o.amount,
       "Account cannot cover costs of escrow. Required: ${r} Available: ${a}", ("r",o.amount)("a",liquid) );
 
-   _db.create< escrow_object >([&]( escrow_object& esc )
-   {
-      from_string( esc.escrow_id, o.escrow_id );
-      esc.from = o.from;
-      esc.to = o.to;
-      esc.from_mediator = account_name_type();
-      esc.to_mediator = account_name_type();
-      esc.acceptance_time = o.acceptance_time;
-      esc.escrow_expiration = o.escrow_expiration;
-      esc.payment = o.amount;
-      esc.balance = asset( 0, o.amount.symbol );
-      esc.dispute_release_time = time_point::maximum();
-      esc.approvals[ o.from ] = false;
-      esc.approvals[ o.to ] = false;
-   });
+   const auto& escrow_idx = _db.get_index< escrow_index >().indices().get< by_from_id >();
+   auto escrow_itr = escrow_idx.find( std::make_tuple( o.from, o.escrow_id ) );
 
+   if( escrow_itr == escrow_idx.end() )    // Escrow transfer does not exist, creating new one.
+   {
+      _db.create< escrow_object >([&]( escrow_object& esc )
+      {
+         from_string( esc.escrow_id, o.escrow_id );
+         esc.from = o.from;
+         esc.to = o.to;
+         esc.from_mediator = account_name_type();
+         esc.to_mediator = account_name_type();
+         esc.acceptance_time = o.acceptance_time;
+         esc.escrow_expiration = o.escrow_expiration;
+         esc.payment = o.amount;
+         esc.balance = asset( 0, o.amount.symbol );
+         esc.dispute_release_time = time_point::maximum();
+         esc.approvals[ o.from ] = false;
+         esc.approvals[ o.to ] = false;
+         esc.created = now;
+         esc.last_updated = now;
+      });
+   }
+   else     // Existing escrow being edited. 
+   {
+      const escrow_object& escrow = *escrow_itr;
+
+      for( auto a : escrow.approvals )
+      {
+         FC_ASSERT( a.second == false, 
+            "Cannot edit escrow after approvals have been made." );
+      }
+
+      _db.modify( escrow, [&]( escrow_object& esc )
+      {
+         esc.acceptance_time = o.acceptance_time;
+         esc.escrow_expiration = o.escrow_expiration;
+         esc.payment = o.amount;
+         esc.last_updated = now;
+      });
+   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -7242,6 +7267,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
          {
             esc.balance += escrow_bond;
          }
+         esc.last_updated = now;
       });
    }
    else       // Any accounts can cancel the escrow and refund all previous payments
@@ -7361,7 +7387,7 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
 //============================//
 
 
-void limit_order_create_evaluator::do_apply( const limit_order_create_operation& o )
+void limit_order_evaluator::do_apply( const limit_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
    if( o.signatory != signed_for )
@@ -7387,52 +7413,75 @@ void limit_order_create_evaluator::do_apply( const limit_order_create_operation&
       const account_object& interface = _db.get_account( o.interface );
       const interface_object& inter = _db.get_interface( o.interface );
    }
-   
-   _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
 
-   const limit_order_object& order = _db.create< limit_order_object >( [&]( limit_order_object& obj )
-   {
-      obj.seller = o.owner;
-      from_string( obj.order_id, o.order_id );
-      obj.for_sale = o.amount_to_sell.amount;
-      obj.sell_price = o.exchange_rate;
-      obj.expiration = o.expiration;
-      if( o.interface.size() )
-      {
-         obj.interface = o.interface;
-      }
-      obj.created = now;
-   });
-
-   bool filled = _db.apply_order( order );
-
-   if( o.fill_or_kill ) 
-   {
-      FC_ASSERT( filled, 
-         "Cancelling order because it was not filled." );
-   }
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
-void limit_order_cancel_evaluator::do_apply( const limit_order_cancel_operation& o )
-{ try {
-   const account_name_type& signed_for = o.owner;
-   if( o.signatory != signed_for )
-   {
-      const account_object& signatory = _db.get_account( o.signatory );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    shared_string order_id;
    from_string( order_id, o.order_id );
 
-   const limit_order_object& limit = _db.get_limit_order( o.owner, order_id );
-   _db.cancel_limit_order( limit );
+   const auto& limit_idx = _db.get_index< limit_order_index >().indices().get< by_account >();
+   auto limit_itr = limit_idx.find( std::make_tuple( o.owner, order_id ) );
+
+   if( limit_itr == limit_idx.end() )    // Limit order does not already exist
+   {
+      _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
+
+      const limit_order_object& order = _db.create< limit_order_object >( [&]( limit_order_object& obj )
+      {
+         obj.seller = o.owner;
+         from_string( obj.order_id, o.order_id );
+         obj.for_sale = o.amount_to_sell.amount;
+         obj.sell_price = o.exchange_rate;
+         obj.expiration = o.expiration;
+         if( o.interface.size() )
+         {
+            obj.interface = o.interface;
+         }
+         obj.created = now;
+         obj.last_updated = now;
+      });
+
+      bool filled = _db.apply_order( order );
+
+      if( o.fill_or_kill ) 
+      {
+         FC_ASSERT( filled, 
+            "Cancelling order because it was not filled." );
+      }
+   }
+   else
+   {
+      const limit_order_object& order = *limit_itr;
+
+      if( o.opened )
+      {
+         asset delta = o.amount_to_sell - asset( order.for_sale, order.sell_price.base.symbol );
+
+         _db.adjust_liquid_balance( o.owner, -delta );
+
+         _db.modify( order, [&]( limit_order_object& obj )
+         {
+            obj.for_sale += delta.amount;
+            obj.sell_price = o.exchange_rate;
+            obj.expiration = o.expiration;
+            obj.last_updated = now;
+         });
+
+         bool filled = _db.apply_order( order );
+
+         if( o.fill_or_kill ) 
+         {
+            FC_ASSERT( filled, 
+               "Cancelling order because it was not filled." );
+         }
+      }
+      else
+      {
+         _db.cancel_limit_order( order );
+      }
+   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void margin_order_create_evaluator::do_apply( const margin_order_create_operation& o )
+void margin_order_evaluator::do_apply( const margin_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
    if( o.signatory != signed_for )
@@ -7465,8 +7514,8 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
    const asset_object& position_asset = _db.get_asset( o.exchange_rate.quote.symbol );
    const credit_collateral_object& collateral = _db.get_collateral( o.owner, o.collateral.symbol );
 
-   FC_ASSERT( collateral.collateral.amount >= o.collateral.amount, 
-      "Insufficient collateral balance in this asset to vest the amount requested in the loan. Please increase collateral.");
+   shared_string order_id;
+   from_string( order_id, o.order_id );
 
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount_to_borrow.symbol, false );
    asset min_collateral = ( o.amount_to_borrow * props.median_props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 20% of debt value.
@@ -7503,70 +7552,177 @@ void margin_order_create_evaluator::do_apply( const margin_order_create_operatio
       "Collateral is insufficient to support a margin loan of this size. Please increase collateral." );
    FC_ASSERT( _db.margin_check( o.amount_to_borrow, position, o.collateral, pool ),
       "Margin loan with provided collateral, position, and debt is not viable with current asset liquidity conditions. Please lower debt." );
-   FC_ASSERT( pool.base_balance.amount >= o.amount_to_borrow.amount,
-      "Insufficient Available assets to borrow from credit pool. Please lower debt." );
-   
-   _db.modify( collateral, [&]( credit_collateral_object& cco )
-   {
-      cco.collateral -= o.collateral;   // Decrement from pledged collateral object balance.
-   });
 
-   // Transfer borrowed amount from the base balance to the borrowed balance of the credit pool.
-   _db.modify( pool, [&]( asset_credit_pool_object& acpo )
-   {
-      acpo.borrowed_balance += o.amount_to_borrow;
-      acpo.base_balance -= o.amount_to_borrow;
-   });
+   const auto& margin_idx = _db.get_index< margin_order_index >().indices().get< by_account >();
+   auto margin_itr = margin_idx.find( std::make_tuple( o.owner, order_id ) );
 
-   const margin_order_object& order = _db.create< margin_order_object >( [&]( margin_order_object& moo )
+   if( margin_itr == margin_idx.end() )    // margin order does not already exist
    {
-      moo.owner = o.owner;
-      from_string( moo.order_id, o.order_id);
-      moo.sell_price = o.exchange_rate;
-      moo.debt = o.amount_to_borrow;
-      moo.debt_balance = o.amount_to_borrow;
-      moo.interest = asset( 0, o.amount_to_borrow.symbol );
-      moo.position = position;
-      moo.position_balance = asset( 0, position.symbol );
-      moo.collateralization = collateralization;
-      if( o.interface.size() )
-      {
-         moo.interface = o.interface;
-      }
-      moo.expiration = o.expiration;
-      if( o.stop_loss_price.valid() )
-      {
-         moo.stop_loss_price = *o.stop_loss_price;
-      }
-      if( o.take_profit_price.valid() )
-      {
-         moo.take_profit_price = *o.take_profit_price;
-      }
-      if( o.limit_stop_loss_price.valid() )
-      {
-         moo.limit_stop_loss_price = *o.limit_stop_loss_price;
-      }
-      if( o.limit_take_profit_price.valid() )
-      {
-         moo.limit_take_profit_price = *o.limit_take_profit_price;
-      }
-      moo.liquidating = false;
-      moo.created = now;
-      moo.last_updated = now;
-      moo.unrealized_value = asset( 0, debt_asset.symbol );
-   });
+      FC_ASSERT( collateral.collateral.amount >= o.collateral.amount, 
+         "Insufficient collateral balance in this asset to vest the amount requested in the loan. Please increase collateral.");
+      FC_ASSERT( pool.base_balance.amount >= o.amount_to_borrow.amount,
+         "Insufficient Available assets to borrow from credit pool. Please lower debt." );
 
-   bool filled = _db.apply_order( order );
+      _db.modify( collateral, [&]( credit_collateral_object& cco )
+      {
+         cco.collateral -= o.collateral;   // Decrement from pledged collateral object balance.
+         cco.last_updated = now;
+      });
 
-   if( o.fill_or_kill )
+      // Transfer borrowed amount from the base balance to the borrowed balance of the credit pool.
+      _db.modify( pool, [&]( asset_credit_pool_object& acpo )
+      {
+         acpo.borrowed_balance += o.amount_to_borrow;
+         acpo.base_balance -= o.amount_to_borrow;
+      });
+
+      const margin_order_object& order = _db.create< margin_order_object >( [&]( margin_order_object& moo )
+      {
+         moo.owner = o.owner;
+         from_string( moo.order_id, o.order_id );
+         moo.sell_price = o.exchange_rate;
+         moo.collateral = o.collateral;
+         moo.debt = o.amount_to_borrow;
+         moo.debt_balance = o.amount_to_borrow;
+         moo.interest = asset( 0, o.amount_to_borrow.symbol );
+         moo.position = o.amount_to_borrow * o.exchange_rate;
+         moo.position_balance = asset( 0, o.exchange_rate.quote.symbol );
+         moo.collateralization = collateralization;
+         if( o.interface.size() )
+         {
+            moo.interface = o.interface;
+         }
+         moo.expiration = o.expiration;
+         if( o.stop_loss_price.valid() )
+         {
+            moo.stop_loss_price = *o.stop_loss_price;
+         }
+         if( o.take_profit_price.valid() )
+         {
+            moo.take_profit_price = *o.take_profit_price;
+         }
+         if( o.limit_stop_loss_price.valid() )
+         {
+            moo.limit_stop_loss_price = *o.limit_stop_loss_price;
+         }
+         if( o.limit_take_profit_price.valid() )
+         {
+            moo.limit_take_profit_price = *o.limit_take_profit_price;
+         }
+         moo.liquidating = false;
+         moo.created = now;
+         moo.last_updated = now;
+         moo.unrealized_value = asset( 0, debt_asset.symbol );
+      });
+
+      bool filled = _db.apply_order( order );
+
+      if( o.fill_or_kill )
+      {
+         FC_ASSERT( filled,
+            "Cancelling order because it was not filled." );
+      }
+   }
+   else      // Editing or closing existing order
    {
-      FC_ASSERT( filled,
-         "Cancelling order because it was not filled." );
+      const margin_order_object& order = *margin_itr;
+
+      FC_ASSERT( o.exchange_rate.base.symbol == order.sell_price.base.symbol &&
+         o.exchange_rate.quote.symbol == order.sell_price.quote.symbol,
+         "Margin exchange rate must maintain the same asset pairing as existing order." );
+
+      if( o.opened )    // Editing margin order
+      {
+         asset delta_collateral = o.collateral - order.collateral;
+         asset delta_borrowed = o.amount_to_borrow - order.debt;
+
+         FC_ASSERT( collateral.collateral >= delta_collateral,
+            "Insufficient collateral balance in this asset to vest the amount requested in the loan. Please increase collateral.");
+         FC_ASSERT( pool.base_balance >= delta_borrowed,
+            "Insufficient Available assets to borrow from credit pool. Please lower debt." );
+         FC_ASSERT( order.debt_balance >= -delta_borrowed,
+            "Insufficient Margin debt balance to process debt reduction." );
+         
+         _db.modify( collateral, [&]( credit_collateral_object& cco )
+         {
+            cco.collateral -= delta_collateral;   // Decrement from pledged collateral object balance.
+            cco.last_updated = now;
+         });
+
+         _db.modify( pool, [&]( asset_credit_pool_object& acpo )
+         {
+            acpo.borrowed_balance += delta_borrowed;
+            acpo.base_balance -= delta_borrowed;
+         });
+
+         _db.modify( order, [&]( margin_order_object& moo )
+         {
+            moo.sell_price = o.exchange_rate;
+            moo.collateral = o.collateral;
+            moo.debt = o.amount_to_borrow;
+            moo.debt_balance += delta_borrowed;
+            moo.position = o.amount_to_borrow * o.exchange_rate;
+            moo.collateralization = collateralization;
+            moo.expiration = o.expiration;
+
+            if( o.stop_loss_price.valid() )
+            {
+               moo.stop_loss_price = *o.stop_loss_price;
+            }
+            if( o.take_profit_price.valid() )
+            {
+               moo.take_profit_price = *o.take_profit_price;
+            }
+            if( o.limit_stop_loss_price.valid() )
+            {
+               moo.limit_stop_loss_price = *o.limit_stop_loss_price;
+            }
+            if( o.limit_take_profit_price.valid() )
+            {
+               moo.limit_take_profit_price = *o.limit_take_profit_price;
+            }
+            moo.last_updated = now;
+         });
+
+         bool filled = _db.apply_order( order );
+
+         if( o.fill_or_kill )
+         {
+            FC_ASSERT( filled,
+               "Cancelling order because it was not filled." );
+         }
+      }
+      else     // closing margin order
+      {
+         if( o.force_close )
+         {
+            _db.close_margin_order( order );   // Liquidate the remaining order into the liquidity pool at current price and close loan.
+         }
+         else
+         {
+            price new_sell_price = ~o.exchange_rate;    // Reverse the exchange rate
+            
+            _db.modify( order, [&]( margin_order_object& moo )
+            {
+               moo.liquidating = true;
+               moo.sell_price = new_sell_price;   // Invert price and insert into the book as sell position order. 
+               moo.last_updated = now;
+            });
+
+            bool filled = _db.apply_order( order );
+
+            if( o.fill_or_kill ) 
+            {
+               FC_ASSERT( filled,
+                  "Cancelling close order because it was not filled." );
+            }
+         }
+      }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void margin_order_close_evaluator::do_apply( const margin_order_close_operation& o )
+void call_order_evaluator::do_apply( const call_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
    if( o.signatory != signed_for )
@@ -7576,142 +7732,96 @@ void margin_order_close_evaluator::do_apply( const margin_order_close_operation&
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   shared_string order_id;
-   from_string( order_id, o.order_id );
 
-   const margin_order_object& margin = _db.get_margin_order( o.owner, order_id );
-   const account_object& owner = _db.get_account( o.owner );
-
-   if( o.force_close )
-   {
-      _db.close_margin_order( margin );   // Liquidate the remaining order into the liquidity pool at current price and close loan.
-   }
-   else
-   {
-      FC_ASSERT( o.exchange_rate.valid(),
-         "Must provide exchange rate if not force closing order." );
-
-      price new_sell_price = *o.exchange_rate;
-      FC_ASSERT( new_sell_price.base.symbol == margin.sell_price.quote.symbol &&
-         new_sell_price.quote.symbol == margin.sell_price.base.symbol,
-         "Margin close exchange rate must have inverse price pair to order sell price pair." );
-
-      _db.modify( margin, [&]( margin_order_object& moo )
-      {
-         moo.liquidating = true;
-         moo.sell_price = new_sell_price;   // Invert price and insert into the book as sell position order. 
-      });
-
-      bool filled = _db.apply_order( margin );
-
-      if( o.fill_or_kill ) 
-      {
-         FC_ASSERT( filled, 
-            "Cancelling close order because it was not filled." );
-      }
-   }
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
-void call_order_update_evaluator::do_apply( const call_order_update_operation& o )
-{ try {
-   const account_name_type& signed_for = o.funding_account;
-   if( o.signatory != signed_for )
-   {
-      const account_object& signatory = _db.get_account( o.signatory );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const account_object& paying_account = _db.get_account( o.funding_account );
+   const account_object& paying_account = _db.get_account( o.owner );
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   const asset_object& debt_asset = _db.get_asset( o.delta_debt.symbol );
-   const asset_dynamic_data_object& debt_dynamic_data = _db.get_dynamic_data( o.delta_debt.symbol );
-   const asset_bitasset_data_object& debt_bitasset_data = _db.get_bitasset_data( o.delta_debt.symbol );
+   const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
+   const asset_dynamic_data_object& debt_dynamic_data = _db.get_dynamic_data( o.debt.symbol );
+   const asset_bitasset_data_object& debt_bitasset_data = _db.get_bitasset_data( o.debt.symbol );
+
+   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   time_point now = props.time;
 
    FC_ASSERT( debt_asset.is_market_issued(),
       "Asset ${sym} is not a collateralized asset.", ("sym", debt_asset.symbol) );
-   FC_ASSERT( debt_dynamic_data.total_supply + o.delta_debt.amount <= debt_asset.options.max_supply,
-      "Borrowing this quantity would exceed the assets Maximum supply." );
-   FC_ASSERT( debt_dynamic_data.total_supply + o.delta_debt.amount >= 0,
-      "This transaction would bring current supply below zero.");
    FC_ASSERT( !debt_bitasset_data.has_settlement(),
       "Cannot update debt position when the asset has been globally settled" );
-   FC_ASSERT( o.delta_collateral.symbol == debt_bitasset_data.backing_asset,
+   FC_ASSERT( o.collateral.symbol == debt_bitasset_data.backing_asset,
       "Collateral asset type should be same as backing asset of debt asset" );
    FC_ASSERT( !debt_bitasset_data.current_feed.settlement_price.is_null(),
       "Cannot borrow asset with no price feed." );
    
-   if( o.delta_debt.amount != 0 )
-   {
-      _db.adjust_liquid_balance( o.funding_account, o.delta_debt );
-   }
-
-   if( o.delta_collateral.amount != 0 )
-   {
-      _db.adjust_liquid_balance( o.funding_account, -o.delta_collateral );
-   }
-
    auto& call_idx = _db.get_index< call_order_index >().indices().get< by_account >();
-   auto itr = call_idx.find( boost::make_tuple( o.funding_account, o.delta_debt.symbol ) );
+   auto itr = call_idx.find( boost::make_tuple( o.owner, o.debt.symbol ) );
 
-   const call_order_object* call_obj_ptr = _db.find_call_order( o.funding_account, o.delta_debt.symbol );
+   const call_order_object* call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );
    optional< price > old_collateralization;
    optional< share_type > old_debt;
 
    if( call_obj_ptr = nullptr )    // creating new debt position
    {
-      FC_ASSERT( o.delta_collateral.amount > 0,
-         "Delta collateral amount of new debt position should be positive." );
-      FC_ASSERT( o.delta_debt.amount > 0,
-         "Delta debt amount of new debt position should be positive." );
+      FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount <= debt_asset.options.max_supply,
+         "Borrowing this quantity would exceed the assets Maximum supply." );
+      FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount >= 0,
+         "This transaction would bring current supply below zero.");
+
+      _db.adjust_liquid_balance( o.owner, o.debt );
+      _db.adjust_liquid_balance( o.owner, -o.collateral );
 
       _db.create< call_order_object >( [&]( call_order_object& coo )
       {
-         coo.borrower = o.funding_account;
-         coo.collateral = o.delta_collateral;
-         coo.debt = o.delta_debt;
-         coo.call_price = price( asset( 1, o.delta_collateral.symbol ), asset( 1, o.delta_debt.symbol ) );
+         coo.borrower = o.owner;
+         coo.collateral = o.collateral;
+         coo.debt = o.debt;
+         coo.call_price = price( asset( 1, o.collateral.symbol ), asset( 1, o.debt.symbol ) );
          coo.target_collateral_ratio = *o.target_collateral_ratio;
+         coo.created = now;
+         coo.last_updated = now;
       });
    }
-   else // updating existing debt position
+   else        // updating existing debt position
    {
       const call_order_object& call_object = *call_obj_ptr;
-      const asset& new_collateral = call_object.collateral + o.delta_collateral;
-      const asset& new_debt = call_object.debt + o.delta_debt;
+
+      asset delta_collateral = o.collateral - call_object.collateral;
+      asset delta_debt = o.debt - call_object.debt;
+
+      _db.adjust_liquid_balance( o.owner, delta_debt );
+      _db.adjust_liquid_balance( o.owner, -delta_collateral );
    
-      if( new_debt.amount == 0 )
+      if( o.debt.amount != 0 )
       {
-         FC_ASSERT( new_collateral.amount == 0,
+         FC_ASSERT( o.collateral.amount > 0 && o.debt.amount > 0,
+            "Both collateral and debt should be positive after updated a debt position if not to close it" );
+
+         price old_collateralization = call_object.collateralization();
+         old_debt = call_object.debt.amount;
+
+         _db.modify( call_object, [&]( call_order_object& coo )
+         {
+            coo.collateral = o.collateral;
+            coo.debt = o.debt;
+            coo.target_collateral_ratio = *o.target_collateral_ratio;
+            coo.last_updated = now;
+         });
+      }
+      else
+      {
+         FC_ASSERT( o.collateral.amount == 0,
             "Should claim all collateral when closing debt position" );
          _db.remove( call_object );
-      }
-
-      FC_ASSERT( new_collateral.amount > 0 && new_debt.amount > 0,
-         "Both collateral and debt should be positive after updated a debt position if not to close it" );
-
-      price old_collateralization = call_object.collateralization();
-      const asset& old_debt = call_object.debt;
-
-      _db.modify( call_object, [&]( call_order_object& coo )
-      {
-         coo.collateral = new_collateral;
-         coo.debt = new_debt;
-         coo.target_collateral_ratio = *o.target_collateral_ratio;
-      });
+      } 
    }
 
-   if( _db.check_call_orders( debt_asset, false, false ) ) // Don't allow black swan, not for new limit order
+   if( _db.check_call_orders( debt_asset, false, false ) )      // Don't allow black swan, not for new limit order
    {
-      call_obj_ptr = _db.find_call_order(o.funding_account, o.delta_debt.symbol);
+      call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );
       FC_ASSERT( !call_obj_ptr,
          "Updating call order would trigger a margin call that cannot be fully filled" );
    }
    else
    {
-      call_obj_ptr = _db.find_call_order( o.funding_account, o.delta_debt.symbol );  // No black swan event has occurred
+      call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );  // No black swan event has occurred
       FC_ASSERT( call_obj_ptr != nullptr,
          "No margin call was executed and yet the call object was deleted" );
 
@@ -7728,7 +7838,6 @@ void call_order_update_evaluator::do_apply( const call_order_update_operation& o
          ("new_collateralization", call_object.collateralization() )
          );
    }
-   
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -7744,52 +7853,66 @@ void bid_collateral_evaluator::do_apply( const bid_collateral_operation& o )
    }
 
    const account_object& paying_account = _db.get_account( o.bidder );
-   const asset_object& debt_asset = _db.get_asset( o.debt_covered.symbol );
+   const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
    const asset_bitasset_data_object& bitasset_data = _db.get_bitasset_data( debt_asset.symbol );
    const asset& liquid = _db.get_liquid_balance( o.bidder, bitasset_data.backing_asset );
+
+   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   time_point now = props.time;
 
    FC_ASSERT( debt_asset.is_market_issued(),
       "Unable to cover ${sym} as it is not a collateralized asset.", ("sym", debt_asset.symbol) );
    FC_ASSERT( bitasset_data.has_settlement(),
       "Asset being bidded on must have a settlement price.");
-   FC_ASSERT( o.additional_collateral.symbol == bitasset_data.backing_asset,
+   FC_ASSERT( o.collateral.symbol == bitasset_data.backing_asset,
       "Additional collateral must be the same asset as backing asset.");
 
-   if( o.additional_collateral.amount > 0 )
+   if( o.collateral.amount > 0 )
    {
-      FC_ASSERT( liquid >= o.additional_collateral,
-         "Cannot bid ${c} collateral when payer only has ${b}", ("c", o.additional_collateral.amount)("b", liquid ) );
+      FC_ASSERT( liquid >= o.collateral,
+         "Cannot bid ${c} collateral when payer only has ${b}", ("c", o.collateral.amount)("b", liquid ) );
    }
 
-   const auto& bids = _db.get_index< collateral_bid_index >();
-   const auto& index = bids.indices().get<by_account>();
-   const auto& bid = index.find( boost::make_tuple( o.debt_covered.symbol, o.bidder ) );
-   const collateral_bid_object* bid_ptr;
+   const auto& bid_idx = _db.get_index< collateral_bid_index >().indices().get< by_account >();
+   const auto& bid_itr = bid_idx.find( boost::make_tuple( o.bidder, o.debt.symbol ) );
 
-   if( bid != index.end() )    // Check for existing bid on debt asset
+   if( bid_itr == bid_idx.end() )    // No bid exists
    {
-      bid_ptr = &(*bid);
-   }
-   else 
-   {
-      FC_ASSERT( o.debt_covered.amount > 0,
+      FC_ASSERT( o.debt.amount > 0,
          "No collateral bid found." );
-   }
-       
-   if( bid_ptr != nullptr )
-   {
-      _db.cancel_bid( *bid_ptr, false );
-   }
       
-   if( o.debt_covered.amount > 0 )
-   {
-      _db.adjust_liquid_balance( o.bidder, -o.additional_collateral );
+      _db.adjust_liquid_balance( o.bidder, -o.collateral );
 
-      _db.create< collateral_bid_object >([&]( collateral_bid_object& bid ) 
+      _db.create< collateral_bid_object >([&]( collateral_bid_object& b )
       {
-         bid.bidder = o.bidder;
-         bid.inv_swan_price = o.additional_collateral / o.debt_covered;
+         b.bidder = o.bidder;
+         b.collateral = o.collateral;
+         b.debt = o.debt;
+         b.last_updated = now;
+         b.created = now;
       });
+   }
+   else
+   {
+      const collateral_bid_object& bid = *bid_itr;
+
+      asset delta_collateral = o.collateral - bid.collateral;
+
+      _db.adjust_liquid_balance( o.bidder, -delta_collateral );
+
+      if( o.debt.amount > 0 )     // Editing bid
+      {
+         _db.modify( bid, [&]( collateral_bid_object& b )
+         {
+            b.collateral = o.collateral;
+            b.debt = o.debt;
+            b.last_updated = now;
+         });
+      }
+      else     // Removing bid
+      {
+         _db.cancel_bid( bid, false );
+      }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -8049,6 +8172,9 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
    const asset& liquid = _db.get_liquid_balance( o.account, o.amount.symbol );
    asset loan_default_balance = account.loan_default_balance;
 
+   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   time_point now = props.time;
+
    const auto& col_idx = _db.get_index< credit_collateral_index >().indices().get< by_owner_symbol >();
    auto col_itr = col_idx.find( boost::make_tuple( account.name, o.amount.symbol ) );
    asset default_paid = asset( 0, o.amount.symbol );
@@ -8078,6 +8204,8 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
          cco.owner = account.name;
          cco.symbol = collateral_asset.symbol;
          cco.collateral = delta;
+         cco.created = now;
+         cco.last_updated = now;
       });
    }
    else    // Collateral position exists and is being updated.
@@ -8109,6 +8237,7 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
       _db.modify( collateral, [&]( credit_collateral_object& cco )
       {
          cco.collateral = o.amount - default_paid;
+         cco.last_updated = now;
       });
 
       if( collateral.collateral.amount == 0 )
@@ -8199,6 +8328,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       _db.modify( collateral, [&]( credit_collateral_object& cco )
       {
          cco.collateral -= o.collateral;     // Decrement from pledged collateral object balance.
+         cco.last_updated = now;
       });
       
       _db.modify( pool, [&]( asset_credit_pool_object& acpo )
@@ -8240,7 +8370,8 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
 
          _db.modify( collateral, [&]( credit_collateral_object& cco )
          {
-            cco.collateral += old_collateral;     // Return collateral to the account's collateral balance. 
+            cco.collateral += old_collateral;     // Return collateral to the account's collateral balance.
+            cco.last_updated = now;
          });
 
          _db.modify( pool, [&]( asset_credit_pool_object& acpo )
@@ -8263,6 +8394,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
          _db.modify( collateral, [&]( credit_collateral_object& cco )
          {
             cco.collateral -= delta_collateral;    // Update to new collateral amount
+            cco.last_updated = now;
          });
 
          _db.modify( pool, [&]( asset_credit_pool_object& acpo )
@@ -8800,29 +8932,11 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
             "Force settlement delay must exceed block interval." );
          const asset_object& new_backing_asset = _db.get_asset( b.short_backing_asset ); // Check if the new backing asset exists
 
-         if( asset_obj.issuer == COMMITTEE_ACCOUNT )
+         if ( new_backing_asset.symbol != SYMBOL_COIN ) // not backed by CORE
          {
-            if( new_backing_asset.is_market_issued() )
-            {
-               const asset_bitasset_data_object& backing_bitasset_data = _db.get_bitasset_data( new_backing_asset.symbol );
-               FC_ASSERT( backing_bitasset_data.options.short_backing_asset == SYMBOL_COIN,
-                  "Commitee may not modify a blockchain-controlled market asset to be backed by an asset which is not backed by core asset." );
-               check_children_of_bitasset( _db, o, new_backing_asset );  // Ensure backing asset does not cause recursive backing.
-            }
-            else
-            {
-               FC_ASSERT( new_backing_asset.symbol == SYMBOL_COIN,
-                  "May not modify a blockchain-controlled market asset to be backed by an asset which is not market issued asset nor core asset." );
-            }
+            check_children_of_bitasset( _db, o, new_backing_asset );   // Checks for recursive backing assets
          }
-         else // not a committee issued asset
-         {
-            if ( new_backing_asset.symbol != SYMBOL_COIN ) // not backed by CORE
-            {
-               check_children_of_bitasset( _db, o, new_backing_asset );   // Checks for recursive backing assets
-            }
-         }
-
+         
          // Check if the new backing asset is itself backed by something. It must be CORE or a UIA.
          if ( new_backing_asset.is_market_issued() )
          {
@@ -9088,8 +9202,6 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
 {
    const dynamic_global_property_object& props = db.get_dynamic_global_properties();
    time_point now = props.time;
-   time_point next_maint_time = props.next_maintenance_time;
-
 
    // If the minimum number of feeds to calculate a median has changed, recalculate the median
    bool should_update_feeds = false;
@@ -9108,14 +9220,14 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
    }
 
    bool backing_asset_changed = false;    // feeds must be reset if the backing asset is changed
-   bool is_witness_or_committee_fed = false;
+   bool is_witness_fed = false;
    if( new_options.short_backing_asset != bdo.backing_asset )
    {
       backing_asset_changed = true;
       should_update_feeds = true;
-      if( asset_to_update.options.flags & ( witness_fed_asset | committee_fed_asset ) )
+      if( asset_to_update.options.flags & witness_fed_asset  )
       {
-         is_witness_or_committee_fed = true;
+         is_witness_fed = true;
       }   
    }
 
@@ -9123,7 +9235,7 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
 
    if( backing_asset_changed ) // Reset price feeds if modifying backing asset
    {
-      if( is_witness_or_committee_fed )
+      if( is_witness_fed )
       {
          bdo.feeds.clear();
       }
@@ -9139,7 +9251,7 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
    if( should_update_feeds ) // Call check_call_orders if the price feed changes
    {
       const auto old_feed = bdo.current_feed;
-      bdo.update_median_feeds( now, next_maint_time );
+      bdo.update_median_feeds( now );
       return ( !( old_feed == bdo.current_feed ) ); 
    }
 
@@ -9160,7 +9272,6 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
 
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
-   time_point next_maint_time = _db.next_maintenance_time();
 
    FC_ASSERT( o.new_feed_producers.size() <= props.median_props.maximum_asset_feed_publishers,
       "Cannot specify more feed producers than maximum allowed" );
@@ -9169,8 +9280,6 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
 
    FC_ASSERT( a.is_market_issued(),
       "Cannot update feed producers on a non-BitAsset.");
-   FC_ASSERT(!( a.options.flags & committee_fed_asset ),
-      "Cannot set feed producers on a committee-fed asset.");
    FC_ASSERT(!( a.options.flags & witness_fed_asset ),
       "Cannot set feed producers on a witness-fed asset.");
    FC_ASSERT( a.issuer == o.issuer,
@@ -9183,7 +9292,7 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
       
    const asset_bitasset_data_object& bitasset_to_update = _db.get_bitasset_data( a.symbol );
 
-   _db.modify( bitasset_to_update, [&o,now,next_maint_time]( asset_bitasset_data_object& abdo ) 
+   _db.modify( bitasset_to_update, [&o,now]( asset_bitasset_data_object& abdo )
    {
       for( auto itr = abdo.feeds.begin(); itr != abdo.feeds.end(); )    // Remove any old publishers who are no longer publishers.
       {
@@ -9200,7 +9309,7 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
       {
          abdo.feeds[ name ];
       }
-      abdo.update_median_feeds( now, next_maint_time );
+      abdo.update_median_feeds( now );
    });
    
    _db.check_call_orders( a, true, false );     // Process margin calls, allow black swan, not for a new limit order
@@ -9220,7 +9329,6 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
    const asset_object& base = _db.get_asset( o.symbol );     // Verify that this feed is for a market-issued asset and that asset is backed by the base.
 
    time_point now = _db.head_block_time();
-   time_point next_maint_time = _db.next_maintenance_time();
    
    FC_ASSERT( base.is_market_issued(), 
       "Can only publish price feeds for market-issued assets" );
@@ -9242,11 +9350,6 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
       FC_ASSERT( _db.get_account_authority( WITNESS_ACCOUNT ).active.account_auths.count( o.publisher ),
          "Only active witnesses are allowed to publish price feeds for this asset" );
    }
-   else if( base.options.flags & committee_fed_asset )
-   {
-      FC_ASSERT( _db.get_account_authority( COMMITTEE_ACCOUNT ).active.account_auths.count( o.publisher ),
-         "Only active committee members are allowed to publish price feeds for this asset" );
-   }
    else
    {
       FC_ASSERT( bitasset.feeds.count( o.publisher ),
@@ -9255,10 +9358,10 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
 
    price_feed old_feed =  bitasset.current_feed;    // Store medians for this asset.
    
-   _db.modify( bitasset , [&o,now,next_maint_time]( asset_bitasset_data_object& abdo )
+   _db.modify( bitasset , [&o,now]( asset_bitasset_data_object& abdo )
    {
       abdo.feeds[ o.publisher ] = make_pair( now, o.feed );
-      abdo.update_median_feeds( now, next_maint_time );
+      abdo.update_median_feeds( now );
    });
 
    if( !( old_feed == bitasset.current_feed ) )
@@ -9410,7 +9513,7 @@ void asset_global_settle_evaluator::do_apply( const asset_global_settle_operatio
 
    const call_order_object& least_collateralized_short = *itr;
 
-   FC_ASSERT(least_collateralized_short.debt * o.settle_price <= least_collateralized_short.collateral,
+   FC_ASSERT( least_collateralized_short.debt * o.settle_price <= least_collateralized_short.collateral,
       "Cannot force settle at supplied price: Least collateralized short lacks sufficient collateral to settle. Please lower the price");
 
    _db.globally_settle_asset( asset_to_settle, o.settle_price );

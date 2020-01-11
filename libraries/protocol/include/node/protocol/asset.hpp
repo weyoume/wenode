@@ -6,45 +6,63 @@ namespace node { namespace protocol {
 
    struct price;
 
+   /**
+    * An object representing an amount of a specified asset.
+    * 
+    * Enables for integer mathemtics between units of assets, and conversion between 
+    * assets and strings specifiying amounts from operations.
+    *
+    * Each Asset has 100,000,000 integer units, offering 8 decimal places of precision
+    * to amounts and balances.
+    */
    struct asset
    {
       asset( share_type amount = 0, asset_symbol_type symbol = SYMBOL_COIN, int16_t precision = BLOCKCHAIN_PRECISION_DIGITS ) : 
       amount(amount),symbol(symbol),precision(precision){}
 
-      share_type           amount;
-      asset_symbol_type    symbol;
-      int16_t              precision;
+      share_type           amount;         ///< The amount of asset being represented, using safe int64_t / share_type
 
-      /// Convert an asset to a textual representation, i.e. "123.45"
-      string amount_to_string(share_type amount)const;
+      asset_symbol_type    symbol;         ///< The asset type being represented.
 
-      /// Convert an asset to a textual representation, i.e. "123.45"
-      string amount_to_string(const asset& amount)const
-      { FC_ASSERT(amount.symbol == symbol); return amount_to_string(amount.amount); }
+      int16_t              precision;      ///< The Asset precision being represented, defaults to BLOCKCHAIN_PRECISION_DIGITS.
+
+      string amount_to_string( share_type amount )const;     ///< Convert an asset to a textual representation, i.e. "123.45"
+
+      
+      string amount_to_string( const asset& amount )const    ///< Convert an asset to a textual representation, i.e. "123.45"
+      { 
+         FC_ASSERT( amount.symbol == symbol ); 
+         return amount_to_string(amount.amount); 
+      }
 
       static asset from_string( const string& from );
+
       string       to_string()const;
 
       int64_t precision_value()const;
 
-      /// Convert a string amount (i.e. "123.45") to an asset object with this asset's type
-      /// The string may have a decimal and/or a negative sign.
-      asset amount_from_string(string amount_string)const;
+      asset amount_from_string( string amount_string )const;     ///< Convert a string amount (i.e. "123.45") to an asset object with this asset's type
 
-      /// Convert an asset to a textual representation, i.e. "123.45"
-      string amount_to_string(share_type amount)const;
+      string amount_to_string( share_type amount )const;          ///< Convert an asset to a textual representation, i.e. "123.45"
 
-      /// Convert an asset to a textual representation, i.e. "123.45"
-      string amount_to_string(const asset& amount)const
-      { FC_ASSERT(amount.symbol == symbol); return amount_to_string(amount.amount); }
+      
+      string amount_to_string(const asset& amount)const           ///< Convert an asset to a textual representation, i.e. "123.45"
+      { 
+         FC_ASSERT( amount.symbol == symbol ); 
+         return amount_to_string( amount.amount ); 
+      }
 
-      /// Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
-      string amount_to_pretty_string(share_type amount)const
-      { return amount_to_string(amount) + " " + symbol; }
+     
+      string amount_to_pretty_string(share_type amount)const       ///< Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
+      { 
+         return amount_to_string( amount ) + " " + symbol; 
+      }
 
-      /// Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
-      string amount_to_pretty_string(const asset &amount)const
-      { FC_ASSERT(amount.symbol == symbol); return amount_to_pretty_string(amount.amount); }
+      string amount_to_pretty_string(const asset &amount)const     ///< Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
+      { 
+         FC_ASSERT(amount.symbol == symbol); 
+         return amount_to_pretty_string( amount.amount ); 
+      }
 
       asset multiply_and_round_up( const price& b )const;
 
@@ -118,13 +136,20 @@ namespace node { namespace protocol {
       }
    };
 
+
+   /**
+    * Measures an exchange rate equality between two assets, a base, and a quote.
+    * 
+    * Base asset is the unit of account of the price, and quote is the asset being priced.
+    */
    struct price
    {
       price(const asset& base = asset(), const asset& quote = asset())
          : base(base),quote(quote){}
 
-      asset base;
-      asset quote;
+      asset base;    ///< The Asset unit of account of the price.
+
+      asset quote;   ///< The Asset being valued in units of the Base asset. 
 
       static price max(asset_symbol_type base, asset_symbol_type quote );
       static price min(asset_symbol_type base, asset_symbol_type quote );
@@ -162,39 +187,32 @@ namespace node { namespace protocol {
    bool  operator != ( const price& a, const price& b );
    asset operator *  ( const asset& a, const price& b );
 
+
+   /**
+    * Price information for a market-issued asset at a time interval.
+    * 
+    * Required maintenance collateral is defined
+    * as a fixed point number with a maximum value of 10.000
+    * and a minimum value of 1.000.  (denominated in COLLATERAL_RATIO_DENOM)
+    *
+    * A black swan event occurs when value_of_collateral equals
+    * value_of_debt, to avoid a black swan a margin call is
+    * executed when value_of_debt * required_maintenance_collateral
+    * equals value_of_collateral using rate.
+    *
+    * Default requirement is $1.75 of collateral per $1 of debt.
+    *
+    * BlackSwan ---> SQR ---> MCR ----> SP
+    */
    struct price_feed
    {
-      /**
-       *  Required maintenance collateral is defined
-       *  as a fixed point number with a maximum value of 10.000
-       *  and a minimum value of 1.000.  (denominated in GRAPHENE_COLLATERAL_RATIO_DENOM)
-       *
-       *  A black swan event occurs when value_of_collateral equals
-       *  value_of_debt, to avoid a black swan a margin call is
-       *  executed when value_of_debt * required_maintenance_collateral
-       *  equals value_of_collateral using rate.
-       *
-       *  Default requirement is $1.75 of collateral per $1 of debt
-       *
-       *  BlackSwan ---> SQR ---> MCR ----> SP
-       */
-      /**
-       * Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL
-       */
-      price settlement_price;
+      price settlement_price;           ///< Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL
 
-      /// Price at which automatically exchanging this asset for CORE from fee pool occurs (used for paying fees)
-      price core_exchange_rate;
+      price core_exchange_rate;         ///< Price at which automatically exchanging this asset for CORE from fee pool occurs (used for paying fees)
 
-      /** 
-       * Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM *
-       * /
-      uint16_t maintenance_collateral_ratio = MAINTENANCE_COLLATERAL_RATIO;
+      uint16_t maintenance_collateral_ratio = MAINTENANCE_COLLATERAL_RATIO;   ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM
 
-      /** 
-       * Fixed point between 1.000 and 10.000, implied fixed point denominator is GRAPHENE_COLLATERAL_RATIO_DENOM 
-       */
-      uint16_t maximum_short_squeeze_ratio = MAX_SHORT_SQUEEZE_RATIO;
+      uint16_t maximum_short_squeeze_ratio = MAX_SHORT_SQUEEZE_RATIO;         ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM 
 
       /** 
        * When selling collateral to pay off debt, the least amount of debt to receive should be
@@ -205,7 +223,7 @@ namespace node { namespace protocol {
       price max_short_squeeze_price()const;
 
       /// Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
-      /// Calculation: ~settlement_price * maintenance_collateral_ratio / GRAPHENE_COLLATERAL_RATIO_DENOM
+      /// Calculation: ~settlement_price * maintenance_collateral_ratio / COLLATERAL_RATIO_DENOM
       price maintenance_collateralization()const;
 
       friend bool operator == ( const price_feed& a, const price_feed& b )
@@ -229,4 +247,11 @@ FC_REFLECT( node::protocol::asset,
 FC_REFLECT( node::protocol::price,
          (base)
          (quote) 
+         );
+
+FC_REFLECT( node::protocol::price_feed,
+         (settlement_price)
+         (core_exchange_rate)
+         (maintenance_collateral_ratio)
+         (maximum_short_squeeze_ratio)
          );

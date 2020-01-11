@@ -101,7 +101,6 @@ DEFINE_EVALUATOR( unstake_asset )
 DEFINE_EVALUATOR( unstake_asset_route )
 DEFINE_EVALUATOR( transfer_to_savings )
 DEFINE_EVALUATOR( transfer_from_savings )
-DEFINE_EVALUATOR( cancel_transfer_from_savings )
 DEFINE_EVALUATOR( delegate_asset )
 
 // Escrow Evaluators
@@ -113,11 +112,9 @@ DEFINE_EVALUATOR( escrow_release )
 
 // Trading Evaluators
 
-DEFINE_EVALUATOR( limit_order_create )
-DEFINE_EVALUATOR( limit_order_cancel )
-DEFINE_EVALUATOR( margin_order_create )
-DEFINE_EVALUATOR( margin_order_close )
-DEFINE_EVALUATOR( call_order_update )
+DEFINE_EVALUATOR( limit_order )
+DEFINE_EVALUATOR( margin_order )
+DEFINE_EVALUATOR( call_order )
 DEFINE_EVALUATOR( bid_collateral )
 
 // Liquidity Pool Evaluators

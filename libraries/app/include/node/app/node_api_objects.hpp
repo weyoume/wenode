@@ -514,8 +514,7 @@ struct account_balance_api_obj
       next_unstake_time( b.next_unstake_time ),
       to_unstake( b.to_unstake.value ),
       total_unstaked( b.total_unstaked.value ),
-      last_interest_time( b.last_interest_time ),
-      maintenance_flag( b.maintenance_flag ){}
+      last_interest_time( b.last_interest_time ){}
 
    account_balance_api_obj(){}
 
@@ -538,7 +537,6 @@ struct account_balance_api_obj
    int64_t                        to_unstake;                 // total amount to unstake over the withdrawal period. 
    int64_t                        total_unstaked;             // total amount that has been unstaked so far. 
    time_point                     last_interest_time;         // Last time that interest was compounded.
-   bool                           maintenance_flag;           // Whether need to process this balance object in maintenance interval
 };
 
 
@@ -1158,7 +1156,7 @@ struct bitasset_data_api_obj
    price_feed                                              current_feed;                            // Currently active price feed, median of values from the currently active feeds.
    time_point                                              current_feed_publication_time;           // Publication time of the oldest feed which was factored into current_feed.
    price                                                   current_maintenance_collateralization;   // Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
-   int64_t                                                 force_settled_volume;                    // This is the volume of this asset which has been force-settled this maintanence interval
+   int64_t                                                 force_settled_volume;                    // This is the volume of this asset which has been force-settled this 24h interval
    price                                                   settlement_price;      // Price at which force settlements of a black swanned asset will occur
    asset                                                   settlement_fund;       // Amount of collateral which is available for force settlement
    bool                                                    asset_cer_updated;       // Track whether core_exchange_rate in corresponding asset_object has updated
@@ -1167,7 +1165,7 @@ struct bitasset_data_api_obj
    uint8_t                                                 minimum_feeds;                                              // Minimum number of unexpired feeds required to extract a median feed from
    fc::microseconds                                        force_settlement_delay;                // This is the delay between the time a long requests settlement and the chain evaluates the settlement
    uint16_t                                                force_settlement_offset_percent;      // The percentage to adjust the feed price in the short's favor in the event of a forced settlement
-   uint16_t                                                maximum_force_settlement_volume;  // the percentage of current supply which may be force settled within each maintenance interval.
+   uint16_t                                                maximum_force_settlement_volume;  // the percentage of current supply which may be force settled within each 24h interval.
 };
 
 
@@ -1734,7 +1732,7 @@ struct supernode_api_obj
       daily_active_users( o.daily_active_users / PERCENT_100 ),
       monthly_active_users( o.monthly_active_users / PERCENT_100 ),
       recent_view_weight( o.recent_view_weight.value ),
-      last_update_time( o.last_update_time ),
+      last_updated( o.last_updated ),
       last_activation_time( o.last_activation_time ){}
    
    supernode_api_obj(){}
@@ -1755,7 +1753,7 @@ struct supernode_api_obj
    uint64_t                daily_active_users;          // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
    uint64_t                monthly_active_users;        // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
    int64_t                 recent_view_weight;          // The rolling 7 day average of daily accumulated voting power of viewers. 
-   time_point              last_update_time;            // The time the file weight and active users was last decayed.
+   time_point              last_updated;            // The time the file weight and active users was last decayed.
    time_point              last_activation_time;        // The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
 };
 
@@ -1772,7 +1770,7 @@ struct interface_api_obj
       created( o.created ),
       daily_active_users( o.daily_active_users / PERCENT_100 ),
       monthly_active_users( o.monthly_active_users / PERCENT_100 ),
-      last_update_time( o.last_update_time ){}
+      last_updated( o.last_updated ){}
    
    interface_api_obj(){}
 
@@ -1785,7 +1783,7 @@ struct interface_api_obj
    time_point              created;                     // The time the interface was created.
    uint64_t                daily_active_users;          // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
    uint64_t                monthly_active_users;        // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
-   time_point              last_update_time;            // The time the file weight and active users was last decayed.
+   time_point              last_updated;            // The time the file weight and active users was last decayed.
 };
 
 
@@ -2340,7 +2338,6 @@ FC_REFLECT( node::app::account_balance_api_obj,
          (to_unstake)
          (total_unstaked)
          (last_interest_time)
-         (maintenance_flag)
          );
 
 FC_REFLECT( node::app::account_business_api_obj,
@@ -2410,7 +2407,7 @@ FC_REFLECT( node::app::connection_api_obj,
          (consecutive_days)
          (last_message_time_a)
          (last_message_time_b)
-         (last_update_time)
+         (last_updated)
          (created)
          );
 
@@ -2848,7 +2845,7 @@ FC_REFLECT( node::app::supernode_api_obj,
          (daily_active_users)
          (monthly_active_users)
          (recent_view_weight)
-         (last_update_time)
+         (last_updated)
          (last_activation_time)
          );
 
@@ -2862,7 +2859,7 @@ FC_REFLECT( node::app::interface_api_obj,
          (created)
          (daily_active_users)
          (monthly_active_users)
-         (last_update_time)
+         (last_updated)
          );
 
 FC_REFLECT( node::app::community_enterprise_api_obj,

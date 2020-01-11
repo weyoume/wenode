@@ -200,18 +200,6 @@ namespace detail
       template< typename T >
       void operator()( const T& )const {}
 
-      void operator()( const comment_options_operation& o )const
-      {
-         const auto& comment = _db.get_comment( o.author, o.permlink );
-
-         comment_options_extension_visitor v( comment, _db );
-
-         for( auto& e : o.extensions )
-         {
-            e.visit( v );
-         }
-      }
-
       void operator()( const comment_operation& o )const
       {
          if( o.parent_author != ROOT_POST_PARENT )
@@ -356,7 +344,7 @@ namespace detail
             * different from past observed behavior and make small adjustments when
             * behavior is within expected norms.
             */
-            if( props.head_block_num % BLOCKS_PER_MINUTE == 0 )
+            if( props.head_block_number % BLOCKS_PER_MINUTE == 0 )
             {
                int64_t distance = ( ( r.average_block_size - ( max_block_size / 4 ) ) * DISTANCE_CALC_PRECISION )
                   / ( max_block_size / 4 );

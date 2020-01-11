@@ -1988,15 +1988,16 @@ namespace node { namespace protocol {
    //============================//
 
 
-   void limit_order_create_operation::validate()const
+   void limit_order_operation::validate()const
    {
       validate_account_name( signatory );
       validate_account_name( interface );
       validate_account_name( owner );
+
       FC_ASSERT( amount_to_sell.symbol == exchange_rate.base.symbol,
          "Sell asset must be the base of the price" );
       exchange_rate.validate();
-      FC_ASSERT( (amount_to_sell * exchange_rate).amount > 0,
+      FC_ASSERT( ( amount_to_sell * exchange_rate ).amount > 0,
          "Amount to sell cannot round to 0 when traded" );
       FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
          "Order ID is too long." );
@@ -2009,20 +2010,7 @@ namespace node { namespace protocol {
          "Expiration time must be greater than genesis time." );
    }
 
-   void limit_order_cancel_operation::validate()const
-   {
-      validate_account_name( signatory );
-      validate_account_name( owner );
-      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
-         "Order ID is too long." );
-      FC_ASSERT( order_id.size(),
-         "Order ID is required." );
-      FC_ASSERT( fc::is_utf8( order_id ),
-         "Order ID is not UTF8" );
-      validate_uuidv4( order_id );
-   }
-
-   void margin_order_create_operation::validate()const
+   void margin_order_operation::validate()const
    {
       validate_account_name( signatory );
       validate_account_name( interface );
@@ -2077,35 +2065,23 @@ namespace node { namespace protocol {
             "Target price must be greater than the specified exchange rate, or the order will be immediately take profit liquidated." );
       }
    }
+   
 
-   void margin_order_close_operation::validate()const
-   {
-      validate_account_name( signatory );
-      validate_account_name( owner );
-      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
-         "Order ID is too long." );
-      FC_ASSERT( order_id.size(),
-         "Order ID is required." );
-      FC_ASSERT( fc::is_utf8( order_id ),
-         "Order ID is not UTF8" );
-      validate_uuidv4( order_id );
-
-      if( exchange_rate.valid() )
-      {
-         exchange_rate->validate();
-      }
-   }
-
-   void call_order_update_operation::validate()const
+   void call_order_operation::validate()const
    {
       validate_account_name( signatory );
       validate_account_name( interface );
-      validate_account_name( funding_account );
+      validate_account_name( owner );
 
-      FC_ASSERT( is_valid_symbol( delta_collateral.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", delta_collateral.symbol) );
-      FC_ASSERT( is_valid_symbol( delta_debt.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", delta_debt.symbol) );
+      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
+      FC_ASSERT( is_valid_symbol( debt.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", debt.symbol) );
+
+      FC_ASSERT( collateral.amount >= 0,
+         "Collateral amount of new debt position should be positive." );
+      FC_ASSERT( debt.amount >= 0,
+         "Debt amount of new debt position should be positive." );
    }
 
    void bid_collateral_operation::validate()const
@@ -2113,14 +2089,14 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( bidder );
 
-      FC_ASSERT( additional_collateral.amount > 0,
+      FC_ASSERT( collateral.amount > 0,
          "Additional Collateral must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( additional_collateral.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", additional_collateral.symbol) );
-      FC_ASSERT( debt_covered.amount > 0,
+      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
+      FC_ASSERT( debt.amount > 0,
          "Debt covered must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( debt_covered.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", debt_covered.symbol) );
+      FC_ASSERT( is_valid_symbol( debt.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", debt.symbol) );
    }
 
 
@@ -2348,8 +2324,6 @@ namespace node { namespace protocol {
       FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
       // The global_settle flag may never be set (this is a permission only)
       FC_ASSERT( !(flags & global_settle) );
-      // the witness_fed and committee_fed flags cannot be set simultaneously
-      FC_ASSERT( (flags & (witness_fed_asset | committee_fed_asset)) != (witness_fed_asset | committee_fed_asset) );
       core_exchange_rate.validate();
       if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
       {

@@ -2,6 +2,7 @@
 #include <node/chain/database.hpp>
 #include <node/chain/witness_objects.hpp>
 #include <node/chain/witness_schedule.hpp>
+#include <node/chain/node_objects.hpp>
 
 #include <node/protocol/config.hpp>
 
@@ -628,6 +629,20 @@ void update_witness_schedule( database& db )
          w.current_miner_virtual_time = new_miner_virtual_time;
          w.next_shuffle_block_num = db.head_block_num() + w.num_scheduled_producers;
          w.majority_version = majority_version;
+      });
+
+      const account_authority_object& witness_auth = db.get_account_authority( WITNESS_ACCOUNT );
+      
+      // Add top witnesses to witness authority for witness fed bitassets
+      db.modify( witness_auth, [&]( account_authority_object& a )
+      {
+         a.active.clear();
+         a.active.weight_threshold = 1;
+
+         for( account_name_type wit : top_witness_set )
+         {
+            a.active.add_authority( wit, 1 );  
+         }
       });
 
       update_median_witness_props( db );

@@ -1380,11 +1380,9 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                   results.back().operations.escrow_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<limit_order_create_operation>::value:
-               case operation::tag<limit_order_cancel_operation>::value:
-               case operation::tag<margin_order_create_operation>::value:
-               case operation::tag<margin_order_close_operation>::value:
-               case operation::tag<call_order_update_operation>::value:
+               case operation::tag<limit_order_operation>::value:
+               case operation::tag<margin_order_operation>::value:
+               case operation::tag<call_order_operation>::value:
                case operation::tag<fill_order_operation>::value:
                {
                   results.back().operations.trading_history[ item.first ] = item.second;

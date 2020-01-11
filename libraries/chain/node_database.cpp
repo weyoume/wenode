@@ -271,7 +271,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( s.bittorrent_endpoint, INIT_BITTORRENT_ENDPOINT );
       s.active = true;
       s.created = now;
-      s.last_update_time = now;
+      s.last_updated = now;
       s.last_activation_time = now;
    });
 
@@ -304,7 +304,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( i.details, INIT_DETAILS );
       i.active = true;
       i.created = now;
-      i.last_update_time = now;
+      i.last_updated = now;
    });
 
    create< mediator_object >( [&]( mediator_object& i )
@@ -314,7 +314,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( i.details, INIT_DETAILS );
       i.active = true;
       i.created = now;
-      i.last_update_time = now;
+      i.last_updated = now;
    });
 
    create< board_object >( [&]( board_object& bo )
@@ -441,11 +441,12 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< asset_object >( []( asset_object& a )
    {
       a.symbol = SYMBOL_USD;
-      a.options.max_supply = MAX_ASSET_SUPPLY;
+      a.issuer = NULL_ACCOUNT;
       a.asset_type = BITASSET_ASSET;
-      a.options.flags = 0;
+      a.options.max_supply = MAX_ASSET_SUPPLY;
+      a.options.flags = witness_fed_asset;
       a.options.issuer_permissions = 0;
-      a.issuer = GENESIS_ACCOUNT_BASE_NAME;
+      
       a.options.core_exchange_rate.base.amount = 1;
       a.options.core_exchange_rate.base.symbol = SYMBOL_COIN;
       a.options.core_exchange_rate.quote.amount = 1;
@@ -801,11 +802,6 @@ const dynamic_global_property_object& database::get_dynamic_global_properties()c
 time_point database::head_block_time()const
 {
    return get_dynamic_global_properties().time;
-}
-
-time_point database::next_maintenance_time()const
-{
-   return get_dynamic_global_properties().next_maintenance_time;
 }
 
 uint32_t database::head_block_num()const
@@ -1447,6 +1443,16 @@ const call_order_object* database::find_call_order( const account_name_type& nam
    return find< call_order_object, by_account >( boost::make_tuple( name, symbol ) );
 }
 
+const collateral_bid_object& database::get_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
+{ try {
+   return get< collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
+
+const collateral_bid_object* database::find_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
+{
+   return find< collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
+}
+
 const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
 { try {
    return get< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
@@ -2001,9 +2007,7 @@ fc::time_point database::get_slot_time(uint32_t slot_num)const
    }
 
    // "slot 0" is head_slot_time
-   // "slot 1" is head_slot_time,
-   // plus maint interval if head block is a maint block
-   // plus block interval if head block is not a maint block
+   // "slot 1" is head_slot_time
 
    int64_t head_block_abs_slot = ( head_block_time().time_since_epoch().count() / interval_micsec );
    return fc::time_point( fc::microseconds( head_block_abs_slot * interval_micsec + slot_num * interval_micsec ) );
@@ -2346,6 +2350,58 @@ void database::update_business_account_set()
       ++business_itr;
    }
    
+} FC_CAPTURE_AND_RETHROW() }
+
+/**
+ * Process updates across all bitassets, execute collateral bids
+ * for settled bitassets, and update price feeds and force settlement volumes
+ */
+void database::process_bitassets()
+{ try {
+   if( (head_block_num() % BITASSET_BLOCK_INTERVAL) != 0 )    // Runs once per day
+      return;
+
+   time_point_sec now = head_block_time();
+   uint64_t head_epoch_seconds = now.sec_since_epoch();
+
+   const auto& bitasset_idx = get_index< asset_bitasset_data_index >().indices().get< by_symbol >();
+   auto bitasset_itr = bitasset_idx.begin();
+
+   while( bitasset_itr != bitasset_idx.end() )
+   {
+      const asset_bitasset_data_object& bitasset = *bitasset_itr;
+      const asset_object& asset_obj = get_asset( bitasset.symbol );
+      uint32_t flags = asset_obj.options.flags;
+      uint64_t feed_lifetime = bitasset.options.feed_lifetime.to_seconds();
+
+      if( bitasset.has_settlement() )
+      {
+         process_bids( bitasset );
+      }
+
+      modify( bitasset, [&]( asset_bitasset_data_object& abdo )
+      {
+         abdo.force_settled_volume = 0; // Reset all BitAsset force settlement volumes to zero
+
+         if ( ( flags & ( witness_fed_asset ) ) &&
+              feed_lifetime < head_epoch_seconds )            // if smartcoin && check overflow
+         {
+            fc::time_point calculated = now - feed_lifetime;
+
+            for( auto feed_itr = abdo.feeds.rbegin(); feed_itr != abdo.feeds.rend(); )       // loop feeds
+            {
+               auto feed_time = feed_itr->second.first;
+               std::advance( feed_itr, 1 );
+
+               if( feed_time < calculated )
+               {
+                  abdo.feeds.erase( feed_itr.base() ); // delete expired feed
+               }
+            }
+         }
+         
+      });
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -3520,11 +3576,9 @@ void database::initialize_evaluators()
    
    // Trading Evaluators
 
-   _my->_evaluator_registry.register_evaluator< limit_order_create_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< limit_order_cancel_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< margin_order_create_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< margin_order_close_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< call_order_update_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< limit_order_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< margin_order_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< call_order_evaluator                     >();
    _my->_evaluator_registry.register_evaluator< bid_collateral_evaluator                 >();
 
    // Pool Evaluators
@@ -3558,7 +3612,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< witness_update_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< proof_of_work_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< verify_block_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< commit_block_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< commit_block_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< producer_violation_evaluator             >();
 
    // Custom Evaluators
@@ -3905,12 +3959,12 @@ void database::_apply_block( const signed_block& next_block )
       ++_current_trx_in_block;
    }
 
-   update_global_dynamic_data(next_block);
-   update_signing_witness(signing_witness, next_block);
+   update_global_dynamic_data( next_block);
+   update_signing_witness( signing_witness, next_block );
 
    update_last_irreversible_block();
-   update_transaction_stake(signing_witness, _current_trx_stake_weight);
-   create_block_summary(next_block);
+   update_transaction_stake( signing_witness, _current_trx_stake_weight );
+   create_block_summary( next_block );
    clear_expired_transactions();
    clear_expired_operations();
    clear_expired_delegations();
@@ -3928,6 +3982,7 @@ void database::_apply_block( const signed_block& next_block )
    process_funds();
 
    process_asset_staking();
+   process_bitassets();
    process_savings_withdraws();
    process_recurring_transfers();
    process_equity_rewards();
@@ -3956,6 +4011,7 @@ void database::_apply_block( const signed_block& next_block )
 
    notify_changed_objects();
 } FC_CAPTURE_LOG_AND_RETHROW( (next_block.block_num()) ) }
+
 
 void database::process_header_extensions( const signed_block& next_block )
 {
