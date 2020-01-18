@@ -490,32 +490,45 @@ namespace node {
 
       enum asset_issuer_permission_flags 
       {
-         charge_market_fee    = 0x01,    // an issuer-specified percentage of all market trades in this asset is paid to the issuer
-         white_list           = 0x02,    // accounts must be whitelisted in order to hold this asset
-         override_authority   = 0x04,    // issuer may transfer asset back to himself
-         transfer_restricted  = 0x08,    // require the issuer to be one party to every transfer
-         disable_force_settle = 0x10,    // disable force settling
-         global_settle        = 0x20,    // allow the bitasset issuer to force a global settlement -- this may be set in permissions, but not flags
-         disable_confidential = 0x40,    // allow the asset to be used with confidential transactions
-         witness_fed_asset    = 0x80,    // allow the asset to be fed by witnesses
+         balance_whitelist           = 1,       // Accounts must be whitelisted in order to send, receive or hold the asset.
+         trade_whitelist             = 2,       // Accounts must be whitelisted to trade the asset.
+         maker_restricted            = 4,       // Only issuer may create new trading orders onto the orderbook, others must fill them.
+         issuer_accept_requests      = 8,       // Issuer may approve transfer requests, enabling them to retrieve funds from any account.
+         transfer_restricted         = 16,      // Transfers may only be to or from the issuer.
+         disable_requests            = 32,      // Payment requests are disabled.
+         disable_recurring           = 64,      // Recurring payments are disabled.
+         disable_credit              = 128,     // The asset cannot be lent into a credit pool, Disabling margin and credit loan orders.
+         disable_liquid              = 256,     // The asset cannot be used to create a liquidity pool.
+         disable_options             = 512,     // The asset cannot be used to issue options assets.
+         disable_escrow              = 1024,    // Disable escrow transfers and marketplace trades using the asset.
+         disable_force_settle        = 2048,    // Disable force settling of bitassets, only global settle may return collateral.
+         disable_confidential        = 4096,    // Asset cannot be used with confidential transactions.
+         disable_auction             = 8192,    // Disable creation of auction orders for the asset.
+         witness_fed_asset           = 16384,   // Allow the asset to be price food to be published by top elected witnesses.
+         global_settle               = 32768,   // Allow the bitasset issuer to force a global settlement: Set in permissions, but not flags.
+         governance_oversight        = 65536,   // Asset update, issuer transfer and issuance require the account's governance address to approve
+         immutable_properties        = 131072,  // Disable any future asset options updates or changes to flags
       };
 
       const static uint32_t ASSET_ISSUER_PERMISSION_MASK =
-            charge_market_fee
-            | white_list
-            | override_authority
+            balance_whitelist
+            | trade_whitelist
+            | maker_restricted
+            | issuer_accept_requests
             | transfer_restricted
+            | disable_requests
+            | disable_recurring
+            | disable_credit
+            | disable_liquid
+            | disable_options
+            | disable_escrow
             | disable_force_settle
-            | global_settle
             | disable_confidential
-            | witness_fed_asset;
-            
-      const static uint32_t UIA_ASSET_ISSUER_PERMISSION_MASK =
-            charge_market_fee
-            | white_list
-            | override_authority
-            | transfer_restricted
-            | disable_confidential;
+            | disable_auction
+            | witness_fed_asset
+            | global_settle
+            | governance_oversight
+            | immutable_properties;
 
       struct public_key_type
       {

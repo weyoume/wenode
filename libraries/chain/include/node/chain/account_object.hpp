@@ -756,7 +756,7 @@ namespace node { namespace chain {
  
          bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          // Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
-            bool fast_check = !( asset_obj.options.flags & white_list );
+            bool fast_check = !( asset_obj.options.flags & balance_white_list );
             fast_check &= !( whitelisted_assets.size() );
             fast_check &= !( blacklisted_assets.size() );
             fast_check &= !( whitelisted_accounts.size() );

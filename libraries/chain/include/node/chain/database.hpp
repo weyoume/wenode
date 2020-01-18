@@ -338,8 +338,8 @@ namespace node { namespace chain {
          const credit_collateral_object& get_collateral( const account_name_type& owner, const asset_symbol_type& symbol  )const;
          const credit_collateral_object* find_collateral( const account_name_type& owner, const asset_symbol_type& symbol )const;
 
-         const credit_loan_object& get_loan( const account_name_type& owner, shared_string& loan_id  )const;
-         const credit_loan_object* find_loan( const account_name_type& owner, shared_string& loan_id )const;
+         const credit_loan_object& get_loan( const account_name_type& owner, const shared_string& loan_id  )const;
+         const credit_loan_object* find_loan( const account_name_type& owner, const shared_string& loan_id )const;
 
          const escrow_object& get_escrow( const account_name_type& name, const shared_string& escrow_id )const;
          const escrow_object* find_escrow( const account_name_type& name, const shared_string& escrow_id )const;
@@ -355,6 +355,9 @@ namespace node { namespace chain {
 
          const collateral_bid_object& get_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const;
          const collateral_bid_object* find_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const;
+
+         const force_settlement_object& get_force_settlement( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const force_settlement_object* find_force_settlement( const account_name_type& name, const asset_symbol_type& symbol )const;
 
          const transfer_request_object& get_transfer_request( const account_name_type& name, const shared_string& request_id )const;
          const transfer_request_object* find_transfer_request( const account_name_type& name, const shared_string& request_id )const;
@@ -750,8 +753,6 @@ namespace node { namespace chain {
          void process_bids( const asset_bitasset_data_object& bad );
 
          void clear_expired_delegations();
-         
-         void update_core_exchange_rates();
 
          void dispute_escrow( const escrow_object& escrow );
 

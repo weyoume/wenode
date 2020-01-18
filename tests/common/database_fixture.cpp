@@ -481,8 +481,7 @@ const asset_object& database_fixture::asset_create(
 const witness_object& database_fixture::witness_create(
    const string& owner,
    const private_key_type& owner_key,
-   const public_key_type& signing_key,
-   const share_type& fee )
+   const public_key_type& signing_key )
 {
    try
    {
@@ -491,10 +490,9 @@ const witness_object& database_fixture::witness_create(
       op.signatory = owner;
       op.owner = owner;
       op.details = "details";
-      op.url = "url";
+      op.url = "www.url.com";
       op.json = "{\"json\":\"valid\"}";
       op.block_signing_key = string( signing_key );
-      op.fee = asset( fee, SYMBOL_COIN );
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );

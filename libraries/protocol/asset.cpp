@@ -348,11 +348,13 @@ namespace node { namespace protocol {
          try
          {
             if( !settlement_price.is_null() )
+            {
                return (settlement_price.base.symbol == symbol);
-            if( !core_exchange_rate.is_null() )
-               return (core_exchange_rate.base.symbol == symbol);
-            // (null, null) is valid for any feed
-            return true;
+            }
+            else
+            {
+               return true; // (null, null) is valid for any feed
+            }
          }
          FC_CAPTURE_AND_RETHROW( (*this) )
       }

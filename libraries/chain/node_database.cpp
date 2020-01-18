@@ -389,7 +389,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
 
    // Create core asset
    
-   create< asset_object >( []( asset_object& a ) 
+   create< asset_object >( [&]( asset_object& a ) 
    {
       a.symbol = SYMBOL_COIN;
       a.options.max_supply = MAX_ASSET_SUPPLY;
@@ -397,15 +397,11 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.options.flags = 0;
       a.options.issuer_permissions = 0;
       a.issuer = NULL_ACCOUNT;
-      a.options.core_exchange_rate.base.amount = 1;
-      a.options.core_exchange_rate.base.symbol = SYMBOL_COIN;
-      a.options.core_exchange_rate.quote.amount = 1;
-      a.options.core_exchange_rate.quote.symbol = SYMBOL_COIN;
       a.options.unstake_intervals = 4;
       a.options.stake_intervals = 0;
    });
 
-   create< asset_dynamic_data_object >( []( asset_dynamic_data_object& a )
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_COIN;
       a.total_supply = INIT_COIN_SUPPLY;
@@ -413,7 +409,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
 
    // Create Equity asset
 
-   create< asset_object >( []( asset_object& a )
+   create< asset_object >( [&]( asset_object& a )
    {
       a.symbol = SYMBOL_EQUITY;
       a.options.max_supply = INIT_EQUITY_SUPPLY;
@@ -421,15 +417,11 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.options.flags = 0;
       a.options.issuer_permissions = 0;
       a.issuer = INIT_ACCOUNT;
-      a.options.core_exchange_rate.base.amount = 10;
-      a.options.core_exchange_rate.base.symbol = SYMBOL_COIN;
-      a.options.core_exchange_rate.quote.amount = 1;
-      a.options.core_exchange_rate.quote.symbol = SYMBOL_EQUITY;
       a.options.unstake_intervals = 0;
       a.options.stake_intervals = 4;
    });
 
-   create< asset_dynamic_data_object >( []( asset_dynamic_data_object& a )
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_EQUITY;
       a.staked_supply = INIT_EQUITY_SUPPLY;
@@ -438,7 +430,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
 
    // Create USD asset
 
-   create< asset_object >( []( asset_object& a )
+   create< asset_object >( [&]( asset_object& a )
    {
       a.symbol = SYMBOL_USD;
       a.issuer = NULL_ACCOUNT;
@@ -446,11 +438,6 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.options.max_supply = MAX_ASSET_SUPPLY;
       a.options.flags = witness_fed_asset;
       a.options.issuer_permissions = 0;
-      
-      a.options.core_exchange_rate.base.amount = 1;
-      a.options.core_exchange_rate.base.symbol = SYMBOL_COIN;
-      a.options.core_exchange_rate.quote.amount = 1;
-      a.options.core_exchange_rate.quote.symbol = SYMBOL_USD;
       a.options.unstake_intervals = 4;
       a.options.stake_intervals = 0;
    });
@@ -463,24 +450,296 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
 
    // Create Credit asset
    
-   create< asset_object >( []( asset_object& a )
+   create< asset_object >( [&]( asset_object& a )
    {
       a.symbol = SYMBOL_CREDIT;
       a.asset_type = CREDIT_ASSET;
       a.options.flags = 0;
       a.options.issuer_permissions = 0;
       a.issuer = INIT_ACCOUNT;
-      a.options.core_exchange_rate.base.amount = 1;
-      a.options.core_exchange_rate.base.symbol = SYMBOL_COIN;
-      a.options.core_exchange_rate.quote.amount = 1;
-      a.options.core_exchange_rate.quote.symbol = SYMBOL_CREDIT;
       a.options.unstake_intervals = 4;
       a.options.stake_intervals = 0;
    });
 
-   create< asset_dynamic_data_object >([](asset_dynamic_data_object& a) 
+   create< asset_dynamic_data_object >([&](asset_dynamic_data_object& a) 
    {
       a.symbol = SYMBOL_CREDIT;
+   });
+
+   // Create Primary Liquidity Pools [coin/equity, coin/usd, coin/credit, equity/usd, equity/credit, usd/credit ]
+
+   asset_symbol_type coin_equity_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_EQUITY );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = coin_equity_symbol;
+      a.asset_type = LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = coin_equity_symbol;
+   });
+      
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.issuer = NULL_ACCOUNT;
+      a.symbol_a = SYMBOL_COIN;
+      a.symbol_b = SYMBOL_EQUITY;
+      a.balance_a = asset( 0, SYMBOL_COIN );
+      a.balance_b = asset( 0, SYMBOL_EQUITY );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+      a.balance_liquid = asset( 0, coin_equity_symbol );
+   });
+
+   asset_symbol_type coin_usd_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_USD );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = coin_usd_symbol;
+      a.asset_type = LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = coin_usd_symbol;
+   });
+      
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.issuer = NULL_ACCOUNT;
+      a.symbol_a = SYMBOL_COIN;
+      a.symbol_b = SYMBOL_USD;
+      a.balance_a = asset( 0, SYMBOL_COIN );
+      a.balance_b = asset( 0, SYMBOL_USD );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+      a.balance_liquid = asset( 0, coin_usd_symbol );
+   });
+
+   asset_symbol_type coin_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_CREDIT );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = coin_credit_symbol;
+      a.asset_type = LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = coin_credit_symbol;
+   });
+      
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.issuer = NULL_ACCOUNT;
+      a.symbol_a = SYMBOL_COIN;
+      a.symbol_b = SYMBOL_CREDIT;
+      a.balance_a = asset( 0, SYMBOL_COIN );
+      a.balance_b = asset( 0, SYMBOL_CREDIT );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+      a.balance_liquid = asset( 0, coin_credit_symbol );
+   });
+
+   asset_symbol_type equity_usd_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_EQUITY )+"."+string( SYMBOL_USD );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = equity_usd_symbol;
+      a.asset_type = LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = equity_usd_symbol;
+   });
+      
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.issuer = NULL_ACCOUNT;
+      a.symbol_a = SYMBOL_EQUITY;
+      a.symbol_b = SYMBOL_USD;
+      a.balance_a = asset( 0, SYMBOL_EQUITY );
+      a.balance_b = asset( 0, SYMBOL_USD );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+      a.balance_liquid = asset( 0, equity_usd_symbol );
+   });
+
+   asset_symbol_type equity_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_EQUITY )+"."+string( SYMBOL_CREDIT );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = equity_credit_symbol;
+      a.asset_type = LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = equity_credit_symbol;
+   });
+      
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.issuer = NULL_ACCOUNT;
+      a.symbol_a = SYMBOL_EQUITY;
+      a.symbol_b = SYMBOL_CREDIT;
+      a.balance_a = asset( 0, SYMBOL_EQUITY );
+      a.balance_b = asset( 0, SYMBOL_CREDIT );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+      a.balance_liquid = asset( 0, equity_credit_symbol );
+   });
+
+   asset_symbol_type usd_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_USD )+"."+string( SYMBOL_CREDIT );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = usd_credit_symbol;
+      a.asset_type = LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = usd_credit_symbol;
+   });
+      
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.issuer = NULL_ACCOUNT;
+      a.symbol_a = SYMBOL_USD;
+      a.symbol_b = SYMBOL_CREDIT;
+      a.balance_a = asset( 0, SYMBOL_USD );
+      a.balance_b = asset( 0, SYMBOL_CREDIT );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+      a.balance_liquid = asset( 0, usd_credit_symbol );
+   });
+
+   // Create Primary asset credit pools [ coin, equity, usd, credit ]
+
+   asset_symbol_type credit_asset_coin_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_COIN );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_coin_symbol;
+      a.asset_type = CREDIT_POOL_ASSET; 
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_coin_symbol;
+   });
+
+   create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.base_symbol = SYMBOL_COIN;
+      a.credit_symbol = credit_asset_coin_symbol;
+      a.base_balance = asset( 0, SYMBOL_COIN );
+      a.borrowed_balance = asset( 0, SYMBOL_COIN );
+      a.credit_balance = asset( 0, credit_asset_coin_symbol );
+      a.last_price = price( asset( 0, SYMBOL_COIN ), asset( 0, credit_asset_coin_symbol ) );
+   });
+
+   asset_symbol_type credit_asset_equity_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_EQUITY );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_equity_symbol;
+      a.asset_type = CREDIT_POOL_ASSET; 
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_equity_symbol;
+   });
+
+   create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.base_symbol = SYMBOL_EQUITY;
+      a.credit_symbol = credit_asset_equity_symbol;
+      a.base_balance = asset( 0, SYMBOL_EQUITY );
+      a.borrowed_balance = asset( 0, SYMBOL_EQUITY );
+      a.credit_balance = asset( 0, credit_asset_equity_symbol );
+      a.last_price = price( asset( 0, SYMBOL_EQUITY ), asset( 0, credit_asset_equity_symbol ) );
+   });
+
+   asset_symbol_type credit_asset_usd_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_USD );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_usd_symbol;
+      a.asset_type = CREDIT_POOL_ASSET; 
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_usd_symbol;
+   });
+
+   create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.base_symbol = SYMBOL_USD;
+      a.credit_symbol = credit_asset_usd_symbol;
+      a.base_balance = asset( 0, SYMBOL_USD );
+      a.borrowed_balance = asset( 0, SYMBOL_USD );
+      a.credit_balance = asset( 0, credit_asset_usd_symbol );
+      a.last_price = price( asset( 0, SYMBOL_USD ), asset( 0, credit_asset_usd_symbol ) );
+   });
+
+   asset_symbol_type credit_asset_credit_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_CREDIT );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_credit_symbol;
+      a.asset_type = CREDIT_POOL_ASSET; 
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_credit_symbol;
+   });
+
+   create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.base_symbol = SYMBOL_CREDIT;
+      a.credit_symbol = credit_asset_credit_symbol;
+      a.base_balance = asset( 0, SYMBOL_CREDIT );
+      a.borrowed_balance = asset( 0, SYMBOL_CREDIT );
+      a.credit_balance = asset( 0, credit_asset_credit_symbol );
+      a.last_price = price( asset( 0, SYMBOL_CREDIT ), asset( 0, credit_asset_credit_symbol ) );
    });
 
    for( int i = 0; i < ( GENESIS_WITNESS_AMOUNT + GENESIS_EXTRA_WITNESSES ); ++i )
@@ -489,7 +748,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       create< account_object >( [&]( account_object& a )
       {
          a.name = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
-      } );
+      });
 
       // Create Core asset balance object for witness
       create< account_balance_object >( [&]( account_balance_object& abo )
@@ -498,7 +757,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
          abo.symbol = SYMBOL_COIN;
          abo.liquid_balance  = GENESIS_ACCOUNT_COIN;
          abo.staked_balance = GENESIS_ACCOUNT_COIN_STAKE;
-      } );
+      });
 
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
@@ -508,18 +767,20 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
          auth.active = auth.owner;
          auth.posting = auth.active;
       });
+
       if( i < GENESIS_WITNESS_AMOUNT )
       {
          create< witness_object >( [&]( witness_object& w )
          {
             w.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
             w.signing_key = init_public_key;
-            w.schedule = witness_object::none;
+            w.schedule = witness_object::top_witness;
          });
       }
    }
 
    // Create Equity asset balance object for initial account
+
    create< account_balance_object >( [&]( account_balance_object& abo )
    {
       abo.owner = INIT_ACCOUNT;
@@ -552,6 +813,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    });
 
    // Create the Global Dynamic Properties Object to track consensus critical network and chain information
+
    create< dynamic_global_property_object >( [&]( dynamic_global_property_object& p )
    {
       p.current_producer = GENESIS_ACCOUNT_BASE_NAME;
@@ -575,7 +837,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    
    create< witness_schedule_object >( [&]( witness_schedule_object& wso )
    {
-      wso.current_shuffled_producers[0] = GENESIS_ACCOUNT_BASE_NAME;    // Create witness scheduler
+      wso.current_shuffled_producers[0] = GENESIS_ACCOUNT_BASE_NAME;    // Create witness schedule
    });
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -1363,12 +1625,12 @@ const credit_collateral_object* database::find_collateral( const account_name_ty
    return find< credit_collateral_object, by_owner_symbol >( boost::make_tuple( owner, symbol ) );
 }
 
-const credit_loan_object& database::get_loan( const account_name_type& owner, shared_string& loan_id  )const
+const credit_loan_object& database::get_loan( const account_name_type& owner, const shared_string& loan_id  )const
 { try {
    return get< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
 } FC_CAPTURE_AND_RETHROW( (owner)(loan_id) ) }
 
-const credit_loan_object* database::find_loan( const account_name_type& owner, shared_string& loan_id )const
+const credit_loan_object* database::find_loan( const account_name_type& owner, const shared_string& loan_id )const
 {
    return find< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
 }
@@ -1451,6 +1713,16 @@ const collateral_bid_object& database::get_collateral_bid( const account_name_ty
 const collateral_bid_object* database::find_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
 {
    return find< collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
+}
+
+const force_settlement_object& database::get_force_settlement( const account_name_type& name, const asset_symbol_type& symbol )const
+{ try {
+   return get< force_settlement_object, by_account_asset >( boost::make_tuple( name, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
+
+const force_settlement_object* database::find_force_settlement( const account_name_type& name, const asset_symbol_type& symbol )const
+{
+   return find< force_settlement_object, by_account_asset >( boost::make_tuple( name, symbol ) );
 }
 
 const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
@@ -2174,8 +2446,8 @@ void database::update_business_account( const account_business_object& business,
    flat_map< account_name_type, share_type > officers;
    flat_map< account_name_type, flat_map< executive_role_type, share_type > > exec_map;
    vector< pair< account_name_type, pair< executive_role_type, share_type > > > role_rank;
-   uint16_t exec_number = props.median_props.executive_role_type_amount;
-   role_rank.reserve( exec_number * officers.size() );
+   
+   role_rank.reserve( executive_role_values.size() * officers.size() );
    flat_map< account_name_type, pair< executive_role_type, share_type > > executives;
    executive_officer_set exec_set;
 
@@ -3351,6 +3623,234 @@ void database::process_community_enterprise_fund()
 } FC_CAPTURE_AND_RETHROW() }
 
 
+/** 
+ * Updates the state of all credit loans.
+ * 
+ * Compounds interest on all credit loans, checks collateralization
+ * ratios, and liquidates under collateralized loans in response to price changes.
+ */
+void database::process_credit_updates()
+{ try {
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+
+   const auto& loan_idx = get_index< credit_loan_index >().indices().get< by_liquidation_spread >();
+   auto loan_itr = loan_idx.begin();
+
+   while( loan_itr != loan_idx.end() )
+   {
+      const asset_object& debt_asset = get_asset( loan_itr->debt_asset() );
+      const asset_credit_pool_object& credit_pool = get_credit_pool( loan_itr->debt_asset(), false );
+      uint16_t fixed = props.median_props.credit_min_interest;
+      uint16_t variable = props.median_props.credit_variable_interest;
+      share_type interest_rate = credit_pool.interest_rate( fixed, variable );
+      asset total_interest = asset( 0, debt_asset.symbol );
+
+      while( loan_itr != loan_idx.end() && 
+         loan_itr->debt_asset() == debt_asset.symbol )
+      {
+         const asset_object& collateral_asset = get_asset( loan_itr->collateral_asset() );
+         const asset_liquidity_pool_object& pool = get_liquidity_pool( loan_itr->symbol_a, loan_itr->symbol_b );
+         price col_debt_price = pool.base_hour_median_price( loan_itr->collateral_asset() );
+
+         while( loan_itr != loan_idx.end() &&
+            loan_itr->debt_asset() == debt_asset.symbol &&
+            loan_itr->collateral_asset() == collateral_asset.symbol )
+         {
+            const credit_loan_object& loan = *loan_itr;
+
+            asset max_debt = ( loan.collateral * col_debt_price * props.median_props.credit_liquidation_ratio ) / PERCENT_100;
+            price liquidation_price = price( loan.collateral, max_debt );
+            asset interest = ( loan.debt * interest_rate * ( now - loan.last_interest_time ).count() ) / ( fc::days(365).count() * PERCENT_100 );
+
+            if( interest.amount > INTEREST_MIN_AMOUNT )    // Ensure interest is above dust to prevent lossy rounding
+            {
+               total_interest += interest;
+            }
+
+            modify( loan, [&]( credit_loan_object& c )
+            {
+               if( interest.amount > INTEREST_MIN_AMOUNT )
+               {
+                  c.debt += interest;
+                  c.interest += interest;
+                  c.last_interest_rate = interest_rate;
+                  c.last_interest_time = now;
+               }
+               c.loan_price = price( c.collateral, c.debt );
+               c.liquidation_price = liquidation_price;
+            });
+
+            if( loan.liquidation_price > loan.loan_price )  // If loan falls below liquidation price
+            {
+               liquidate_credit_loan( loan );      // Liquidate it at current price
+            }
+
+            ++loan_itr;
+         }
+      }
+
+      modify( credit_pool, [&]( asset_credit_pool_object& c )
+      {
+         c.last_interest_rate = interest_rate;
+         c.borrowed_balance += total_interest;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Updates the state of all margin orders.
+ * 
+ * Compounds interest on all margin orders, checks collateralization
+ * ratios for all orders, and liquidates them if they are under collateralized.
+ * Places orders into the book into liquidation mode 
+ * if they reach their specified limit stop or take profit price.
+ */
+void database::process_margin_updates()
+{ try {
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = props.time;
+   const auto& margin_idx = get_index< margin_order_index >().indices().get< by_debt_collateral_position >();
+   auto margin_itr = margin_idx.begin();
+
+   while( margin_itr != margin_idx.end() )
+   {
+      const asset_object& debt_asset = get_asset( margin_itr->debt_asset() );
+      const asset_credit_pool_object& credit_pool = get_credit_pool( margin_itr->debt_asset(), false );
+      uint16_t fixed = props.median_props.credit_min_interest;
+      uint16_t variable = props.median_props.credit_variable_interest;
+      share_type interest_rate = credit_pool.interest_rate( fixed, variable );
+      asset total_interest = asset( 0, debt_asset.symbol );
+
+      while( margin_itr != margin_idx.end() && 
+         margin_itr->debt_asset() == debt_asset.symbol )
+      {
+         const asset_object& collateral_asset = get_asset( margin_itr->collateral_asset() );
+
+         asset_symbol_type symbol_a;
+         asset_symbol_type symbol_b;
+         if( debt_asset.id < collateral_asset.id )
+         {
+            symbol_a = debt_asset.symbol;
+            symbol_b = collateral_asset.symbol;
+         }
+         else
+         {
+            symbol_b = debt_asset.symbol;
+            symbol_a = collateral_asset.symbol;
+         }
+
+         const asset_liquidity_pool_object& col_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
+         price col_debt_price = col_debt_pool.base_hour_median_price( debt_asset.symbol );
+
+         while( margin_itr != margin_idx.end() &&
+            margin_itr->debt_asset() == debt_asset.symbol &&
+            margin_itr->collateral_asset() == collateral_asset.symbol )
+         {
+            const asset_object& position_asset = get_asset( margin_itr->position_asset() );
+
+            asset_symbol_type symbol_a;
+            asset_symbol_type symbol_b;
+            if( debt_asset.id < position_asset.id )
+            {
+               symbol_a = debt_asset.symbol;
+               symbol_b = position_asset.symbol;
+            }
+            else
+            {
+               symbol_b = debt_asset.symbol;
+               symbol_a = position_asset.symbol;
+            }
+
+            const asset_liquidity_pool_object& pos_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
+            price pos_debt_price = pos_debt_pool.base_hour_median_price( debt_asset.symbol );
+            
+            while( margin_itr != margin_idx.end() &&
+               margin_itr->debt_asset() == debt_asset.symbol &&
+               margin_itr->collateral_asset() == collateral_asset.symbol &&
+               margin_itr->position_asset() == position_asset.symbol )
+            {
+               const margin_order_object& margin = *margin_itr;
+               asset collateral_debt_value;
+
+               if( margin.collateral_asset() != margin.debt_asset() )
+               {
+                  collateral_debt_value = margin.collateral * col_debt_price;
+               }
+               else
+               {
+                  collateral_debt_value = margin.collateral;
+               }
+
+               asset position_debt_value = margin.position_balance * pos_debt_price;
+               asset equity = margin.debt_balance + position_debt_value + collateral_debt_value;
+               asset unrealized_value = margin.debt_balance + position_debt_value - margin.debt;
+               share_type collateralization = ( PERCENT_100 * ( equity - margin.debt ) ) / margin.debt;
+               
+               asset interest = ( margin.debt * interest_rate * ( now - margin.last_interest_time ).count() ) / ( fc::days(365).count() * PERCENT_100 );
+
+               if( interest.amount > INTEREST_MIN_AMOUNT )      // Ensure interest is above dust to prevent lossy rounding
+               {
+                  total_interest += interest;
+               }
+               
+               modify( margin, [&]( margin_order_object& m )
+               {
+                  if( interest.amount > INTEREST_MIN_AMOUNT )
+                  {
+                     m.debt += interest;      // Increment interest onto margin loan
+                     m.interest += interest;
+                     m.last_interest_time = now;
+                     m.last_interest_rate = interest_rate;
+                  }
+
+                  m.collateralization = collateralization;
+                  m.unrealized_value = unrealized_value;
+               });
+
+               if( margin.collateralization < props.median_props.margin_liquidation_ratio ||
+                  pos_debt_price <= margin.stop_loss_price ||
+                  pos_debt_price >= margin.take_profit_price )
+               {
+                  close_margin_order( margin );       // If margin value falls below collateralization threshold, or stop prices are reached
+               }
+               else if( pos_debt_price <= margin.limit_stop_loss_price && !margin.liquidating )
+               {
+                  modify( margin, [&]( margin_order_object& m )
+                  {
+                     m.liquidating = true;
+                     m.last_updated = now;
+                     m.sell_price = ~m.limit_stop_loss_price;   // If price falls below limit stop loss, reverse order and sell at limit price
+                  });
+                  apply_order( margin );
+               }
+               else if( pos_debt_price >= margin.limit_take_profit_price && !margin.liquidating )
+               {
+                  modify( margin, [&]( margin_order_object& m )
+                  {
+                     m.liquidating = true;
+                     m.last_updated = now;
+                     m.sell_price = ~m.limit_take_profit_price;  // If price rises above take profit, reverse order and sell at limit price
+                  });
+                  apply_order( margin );
+               }
+
+               ++margin_itr;
+
+            }     // Same Position, Collateral, and Debt
+         }        // Same Collateral and Debt
+      }           // Same Debt
+
+      modify( credit_pool, [&]( asset_credit_pool_object& c )
+      {
+         c.last_interest_rate = interest_rate;
+         c.borrowed_balance += total_interest;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
 
 void database::adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true )
 { try {
@@ -3598,9 +4098,6 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< asset_update_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< asset_issue_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< asset_reserve_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< asset_claim_fees_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< asset_claim_pool_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< asset_fund_fee_pool_evaluator            >();
    _my->_evaluator_registry.register_evaluator< asset_update_issuer_evaluator            >();
    _my->_evaluator_registry.register_evaluator< asset_update_feed_producers_evaluator    >();
    _my->_evaluator_registry.register_evaluator< asset_publish_feed_evaluator             >();
@@ -4405,11 +4902,6 @@ asset database::calculate_issuer_fee( const asset_object& trade_asset, const ass
 { try {
    FC_ASSERT( trade_asset.symbol == trade_amount.symbol,
    "Trade asset symbol must be equal to trade amount symbol." );
-
-   if( !trade_asset.charges_market_fees() )
-   {
-      return asset( 0, trade_asset.symbol );
-   }
       
    if( trade_asset.options.market_fee_percent == 0 )
    {
@@ -4436,11 +4928,7 @@ asset database::pay_issuer_fees( const asset_object& recv_asset, const asset& re
 
    if( issuer_fees.amount > 0 )
    {
-      const asset_dynamic_data_object& recv_dyn_data = get_dynamic_data(recv_asset.symbol);
-      modify( recv_dyn_data, [&]( asset_dynamic_data_object& addo )
-      {
-         addo.adjust_accumulated_fees( issuer_fees );
-      });
+      adjust_reward_balance( recv_asset.issuer, issuer_fees );
    }
 
    return issuer_fees;
@@ -4527,11 +5015,7 @@ asset database::pay_issuer_fees( const account_object& seller, const asset_objec
          }
       }
 
-      const asset_dynamic_data_object& recv_dyn_data = get_dynamic_data(recv_asset.symbol);
-      modify( recv_dyn_data, [&]( asset_dynamic_data_object& obj )
-      {
-         obj.adjust_accumulated_fees( issuer_fees - reward_paid );
-      });
+      adjust_reward_balance( recv_asset.issuer, issuer_fees - reward_paid );
    }
 
    return issuer_fees;
@@ -5163,7 +5647,6 @@ void database::validate_invariants()const
       total_supply_checksum += addo.get_reward_supply();
       total_supply_checksum += addo.get_pending_supply();
       total_supply_checksum += addo.get_confidential_supply();
-      total_supply_checksum += addo.get_accumulated_fees();
 
       FC_ASSERT( addo.get_delegated_supply() == addo.get_receiving_supply(),
          "Asset Supply error: Delegated supply not equal to receiving supply",

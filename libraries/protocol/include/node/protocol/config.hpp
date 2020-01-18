@@ -1,5 +1,5 @@
 #pragma once
-#define BLOCKCHAIN_VERSION              ( version(0, 0, 0) )
+#define BLOCKCHAIN_VERSION              ( version(0, 0, 1) )
 #define BLOCKCHAIN_HARDFORK_VERSION     ( hardfork_version( BLOCKCHAIN_VERSION ) )
 
 #ifndef SHOW_PRIVATE_KEYS
@@ -44,7 +44,7 @@
 #define WEYOUME_SYMBOL                  "WYM"
 #define MEUSD_SYMBOL                    "MUSD"
 #define MECREDIT_SYMBOL                 "MCR"
-#define LIQUITY_ASSET_PREFIX            "LIQUID."
+#define LIQUIDITY_ASSET_PREFIX          "LIQUID."
 #define CREDIT_ASSET_PREFIX             "CREDIT."
 #define OPTION_ASSET_PREFIX             "OPT."
 
@@ -80,7 +80,7 @@
 #define IRREVERSIBLE_THRESHOLD                (67 * PERCENT_1)          // Blocks produced become irrervsible after approval by this percentage of active producers. 
 #define POW_TARGET_TIME                       fc::minutes(10)           // Aim for approximately one proof of work every 10 minutes to be produced. 
 #define POW_DECAY_TIME                        fc::days(7)               // Averaging time of one week for adjusting proof of work difficulty. 
-#define POW_UPDATE_BLOCK_INTERVAL             (1 * BLOCKS_PER_HOUR)    // Updates the mining dificulty once per hour.            
+#define POW_UPDATE_BLOCK_INTERVAL             (1 * BLOCKS_PER_HOUR)     // Updates the mining dificulty once per hour.            
 #define POA_BLOCK_INTERVAL                    (8 * BLOCKS_PER_HOUR)     // Distributes the proof of activity reward every 8 hours to the highest activity voted witness. 
 #define TXN_STAKE_BLOCK_INTERVAL              (1 * BLOCKS_PER_HOUR)     // Transaction stake rewards are distributed each hour.
 #define TXN_STAKE_DECAY_TIME                  fc::days(7)               // Transaction stake is averaged over a rolling 7 day window. 
@@ -300,7 +300,7 @@
 #define MAX_GOV_ACCOUNTS                       5
 #define MAX_EXEC_VOTES                         10
 #define MAX_OFFICER_VOTES                      150
-#define MAX_EXEC_BUDGET                        asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT )
+#define MAX_EXEC_BUDGET                        asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT )
 
 #define COLLATERAL_RATIO_DENOM                 (1000)
 #define MIN_COLLATERAL_RATIO                   (1001)      // lower than this could result in divide by 0
@@ -312,18 +312,18 @@
 #define MARGIN_LIQUIDATION_RATIO               (10 * PERCENT_1)      // Liquidate margin positions when their collateralization ratios fall below 10%, position is 4X the value of collateral equity
 #define CREDIT_OPEN_RATIO                      (125 * PERCENT_1)     // Credit borrow orders need at least 125% of the value of the loan in collateral. 
 #define CREDIT_LIQUIDATION_RATIO               (110 * PERCENT_1)     // Credit borrow orders are liquidated when the value of the collateral falls below 110% of the loan value.
-#define CREDIT_INTEREST_RATE                   (5 * PERCENT_1)       // 5% Initial Interest rate for network credit asset holders, and credit pool borrowers and lenders. 
-#define CREDIT_MIN_INTEREST                    (PERCENT_1)           // 1% interest PA minimum component on credit pools. 
-#define CREDIT_VARIABLE_INTEREST               (4* PERCENT_1)        // 4% interest PA variable component on credit pools. 
-#define INTEREST_COMPOUND_INTERVAL             fc::hours(1)          // Interest payments compound hourly. 
-#define CREDIT_INTERVAL_BLOCKS                 int64_t( INTEREST_COMPOUND_INTERVAL.count() / BLOCK_INTERVAL.count() )
-#define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)      //  Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity. 
+#define CREDIT_INTEREST_RATE                   (5 * PERCENT_1)       // 5% Initial Interest rate for network credit assets
+#define CREDIT_MIN_INTEREST                    (PERCENT_1)           // 1% interest PA minimum component on credit pools.
+#define CREDIT_VARIABLE_INTEREST               (4* PERCENT_1)        // 4% interest PA variable component on credit pools.
+#define CREDIT_INTERVAL_BLOCKS                 (BLOCKS_PER_HOUR)     // Interest payments for credit assets compound hourly.
+#define INTEREST_MIN_AMOUNT                    (100)                 // Minimum units of asset required to pay interest in credit pools each block.
+#define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)      // Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity. 
 
-#define EQUITY_MIN_WITNESSES                   (10)                 // Accounts need at least 10 witness votes to claim equity reward. 
+#define EQUITY_MIN_WITNESSES                   (10)                          // Accounts need at least 10 witness votes to claim equity reward. 
 #define EQUITY_BOOST_WITNESSES                 (50)                          // Boost when account has min 50 witness votes
-#define EQUITY_ACTIVITY_TIME                   fc::days(30)
-#define EQUITY_BOOST_ACTIVITY                  (15 * BLOCKCHAIN_PRECISION)   // Boost when account has a rolling average of 15 activity rewards in the last 30 days.
-#define EQUITY_BOOST_BALANCE                   (10 * BLOCKCHAIN_PRECISION)   // Boost when account has a rolling average of 15 activity rewards in the last 30 days.
+#define EQUITY_ACTIVITY_TIME                   fc::days(30)                  // Dividends available when activity in the last 30 days
+#define EQUITY_BOOST_ACTIVITY                  (15 * BLOCKCHAIN_PRECISION)   // Dividends are doubled when account has a rolling average of 15 activity rewards in the last 30 days.
+#define EQUITY_BOOST_BALANCE                   (10 * BLOCKCHAIN_PRECISION)   // Dividends are doubled when account has balance greater than 10 units.
 #define EQUITY_BOOST_TOP_PERCENT               (10 * PERCENT_1)              // Boost equity reward by 10% for top members
 #define POWER_BOOST_TOP_PERCENT                (10 * PERCENT_1)              // Boost power reward by 10% for top members
 

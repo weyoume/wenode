@@ -23,17 +23,17 @@ namespace node { namespace chain {
 
          id_type                  id;
 
-         account_name_type        to;             // Account requesting the transfer.
+         account_name_type        to;             ///< Account requesting the transfer.
       
-         account_name_type        from;           // Account that is being requested to accept the transfer.
+         account_name_type        from;           ///< Account that is being requested to accept the transfer.
       
-         asset                    amount;         // The amount of asset to transfer.
+         asset                    amount;         ///< The amount of asset to transfer.
 
-         shared_string            request_id;     // uuidv4 of the request transaction.
+         shared_string            request_id;     ///< uuidv4 of the request transaction.
 
-         shared_string            memo;           // The memo is plain-text, encryption on the memo is advised. 
+         shared_string            memo;           ///< The memo is plain-text, encryption on the memo is advised. 
 
-         time_point               expiration;     // time that the request expires. 
+         time_point               expiration;     ///< time that the request expires. 
    };
 
 
@@ -48,31 +48,31 @@ namespace node { namespace chain {
 
          id_type                     id;
 
-         account_name_type           from;                  // Sending account to transfer asset from.
+         account_name_type           from;                  ///< Sending account to transfer asset from.
       
-         account_name_type           to;                    // Recieving account to transfer asset to.
+         account_name_type           to;                    ///< Recieving account to transfer asset to.
       
-         asset                       amount;                // The amount of asset to transfer for each payment interval.
+         asset                       amount;                ///< The amount of asset to transfer for each payment interval.
 
-         shared_string               transfer_id;           // uuidv4 of the request transaction.
+         shared_string               transfer_id;           ///< uuidv4 of the request transaction.
 
-         shared_string               memo;                  // The memo is plain-text, encryption on the memo is advised.
+         shared_string               memo;                  ///< The memo is plain-text, encryption on the memo is advised.
 
-         time_point                  begin;                 // Starting time of the first payment.
+         time_point                  begin;                 ///< Starting time of the first payment.
 
-         uint32_t                    payments;              // Number of payments to process in total.
+         uint32_t                    payments;              ///< Number of payments to process in total.
 
-         uint32_t                    payments_remaining;    // Number of payments processed so far.
+         uint32_t                    payments_remaining;    ///< Number of payments processed so far.
 
-         fc::microseconds            interval;              // Microseconds between each transfer event.
+         fc::microseconds            interval;              ///< Microseconds between each transfer event.
 
-         time_point                  end;                   // Ending time of the recurring payment. 
+         time_point                  end;                   ///< Ending time of the recurring payment. 
    
-         time_point                  next_transfer;         // Time of the next transfer.    
+         time_point                  next_transfer;         ///< Time of the next transfer.    
 
-         bool                        extensible;            // True if the payment duration should be extended in the event a payment is missed.
+         bool                        extensible;            ///< True if the payment duration should be extended in the event a payment is missed.
 
-         bool                        fill_or_kill;          // True if the payment should be cancelled if a payment is missed.
+         bool                        fill_or_kill;          ///< True if the payment should be cancelled if a payment is missed.
    };
 
 
@@ -87,29 +87,29 @@ namespace node { namespace chain {
 
          id_type                     id;
 
-         account_name_type           from;              // Sending account to transfer asset from.
+         account_name_type           from;              ///< Sending account to transfer asset from.
       
-         account_name_type           to;                // Recieving account to transfer asset to.
+         account_name_type           to;                ///< Recieving account to transfer asset to.
       
-         asset                       amount;            // The amount of asset to transfer for each payment interval.
+         asset                       amount;            ///< The amount of asset to transfer for each payment interval.
 
-         shared_string               request_id;        // uuidv4 of the request transaction.
+         shared_string               request_id;        ///< uuidv4 of the request transaction.
 
-         shared_string               memo;              // The memo is plain-text, encryption on the memo is advised.
+         shared_string               memo;              ///< The memo is plain-text, encryption on the memo is advised.
 
-         time_point                  begin;             // Starting time of the first payment.
+         time_point                  begin;             ///< Starting time of the first payment.
 
-         uint32_t                    payments;          // Number of payments to process in total.
+         uint32_t                    payments;          ///< Number of payments to process in total.
 
-         fc::microseconds            interval;          // Microseconds between each transfer event.
+         fc::microseconds            interval;          ///< Microseconds between each transfer event.
 
-         time_point                  end;               // Ending time of the recurring payment. 
+         time_point                  end;               ///< Ending time of the recurring payment. 
 
-         time_point                  expiration;        // time that the request expires. 
+         time_point                  expiration;        ///< time that the request expires. 
 
-         bool                        extensible;        // True if the payment duration should be extended in the event a payment is missed.
+         bool                        extensible;        ///< True if the payment duration should be extended in the event a payment is missed.
 
-         bool                        fill_or_kill;      // True if the payment should be cancelled if a payment is missed.
+         bool                        fill_or_kill;      ///< True if the payment should be cancelled if a payment is missed.
 
          asset                       total_payment()
          {
@@ -136,21 +136,21 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         account_name_type      seller;            // Selling account name of the trading order.
+         account_name_type      seller;            ///< Selling account name of the trading order.
 
-         shared_string          order_id;          // UUIDv4 of the order for each account.
+         shared_string          order_id;          ///< UUIDv4 of the order for each account.
 
-         share_type             for_sale;          // asset symbol is sell_price.base.symbol.
+         share_type             for_sale;          ///< asset symbol is sell_price.base.symbol.
 
-         price                  sell_price;        // Base price is the asset being sold.
+         price                  sell_price;        ///< Base price is the asset being sold.
 
-         account_name_type      interface;         // The interface account that created the order.
+         account_name_type      interface;         ///< The interface account that created the order.
 
-         time_point             created;           // Time that the order was created.
+         time_point             created;           ///< Time that the order was created.
 
-         time_point             last_updated;  // Time that the order was last modified.
+         time_point             last_updated;      ///< Time that the order was last modified.
 
-         time_point             expiration;        // Expiration time of the order.
+         time_point             expiration;        ///< Expiration time of the order.
 
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
@@ -205,19 +205,19 @@ namespace node { namespace chain {
 
          account_name_type       borrower;
 
-         asset                   collateral;                  // call_price.base.symbol, access via get_collateral
+         asset                   collateral;                  ///< call_price.base.symbol, access via get_collateral
 
-         asset                   debt;                        // call_price.quote.symbol, access via get_debt
+         asset                   debt;                        ///< call_price.quote.symbol, access via get_debt
 
-         price                   call_price;                  // Collateral / Debt
+         price                   call_price;                  ///< Collateral / Debt
 
-         optional<uint16_t>      target_collateral_ratio;     // maximum CR to maintain when selling collateral on margin call
+         optional<uint16_t>      target_collateral_ratio;     ///< maximum CR to maintain when selling collateral on margin call
 
-         account_name_type       interface;                   // The interface account that created the order
+         account_name_type       interface;                   ///< The interface account that created the order
 
-         time_point              created;                     // Time that the order was created.
+         time_point              created;                     ///< Time that the order was created.
 
-         time_point              last_updated;                // Time that the order was last modified.
+         time_point              last_updated;                ///< Time that the order was last modified.
 
          double                  real_price()const 
          { 
@@ -272,17 +272,17 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         account_name_type      owner;
+         account_name_type      owner;             ///< Name of the account that is force settling the asset
 
-         asset                  balance;
+         asset                  balance;           ///< Amount of debt asset being settled
 
-         time_point             settlement_date;
+         time_point             settlement_date;   ///< Date of asset settlement for collateral
 
-         account_name_type      interface;         // The interface account that created the order
+         account_name_type      interface;         ///< The interface account that created the order
 
-         time_point             created;           // Time that the settlement was created.
+         time_point             created;           ///< Time that the settlement was created.
 
-         time_point             last_updated;      // Time that the settlement was last modified.
+         time_point             last_updated;      ///< Time that the settlement was last modified.
 
          asset_symbol_type      settlement_asset_symbol()const
          { return balance.symbol; }
@@ -304,19 +304,19 @@ namespace node { namespace chain {
 
          id_type               id;
 
-         account_name_type     bidder;           // Bidding Account name.
+         account_name_type     bidder;           ///< Bidding Account name.
 
-         asset                 collateral;       // Collateral bidded to obtain debt from a global settlement.
+         asset                 collateral;       ///< Collateral bidded to obtain debt from a global settlement.
 
-         asset                 debt;             // Debt requested for bid.
+         asset                 debt;             ///< Debt requested for bid.
 
-         time_point            last_updated;     // Time that the bid was last adjusted.
+         time_point            last_updated;     ///< Time that the bid was last adjusted.
 
-         time_point            created;          // Time that the bid was created.
+         time_point            created;          ///< Time that the bid was created.
 
          price                 inv_swan_price()const
          {
-            return price( collateral, debt );    // Collateral / Debt.
+            return price( collateral, debt );    ///< Collateral / Debt.
          }
 
          asset_symbol_type debt_type()const 
@@ -342,15 +342,15 @@ namespace node { namespace chain {
 
          id_type                    id;
 
-         account_name_type          owner;               // Collateral owners account name.
+         account_name_type          owner;               ///< Collateral owners account name.
 
-         asset_symbol_type          symbol;              // Asset symbol being collateralized. 
+         asset_symbol_type          symbol;              ///< Asset symbol being collateralized. 
 
-         asset                      collateral;          // Asset balance that is being locked in for loan backing for loan or margin orders.
+         asset                      collateral;          ///< Asset balance that is being locked in for loan backing for loan or margin orders.
 
-         time_point                 created;             // Time that collateral was created.
+         time_point                 created;             ///< Time that collateral was created.
 
-         time_point                 last_updated;        // Time that the order was last modified.
+         time_point                 last_updated;        ///< Time that the order was last modified.
    };
 
 
@@ -370,29 +370,31 @@ namespace node { namespace chain {
 
          id_type                    id;
 
-         account_name_type          owner;                   // Collateral owner's account name
+         account_name_type          owner;                   ///< Collateral owner's account name
 
-         shared_string              loan_id;                 // UUIDV4 for the loan to uniquely identify it for reference. 
+         shared_string              loan_id;                 ///< UUIDV4 for the loan to uniquely identify it for reference. 
 
-         asset                      debt;                    // Amount of an asset borrowed. Limit of 75% of collateral value. Increases with interest charged.
+         asset                      debt;                    ///< Amount of an asset borrowed. Limit of 75% of collateral value. Increases with interest charged.
 
-         asset                      interest;                // Total Amount of interest accrued on the loan. 
+         asset                      interest;                ///< Total Amount of interest accrued on the loan. 
 
-         asset                      collateral;              // Amount of an asset to use as collateral for the loan. 
+         asset                      collateral;              ///< Amount of an asset to use as collateral for the loan. 
 
-         price                      loan_price;              // Collateral / Debt. Must be higher than liquidation price to remain solvent. 
+         price                      loan_price;              ///< Collateral / Debt. Must be higher than liquidation price to remain solvent. 
 
-         price                      liquidation_price;       // Collateral / max_debt value. Rises when collateral/debt market price falls.
+         price                      liquidation_price;       ///< Collateral / max_debt value. Rises when collateral/debt market price falls.
 
-         asset_symbol_type          symbol_a;                // The symbol of asset A in the debt / collateral exchange pair.
+         asset_symbol_type          symbol_a;                ///< The symbol of asset A in the debt / collateral exchange pair.
 
-         asset_symbol_type          symbol_b;                // The symbol of asset B in the debt / collateral exchange pair.
+         asset_symbol_type          symbol_b;                ///< The symbol of asset B in the debt / collateral exchange pair.
 
-         share_type                 last_interest_rate;      // Updates the interest rate of the loan hourly. 
+         share_type                 last_interest_rate;      ///< Updates the interest rate of the loan hourly. 
 
-         time_point                 created;                 // Time that the loan was taken out.
+         time_point                 created;                 ///< Time that the loan was taken out.
 
-         time_point                 last_updated;            // Time that the loan was last updated, and interest was accrued.
+         time_point                 last_updated;            ///< Time that the loan details was last updated.
+
+         time_point                 last_interest_time;      ///< Time that interest was last compounded. 
 
          asset_symbol_type          debt_asset()const { return debt.symbol; } 
          asset_symbol_type          collateral_asset()const { return collateral.symbol; } 
@@ -422,47 +424,49 @@ namespace node { namespace chain {
 
          id_type                    id;
 
-         account_name_type          owner;                       // Margin order owners account name
+         account_name_type          owner;                       ///< Margin order owners account name
 
-         shared_string              order_id;                    // UUIDv4 Unique Identifier of the order for each account.
+         shared_string              order_id;                    ///< UUIDv4 Unique Identifier of the order for each account.
 
-         price                      sell_price;                  // limit exchange price of the borrowed asset being sold for the position asset.
+         price                      sell_price;                  ///< limit exchange price of the borrowed asset being sold for the position asset.
 
-         asset                      collateral;                  // Collateral asset used to back the loan value; Returned to credit collateral object when position is closed. 
+         asset                      collateral;                  ///< Collateral asset used to back the loan value; Returned to credit collateral object when position is closed. 
 
-         asset                      debt;                        // Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed. 
+         asset                      debt;                        ///< Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed. 
 
-         asset                      debt_balance;                // Debt asset that is held by the order when selling debt, or liquidating position.
+         asset                      debt_balance;                ///< Debt asset that is held by the order when selling debt, or liquidating position.
 
-         asset                      interest;                    // Amount of interest accrued on the borrowed asset into the debt value.
+         asset                      interest;                    ///< Amount of interest accrued on the borrowed asset into the debt value.
 
-         asset                      position;                    // Minimum amount of asset to receive as margin position.
+         asset                      position;                    ///< Minimum amount of asset to receive as margin position.
 
-         asset                      position_balance;            // Amount of asset currently held within the order that has filled.                     
+         asset                      position_balance;            ///< Amount of asset currently held within the order that has filled.                     
 
-         share_type                 collateralization;           // Percentage ratio of ( Collateral + position_balance + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
+         share_type                 collateralization;           ///< Percentage ratio of ( Collateral + position_balance + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
 
-         account_name_type          interface;                   // The interface account that created the order.
+         account_name_type          interface;                   ///< The interface account that created the order.
 
-         time_point                 created;                     // Time that the order was created.
+         time_point                 created;                     ///< Time that the order was created.
 
-         time_point                 last_updated;                // Time that interest was last compounded on the margin order, and collateralization was last updated. 
+         time_point                 last_updated;                ///< Time that the details of the order was last updated.
 
-         time_point                 expiration;                  // Expiration time of the order.
+         time_point                 last_interest_time;          ///< Time that interest was last compounded on the margin order. 
 
-         asset                      unrealized_value = asset(0, debt.symbol);   // Current profit or loss that the position is holding.
+         time_point                 expiration;                  ///< Expiration time of the order.
 
-         share_type                 last_interest_rate = 0;      // The interest rate that was last applied to the order.
+         asset                      unrealized_value = asset(0, debt.symbol);   ///< Current profit or loss that the position is holding.
 
-         bool                       liquidating = false;         // Set to true to place the margin order back into the orderbook and liquidate the position at sell price.
+         share_type                 last_interest_rate = 0;      ///< The interest rate that was last applied to the order.
 
-         price                      stop_loss_price = price::min(sell_price.base.symbol, sell_price.quote.symbol);          // Price at which the position will be force liquidated if it falls into a net loss.
+         bool                       liquidating = false;         ///< Set to true to place the margin order back into the orderbook and liquidate the position at sell price.
 
-         price                      take_profit_price = price::max(sell_price.base.symbol, sell_price.quote.symbol);         // Price at which the position will be force liquidated if it rises into a net profit.
+         price                      stop_loss_price = price::min(sell_price.base.symbol, sell_price.quote.symbol);          ///< Price at which the position will be force liquidated if it falls into a net loss.
 
-         price                      limit_stop_loss_price = price::min(sell_price.base.symbol, sell_price.quote.symbol);     // Price at which the position will be limit liquidated if it falls into a net loss.
+         price                      take_profit_price = price::max(sell_price.base.symbol, sell_price.quote.symbol);         ///< Price at which the position will be force liquidated if it rises into a net profit.
 
-         price                      limit_take_profit_price = price::max(sell_price.base.symbol, sell_price.quote.symbol);   // Price at which the position will be limit liquidated if it rises into a net profit.
+         price                      limit_stop_loss_price = price::min(sell_price.base.symbol, sell_price.quote.symbol);     ///< Price at which the position will be limit liquidated if it falls into a net loss.
+
+         price                      limit_take_profit_price = price::max(sell_price.base.symbol, sell_price.quote.symbol);   ///< Price at which the position will be limit liquidated if it rises into a net profit.
 
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
@@ -504,11 +508,11 @@ namespace node { namespace chain {
          { 
             if( liquidating )
             {
-               return position_balance.amount == 0;    // No position left to sell
+               return position_balance.amount == 0;    ///< No position left to sell
             }
             else
             {
-               return debt_balance.amount == 0;     // No debt left to sell.
+               return debt_balance.amount == 0;     ///< No debt left to sell.
             }
          }
 
@@ -542,53 +546,53 @@ namespace node { namespace chain {
 
          id_type                                   id;
 
-         account_name_type                         from;                   // Account sending funds
+         account_name_type                         from;                   ///< Account sending funds
 
-         account_name_type                         to;                     // Account receiving funds
+         account_name_type                         to;                     ///< Account receiving funds
 
-         account_name_type                         from_mediator;          // Representative of the sending account
+         account_name_type                         from_mediator;          ///< Representative of the sending account
 
-         account_name_type                         to_mediator;            // Representative of the receiving account
+         account_name_type                         to_mediator;            ///< Representative of the receiving account
 
-         asset                                     payment;                // Total payment to be transferred
+         asset                                     payment;                ///< Total payment to be transferred
 
-         asset                                     balance;                // Current funds deposited in the escrow
+         asset                                     balance;                ///< Current funds deposited in the escrow
 
-         shared_string                             escrow_id;              // uuidv4 referring to the escrow payment
+         shared_string                             escrow_id;              ///< uuidv4 referring to the escrow payment
 
-         shared_string                             memo;                   // Details of the transaction for reference. 
+         shared_string                             memo;                   ///< Details of the transaction for reference. 
 
-         shared_string                             json;                   // Additonal JSON object attribute details
+         shared_string                             json;                   ///< Additonal JSON object attribute details
 
-         time_point                                acceptance_time;        // time that the transfer must be approved by
+         time_point                                acceptance_time;        ///< time that the transfer must be approved by
 
-         time_point                                escrow_expiration;      // Time that the escrow is able to be claimed by either TO or FROM
+         time_point                                escrow_expiration;      ///< Time that the escrow is able to be claimed by either TO or FROM
 
-         time_point                                dispute_release_time;   // Time that the balance is distributed to median release percentage
+         time_point                                dispute_release_time;   ///< Time that the balance is distributed to median release percentage
 
-         flat_set< account_name_type >             mediators;              // Set of accounts able to mediate the dispute
+         flat_set< account_name_type >             mediators;              ///< Set of accounts able to mediate the dispute
 
-         flat_map< account_name_type, uint16_t >   release_percentages;    // Declared release percentages of all accounts
+         flat_map< account_name_type, uint16_t >   release_percentages;    ///< Declared release percentages of all accounts
 
-         flat_map< account_name_type, bool >       approvals;              // Map of account approvals, paid into balance
+         flat_map< account_name_type, bool >       approvals;              ///< Map of account approvals, paid into balance
 
-         time_point                                created;                // Time that the order was created
+         time_point                                created;                ///< Time that the order was created
 
-         time_point                                last_updated;           // Time that the order was last updated, approved, or disputed
+         time_point                                last_updated;           ///< Time that the order was last updated, approved, or disputed
 
-         bool                                      disputed = false;       // True when escrow is in dispute
+         bool                                      disputed = false;       ///< True when escrow is in dispute
 
-         bool                                      from_approved()const
+         bool                                      from_approved()const    ///< True when the from account has approved
          {
             return approvals.at( from );
          };
-     
-         bool                                      to_approved()const
+
+         bool                                      to_approved()const      ///< True when the to account has approved
          {
             return approvals.at( to );
          };
 
-         bool                                      from_mediator_approved()const
+         bool                                      from_mediator_approved()const    ///< True when the mediator added by from account has approved
          {
             if( from_mediator != account_name_type() )
             {
@@ -600,7 +604,7 @@ namespace node { namespace chain {
             }
          };
 
-         bool                                      to_mediator_approved()const
+         bool                                      to_mediator_approved()const    ///< True when the mediator added by to account has approved
          {
             if( to_mediator != account_name_type() )
             {
@@ -612,12 +616,12 @@ namespace node { namespace chain {
             }
          };
 
-         bool                                      is_approved()const
+         bool                                      is_approved()const      ///< True when all participating accounts have approved
          { 
             return from_approved() && to_approved() && from_mediator_approved() && to_mediator_approved();
          };
 
-         bool                                      is_mediator( const account_name_type& account )const  
+         bool                                      is_mediator( const account_name_type& account )const    ///< True when an acocunt is a mediator
          {
             return std::find( mediators.begin(), mediators.end(), account ) != mediators.end();
          };
@@ -637,17 +641,17 @@ namespace node { namespace chain {
 
          id_type                 id;
 
-         account_name_type       from;
+         account_name_type       from;         ///< Account that is withdrawing savings balance
 
-         account_name_type       to;
+         account_name_type       to;           ///< Account to direct withdrawn assets to
 
-         shared_string           memo;
+         shared_string           memo;         ///< Reference memo for the transaction
 
-         shared_string           request_id;
+         shared_string           request_id;   ///< uuidv4 reference of the withdrawl instance
 
-         asset                   amount;
+         asset                   amount;       ///< Amount to withdraw
          
-         time_point              complete;
+         time_point              complete;     ///< Time that the withdrawal will complete
    };
 
 
@@ -667,15 +671,15 @@ namespace node { namespace chain {
 
          id_type             id;
 
-         account_name_type   from_account;          // Account that is unstaking the asset balance
+         account_name_type   from_account;          ///< Account that is unstaking the asset balance
 
-         account_name_type   to_account;            // Account name that receives the unstaked assets
+         account_name_type   to_account;            ///< Account name that receives the unstaked assets
 
-         asset_symbol_type   symbol;                // Asset to be unstaked
+         asset_symbol_type   symbol;                ///< Asset to be unstaked
 
-         uint16_t            percent = 0;           // Percentage of unstaking asset that should be directed to this route.
+         uint16_t            percent = 0;           ///< Percentage of unstaking asset that should be directed to this route.
 
-         bool                auto_stake = false;    // Automatically stake the asset on the receiving account
+         bool                auto_stake = false;    ///< Automatically stake the asset on the receiving account
    };
 
 
@@ -700,11 +704,11 @@ namespace node { namespace chain {
 
    enum curve_id
    {
-      quadratic,                   // Returns the square of the reward, with a constant added
-      quadratic_curation,          // Returns an amount converging to linear with reward
-      linear,                      // Returns exactly the reward, without using constant
-      square_root,                 // returns exactly the square root of reward
-      convergent_semi_quadratic    // Returns an amount converging to the reward, to the power of 1.5, which decays over the time period specified
+      quadratic,                   ///< Returns the square of the reward, with a constant added
+      quadratic_curation,          ///< Returns an amount converging to linear with reward
+      linear,                      ///< Returns exactly the reward, without using constant
+      square_root,                 ///< returns exactly the square root of reward
+      convergent_semi_quadratic    ///< Returns an amount converging to the reward, to the power of 1.5, which decays over the time period specified
    };
 
 
@@ -745,7 +749,7 @@ namespace node { namespace chain {
 
          asset                   activity_reward_balance = asset( 0, SYMBOL_COIN );
 
-         asset                   premium_partners_fund_balance = asset( 0, SYMBOL_COIN );  // Receives income from memberships, distributed to premium creators. 
+         asset                   premium_partners_fund_balance = asset( 0, SYMBOL_COIN );      ///< Receives income from memberships, distributed to premium creators. 
 
          asset                   total_pending_reward_balance = asset( 0, SYMBOL_COIN );
 
@@ -1226,13 +1230,16 @@ namespace node { namespace chain {
    > call_order_index;
 
    struct by_expiration;
+   struct by_account_asset;
+   
    typedef multi_index_container<
       force_settlement_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< force_settlement_object, force_settlement_id_type, &force_settlement_object::id > >,
-         ordered_unique< tag<by_account>,
+         ordered_unique< tag<by_account_asset>,
             composite_key< force_settlement_object,
                member<force_settlement_object, account_name_type, &force_settlement_object::owner>,
+               const_mem_fun<force_settlement_object, asset_symbol_type, &force_settlement_object::settlement_asset_symbol>,
                member< force_settlement_object, force_settlement_id_type, &force_settlement_object::id >
             >
          >,

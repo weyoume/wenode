@@ -1408,9 +1408,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<asset_update_operation>::value:
                case operation::tag<asset_issue_operation>::value: 
                case operation::tag<asset_reserve_operation>::value: 
-               case operation::tag<asset_claim_fees_operation>::value:
-               case operation::tag<asset_claim_pool_operation>::value: 
-               case operation::tag<asset_fund_fee_pool_operation>::value:
                case operation::tag<asset_update_issuer_operation>::value:        
                case operation::tag<asset_update_feed_producers_operation>::value:         
                case operation::tag<asset_publish_feed_operation>::value: 
@@ -1849,8 +1846,6 @@ vector< extended_asset > database_api_impl::get_assets( vector< string > assets 
          result.back().receiving_supply = asset_dyn_itr->receiving_supply.value;
          result.back().pending_supply = asset_dyn_itr->pending_supply.value;
          result.back().confidential_supply = asset_dyn_itr->confidential_supply.value;
-         result.back().accumulated_fees = asset_dyn_itr->accumulated_fees.value;
-         result.back().fee_pool = asset_dyn_itr->fee_pool.value;
       }
 
       const auto& bitasset_idx = _db.get_index< asset_bitasset_data_index >().indices().get< by_symbol >();

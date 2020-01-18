@@ -208,17 +208,15 @@ namespace node { namespace protocol {
    {
       price settlement_price;           ///< Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL
 
-      price core_exchange_rate;         ///< Price at which automatically exchanging this asset for CORE from fee pool occurs (used for paying fees)
-
       uint16_t maintenance_collateral_ratio = MAINTENANCE_COLLATERAL_RATIO;   ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM
 
       uint16_t maximum_short_squeeze_ratio = MAX_SHORT_SQUEEZE_RATIO;         ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM 
 
       /** 
        * When selling collateral to pay off debt, the least amount of debt to receive should be
-       *  min_usd = max_short_squeeze_price() * collateral
-       *  This is provided to ensure that a black swan cannot be trigged due to poor liquidity alone, it
-       *  must be confirmed by having the max_short_squeeze_price() move below the black swan price.
+       * min_usd = max_short_squeeze_price() * collateral
+       * This is provided to ensure that a black swan cannot be trigged due to poor liquidity alone, it
+       * must be confirmed by having the max_short_squeeze_price() move below the black swan price.
        */
       price max_short_squeeze_price()const;
 
@@ -251,7 +249,6 @@ FC_REFLECT( node::protocol::price,
 
 FC_REFLECT( node::protocol::price_feed,
          (settlement_price)
-         (core_exchange_rate)
          (maintenance_collateral_ratio)
          (maximum_short_squeeze_ratio)
          );

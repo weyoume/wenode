@@ -39,8 +39,6 @@ namespace node { namespace protocol {
 
       uint16_t               margin_liquidation_ratio = MARGIN_LIQUIDATION_RATIO;           // The minimum permissible collateralization ratio before a loan is liquidated. 
 
-      fc::microseconds       interest_compound_interval = INTEREST_COMPOUND_INTERVAL;       // The frequency of interest compounding payments. 
-
       uint16_t               maximum_asset_feed_publishers = MAX_ASSET_FEED_PUBLISHERS;     // The maximum number of accounts that can publish price feeds for a bitasset.
 
       asset                  membership_base_price = MEMBERSHIP_FEE_BASE;                   // The price for standard membership per month.
@@ -97,8 +95,6 @@ namespace node { namespace protocol {
 
       uint16_t               enterprise_vote_percent_required = VOTE_THRESHOLD_PERCENT;     // Percentage of total voting power required to approve enterprise milestones. 
 
-      uint16_t               executive_role_type_amount = EXECUTIVE_TYPES_AMOUNT;               // Number of roles on a business account executive board.
-
       uint64_t               maximum_asset_whitelist_authorities = MAX_ASSET_WHITELIST_AUTHORITIES;  // The maximum amount of whitelisted or blacklisted authorities for user issued assets 
 
       uint8_t                max_stake_intervals = MAX_ASSET_STAKE_INTERVALS;               // Maximum weeks that an asset can stake over.
@@ -109,10 +105,10 @@ namespace node { namespace protocol {
 
       void validate()const
       {
-         FC_ASSERT( account_creation_fee >= MIN_ACCOUNT_CREATION_FEE,
-            "Account creation fee must be at least 1 Unit of core asset." );
          FC_ASSERT( account_creation_fee.symbol == SYMBOL_COIN,
             "Acccount creation fee must be in the core asset." );
+         FC_ASSERT( account_creation_fee >= MIN_ACCOUNT_CREATION_FEE,
+            "Account creation fee must be at least 1 Unit of core asset." );
          FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT,
             "Maximum blocksize must be greater than minimum limit requirement." );    // No Upper bound on block size limit
          FC_ASSERT( pow_target_time >= fc::minutes(1) && pow_target_time <= fc::hours(1),
@@ -139,8 +135,6 @@ namespace node { namespace protocol {
             "Margin Open Ratio must be between PERCENT_1 and PERCENT_100." );
          FC_ASSERT( margin_liquidation_ratio >= PERCENT_1 && margin_liquidation_ratio <= PERCENT_100,
             "Margin Liquidation Ratio must be between PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( interest_compound_interval >= fc::minutes(1) && interest_compound_interval <= fc::days(1),
-            "Interest Compound Interval must be between 1 minute and 1 day." );
          FC_ASSERT( maximum_asset_feed_publishers >= MAX_ASSET_FEED_PUBLISHERS / 10 &&
             maximum_asset_feed_publishers <= MAX_ASSET_FEED_PUBLISHERS * 10,
             "Maximum asset feed publishers must be between 10 and 1000." );
@@ -157,24 +151,18 @@ namespace node { namespace protocol {
          FC_ASSERT( membership_top_price.symbol == SYMBOL_USD,
             "Membership top price must be in the USD asset." );
 
-         FC_ASSERT( author_reward_percent >= PERCENT_10_OF_PERCENT_1 && author_reward_percent <= PERCENT_100,
-            "Author reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( vote_reward_percent >= PERCENT_10_OF_PERCENT_1 && vote_reward_percent <= PERCENT_100,
-            "Vote reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( view_reward_percent >= PERCENT_10_OF_PERCENT_1 && view_reward_percent <= PERCENT_100,
-            "View reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( share_reward_percent >= PERCENT_10_OF_PERCENT_1 && share_reward_percent <= PERCENT_100,
-            "Share reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( comment_reward_percent >= PERCENT_10_OF_PERCENT_1 && comment_reward_percent <= PERCENT_100,
-            "Comment reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( storage_reward_percent >= PERCENT_10_OF_PERCENT_1 && storage_reward_percent <= PERCENT_100,
-            "Storage reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( moderator_reward_percent >= PERCENT_10_OF_PERCENT_1 && moderator_reward_percent <= PERCENT_100,
-            "Moderator reward percent must be between PERCENT_10_OF_PERCENT_1 and PERCENT_100." );
-
-         FC_ASSERT( author_reward_percent + vote_reward_percent + view_reward_percent + share_reward_percent + 
-            comment_reward_percent + storage_reward_percent + moderator_reward_percent == PERCENT_100,
-            "Content reward percentages must sum to PERCENT_100." );
+         FC_ASSERT( vote_reward_percent >= PERCENT_10_OF_PERCENT_1 && vote_reward_percent <= 20 * PERCENT_1,
+            "Vote reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+         FC_ASSERT( view_reward_percent >= PERCENT_10_OF_PERCENT_1 && view_reward_percent <= 20 * PERCENT_1,
+            "View reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+         FC_ASSERT( share_reward_percent >= PERCENT_10_OF_PERCENT_1 && share_reward_percent <= 20 * PERCENT_1,
+            "Share reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+         FC_ASSERT( comment_reward_percent >= PERCENT_10_OF_PERCENT_1 && comment_reward_percent <= 20 * PERCENT_1,
+            "Comment reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+         FC_ASSERT( storage_reward_percent >= PERCENT_10_OF_PERCENT_1 && storage_reward_percent <= 10 * PERCENT_1,
+            "Storage reward percent must be between PERCENT_10_OF_PERCENT_1 and 10 * PERCENT_1." );
+         FC_ASSERT( moderator_reward_percent >= PERCENT_10_OF_PERCENT_1 && moderator_reward_percent <= 10 * PERCENT_1,
+            "Moderator reward percent must be between PERCENT_10_OF_PERCENT_1 and 10 * PERCENT_1." );
 
          FC_ASSERT( content_reward_decay_rate >= fc::days(1) && content_reward_decay_rate <= fc::days(365),
             "Content reward decay rate must be between 1 and 365 days." );
@@ -214,8 +202,6 @@ namespace node { namespace protocol {
             "Supernode Decay time must be between 1 and 365 days." );
          FC_ASSERT( enterprise_vote_percent_required >= 0 && enterprise_vote_percent_required <= PERCENT_100,
             "Enterprise vote percent required must be between 0 and PERCENT_100." );
-         FC_ASSERT( executive_role_type_amount >= 10 && executive_role_type_amount <= 100,
-            "Executive types amount must be between 10 and 100." );
          FC_ASSERT( maximum_asset_whitelist_authorities >= MAX_ASSET_WHITELIST_AUTHORITIES && 
             maximum_asset_whitelist_authorities <= 10 * MAX_ASSET_WHITELIST_AUTHORITIES,
             "Executive types amount must be between 1000 and 10,000." );
@@ -223,11 +209,11 @@ namespace node { namespace protocol {
             "Max stake intervals must be between 104 and 10400." );
          FC_ASSERT( max_unstake_intervals >= MAX_ASSET_UNSTAKE_INTERVALS && max_unstake_intervals <= 100 * MAX_ASSET_UNSTAKE_INTERVALS,
             "Max unstake intervals must be between 104 and 10400." );
-         
-         FC_ASSERT( max_exec_budget >= MAX_EXEC_BUDGET,
-            "Max Excutive Budget must be greater than 10,000 MCR." );
          FC_ASSERT( max_exec_budget.symbol == SYMBOL_CREDIT,
             "Max Excutive Budget must be in the CREDIT asset." );
+         FC_ASSERT( max_exec_budget >= MAX_EXEC_BUDGET,
+            "Max Excutive Budget must be less than or equal to 1,000,000 MCR." );
+         
       };
    };
 
@@ -269,7 +255,6 @@ FC_REFLECT( node::protocol::chain_properties,
          (comment_curation_decay)
          (supernode_decay_time)
          (enterprise_vote_percent_required)
-         (executive_role_type_amount)
          (maximum_asset_whitelist_authorities)
          (max_stake_intervals)
          (max_unstake_intervals)

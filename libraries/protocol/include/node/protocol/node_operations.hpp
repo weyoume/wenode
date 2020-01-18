@@ -135,6 +135,31 @@ namespace node { namespace protocol {
 
    /**
     * Creates a brand new WeYouMe account for signing transactions and creating posts.
+    * 
+    * Accounts can be created with multiple different types for
+    * varying feature sets and capabilities
+    * 
+    * PERSONA: Referenced only by username, contains basic account information.
+    * Does not require a governance address, typically not linked with a 
+    * personal identity.
+    * 
+    * PROFILE: Contains a range of hashed and salted information for 
+    * searching and discovering the account, and linking it to
+    * a specific personal identity. Contains encrypted profile 
+    * information available to specific levels of connections.
+    * Requires a governance account, hashed email address, hashed phone number,
+    * encrypted email address and encrypted phone number.
+    * The Governance address has access to 
+    * plaintext information by way of connection key decryption.
+    * Account typically contains first name and last name of the person.
+    * 
+    * BUSINESS: Contains a heirarchial structure of members, officers, and 
+    * executives that can be used for managing an enterprise of multiple
+    * accounts, and giving individuals delegated control over account
+    * transaction signatory authority. Able to issue additonal assets
+    * that distribute portions of incoming revenue.
+    * Options for control structures that offer different 
+    * authority dynamics, from most permissive to most restrictive. 
     */
    struct account_create_operation : public base_operation
    {
@@ -196,7 +221,7 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Updates the details and authorities of an account. Requires Owner Authority.
+    * Updates the details and authorities of an account.
     */
    struct account_update_operation : public base_operation
    {
@@ -466,7 +491,7 @@ namespace node { namespace protocol {
 
       bool                              blacklisted = true;   ///< True to add to blacklist, false to remove. 
 
-      bool                              whitelisted = false;   ///< True to add to whitelist, false to remove. 
+      bool                              whitelisted = false;  ///< True to add to whitelist, false to remove. 
 
       void validate() const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -475,7 +500,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * All accounts with a voting power can vote for or against any witness.
+    * All accounts with voting power can vote for witnesses to produce blocks.
     * 
     * If a proxy is specified then all existing votes are removed.
     */
@@ -483,11 +508,11 @@ namespace node { namespace protocol {
    {
       account_name_type               signatory;
 
-      account_name_type               account;
+      account_name_type               account;           ///< Account creating the vote
 
-      uint16_t                        vote_rank;
+      uint16_t                        vote_rank;         ///< Rank ordering of the vote
 
-      account_name_type               witness;
+      account_name_type               witness;           ///< Witness being voted for
 
       bool                            approved = true;   ///< True to create vote, false to remove vote.
 
@@ -889,7 +914,7 @@ namespace node { namespace protocol {
 
       account_name_type             account;           ///< Name of the member's account
 
-      network_officer_role_type         officer_type;      ///< The type of network officer that the account serves as. 
+      network_officer_role_type     officer_type;      ///< The type of network officer that the account serves as. 
 
       string                        details;           ///< Information about the network officer and their work
 
@@ -2725,6 +2750,7 @@ namespace node { namespace protocol {
       void  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
+
    /**
     * Creates a new collateralized debt position in a market issued asset.
     * 
@@ -2751,6 +2777,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return owner; }
       void                get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+
 
    /**
     * Used to create a bid for outstanding debt of a globally settled market issued asset.
@@ -2781,6 +2808,7 @@ namespace node { namespace protocol {
    //==== Pool Operations ====//
    //=========================//
 
+
    /**
     * Creates a new liquidity pool between two assets.
     * 
@@ -2804,6 +2832,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return account; }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+
 
    /**
     * Exchanges an asset directly from liquidity pools.
@@ -2833,6 +2862,7 @@ namespace node { namespace protocol {
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
+
    /**
     * Adds capital to a liquidity pool.
     * 
@@ -2856,6 +2886,7 @@ namespace node { namespace protocol {
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
+
    /**
     * Removes capital from a liquidity pool.
     * 
@@ -2877,8 +2908,11 @@ namespace node { namespace protocol {
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
+
    /**
     * Adds an asset to an account's credit collateral position of that asset.
+    * 
+    * Collateral pools are used to borrow funds in credit borrow orders, and margin orders.
     */
    struct credit_pool_collateral_operation : public base_operation
    {
@@ -2892,6 +2926,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return account; }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+
 
    /**
     * Borrows an asset from the credit pool of the asset.
@@ -2909,12 +2944,13 @@ namespace node { namespace protocol {
 
       asset                 collateral;      ///< Amount of an asset to use as collateral for the loan. Set to 0 to reclaim collateral to collateral balance. 
 
-      string                loan_id;         ///< UUDIv4 unique identifier for the loan
+      string                loan_id;         ///< uuidv4 unique identifier for the loan
 
       void                  validate()const;
       const account_name_type& get_creator_name() const { return account; }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+
 
    /**
     * Lends an asset to a credit pool.
@@ -2936,6 +2972,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return account; }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+
 
    /**
     * Withdraws an asset from the specified credit pool.
@@ -2990,19 +3027,17 @@ namespace node { namespace protocol {
 
       share_type                      max_market_fee = MAX_ASSET_SUPPLY;     ///< Market fee charged on a trade is capped to this value.
       
-      uint32_t                        issuer_permissions = UIA_ASSET_ISSUER_PERMISSION_MASK; ///< The flags which the issuer has permission to update.
+      uint32_t                        issuer_permissions = ASSET_ISSUER_PERMISSION_MASK; ///< The flags which the issuer has permission to update.
 
       uint32_t                        flags = 0;                             ///< The currently active flags on this permission.
 
-      price                           core_exchange_rate = price(asset(), asset()); ///< Exchange rate between asset and core for fee pool exchange
+      flat_set< account_name_type >   whitelist_authorities;                 ///< Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
 
-      flat_set<account_name_type>     whitelist_authorities;                 ///< Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
+      flat_set< account_name_type >   blacklist_authorities;                 ///< Accounts which cannot transfer or recieve this asset.
 
-      flat_set<account_name_type>     blacklist_authorities;                 ///< Accounts which cannot transfer or recieve this asset.
+      flat_set< asset_symbol_type >   whitelist_markets;                     ///< The assets that this asset may be traded against in the market
 
-      flat_set<asset_symbol_type>     whitelist_markets;                     ///< The assets that this asset may be traded against in the market
-
-      flat_set<asset_symbol_type>     blacklist_markets;                     ///< The assets that this asset may not be traded against in the market, must not overlap whitelist
+      flat_set< asset_symbol_type >   blacklist_markets;                     ///< The assets that this asset may not be traded against in the market, must not overlap whitelist
 
       extensions_type                 extensions;
 
@@ -3053,35 +3088,35 @@ namespace node { namespace protocol {
     */
    struct equity_options 
    {
-      asset_symbol_type   dividend_asset = SYMBOL_USD;
+      asset_symbol_type   dividend_asset = SYMBOL_USD;                            ///< Asset that is distributed to equity stakeholders
 
-      uint16_t            dividend_share_percent = DIVIDEND_SHARE_PERCENT;            ///< Percentage of incoming assets added to the dividends pool
+      uint16_t            dividend_share_percent = DIVIDEND_SHARE_PERCENT;        ///< Percentage of incoming assets added to the dividends pool
 
-      uint16_t            liquid_dividend_percent = LIQUID_DIVIDEND_PERCENT;          ///< percentage of equity dividends distributed to liquid balances
+      uint16_t            liquid_dividend_percent = LIQUID_DIVIDEND_PERCENT;      ///< Percentage of equity dividends distributed to liquid balances
 
-      uint16_t            staked_dividend_percent = STAKED_DIVIDEND_PERCENT;          ///< percentage of equity dividends distributed to staked balances
+      uint16_t            staked_dividend_percent = STAKED_DIVIDEND_PERCENT;      ///< Percentage of equity dividends distributed to staked balances
 
-      uint16_t            savings_dividend_percent = SAVINGS_DIVIDEND_PERCENT;        ///< percentage of equity dividends distributed to savings balances
+      uint16_t            savings_dividend_percent = SAVINGS_DIVIDEND_PERCENT;    ///< Percentage of equity dividends distributed to savings balances
 
-      uint16_t            liquid_voting_rights = PERCENT_100;                         ///< Amount of votes per asset conveyed to liquid holders of the asset
+      uint16_t            liquid_voting_rights = PERCENT_100;                     ///< Amount of votes per asset conveyed to liquid holders of the asset
 
-      uint16_t            staked_voting_rights = PERCENT_100;                         ///< Amount of votes per asset conveyed to staked holders of the asset
+      uint16_t            staked_voting_rights = PERCENT_100;                     ///< Amount of votes per asset conveyed to staked holders of the asset
 
-      uint16_t            savings_voting_rights = PERCENT_100;                        ///< Amount of votes per asset conveyed to savings holders of the asset
+      uint16_t            savings_voting_rights = PERCENT_100;                    ///< Amount of votes per asset conveyed to savings holders of the asset
 
-      fc::microseconds    min_active_time = EQUITY_ACTIVITY_TIME;
+      fc::microseconds    min_active_time = EQUITY_ACTIVITY_TIME;                 ///< Time that account must have a recent activity reward within to earn dividend
 
-      share_type          min_balance = BLOCKCHAIN_PRECISION;
+      share_type          min_balance = BLOCKCHAIN_PRECISION;                     ///< Minimum amount of equity required to earn dividends
 
-      uint16_t            min_witnesses = EQUITY_MIN_WITNESSES;
+      uint16_t            min_witnesses = EQUITY_MIN_WITNESSES;                   ///< Minimum amount of witness votes required to earn dividends
 
-      uint16_t            boost_balance = EQUITY_BOOST_BALANCE;
+      uint16_t            boost_balance = EQUITY_BOOST_BALANCE;                   ///< Amount of equity balance to earn double dividends
 
-      uint16_t            boost_activity = EQUITY_BOOST_ACTIVITY;
+      uint16_t            boost_activity = EQUITY_BOOST_ACTIVITY;                 ///< Amount of recent activity rewards required to earn double dividends
 
-      uint16_t            boost_witnesses = EQUITY_BOOST_WITNESSES;
+      uint16_t            boost_witnesses = EQUITY_BOOST_WITNESSES;               ///< Amount of witness votes required to earn double dividends
 
-      uint16_t            boost_top = EQUITY_BOOST_TOP_PERCENT;
+      uint16_t            boost_top = EQUITY_BOOST_TOP_PERCENT;                   ///< Percent bonus earned by Top membership accounts
 
       extensions_type     extensions;
 
@@ -3094,7 +3129,9 @@ namespace node { namespace protocol {
     */
    struct credit_options 
    {
-      asset_symbol_type   buyback_asset = SYMBOL_USD;
+      asset_symbol_type   buyback_asset = SYMBOL_USD;                                        ///< Asset used to repurchase the credit asset
+
+      price               buyback_price = price();                                           ///< Price that credit asset is repurchased at to repay creditors.
 
       uint32_t            buyback_share_percent = BUYBACK_SHARE_PERCENT;                     ///< Percentage of incoming assets added to the buyback pool
 
@@ -3151,38 +3188,39 @@ namespace node { namespace protocol {
    /**
     * Creates a new asset object of the asset type provided.
     * 
-    * Assets can be transferred between accounts to represent ownership of anything of value.
-    * All assets can be staked and saved, delegated and recieved. 
+    * Assets can be transferred between accounts
+    * to represent ownership of anything of value.
+    * All assets can be staked and saved, delegated and recieved.
     */
    struct asset_create_operation : public base_operation
    {
       account_name_type               signatory;
 
-      account_name_type               issuer;                       ///< Name of the issuing account, can create units and administrate the asset
+      account_name_type               issuer;                  ///< Name of the issuing account, can create units and administrate the asset
       
-      asset_symbol_type               symbol;                       ///< The ticker symbol of this asset.
+      asset_symbol_type               symbol;                  ///< The ticker symbol of this asset.
 
-      asset_property_type             asset_type;                   ///< The type of the asset.
+      asset_property_type             asset_type;              ///< The type of the asset.
 
-      asset                           coin_liquidity;               ///< Amount of COIN asset to inject into the Coin liquidity pool.  
+      asset                           coin_liquidity;          ///< Amount of COIN asset to inject into the Coin liquidity pool.  
 
-      asset                           usd_liquidity;                ///< Amount of USD asset to inject into the USD liquidity pool.
+      asset                           usd_liquidity;           ///< Amount of USD asset to inject into the USD liquidity pool.
 
-      asset                           credit_liquidity;             ///< Amount of the new asset to inject into the credit pool.                     
+      asset                           credit_liquidity;        ///< Amount of the new asset to issue and inject into the credit pool.                     
 
-      asset_options                   common_options;               ///< Series of options paramters that apply to all asset types. 
+      asset_options                   common_options;          ///< Series of options paramters that apply to all asset types. 
 
-      optional<currency_options>      currency_opts;                ///< Options available for currency assets.
+      optional< currency_options >    currency_opts;           ///< Options available for currency assets.
 
-      optional<bitasset_options>      bitasset_opts;                ///< Options available for BitAssets.
+      optional< bitasset_options >    bitasset_opts;           ///< Options available for BitAssets.
 
-      optional<equity_options>        equity_opts;                  ///< Options available for equity assets.
+      optional< equity_options >      equity_opts;             ///< Options available for equity assets.
 
-      optional<credit_options>        credit_opts;                  ///< Options available for credit assets.
+      optional< credit_options >      credit_opts;             ///< Options available for credit assets.
 
-      optional<gateway_options>       gateway_opts;                 ///< Options available for gateway assets.
+      optional< gateway_options >     gateway_opts;            ///< Options available for gateway assets.
 
-      optional<unique_options>        unique_opts;                  ///< Options available for unique assets.
+      optional< unique_options >      unique_opts;             ///< Options available for unique assets.
 
       extensions_type                 extensions;
 
@@ -3199,23 +3237,23 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             issuer;
+      account_name_type             issuer;                   ///< Account that issued the asset.
 
-      asset_symbol_type             asset_to_update;
+      asset_symbol_type             asset_to_update;          ///< Asset symbol that is being updated
 
-      asset_options                 new_options; 
+      asset_options                 new_options;              ///< Options used for all asset types
 
-      optional<currency_options>    new_currency_opts;        ///< Options available for currency assets
+      optional< currency_options >  new_currency_opts;        ///< Options available for currency assets
 
-      optional<bitasset_options>    new_bitasset_opts;        ///< Options available for BitAssets.
+      optional< bitasset_options >  new_bitasset_opts;        ///< Options available for BitAssets.
 
-      optional<equity_options>      new_equity_opts;          ///< Options available for equity assets
+      optional< equity_options >    new_equity_opts;          ///< Options available for equity assets
 
-      optional<credit_options>      new_credit_opts;          ///< Options available for credit assets
+      optional< credit_options >    new_credit_opts;          ///< Options available for credit assets
 
-      optional<gateway_options>     new_gateway_opts;         ///< Options available for gateway assets
+      optional< gateway_options >   new_gateway_opts;         ///< Options available for gateway assets
 
-      optional<unique_options>      new_unique_opts;          ///< Options available for unique assets
+      optional< unique_options >    new_unique_opts;          ///< Options available for unique assets
 
       extensions_type               extensions;
 
@@ -3223,7 +3261,8 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return issuer; }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
-   
+
+
    /**
     * Issues an amount of an asset.
     * 
@@ -3262,71 +3301,9 @@ namespace node { namespace protocol {
 
       extensions_type       extensions;
 
-      void            validate()const;
-      const account_name_type& get_creator_name() const { return payer; }
-      void                   get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-   };
-
-
-   /**
-    * Used to transfer accumulated fees back to the issuer's balance.
-    */
-   struct asset_claim_fees_operation : public base_operation
-   {
-      account_name_type    signatory;
-
-      account_name_type    issuer;             ///< The issuer of the asset
-
-      asset                amount_to_claim;    ///< Asset claimed must be issued by the issuer
-
-      extensions_type      extensions;
-
-      void            validate()const;
-      const account_name_type& get_creator_name() const { return issuer; }
-      void                   get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-   };
-
-
-   /**
-    * Transfers Core asset from the fee pool of a specified asset back to the issuer.
-    */
-   struct asset_claim_pool_operation : public base_operation
-   {
-      account_name_type      signatory;
-      
-      account_name_type      issuer;             ///< Account which will be used for transfering Core asset
-
-      asset_symbol_type      symbol;             ///< Asset symbol
-
-      asset                  amount_to_claim;    ///< denominated in the core asset
-
-      extensions_type        extensions;
-
       void                  validate()const;
-      const account_name_type& get_creator_name() const { return issuer; }
+      const account_name_type& get_creator_name() const { return payer; }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-   };
-
-    /**
-    * Transfers Core asset to the fee pool of a specified asset.
-    * 
-    * Fee pool can be used to pay for the trading fees of a given asset. 
-    */
-   struct asset_fund_fee_pool_operation : public base_operation
-   {
-      account_name_type       signatory;
-      
-      account_name_type       from_account;      ///< Account which will be used for transfering Core asset
-
-      asset_symbol_type       symbol;            ///< Asset symbol
-
-      asset                   pool_amount;       ///< Must be core asset
-
-      extensions_type         extensions;
-
-      void                    validate()const;
-      const account_name_type& get_creator_name() const { return from_account; }
-      void                    get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
 
@@ -3338,27 +3315,31 @@ namespace node { namespace protocol {
     */
    struct asset_update_issuer_operation : public base_operation
    {
-      account_name_type      signatory;
+      account_name_type         signatory;
       
-      account_name_type      issuer;
+      account_name_type         issuer;
 
-      asset_symbol_type      asset_to_update;
+      asset_symbol_type         asset_to_update;
 
-      account_name_type      new_issuer;
+      account_name_type         new_issuer;
 
-      extensions_type        extensions;
+      extensions_type           extensions;
 
-      void                   validate()const;
-      const account_name_type& get_creator_name() const { return issuer; }
-      void get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                      validate()const;
+      const account_name_type&  get_creator_name() const { return issuer; }
+      void                      get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+
 
    /**
     * Update the set of feed-producing accounts for a BitAsset.
     *
-    * BitAssets have price feeds selected by taking the median values of recommendations from a set of feed producers.
-    * This operation is used to specify which accounts may produce feeds for a given BitAsset.
-    * All valid feeds supplied by feed producers in @ref new_feed_producers, which were already feed producers
+    * BitAssets have price feeds selected by taking the 
+    * median values of recommendations from a set of feed producers.
+    * This operation is used to specify which
+    * accounts may produce feeds for a given BitAsset.
+    * All valid feeds supplied by feed producers 
+    * in @ref new_feed_producers, which were already feed producers
     * prior to execution of this operation, will be preserved.
     */
    struct asset_update_feed_producers_operation : public base_operation
@@ -3369,12 +3350,12 @@ namespace node { namespace protocol {
 
       asset_symbol_type               asset_to_update;
 
-      flat_set<account_name_type>     new_feed_producers;
+      flat_set< account_name_type >   new_feed_producers;
 
       extensions_type                 extensions;
 
       void                            validate()const;
-      const account_name_type& get_creator_name() const { return issuer; }
+      const account_name_type&        get_creator_name() const { return issuer; }
       void                            get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3382,33 +3363,40 @@ namespace node { namespace protocol {
    /**
     * Publish price feeds for market-issued assets.
     *
-    * Price feed providers use this operation to publish their price feeds for market-issued assets. A price feed is
-    * used to tune the market for a particular market-issued asset. For each value in the feed, the median across all
-    * committee_member feeds for that asset is calculated and the market for the asset is configured with the median of that
-    * value.
+    * Price feed providers use this operation to publish 
+    * their price feeds for market-issued assets. A price feed is
+    * used to tune the market for a particular market-issued asset. 
+    * For each value in the feed, the median across all
+    * committee_member feeds for that asset is calculated and the 
+    * market for the asset is configured with the median of that value.
     *
-    * The feed in the operation contains three prices: a call price limit, a short price limit, and a settlement price.
-    * The call limit price is structured as (collateral asset) / (debt asset) and the short limit price is structured
-    * as (asset for sale) / (collateral asset). Note that the asset IDs are opposite to eachother, so if we're
-    * publishing a feed for USD, the call limit price will be CORE/USD and the short limit price will be USD/CORE. The
-    * settlement price may be flipped either direction, as long as it is a ratio between the market-issued asset and
+    * The feed in the operation contains three prices:
+    * a call price limit, a short price limit, and a settlement price.
+    * The call limit price is structured as (collateral asset) / (debt asset) 
+    * and the short limit price is structured
+    * as (asset for sale) / (collateral asset).
+    * Note that the asset IDs are opposite to eachother, so if we're
+    * publishing a feed for USD, the call limit price 
+    * will be CORE/USD and the short limit price will be USD/CORE. The
+    * settlement price may be flipped either direction, 
+    * as long as it is a ratio between the market-issued asset and
     * its collateral.
     */
    struct asset_publish_feed_operation : public base_operation
    {
       account_name_type          signatory;
       
-      account_name_type          publisher;
+      account_name_type          publisher;  ///< Account publishing the price feed
 
-      asset_symbol_type          symbol; ///< asset for which the feed is published
+      asset_symbol_type          symbol;     ///< Asset for which the feed is published
 
-      price_feed                 feed;
+      price_feed                 feed;       ///< Exchange rate between bitasset and backing asset
 
       extensions_type            extensions;
 
-      void            validate()const;
-      const account_name_type& get_creator_name() const { return publisher; }
-      void                   get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                       validate()const;
+      const account_name_type&   get_creator_name() const { return publisher; }
+      void                       get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
 
@@ -3430,10 +3418,12 @@ namespace node { namespace protocol {
    {
       account_name_type       signatory;
 
-      account_name_type       account;      ///< Account requesting the force settlement. This account pays the fee.
+      account_name_type       account;          ///< Account requesting the force settlement. This account pays the fee.
       
-      asset                   amount;       ///< Amount of asset to force settle. This must be a market-issued asset.
+      asset                   amount;           ///< Amount of asset to force settle. Set to 0 to cancel order. Must be a market-issued asset.
 
+      account_name_type       interface;        ///< Account of the interface used to broadcast the operation.
+      
       extensions_type         extensions;
 
       void                    validate()const;
@@ -3480,19 +3470,15 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates a new witness for a specified account, enabling block production.
+    * Creates a new witness for a specified account, 
+    * enabling block production.
     * 
-    * Users who wish to become a witness must pay a fee acceptable to
-    * the current witnesses to apply for the position and allow voting
-    * to begin.
-    * 
-    * If the owner isn't a witness they will become a witness.  Witnesses
-    * are charged a fee equal to 1 weeks worth of witness pay which in
-    * turn is derived from the current share supply. The fee is
-    * only applied if the owner is not already a witness.
-    * If the block_signing_key is null then the witness is removed from
-    * contention. The network will pick the top voted witnesses for
-    * producing blocks.
+    * If the owner isn't a witness they will become a witness, 
+    * and become eligible to recieve witness votes 
+    * from all stakeholding accounts.
+    *  
+    * The network will pick the top voted witnesses 
+    * and top producing miners for producing blocks.
     */
    struct witness_update_operation : public base_operation
    {
@@ -3515,8 +3501,6 @@ namespace node { namespace protocol {
       chain_properties          props;                  ///< chain properties values for selection of adjustable network parameters. 
 
       bool                      active = true;          ///< Set active to true to activate, false to deactivate; 
-
-      asset                     fee;                    ///< The fee paid to register a new witness.
 
       void validate()const;
       const account_name_type& get_creator_name() const { return owner; }
@@ -3584,9 +3568,9 @@ namespace node { namespace protocol {
 
       void validate()const;
 
-      const account_name_type& get_creator_name() const { return work.get< equihash_proof_of_work >().input.miner_account; }
+      const account_name_type& get_creator_name() const { return work.get< proof_of_work >().input.miner_account; }
 
-      void get_required_active_authorities( flat_set<account_name_type>& a )const;
+      void get_required_active_authorities( flat_set<account_name_type>& a )const;      ///< No signatory authorities required, proof of work is implicit authority.
 
       void get_required_authorities( vector< authority >& a )const
       {
@@ -4703,7 +4687,6 @@ FC_REFLECT( node::protocol::asset_options,
          (max_market_fee)
          (issuer_permissions)
          (flags)
-         (core_exchange_rate)
          (whitelist_authorities)
          (blacklist_authorities)
          (whitelist_markets)
@@ -4817,29 +4800,6 @@ FC_REFLECT( node::protocol::asset_reserve_operation,
          (signatory)
          (payer)
          (amount_to_reserve)
-         (extensions) 
-         );
-
-FC_REFLECT( node::protocol::asset_claim_fees_operation, 
-         (signatory)
-         (issuer)
-         (amount_to_claim)
-         (extensions) 
-         );
-
-FC_REFLECT( node::protocol::asset_claim_pool_operation, 
-         (signatory)
-         (issuer)
-         (symbol)
-         (amount_to_claim)
-         (extensions) 
-         );
-
-FC_REFLECT( node::protocol::asset_fund_fee_pool_operation, 
-         (signatory)
-         (from_account)
-         (symbol)
-         (pool_amount)
          (extensions) 
          );
 

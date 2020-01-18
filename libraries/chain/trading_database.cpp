@@ -2022,12 +2022,26 @@ void database::liquid_limit_exchange( const asset& input, const price& limit_pri
 } FC_CAPTURE_AND_RETHROW( (input)(limit_price)(account)(pool) ) }
 
 
+/**
+ * Adds new capital reserves to an asset's credit liquidity pool.
+ * 
+ * Returns depositors the credit pool asset which earns a share of
+ * incoming interest when withdrawn.
+ */
 void database::credit_lend( const asset& input, const account_object& account, const asset_credit_pool_object& pool)
 { try {
-   FC_ASSERT( input.symbol == pool.base_symbol );
+   FC_ASSERT( input.symbol == pool.base_symbol,
+      "Incorrect pool for input asset" );
+
    price credit_price = pool.current_price();
    asset borrowed = input * credit_price;
+   asset liquid = get_liquid_balance( account.name, input.symbol );
+
+   FC_ASSERT( liquid >= input,
+      "Account has insufficient funds to lend to pool." );
+
    adjust_liquid_balance( account.name, -input );
+   adjust_pending_supply( input );
 
    modify( pool, [&]( asset_credit_pool_object& acpo )
    {
@@ -2041,17 +2055,33 @@ void database::credit_lend( const asset& input, const account_object& account, c
 } FC_CAPTURE_AND_RETHROW( (input)(account)(pool) ) }
 
 
+/**
+ * Withdraws capital reserves from an asset's credit liquidity pool.
+ * 
+ * Exchanges a credit pool asset for its underlying reserve asset 
+ * at the current exchange rate.
+ */
 void database::credit_withdraw( const asset& input, const account_object& account, const asset_credit_pool_object& pool)
 { try {
-   FC_ASSERT( input.symbol == pool.credit_symbol );
+   FC_ASSERT( input.symbol == pool.credit_symbol,
+      "Incorrect pool for input asset" );
+   asset liquid = get_liquid_balance( account.name, input.symbol );
+   asset credit = pool.credit_balance;
    price credit_price = pool.current_price();
    asset withdrawn = input * credit_price;
+
+   FC_ASSERT( liquid >= input,
+      "Account has insufficient funds to withdraw from pool." );
+   FC_ASSERT( pool.base_balance >= withdrawn,
+      "Credit pool does not have sufficient available base balance, please wait for outstanding loans to be repaid." );
+
    adjust_liquid_balance( account.name, -input );
+   adjust_pending_supply( input );
 
    modify( pool, [&]( asset_credit_pool_object& acpo )
    {
-      acpo.base_balance -= input;
-      acpo.credit_balance -= withdrawn;
+      acpo.base_balance -= withdrawn;
+      acpo.credit_balance -= input;
       acpo.last_price = credit_price;
    });
 
@@ -2061,13 +2091,27 @@ void database::credit_withdraw( const asset& input, const account_object& accoun
 
 
 /**
- * Checks if the collateral asset and the debt asset is sufficiently liquid
- * to the core asset, and that the amount lent overall is less than 50% of
- * the amount available from the core to debt asset liquidity pool.
+ * Checks whether a proposed credit loan has sufficient liquidity.
+ * 
+ * Confirms that the credit asset has sufficient liquidity to the core asset,
+ * and that the debt asset has greater outstanding debt
+ * than market_max_credit_ratio (50%) of the amount that the liquidity pool 
+ * has available in exchange for the core asset.
+ * 
+ * Credit Check Objective:
+ * 
+ * Ensure that the credit loan system is fully solvent and can be liquidated with only liquidity pool reserves.
+ * 
+ * 1 - Prevent Debt asset from becoming too depressed in the event of a liquidation.
+ * 2 - Prevent Collateral asset from becoming too depressed in the event of a liquidation.
+ * 3 - Ensure sufficient pool balances to support a full liquidation of an order 10 times the requested size.
+ * 4 - Ensure that no assets accumulate margin debt in excess of the total available Coin liquidity for the debt.
+ * 5 - Ensure sufficient liquidity for Coin in the credit asset liquidity pool.
  */
-bool database::credit_check( const asset& debt, const asset& collateral, const asset_credit_pool_object& credit_pool)
+bool database::credit_check( const asset& debt, const asset& collateral, const asset_credit_pool_object& credit_pool )
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const asset_liquidity_pool_object& credit_asset_pool = get_liquidity_pool( SYMBOL_COIN, SYMBOL_CREDIT );  //  Credit : Coin Liquidity pool
    asset collateral_coin = collateral;
    asset debt_coin = debt;
    asset debt_outstanding = credit_pool.borrowed_balance;
@@ -2084,20 +2128,24 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
    {
       collateral_coin = 10 * collateral;
    }
-   
-   if( debt.symbol != SYMBOL_COIN )
+
+   if( debt.symbol != SYMBOL_COIN )     // Coin cost of acquiring 10 times debt amount
    {
-      const asset_liquidity_pool_object& debt_pool = get_liquidity_pool( debt.symbol );
-      if( debt_pool.asset_balance( debt.symbol ) >= 10 * debt )
+      const asset_liquidity_pool_object& debt_pool = get_liquidity_pool( debt.symbol );   // Debt : Coin Liquidity pool
+
+      if( debt_pool.asset_balance( debt.symbol ) >= 10 * debt )   
       {
-         debt_coin = liquid_acquire( 10 * debt, SYMBOL_COIN, false, false);
+         debt_coin = liquid_acquire( 10 * debt, SYMBOL_COIN, false, false );
       }
-      else
+      else       // Pool does not have enough debt asset 
       {
          return false;
       }
+      
       if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * props.median_props.market_max_credit_ratio ) / PERCENT_100 )
       {
+         // If too much debt is outstanding on the specified debt asset, compared with available liquidity to Coin
+         // Prevent margin liquidations from running out of available debt asset liquidity
          return false;
       }
    }
@@ -2106,21 +2154,30 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
       debt_coin = 10 * debt;
    }
 
-   if( collateral_coin <= debt_coin )
+   if( credit_asset_pool.asset_balance( SYMBOL_COIN ) >= 10 * debt_coin )  // Not enough coin to cover cost of debt with credit 
    {
-      return false;
+      if( collateral_coin >= debt_coin )    // Order 10 times requested would be insolvent due to illiquidity
+      {
+         return true;     // Requested margin order passes all credit checks 
+      }
+      else        
+      {
+         return false;
+      }
    }
    else
    {
-      return true;
+      return false;
    }
+
 } FC_CAPTURE_AND_RETHROW( (debt)(collateral)(credit_pool) ) }
 
 
 /**
- * Checks whether a proposed margin position has sufficient liquidity to the 
- * core asset, whether the credit asset has sufficient liquidity to the core asset,
- * and whether the debt asset has greater outstanding debt
+ * Checks whether a proposed margin position has sufficient liquidity.
+ * 
+ * Confirms that the credit asset has sufficient liquidity to the core asset,
+ * and that the debt asset has greater outstanding debt
  * than market_max_credit_ratio (50%) of the amount that the liquidity pool 
  * has available in exchange for the core asset.
  * 
@@ -2134,11 +2191,19 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
  * 4 - Ensure sufficient pool balances to support a full liquidation of an order 10 times the requested size.
  * 5 - Ensure that no assets accumulate margin debt in excess of the total available Coin liquidity for the debt.
  * 6 - Ensure sufficient liquidity for Coin in the credit asset liquidity pool.
+ * 
+ * @todo Enable margin positons in liquidity and credit pool assets by checking 
+ * liquidity of underlying assets after redemptions.
+ * 
+ * @todo Enhance checks to prevent an arbitrary asset from being issued,
+ * lent to its pool, then borrowed and deliberately defaulted on by manipulating the
+ * price of the debt or collateral asset, which purchases the issued asset with credit
+ * and captures the network credit default acquisition privately.
  */
-bool database::margin_check( const asset& debt, const asset& position, const asset& collateral, const asset_credit_pool_object& credit_pool)
+bool database::margin_check( const asset& debt, const asset& position, const asset& collateral, const asset_credit_pool_object& credit_pool )
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const asset_liquidity_pool_object& credit_asset_pool = get_liquidity_pool( SYMBOL_COIN, SYMBOL_CREDIT );  //  Credit : Coin Liquidity pool
+   const asset_liquidity_pool_object& credit_asset_pool = get_liquidity_pool( SYMBOL_COIN, SYMBOL_CREDIT );    //  Credit : Coin Liquidity pool
    asset collateral_coin = collateral;
    asset position_coin = position;
    asset debt_coin = debt;
@@ -2210,215 +2275,6 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
 } FC_CAPTURE_AND_RETHROW( (debt)(position)(collateral)(credit_pool) ) }
 
 
-
-/** 
- * Compounds interest on all credit loans, and checks collateralization
- * ratios for all loans, and liquidates them if they are under collateralized.
- */
-void database::process_credit_updates()
-{ try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
-   const auto& loan_idx = get_index< credit_loan_index >().indices().get< by_liquidation_spread >();
-   auto loan_itr = loan_idx.begin();
-
-   while( loan_itr != loan_idx.end() )
-   {
-      const asset_object& debt_asset = get_asset( loan_itr->debt_asset() );
-      const asset_credit_pool_object& credit_pool = get_credit_pool( loan_itr->debt_asset(), false );
-      uint16_t fixed = props.median_props.credit_min_interest;
-      uint16_t variable = props.median_props.credit_variable_interest;
-      share_type interest_rate = credit_pool.interest_rate( fixed, variable );
-      asset total_interest = asset( 0, debt_asset.symbol );
-
-      while( loan_itr != loan_idx.end() && 
-         loan_itr->debt_asset() == debt_asset.symbol )
-      {
-         const asset_object& collateral_asset = get_asset( loan_itr->collateral_asset() );
-         const asset_liquidity_pool_object& pool = get_liquidity_pool( loan_itr->symbol_a, loan_itr->symbol_b );
-         price col_debt_price = pool.base_hour_median_price( loan_itr->collateral_asset() );
-
-         while( loan_itr != loan_idx.end() &&
-            loan_itr->debt_asset() == debt_asset.symbol &&
-            loan_itr->collateral_asset() == collateral_asset.symbol )
-         {
-            const credit_loan_object& loan = *loan_itr;
-
-            asset max_debt = ( loan.collateral * col_debt_price * props.median_props.credit_liquidation_ratio ) / PERCENT_100;
-            price liquidation_price = price( loan.collateral, max_debt );
-            asset interest = ( loan.debt * interest_rate * ( now - loan.last_updated ).to_seconds() ) / ( fc::days(365).to_seconds() * PERCENT_100 );
-            total_interest += interest;
-
-            modify( loan, [&]( credit_loan_object& c )
-            {
-               c.debt += interest;
-               c.interest += interest;
-               c.loan_price = price( c.collateral, c.debt );
-               c.liquidation_price = liquidation_price;
-               c.last_interest_rate = interest_rate;
-               c.last_updated = now;
-            });
-
-            if( loan.liquidation_price > loan.loan_price )  // If loan falls below liquidation price
-            {
-               liquidate_credit_loan( loan );
-            }
-
-            ++loan_itr;
-         }
-      }
-
-      modify( credit_pool, [&]( asset_credit_pool_object& c )
-      {
-         c.last_interest_rate = interest_rate;
-         c.borrowed_balance += total_interest;
-      });
-   }
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/** 
- * Compounds interest on all margin orders, and checks collateralization
- * ratios for all orders, and liquidates them if they are under collateralized.
- * Places orders into the book in liquidation if they reach their limit stop or take profit 
- * price.
- */
-void database::process_margin_updates()
-{ try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
-   const auto& margin_idx = get_index< margin_order_index >().indices().get< by_debt_collateral_position >();
-   auto margin_itr = margin_idx.begin();
-
-   while( margin_itr != margin_idx.end() )
-   {
-      const asset_object& debt_asset = get_asset( margin_itr->debt_asset() );
-      const asset_credit_pool_object& credit_pool = get_credit_pool( margin_itr->debt_asset(), false );
-      uint16_t fixed = props.median_props.credit_min_interest;
-      uint16_t variable = props.median_props.credit_variable_interest;
-      share_type interest_rate = credit_pool.interest_rate( fixed, variable );
-      asset total_interest = asset( 0, debt_asset.symbol );
-
-      while( margin_itr != margin_idx.end() && 
-         margin_itr->debt_asset() == debt_asset.symbol )
-      {
-         const asset_object& collateral_asset = get_asset( margin_itr->collateral_asset() );
-
-         asset_symbol_type symbol_a;
-         asset_symbol_type symbol_b;
-         if( debt_asset.id < collateral_asset.id )
-         {
-            symbol_a = debt_asset.symbol;
-            symbol_b = collateral_asset.symbol;
-         }
-         else
-         {
-            symbol_b = debt_asset.symbol;
-            symbol_a = collateral_asset.symbol;
-         }
-
-         const asset_liquidity_pool_object& col_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
-         price col_debt_price = col_debt_pool.base_hour_median_price( debt_asset.symbol );
-
-         while( margin_itr != margin_idx.end() &&
-            margin_itr->debt_asset() == debt_asset.symbol &&
-            margin_itr->collateral_asset() == collateral_asset.symbol )
-         {
-            const asset_object& position_asset = get_asset( margin_itr->position_asset() );
-
-            asset_symbol_type symbol_a;
-            asset_symbol_type symbol_b;
-            if( debt_asset.id < position_asset.id )
-            {
-               symbol_a = debt_asset.symbol;
-               symbol_b = position_asset.symbol;
-            }
-            else
-            {
-               symbol_b = debt_asset.symbol;
-               symbol_a = position_asset.symbol;
-            }
-
-            const asset_liquidity_pool_object& pos_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
-            price pos_debt_price = pos_debt_pool.base_hour_median_price( debt_asset.symbol );
-            
-            while( margin_itr != margin_idx.end() &&
-               margin_itr->debt_asset() == debt_asset.symbol &&
-               margin_itr->collateral_asset() == collateral_asset.symbol &&
-               margin_itr->position_asset() == position_asset.symbol )
-            {
-               const margin_order_object& margin = *margin_itr;
-               asset collateral_debt_value;
-
-               if( margin.collateral_asset() != margin.debt_asset() )
-               {
-                  collateral_debt_value = margin.collateral * col_debt_price;
-               }
-               else
-               {
-                  collateral_debt_value = margin.collateral;
-               }
-
-               asset position_debt_value = margin.position_balance * pos_debt_price;
-               asset equity = margin.debt_balance + position_debt_value + collateral_debt_value;
-               asset unrealized_value = margin.debt_balance + position_debt_value - margin.debt;
-               share_type collateralization = ( PERCENT_100 * ( equity - margin.debt ) ) / margin.debt;
-               
-               asset interest = ( margin.debt * interest_rate * ( now - margin.last_updated ).to_seconds() ) / ( fc::days(365).to_seconds() * PERCENT_100 );
-               total_interest += interest;
-
-               modify( margin, [&]( margin_order_object& m )
-               {
-                  m.debt += interest;
-                  m.interest += interest;
-                  m.collateralization = collateralization;
-                  m.unrealized_value = unrealized_value;
-                  m.last_interest_rate = interest_rate;
-                  m.last_updated = now;
-               });
-
-               if( margin.collateralization < props.median_props.margin_liquidation_ratio ||
-                  pos_debt_price <= margin.stop_loss_price ||
-                  pos_debt_price >= margin.take_profit_price )  
-               {
-                  close_margin_order( margin ); // If margin value falls below collateralization threshold, or stop prices are reached
-               }
-               else if( pos_debt_price <= margin.limit_stop_loss_price && !margin.liquidating )  
-               {
-                  modify( margin, [&]( margin_order_object& m )
-                  {
-                     m.liquidating = true;
-                     m.last_updated = now;
-                     m.sell_price = ~m.limit_stop_loss_price;   // If price falls below limit stop loss, reverse order and sell at limit price
-                  });
-                  apply_order( margin );
-               }
-               else if( pos_debt_price >= margin.limit_take_profit_price && !margin.liquidating )  
-               {
-                  modify( margin, [&]( margin_order_object& m )
-                  {
-                     m.liquidating = true;
-                     m.last_updated = now;
-                     m.sell_price = ~m.limit_take_profit_price;  // If price rises above take profit, reverse order and sell at limit price
-                  });
-                  apply_order( margin );
-               }
-
-               ++margin_itr;
-
-            }     // Same Position, Collateral, and Debt
-         }        // Same Collateral and Debt
-      }           // Same Debt
-
-      modify( credit_pool, [&]( asset_credit_pool_object& c )
-      {
-         c.last_interest_rate = interest_rate;
-         c.borrowed_balance += total_interest;
-      });
-   }
-} FC_CAPTURE_AND_RETHROW() }
-
-
 /**
  * Deleverages a loan that has gone under its collateralization
  * requirements, by selling the collateral to the liquidity arrays.
@@ -2451,14 +2307,20 @@ void database::liquidate_credit_loan( const credit_loan_object& loan )
 
 
 /**
- * Acquires a debt asset using network credit asset
- * by issuing new credit to the liquidity pool of the core asset
- * and purchasing the debt asset.
+ * Acquires a debt asset using network credit asset.
+ * 
+ * Issues new credit asset to the liquidity pool of coin
+ * and purchases the debt asset using the coin proceeds
  */
 asset database::network_credit_acquisition( const asset& amount, bool execute )
 { try {
    asset coin_acquired;
    asset credit_acquired;
+
+   const asset_object& asset_obj = get_asset( amount.symbol );
+   FC_ASSERT( asset_obj.asset_type != CREDIT_POOL_ASSET && asset_obj.asset_type != LIQUIDITY_POOL_ASSET, 
+      "Cannot acquire assets that do not facilitate liquidity pools." );
+
    if( amount.symbol != SYMBOL_CREDIT )
    {
       if( amount.symbol != SYMBOL_COIN )
@@ -2480,6 +2342,7 @@ asset database::network_credit_acquisition( const asset& amount, bool execute )
    return credit_acquired;
 } FC_CAPTURE_AND_RETHROW() }
 
+
 // Look for expired transactions in the deduplication list, and remove them.
 // Transactions must have expired by at least two forking windows in order to be removed.
 void database::clear_expired_transactions()
@@ -2493,11 +2356,12 @@ void database::clear_expired_transactions()
 }
 
 /**
- * All margin positions are force closed at the swan price
+ * All margin positions are force closed at the swan price.
+ * 
  * Collateral received goes into a force-settlement fund
  * No new margin positions can be created for this asset
  * Force settlement happens without delay at the swan price, 
- * deducting from force-settlement fund
+ * deducting from force-settlement fund.
  * No more asset updates may be issued.
 */
 void database::globally_settle_asset( const asset_object& mia, const price& settlement_price )
@@ -2539,8 +2403,8 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
       obj.settlement_price = asset( original_mia_supply, mia.symbol ) / collateral_gathered;     // Activate global settlement price on asset
       obj.settlement_fund = collateral_gathered;
    });
-
 } FC_CAPTURE_AND_RETHROW( (mia)(settlement_price) ) }
+
 
 void database::revive_bitasset( const asset_object& bitasset )
 { try {
@@ -2574,6 +2438,7 @@ void database::revive_bitasset( const asset_object& bitasset )
       
    cancel_bids_and_revive_mpa( bitasset, bad );
 } FC_CAPTURE_AND_RETHROW( (bitasset) ) }
+
 
 void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad )
 { try {
@@ -2669,8 +2534,9 @@ void database::cancel_limit_order( const limit_order_object& order )
 }
 
 /**
- * Liquidates the remaining position held in a margin order, and 
- * if there is sufficient debt asset, repays the loan.
+ * Liquidates the remaining position held in a margin order.
+ * 
+ * If there is sufficient debt assetremaining, repays the loan.
  * If the order is in default, issues network credit to 
  * acquire the remaining deficit, and applies the default balance
  * to the account.

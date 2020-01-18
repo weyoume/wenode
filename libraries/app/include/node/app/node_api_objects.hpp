@@ -1072,8 +1072,7 @@ struct asset_api_obj
       market_fee_percent( a.options.market_fee_percent ),
       market_fee_share_percent( a.options.market_fee_share_percent ),
       issuer_permissions( a.options.issuer_permissions ),
-      flags( a.options.flags ),
-      core_exchange_rate( a.options.core_exchange_rate )
+      flags( a.options.flags )
       {
          for( auto auth : a.options.whitelist_authorities )
          {
@@ -1112,7 +1111,6 @@ struct asset_api_obj
    int64_t                         max_market_fee;                        // Market fee charged on a trade is capped to this value.
    uint32_t                        issuer_permissions;                    // The flags which the issuer has permission to update.
    uint32_t                        flags;                                 // The currently active flags on this permission.
-   price                           core_exchange_rate;                    // Exchange rate between asset and core for fee pool exchange
    vector<account_name_type>       whitelist_authorities;                 // Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
    vector<account_name_type>       blacklist_authorities;                 // Accounts which cannot transfer or recieve this asset.
    vector<asset_symbol_type>       whitelist_markets;                     // The assets that this asset may be traded against in the market
@@ -1132,8 +1130,6 @@ struct bitasset_data_api_obj
       force_settled_volume( b.force_settled_volume.value ),
       settlement_price( b.settlement_price ),
       settlement_fund( b.settlement_fund ),
-      asset_cer_updated( b.asset_cer_updated ),
-      feed_cer_updated( b.asset_cer_updated ),
       feed_lifetime( b.options.feed_lifetime ),
       minimum_feeds( b.options.minimum_feeds ),
       force_settlement_delay( b.options.force_settlement_delay ),
@@ -1159,8 +1155,6 @@ struct bitasset_data_api_obj
    int64_t                                                 force_settled_volume;                    // This is the volume of this asset which has been force-settled this 24h interval
    price                                                   settlement_price;      // Price at which force settlements of a black swanned asset will occur
    asset                                                   settlement_fund;       // Amount of collateral which is available for force settlement
-   bool                                                    asset_cer_updated;       // Track whether core_exchange_rate in corresponding asset_object has updated
-   bool                                                    feed_cer_updated;// Track whether core exchange rate in current feed has updated
    fc::microseconds                                        feed_lifetime;                            // Time before a price feed expires
    uint8_t                                                 minimum_feeds;                                              // Minimum number of unexpired feeds required to extract a median feed from
    fc::microseconds                                        force_settlement_delay;                // This is the delay between the time a long requests settlement and the chain evaluates the settlement
@@ -1221,8 +1215,6 @@ struct credit_data_api_obj
       buyback_asset( c.buyback_asset ),
       buyback_pool( c.buyback_pool ),
       buyback_price( c.buyback_price ),
-      symbol_a( c.symbol_a ),
-      symbol_b( c.symbol_b ),
       last_buyback( c.last_buyback ),
       buyback_share_percent( c.options.buyback_share_percent ),
       liquid_fixed_interest_rate( c.options.liquid_fixed_interest_rate ),
@@ -1239,8 +1231,6 @@ struct credit_data_api_obj
    asset_symbol_type          buyback_asset;                             // Symbol used to buyback credit assets
    asset                      buyback_pool;                              // Amount of assets pooled to buyback the asset at next interval
    price                      buyback_price;                             // Price at which the credit asset is bought back
-   asset_symbol_type          symbol_a;                                  // the asset with the lower id in the buyback price pair
-   asset_symbol_type          symbol_b;                                  // the asset with the greater id in the buyback price pair
    time_point                 last_buyback;                              // Time that the asset was last updated
    uint32_t                   buyback_share_percent;                     // Percentage of incoming assets added to the buyback pool
    uint32_t                   liquid_fixed_interest_rate;                // Fixed component of Interest rate of the asset for liquid balances.
@@ -1563,7 +1553,6 @@ struct witness_api_obj
       miner_virtual_last_update( w.miner_virtual_last_update ),
       miner_virtual_position( w.miner_virtual_position ),
       miner_virtual_scheduled_time( w.miner_virtual_scheduled_time ),
-      last_work( w.last_work ),
       running_version( w.running_version ),
       hardfork_version_vote( w.hardfork_version_vote ),
       hardfork_time_vote( w.hardfork_time_vote ){}
@@ -1603,8 +1592,7 @@ struct witness_api_obj
    uint128_t                    miner_virtual_last_update;
    uint128_t                    miner_virtual_position;
    uint128_t                    miner_virtual_scheduled_time;
-   digest_type                  last_work;
-   version                      running_version;                  // This field represents the WeYouMe blockchain version the witness is running.
+   version                      running_version;                  // The WeYouMe blockchain version the witness is running.
    hardfork_version             hardfork_version_vote;
    time_point                   hardfork_time_vote;
 };
@@ -2551,7 +2539,6 @@ FC_REFLECT( node::app::asset_api_obj,
          (max_market_fee)
          (issuer_permissions)
          (flags)
-         (core_exchange_rate)
          (whitelist_authorities)
          (blacklist_authorities)
          (whitelist_markets)
@@ -2570,8 +2557,6 @@ FC_REFLECT( node::app::bitasset_data_api_obj,
          (force_settled_volume)
          (settlement_price)
          (settlement_fund)
-         (asset_cer_updated)
-         (feed_cer_updated)
          (feed_lifetime)
          (minimum_feeds)
          (force_settlement_delay)
@@ -2775,7 +2760,6 @@ FC_REFLECT( node::app::witness_api_obj,
          (miner_virtual_last_update)
          (miner_virtual_position)
          (miner_virtual_scheduled_time)
-         (last_work)
          (running_version)
          (hardfork_version_vote)
          (hardfork_time_vote)

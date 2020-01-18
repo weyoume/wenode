@@ -2277,9 +2277,13 @@ namespace node { namespace protocol {
 
    void bitasset_options::validate() const
    {
-      FC_ASSERT( minimum_feeds > 0);
+      FC_ASSERT( minimum_feeds > 0 );
       FC_ASSERT( force_settlement_offset_percent <= PERCENT_100 );
       FC_ASSERT( maximum_force_settlement_volume <= PERCENT_100 );
+      FC_ASSERT( feed_lifetime >= MIN_FEED_LIFETIME,
+         "Feed lifetime must be greater than network minimum." );
+      FC_ASSERT( force_settlement_delay >= MIN_SETTLEMENT_DELAY,
+         "Force Settlement delay must be greater than network minimum." );
    }
 
    void asset_options::validate()const
@@ -2321,13 +2325,13 @@ namespace node { namespace protocol {
       }
       
       // There must be no high bits in permissions whose meaning is not known.
-      FC_ASSERT( !(issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK) );
+      FC_ASSERT( !( issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK ) );
       // The global_settle flag may never be set (this is a permission only)
-      FC_ASSERT( !(flags & global_settle) );
-      core_exchange_rate.validate();
-      if(!whitelist_authorities.empty() || !blacklist_authorities.empty())
+      FC_ASSERT( !( flags & global_settle ) );
+
+      if( !whitelist_authorities.empty() || !blacklist_authorities.empty() )
       {
-         FC_ASSERT( flags & white_list );
+         FC_ASSERT( flags & balance_white_list );
       }
          
       for( auto item : whitelist_markets )
@@ -2477,12 +2481,6 @@ namespace node { namespace protocol {
       FC_ASSERT( is_valid_symbol( asset_to_update ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_update ) );
 
-      if( new_issuer )
-      {
-         FC_ASSERT( issuer != *new_issuer,
-            "New issuer must be different from existing issuer." );
-         validate_account_name( *new_issuer );
-      }
       new_options.validate();
 
       if( new_bitasset_opts.valid() )
@@ -2536,39 +2534,6 @@ namespace node { namespace protocol {
          "Amount to reserve must be greater than zero." );
    }
 
-   void asset_claim_fees_operation::validate()const
-   {
-      validate_account_name( signatory );
-      validate_account_name( issuer );
-      FC_ASSERT( amount_to_claim.amount > 0 );
-   }
-
-   void asset_claim_pool_operation::validate()const
-   {
-      validate_account_name( signatory );
-      validate_account_name( issuer );
-      FC_ASSERT( is_valid_symbol( symbol ), 
-         "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
-      FC_ASSERT( is_valid_symbol( amount_to_claim.symbol ), 
-         "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
-      FC_ASSERT( amount_to_claim.amount > 0,
-         "Amount to claim must be greater than zero." );
-      FC_ASSERT( amount_to_claim.symbol == SYMBOL_COIN, 
-         "Amount to claim from fee pool must be denominated in the core asset." );
-   }
-
-   void asset_fund_fee_pool_operation::validate()const
-   {
-      validate_account_name( signatory );
-      validate_account_name( from_account );
-      FC_ASSERT( is_valid_symbol( symbol ), 
-         "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
-      FC_ASSERT( pool_amount.symbol == SYMBOL_COIN,
-         "Pool asset must be core asset." );
-      FC_ASSERT( pool_amount.amount > 0,
-         "Poll amount must be greater than zero." );
-   }
-
    void asset_update_issuer_operation::validate()const
    {
       validate_account_name( signatory );
@@ -2602,20 +2567,8 @@ namespace node { namespace protocol {
 
       feed.validate();
 
-      if( !feed.core_exchange_rate.is_null() )
-      {
-         feed.core_exchange_rate.validate();
-      }
-      if( (!feed.settlement_price.is_null()) && (!feed.core_exchange_rate.is_null()) )
-      {
-         FC_ASSERT( feed.settlement_price.base.symbol == feed.core_exchange_rate.base.symbol,
-            "Settlement price base asset must be core exchange rate base asset." );
-      }
-
       FC_ASSERT( !feed.settlement_price.is_null(),
          "Settlement price cannot be null." );
-      FC_ASSERT( !feed.core_exchange_rate.is_null(),
-         "core exchange rate cannot be null." );
       FC_ASSERT( feed.is_for( symbol ),
          "Price feed must be for symbol." );
    }
@@ -2625,7 +2578,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       FC_ASSERT( amount.amount >= 0,
-         "Amount must be greater than zero." );
+         "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
@@ -2680,10 +2633,6 @@ namespace node { namespace protocol {
          "Latitude must be between +-180 degrees." );
       FC_ASSERT( block_signing_key.size() < MAX_STRING_LENGTH,
          "Block signing key size is too large." );
-      FC_ASSERT( fee.amount >= 0,
-         "Fee must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( fee.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol ) );
 
       props.validate();
    }
@@ -2761,7 +2710,8 @@ namespace node { namespace protocol {
    void proof_of_work::validate()const
    {
       validate_account_name( input.miner_account );
-      proof_of_work tmp; tmp.create( input.prev_block, input.miner_account, input.nonce );
+      proof_of_work tmp; 
+      tmp.create( input.prev_block, input.miner_account, input.nonce );
       FC_ASSERT( pow_summary == tmp.pow_summary, 
          "Reported work does not match calculated work" );
    }

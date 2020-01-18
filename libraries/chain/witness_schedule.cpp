@@ -100,6 +100,12 @@ void update_median_witness_props( database& db )
 
    std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
    {
+      return a->props.escrow_bond_percent < b->props.escrow_bond_percent;
+   });
+   new_props.escrow_bond_percent = active[ offset ]->props.escrow_bond_percent;
+
+   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
+   {
       return a->props.credit_interest_rate < b->props.credit_interest_rate;
    });
    new_props.credit_interest_rate = active[ offset ]->props.credit_interest_rate;
@@ -148,12 +154,6 @@ void update_median_witness_props( database& db )
 
    std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
    {
-      return a->props.interest_compound_interval < b->props.interest_compound_interval;
-   });
-   new_props.interest_compound_interval = active[ offset ]->props.interest_compound_interval;
-
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
-   {
       return a->props.maximum_asset_feed_publishers < b->props.maximum_asset_feed_publishers;
    });
    new_props.maximum_asset_feed_publishers = active[ offset ]->props.maximum_asset_feed_publishers;
@@ -175,6 +175,49 @@ void update_median_witness_props( database& db )
       return a->props.membership_top_price < b->props.membership_top_price;
    });
    new_props.membership_top_price = active[ offset ]->props.membership_top_price;
+
+   // Sort the content reward splits by median, and adjust author rewards to be the remainder of the percentages
+
+   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
+   {
+      return a->props.vote_reward_percent < b->props.vote_reward_percent;
+   });
+   new_props.vote_reward_percent = active[ offset ]->props.vote_reward_percent;
+
+   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
+   {
+      return a->props.view_reward_percent < b->props.view_reward_percent;
+   });
+   new_props.view_reward_percent = active[ offset ]->props.view_reward_percent;
+
+   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
+   {
+      return a->props.share_reward_percent < b->props.share_reward_percent;
+   });
+   new_props.share_reward_percent = active[ offset ]->props.share_reward_percent;
+
+   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
+   {
+      return a->props.comment_reward_percent < b->props.comment_reward_percent;
+   });
+   new_props.comment_reward_percent = active[ offset ]->props.comment_reward_percent;
+
+   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
+   {
+      return a->props.storage_reward_percent < b->props.storage_reward_percent;
+   });
+   new_props.storage_reward_percent = active[ offset ]->props.storage_reward_percent;
+
+   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
+   {
+      return a->props.moderator_reward_percent < b->props.moderator_reward_percent;
+   });
+   new_props.moderator_reward_percent = active[ offset ]->props.moderator_reward_percent;
+
+   uint32_t author_reward_percent = PERCENT_100 - ( new_props.vote_reward_percent + new_props.view_reward_percent +
+      new_props.share_reward_percent + new_props.comment_reward_percent + new_props.storage_reward_percent + new_props.moderator_reward_percent );
+
+   new_props.author_reward_percent = author_reward_percent;
 
    std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
    {
@@ -277,12 +320,6 @@ void update_median_witness_props( database& db )
       return a->props.enterprise_vote_percent_required < b->props.enterprise_vote_percent_required;
    });
    new_props.enterprise_vote_percent_required = active[ offset ]->props.enterprise_vote_percent_required;
-
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
-   {
-      return a->props.executive_role_type_amount < b->props.executive_role_type_amount;
-   });
-   new_props.executive_role_type_amount = active[ offset ]->props.executive_role_type_amount;
 
    std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const witness_object* a, const witness_object* b )
    {

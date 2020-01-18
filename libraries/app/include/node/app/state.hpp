@@ -276,8 +276,6 @@ namespace node { namespace app {
       int64_t                                  receiving_supply;          // The current receiving supply supply of the asset, should equal delegated
       int64_t                                  pending_supply;            // The current supply contained in reward funds and active order objects
       int64_t                                  confidential_supply;       // total confidential asset supply
-      int64_t                                  accumulated_fees;          // Amount of Fees that have accumulated to be paid to the asset issuer. Denominated in this asset.
-      int64_t                                  fee_pool;                  // Amount of core asset available to pay fees. Denominated in the core asset.
       bitasset_data_api_obj                    bitasset;
       equity_data_api_obj                      equity; 
       credit_data_api_obj                      credit;
@@ -626,8 +624,6 @@ FC_REFLECT_DERIVED( node::app::extended_asset, ( node::app::asset_api_obj ),
          (receiving_supply)
          (pending_supply)
          (confidential_supply)
-         (accumulated_fees)
-         (fee_pool)
          (bitasset)
          (equity)
          (credit)

@@ -254,8 +254,7 @@ struct database_fixture {
    const witness_object& witness_create(
       const string& owner,
       const private_key_type& owner_key,
-      const public_key_type& signing_key,
-      const share_type& fee
+      const public_key_type& signing_key
    );
 
    const comment_object& comment_create(

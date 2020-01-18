@@ -382,7 +382,7 @@ void database::process_credit_buybacks()
       const asset_credit_data_object& credit = *credit_itr;
       if( credit.buyback_pool.amount > 0 )
       {
-         const asset_liquidity_pool_object& pool = get_liquidity_pool( credit.symbol_a, credit.symbol_b );
+         const asset_liquidity_pool_object& pool = get_liquidity_pool( credit.buyback_asset, credit.symbol );
          price buyback_price = credit.buyback_price;
          price market_price = pool.base_hour_median_price( buyback_price.base.symbol );
          if( market_price > buyback_price )
@@ -401,16 +401,23 @@ void database::process_credit_buybacks()
 
 /**
  * Pays accrued interest to all balance holders of credit assets,
- * according to the fixed and variable components of the assets
+ * according to the fixed and variable components of the asset's
  * interest options, and the current market price of the asset, 
  * relative to its target buyback face value price.
- * the interest rate increases when the the price of the credit asset falls,
- * and decreases, when it is above buyback price.
+ * 
+ * The interest rate increases when the the price of the credit 
+ * asset falls, and decreases, when it is above buyback price.
+ * 
+ * When the price of the asset falls below the specified range
+ * the variable interest rate goes to maximum value, and if it increases
+ * above the specified range the variable interest rate falls to 0.
  */
 void database::process_credit_interest()
 { try {
-    if( (head_block_num() % CREDIT_INTERVAL_BLOCKS) != 0 )
-      return;
+   if( (head_block_num() % CREDIT_INTERVAL_BLOCKS) != 0 )
+   { 
+      return; 
+   }
 
    time_point now = head_block_time();
    const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol>();
@@ -423,15 +430,15 @@ void database::process_credit_interest()
       asset_symbol_type cs = credit.symbol;
       const asset_dynamic_data_object& dyn_data = get_dynamic_data( cs );
       price buyback = credit.buyback_price;
-      price market = get_liquidity_pool( credit.symbol_a , credit.symbol_b ).base_hour_median_price( buyback.base.symbol );
+      price market = get_liquidity_pool( credit.buyback_asset, credit.symbol ).base_hour_median_price( buyback.base.symbol );
       
       asset unit = asset( BLOCKCHAIN_PRECISION, buyback.quote.symbol );
-      share_type range = credit.options.var_interest_range;
+      share_type range = credit.options.var_interest_range;     // Percentage range that caps the price divergence between market and buyback
       share_type pr = PERCENT_100;
       share_type hpr = PERCENT_100 / 2;
 
-      share_type mar = (market * unit).amount;
-      share_type buy = (buy * unit).amount;
+      share_type mar = ( market * unit ).amount;    // Market price of the credit asset
+      share_type buy = ( buy * unit ).amount;       // Buyback price of the credit asset
 
       share_type liqf = credit.options.liquid_fixed_interest_rate;
       share_type staf = credit.options.staked_fixed_interest_rate;
@@ -440,7 +447,7 @@ void database::process_credit_interest()
       share_type stav = credit.options.staked_variable_interest_rate;
       share_type savv = credit.options.savings_variable_interest_rate;
 
-      share_type var_factor = ( ( -hpr * std::min( pr, std::max( -pr, pr * ( mar-buy ) / ( ( ( buy*range ) / pr ) ) ) ) ) / pr ) + hpr;
+      share_type var_factor = ( ( -hpr * std::min( pr, std::max( -pr, pr * ( mar-buy ) / ( ( ( buy * range ) / pr ) ) ) ) ) / pr ) + hpr;
 
       share_type liq_ir = liqv * var_factor + liqf;
       share_type sta_ir = stav * var_factor + staf;
@@ -448,9 +455,9 @@ void database::process_credit_interest()
 
       // Applies interest rates that scale with the current market price / buyback price ratio, within a specified boundary range.
 
-      asset total_liquid_interest = asset(0, cs);
-      asset total_staked_interest = asset(0, cs);
-      asset total_savings_interest = asset(0, cs);
+      asset total_liquid_interest = asset( 0, cs );
+      asset total_staked_interest = asset( 0, cs );
+      asset total_savings_interest = asset( 0, cs );
 
       auto balance_itr = balance_idx.lower_bound( cs );
       while( balance_itr != balance_idx.end() && balance_itr->symbol == cs )
@@ -1210,38 +1217,18 @@ void database::update_expired_feeds()
    {
       const asset_bitasset_data_object& bitasset = *itr;
       ++itr; 
-      bool update_cer = false; 
       const asset_object* asset_ptr = nullptr;
       
       auto old_median_feed = bitasset.current_feed;
-      modify( bitasset, [head_time,&update_cer]( asset_bitasset_data_object& abdo )
+      modify( bitasset, [&]( asset_bitasset_data_object& abdo )
       {
          abdo.update_median_feeds( head_time );
-         if( abdo.need_to_update_cer() )
-         {
-            update_cer = true;
-            abdo.asset_cer_updated = false;
-            abdo.feed_cer_updated = false;
-         }
       });
 
       if( !bitasset.current_feed.settlement_price.is_null() && !( bitasset.current_feed == old_median_feed ) ) // `==` check is safe here
       {
          asset_ptr = find_asset(bitasset.symbol);
          check_call_orders( *asset_ptr, true, false );
-      }
-      
-      if( update_cer ) // update CER
-      {
-         if( !asset_ptr )
-            asset_ptr = find_asset(bitasset.symbol);
-         if( asset_ptr->options.core_exchange_rate != bitasset.current_feed.core_exchange_rate )
-         {
-            modify( *asset_ptr, [&]( asset_object& ao )
-            {
-               ao.options.core_exchange_rate = bitasset.current_feed.core_exchange_rate;
-            });
-         }
       }
    } 
 } FC_CAPTURE_AND_RETHROW() }
@@ -1334,32 +1321,6 @@ void database::process_bids( const asset_bitasset_data_object& bad )
       cancel_bids_and_revive_mpa( to_revive, bad );
    }
 } FC_CAPTURE_AND_RETHROW() }
-
-
-void database::update_core_exchange_rates()
-{
-   const auto& idx = get_index< asset_bitasset_data_index >().indices().get< by_cer_update >();
-   if( idx.begin() != idx.end() )
-   {
-      for( auto itr = idx.rbegin(); itr->need_to_update_cer(); itr = idx.rbegin() )
-      {
-         const asset_bitasset_data_object& bitasset = *itr;
-         const asset_object& asset = get_asset( bitasset.symbol );
-         if( asset.options.core_exchange_rate != bitasset.current_feed.core_exchange_rate )
-         {
-            modify( asset, [&]( asset_object& ao )
-            {
-               ao.options.core_exchange_rate = bitasset.current_feed.core_exchange_rate;
-            });
-         }
-         modify( bitasset, [&]( asset_bitasset_data_object& abdo )
-         {
-            abdo.asset_cer_updated = false;
-            abdo.feed_cer_updated = false;
-         });
-      }
-   }
-}
 
 
 void database::dispute_escrow( const escrow_object& escrow )

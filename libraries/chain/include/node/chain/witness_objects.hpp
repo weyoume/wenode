@@ -81,9 +81,9 @@ namespace node { namespace chain {
 
          time_point                   created;                          // The time the witness was created.
 
-         uint32_t                     last_commit_height;               // Block height that has been most recently committed by the producer
+         uint32_t                     last_commit_height = 0;           // Block height that has been most recently committed by the producer
 
-         block_id_type                last_commit_id;                   // Block ID of the height that was most recently committed by the producer. 
+         block_id_type                last_commit_id = block_id_type(); // Block ID of the height that was most recently committed by the producer. 
 
          uint32_t                     total_blocks = 0;                 // Accumulated number of blocks produced.
 
@@ -111,21 +111,19 @@ namespace node { namespace chain {
 
          chain_properties             props;                            // The chain properties object that the witness currently proposes for global network variables
          
-         uint128_t                    witness_virtual_last_update;
+         uint128_t                    witness_virtual_last_update;      // Virtual time of last witness update
 
-         uint128_t                    witness_virtual_position;
+         uint128_t                    witness_virtual_position;         // Virtual position relative to other witnesses
 
-         uint128_t                    witness_virtual_scheduled_time = fc::uint128::max_value();
+         uint128_t                    witness_virtual_scheduled_time = fc::uint128::max_value();    // Expected virtual time of next scheduled block production
 
-         uint128_t                    miner_virtual_last_update;
+         uint128_t                    miner_virtual_last_update;        // Virtual time of last mining update
 
-         uint128_t                    miner_virtual_position;
+         uint128_t                    miner_virtual_position;           // Virtual position relative to other miners
 
-         uint128_t                    miner_virtual_scheduled_time = fc::uint128::max_value();
-         
-         digest_type                  last_work;
+         uint128_t                    miner_virtual_scheduled_time = fc::uint128::max_value();     // Expected virtual time of next scheduled block production
 
-         version                      running_version;  // This field represents the WeYouMe blockchain version the witness is running.
+         version                      running_version;                  // This field represents the WeYouMe blockchain version the witness is running.
 
          hardfork_version             hardfork_version_vote;
 
@@ -193,7 +191,7 @@ namespace node { namespace chain {
 
          uint8_t                                           num_scheduled_producers = 1;
 
-         uint128_t                                         pow_target_difficulty = -1;      //
+         uint128_t                                         pow_target_difficulty = uint128_t::max_value();      // Proof of work summary value target, must be lower than this value.
 
          uint128_t                                         recent_pow;                      // Rolling average amount of blocks (x prec) mined in the last 7 days.
 
@@ -235,19 +233,27 @@ namespace node { namespace chain {
    };
 
    /**
-    * Block Validation Objects are used by block producers to place a committment
-    * stake on recent blocks, before they become irreversible, in order to increase the 
+    * Block Validation Objects are used by block producers
+    * to place a committment stake on recent blocks, 
+    * before they become irreversible, in order to increase the 
     * speed of achieving consensus finality on block history.
-    * Block producers earn an additional share of the block reward when they are in the first 
-    * two thirds of producers to commit to a block id at a given height.
-    * The reward is distributed to all producers upon the block becoming irreversible
-    * to all producers that have commitments at a given height.
-    * All producers that include commitments in the block that exceeds two thirds are included
+    * 
+    * Block producers earn an additional share of the block 
+    * reward when they are in the first two thirds of 
+    * producers to commit to a block id at a given height.
+    * 
+    * The reward is distributed to all producers upon the
+    * block becoming irreversible to all producers
+    * that have commitments at a given height.
+    * All producers that include commitments in the 
+    * block that exceeds two thirds are included
     * in reward distribution.
-    * All nodes will use the greater of the last irreversible block, or the last commited block when
-    * updating the state of their block logs. 
-    * This enables an optimal block finality time of two blocks, with rapid participation of
-    * producers to validate and commit to new blocks as they are produced.
+    * 
+    * All nodes will use the greater of the last irreversible block, 
+    * or the last commited block when updating the state of their block logs. 
+    * This enables an optimal block finality time of two blocks, 
+    * with rapid participation of producers to validate and 
+    * commit to new blocks as they are produced.
     */
    class block_validation_object : public object< block_validation_object_type, block_validation_object >
    {
@@ -262,17 +268,17 @@ namespace node { namespace chain {
 
          id_type                          id;
 
-         account_name_type                producer;
+         account_name_type                producer;             ///< Name of the block producer creating the validation
 
-         block_id_type                    block_id;
+         block_id_type                    block_id;             ///< Block ID commited to for the height
 
-         uint32_t                         block_height;
+         uint32_t                         block_height;         ///< Height of the block being validated
 
-         time_point                       created;
+         time_point                       created;              ///< Time that the validation was created
 
-         flat_set<transaction_id_type>    verifications;
+         flat_set< transaction_id_type >  verifications;        ///< Validation transactions from other witnesses
 
-         flat_set<account_name_type>      verifiers;
+         flat_set< account_name_type >    verifiers;            ///< 
 
          bool                             committed = false;
 
@@ -314,7 +320,6 @@ namespace node { namespace chain {
    struct by_mining_power;
    struct by_name;
    struct by_pow;
-   struct by_work;
    struct by_witness_schedule_time;
    struct by_miner_schedule_time;
    struct by_txn_stake_weight;
@@ -327,7 +332,6 @@ namespace node { namespace chain {
       witness_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< witness_object, witness_id_type, &witness_object::id > >,
-         ordered_non_unique< tag< by_work >, member< witness_object, digest_type, &witness_object::last_work > >,
          ordered_unique< tag< by_name >, member< witness_object, account_name_type, &witness_object::owner > >,
          
          ordered_unique< tag< by_voting_power >,
@@ -575,7 +579,6 @@ FC_REFLECT( node::chain::witness_object,
          (miner_virtual_last_update)
          (miner_virtual_position)
          (miner_virtual_scheduled_time)
-         (last_work)
          (running_version)
          (hardfork_version_vote)
          (hardfork_time_vote)
