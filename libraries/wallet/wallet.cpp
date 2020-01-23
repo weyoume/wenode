@@ -292,13 +292,12 @@ public:
       result["hardfork_version"] = fc::string( _remote_db->get_hardfork_version() );
       result["head_block_num"] = dynamic_props.head_block_number;
       result["head_block_id"] = dynamic_props.head_block_id;
-      result["head_block_age"] = fc::get_approximate_relative_time_string(dynamic_props.time,
-                                                                          time_point(time_point::now()),
-                                                                          " old");
+      result["head_block_age"] = fc::get_approximate_relative_time_string( dynamic_props.time, time_point(time_point::now()), " old" );
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
-      result["median_USD_price"] = _remote_db->get_current_median_history_price();
+      result["usd_price"] = dynamic_props.current_median_usd_price;
+      result["equity_price"] = dynamic_props.current_median_equity_price;
       result["account_creation_fee"] = _remote_db->get_chain_properties().account_creation_fee;
-      //result["reward_fund"] = fc::variant(_remote_db->get_reward_fund().get_object();
+      result["reward_fund"] = fc::variant( _remote_db->get_reward_fund() ).get_object();
       return result;
    }
 
@@ -312,10 +311,10 @@ public:
       fc::mutable_variant_object result;
       result["blockchain_version"]       = BLOCKCHAIN_VERSION;
       result["client_version"]           = client_version;
-      result["node_revision"]           = graphene::utilities::git_revision_sha;
-      result["node_revision_age"]       = fc::get_approximate_relative_time_string( fc::time_point( graphene::utilities::git_revision_unix_timestamp ) );
+      result["node_revision"]            = graphene::utilities::git_revision_sha;
+      result["node_revision_age"]        = fc::get_approximate_relative_time_string( time_point( fc::seconds( graphene::utilities::git_revision_unix_timestamp ) ) );
       result["fc_revision"]              = fc::git_revision_sha;
-      result["fc_revision_age"]          = fc::get_approximate_relative_time_string( fc::time_point( fc::git_revision_unix_timestamp ) );
+      result["fc_revision_age"]          = fc::get_approximate_relative_time_string( time_point( fc::seconds( fc::git_revision_unix_timestamp ) ) );
       result["compile_date"]             = "compiled on " __DATE__ " at " __TIME__;
       result["boost_version"]            = boost::replace_all_copy(std::string(BOOST_LIB_VERSION), "_", ".");
       result["openssl_version"]          = OPENSSL_VERSION_TEXT;

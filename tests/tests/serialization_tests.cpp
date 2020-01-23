@@ -1,5 +1,3 @@
-
-
 //#ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
@@ -18,24 +16,25 @@ using namespace node;
 using namespace node::chain;
 using namespace node::protocol;
 
-BOOST_FIXTURE_TEST_SUITE( serialization_tests, clean_database_fixture )
+BOOST_FIXTURE_TEST_SUITE( serialization_MEC, clean_database_fixture )
 
-   /*
 BOOST_AUTO_TEST_CASE( account_name_type_test )
 {
-
-   auto test = []( const string& data ) {
+   auto test = []( const string& data )
+   {
       fixed_string<> a(data);
       std::string    b(data);
 
-      auto ap = fc::raw::pack( empty );
-      auto bp = fc::raw::pack( emptystr );
+      auto ap = fc::raw::pack( a );
+      auto bp = fc::raw::pack( b );
+
       FC_ASSERT( ap.size() == bp.size() );
       FC_ASSERT( std::equal( ap.begin(), ap.end(), bp.begin() ) );
 
       auto sfa = fc::raw::unpack<std::string>( ap );
       auto afs = fc::raw::unpack<fixed_string<>>( bp );
-   }
+   };
+
    test( std::string() );
    test( "helloworld" );
    test( "1234567890123456" );
@@ -44,37 +43,51 @@ BOOST_AUTO_TEST_CASE( account_name_type_test )
    auto unpacked = fc::raw::unpack<fixed_string<>>( packed_long_string );
    idump( (unpacked) );
 }
-*/
+
 
 BOOST_AUTO_TEST_CASE( serialization_raw_test )
 {
-   try {
-      ACTORS( (alice)(bob) )
+   try 
+   {
+      ACTORS( (alice)(bob) );
+
       transfer_operation op;
+
+      op.signatory = "alice";
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,SYMBOL_COIN);
+      op.amount = asset( 1000, SYMBOL_COIN );
+      op.memo = "Hello";
 
       trx.operations.push_back( op );
       auto packed = fc::raw::pack( trx );
       signed_transaction unpacked = fc::raw::unpack<signed_transaction>(packed);
       unpacked.validate();
       BOOST_CHECK( trx.digest() == unpacked.digest() );
-   } catch (fc::exception& e) {
+   } 
+   catch( fc::exception& e ) 
+   {
       edump((e.to_detail_string()));
       throw;
    }
 }
+
+
 BOOST_AUTO_TEST_CASE( serialization_json_test )
 {
-   try {
-      ACTORS( (alice)(bob) )
+   try 
+   {
+      ACTORS( (alice)(bob) );
+
       transfer_operation op;
+
+      op.signatory = "alice";
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(100,SYMBOL_COIN);
+      op.amount = asset( 1000, SYMBOL_COIN );
+      op.memo = "Hello";
 
-      fc::variant test(op.amount);
+      fc::variant test( op.amount );
       auto tmp = test.as<asset>();
       BOOST_REQUIRE( tmp == op.amount );
 
@@ -83,7 +96,9 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
       signed_transaction unpacked = packed.as<signed_transaction>();
       unpacked.validate();
       BOOST_CHECK( trx.digest() == unpacked.digest() );
-   } catch (fc::exception& e) {
+   } 
+   catch (fc::exception& e) 
+   {
       edump((e.to_detail_string()));
       throw;
    }
@@ -93,88 +108,62 @@ BOOST_AUTO_TEST_CASE( asset_test )
 {
    try
    {
-      BOOST_CHECK_EQUAL( asset().decimals(), 3 );
-      BOOST_CHECK_EQUAL( asset().symbol_name(), "TESTS" );
-      BOOST_CHECK_EQUAL( asset().to_string(), "0.000 TESTS" );
-
       BOOST_TEST_MESSAGE( "Asset Test" );
-      asset TME = asset::from_string( "123.456 TESTS" );
-      asset USD = asset::from_string( "654.321 USD" );
-      asset tmp = asset::from_string( "0.456 TESTS" );
-      BOOST_CHECK_EQUAL( tmp.amount.value, 456 );
-      tmp = asset::from_string( "0.056 TESTS" );
-      BOOST_CHECK_EQUAL( tmp.amount.value, 56 );
 
-      BOOST_CHECK( std::abs( TME.to_real() - 123.456 ) < 0.0005 );
-      BOOST_CHECK_EQUAL( TME.amount.value, 123456 );
-      BOOST_CHECK_EQUAL( TME.decimals(), 3 );
-      BOOST_CHECK_EQUAL( TME.symbol_name(), "TESTS" );
-      BOOST_CHECK_EQUAL( TME.to_string(), "123.456 TESTS" );
-      BOOST_CHECK_EQUAL( TME.symbol, SYMBOL_COIN);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL_COIN).to_string(), "0.050 TESTS" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_COIN).to_string(), "50.000 TESTS" );
+      BOOST_CHECK_EQUAL( asset().precision, 8 );
+      BOOST_CHECK_EQUAL( asset().symbol, SYMBOL_COIN );
+      BOOST_CHECK_EQUAL( asset().to_string(), "0.00000000 MEC" );
+      
+      asset COIN = asset::from_string( "123.45678901 MEC" );
+      asset USD = asset::from_string( "654.32100000 MUSD" );
+      asset tmp = asset::from_string( "0.00001234 MEC" );
+      BOOST_CHECK_EQUAL( tmp.amount.value, 1234 );
+      tmp = asset::from_string( "0.56780000 MEC" );
+      BOOST_CHECK_EQUAL( tmp.amount.value, 56780000 );
+
+      BOOST_CHECK( std::abs( COIN.to_real() - 123.45678901 ) < 0.0005 );
+
+      BOOST_CHECK_EQUAL( COIN.amount.value, 12345678901 );
+      BOOST_CHECK_EQUAL( COIN.precision, 8 );
+      BOOST_CHECK_EQUAL( COIN.symbol, "MEC" );
+      BOOST_CHECK_EQUAL( COIN.to_string(), "123.45678901 MEC" );
+      BOOST_CHECK_EQUAL( COIN.symbol, SYMBOL_COIN );
+      BOOST_CHECK_EQUAL( asset( 50, SYMBOL_COIN ).to_string(), "0.00000050 MEC" );
+      BOOST_CHECK_EQUAL( asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ).to_string(), "50.00000000 MEC" );
 
       BOOST_CHECK( std::abs( USD.to_real() - 654.321 ) < 0.0005 );
-      BOOST_CHECK_EQUAL( USD.amount.value, 654321 );
-      BOOST_CHECK_EQUAL( USD.decimals(), 3 );
-      BOOST_CHECK_EQUAL( USD.symbol_name(), "USD" );
-      BOOST_CHECK_EQUAL( USD.to_string(), "654.321 USD" );
-      BOOST_CHECK_EQUAL( USD.symbol, SYMBOL_USD);
-      BOOST_CHECK_EQUAL( asset(50, SYMBOL_USD).to_string(), "0.050 USD" );
-      BOOST_CHECK_EQUAL( asset(50000, SYMBOL_USD).to_string(), "50.000 USD" );
+      BOOST_CHECK_EQUAL( USD.amount.value, 65432100000 );
+      BOOST_CHECK_EQUAL( USD.precision, 8 );
+      BOOST_CHECK_EQUAL( USD.symbol, "USD" );
+      BOOST_CHECK_EQUAL( USD.to_string(), "654.32100000 USD" );
+      BOOST_CHECK_EQUAL( USD.symbol, SYMBOL_USD );
+      BOOST_CHECK_EQUAL( asset( 50, SYMBOL_USD ).to_string(), "0.00000050 USD" );
+      BOOST_CHECK_EQUAL( asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_USD ).to_string(), "50.00000000 USD" );
 
-      BOOST_CHECK_THROW( TME.set_decimals(100), fc::exception );
-      char* TME_sy = (char*) &TME.symbol;
-      TME_sy[0] = 100;
-      BOOST_CHECK_THROW( TME.decimals(), fc::exception );
-      TME_sy[6] = 'A';
-      TME_sy[7] = 'A';
-
-      auto check_sym = []( const asset& a ) -> std::string
-      {
-         auto symbol = a.symbol_name();
-         wlog( "symbol_name is ${s}", ("s", symbol) );
-         return symbol;
-      };
-
-      BOOST_CHECK_THROW( check_sym(TME), fc::exception );
-      BOOST_CHECK_THROW( asset::from_string( "1.00000000000000000000 TESTS" ), fc::exception );
-      BOOST_CHECK_THROW( asset::from_string( "1.000TESTS" ), fc::exception );
-      BOOST_CHECK_THROW( asset::from_string( "1. 333 TESTS" ), fc::exception ); // Fails because symbol is '333 TESTS', which is too long
-      BOOST_CHECK_THROW( asset::from_string( "1 .333 TESTS" ), fc::exception );
-      asset unusual = asset::from_string( "1. 333 X" ); // Passes because symbol '333 X' is short enough
-      FC_ASSERT( unusual.decimals() == 0 );
-      FC_ASSERT( unusual.symbol_name() == "333 X" );
+      BOOST_CHECK_THROW( asset::from_string( "1.000000000000000000000000 MEC" ), fc::exception );
+      BOOST_CHECK_THROW( asset::from_string( "1.000MEC" ), fc::exception );
+      BOOST_CHECK_THROW( asset::from_string( "1. 333 MEC" ), fc::exception ); // Fails because symbol is '333 MEC', which is too long
+      BOOST_CHECK_THROW( asset::from_string( "1 .333 MEC" ), fc::exception );
+      
       BOOST_CHECK_THROW( asset::from_string( "1 .333 X" ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "1 .333" ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "1 1.1" ), fc::exception );
-      BOOST_CHECK_THROW( asset::from_string( "11111111111111111111111111111111111111111111111 TESTS" ), fc::exception );
-      BOOST_CHECK_THROW( asset::from_string( "1.1.1 TESTS" ), fc::exception );
-      BOOST_CHECK_THROW( asset::from_string( "1.abc TESTS" ), fc::exception );
-      BOOST_CHECK_THROW( asset::from_string( " TESTS" ), fc::exception );
-      BOOST_CHECK_THROW( asset::from_string( "TESTS" ), fc::exception );
+      BOOST_CHECK_THROW( asset::from_string( "11111111111111111111111111111111111111111111111 MEC" ), fc::exception );
+      BOOST_CHECK_THROW( asset::from_string( "1.1.1 MEC" ), fc::exception );
+      BOOST_CHECK_THROW( asset::from_string( "1.abc MEC" ), fc::exception );
+      BOOST_CHECK_THROW( asset::from_string( " MEC" ), fc::exception );
+      BOOST_CHECK_THROW( asset::from_string( "MEC" ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "1.333" ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "1.333 " ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "" ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( " " ), fc::exception );
       BOOST_CHECK_THROW( asset::from_string( "  " ), fc::exception );
 
-      BOOST_CHECK_EQUAL( asset::from_string( "100 TESTS" ).amount.value, 100 );
+      BOOST_CHECK_EQUAL( asset::from_string( "1.00000000 MEC" ).amount.value, 100000000 );
    }
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( json_tests )
-{
-   try {
-   auto var = fc::json::variants_from_string( "10.6 " );
-   var = fc::json::variants_from_string( "10.5" );
-   } catch ( const fc::exception& e )
-   {
-      edump((e.to_detail_string()));
-      throw;
-   }
-}
 
 BOOST_AUTO_TEST_CASE( extended_private_key_type_test )
 {
@@ -194,6 +183,7 @@ BOOST_AUTO_TEST_CASE( extended_private_key_type_test )
    }
 }
 
+
 BOOST_AUTO_TEST_CASE( extended_public_key_type_test )
 {
    try
@@ -211,6 +201,7 @@ BOOST_AUTO_TEST_CASE( extended_public_key_type_test )
       throw;
    }
 }
+
 
 BOOST_AUTO_TEST_CASE( version_test )
 {
@@ -256,6 +247,7 @@ BOOST_AUTO_TEST_CASE( version_test )
    }
    FC_LOG_AND_RETHROW();
 }
+
 
 BOOST_AUTO_TEST_CASE( hardfork_version_test )
 {
@@ -307,7 +299,10 @@ BOOST_AUTO_TEST_CASE( min_block_size )
 {
    signed_block b;
    while( b.witness.length() < MIN_ACCOUNT_NAME_LENGTH )
+   {
       b.witness += 'a';
+   }
+      
    size_t min_size = fc::raw::pack_size( b );
    BOOST_CHECK( min_size == MIN_BLOCK_SIZE );
 }

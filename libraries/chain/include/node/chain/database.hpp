@@ -696,6 +696,8 @@ namespace node { namespace chain {
 
          share_type distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
 
+         util::comment_reward_context get_comment_reward_context( const reward_fund_object& reward_fund );
+
          void process_comment_cashout();
 
          void update_comment_metrics();

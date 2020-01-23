@@ -35,19 +35,32 @@ uint64_t approx_sqrt( const uint128_t& x )
    return result;
 }
 
-uint64_t get_comment_reward( const comment_reward_context& ctx )
+void fill_comment_reward_context_local_state( util::comment_reward_context& ctx, const comment_object& comment )
+{
+   ctx.reward = comment.net_reward;
+   ctx.cashouts_received = comment.cashouts_received;
+   ctx.max_reward = comment.max_accepted_payout;
+}
+
+uint128_t get_comment_reward( const comment_reward_context& ctx )
 { try {
    FC_ASSERT( ctx.reward > 0 );
-   FC_ASSERT( ctx.total_reward_squared > 0 );
+   FC_ASSERT( ctx.recent_content_claims > 0 );
 
    u256 rf(ctx.total_reward_fund.amount.value);
-   u256 total_claims = to256( ctx.total_reward_squared );
+   u256 total_claims = to256( ctx.recent_content_claims );
 
-   u256 claim = to256( evaluate_reward_curve( ctx.reward.value, ctx.cashouts_received, ctx.reward_curve, ctx.cashout_decay, ctx.content_constant ) );
+   u256 claim = to256( evaluate_reward_curve( 
+      ctx.reward.value, 
+      ctx.cashouts_received, 
+      ctx.reward_curve, 
+      ctx.decay_rate, 
+      ctx.content_constant ) );
+
    u256 payout_u256 = ( rf * claim ) / total_claims;
 
-   FC_ASSERT( payout_u256 <= u256( uint64_t( std::numeric_limits<int64_t>::max() ) ) );
-   uint64_t payout = static_cast< uint64_t >( payout_u256 );
+   FC_ASSERT( payout_u256 <= u256( uint64_t( std::numeric_limits<int128_t>::max() ) ) );
+   uint128_t payout = static_cast< uint128_t >( payout_u256 );
 
    if( is_comment_payout_dust( ctx.current_COIN_USD_price, payout ) )
    {
@@ -56,17 +69,22 @@ uint64_t get_comment_reward( const comment_reward_context& ctx )
 
    asset max_reward = USD_to_asset( ctx.current_COIN_USD_price, ctx.max_reward );
 
-   payout = std::min( payout, uint64_t( max_reward.amount.value ) );
+   payout = std::min( payout, uint128_t( max_reward.amount.value ) );
 
    return payout;
 } FC_CAPTURE_AND_RETHROW( (ctx) ) }
 
+
+/**
+ * Determines the value of the comment's reward curve value, based on its
+ * net reward value, and past payout details, and the variables of the network.
+ */
 uint128_t evaluate_reward_curve( 
-   const uint128_t& reward, 
-   const uint32_t cashouts_received, 
-   const curve_id& curve = convergent_semi_quadratic,
-   const fc::microseconds cashout_decay = CONTENT_REWARD_DECAY_RATE, 
-   const uint128_t& content_constant = CONTENT_CONSTANT )
+   const uint128_t& reward,
+   const uint32_t cashouts_received,
+   const curve_id& curve,
+   const fc::microseconds decay_rate,
+   const uint128_t& content_constant )
 {
    uint128_t result = 0;
 
@@ -99,7 +117,7 @@ uint128_t evaluate_reward_curve(
          uint128_t r = reward;
          uint128_t s = content_constant;
          int32_t d = cashouts_received;
-         int32_t t = cashout_decay.to_seconds() / fc::days(1).to_seconds();
+         int32_t t = decay_rate.to_seconds() / fc::days(1).to_seconds();
          if( d >= t )
          { 
             result = 0; 

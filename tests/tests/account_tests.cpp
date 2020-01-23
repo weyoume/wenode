@@ -25,9 +25,9 @@ using std::string;
 BOOST_FIXTURE_TEST_SUITE( account_operation_tests, clean_database_fixture );
 
 
-   //============================//
-   // === Account Operations === //
-   //============================//
+   //=======================//
+   // === Account Tests === //
+   //=======================//
 
 
 BOOST_AUTO_TEST_CASE( account_create_operation_test )

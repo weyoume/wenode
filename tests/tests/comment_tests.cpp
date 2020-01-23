@@ -25,9 +25,9 @@ using std::string;
 BOOST_FIXTURE_TEST_SUITE( comment_operation_tests, clean_database_fixture );
 
 
-   //=====================================//
-   // === Post and Comment Operations === //
-   //=====================================//
+   //================================//
+   // === Post and Comment Tests === //
+   //================================//
 
 
 

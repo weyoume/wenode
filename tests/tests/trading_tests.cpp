@@ -26,9 +26,9 @@ BOOST_FIXTURE_TEST_SUITE( trading_operation_tests, clean_database_fixture );
 
 
 
-   //============================//
-   // === Trading Operations === //
-   //============================//
+   //=======================//
+   // === Trading Tests === //
+   //=======================//
 
 
 

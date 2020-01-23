@@ -25,9 +25,9 @@ using std::string;
 BOOST_FIXTURE_TEST_SUITE( escrow_operation_tests, clean_database_fixture );
 
 
-   //===========================//
-   // === Escrow Operations === //
-   //===========================//
+   //======================//
+   // === Escrow Tests === //
+   //======================//
 
 
 

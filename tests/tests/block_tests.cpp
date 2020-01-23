@@ -1,5 +1,4 @@
-
-#ifdef IS_TEST_NET
+//#ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
 #include <node/protocol/exceptions.hpp>
@@ -27,7 +26,7 @@ BOOST_AUTO_TEST_SUITE(block_tests)
 BOOST_AUTO_TEST_CASE( generate_empty_blocks )
 {
    try {
-      fc::time_point now( TESTING_GENESIS_TIMESTAMP );
+      time_point now = TESTING_GENESIS_TIMESTAMP;
       fc::temp_directory data_dir( graphene::utilities::temp_directory_path() );
       signed_block b;
 
@@ -36,7 +35,7 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
       {
          database db;
          db._log_hardforks = false;
-         db.open(data_dir.path(), data_dir.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+         db.open( data_dir.path(), data_dir.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
          b = db.generate_block(db.get_slot_time(1), db.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
 
          // n.b. we generate MIN_UNDO_HISTORY+1 extra blocks which will be discarded on save
@@ -62,7 +61,7 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
       {
          database db;
          db._log_hardforks = false;
-         db.open(data_dir.path(), data_dir.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+         db.open( data_dir.path(), data_dir.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
          BOOST_CHECK_EQUAL( db.head_block_num(), cutoff_block.block_num() );
          b = cutoff_block;
          for( uint32_t i = 0; i < 200; ++i )
@@ -75,7 +74,9 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          }
          BOOST_CHECK_EQUAL( db.head_block_num(), cutoff_block.block_num()+200 );
       }
-   } catch (fc::exception& e) {
+   } 
+   catch(fc::exception& e)
+   {
       edump((e.to_detail_string()));
       throw;
    }
@@ -88,7 +89,7 @@ BOOST_AUTO_TEST_CASE( undo_block )
       {
          database db;
          db._log_hardforks = false;
-         db.open(data_dir.path(), data_dir.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+         db.open( data_dir.path(), data_dir.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
          fc::time_point now( TESTING_GENESIS_TIMESTAMP );
          std::vector< time_point > time_stack;
 
@@ -124,7 +125,9 @@ BOOST_AUTO_TEST_CASE( undo_block )
          }
          BOOST_CHECK( db.head_block_num() == 7 );
       }
-   } catch (fc::exception& e) {
+   } 
+   catch(fc::exception& e)
+   {
       edump((e.to_detail_string()));
       throw;
    }
@@ -140,10 +143,10 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
 
       database db1;
       db1._log_hardforks = false;
-      db1.open( data_dir1.path(), data_dir1.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+      db1.open( data_dir1.path(), data_dir1.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
       database db2;
       db2._log_hardforks = false;
-      db2.open( data_dir2.path(), data_dir2.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+      db2.open( data_dir2.path(), data_dir2.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
 
       auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
       for( uint32_t i = 0; i < 10; ++i )
@@ -191,7 +194,9 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
       BOOST_CHECK_EQUAL(db2.head_block_num(), 14);
       PUSH_BLOCK( db1, good_block );
       BOOST_CHECK_EQUAL(db1.head_block_id().str(), db2.head_block_id().str());
-   } catch (fc::exception& e) {
+   } 
+   catch(fc::exception& e)
+   {
       edump((e.to_detail_string()));
       throw;
    }
@@ -205,9 +210,9 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       database db1,
                db2;
       db1._log_hardforks = false;
-      db1.open( dir1.path(), dir1.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+      db1.open( dir1.path(), dir1.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
       db2._log_hardforks = false;
-      db2.open( dir2.path(), dir2.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+      db2.open( dir2.path(), dir2.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
 
       auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
       public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
@@ -215,15 +220,20 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       //*
       signed_transaction trx;
+      
       account_create_operation cop;
+
+      cop.signatory = GENESIS_ACCOUNT_BASE_NAME;
       cop.new_account_name = "alice";
-      cop.creator = GENESIS_ACCOUNT_BASE_NAME;
+      cop.registrar = GENESIS_ACCOUNT_BASE_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
+
       PUSH_TX( db1, trx );
+
       //*/
       // generate blocks
       // db1 : A
@@ -250,7 +260,9 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       BOOST_CHECK( db1.get(alice_id).name == "alice");
       BOOST_CHECK( db2.get(alice_id).name == "alice");
-   } catch (fc::exception& e) {
+   } 
+   catch(fc::exception& e) 
+   {
       edump((e.to_detail_string()));
       throw;
    }
@@ -264,9 +276,9 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       database db1,
                db2;
       db1._log_hardforks = false;
-      db1.open(dir1.path(), dir1.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+      db1.open( dir1.path(), dir1.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
       db2._log_hardforks = false;
-      db2.open(dir2.path(), dir2.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+      db2.open( dir2.path(), dir2.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
       BOOST_CHECK( db1.get_chain_id() == db2.get_chain_id() );
 
       auto skip_sigs = database::skip_transaction_signatures | database::skip_authority_check;
@@ -275,24 +287,35 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
 
       signed_transaction trx;
+
       account_create_operation cop;
+
+      cop.signatory = GENESIS_ACCOUNT_BASE_NAME;
       cop.new_account_name = "alice";
-      cop.creator = GENESIS_ACCOUNT_BASE_NAME;
+      cop.registrar = GENESIS_ACCOUNT_BASE_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
+
       trx.operations.push_back(cop);
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
+
       PUSH_TX( db1, trx, skip_sigs );
 
       trx = decltype(trx)();
+
       transfer_operation t;
+
+      t.signatory = GENESIS_ACCOUNT_BASE_NAME;
       t.from = GENESIS_ACCOUNT_BASE_NAME;
       t.to = "alice";
-      t.amount = asset(500,SYMBOL_COIN);
+      t.amount = asset( 500, SYMBOL_COIN );
+      t.memo = "Hello";
+
       trx.operations.push_back(t);
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
+
       PUSH_TX( db1, trx, skip_sigs );
 
       CHECK_THROW(PUSH_TX( db1, trx, skip_sigs ), fc::exception);
@@ -302,9 +325,11 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       CHECK_THROW(PUSH_TX( db1, trx, skip_sigs ), fc::exception);
       CHECK_THROW(PUSH_TX( db2, trx, skip_sigs ), fc::exception);
-      BOOST_CHECK_EQUAL(db1.get_balance( "alice", SYMBOL_COIN ).amount.value, 500);
-      BOOST_CHECK_EQUAL(db2.get_balance( "alice", SYMBOL_COIN ).amount.value, 500);
-   } catch (fc::exception& e) {
+      BOOST_CHECK_EQUAL( db1.get_liquid_balance( "alice", SYMBOL_COIN ).amount.value, 500 );
+      BOOST_CHECK_EQUAL( db2.get_liquid_balance( "alice", SYMBOL_COIN ).amount.value, 500 );
+   } 
+   catch(fc::exception& e) 
+   {
       edump((e.to_detail_string()));
       throw;
    }
@@ -316,7 +341,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       fc::temp_directory dir1( graphene::utilities::temp_directory_path() );
       database db1;
       db1._log_hardforks = false;
-      db1.open(dir1.path(), dir1.path(), INITIAL_TEST_SUPPLY, TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
+      db1.open(dir1.path(), dir1.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
 
       auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
       public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
@@ -330,8 +355,10 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.set_reference_block( db1.head_block_id() );
 
       account_create_operation cop;
+
+      cop.signatory = GENESIS_ACCOUNT_BASE_NAME;
+      cop.registrar = GENESIS_ACCOUNT_BASE_NAME;
       cop.new_account_name = "alice";
-      cop.creator = GENESIS_ACCOUNT_BASE_NAME;
       cop.owner = authority(1, init_account_pub_key, 1);
       cop.active = cop.owner;
       trx.operations.push_back(cop);
@@ -346,9 +373,12 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.clear();
 
       transfer_operation t;
+
+      t.signatory = GENESIS_ACCOUNT_BASE_NAME;
       t.from = GENESIS_ACCOUNT_BASE_NAME;
       t.to = "alice";
       t.amount = asset(50,SYMBOL_COIN);
+
       trx.operations.push_back(t);
       trx.set_expiration( db1.head_block_time() + fc::seconds(2) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
@@ -359,7 +389,9 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.signatures.clear();
       trx.sign( init_account_priv_key, db1.get_chain_id() );
       BOOST_REQUIRE_THROW( db1.push_transaction(trx, 0/*database::skip_transaction_signatures | database::skip_authority_check*/), fc::exception );
-   } catch (fc::exception& e) {
+   } 
+   catch(fc::exception& e) 
+   {
       edump((e.to_detail_string()));
       throw;
    }
@@ -376,11 +408,15 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
 
       BOOST_TEST_MESSAGE( "Create transaction" );
 
-      transfer( GENESIS_ACCOUNT_BASE_NAME, "alice", 1000000 );
+      transfer( GENESIS_ACCOUNT_BASE_NAME, "alice", asset( 1000000, SYMBOL_COIN ) );
+
       transfer_operation op;
+
+      op.signatory = "alice";
       op.from = "alice";
       op.to = "bob";
-      op.amount = asset(1000,SYMBOL_COIN);
+      op.amount = asset( 1000, SYMBOL_COIN );
+
       signed_transaction tx;
       tx.operations.push_back( op );
 
@@ -390,14 +426,14 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       tx.ref_block_prefix = 0;
       tx.signatures.clear();
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       PUSH_TX( db, tx );
 
       BOOST_TEST_MESSAGE( "proper ref_block_num, ref_block_prefix" );
 
       tx.signatures.clear();
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       PUSH_TX( db, tx, database::skip_transaction_dupe_check );
 
       BOOST_TEST_MESSAGE( "ref_block_num=0, ref_block_prefix=12345678" );
@@ -406,7 +442,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( PUSH_TX( db, tx, database::skip_transaction_dupe_check ), fc::exception );
 
       BOOST_TEST_MESSAGE( "ref_block_num=1, ref_block_prefix=12345678" );
@@ -415,7 +451,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( PUSH_TX( db, tx, database::skip_transaction_dupe_check ), fc::exception );
 
       BOOST_TEST_MESSAGE( "ref_block_num=9999, ref_block_prefix=12345678" );
@@ -424,7 +460,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       tx.ref_block_prefix = 0x12345678;
       tx.signatures.clear();
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( PUSH_TX( db, tx, database::skip_transaction_dupe_check ), fc::exception );
    }
    catch (fc::exception& e)
@@ -441,6 +477,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    share_type amount = 1000;
 
    transfer_operation t;
+   t.signatory = GENESIS_ACCOUNT_BASE_NAME;
    t.from = GENESIS_ACCOUNT_BASE_NAME;
    t.to = "bob";
    t.amount = asset(amount,SYMBOL_COIN);
@@ -451,6 +488,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    db.push_transaction(trx, ~0);
 
    trx.operations.clear();
+   t.signatory = "bob";
    t.from = "bob";
    t.to = GENESIS_ACCOUNT_BASE_NAME;
    t.amount = asset(amount,SYMBOL_COIN);
@@ -461,8 +499,8 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    REQUIRE_THROW( db.push_transaction(trx, 0), fc::exception );
 
    BOOST_TEST_MESSAGE( "Verify that double-signing causes an exception" );
-   trx.sign( bob_private_key, db.get_chain_id() );
-   trx.sign( bob_private_key, db.get_chain_id() );
+   trx.sign( bob_private_active_key, db.get_chain_id() );
+   trx.sign( bob_private_active_key, db.get_chain_id() );
    REQUIRE_THROW( db.push_transaction(trx, 0), tx_duplicate_sig );
 
    BOOST_TEST_MESSAGE( "Verify that signing with an extra, unused key fails" );
@@ -473,7 +511,7 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
    BOOST_TEST_MESSAGE( "Verify that signing once with the proper key passes" );
    trx.signatures.pop_back();
    db.push_transaction(trx, 0);
-   trx.sign( bob_private_key, db.get_chain_id() );
+   trx.sign( bob_private_active_key, db.get_chain_id() );
 
 } FC_LOG_AND_RETHROW() }
 
@@ -500,7 +538,7 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
 
       db.get_account( GENESIS_ACCOUNT_BASE_NAME );
       // transfer from account to Sam account
-      transfer( GENESIS_ACCOUNT_BASE_NAME, "sam", 100000 );
+      transfer( GENESIS_ACCOUNT_BASE_NAME, "sam", asset( 100000, SYMBOL_COIN ) );
 
       generate_block(skip_flags);
 
@@ -659,7 +697,7 @@ BOOST_FIXTURE_TEST_CASE( skip_block, clean_database_fixture )
       BOOST_REQUIRE( db.head_block_num() == 2 );
 
       int init_block_num = db.head_block_num();
-      int miss_blocks = fc::minutes( 1 ).to_seconds() / BLOCK_INTERVAL;
+      int miss_blocks = fc::minutes( 1 ).to_seconds() / BLOCK_INTERVAL.to_seconds();
       auto witness = db.get_scheduled_witness( miss_blocks );
       auto block_time = db.get_slot_time( miss_blocks );
       db.generate_block( block_time , witness, init_account_priv_key, 0 );
@@ -684,15 +722,18 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
       {
          db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
          {
-            gpo.maximum_block_size = MIN_BLOCK_SIZE_LIMIT;
+            gpo.median_props.maximum_block_size = MIN_BLOCK_SIZE_LIMIT;
          });
       });
+
       generate_block();
 
       signed_transaction tx;
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
       transfer_operation op;
+
+      op.signatory = GENESIS_ACCOUNT_BASE_NAME;
       op.from = GENESIS_ACCOUNT_BASE_NAME;
       op.to = TEMP_ACCOUNT;
       op.amount = asset( 1000, SYMBOL_COIN );
@@ -730,4 +771,4 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-#endif
+//#endif

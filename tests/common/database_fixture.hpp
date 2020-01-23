@@ -14,7 +14,7 @@
 #define INITIAL_TEST_SUPPLY (10000000000ll)
 using namespace graphene::db;
 
-extern uint32_t ( TESTING_GENESIS_TIMESTAMP );
+extern fc::time_point TESTING_GENESIS_TIMESTAMP;
 
 #define PUSH_TX \
    node::chain::test::_push_transaction

@@ -91,7 +91,8 @@ class wallet_api
       bool copy_wallet_file( string destination_filename );
 
 
-      /** Returns a list of all commands supported by the wallet API.
+      /** 
+       * Returns a list of all commands supported by the wallet API.
        *
        * This lists each command, along with its arguments and return types.
        * For more detailed help on a single command, use \c get_help()
@@ -101,12 +102,13 @@ class wallet_api
       string                              help()const;
 
       /**
-       * Returns info about the current state of the blockchain
+       * Returns info about the current state of the blockchain.
        */
       variant                             info();
 
-      /** Returns info such as client version, git version of graphene/fc, version of boost, openssl.
-       * @returns compile time info and client and dependencies versions
+      /** 
+       * Returns info such as client version, git version of graphene/fc, version of boost, openssl.
+       * @returns compile time info and client and dependencies versions.
        */
       variant_object                      about() const;
 

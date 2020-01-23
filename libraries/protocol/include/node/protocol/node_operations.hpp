@@ -1345,29 +1345,29 @@ namespace node { namespace protocol {
     */
    struct comment_options
    {
-      post_format_type                      post_type = TEXT_POST;                  ///< Type of post being created, text, image, article, video, audio, file, etc.
+      post_format_type                      post_type = TEXT_POST;          ///< Type of post being created, text, image, article, video, audio, file, etc.
 
-      feed_reach_type                       reach = TAG_FEED;                       ///< The extent to which the post will be distributed to account's followers and connections feeds.
+      feed_reach_type                       reach = TAG_FEED;               ///< The extent to which the post will be distributed to account's followers and connections feeds.
 
-      bool                                  privacy = false;                        ///< True if the post is encrypted. False if it is plaintext.
+      bool                                  privacy = false;                ///< True if the post is encrypted. False if it is plaintext.
 
-      post_rating_type                      rating = GENERAL;                       ///< User nominated rating as to the maturity of the content, and display sensitivity.
+      post_rating_type                      rating = GENERAL;               ///< User nominated rating as to the maturity of the content, and display sensitivity.
 
       asset                                 max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );   ///< USD value of the maximum payout this post will receive.
       
-      uint16_t                              percent_liquid = PERCENT_100;           ///< Percentage of reward to keep liquid, remaining received as a staked balance.
+      uint16_t                              percent_liquid = PERCENT_100;   ///< Percentage of reward to keep liquid, remaining received as a staked balance.
 
-      bool                                  allow_replies = true;                   ///< Allows a post to receive comment replies.
+      bool                                  allow_replies = true;           ///< Allows a post to receive comment replies.
       
-      bool                                  allow_votes = true;                     ///< Allows a post to receive votes.
+      bool                                  allow_votes = true;             ///< Allows a post to receive votes.
 
-      bool                                  allow_views = true;                     ///< Allows a post to receive views.
+      bool                                  allow_views = true;             ///< Allows a post to receive views.
 
-      bool                                  allow_shares = true;                    ///< Allows a post to receive shares.
+      bool                                  allow_shares = true;            ///< Allows a post to receive shares.
       
-      bool                                  allow_curation_rewards = true;          ///< allows voters, viewers, sharers, and commenters to recieve curation rewards.
+      bool                                  allow_curation_rewards = true;  ///< allows voters, viewers, sharers, and commenters to recieve curation rewards.
 
-      vector< beneficiary_route_type >      beneficiaries;                          ///< Vector of accounts that will receive an allocation of content rewards from the post.
+      vector< beneficiary_route_type >      beneficiaries;                  ///< Vector of accounts that will receive an allocation of content rewards from the post.
 
       comment_options_extensions_type       extensions;
 
@@ -3386,11 +3386,11 @@ namespace node { namespace protocol {
    {
       account_name_type          signatory;
       
-      account_name_type          publisher;  ///< Account publishing the price feed
+      account_name_type          publisher;     ///< Account publishing the price feed
 
-      asset_symbol_type          symbol;     ///< Asset for which the feed is published
+      asset_symbol_type          symbol;        ///< Asset for which the feed is published
 
-      price_feed                 feed;       ///< Exchange rate between bitasset and backing asset
+      price_feed                 feed;          ///< Exchange rate between bitasset and backing asset
 
       extensions_type            extensions;
 

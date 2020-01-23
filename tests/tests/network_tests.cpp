@@ -25,9 +25,9 @@ using std::string;
 BOOST_FIXTURE_TEST_SUITE( network_operation_tests, clean_database_fixture );
 
 
-   //============================//
-   // === Network Operations === //
-   //============================//
+   //=======================//
+   // === Network Tests === //
+   //=======================//
 
 
 BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )

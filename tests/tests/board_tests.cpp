@@ -26,9 +26,9 @@ BOOST_FIXTURE_TEST_SUITE( board_operation_tests, clean_database_fixture );
 
 
 
-   //==========================//
-   // === Board Operations === //
-   //==========================//
+   //=====================//
+   // === Board Tests === //
+   //=====================//
 
 
    

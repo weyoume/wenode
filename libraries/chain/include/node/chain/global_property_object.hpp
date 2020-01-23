@@ -50,9 +50,9 @@ namespace node { namespace chain {
 
          asset                  accumulated_network_revenue = asset(0, SYMBOL_COIN);      // Counter for the total of all core assets burned as network revenue.        
 
-         price                  current_median_equity_price = price(asset(1,SYMBOL_COIN),asset(1,SYMBOL_EQUITY));  // The current price of Equity Asset in Coin asset.
+         price                  current_median_equity_price = price(asset(1,SYMBOL_EQUITY),asset(1,SYMBOL_COIN));  // The current price of Equity Asset in Coin asset.
 
-         price                  current_median_usd_price;                                 // The current price of the USD asset in the Coin asset.
+         price                  current_median_usd_price = price(asset(1,SYMBOL_USD),asset(1,SYMBOL_COIN));        // The current price of the USD asset in the Coin asset.
 
          uint128_t              total_voting_power;                                       // Current outstanding supply of voting power in both equity and staked coin balances.
 

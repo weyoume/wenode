@@ -201,19 +201,19 @@ class database_api
       //=================//
 
 
-      fc::variant_object                get_config()const;
+      fc::variant_object                  get_config()const;
 
-      dynamic_global_property_api_obj   get_dynamic_global_properties()const;
+      dynamic_global_property_api_obj     get_dynamic_global_properties()const;
 
-      chain_properties                  get_chain_properties()const;
+      chain_properties                    get_chain_properties()const;
 
-      witness_schedule_api_obj          get_witness_schedule()const;
+      witness_schedule_api_obj            get_witness_schedule()const;
 
-      hardfork_version                  get_hardfork_version()const;
+      hardfork_version                    get_hardfork_version()const;
 
-      scheduled_hardfork                get_next_scheduled_hardfork()const;
+      scheduled_hardfork                  get_next_scheduled_hardfork()const;
 
-      reward_fund_api_obj               get_reward_fund()const;
+      reward_fund_api_obj                 get_reward_fund()const;
 
 
       //===================//

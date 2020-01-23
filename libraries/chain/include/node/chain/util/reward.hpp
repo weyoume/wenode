@@ -19,20 +19,41 @@ using node::protocol::share_type;
 
 using fc::uint128_t;
 
+uint8_t find_msb( const uint128_t& u );
+
+uint64_t approx_sqrt( const uint128_t& x );
+
+void fill_comment_reward_context_local_state( util::comment_reward_context& ctx, const comment_object& comment );
+
+
+/**
+ * Container of network and comment values 
+ * to be passed into comment reward calculations.
+ */
 struct comment_reward_context
 {
-   share_type          reward;
-   asset               max_reward;                                   // Max reward Asset in USD
-   uint128_t           total_reward_squared;
-   asset               total_reward_fund;
-   price               current_COIN_USD_price;
-   uint32_t            cashouts_received;                            // Number of days that the comment has received rewards for
-   fc::microseconds    cashout_decay = CONTENT_REWARD_DECAY_RATE;    // Days over which the content reward linearly decays
-   curve_id            reward_curve = convergent_semi_quadratic;
-   uint128_t           content_constant = CONTENT_CONSTANT;
+   share_type          reward;                         ///< Net reward from a given comment.
+
+   asset               max_reward;                     ///< Max reward Asset in USD.
+
+   uint128_t           recent_content_claims;          ///< Sum of the reward curve from posts in the previous decay time, decays linearly.
+
+   asset               total_reward_fund;              ///< Amount of Coin available for content reward distribution.
+
+   price               current_COIN_USD_price;         ///< Price of Coin in USD, used to manage maximum payout values and dust threshold.
+
+   uint32_t            cashouts_received;              ///< Number of days that the comment has received rewards for previously.
+
+   fc::microseconds    decay_rate;                     ///< Days over which the content reward claims linearly decays.
+
+   fc::microseconds    reward_interval;                ///< Time over which each content reward payout occur.
+
+   curve_id            reward_curve;                   ///< Formula selection for calculating the value of reward shares from a comment.
+
+   uint128_t           content_constant;               ///< Constant added to reward value for reward curve calculation.
 };
 
-uint64_t get_comment_reward( const comment_reward_context& ctx );
+uint128_t get_comment_reward( const comment_reward_context& ctx );
 
 inline uint128_t get_content_constant_s()
 {
@@ -42,10 +63,9 @@ inline uint128_t get_content_constant_s()
 uint128_t evaluate_reward_curve( 
    const uint128_t& reward, 
    const uint32_t cashouts_received, 
-   const curve_id& curve = convergent_semi_quadratic, 
-   const fc::microseconds cashout_decay = CONTENT_REWARD_DECAY_RATE,
-   const uint128_t& content_constant = CONTENT_CONSTANT 
-   );
+   const curve_id& curve, 
+   const fc::microseconds decay_rate,
+   const uint128_t& content_constant );
 
 inline bool is_comment_payout_dust( const price& p, share_type reward_payout )
 {
@@ -57,11 +77,11 @@ inline bool is_comment_payout_dust( const price& p, share_type reward_payout )
 FC_REFLECT( node::chain::util::comment_reward_context,
          (reward)
          (max_reward)
-         (total_reward_squared)
+         (recent_content_claims)
          (total_reward_fund)
          (current_COIN_USD_price)
          (cashouts_received)
-         (cashout_decay)
+         (decay_rate)
          (reward_curve)
          (content_constant)
          );

@@ -26,9 +26,9 @@ BOOST_FIXTURE_TEST_SUITE( balance_operation_tests, clean_database_fixture );
 
 
 
-   //============================//
-   // === Balance Operations === //
-   //============================//
+   //=======================//
+   // === Balance Tests === //
+   //=======================//
 
 
 

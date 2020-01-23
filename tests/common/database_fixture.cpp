@@ -21,7 +21,7 @@
 
 //using namespace node::chain::test;
 
-uint32_t TESTING_GENESIS_TIMESTAMP = 1431700000;
+fc::time_point TESTING_GENESIS_TIMESTAMP = fc::time_point(fc::microseconds(1590242400000000));
 
 namespace node { namespace chain {
 

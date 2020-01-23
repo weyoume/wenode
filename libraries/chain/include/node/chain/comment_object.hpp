@@ -39,13 +39,13 @@ namespace node { namespace chain {
 
          vector< shared_string >        magnet;                       // String containing a bittorrent magnet link to a file swarm.
 
-         post_format_type                     post_type;                    // The type of post that is being created, image, text, article, video etc. 
+         post_format_type               post_type;                    // The type of post that is being created, image, text, article, video etc. 
 
          bool                           privacy;                      // True if the post is encrypted. False if it is plaintext.
 
          public_key_type                public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
 
-         feed_reach_type                     reach;                        // The reach of the post across followers, connections, friends and companions
+         feed_reach_type                reach;                        // The reach of the post across followers, connections, friends and companions
 
          board_name_type                board;                        // The name of the board to which the post is uploaded to. Null string if no board. 
 
@@ -53,7 +53,7 @@ namespace node { namespace chain {
 
          account_name_type              interface;                    // Name of the interface account that was used to broadcast the transaction and view the post.
 
-         post_rating_type                   rating;                       // User nominated rating as to the maturity of the content, and display sensitivity. 
+         post_rating_type               rating;                       // User nominated rating as to the maturity of the content, and display sensitivity. 
 
          shared_string                  language;                     // String containing a two letter language code that the post is broadcast in.
 

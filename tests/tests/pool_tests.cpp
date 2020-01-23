@@ -26,9 +26,9 @@ BOOST_FIXTURE_TEST_SUITE( pool_operation_tests, clean_database_fixture );
 
 
 
-   //=========================//
-   // === Pool Operations === //
-   //=========================//
+   //====================//
+   // === Pool Tests === //
+   //====================//
 
 
 

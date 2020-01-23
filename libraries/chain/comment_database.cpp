@@ -328,14 +328,6 @@ share_type database::pay_moderators( const comment_object& c, const share_type& 
 
 
 
-void fill_comment_reward_context_local_state( util::comment_reward_context& ctx, const comment_object& comment )
-{
-   ctx.reward = comment.net_reward;
-   ctx.cashouts_received = comment.cashouts_received;
-   ctx.max_reward = comment.max_accepted_payout;
-}
-
-
 /**
  * Distributes Content rewards to comments once per day
  * for the first 30 days after they are created, and 
@@ -350,12 +342,9 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
 
    if( comment.net_reward > 0 )
    {
-      fill_comment_reward_context_local_state( ctx, comment );
-      const reward_fund_object& reward_fund = get_reward_fund();
-      ctx.reward_curve = reward_fund.author_reward_curve;
-      ctx.content_constant = reward_fund.content_constant;
-      const share_type reward = util::get_comment_reward( ctx );
-      uint128_t reward_tokens = uint128_t( reward.value );
+      util::fill_comment_reward_context_local_state( ctx, comment );
+
+      uint128_t reward_tokens = util::get_comment_reward( ctx );
 
       if( reward_tokens > 0 )
       {
@@ -393,10 +382,29 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
          asset author_reward = asset( author_tokens, SYMBOL_COIN );
          adjust_reward_balance( author, author_reward );
 
-         adjust_total_payout( comment, asset_to_USD( asset( claimed_reward, SYMBOL_COIN ) ), asset_to_USD( asset( total_curation_tokens, SYMBOL_COIN ) ), asset_to_USD( asset( total_beneficiary, SYMBOL_COIN ) ) );
+         adjust_total_payout( 
+            comment, 
+            asset_to_USD( asset( claimed_reward, SYMBOL_COIN ) ),
+            asset_to_USD( asset( total_curation_tokens, SYMBOL_COIN ) ),
+            asset_to_USD( asset( total_beneficiary, SYMBOL_COIN ) )
+         );
 
-         push_virtual_operation( author_reward_operation( comment.author, to_string( comment.permlink ), author_reward ) );
-         push_virtual_operation( comment_reward_operation( comment.author, to_string( comment.permlink ), asset_to_USD( asset( claimed_reward, SYMBOL_COIN ) ) ) );
+         push_virtual_operation( 
+            author_reward_operation( 
+               comment.author,
+               to_string( comment.permlink ),
+               author_reward
+            ) 
+         );
+
+         push_virtual_operation( 
+            comment_reward_operation( 
+               comment.author,
+               to_string( comment.permlink ),
+               asset_to_USD( asset( claimed_reward, SYMBOL_COIN )
+               )
+            )
+         );
 
          modify( comment, [&]( comment_object& c )
          {
@@ -422,14 +430,14 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
 
    modify( comment, [&]( comment_object& c )
    {
-      if( c.cashouts_received < ( props.median_props.content_reward_decay_rate.to_seconds() / props.median_props.content_reward_interval.to_seconds() ) )
+      if( c.cashouts_received < ( ctx.decay_rate.to_seconds() / ctx.reward_interval.to_seconds() ) )
       {
          if( c.net_reward > 0 )   // A payout is only made for positive reward.
          {
             c.cashouts_received++;
             c.last_payout = now;
          }
-         c.cashout_time += props.median_props.content_reward_interval;
+         c.cashout_time += ctx.reward_interval;     // Bump reward interval to next time
       }
       else
       {
@@ -461,6 +469,18 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
    return claimed_reward;
 } FC_CAPTURE_AND_RETHROW( (comment) ) }
 
+util::comment_reward_context database::get_comment_reward_context( const reward_fund_object& reward_fund )
+{
+   util::comment_reward_context ctx;
+
+   ctx.current_COIN_USD_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).day_median_price;
+   ctx.decay_rate = reward_fund.content_reward_decay_rate;
+   ctx.reward_interval = reward_fund.content_reward_interval;
+   ctx.reward_curve = reward_fund.author_reward_curve;
+   ctx.content_constant = reward_fund.content_constant;
+   return ctx;
+}
+
 
 /**
  * Distributes content rewards to content authors and curators
@@ -469,21 +489,25 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
 void database::process_comment_cashout()
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+   
    time_point now = props.time;
-   util::comment_reward_context ctx;
-   ctx.current_COIN_USD_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_USD).day_median_price;
+
    vector< share_type > reward_distributed;
-   auto decay_rate = RECENT_REWARD_DECAY_RATE;
+
    const reward_fund_object& reward_fund = get_reward_fund();
 
+   util::comment_reward_context ctx = get_comment_reward_context( reward_fund );
+
    // Decay recent reward of post reward fund
+
    modify( reward_fund, [&]( reward_fund_object& rfo )
    {
-      rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_update ).to_seconds() ) / decay_rate.to_seconds();
+      rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_update ).to_seconds() ) / ctx.decay_rate.to_seconds();
       rfo.last_update = now;
    });
 
    // Snapshots the reward fund into a seperate object reward fund context to ensure equal execution conditions.
+
    reward_fund_context rf_ctx;
    rf_ctx.recent_content_claims = reward_fund.recent_content_claims;
    rf_ctx.content_reward_balance = reward_fund.content_reward_balance;
@@ -496,19 +520,25 @@ void database::process_comment_cashout()
    {
       if( current->net_reward > 0 )
       {
-         rf_ctx.recent_content_claims += util::evaluate_reward_curve( uint128_t(current->net_reward), current->cashouts_received, reward_fund.author_reward_curve, decay_rate, reward_fund.content_constant );
+         rf_ctx.recent_content_claims += util::evaluate_reward_curve(
+            uint128_t( current->net_reward ),
+            current->cashouts_received,
+            ctx.reward_curve,
+            ctx.decay_rate,
+            ctx.content_constant 
+         );
       }
       ++current;
    }
 
    current = cidx.begin();
-   
+
+   ctx.recent_content_claims = rf_ctx.recent_content_claims;
+   ctx.total_reward_fund = rf_ctx.content_reward_balance;
+
    while( current != cidx.end() && current->cashout_time <= now )
    {
-      ctx.total_reward_squared = rf_ctx.recent_content_claims;
-      ctx.total_reward_fund = rf_ctx.content_reward_balance;
       rf_ctx.reward_distributed += distribute_comment_reward( ctx, *current );    // Allocates reward balances to accounts from the comment reward context
-
       ++current;
    }
 
@@ -2007,9 +2037,9 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
 
 
 /**
- * This method updates total_reward_squared on DGPO, and children_reward_squared on comments, when a comment's reward_squared changes
- * from old_reward_squared to new_reward_squared.  Maintaining invariants that children_reward_squared is the sum of all descendants' reward_squared,
- * and dgpo.total_reward_squared is the total number of reward_squared outstanding.
+ * This method updates total_reward_shares on reward fund object, 
+ * when a comment's reward_squared changes from old_reward_shares 
+ * to new_reward_shares.
  */
 void database::adjust_reward_shares( const comment_object& c, uint128_t old_reward_shares, uint128_t new_reward_shares )
 {

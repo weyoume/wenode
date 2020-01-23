@@ -76,19 +76,19 @@ namespace node { namespace protocol {
          const asset_symbol_type& sym_a,
          const asset_symbol_type& sym_b ):
          current_owner(c_o),
-         current_orderid(c_id),
+         current_order_id(c_id),
          current_pays(c_p),
          open_owner(o_o),
-         open_orderid(o_id),
+         open_order_id(o_id),
          open_pays(o_p),
          symbol_a(sym_a),
          symbol_b(sym_b){}
 
       account_name_type      current_owner;
-      string                 current_orderid;
+      string                 current_order_id;
       asset                  current_pays;
       account_name_type      open_owner;
-      string                 open_orderid;
+      string                 open_order_id;
       asset                  open_pays;
       asset_symbol_type      symbol_a;
       asset_symbol_type      symbol_b;
@@ -227,10 +227,10 @@ FC_REFLECT( node::protocol::shutdown_witness_operation,
 
 FC_REFLECT( node::protocol::fill_order_operation, 
          (current_owner)
-         (current_orderid)
+         (current_order_id)
          (current_pays)
          (open_owner)
-         (open_orderid)
+         (open_order_id)
          (open_pays) 
          );
 

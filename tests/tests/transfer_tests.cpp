@@ -26,9 +26,9 @@ BOOST_FIXTURE_TEST_SUITE( transfer_operation_tests, clean_database_fixture );
 
 
 
-   //=============================//
-   // === Transfer Operations === //
-   //=============================//
+   //========================//
+   // === Transfer Tests === //
+   //========================//
 
 
 

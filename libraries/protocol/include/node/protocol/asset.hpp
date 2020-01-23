@@ -1,6 +1,7 @@
 #pragma once
 #include <node/protocol/types.hpp>
 #include <node/protocol/config.hpp>
+#include <node/protocol/node_operations.hpp>
 
 namespace node { namespace protocol {
 
@@ -26,41 +27,43 @@ namespace node { namespace protocol {
 
       int16_t              precision;      ///< The Asset precision being represented, defaults to BLOCKCHAIN_PRECISION_DIGITS.
 
-      string amount_to_string( share_type amount )const;     ///< Convert an asset to a textual representation, i.e. "123.45"
+      string amount_to_string( share_type amount )const;     ///< Convert an asset to a textual representation
 
-      
-      string amount_to_string( const asset& amount )const    ///< Convert an asset to a textual representation, i.e. "123.45"
+      string amount_to_string( const asset& amount )const    ///< Convert an asset to a textual representation
       { 
          FC_ASSERT( amount.symbol == symbol ); 
-         return amount_to_string(amount.amount); 
+         return amount_to_string( amount.amount );
       }
 
-      static asset from_string( const string& from );
+      static asset from_string( string from );
 
-      string       to_string()const;
+      string to_string()const;
 
       int64_t precision_value()const;
 
-      asset amount_from_string( string amount_string )const;     ///< Convert a string amount (i.e. "123.45") to an asset object with this asset's type
+      double to_real()const
+      {
+         return double( amount.value ) / double( precision );
+      }
 
-      string amount_to_string( share_type amount )const;          ///< Convert an asset to a textual representation, i.e. "123.45"
+      asset amount_from_string( string amount_string )const;     ///< Convert a string amount to an asset object with this asset's type
 
+      string amount_to_string( share_type amount )const;          ///< Convert an asset to a textual representation
       
-      string amount_to_string(const asset& amount)const           ///< Convert an asset to a textual representation, i.e. "123.45"
+      string amount_to_string( const asset& amount )const           ///< Convert an asset to a textual representation
       { 
          FC_ASSERT( amount.symbol == symbol ); 
          return amount_to_string( amount.amount ); 
       }
 
-     
-      string amount_to_pretty_string(share_type amount)const       ///< Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
+      string amount_to_pretty_string(share_type amount)const       ///< Convert an asset to a textual representation with symbol
       { 
          return amount_to_string( amount ) + " " + symbol; 
       }
 
-      string amount_to_pretty_string(const asset &amount)const     ///< Convert an asset to a textual representation with symbol, i.e. "123.45 USD"
+      string amount_to_pretty_string(const asset &amount)const     ///< Convert an asset to a textual representation with symbol
       { 
-         FC_ASSERT(amount.symbol == symbol); 
+         FC_ASSERT( amount.symbol == symbol ); 
          return amount_to_pretty_string( amount.amount ); 
       }
 

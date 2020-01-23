@@ -763,6 +763,8 @@ namespace node { namespace chain {
 
          fc::microseconds        content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;
 
+         fc::microseconds        content_reward_interval = CONTENT_REWARD_INTERVAL;
+
          curve_id                author_reward_curve = convergent_semi_quadratic;
 
          curve_id                curation_reward_curve = convergent_semi_quadratic;
