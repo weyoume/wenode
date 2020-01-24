@@ -103,7 +103,7 @@ namespace graphene { namespace net {
           *       we cannot undo
           *   the second element will be the hash of an item at the half way point in the undoable
           *       segment of the blockchain
-          *   the third will be ~3/4 of the way through the undoable segment of the block chain
+          *   the third will be ~3/4 of the way through the undoable segment of the blockchain
           *   the fourth will be at ~7/8...
           *     &c.
           *   the last item in the list will be the hash of the most recent block on our preferred chain

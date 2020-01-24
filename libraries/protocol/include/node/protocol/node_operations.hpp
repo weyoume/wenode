@@ -213,8 +213,6 @@ namespace node { namespace protocol {
 
       asset                                  delegation;                    ///< Initial amount delegated to the new account
 
-      extensions_type                        extensions;
-
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return registrar; }
@@ -304,15 +302,15 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      account;
+      account_name_type      account;              ///< The name of the account to activate membership on.
 
-      membership_tier_type   membership_type;
+      membership_tier_type   membership_type;      ///< The level of membership to activate on the account.
 
-      uint16_t               months;
+      uint16_t               months;               ///< Number of months to purchase membership for.
 
-      account_name_type      interface;
+      account_name_type      interface;            ///< Name of the interface application facilitating the transaction.
 
-      bool                   recurring = true;
+      bool                   recurring = true;     ///< True for membership to automatically recur each month from liquid balance. 
 
       void validate() const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -359,7 +357,7 @@ namespace node { namespace protocol {
 
       account_name_type            officer_account;       ///< Name of officer being voted for.
 
-      uint16_t                     vote_rank;             ///< Rank of voting preference
+      uint16_t                     vote_rank;             ///< Rank of voting preference.
 
       bool                         approved = true;       ///< True to add, false to remove. 
 
@@ -376,7 +374,7 @@ namespace node { namespace protocol {
    {
       account_name_type            signatory;
 
-      account_name_type            account;              ///< Business account or the member account, or an officer of the business account.
+      account_name_type            account;              ///< Account requesting to be a member of the business.
 
       account_name_type            business_account;     ///< Business account that the member is being added to.
 
@@ -401,7 +399,7 @@ namespace node { namespace protocol {
 
       account_name_type            business_account;          ///< Business account that the member is being added to.
 
-      account_name_type            member;                    ///< Name of member being added
+      account_name_type            member;                    ///< Name of member being added.
 
       string                       message;                   ///< Encrypted Message to the account being invited.
 
@@ -445,7 +443,7 @@ namespace node { namespace protocol {
    {
       account_name_type            signatory;
 
-      account_name_type            account;              ///< Account accepting the invitation
+      account_name_type            account;              ///< Account accepting the invitation.
 
       account_name_type            business_account;     ///< Business account that the account was invited to.
 
@@ -466,7 +464,7 @@ namespace node { namespace protocol {
 
       account_name_type            account;              ///< Business account or an executive of the business account.
 
-      account_name_type            business_account;     ///< Business account that the member is being added to.
+      account_name_type            business_account;     ///< Business account that the member is being removed from.
 
       account_name_type            member;               ///< Name of member being accepted.
 
@@ -500,19 +498,22 @@ namespace node { namespace protocol {
 
 
    /**
-    * All accounts with voting power can vote for witnesses to produce blocks.
+    * Vote for a witness to become a block producer. 
     * 
+    * All accounts with voting power can vote for witnesses to produce blocks, 
+    * the top 50 voted producers are able to produce one block each round, 
+    * combined with the top 50 miners.
     * If a proxy is specified then all existing votes are removed.
     */
    struct account_witness_vote_operation : public base_operation
    {
       account_name_type               signatory;
 
-      account_name_type               account;           ///< Account creating the vote
+      account_name_type               account;           ///< Account creating the vote.
 
-      uint16_t                        vote_rank;         ///< Rank ordering of the vote
+      uint16_t                        vote_rank;         ///< Rank ordering of the vote.
 
-      account_name_type               witness;           ///< Witness being voted for
+      account_name_type               witness;           ///< Witness being voted for.
 
       bool                            approved = true;   ///< True to create vote, false to remove vote.
 
@@ -521,19 +522,20 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return account; }
    };
 
+
    /**
     * Updates the Proxy account for a specified account.
     * 
     * Proxy is able to vote for witnesses, network officers and 
-    * additonal network functionalities on behalf of the account
+    * additonal network functionalities on behalf of the account.
     */
    struct account_update_proxy_operation : public base_operation
    {
       account_name_type          signatory;
 
-      account_name_type          account;
+      account_name_type          account;      ///< The name of the account to update.
 
-      account_name_type          proxy;
+      account_name_type          proxy;        ///< The name of account that should proxy to, or empty string to have no proxy.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -577,10 +579,7 @@ namespace node { namespace protocol {
 
       account_name_type                  account_to_recover;     ///< The account to recover. This is likely due to a compromised owner authority.
 
-      authority                          new_owner_authority;    ///< The new owner authority the account to recover wishes to have. This is secret
-                                                ///< known by the account to recover and will be confirmed in a recover_account_operation
-
-      extensions_type                    extensions;             ///< Extensions. Not currently used.
+      authority                          new_owner_authority;    ///< The new owner authority the account to recover wishes to have.
 
       const account_name_type& get_creator_name() const { return recovery_account; }
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -638,8 +637,6 @@ namespace node { namespace protocol {
 
       authority             recent_owner_authority;    ///< A previous owner authority that the account holder will use to prove past ownership of the account to be recovered.
 
-      extensions_type       extensions;                ///< Extensions. Not currently used.
-
       void get_required_authorities( vector< authority >& a )const
       {
          a.push_back( new_owner_authority );
@@ -651,7 +648,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * Allows @ref recovery_account to change @ref account_to_reset's owner authority.
+    * Allows @ref reset_account to change @ref account_to_reset's owner authority.
     * 
     * Enabled after 7 days of inactivity.
     */
@@ -659,11 +656,11 @@ namespace node { namespace protocol {
    {
       account_name_type         signatory;
 
-      account_name_type         reset_account;
+      account_name_type         reset_account;          ///< The account that is initiating the reset process.
 
-      account_name_type         account_to_reset;
+      account_name_type         account_to_reset;       ///< The Account to be reset.
 
-      authority                 new_owner_authority;
+      authority                 new_owner_authority;    ///< A recent owner authority on your account.
 
       void get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return reset_account; }
@@ -680,11 +677,11 @@ namespace node { namespace protocol {
    {
       account_name_type         signatory;
 
-      account_name_type         account;
+      account_name_type         account;             ///< Account to update.
 
-      account_name_type         new_reset_account;
+      account_name_type         new_reset_account;   ///< Account that has the new authority to reset the account.
 
-      int16_t                   days = 7;
+      uint16_t                  days = 7;            ///< Days of inactivity required to reset the account. 
 
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
@@ -715,11 +712,9 @@ namespace node { namespace protocol {
    {
       account_name_type         signatory;
 
-      account_name_type         account_to_recover;     ///< The account that would be recovered in case of compromise
+      account_name_type         account_to_recover;     ///< The account being updated.
 
-      account_name_type         new_recovery_account;   ///< The account that creates the recover request
-
-      extensions_type           extensions;             ///< Extensions. Not currently used.
+      account_name_type         new_recovery_account;   ///< The account that is authorized to create recovery requests.
 
       void get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account_to_recover; }
@@ -730,14 +725,15 @@ namespace node { namespace protocol {
    /**
     * Removes an account's ability to vote in perpetuity.
     * 
-    * Used for the purposes of ensuring that funds held in trust that are owned by third parties
+    * Used for the purposes of ensuring that funds held 
+    * in trust that are owned by third parties
     * are not used for undue influence over the network.
     */
    struct decline_voting_rights_operation : public base_operation
    {
       account_name_type       signatory;
 
-      account_name_type       account;
+      account_name_type       account;             ///< The account being updated.
 
       bool                    declined = true;     ///< True to decine voting rights, false to cancel pending request.
 
@@ -748,11 +744,13 @@ namespace node { namespace protocol {
 
 
    /**
-    * Initiates a 3 step connection exchange betwen two accounts.
+    * Requests that a connection be created between two accounts.
     * 
     * Used for the purposes of exchanging encrypted connection keys that can be used to decrypt
     * private posts made by the account, and enables the creation of private 
-    * message transactions between the two accounts.
+    * message transactions between the two accounts. 
+    * 
+    * Initiates a 3 step connection exchange process:
     * 
     * 1 - Alice sends Request txn.
     * 2 - Bob sends Acceptance txn with encrypted private key.
@@ -762,11 +760,11 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             account;                        ///< Account sending the request
+      account_name_type             account;                        ///< Account sending the request.
 
-      account_name_type             requested_account;              ///< Account that is being requested to connect
+      account_name_type             requested_account;              ///< Account that is being requested to connect.
 
-      connection_tier_type          connection_type;                ///< Type of connection level
+      connection_tier_type          connection_type;                ///< Type of connection level.
 
       string                        message;                        ///< Message attached to the request, encrypted with recipient's secure public key.
 
@@ -796,7 +794,7 @@ namespace node { namespace protocol {
 
       account_name_type             requesting_account;    ///< Account that originally requested to connect.
 
-      string                        connection_id;         ///< Unique uuidv4 for the connection, for local storage of decryption key.
+      string                        connection_id;         ///< uuidv4 for the connection, for local storage of decryption key.
 
       connection_tier_type          connection_type;       ///< Type of connection level.
 
@@ -820,11 +818,11 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             follower;             ///< Name of the account that is creating the new follow relationship
+      account_name_type             follower;             ///< Account that is creating the new follow relationship.
 
-      account_name_type             following;            ///< Name of the account that is being follower by follower
+      account_name_type             following;            ///< Account that is being followed by follower.
 
-      account_name_type             interface;            ///< Name of the interface account that was used to broadcast the transaction. 
+      account_name_type             interface;            ///< Interface account that was used to broadcast the transaction. 
 
       bool                          added = true;         ///< Set true to add to list, false to remove from list.
 
@@ -837,8 +835,9 @@ namespace node { namespace protocol {
 
 
    /**
-    * Enables an account to follow a tag, 
-    * adding it to the accounts follow object, and displaying
+    * Enables an account to follow a tag.
+    * 
+    * Includes the tag in the accounts following object, and displays
     * posts and shares from posts that use the tag in their feeds.
     */
    struct tag_follow_operation : public base_operation
@@ -1369,8 +1368,6 @@ namespace node { namespace protocol {
 
       vector< beneficiary_route_type >      beneficiaries;                  ///< Vector of accounts that will receive an allocation of content rewards from the post.
 
-      comment_options_extensions_type       extensions;
-
       void validate()const;
    };
 
@@ -1463,12 +1460,6 @@ namespace node { namespace protocol {
 
       void validate()const;
    };
-
-   typedef static_variant<
-      comment_payout_beneficiaries
-      > comment_options_extension;
-
-   typedef flat_set< comment_options_extension > comment_options_extensions_type;
 
 
    /**
@@ -2767,11 +2758,9 @@ namespace node { namespace protocol {
 
       asset                    debt;                       ///< Amount of the debt to be issued.
 
-      optional< uint16_t >     target_collateral_ratio;    ///< maximum CR to maintain when selling collateral on margin call.
+      optional< uint16_t >     target_collateral_ratio;    ///< Maximum CR to maintain when selling collateral on margin call.
 
       account_name_type        interface;                  ///< Name of the interface that created the transaction.
-
-      extensions_type          extensions;   
 
       void                validate()const;
       const account_name_type& get_creator_name() const { return owner; }
@@ -2790,13 +2779,11 @@ namespace node { namespace protocol {
    {
       account_name_type     signatory;
 
-      account_name_type     bidder;           ///< pays fee and additional collateral.
+      account_name_type     bidder;           ///< Pays fee and additional collateral.
 
-      asset                 collateral;       ///< the amount of collateral to bid for the debt.
+      asset                 collateral;       ///< The amount of collateral to bid for the debt.
 
-      asset                 debt;             ///< the amount of debt to take over.
-
-      extensions_type       extensions;
+      asset                 debt;             ///< The amount of debt to take over.
 
       void                  validate()const;
       const account_name_type& get_creator_name() const { return bidder; }
@@ -3039,8 +3026,6 @@ namespace node { namespace protocol {
 
       flat_set< asset_symbol_type >   blacklist_markets;                     ///< The assets that this asset may not be traded against in the market, must not overlap whitelist
 
-      extensions_type                 extensions;
-
       void validate()const;
    };
 
@@ -3053,8 +3038,6 @@ namespace node { namespace protocol {
       share_type          annual_issuance = ANNUAL_COIN_ISSUANCE;
 
       uint16_t            block_producer_percent = PRODUCER_REWARD_PERCENT;
-
-      extensions_type     extensions;
 
       void validate()const;
    };
@@ -3076,8 +3059,6 @@ namespace node { namespace protocol {
       uint16_t            maximum_force_settlement_volume = FORCE_SETTLEMENT_MAX_VOLUME;  ///< the percentage of current supply which may be force settled within each 24h interval.
 
       asset_symbol_type   short_backing_asset = SYMBOL_COIN;                              ///< The symbol of the asset that the bitasset is collateralized by.
-
-      extensions_type     extensions;
 
       void validate()const;
    };
@@ -3118,8 +3099,6 @@ namespace node { namespace protocol {
 
       uint16_t            boost_top = EQUITY_BOOST_TOP_PERCENT;                   ///< Percent bonus earned by Top membership accounts
 
-      extensions_type     extensions;
-
       void validate()const;
    };
 
@@ -3149,8 +3128,6 @@ namespace node { namespace protocol {
 
       uint32_t            var_interest_range = VAR_INTEREST_RANGE;                           ///< The percentage range from the buyback price over which to apply the variable interest rate.
 
-      extensions_type     extensions;
-
       void validate()const;
    };
 
@@ -3164,8 +3141,6 @@ namespace node { namespace protocol {
 
       uint16_t            block_producer_percent = PRODUCER_REWARD_PERCENT;
 
-      extensions_type     extensions;
-
       void validate()const;
    };
 
@@ -3178,8 +3153,6 @@ namespace node { namespace protocol {
       share_type          annual_issuance = ANNUAL_COIN_ISSUANCE;
 
       uint16_t            block_producer_percent = PRODUCER_REWARD_PERCENT;
-
-      extensions_type     extensions;
 
       void validate()const;
    };
@@ -3222,8 +3195,6 @@ namespace node { namespace protocol {
 
       optional< unique_options >      unique_opts;             ///< Options available for unique assets.
 
-      extensions_type                 extensions;
-
       void                            validate()const;
       const account_name_type&        get_creator_name() const { return issuer; }
       void                            get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -3255,8 +3226,6 @@ namespace node { namespace protocol {
 
       optional< unique_options >    new_unique_opts;          ///< Options available for unique assets
 
-      extensions_type               extensions;
-
       void                          validate()const;
       const account_name_type& get_creator_name() const { return issuer; }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -3280,8 +3249,6 @@ namespace node { namespace protocol {
 
       string                 memo;                 ///< user provided data encrypted to the memo key of the "to" account 
 
-      extensions_type        extensions;
-
       void                   validate()const;
       const account_name_type& get_creator_name() const { return issuer; }
       void                   get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -3298,8 +3265,6 @@ namespace node { namespace protocol {
       account_name_type     payer;               ///< Account that is reserving the asset back to the unissued supply.
 
       asset                 amount_to_reserve;   ///< amount of the asset begin reserved.
-
-      extensions_type       extensions;
 
       void                  validate()const;
       const account_name_type& get_creator_name() const { return payer; }
@@ -3322,8 +3287,6 @@ namespace node { namespace protocol {
       asset_symbol_type         asset_to_update;
 
       account_name_type         new_issuer;
-
-      extensions_type           extensions;
 
       void                      validate()const;
       const account_name_type&  get_creator_name() const { return issuer; }
@@ -3351,8 +3314,6 @@ namespace node { namespace protocol {
       asset_symbol_type               asset_to_update;
 
       flat_set< account_name_type >   new_feed_producers;
-
-      extensions_type                 extensions;
 
       void                            validate()const;
       const account_name_type&        get_creator_name() const { return issuer; }
@@ -3392,8 +3353,6 @@ namespace node { namespace protocol {
 
       price_feed                 feed;          ///< Exchange rate between bitasset and backing asset
 
-      extensions_type            extensions;
-
       void                       validate()const;
       const account_name_type&   get_creator_name() const { return publisher; }
       void                       get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -3423,8 +3382,6 @@ namespace node { namespace protocol {
       asset                   amount;           ///< Amount of asset to force settle. Set to 0 to cancel order. Must be a market-issued asset.
 
       account_name_type       interface;        ///< Account of the interface used to broadcast the operation.
-      
-      extensions_type         extensions;
 
       void                    validate()const;
       const account_name_type& get_creator_name() const { return account; }
@@ -3455,8 +3412,6 @@ namespace node { namespace protocol {
       asset_symbol_type          asset_to_settle;     ///< Symbol of the asset being settled. 
 
       price                      settle_price;        ///< Global settlement price, must be in asset / backing asset. 
-
-      extensions_type            extensions;
 
       void                       validate()const;
       const account_name_type& get_creator_name() const { return issuer; }
@@ -3760,7 +3715,6 @@ FC_REFLECT( node::protocol::account_create_operation,
          (officer_vote_threshold)
          (fee)
          (delegation)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::account_update_operation,
@@ -3877,7 +3831,6 @@ FC_REFLECT( node::protocol::request_account_recovery_operation,
          (recovery_account)
          (account_to_recover)
          (new_owner_authority)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::recover_account_operation, 
@@ -3885,7 +3838,6 @@ FC_REFLECT( node::protocol::recover_account_operation,
          (account_to_recover)
          (new_owner_authority)
          (recent_owner_authority)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::reset_account_operation, 
@@ -3907,7 +3859,6 @@ FC_REFLECT( node::protocol::change_recovery_account_operation,
          (signatory)
          (account_to_recover)
          (new_recovery_account)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::decline_voting_rights_operation, 
@@ -4129,8 +4080,6 @@ FC_REFLECT( node::protocol::comment_payout_beneficiaries,
          (beneficiaries) 
          );
 
-FC_REFLECT_TYPENAME( node::protocol::comment_options_extension )
-
 FC_REFLECT( node::protocol::comment_options, 
          (author)
          (permlink)
@@ -4138,7 +4087,6 @@ FC_REFLECT( node::protocol::comment_options,
          (percent_liquid)
          (allow_votes)
          (allow_curation_rewards)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::message_operation,
@@ -4598,7 +4546,6 @@ FC_REFLECT( node::protocol::call_order_operation,
          (delta_debt)
          (target_collateral_ratio)
          (interface)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::bid_collateral_operation, 
@@ -4606,7 +4553,6 @@ FC_REFLECT( node::protocol::bid_collateral_operation,
          (bidder)
          (collateral)
          (debt)
-         (extensions)
          );
 
    //=========================//
@@ -4691,13 +4637,11 @@ FC_REFLECT( node::protocol::asset_options,
          (blacklist_authorities)
          (whitelist_markets)
          (blacklist_markets)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::currency_options,
          (annual_issuance)
          (block_producer_percent)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::bitasset_options,
@@ -4707,7 +4651,6 @@ FC_REFLECT( node::protocol::bitasset_options,
          (force_settlement_offset_percent)
          (maximum_force_settlement_volume)
          (short_backing_asset)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::equity_options,
@@ -4726,7 +4669,6 @@ FC_REFLECT( node::protocol::equity_options,
          (boost_activity)
          (boost_witnesses)
          (boost_top)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::credit_options,
@@ -4739,19 +4681,16 @@ FC_REFLECT( node::protocol::credit_options,
          (savings_fixed_interest_rate)
          (savings_variable_interest_rate)
          (var_interest_range)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::unique_options,
          (annual_issuance)
          (block_producer_percent)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::gateway_options,
          (annual_issuance)
          (block_producer_percent)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::asset_create_operation,
@@ -4769,7 +4708,6 @@ FC_REFLECT( node::protocol::asset_create_operation,
          (credit_opts)
          (gateway_opts)
          (unique_opts)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::asset_update_operation,
@@ -4784,7 +4722,6 @@ FC_REFLECT( node::protocol::asset_update_operation,
          (new_credit_opts)
          (new_gateway_opts)
          (new_unique_opts)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::asset_issue_operation, 
@@ -4793,14 +4730,12 @@ FC_REFLECT( node::protocol::asset_issue_operation,
          (asset_to_issue)
          (issue_to_account)
          (memo)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::asset_reserve_operation, 
          (signatory)
          (payer)
          (amount_to_reserve)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::asset_update_issuer_operation,
@@ -4808,7 +4743,6 @@ FC_REFLECT( node::protocol::asset_update_issuer_operation,
          (issuer)
          (asset_to_update)
          (new_issuer)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::asset_update_feed_producers_operation,
@@ -4816,7 +4750,6 @@ FC_REFLECT( node::protocol::asset_update_feed_producers_operation,
          (issuer)
          (asset_to_update)
          (new_feed_producers)
-         (extensions)
          );
 
 FC_REFLECT( node::protocol::asset_publish_feed_operation, 
@@ -4824,14 +4757,12 @@ FC_REFLECT( node::protocol::asset_publish_feed_operation,
          (publisher)
          (symbol)
          (feed)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::asset_settle_operation, 
          (signatory)
          (account)
          (amount)
-         (extensions) 
          );
 
 FC_REFLECT( node::protocol::asset_global_settle_operation, 
@@ -4839,7 +4770,6 @@ FC_REFLECT( node::protocol::asset_global_settle_operation,
          (issuer)
          (asset_to_settle)
          (settle_price)
-         (extensions) 
          );
 
    //=====================================//

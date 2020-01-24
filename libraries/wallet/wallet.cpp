@@ -454,7 +454,7 @@ public:
    }
 
    // This function generates derived keys starting with index 0 and keeps incrementing
-   // the index until it finds a key that isn't registered in the block chain.  To be
+   // the index until it finds a key that isn't registered in the blockchain.  To be
    // safer, it continues checking for a few more keys to make sure there wasn't a short gap
    // caused by a failed registration or the like.
    int find_first_unused_derived_key_index(const fc::ecc::private_key& parent_key)

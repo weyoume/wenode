@@ -51,26 +51,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       ~database_api_impl();
 
 
-      //=======================//
-      // === Subscriptions === //
-      //=======================//
-
-
-      void                                      set_block_applied_callback( std::function<void( const variant& block_id )> cb );
-
-
-      //=================================//
-      // === Blocks and transactions === //
-      //=================================//
-
-
-      optional< block_header >                  get_block_header( uint32_t block_num )const;
-
-      optional< signed_block_api_obj >          get_block( uint32_t block_num )const;
-
-      vector< applied_operation >               get_ops_in_block( uint32_t block_num, bool only_virtual )const;
-
-
       //=================//
       // === Globals === //
       //=================//
@@ -235,22 +215,28 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       search_result_state                       get_search_query( const search_query& query )const;
 
 
-      //================================//
-      // === Authority / validation === //
-      //================================//
+      //=================================//
+      // === Blocks and transactions === //
+      //=================================//
 
 
-      std::string                              get_transaction_hex( const signed_transaction& trx)const;
+      optional< block_header >                  get_block_header( uint32_t block_num )const;
 
-      annotated_signed_transaction             get_transaction( transaction_id_type trx_id )const;
+      optional< signed_block_api_obj >          get_block( uint32_t block_num )const;
 
-      set< public_key_type >                   get_required_signatures( const signed_transaction& trx, const flat_set< public_key_type >& available_keys )const;
+      vector< applied_operation >               get_ops_in_block( uint32_t block_num, bool only_virtual )const;
 
-      set< public_key_type >                   get_potential_signatures( const signed_transaction& trx )const;
+      std::string                               get_transaction_hex( const signed_transaction& trx)const;
 
-      bool                                     verify_authority( const signed_transaction& trx )const;
+      annotated_signed_transaction              get_transaction( transaction_id_type trx_id )const;
 
-      bool                                     verify_account_authority( const string& name_or_id, const flat_set< public_key_type >& signers )const;
+      set< public_key_type >                    get_required_signatures( const signed_transaction& trx, const flat_set< public_key_type >& available_keys )const;
+
+      set< public_key_type >                    get_potential_signatures( const signed_transaction& trx )const;
+
+      bool                                      verify_authority( const signed_transaction& trx )const;
+
+      bool                                      verify_account_authority( const string& name_or_id, const flat_set< public_key_type >& signers )const;
 
 
       //======================//
@@ -337,6 +323,14 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       state                                get_state( string path )const;
 
 
+      //=======================//
+      // === Subscriptions === //
+      //=======================//
+
+
+      void                                 set_block_applied_callback( std::function<void( const variant& block_id )> cb );
+
+
       //=========================//
       // === Signal Handlers === //
       //=========================//
@@ -381,38 +375,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       void recursively_fetch_content( state& _state, discussion& root, set<string>& referenced_accounts )const;
 };
-
-
-   //=======================//
-   // === Subscriptions === //
-   //=======================//
-
-
-void database_api::set_block_applied_callback( std::function<void( const variant& block_id)> cb )
-{
-   my->_db.with_read_lock( [&]()
-   {
-      my->set_block_applied_callback( cb );
-   });
-}
-
-void database_api_impl::on_applied_block( const chain::signed_block& b )
-{
-   try
-   {
-      _block_applied_callback( fc::variant(signed_block_header(b) ) );
-   }
-   catch( ... )
-   {
-      _block_applied_connection.release();
-   }
-}
-
-void database_api_impl::set_block_applied_callback( std::function<void( const variant& block_header)> cb )
-{
-   _block_applied_callback = cb;
-   _block_applied_connection = connect_signal( _db.applied_block, *this, &database_api_impl::on_applied_block );
-}
 
 
    //======================//
@@ -462,74 +424,6 @@ void database_api::set_url( discussion& d )const
    d.root_title = root.title;
    if( root.id != d.id )
       d.url += "#@" + d.author + "/" + d.permlink;
-}
-
-
-   //=================================//
-   // === Blocks and transactions === //
-   //=================================//
-
-
-optional< block_header > database_api::get_block_header( uint32_t block_num )const
-{
-   FC_ASSERT( !my->_disable_get_block,
-      "get_block_header is disabled on this node." );
-
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_block_header( block_num );
-   });
-}
-
-optional< block_header > database_api_impl::get_block_header( uint32_t block_num ) const
-{
-   auto result = _db.fetch_block_by_number( block_num );
-   if( result )
-   {
-      return *result;
-   }
-      
-   return {};
-}
-
-optional< signed_block_api_obj > database_api::get_block( uint32_t block_num )const
-{
-   FC_ASSERT( !my->_disable_get_block,
-      "get_block is disabled on this node." );
-
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_block( block_num );
-   });
-}
-
-optional< signed_block_api_obj > database_api_impl::get_block( uint32_t block_num )const
-{
-   return _db.fetch_block_by_number( block_num );
-}
-
-vector< applied_operation > database_api::get_ops_in_block( uint32_t block_num, bool only_virtual )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_ops_in_block( block_num, only_virtual );
-   });
-}
-
-vector< applied_operation > database_api_impl::get_ops_in_block(uint32_t block_num, bool only_virtual)const
-{
-   const auto& idx = _db.get_index< operation_index >().indices().get< by_location >();
-   auto itr = idx.lower_bound( block_num );
-   vector< applied_operation> result;
-   applied_operation temp;
-   while( itr != idx.end() && itr->block == block_num )
-   {
-      temp = *itr;
-      if( !only_virtual || is_virtual_operation(temp.op) )
-         result.push_back(temp);
-      ++itr;
-   }
-   return result;
 }
 
 
@@ -3480,9 +3374,77 @@ search_result_state database_api_impl::get_search_query( const search_query& que
 }
 
 
-   //================================//
-   // === Authority / validation === //
-   //================================//
+   //=================================//
+   // === Blocks and Transactions === //
+   //=================================//
+
+
+optional< block_header > database_api::get_block_header( uint32_t block_num )const
+{
+   FC_ASSERT( !my->_disable_get_block,
+      "get_block_header is disabled on this node." );
+
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_block_header( block_num );
+   });
+}
+
+
+optional< block_header > database_api_impl::get_block_header( uint32_t block_num ) const
+{
+   auto result = _db.fetch_block_by_number( block_num );
+   if( result )
+   {
+      return *result;
+   }
+      
+   return {};
+}
+
+
+optional< signed_block_api_obj > database_api::get_block( uint32_t block_num )const
+{
+   FC_ASSERT( !my->_disable_get_block,
+      "get_block is disabled on this node." );
+
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_block( block_num );
+   });
+}
+
+
+optional< signed_block_api_obj > database_api_impl::get_block( uint32_t block_num )const
+{
+   return _db.fetch_block_by_number( block_num );
+}
+
+
+vector< applied_operation > database_api::get_ops_in_block( uint32_t block_num, bool only_virtual )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_ops_in_block( block_num, only_virtual );
+   });
+}
+
+
+vector< applied_operation > database_api_impl::get_ops_in_block(uint32_t block_num, bool only_virtual)const
+{
+   const auto& idx = _db.get_index< operation_index >().indices().get< by_location >();
+   auto itr = idx.lower_bound( block_num );
+   vector< applied_operation> result;
+   applied_operation temp;
+   while( itr != idx.end() && itr->block == block_num )
+   {
+      temp = *itr;
+      if( !only_virtual || is_virtual_operation(temp.op) )
+         result.push_back(temp);
+      ++itr;
+   }
+   return result;
+}
 
 
 std::string database_api::get_transaction_hex( const signed_transaction& trx )const
@@ -6075,6 +6037,38 @@ state database_api_impl::get_state( string path )const
       _state.error = e.to_detail_string();
    }
    return _state;
+}
+
+
+   //=======================//
+   // === Subscriptions === //
+   //=======================//
+
+
+void database_api::set_block_applied_callback( std::function<void( const variant& block_id)> cb )
+{
+   my->_db.with_read_lock( [&]()
+   {
+      my->set_block_applied_callback( cb );
+   });
+}
+
+void database_api_impl::on_applied_block( const chain::signed_block& b )
+{
+   try
+   {
+      _block_applied_callback( fc::variant(signed_block_header(b) ) );
+   }
+   catch( ... )
+   {
+      _block_applied_connection.release();
+   }
+}
+
+void database_api_impl::set_block_applied_callback( std::function<void( const variant& block_header)> cb )
+{
+   _block_applied_callback = cb;
+   _block_applied_connection = connect_signal( _db.applied_block, *this, &database_api_impl::on_applied_block );
 }
 
 } } // node::app

@@ -176,26 +176,6 @@ class database_api
       ~database_api();
 
 
-      //=======================//
-      // === Subscriptions === //
-      //=======================//
-   
-
-      void                                set_block_applied_callback( std::function< void(const variant& block_header ) > cb );
-
-
-      //=================================//
-      // === Blocks and transactions === //
-      //=================================//
-
-
-      optional< block_header >            get_block_header( uint32_t block_num )const;
-
-      optional< signed_block_api_obj >    get_block( uint32_t block_num )const;
-
-      vector< applied_operation >         get_ops_in_block( uint32_t block_num, bool only_virtual = true)const;
-
-
       //=================//
       // === Globals === //
       //=================//
@@ -360,10 +340,16 @@ class database_api
       search_result_state                  get_search_query( const search_query& query )const;  
 
 
-      //================================//
-      // === Authority / validation === //
-      //================================//
+      //=================================//
+      // === Blocks and Transactions === //
+      //=================================//
 
+
+      optional< block_header >             get_block_header( uint32_t block_num )const;
+
+      optional< signed_block_api_obj >     get_block( uint32_t block_num )const;
+
+      vector< applied_operation >          get_ops_in_block( uint32_t block_num, bool only_virtual = true)const;
 
       std::string                          get_transaction_hex( const signed_transaction& trx )const;
 
@@ -460,6 +446,15 @@ class database_api
 
 
       state                                get_state( string path )const;
+
+
+      //=======================//
+      // === Subscriptions === //
+      //=======================//
+   
+
+      void                                set_block_applied_callback( std::function< void(const variant& block_header ) > cb );
+
 
       //=========================//
       // === Signal Handlers === //

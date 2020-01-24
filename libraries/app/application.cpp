@@ -644,7 +644,7 @@ namespace detail {
        *         we cannot undo
        *     the second element will be the hash of an item at the half way point in the undoable
        *         segment of the blockchain
-       *     the third will be ~3/4 of the way through the undoable segment of the block chain
+       *     the third will be ~3/4 of the way through the undoable segment of the blockchain
        *     the fourth will be at ~7/8...
        *       &c.
        *     the last item in the list will be the hash of the most recent block on our preferred chain
@@ -675,7 +675,7 @@ namespace detail {
        * get the response we want (the next chunk of block ids following the last one they sent us, or,
        * failing that, the shortest fork off of the last list of block ids they sent), we need to construct
        * a synopsis as if our blockchain was made up of:
-       *    1. the blocks in our block chain up to the fork point (if there is a fork) or the head block (if no fork)
+       *    1. the blocks in our blockchain up to the fork point (if there is a fork) or the head block (if no fork)
        *    2. the blocks we've already pushed from their fork (if there's a fork)
        *    3. the block ids they've previously sent us
        * Segment 3 is handled in the p2p code, it just tells us the number of blocks it has (in
@@ -699,7 +699,7 @@ namespace detail {
 
             if (reference_point != item_hash_t())
             {
-               // the node is asking for a summary of the block chain up to a specified
+               // the node is asking for a summary of the blockchain up to a specified
                // block, which may or may not be on a fork
                // for now, assume it's not on a fork
                if (is_included_block(reference_point))
@@ -771,7 +771,7 @@ namespace detail {
             }
             else
             {
-               // no reference point specified, summarize the whole block chain
+               // no reference point specified, summarize the whole blockchain
                high_block_num = _chain_db->head_block_num();
                non_fork_high_block_num = high_block_num;
                if (high_block_num == 0)

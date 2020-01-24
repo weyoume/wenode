@@ -43,7 +43,7 @@ if [[ ! -z  "$BLOCKCHAIN_TIME" ]]; then
     echo Status: 503
     echo Content-type:text/plain
     echo
-    echo The node is responding but block chain age is $BLOCK_AGE seconds old
+    echo The node is responding but blockchain age is $BLOCK_AGE seconds old
   fi
 else
   echo Status: 502
