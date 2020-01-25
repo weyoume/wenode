@@ -76,7 +76,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
@@ -802,7 +801,6 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
@@ -1010,7 +1008,6 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
@@ -1150,7 +1147,6 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
@@ -1287,7 +1283,6 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;

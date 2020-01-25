@@ -41,7 +41,7 @@ namespace node { namespace chain {
 
          account_identity_type            account_type;                          // Type of account, persona, profile or business.
 
-         membership_tier_type                 membership;                            // Level of account membership.
+         membership_tier_type             membership;                            // Level of account membership.
 
          public_key_type                  secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
 

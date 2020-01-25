@@ -41,8 +41,6 @@ namespace node { namespace chain {
 
          post_format_type               post_type;                    // The type of post that is being created, image, text, article, video etc. 
 
-         bool                           privacy;                      // True if the post is encrypted. False if it is plaintext.
-
          public_key_type                public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
 
          feed_reach_type                reach;                        // The reach of the post across followers, connections, friends and companions
@@ -162,6 +160,11 @@ namespace node { namespace chain {
          bool                           root = true;                        // True if post is a root post. 
 
          bool                           deleted = false;                    // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
+
+         bool                           is_encrypted() const                // True if the post is encrypted. False if it is plaintext.
+         {
+            return public_key != public_key_type();
+         };
 
          bool                           comment_paid( account_name_type name ) const    // return true if user has paid comment price
          {
@@ -1084,7 +1087,6 @@ FC_REFLECT( node::chain::comment_object,
          (ipfs)
          (magnet)
          (post_type)
-         (privacy)
          (public_key)
          (reach)
          (board)

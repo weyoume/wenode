@@ -588,7 +588,7 @@ vector< account_api_obj > database_api_impl::get_accounts_by_followers( string f
       account_itr = account_idx.iterator_to( *name_itr );
    }
 
-   while( account_itr != account_idx.end() && result.size() < limit )
+   while( account_itr != account_idx.end() && results.size() < limit )
    {
       results.push_back( account_api_obj( *account_itr, _db ) );
       ++account_itr;
@@ -711,7 +711,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          auto balance_itr = balance_idx.lower_bound( name );
          while( balance_itr != balance_idx.end() && balance_itr->owner == name )
          {
-            results.back().balances[ balance_itr->symbol ] = account_balance_api_obj( *balance_itr );
+            results.back().balances.balances[ balance_itr->symbol ] = account_balance_api_obj( *balance_itr );
             ++balance_itr;
          }
    
@@ -1238,7 +1238,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<ad_inventory_operation>::value:
                case operation::tag<ad_audience_operation>::value:
                case operation::tag<ad_bid_operation>::value:
-               case operation::tag<ad_deliver_operation>::value:
                {
                   results.back().operations.ad_history[ item.first ] = item.second;
                }
@@ -4140,7 +4139,7 @@ vector< discussion > database_api::get_discussions(
       {
          if( !query.include_private )
          {
-            if( tidx_itr->privacy )
+            if( tidx_itr->encrypted )
             {
                ++tidx_itr;
                continue;
@@ -5184,7 +5183,7 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          if( !query.include_private )
          {
             auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-            if( tag_itr->privacy )
+            if( tag_itr->encrypted )
             {
                ++blog_itr;
                continue;

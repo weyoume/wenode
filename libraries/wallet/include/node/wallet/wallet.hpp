@@ -742,6 +742,7 @@ class wallet_api
          string json, 
          bool broadcast );
 
+
       /**
        * Create new accounts for other users which must provide their desired keys. 
        * The resulting account may not be controllable by this wallet.
@@ -765,6 +766,7 @@ class wallet_api
          public_key_type memo,
          bool broadcast )const;
 
+
       /**
        * Generates new keys for the new account which will be controlable by this wallet. 
        * 
@@ -784,6 +786,7 @@ class wallet_api
          string new_account_name, 
          string json, 
          bool broadcast );
+
 
       /**
        * Create new accounts for other users which must provide their desired keys. 
@@ -816,6 +819,7 @@ class wallet_api
          public_key_type memo,
          bool broadcast )const;
 
+
       /**
        * Update the keys of an existing account.
        *
@@ -835,6 +839,7 @@ class wallet_api
          public_key_type posting,
          public_key_type memo,
          bool broadcast )const;
+
 
       /**
        * Update the key of an authority for an exisiting account.
@@ -858,6 +863,7 @@ class wallet_api
          weight_type weight, 
          bool broadcast );
 
+
       /**
        * Updates the account of an authority for an exisiting account.
        * 
@@ -880,6 +886,7 @@ class wallet_api
          weight_type weight, 
          bool broadcast );
 
+
       /**
        * Updates the weight threshold of an authority for an account.
        * 
@@ -899,6 +906,7 @@ class wallet_api
          uint32_t threshold, 
          bool broadcast );
 
+
       /**
        * Updates the account JSON metadata.
        *
@@ -910,6 +918,7 @@ class wallet_api
          string account_name, 
          string json, 
          bool broadcast );
+
 
       /**
        * Updates the Secure Public key of an account.
@@ -1109,6 +1118,7 @@ class wallet_api
          bool whitelisted,
          bool broadcast );
 
+
       /**
        * Vote for a witness to become a block producer. 
        *
@@ -1142,8 +1152,6 @@ class wallet_api
          string proxy,
          bool broadcast = false );
 
-      
-
 
       /**
        * Create an account recovery request as a recover account. 
@@ -1162,6 +1170,7 @@ class wallet_api
          string account_to_recover, 
          authority new_owner_authority, 
          bool broadcast );
+
 
       /**
        * Recover an account using a recovery request created by your recovery account. 
@@ -1216,6 +1225,7 @@ class wallet_api
          uint16_t days,
          bool broadcast );
 
+
       /**
        * Change your recovery account after a 30 day delay.
        *
@@ -1244,7 +1254,6 @@ class wallet_api
          string account, 
          bool declined, 
          bool broadcast );
-
 
 
       /**
@@ -1359,6 +1368,285 @@ class wallet_api
       //==============================//
 
 
+      /**
+       * Creates or updates a network officer object for a member.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the member's account.
+       * @param officer_type The type of network officer that the account serves as. 
+       * @param details Information about the network officer and their work
+       * @param url The officers's description URL explaining their details. 
+       * @param json Additonal information about the officer.
+       * @param active Set true to activate the officer, false to deactivate. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           update_network_officer(
+         string signatory,
+         string account,
+         string officer_type,
+         string details,
+         string url,
+         string json,
+         bool active
+         bool broadcast );
+
+
+      /**
+       * Votes to support a network officer.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The name of the account voting for the officer.
+       * @param network_officer The name of the network officer being voted for.
+       * @param vote_rank Number of vote rank ordering.
+       * @param approved True if approving, false if removing vote.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           network_officer_vote(
+         string signatory,
+         string account,
+         string network_officer,
+         uint16_t vote_rank,
+         bool approved,
+         bool broadcast );
+
+      
+      /**
+       * Creates or updates a executive board object for a member.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the account updating the executive board.
+       * @param executive Name of the Executive board account being updated.
+       * @param budget The type of executive board that the account serves as. 
+       * @param details Information about the executive board and their work
+       * @param url The teams's description URL explaining their details. 
+       * @param json Additonal information about the executive board.
+       * @param active Set true to activate the board, false to deactivate. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           update_executive_board(
+         string signatory,
+         string account,
+         string executive,
+         asset budget
+         string details,
+         string url,
+         string json,
+         bool active
+         bool broadcast );
+
+
+      /**
+       * Votes to support a executive board.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The name of the account voting for the board.
+       * @param executive_board The name of the executive board being voted for.
+       * @param vote_rank Number of vote rank ordering.
+       * @param approved True if approving, false if removing vote.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           executive_board_vote(
+         string signatory,
+         string account,
+         string executive_board,
+         uint16_t vote_rank,
+         bool approved,
+         bool broadcast );
+
+
+      /**
+       * Creates or updates a governance account for a member.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the governance account.
+       * @param details Information about the governance account's filtering and tagging policies
+       * @param url The governance account's description URL explaining their details. 
+       * @param json Additonal information about the governance account policies.
+       * @param active Set true to activate governance account, false to deactivate. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           update_governance(
+         string signatory,
+         string account,
+         string details,
+         string url,
+         string json,
+         bool active
+         bool broadcast );
+
+
+      /**
+       * Adds a governance account to the subscription set of the account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The account subscribing to the governance account.
+       * @param governance_account The name of the governance account.
+       * @param subscribe True if subscribing, false if unsubscribing.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           subscribe_governance(
+         string signatory,
+         string account,
+         string governance_account,
+         bool subscribe,
+         bool broadcast );
+
+
+      /**
+       * Creates or updates a supernode object for an infrastructure provider.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the member's account.
+       * @param details Information about the supernode, and the range of storage and node services they operate.
+       * @param url The supernode's reference URL.
+       * @param node_api_endpoint The Full Archive node public API endpoint of the supernode.
+       * @param notification_api_endpoint The Notification API endpoint of the Supernode.
+       * @param auth_api_endpoint The Transaction signing authentication API endpoint of the supernode.
+       * @param ipfs_endpoint The IPFS file storage API endpoint of the supernode.
+       * @param bittorrent_endpoint The Bittorrent Seed Box endpoint URL of the Supernode. 
+       * @param json Additonal information about the Supernode.
+       * @param active Set true to activate the supernode, false to deactivate. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           update_supernode(
+         string signatory,
+         string account,
+         string details,
+         string url,
+         string node_api_endpoint,
+         string notification_api_endpoint,
+         string auth_api_endpoint,
+         string ipfs_endpoint,
+         string bittorrent_endpoint,
+         string json,
+         bool active
+         bool broadcast );
+
+      
+      /**
+       * Creates or updates an interface object for an application developer.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the member's account.
+       * @param details Information about the interface, and what they are offering to users.
+       * @param url The interface's reference URL.
+       * @param json Additonal information about the interface.
+       * @param active Set true to activate the interface, false to deactivate. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           update_interface(
+         string signatory,
+         string account,
+         string details,
+         string url,
+         string json,
+         bool active
+         bool broadcast );
+
+
+      /**
+       * Creates or updates a mediator object for marketplace escrow facilitator.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the member's account.
+       * @param details Information about the mediator, and what they are offering to users
+       * @param url The mediator's reference URL.
+       * @param json Additonal information about the mediator.
+       * @param mediator_bond Amount of Core asset to stake in the mediation pool. 
+       * @param active Set true to activate the interface, false to deactivate. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           update_mediator(
+         string signatory,
+         string account,
+         string details,
+         string url,
+         string json,
+         asset mediator_bond,
+         bool active
+         bool broadcast );
+
+
+      /**
+       * Creates a new community enterprise proposal.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param creator The name of the account that created the community enterprise proposal.
+       * @param enterprise_id uuidv4 referring to the proposal.
+       * @param proposal_type The type of proposal, determines release schedule.
+       * @param beneficiaries Set of account names and percentages of budget value. Should not include the null account.
+       * @param milestones Ordered vector of release milestone descriptions and percentages of budget value.
+       * @param investment Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+       * @param details The proposals's details description. 
+       * @param url The proposals's reference URL. 
+       * @param json Json metadata of the proposal.
+       * @param begin Enterprise proposal start time.
+       * @param duration Number of days that the proposal will be paid for.
+       * @param daily_budget Daily amount of Core asset requested for project compensation and funding
+       * @param fee Amount of Core asset paid to community fund to apply.
+       * @param active True to set the proposal to activate, false to deactivate an existing proposal and delay funding. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           create_community_enterprise(
+         string signatory,
+         string creator,
+         string enterprise_id,
+         string proposal_type,
+         flat_map< string, uint16_t > beneficiaries,
+         vector< pair < string, uint16_t > > milestones,
+         string investment,
+         string details,
+         string url,
+         string json,
+         time_point begin,
+         uint16_t duration,
+         asset daily_budget,
+         asset fee,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Claims a milestone from a community enterprise proposal.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param creator The name of the account that created the community enterprise proposal.
+       * @param enterprise_id uuidv4 referring to the proposal.
+       * @param milestone Number of the milestone that is being claimed as completed. Number 0 for initial acceptance. 
+       * @param details Description of completion of milestone, with supporting evidence.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           claim_enterprise_milestone(
+         string signatory,
+         string creator,
+         string enterprise_id,
+         uint16_t milestones,
+         string details,
+         bool broadcast );
+
+
+      /**
+       * Approves a milestone claim from a community enterprise proposal.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account approving the milestone.
+       * @param creator The name of the account that created the community enterprise proposal.
+       * @param enterprise_id uuidv4 referring to the proposal.
+       * @param milestone Number of the milestone that is being approved as completed. 
+       * @param vote_rank The rank of the approval for enterprise proposals.
+       * @param approved True to approve the milestone claim, false to remove approval. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           approve_enterprise_milestone(
+         string signatory,
+         string account,
+         string creator,
+         string enterprise_id,
+         uint16_t milestone,
+         uint16_t vote_rank,
+         bool approved,
+         bool broadcast );
+
 
       //=======================================//
       // === Post and Comment Transactions === //
@@ -1367,42 +1655,183 @@ class wallet_api
 
       /**
        * Post or update a comment.
+       * 
+       * Uses comment options object with schematic:
+       * {
+       *    "post_type": "\"text\"",
+       *    "reach": "\"tag\"",
+       *    "rating": "\"general\"",
+       *    "max_accepted_payout": "\"1000000000.00000000 MUSD\"",
+       *    "percent_liquid": 10000,
+       *    "allow_replies": true,
+       *    "allow_votes": true,
+       *    "allow_views": true,
+       *    "allow_shares": true,
+       *    "allow_curation_rewards": true,
+       *    "beneficiaries": []
+       * }
        *
-       * @param author the name of the account authoring the comment.
-       * @param permlink the accountwide unique permlink for the comment.
-       * @param parent_author can be null if this is a top level comment.
-       * @param parent_permlink becomes category if parent_author is "".
-       * @param title the title of the comment.
-       * @param body the body of the comment.
-       * @param json the json metadata of the comment.
+       * @param signatory The name of the account signing the transaction.
+       * @param author Name of the account that created the post.
+       * @param permlink Unique identifing string for the post.
+       * @param title Content related name of the post, used to find post with search API.
+       * @param body String containing text for display when the post is opened.
+       * @param ipfs Vector of Strings containing IPFS file hashes: images, videos, files.
+       * @param magnet Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
+       * @param language String containing the two letter ISO language code of the native language of the author.
+       * @param board The name of the board to which the post is uploaded to.
+       * @param public_key The public key used to encrypt the post, holders of the private key may decrypt.
+       * @param interface Name of the interface application that broadcasted the transaction.
+       * @param comment_price Price that is required to comment on the post.
+       * @param premium_price Price that is required to unlock premium content.
+       * @param parent_author Account that created the post this post is replying to, empty if root post.
+       * @param parent_permlink Permlink of the post this post is replying to, empty if root post.
+       * @param tags Set of string tags for sorting the post by.
+       * @param json json string of additional interface specific data relating to the post.
+       * @param options Settings for the post, that effect how the network applies and displays it.
+       * @param deleted True to delete post, false to create post.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           post_comment(
-         string author, 
-         string permlink, 
+      annotated_signed_transaction           comment(
+         string signatory,
+         string author,
+         string permlink,
+         string title,
+         string body,
+         vector< string > ipfs,
+         vector< string > magnet,
+         string language,
+         string board,
+         string public_key,
+         string interface,
+         asset comment_price,
+         asset premium_price,
          string parent_author, 
          string parent_permlink, 
-         string title, 
-         string body, 
-         string json, 
+         vector< string > tags,
+         string json,
+         comment_options options,
+         bool deleted,
          bool broadcast );
 
+
       /**
-       * Vote on a comment.
+       * Creates a private encrypted message between two accounts.
        *
-       * @param voter The account voting.
-       * @param author The author of the comment to be voted on.
-       * @param permlink The permlink of the comment to be voted on. (author, permlink) is a unique pair.
-       * @param weight The weight [-100,100] of the vote.
+       * @param signatory The name of the account signing the transaction.
+       * @param sender The account sending the message.
+       * @param recipient The receiving account of the message.
+       * @param message Encrypted ciphertext of the message being sent. 
+       * @param uuid uuidv4 uniquely identifying the message for local storage.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           vote( 
+      annotated_signed_transaction           message(
+         string signatory,
+         string sender, 
+         string recipient, 
+         string message,
+         string uuid,
+         bool broadcast );
+      
+
+      /**
+       * Votes for a comment to allocate content rewards and increase the posts ranked ordering.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param voter Name of the voting account.
+       * @param author Name of the account that created the post being voted on.
+       * @param permlink Permlink of the post being voted on.
+       * @param weight Percentage weight of the voting power applied to the post.
+       * @param interface Name of the interface account that was used to broadcast the transaction. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           vote(
+         string signatory,
          string voter, 
          string author, 
          string permlink, 
-         int16_t weight, 
+         int16_t weight,
+         string interface,
          bool broadcast );
 
+
+      /**
+       * Views a post, which increases the post's content reward earnings.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param viewer Name of the viewing account.
+       * @param author Name of the account that created the post being viewed.
+       * @param permlink Permlink of the post being viewed.
+       * @param interface Name of the interface account that was used to broadcast the transaction and view the post.
+       * @param supernode Name of the supernode account that served the IPFS file data in the post.
+       * @param viewed True if viewing the post, false if removing view object.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           view(
+         string signatory,
+         string viewer,
+         string author,
+         string permlink,
+         string interface,
+         string supernode,
+         bool viewed,
+         bool broadcast );
+
+
+      /**
+       * Shares a post to the account's feed.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param sharer Name of the viewing account.
+       * @param author Name of the account that created the post being shared.
+       * @param permlink Permlink of the post being shared.
+       * @param reach Audience reach selection for share.
+       * @param interface Name of the interface account that was used to broadcast the transaction and share the post.
+       * @param board Optionally share the post with a new board.
+       * @param tag Optionally share the post with a new tag.
+       * @param shared True if sharing the post, false if removing share.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           share(
+         string signatory,
+         string sharer,
+         string author,
+         string permlink,
+         string reach,
+         string interface,
+         string board,
+         string tag,
+         bool shared,
+         bool broadcast );
+
+
+      /**
+       * Applies a set of tags to a post for filtering from interfaces.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param moderator Account creating the tag: can be a governance address or a board moderator. 
+       * @param author Author of the post being tagged.
+       * @param permlink Permlink of the post being tagged.
+       * @param tags Set of tags to apply to the post for selective interface side filtering.
+       * @param rating Newly proposed rating for the post.
+       * @param details String explaining the reason for the tag to the author.
+       * @param interface Interface account used for the transaction.
+       * @param filter True if the post should be filtered from the board and governance account subscribers.
+       * @param applied True if applying the tag, false if removing the tag.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           moderation_tag(
+         string signatory,
+         string moderator,
+         string author,
+         string permlink,
+         vector< string > tags,
+         string rating,
+         string details,
+         string interface,
+         bool filter,
+         bool applied,
+         bool broadcast );
 
 
 
@@ -1412,9 +1841,430 @@ class wallet_api
 
 
 
+      /**
+       * Creates a new board for collecting posts about a specific topic.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param founder The account that created the board, able to add and remove administrators.
+       * @param name Name of the board.
+       * @param board_type Type of board Structure to use, determines content types.
+       * @param board_privacy Type of board Privacy to us, determines access permissions and encryption.
+       * @param board_public_key Key used for encrypting and decrypting posts. Private key shared with accepted members.
+       * @param json Public plaintext json information about the board, its topic and rules.
+       * @param json_private Private ciphertext json information about the board.
+       * @param details Details of the board, describing what it is for.
+       * @param url External reference URL.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_create(
+         string signatory,
+         string founder,
+         string name,
+         string board_type,
+         string board_privacy,
+         string board_public_key,
+         string json,
+         string json_private,
+         string details,
+         string url,
+         bool broadcast );
+
+
+      /**
+       * Updates the details of an existing board.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account updating the board.
+       * @param board Name of the board.
+       * @param board_public_key Key used for encrypting and decrypting posts. Private key shared with accepted members.
+       * @param json Public plaintext json information about the board, its topic and rules.
+       * @param json_private Private ciphertext json information about the board.
+       * @param details Details of the board, describing what it is for.
+       * @param url External reference URL.
+       * @param pinned_author Author of the pinned post.
+       * @param pinned_permlink Permlink of the pinned post.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_update(
+         string signatory,
+         string account,
+         string board,
+         string board_public_key,
+         string json,
+         string json_private,
+         string details,
+         string url,
+         string pinned_author,
+         atring pinned_permlink,
+         bool broadcast );
+
+
+      /**
+       * Adds a new moderator to a board.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account of an administrator of the board.
+       * @param board Board that the moderator is being added to.
+       * @param moderator New moderator account.
+       * @param added True when adding a new moderator, false when removing.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_add_mod(
+         string signatory,
+         string account,
+         string board,
+         string moderator,
+         bool added,
+         bool broadcast );
+
+
+      /**
+       * Adds a new administrator to a board.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account of the founder of the board.
+       * @param board Board that the admin is being added to.
+       * @param admin New administrator account.
+       * @param added True when adding a new administrator, false when removing.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_add_admin(
+         string signatory,
+         string account,
+         string board,
+         string admin,
+         bool added,
+         bool broadcast );
+
+
+      /**
+       * Votes for a moderator to increase their mod weight.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account of a member of the board.
+       * @param board Board that the moderator is being voted into.
+       * @param moderator Moderator account.
+       * @param vote_rank Voting rank for the specified board moderator.
+       * @param approved True when voting for the moderator, false when removing.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_vote_mod(
+         string signatory,
+         string account,
+         string board,
+         string moderator,
+         uint16_t vote_rank,
+         bool approved,
+         bool broadcast );
+
+
+      /**
+       * Transfers a board to a new account as the founder.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account that created the board.
+       * @param board Board that is being transferred.
+       * @param new_founder Account of the new founder.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_transfer_ownership(
+         string signatory,
+         string account,
+         string board,
+         string new_founder,
+         bool broadcast );
+
+
+      /**
+       * Requests that an account be added as a new member of a board.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account that wants to join the board.
+       * @param board Board that is being requested to join.
+       * @param message Message attatched to the request, encrypted with the boards public key.
+       * @param requested Set true to request, false to cancel request.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_join_request(
+         string signatory,
+         string account,
+         string board,
+         string message,
+         bool requested,
+         bool broadcast );
+
+
+      /**
+       * Invite a new member to a board.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account sending the invitation.
+       * @param member New board member account being invited.
+       * @param board Board that is the member is being invited to.
+       * @param message Message attatched to the invite, encrypted with the member's secure public key.
+       * @param encrypted_board_key The Board Private Key, encrypted with the member's secure public key.
+       * @param invited Set true to invite, false to cancel invite.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_join_invite(
+         string signatory,
+         string account,
+         string member,
+         string board,
+         string message,
+         string encrypted_board_key,
+         bool invited,
+         bool broadcast );
+
+
+      /**
+       * Used to accept to a request and admit a new member.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account within the board accepting the request.
+       * @param member Account to accept into the board.
+       * @param board Board that is being joined.
+       * @param encrypted_board_key The Board Private Key, encrypted with the member's secure public key.
+       * @param accepted Set true to invite, false to cancel invite.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_join_accept(
+         string signatory,
+         string account,
+         string member,
+         string board,
+         string encrypted_board_key,
+         bool accepted,
+         bool broadcast );
+
+
+      /**
+       * Accepts a board invitation.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account A new member of the board.
+       * @param board Board that the account was invited to.
+       * @param accepted True to accept invite, false to reject invite.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_invite_accept(
+         string signatory,
+         string account,
+         string board,
+         bool accepted,
+         bool broadcast );
+
+
+      /**
+       * Removes a specifed member of a board.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Either the member of the board leaving OR a moderator of the board removing the member.
+       * @param member Account to be removed from the board membership.
+       * @param board Board that that member is being removed from.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_remove_member(
+         string signatory,
+         string account,
+         string member,
+         string board,
+         bool broadcast );
+
+
+      /**
+       * Adds a specifed account to the board's blacklist.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Moderator or admin of the board.
+       * @param member Account to be blacklisted from interacting with the board.
+       * @param board Board that member is being blacklisted from.
+       * @param blacklisted Set to true to add account to blacklist, set to false to remove from blacklist. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_blacklist(
+         string signatory,
+         string account,
+         string member,
+         string board,
+         bool blacklisted,
+         bool broadcast );
+
+
+      /**
+       * Adds a board to an account's subscriptions.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account that wants to subscribe to the board.
+       * @param board Board to suscribe to.
+       * @param interface Name of the interface account that was used to broadcast the transaction and subscribe to the board.
+       * @param added True to add to lists, false to remove.
+       * @param subscribed true if subscribing, false if filtering.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           board_subscribe(
+         string signatory,
+         string account,
+         string board,
+         string interface,
+         bool added,
+         bool subscribed,
+         bool broadcast );
+
+
+
       //=========================//
       // === Ad Transactions === //
       //=========================//
+
+
+
+      /**
+       * Creates a new ad creative to be used in a campaign for display in interfaces.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account publishing the ad creative.
+       * @param author Author of the objective item referenced.
+       * @param objective The reference of the object being advertised, the link and CTA destination of the creative.
+       * @param creative_id uuidv4 referring to the creative.
+       * @param creative IPFS link to the Media to be displayed, image or video.
+       * @param json JSON string of creative metadata for display.
+       * @param format_type The type of formatting used for the advertisment, determines the interpretation of the creative.
+       * @param active True if the creative is enabled for active display, false to deactivate.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           ad_creative(
+         string signatory,
+         string account,
+         string author,
+         string objective,
+         string creative_id,
+         string creative,
+         string json,
+         string format_type,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Creates a new ad campaign to enable ad bidding.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account creating the ad campaign.
+       * @param campaign_id uuidv4 referring to the campaign.
+       * @param budget Total expenditure of the campaign.
+       * @param begin Beginning time of the campaign. Bids cannot be created before this time.
+       * @param end Ending time of the campaign. Bids cannot be created after this time.
+       * @param json JSON string of creative metadata for display.
+       * @param agents Set of Accounts authorized to create bids for the campaign.
+       * @param interface Interface that facilitated the purchase of the advertising campaign.
+       * @param active True if the campaign is enabled for bid creation, false to deactivate and reclaim the budget.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           ad_campaign(
+         string signatory,
+         string account,
+         string campaign_id,
+         asset budget,
+         time_point begin,
+         time_point end,
+         string json,
+         vector< string > agents,
+         string interface,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Declares the availability of a supply of ad inventory.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param provider Account of an interface offering ad supply.
+       * @param inventory_id uuidv4 referring to the inventory offering.
+       * @param audience_id uuidv4 referring to audience object containing usernames of desired accounts in interface's audience.
+       * @param metric Type of expense metric used.
+       * @param min_price Minimum bidding price per metric.
+       * @param inventory Total metrics available.
+       * @param json JSON metadata for the inventory.
+       * @param agents Set of Accounts authorized to create bids for the campaign.
+       * @param active True if the inventory is enabled for display, false to deactivate.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           ad_inventory(
+         string signatory,
+         string provider,
+         string inventory_id,
+         string audience_id,
+         string metric,
+         asset min_price,
+         uint32_t inventory,
+         string json,
+         vector< string > agents,
+         string interface,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Contains a set of accounts that are valid for advertising display.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account creating the audience set.
+       * @param audience_id uuidv4 referring to the audience for inclusion in inventory and campaigns.
+       * @param json JSON metadata for the audience.
+       * @param audience List of usernames of viewing accounts.
+       * @param active True if the audience is enabled for reference, false to deactivate.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           ad_audience(
+         string signatory,
+         string account,
+         string audience_id,
+         string json,
+         vector< string > audience,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Creates a new advertising bid offer.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param bidder Account that created the ad budget, or an agent of the campaign.
+       * @param bid_id Bid uuidv4 for referring to the bid.
+       * @param account Account that created the campaign that the bid is directed towards.
+       * @param campaign_id Ad campaign uuidv4 to utilise for the bid.
+       * @param author Account that was the author of the creative.
+       * @param creative_id uuidv4 referring to the creative item to bid on.
+       * @param provider Account of an interface offering ad supply.
+       * @param inventory_id Inventory uuidv4 offering to bid on.
+       * @param bid_price Price offered per metric.
+       * @param requested Maximum total metrics requested.
+       * @param included_audiences List of desired audiences for display acceptance, accounts must be in inventory audience.
+       * @param excluded_audiences List of audiences to remove all members from the combined bid audience.
+       * @param json JSON metadata for the inventory.
+       * @param expiration Time the the bid is valid until, bid is cancelled after this time if not filled. 
+       * @param active True if the bid is open for delivery, false to cancel.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           ad_bid(
+         string signatory,
+         string bidder,
+         string bid_id,
+         string account,
+         string campaign_id,
+         string author,
+         string creative_id,
+         string provider,
+         string inventory_id,
+         asset bid_price,
+         uint32_t requested,
+         vector< string > included_audiences,
+         vector< string > excluded_audiences,
+         string json,
+         time_point expiration,
+         bool active,
+         bool broadcast );
 
 
 
@@ -1435,9 +2285,9 @@ class wallet_api
       annotated_signed_transaction            transfer(
          string from, 
          string to,
-          asset amount, 
-          string memo, 
-          bool broadcast = false );
+         asset amount, 
+         string memo, 
+         bool broadcast = false );
 
 
 

@@ -611,11 +611,13 @@ namespace node { namespace chain {
             const account_name_type& taker_int );
 
          asset pay_advertising_delivery( const account_object& provider, const account_object& demand, 
-            const account_object& bidder, const account_object& delivery, flat_set< const account_object* > audience, const asset& value );
+            const account_object& bidder, const account_object& delivery, const account_object& audience, const asset& value );
 
          asset pay_fee_share( const account_object& payee, const asset& amount );
 
          asset pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount );
+
+         void deliver_ad_bid( const ad_bid_object& bid, const account_object& viewer );
 
          void cancel_ad_bid( const ad_bid_object& bid );
 

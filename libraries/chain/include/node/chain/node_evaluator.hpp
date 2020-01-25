@@ -82,7 +82,6 @@ DEFINE_EVALUATOR( ad_campaign )
 DEFINE_EVALUATOR( ad_inventory )
 DEFINE_EVALUATOR( ad_audience )
 DEFINE_EVALUATOR( ad_bid )
-DEFINE_EVALUATOR( ad_deliver )
 
 // Transfer Evaluators
 

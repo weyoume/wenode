@@ -37,9 +37,9 @@ namespace node { namespace chain {
 
          shared_string               creative;          // IPFS link to the Media to be displayed, image or video.
 
-         shared_string               json;              // Public plaintext json information about the board, its topic and rules.
+         shared_string               json;              // JSON metadata information about the board, its topic and rules.
 
-         ad_format_type                format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
+         ad_format_type              format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
 
          time_point                  created;           // Time creative was made.
 
@@ -74,7 +74,7 @@ namespace node { namespace chain {
 
          time_point                       end;               // Ending time of the campaign. Remaining campaign budget will be refunded after this time.
 
-         shared_string                    json;              // json metadata for the campaign.
+         shared_string                    json;              // JSON metadata for the campaign.
 
          flat_set< account_name_type >    agents;            // Set of Accounts authorized to create bids for the campaign.
 
@@ -117,7 +117,7 @@ namespace node { namespace chain {
 
          shared_string                    inventory_id;      // uuidv4 to refer to the inventory.
 
-         ad_metric_type                     metric;            // Type of expense metric used.
+         ad_metric_type                   metric;            // Type of expense metric used.
 
          shared_string                    audience_id;       // ad audience_id, containing a set of usernames of viewing accounts in their userbase.
 
@@ -127,7 +127,7 @@ namespace node { namespace chain {
 
          uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
 
-         shared_string                    json;              // json metadata for the inventory.
+         shared_string                    json;              // JSON metadata for the inventory.
 
          flat_set< account_name_type >    agents;            // Set of Accounts authorized to create delivery transactions for the inventory.
          
@@ -169,7 +169,7 @@ namespace node { namespace chain {
 
          shared_string                    audience_id;       // uuidv4 to refer to the audience.
 
-         shared_string                    json;              // json metadata for the audience.
+         shared_string                    json;              // JSON metadata for the audience.
 
          flat_set< account_name_type >    audience;          // List of usernames within the audience for campaigns and inventory.
          
@@ -211,7 +211,7 @@ namespace node { namespace chain {
 
          shared_string                    audience_id;       // Desired audience for display acceptance. Audience must include only members of the inventory audience.
 
-         account_name_type                account;           // Account that created the campaign that this bid is directed towards. 
+         account_name_type                account;           // Account that created the campaign that this bid is directed towards.
 
          shared_string                    campaign_id;       // Ad campaign uuidv4 to utilise for the bid.
 
@@ -225,21 +225,40 @@ namespace node { namespace chain {
 
          asset                            bid_price;         // Price offered per metric. Asset symbol must be the same as the inventory price.
 
-         ad_metric_type                     metric;            // Type of expense metric used.
+         ad_metric_type                   metric;            // Type of expense metric used.
+
+         shared_string                    objective;         // Creative Objective for bid rank ordering.
 
          uint32_t                         requested;         // Maximum total metrics requested.
 
          uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
+
+         flat_set< account_name_type >    delivered;         // List of audience accounts that have been delivered creative.
+
+         shared_string                    json;              // JSON Metadata of the ad bid.
          
          time_point                       created;           // Time that the bid was created.
 
          time_point                       last_updated;      // Time that the bid's details were last updated or inventory was delivered.
 
          time_point                       expiration;        // Time that the bid was will expire.
+
+         bool is_delivered( const account_name_type& account )const  
+         {
+            if( delivered.find( account ) != delivered.end() )
+            {
+               return true; // The account has been delivered.
+            }
+            else 
+            {
+               return false; // The account has not been delivered.
+            }
+         };
    };
 
    struct by_creative_id;
    struct by_latest;
+   struct by_author_objective;
 
    typedef multi_index_container<
       ad_creative_object,
@@ -264,7 +283,19 @@ namespace node { namespace chain {
                member< ad_creative_object, shared_string, &ad_creative_object::creative_id >
             >,
             composite_key_compare< std::less< account_name_type >, strcmp_less >
-         > 
+         >,
+         ordered_unique< tag< by_author_objective >,
+            composite_key< ad_creative_object,
+               member< ad_creative_object, account_name_type, &ad_creative_object::author >,
+               member< ad_creative_object, shared_string, &ad_creative_object::objective >,
+               member< ad_creative_object, ad_creative_id_type, &ad_creative_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               strcmp_less,
+               std::less< ad_creative_id_type >
+            >
+         >
       >,
       allocator< ad_creative_object >
    > ad_creative_index;
@@ -383,6 +414,7 @@ namespace node { namespace chain {
    struct by_author_updated;
    struct by_provider_updated;
    struct by_bid_id;
+   struct by_provider_metric_author_objective_price;
 
    typedef multi_index_container<
       ad_bid_object,
@@ -438,6 +470,23 @@ namespace node { namespace chain {
             composite_key_compare<
                std::less< account_name_type >,
                std::less< ad_metric_type >,
+               std::greater< asset >,
+               std::less< ad_bid_id_type >
+            >
+         >,
+         ordered_unique< tag< by_provider_metric_author_objective_price >,
+            composite_key< ad_bid_object,
+               member< ad_bid_object, account_name_type, &ad_bid_object::provider >,
+               member< ad_bid_object, ad_metric_type, &ad_bid_object::metric >,
+               member< ad_bid_object, account_name_type, &ad_bid_object::author >,
+               member< ad_bid_object, shared_string, &ad_bid_object::objective >,
+               member< ad_bid_object, asset, &ad_bid_object::bid_price >,
+               member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< account_name_type >,
+               strcmp_less,
                std::greater< asset >,
                std::less< ad_bid_id_type >
             >

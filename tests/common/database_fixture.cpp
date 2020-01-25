@@ -525,7 +525,6 @@ const comment_object& database_fixture::comment_create(
       op.board = INIT_BOARD;
       op.options.post_type = TEXT_POST;
       op.language = "en";
-      op.options.privacy = false;
       op.options.reach = TAG_FEED;
       op.interface = INIT_ACCOUNT;
       op.options.rating = GENERAL;

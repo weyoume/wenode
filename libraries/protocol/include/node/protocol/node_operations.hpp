@@ -911,17 +911,17 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             account;           ///< Name of the member's account
+      account_name_type             account;           ///< Name of the member's account.
 
       network_officer_role_type     officer_type;      ///< The type of network officer that the account serves as. 
 
-      string                        details;           ///< Information about the network officer and their work
+      string                        details;           ///< Information about the network officer and their work.
 
       string                        url;               ///< The officers's description URL explaining their details. 
 
       string                        json;              ///< Additonal information about the officer.
 
-      bool                          active = true;     ///< Set true to activate governance account, false to deactivate. 
+      bool                          active = true;     ///< Set true to activate the officer, false to deactivate. 
          
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
@@ -1107,7 +1107,7 @@ namespace node { namespace protocol {
 
       account_name_type             account;             ///< The account subscribing to the governance address
       
-      account_name_type             governance_account;  ///< The name of the governance account
+      account_name_type             governance_account;  ///< The name of the governance account.
 
       bool                          subscribe = true;    ///< True if subscribing, false if unsubscribing.
 
@@ -1159,9 +1159,9 @@ namespace node { namespace protocol {
 
       string                        bittorrent_endpoint;         ///< The Bittorrent Seed Box endpoint URL of the Supernode. 
 
-      string                        json;                        ///< Additonal information about the interface.
+      string                        json;                        ///< Additonal information about the Supernode.
 
-      bool                          active = true;               ///< Set true to activate the interface, false to deactivate. 
+      bool                          active = true;               ///< Set true to activate the supernode, false to deactivate. 
          
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
@@ -1181,11 +1181,11 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             account;           ///< Name of the member's account
+      account_name_type             account;           ///< Name of the member's account.
 
-      string                        details;           ///< Information about the interface, and what they are offering to users
+      string                        details;           ///< Information about the interface, and what they are offering to users.
 
-      string                        url;               ///< The interfaces's URL
+      string                        url;               ///< The interfaces's URL.
 
       string                        json;              ///< Additonal information about the interface.
 
@@ -1209,11 +1209,11 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             account;           ///< Name of the member's account
+      account_name_type             account;           ///< Name of the member's account.
 
       string                        details;           ///< Information about the mediator, and what they are offering to users
 
-      string                        url;               ///< The mediator's URL
+      string                        url;               ///< The mediator's reference URL.
 
       string                        json;              ///< Additonal information about the mediator.
 
@@ -1242,9 +1242,9 @@ namespace node { namespace protocol {
 
       account_name_type                                 creator;             ///< The name of the account that created the community enterprise proposal.
 
-      string                                            enterprise_id;       ///< UUIDv4 referring to the proposal. 
+      string                                            enterprise_id;       ///< uuidv4 referring to the proposal. 
 
-      proposal_distribution_type                                    proposal_type;       ///< The type of proposal, determines release schedule
+      proposal_distribution_type                        proposal_type;       ///< The type of proposal, determines release schedule
 
       flat_map< account_name_type, uint16_t >           beneficiaries;       ///< Set of account names and percentages of budget value. Should not include the null account.
 
@@ -1312,7 +1312,7 @@ namespace node { namespace protocol {
    {
       account_name_type         signatory;
 
-      account_name_type         account;           ///< Account approving the milestone, must be a current top 50 witness, developer, marketer, or advocate.
+      account_name_type         account;           ///< Account approving the milestone.
 
       account_name_type         creator;           ///< The name of the account that created the proposal.
 
@@ -1320,11 +1320,9 @@ namespace node { namespace protocol {
 
       uint16_t                  milestone = 0;     ///< Number of the milestone that is being approved as completed.
 
-      string                    details;           ///< Description of completion of milestone, with supporting evidence.
+      uint16_t                  vote_rank;         ///< The rank of the approval for enterprise proposals.
 
-      uint16_t                  vote_rank;         ///< The rank of the approval for enterprise proposals
-
-      bool                      approved = true;   ///< True to claim the milestone amount, false to remove approval. 
+      bool                      approved = true;   ///< True to approve the milestone claim, false to remove approval. 
          
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
@@ -1335,6 +1333,7 @@ namespace node { namespace protocol {
    //=====================================//
    //==== Post and Comment Operations ====//
    //=====================================//
+
 
    /**
     * Allows authors to update properties associated with their post.
@@ -1347,8 +1346,6 @@ namespace node { namespace protocol {
       post_format_type                      post_type = TEXT_POST;          ///< Type of post being created, text, image, article, video, audio, file, etc.
 
       feed_reach_type                       reach = TAG_FEED;               ///< The extent to which the post will be distributed to account's followers and connections feeds.
-
-      bool                                  privacy = false;                ///< True if the post is encrypted. False if it is plaintext.
 
       post_rating_type                      rating = GENERAL;               ///< User nominated rating as to the maturity of the content, and display sensitivity.
 
@@ -1404,7 +1401,7 @@ namespace node { namespace protocol {
 
       string                      permlink;        ///< Unique identifing string for the post.
 
-      string                      title;           ///< content related name of the post, used to find post with search API.
+      string                      title;           ///< Content related name of the post, used to find post with search API.
 
       string                      body;            ///< String containing text for display when the post is opened.
 
@@ -1426,7 +1423,7 @@ namespace node { namespace protocol {
 
       account_name_type           parent_author;   ///< Account that created the post this post is replying to, empty if root post.
 
-      string                      parent_permlink; ///< permlink of the post this post is replying to, empty if root post.
+      string                      parent_permlink; ///< Permlink of the post this post is replying to, empty if root post.
 
       vector< string >            tags;            ///< Set of string tags for sorting the post by.
 
@@ -1441,6 +1438,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return author; }
    };
 
+
    struct beneficiary_route_type
    {
       beneficiary_route_type() {}
@@ -1453,6 +1451,7 @@ namespace node { namespace protocol {
       ///< For use by std::sort such that the route is sorted first by name (ascending)
       bool operator < ( const beneficiary_route_type& o )const { return account < o.account; }
    };
+
 
    struct comment_payout_beneficiaries
    {
@@ -1510,7 +1509,7 @@ namespace node { namespace protocol {
 
 
    /** 
-    * Views the post, which increases the post's content reward earnings.
+    * Views a post, which increases the post's content reward earnings.
     * 
     * Nominates an interface through which the post was viewed,
     * and nominates a supernode that served the data through IPFS.
@@ -1625,7 +1624,7 @@ namespace node { namespace protocol {
     * - Event: Used for gathering posts about a specific event or series of events.
     *    - Displayed with a focus on the people attending, and the time and location of the event.
     * - Store: Used for gathering product posts from a specified brand, type of product, or trading location.
-    *    - Displayed with a focus on the products being sold, and thier prices. 
+    *    - Displayed with a focus on the products being sold, and thier prices.
     * 
     * Boards have 4 Privacy options: 
     * 
@@ -1645,9 +1644,9 @@ namespace node { namespace protocol {
 
       board_name_type             name;              ///< Name of the board.
 
-      board_structure_type        board_type;        ///< Type of board to create.
+      board_structure_type        board_type;        ///< Type of board Structure to use, determines content types.
 
-      board_privacy_type          board_privacy;     ///< Type of board to create.
+      board_privacy_type          board_privacy;     ///< Type of board Privacy to us, determines access permissions and encryption
 
       string                      board_public_key;  ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
@@ -1675,13 +1674,9 @@ namespace node { namespace protocol {
    {
       account_name_type           signatory;
 
-      account_name_type           account;           ///< Account updating the board.
+      account_name_type           account;           ///< Account updating the board. Administrator of the board.
 
       board_name_type             board;             ///< Name of the board.
-
-      board_structure_type        board_type;        ///< Type of board to create.
-
-      board_privacy_type          board_privacy;     ///< Type of board to create.
 
       string                      board_public_key;  ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
@@ -1693,7 +1688,7 @@ namespace node { namespace protocol {
 
       string                      url;               ///< External reference URL.
 
-      account_name_type           pinned_author;     ///< Author of the pinned post;
+      account_name_type           pinned_author;     ///< Author of the pinned post.
 
       string                      pinned_permlink;   ///< Permlink of the pinned post.
 
@@ -1715,7 +1710,7 @@ namespace node { namespace protocol {
 
       account_name_type              account;           ///< Account of an administrator of the board.
 
-      board_name_type                board;             ///< Board that is being changed.
+      board_name_type                board;             ///< Board that the moderator is being added to.
 
       account_name_type              moderator;         ///< New moderator account.
 
@@ -1739,11 +1734,11 @@ namespace node { namespace protocol {
 
       account_name_type              account;          ///< Account of the founder of the board.
 
-      board_name_type                board;            ///< Board that is being changed.
+      board_name_type                board;            ///< Board that the admin is being added to.
 
       account_name_type              admin;            ///< New administrator account.
 
-      bool                           added = true;     ///<  True when adding a new moderator, false when removing.
+      bool                           added = true;     ///< True when adding a new administrator, false when removing.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1751,7 +1746,7 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Votes for a moderator to increase thier mod weight.
+    * Votes for a moderator to increase their mod weight.
     * 
     * Moderators with a higher mod weight receive a higher 
     * proportion of incoming moderator rewards in a board.
@@ -1762,7 +1757,7 @@ namespace node { namespace protocol {
 
       account_name_type              account;          ///< Account of a member of the board.
 
-      board_name_type                board;            ///< Board of the member.
+      board_name_type                board;            ///< Board that the moderator is being voted into.
 
       account_name_type              moderator;        ///< Moderator account.
 
@@ -1788,7 +1783,7 @@ namespace node { namespace protocol {
 
       account_name_type              account;        ///< Account that created the board.
 
-      board_name_type                board;          ///< Board that is being changed.
+      board_name_type                board;          ///< Board that is being transferred.
 
       account_name_type              new_founder;    ///< Account of the new founder.
 
@@ -1811,7 +1806,7 @@ namespace node { namespace protocol {
 
       account_name_type              account;            ///< Account that wants to join the board.
 
-      board_name_type                board;              ///< Board that is being changed.
+      board_name_type                board;              ///< Board that is being requested to join.
 
       string                         message;            ///< Message attatched to the request, encrypted with the boards public key. 
 
@@ -1823,7 +1818,7 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Used by an existing member of a board to invite a new member.
+    * Invite a new member to a board.
     * 
     * The account must then accept the invitation to be added.
     * Invitation includes the @ref encrypted_board_key for
@@ -1839,11 +1834,11 @@ namespace node { namespace protocol {
 
       board_name_type                board;                 ///< Board that is the member is being invited to.
 
-      string                         message;               ///< Message attatched to the request, encrypted with the member's secure public key.
+      string                         message;               ///< Message attatched to the invite, encrypted with the member's secure public key.
 
       string                         encrypted_board_key;   ///< The Board Private Key, encrypted with the member's secure public key.
 
-      bool                           invited = true;        ///< Set true to request, false to cancel request.
+      bool                           invited = true;        ///< Set true to invite, false to cancel invite.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1851,7 +1846,7 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Used to respond to a request and admit a new member.
+    * Used to accept to a request and admit a new member.
     * 
     * This operation discloses the @ref encrypted_board_key
     * for decrypting posts, from an existing 
@@ -1861,7 +1856,7 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;                    ///< A Moderator of the board.
+      account_name_type              account;                    ///< Account within the board accepting the request.
 
       account_name_type              member;                     ///< Account to accept into the board.
 
@@ -1877,7 +1872,7 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Accepts a board join invitation.
+    * Accepts a board invitation.
     * 
     * Adds the invited account to become a new member of the
     * specifed board.
@@ -1888,7 +1883,7 @@ namespace node { namespace protocol {
 
       account_name_type              account;             ///< A new member of the board.
 
-      board_name_type                board;               ///< Board that is being joined.
+      board_name_type                board;               ///< Board that the account was invited to.
 
       bool                           accepted = true;     ///< True to accept invite, false to reject invite.
 
@@ -1912,7 +1907,7 @@ namespace node { namespace protocol {
 
       account_name_type              member;         ///< Account to be removed from the board membership.
 
-      board_name_type                board;          ///< Board that is being joined.
+      board_name_type                board;          ///< Board that member is being removed from.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1929,7 +1924,7 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;               ///< A moderator or admin of the board blacklisting member.
+      account_name_type              account;               ///< Moderator or admin of the board.
 
       account_name_type              member;                ///< Account to be blacklisted from interacting with the board.
 
@@ -1975,7 +1970,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * Describes an ad creative to be used in a campaign for display in interfaces.
+    * Creates a new ad creative to be used in a campaign for display in interfaces.
     */
    struct ad_creative_operation : public base_operation 
    {
@@ -1991,7 +1986,7 @@ namespace node { namespace protocol {
 
       string                 creative;          ///< IPFS link to the Media to be displayed, image or video.
 
-      string                 json;              ///< json string of creative metadata for display.
+      string                 json;              ///< JSON string of creative metadata for display.
 
       ad_format_type         format_type;       ///< The type of formatting used for the advertisment, determines the interpretation of the creative.
 
@@ -2058,7 +2053,7 @@ namespace node { namespace protocol {
 
       uint32_t                           inventory;      ///< Total metrics available.
 
-      string                             json;           ///< json metadata for the inventory.
+      string                             json;           ///< JSON metadata for the inventory.
 
       vector< account_name_type >        agents;         ///< Set of Accounts authorized to create delivery transactions for the inventory.
 
@@ -2080,11 +2075,11 @@ namespace node { namespace protocol {
    {
       account_name_type                  signatory;
 
-      account_name_type                  account;        ///< Account creating the audience set, either an advertiser or supplier.
+      account_name_type                  account;        ///< Account creating the audience set.
 
-      string                             audience_id;    ///< uuidv4 referring to the inventory offering.
+      string                             audience_id;    ///< uuidv4 referring to the audience for inclusion in inventory and campaigns.
 
-      string                             json;           ///< json metadata for the audience.
+      string                             json;           ///< JSON metadata for the audience.
 
       vector< account_name_type >        audience;       ///< List of usernames of viewing accounts.
 
@@ -2100,7 +2095,11 @@ namespace node { namespace protocol {
     * 
     * Advertising bids can be delivered by interfaces when they
     * display an ad creative that leads to a specified transaction from
-    * the audience member's account, and the ad bid payment is made.
+    * the audience member's account.
+    * 
+    * Ad bid payments are made after an operation is broadcast
+    * to the network by an audience member, with an interface reference
+    * to the provider of the inventory.
     */
    struct ad_bid_operation : public base_operation
    {
@@ -2114,7 +2113,9 @@ namespace node { namespace protocol {
 
       string                           campaign_id;           ///< Ad campaign uuidv4 to utilise for the bid.
 
-      string                           creative_id;           ///< Creative uuidv4 offering to bid on.
+      account_name_type                author;                ///< Account that was the author of the creative.
+
+      string                           creative_id;           ///< uuidv4 referring to the creative item to bid on.
 
       account_name_type                provider;              ///< Account offering inventory supply.
 
@@ -2128,7 +2129,7 @@ namespace node { namespace protocol {
 
       vector< string >                 excluded_audiences;    ///< List of audiences to remove all members from the combined bid audience.
 
-      string                           json;                  ///< json metadata for the combined audience if created.
+      string                           json;                  ///< JSON metadata for the Bid and new inventory.
 
       time_point                       expiration;            ///< Time the the bid is valid until, bid is cancelled after this time if not filled. 
 
@@ -2137,30 +2138,6 @@ namespace node { namespace protocol {
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return bidder; }
-   };
-
-   /**
-    * @todo restructure the deliver to automatically take place when a transaction is broadcasted.
-    */
-   struct ad_deliver_operation : public base_operation
-   {
-      account_name_type                  signatory;
-
-      account_name_type                  account;             ///< Account creating the delivery, must be an agent of the inventory bidded on.
-
-      account_name_type                  bidder;              ///< Account that created the bid on available supply.
-
-      string                             bid_id;              ///< Bid uuidv4 for referring to the bid.
-
-      asset                              delivery_price;      ///< Price charged per metric. Must be equal to or less than bid price. [Typically the Price of second highest bidder]
-
-      uint32_t                           delivered;           ///< Total metrics delivered.
-
-      vector< transaction_id_type >      transactions;        ///< Delivered metric transactions ids
-
-      void validate()const;
-      void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return account; }
    };
 
 
@@ -4038,7 +4015,6 @@ FC_REFLECT( node::protocol::approve_enterprise_milestone_operation,
          (creator)
          (enterprise_id)
          (milestone)
-         (details)
          (vote_rank)
          (approved)
          );
@@ -4058,7 +4034,6 @@ FC_REFLECT( node::protocol::comment_operation,
          (magnet)
          (language)
          (board)
-         (privacy)
          (public_key)
          (reach)
          (interface)
@@ -4068,7 +4043,7 @@ FC_REFLECT( node::protocol::comment_operation,
          (parent_author)
          (parent_permlink)
          (tags)
-         (json) 
+         (json)
          );
 
 FC_REFLECT( node::protocol::beneficiary_route_type, 

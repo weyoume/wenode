@@ -336,7 +336,6 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
@@ -1529,7 +1528,6 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;

@@ -4046,7 +4046,6 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< ad_inventory_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< ad_audience_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< ad_bid_evaluator                         >();
-   _my->_evaluator_registry.register_evaluator< ad_deliver_evaluator                     >();
 
    // Transfer Evaluators
 
@@ -5174,7 +5173,7 @@ asset database::pay_trading_fees( const account_object& taker, const asset& rece
  * the bidder account, the audience members, and the network.
  */
 asset database::pay_advertising_delivery( const account_object& provider, const account_object& demand, 
-   const account_object& bidder, const account_object& delivery, flat_set< const account_object* > audience, const asset& value )
+   const account_object& bidder, const account_object& delivery, const account_object& audience, const asset& value )
 { try {
    asset total_fees = ( value * ADVERTISING_FEE_PERCENT ) / PERCENT_100;
    
@@ -5185,7 +5184,7 @@ asset database::pay_advertising_delivery( const account_object& provider, const 
    asset network_fee      = ( total_fees * NETWORK_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
 
    asset demand_paid = pay_fee_share( demand, demand_share );
-   asset audience_paid = pay_multi_fee_share( audience, audience_share );
+   asset audience_paid = pay_fee_share( audience, audience_share );
    asset bidder_paid = pay_fee_share( bidder, bidder_share );
    asset delivery_paid = pay_fee_share( delivery, delivery_share );
    asset network_paid = pay_network_fees( provider, network_fee );
@@ -5254,6 +5253,79 @@ asset database::pay_multi_fee_share( flat_set< const account_object* > payees, c
    }
    return total_paid;
 
+} FC_CAPTURE_AND_RETHROW() }
+
+/**
+ * Activates the delivery process for a bid
+ * that has been triggered by an operation broadcast by
+ * an audience member. 
+ * Rewards the Provider of the inventory, in addition to the 
+ * audience member account that received the ad display.
+ */
+void database::deliver_ad_bid( const ad_bid_object& bid, const account_object& viewer )
+{ try {
+   const account_object& bidder = get_account( bid.bidder );
+   const account_object& account = get_account( bid.account );
+   const account_object& author = get_account( bid.author );
+   const account_object& provider = get_account( bid.provider );
+
+   const ad_campaign_object& campaign = get_ad_campaign( account.name, bid.campaign_id );
+   const ad_inventory_object& inventory = get_ad_inventory( provider.name, bid.inventory_id );
+   const ad_audience_object& audience = get_ad_audience( bidder.name, bid.audience_id );
+   const ad_creative_object& creative = get_ad_creative( author.name, bid.creative_id );
+
+   FC_ASSERT( campaign.budget >= bid.bid_price,
+      "Campaign does not have sufficient budget to pay the delivery." );
+   FC_ASSERT( !bid.is_delivered( viewer.name ) ,
+      "Viewer has already been delivered by this bid." );
+
+   const account_object& demand = get_account( campaign.interface );
+   time_point now = head_block_time();
+
+   if( campaign.active && 
+      inventory.active && 
+      audience.active && 
+      creative.active && 
+      now < bid.expiration &&
+      now < inventory.expiration &&
+      now > campaign.begin &&
+      now < campaign.end )
+   {
+      modify( campaign, [&]( ad_campaign_object& aco )
+      {
+         aco.budget -= bid.bid_price;
+         aco.total_bids -= bid.bid_price;
+         aco.last_updated = now;
+      });
+
+      modify( inventory, [&]( ad_inventory_object& aio )
+      {
+         aio.remaining--;
+         aio.last_updated = now;
+      });
+
+      modify( bid, [&]( ad_bid_object& abo )
+      {
+         abo.remaining--;
+         abo.delivered.insert( viewer.name );
+         abo.last_updated = now;
+      });
+
+      pay_advertising_delivery( provider, demand, bidder, account, viewer, bid.bid_price );
+
+      if( bid.remaining == 0 )
+      {
+         remove( bid );
+      }
+      if( inventory.remaining == 0 )
+      {
+         remove( inventory );
+      }
+      if( campaign.budget.amount == 0 )
+      {
+         remove( campaign );
+      }
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 

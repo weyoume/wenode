@@ -2151,7 +2151,6 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
 

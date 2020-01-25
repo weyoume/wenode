@@ -768,13 +768,15 @@ void database::add_comment_to_feeds( const comment_object& comment )
       case FRIEND_FEED:
       case CONNECTION_FEED:
       {
-         FC_ASSERT( comment.privacy, "Post should be encrypted at this reach level." );
+         FC_ASSERT( comment.is_encrypted(), 
+            "Post should be encrypted at this reach level." );
       }
       case MUTUAL_FEED:        // Public Posts only from here down
       case FOLLOW_FEED:
       case TAG_FEED:           // Tag Feed level posts are shared to tag followers, in addition to account followers. 
       {
-         FC_ASSERT( !comment.privacy, "Post should not encrypted at this reach level." );
+         FC_ASSERT( !comment.is_encrypted(), 
+            "Post should not encrypted at this reach level." );
       }
       default:
       {

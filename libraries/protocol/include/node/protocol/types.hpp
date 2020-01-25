@@ -262,16 +262,16 @@ namespace node {
       // Type of advertising format, determines how creative is formatted in interfaces.
       enum ad_format_type
       {
-         STANDARD_FORMAT,  // A regular post, objective is permlink
-         PREMIUM_FORMAT,   // A premium post, objective is permlink
-         PRODUCT_FORMAT,   // A product post, objective is permlink
-         LINK_FORMAT,      // A link to an external webpage, objective is URL
-         ACCOUNT_FORMAT,   // An account, objective is account name
-         BOARD_FORMAT,     // A board, objective is board name
-         GROUP_FORMAT,     // A group, objective is group board name
-         EVENT_FORMAT,     // An event, objective is board name
-         STORE_FORMAT,     // A store, objective is store name
-         ASSET_FORMAT      // An asset, objective is asset symbol
+         STANDARD_FORMAT,  // A regular post, objective is permlink.
+         PREMIUM_FORMAT,   // A premium post, objective is permlink.
+         PRODUCT_FORMAT,   // A product post, objective is permlink.
+         LINK_FORMAT,      // A link to an external webpage, objective is URL.
+         ACCOUNT_FORMAT,   // An account, objective is account name.
+         BOARD_FORMAT,     // A board, objective is board name.
+         GROUP_FORMAT,     // A group, objective is group board name.
+         EVENT_FORMAT,     // An event, objective is board name.
+         STORE_FORMAT,     // A store, objective is store name.
+         ASSET_FORMAT      // An asset, objective is asset symbol.
       };
 
       vector< string > ad_format_values =
@@ -322,10 +322,10 @@ namespace node {
       // Types of expense metrics for advertising transactions.
       enum ad_metric_type 
       {
-         VIEW_METRIC,      // View transaction ids required for delivery.
-         VOTE_METRIC,      // vote transaction ids required for delivery.
-         SHARE_METRIC,     // share transaction ids required for delivery.
-         FOLLOW_METRIC,    // follow or board join transaction ids required for delivery.
+         VIEW_METRIC,      // View transaction required for delivery.
+         VOTE_METRIC,      // vote transaction required for delivery.
+         SHARE_METRIC,     // share transaction required for delivery.
+         FOLLOW_METRIC,    // follow or board join transaction required for delivery.
          PURCHASE_METRIC,  // product marketplace purchase orders required for delivery. 
          PREMIUM_METRIC    // premium content purchases transaction ids required for delivery.
       };
@@ -346,7 +346,7 @@ namespace node {
          PUBLIC,       // No privacy setting, post is public.
          CONNECTION,   // Standard connection level, enables private messaging and viewing private posts.
          FRIEND,       // Elevated connection level, activates notifications when posts are made by friends.
-         COMPANION     // Highest connection level, maximum privacy for close friends or partners. 
+         COMPANION     // Highest connection level, maximum privacy for close friends or partners.
       };
 
       vector< string > connection_tier_values =
@@ -357,20 +357,20 @@ namespace node {
          "companion"
       };
 
-      // Types of feeds for subscribing to the posts of different sets of users. 
+      // Types of feeds for subscribing to the posts of different sets of users.
       enum feed_reach_type 
       { 
-         NO_FEED,           // Posts that should not be distributed to any feeds. 
+         NO_FEED,           // Posts that should not be distributed to any feeds.
          FOLLOW_FEED,       // Feed from accounts that are followed.
-         MUTUAL_FEED,       // Feed from accounts that are mutually followed. 
-         CONNECTION_FEED,   // Feed from accounts that are connected. 
-         FRIEND_FEED,       // Feed from accounts that are friends. 
+         MUTUAL_FEED,       // Feed from accounts that are mutually followed.
+         CONNECTION_FEED,   // Feed from accounts that are connected.
+         FRIEND_FEED,       // Feed from accounts that are friends.
          COMPANION_FEED,    // Feed from accounts that are companions.
-         BOARD_FEED,        // Feed from subscribed boards. 
+         BOARD_FEED,        // Feed from subscribed boards.
          GROUP_FEED,        // Feed from subscribed groups.
          EVENT_FEED,        // Feed from subscribed events.
          STORE_FEED,        // Feed from subscribed stores.
-         TAG_FEED           // Feed from followed tags. 
+         TAG_FEED           // Feed from followed tags.
       };
 
       vector< string > feed_reach_values =

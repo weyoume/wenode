@@ -86,7 +86,6 @@ namespace node { namespace protocol {
             ad_inventory_operation,
             ad_audience_operation,
             ad_bid_operation,
-            ad_deliver_operation,
             
             // Transfer Operations
 

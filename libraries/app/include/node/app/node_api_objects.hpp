@@ -37,8 +37,7 @@ struct comment_api_obj
       author( o.author ),
       permlink( to_string( o.permlink ) ),
       title( to_string( o.title ) ),
-      post_type( post_format_values[ o.post_type ] ),
-      privacy( o.privacy ),
+      post_type( post_format_values[ o.post_type ]),
       public_key( o.public_key ),
       reach( feed_reach_values[ o.reach ] ),
       board( o.board ),
@@ -128,7 +127,6 @@ struct comment_api_obj
    string                         permlink;                     // Unique identifing string for the post.
    string                         title;                        // Name of the post for reference.
    string                         post_type;                    // The type of post that is being created, image, text, article, video etc. 
-   bool                           privacy;                      // True if the post is encrypted. False if it is plaintext.
    public_key_type                public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
    string                         reach;                        // The reach of the post across followers, connections, friends and companions
    board_name_type                board;                        // The name of the board to which the post is uploaded to. Null string if no board. 
@@ -2132,7 +2130,6 @@ FC_REFLECT( node::app::comment_api_obj,
          (permlink)
          (title)
          (post_type)
-         (privacy)
          (public_key)
          (reach)
          (board)

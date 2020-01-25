@@ -82,7 +82,6 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       comment_options options;
 
       options.post_type = ARTICLE_POST;
-      options.privacy = false;
       options.reach = TAG_FEED;
       options.rating = GENERAL;
       comment.options = options;
@@ -310,7 +309,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful ad bid creation" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when ad delivery contains no accounts in audience" );
+       BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful partial ad delivery" );
 
       account_create_operation create;
 
@@ -340,14 +339,6 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
          tx.operations.clear();
          tx.signatures.clear();
       }
-
-      ad_deliver_operation deliver;
-
-      deliver.signatory = "bob";
-      deliver.account = "bob";
-      deliver.bidder = "alice";
-      deliver.bid_id = "28bdc74a-097a-40d4-bf49-cc95af3eeec0";
-      deliver.delivery_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
    
       view_operation view;
 
@@ -367,25 +358,10 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
          tx.operations.push_back( view );
          tx.sign( alice_private_posting_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
-         deliver.transactions.push_back( tx.id() );      // Add transaction IDs to deliver operation
 
          tx.operations.clear();
          tx.signatures.clear();
       }
-
-      deliver.validate();
-      tx.operations.push_back( deliver );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Accounts are not in audience
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when ad delivery contains no accounts in audience" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful ad delivery" );
 
       tx.operations.push_back( audience );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -412,15 +388,6 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       tx.operations.clear();
       tx.signatures.clear();
 
-      deliver.validate();
-      tx.operations.push_back( deliver );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      deliver.transactions.clear();
-
       const ad_bid_object& alice_bid = db.get_ad_bid( "alice", "28bdc74a-097a-40d4-bf49-cc95af3eeec0" );
 
       BOOST_REQUIRE( alice_bid.bid_price == bid.bid_price );
@@ -446,7 +413,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful ad delivery" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful partial ad delivery" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: ad delivery bid completion" );
       
@@ -458,19 +425,10 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
          tx.operations.push_back( view );
          tx.sign( alice_private_posting_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
-         deliver.transactions.push_back( tx.id() );      // Add transaction IDs to deliver operation
 
          tx.operations.clear();
          tx.signatures.clear();
       }
-
-      deliver.validate();
-      tx.operations.push_back( deliver );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       const auto& bid_idx = db.get_index< ad_bid_index >().indices().get< by_bid_id >();
       auto bid_itr = bid_idx.find( boost::make_tuple( "alice", "28bdc74a-097a-40d4-bf49-cc95af3eeec0" ) );

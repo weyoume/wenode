@@ -171,7 +171,7 @@ struct operation_visitor
          {
             obj.active            = comment.active;
             obj.rating            = comment.rating;
-            obj.privacy           = comment.privacy;
+            obj.encrypted         = comment.is_encrypted();
             obj.author_reputation = comment.author_reputation;
             obj.cashout           = _db.calculate_discussion_payout_time( comment );
             obj.net_reward        = comment.net_reward;
@@ -212,7 +212,7 @@ struct operation_visitor
          obj.tag               = tag;
          obj.board             = board;
          obj.comment           = comment.id;
-         obj.privacy           = comment.privacy;
+         obj.encrypted         = comment.is_encrypted();
          obj.rating            = comment.rating;
          obj.language          = to_string( comment.language );
          obj.author_reputation = comment.author_reputation;

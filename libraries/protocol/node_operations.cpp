@@ -843,8 +843,6 @@ namespace node { namespace protocol {
       validate_uuidv4( enterprise_id );
       FC_ASSERT( milestone <= PERCENT_100,
          "Milestone percent is too large." );
-      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
       FC_ASSERT( vote_rank >= 1 && vote_rank <= 100,
          "Vote rank must be between zero and one hundred." );
    }
@@ -940,9 +938,6 @@ namespace node { namespace protocol {
          FC_ASSERT( beneficiaries[i - 1] < beneficiaries[i], 
             "Benficiaries must be specified in sorted order (account ascending)" );
       }
-
-      for( auto& e : extensions )
-         e.visit( comment_options_extension_validate_visitor() );
    }
 
    void comment_operation::validate() const
@@ -1019,18 +1014,6 @@ namespace node { namespace protocol {
             "Symbol ${symbol} is not a valid symbol", ("symbol", comment_price.symbol) );
       }
    }
-
-   struct comment_options_extension_validate_visitor
-   {
-      comment_options_extension_validate_visitor() {}
-
-      typedef void result_type;
-
-      void operator()( const comment_payout_beneficiaries& cpb ) const
-      {
-         cpb.validate();
-      }
-   };
 
    void message_operation::validate() const
    {
@@ -1194,36 +1177,6 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_board_name( board );
-
-      switch( board_type )
-      {
-         case BOARD:
-         case GROUP:
-         case EVENT:
-         case STORE:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Invalid board type." );
-         }
-      }
-
-      switch( board_privacy )
-      {
-         case OPEN_BOARD:
-         case PUBLIC_BOARD:
-         case PRIVATE_BOARD:
-         case EXCLUSIVE_BOARD:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Invalid board privacy." );
-         }
-      }
 
       if( json.size() > 0 )
       {
@@ -1626,29 +1579,6 @@ namespace node { namespace protocol {
             "Audience ID is too long." );
       }
    }
-
-
-   void ad_deliver_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( bidder );
-      validate_account_name( account );
-
-      FC_ASSERT( bid_id.size() < MAX_STRING_LENGTH,
-         "Bid ID is too long." );
-      FC_ASSERT( bid_id.size(),
-         "Delivery has no bid ID." );
-      FC_ASSERT( fc::is_utf8( bid_id ),
-         "bid ID must be UTF-8" );
-      validate_uuidv4( bid_id );
-      FC_ASSERT( delivery_price.amount > 0,
-         "Delivery price must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( delivery_price.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ( "symbol", delivery_price.symbol ) );
-      FC_ASSERT( delivered > 0,
-         "Delivered must be greater than zero." );
-   }
-
 
 
    //=============================//

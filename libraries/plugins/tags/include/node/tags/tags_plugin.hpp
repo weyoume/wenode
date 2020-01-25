@@ -189,7 +189,7 @@ class tag_object : public object< tag_object_type, tag_object >
 
       time_point                 cashout;                      // Time of the next content reward cashout due for the post. 
 
-      bool                       privacy;                      // Privacy type of the post.
+      bool                       encrypted;                    // True if the post is encrypted.
 
       post_rating_type           rating;                       // Content severity rating from the author. 
 
@@ -1895,7 +1895,7 @@ FC_REFLECT( node::tags::tag_object,
          (created)
          (active)
          (cashout)
-         (privacy)
+         (encrypted)
          (rating)
          (language)
          (author_reputation)

@@ -1838,6 +1838,30 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
             afo.add_follower( follower.name );
             afo.last_update = now;
          });
+
+         if( follower.membership == NONE )     // Check for the presence of an ad bid on this follow.
+         {
+            const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
+            auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, FOLLOW_METRIC, o.following, o.following ) );
+
+            while( bid_itr != bid_idx.end() &&
+               bid_itr->provider == o.interface &&
+               bid_itr->metric == FOLLOW_METRIC &&
+               bid_itr->author == o.following &&
+               bid_itr->objective == o.following )    // Retrieves highest paying bids for this share by this interface.
+            {
+               const ad_bid_object& bid = *bid_itr;
+               const ad_audience_object& audience = _db.get_ad_audience( bid.bidder, bid.audience_id );
+
+               if( !bid.is_delivered( o.follower ) && audience.is_audience( o.follower ) )
+               {
+                  _db.deliver_ad_bid( bid, follower );
+                  break;
+               }
+
+               ++bid_itr;
+            }
+         }
       }  
       else    // Creating new filter relation
       {
@@ -3266,13 +3290,13 @@ void comment_evaluator::do_apply( const comment_operation& o )
          case OPEN_BOARD:
          case PUBLIC_BOARD:
          {
-            FC_ASSERT( !options.privacy && o.public_key == public_key_type(), 
+            FC_ASSERT( public_key_type( o.public_key ) != public_key_type(), 
                "Posts in Open and Public boards should not be encrypted." );
          }
          case PRIVATE_BOARD:
          case EXCLUSIVE_BOARD:
          {
-            FC_ASSERT( options.privacy && o.public_key == board.board_public_key, 
+            FC_ASSERT( public_key_type( o.public_key ) == board.board_public_key, 
                "Posts in Private and Exclusive Boards must be encrypted with the board public key.");
             FC_ASSERT( options.reach == board_feed_type, 
                "Posts in Private and Exclusive Boards should have reach limited to only board level subscribers.");
@@ -3292,25 +3316,25 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case FOLLOW_FEED:
       case MUTUAL_FEED:
       {
-         FC_ASSERT( !options.privacy && o.public_key == public_key_type(), 
+         FC_ASSERT( o.public_key == public_key_type(), 
             "Follow, Mutual and Tag level posts should not be encrypted." );
       }
       break;
       case CONNECTION_FEED:
       {
-         FC_ASSERT( options.privacy && o.public_key == auth.connection_public_key, 
+         FC_ASSERT( o.public_key == auth.connection_public_key, 
             "Connection level posts must be encrypted with the account's Connection public key." );
       }
       break;
       case FRIEND_FEED:
       {
-         FC_ASSERT( options.privacy && o.public_key == auth.friend_public_key, 
+         FC_ASSERT( o.public_key == auth.friend_public_key, 
             "Connection level posts must be encrypted with the account's Friend public key.");
       }
       break;
       case COMPANION_FEED:
       {
-         FC_ASSERT( options.privacy && o.public_key == auth.companion_public_key, 
+         FC_ASSERT( o.public_key == auth.companion_public_key, 
             "Connection level posts must be encrypted with the account's Companion public key.");
       }
       break;
@@ -3321,7 +3345,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          FC_ASSERT( board_ptr != nullptr, 
             "Board level posts must be made within a valid board.");
-         FC_ASSERT( options.privacy && o.public_key == board_ptr->board_public_key, 
+         FC_ASSERT( o.public_key == board_ptr->board_public_key, 
             "Board level posts must be encrypted with the board public key.");
       }
       break;
@@ -3469,7 +3493,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.author = o.author;
          com.rating = options.rating;
          com.board = o.board;
-         com.privacy = options.privacy;
          com.reach = options.reach;
          com.post_type = options.post_type;
          com.author_reputation = auth.author_reputation;
@@ -3621,7 +3644,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.active = now;
             com.rating = options.rating;
             com.board = o.board;
-            com.privacy = options.privacy;
             com.reach = options.reach;
 
             com.max_accepted_payout = options.max_accepted_payout;
@@ -3701,7 +3723,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.active = fc::time_point::min();
             com.rating = EXPLICIT;
             com.board = board_name_type();
-            com.privacy = true;
             com.reach = NO_FEED;
             from_string( com.json, "" );  
             com.ipfs.clear();
@@ -3986,6 +4007,30 @@ void vote_evaluator::do_apply( const vote_operation& o )
                bo.vote_count--;
             }
          });
+      }
+
+      if( voter.membership == NONE )     // Check for the presence of an ad bid on this vote.
+      {
+         const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
+         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, VOTE_METRIC, comment.author, comment.permlink ) );
+
+         while( bid_itr != bid_idx.end() &&
+            bid_itr->provider == o.interface &&
+            bid_itr->metric == VOTE_METRIC &&
+            bid_itr->author == comment.author &&
+            bid_itr->objective == comment.permlink )    // Retrieves highest paying bids for this vote by this interface.
+         {
+            const ad_bid_object& bid = *bid_itr;
+            const ad_audience_object& audience = _db.get_ad_audience( bid.bidder, bid.audience_id );
+
+            if( !bid.is_delivered( o.voter ) && audience.is_audience( o.voter ) )
+            {
+               _db.deliver_ad_bid( bid, voter );
+               break;
+            }
+
+            ++bid_itr;
+         }
       }
    }
    else  // Vote is being altered from a previous vote
@@ -4280,6 +4325,30 @@ void view_evaluator::do_apply( const view_operation& o )
             cv.max_weight = 0;
          }
       });
+
+      if( viewer.membership == NONE )     // Check for the presence of an ad bid on this view.
+      {
+         const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
+         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, VIEW_METRIC, comment.author, comment.permlink ) );
+
+         while( bid_itr != bid_idx.end() &&
+            bid_itr->provider == o.interface &&
+            bid_itr->metric == VIEW_METRIC &&
+            bid_itr->author == comment.author &&
+            bid_itr->objective == comment.permlink )    // Retrieves highest paying bids for this view by this interface.
+         {
+            const ad_bid_object& bid = *bid_itr;
+            const ad_audience_object& audience = _db.get_ad_audience( bid.bidder, bid.audience_id );
+
+            if( !bid.is_delivered( o.viewer ) && audience.is_audience( o.viewer ) )
+            {
+               _db.deliver_ad_bid( bid, viewer );
+               break;
+            }
+
+            ++bid_itr;
+         }
+      }
    }
    else  // View is being removed
    {
@@ -4469,7 +4538,30 @@ void share_evaluator::do_apply( const share_operation& o )
       {
          _db.share_comment_to_tag( sharer.name, *o.tag, comment );
       }
-      
+
+      if( sharer.membership == NONE )     // Check for the presence of an ad bid on this share.
+      {
+         const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
+         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, SHARE_METRIC, comment.author, comment.permlink ) );
+
+         while( bid_itr != bid_idx.end() &&
+            bid_itr->provider == o.interface &&
+            bid_itr->metric == SHARE_METRIC &&
+            bid_itr->author == comment.author &&
+            bid_itr->objective == comment.permlink )    // Retrieves highest paying bids for this share by this interface.
+         {
+            const ad_bid_object& bid = *bid_itr;
+            const ad_audience_object& audience = _db.get_ad_audience( bid.bidder, bid.audience_id );
+
+            if( !bid.is_delivered( o.sharer ) && audience.is_audience( o.sharer ) )
+            {
+               _db.deliver_ad_bid( bid, sharer );
+               break;
+            }
+
+            ++bid_itr;
+         }
+      }
    }
    else  // share is being removed
    {
@@ -4705,13 +4797,18 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
    }
    const board_object& board = _db.get_board( o.board ); 
    const account_object& account = _db.get_account( o.account );
-
    time_point now = _db.head_block_time();
-   FC_ASSERT( now > board.last_board_update + MIN_BOARD_UPDATE_INTERVAL, 
+
+   FC_ASSERT( now > ( board.last_board_update + MIN_BOARD_UPDATE_INTERVAL ),
       "Boards can only be updated once per 10 minutes." );
+
    const board_member_object& board_member = _db.get_board_member( o.board );
 
+   FC_ASSERT( board_member.is_administrator( o.account ),
+      "Only administrators of the board can update it.");
+
    const comment_object* pinned_post_ptr;
+
    if( o.pinned_author.size() || o.pinned_permlink.size() )
    {
       pinned_post_ptr = _db.find_comment( o.pinned_author, o.pinned_permlink );
@@ -4723,29 +4820,8 @@ void board_update_evaluator::do_apply( const board_update_operation& o )
          "Pinned post must be contained within the board." );
    }
 
-   FC_ASSERT( board_member.is_administrator( account.name ), 
-      "Only administrators of the board can update it.");
-
-   if( o.board_privacy == OPEN_BOARD )
-   {
-      FC_ASSERT( board.board_privacy != PUBLIC_BOARD || board.board_privacy != PRIVATE_BOARD || board.board_privacy != EXCLUSIVE_BOARD,
-         "Cannot lower the privacy setting of a board, only increase it." );
-   }
-   else if( o.board_privacy == PUBLIC_BOARD )
-   {
-      FC_ASSERT( board.board_privacy != PRIVATE_BOARD || board.board_privacy != EXCLUSIVE_BOARD,
-         "Cannot lower the privacy setting of a board, only increase it." );
-   }
-   else if( o.board_privacy == PRIVATE_BOARD )
-   {
-      FC_ASSERT( board.board_privacy != EXCLUSIVE_BOARD,
-         "Cannot lower the privacy setting of a board, only increase it." );
-   }
-
    _db.modify( board, [&]( board_object& bo )
    {
-      bo.board_type = o.board_type;
-      bo.board_privacy = o.board_privacy;
       from_string( bo.json, o.json );
       from_string( bo.json_private, o.json_private );
       from_string( bo.details, o.details );
@@ -5409,7 +5485,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must be a root comment" );
          FC_ASSERT( creative_obj.deleted == false,
             "Creative comment has been deleted." );
-         FC_ASSERT( creative_obj.privacy == false && creative_obj.public_key == shared_string(),
+         FC_ASSERT( !creative_obj.is_encrypted(),
             "Creative comment must be public." );
          FC_ASSERT( creative_obj.premium_price.amount == 0,
             "Creative comment must not be a premium post." );
@@ -5424,7 +5500,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must be a root comment" );
          FC_ASSERT( creative_obj.deleted == false,
             "Creative comment has been deleted." );
-         FC_ASSERT( creative_obj.privacy == false && creative_obj.public_key == shared_string(),
+         FC_ASSERT( !creative_obj.is_encrypted(),
             "Creative comment must be public." );
          FC_ASSERT( creative_obj.premium_price.amount != 0,
             "Creative comment must be a premium post." );
@@ -5439,7 +5515,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must be a root comment" );
          FC_ASSERT( creative_obj.deleted == false,
             "Creative comment has been deleted." );
-         FC_ASSERT( creative_obj.privacy == false && creative_obj.public_key == shared_string(),
+         FC_ASSERT( !creative_obj.is_encrypted(),
             "Creative comment must be public." );
          FC_ASSERT( creative_obj.premium_price.amount == 0,
             "Creative comment must not be a premium post." );
@@ -5778,16 +5854,20 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    }
    const account_object& bidder = _db.get_account( o.bidder );
    const account_object& account = _db.get_account( o.account );
+   const account_object& author = _db.get_account( o.author );
    const account_object& provider = _db.get_account( o.provider );
 
    shared_string campaign_id;
    from_string( campaign_id, o.campaign_id );
+   shared_string creative_id;
+   from_string( creative_id, o.creative_id );
    shared_string inventory_id;
    from_string( inventory_id, o.inventory_id );
    shared_string bid_id;
    from_string( bid_id, o.bid_id );
 
    const ad_campaign_object& campaign = _db.get_ad_campaign( account.name, campaign_id );
+   const ad_creative_object& creative = _db.get_ad_creative( author.name, creative_id );
    const ad_inventory_object& inventory = _db.get_ad_inventory( provider.name, inventory_id );
    const ad_audience_object& inventory_audience = _db.get_ad_audience( provider.name, inventory.audience_id );
 
@@ -5797,6 +5877,8 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       "Bid expiration time has to be in the future." );
    FC_ASSERT( campaign.active,
       "Campaign must be set to active to create a bid." );
+   FC_ASSERT( creative.active,
+      "Creative must be set to active to create a bid." );
    FC_ASSERT( now > campaign.begin,
       "Campaign has not begun yet, please wait until the beginning time to create bids." );
    FC_ASSERT( now < campaign.end,
@@ -5879,9 +5961,8 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
          aao.created = now;
          aao.last_updated = now;
       });
-      
    }
-   else    // Bid audience already exists for this bid id, editing
+   else    // Bid audience already exists for this bid id, editing bid.
    {
       const ad_audience_object& audience = *audience_itr;
       _db.modify( audience, [&]( ad_audience_object& aao )
@@ -5907,17 +5988,20 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 
       _db.create< ad_bid_object >( [&]( ad_bid_object& abo )
       {
-         abo.bidder = bidder.name;
+         abo.bidder = o.bidder;
          from_string( abo.bid_id, o.bid_id );
-         abo.account = account.name;
+         abo.account = o.account;
          from_string( abo.campaign_id, o.campaign_id );
+         abo.author = o.author;
          from_string( abo.creative_id, o.creative_id );
-         abo.provider = provider.name;
+         abo.provider = o.provider;
          from_string( abo.inventory_id, o.inventory_id );
          abo.metric = inventory.metric;
          abo.bid_price = o.bid_price;
+         abo.objective = creative.objective;
          abo.requested = o.requested;
          abo.remaining = o.requested;
+         from_string( abo.json, o.json );
          abo.created = now;
          abo.last_updated = now;
          abo.expiration = o.expiration;
@@ -5955,6 +6039,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
             abo.bid_price = o.bid_price;
             abo.requested = o.requested;
             abo.remaining = new_remaining;
+            from_string( abo.json, o.json );
             abo.last_updated = now;
             abo.expiration = o.expiration;
          }); 
@@ -5978,219 +6063,6 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 
          _db.remove( bid );
       }  
-   }
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
-void ad_deliver_evaluator::do_apply( const ad_deliver_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   if( o.signatory != signed_for )
-   {
-      const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
-      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   shared_string bid_id;
-   from_string( bid_id, o.bid_id );
-   const account_object& account = _db.get_account( o.account );
-   const account_object& bidder = _db.get_account( o.bidder );
-   const ad_bid_object& bid = _db.get_ad_bid( bidder.name, bid_id );
-   const account_object& advertiser = _db.get_account( bid.account );
-   const account_object& provider = _db.get_account( bid.provider );
-   const ad_campaign_object& campaign = _db.get_ad_campaign( advertiser.name, bid.campaign_id );
-   const ad_inventory_object& inventory = _db.get_ad_inventory( provider.name, bid.inventory_id );
-   const ad_audience_object& audience = _db.get_ad_audience( bidder.name , bid.audience_id );
-   const ad_creative_object& creative = _db.get_ad_creative( account.name, bid.creative_id );
-   const account_object& demand = _db.get_account( campaign.interface );
-   uint32_t delivered = o.transactions.size();
-   
-   FC_ASSERT( inventory.is_agent( account.name ), 
-      "Delivering account must be a designated agent of the Inventory." );
-   FC_ASSERT( campaign.is_agent( bidder.name ), 
-      "Bidder account is no longer an agent of the campaign, bid is invalid for delivery." );
-
-   time_point now = _db.head_block_time();
-   asset_symbol_type bid_asset = bid.bid_price.symbol;
-   asset_symbol_type delivery_asset = o.delivery_price.symbol;
-
-   FC_ASSERT( bid_asset == delivery_asset,
-      "Delivery price asset must match the bid price asset." );
-   FC_ASSERT( o.delivery_price <= bid.bid_price, 
-      "Delivery Price must be equal to or less than Bid price");
-   FC_ASSERT( now < bid.expiration, 
-      "Bid has expired.");
-
-   FC_ASSERT( campaign.active,
-      "Campaign must be set to active to deliver inventory.");
-   FC_ASSERT( now > campaign.begin,
-      "Campaign has not begun yet, please wait until the beginning time to create bids." );
-   FC_ASSERT( now < campaign.end,
-      "Campaign has expired.");
-   
-   FC_ASSERT( inventory.active, 
-      "Inventory must be set to active to create a bid.");
-   FC_ASSERT( now < inventory.expiration, 
-      "Inventory offering has expired.");
-
-   uint32_t valid_inventory_count = 0;
-   ad_metric_type metric = inventory.metric;
-   flat_set< const account_object* > inventory_accounts;
-   
-   for( transaction_id_type txn : o.transactions )     // Validates the inventory transactions in the delivery
-   {
-      annotated_signed_transaction metric_txn = _db.get_transaction( txn );
-      FC_ASSERT( metric_txn.operations.size(),
-         "Transaction ID ${t} has no operations.", ("t", txn) );
-      for( operation& op : metric_txn.operations )
-      {
-         switch( metric )
-         {
-            case VIEW_METRIC:
-            {
-               if( op.which() == operation::tag< view_operation >::value )
-               {
-                  view_operation& view_op = op.get< view_operation >();
-                  FC_ASSERT( audience.is_audience( view_op.viewer ),
-                     "Account is not within the bid audience." );
-                  FC_ASSERT( view_op.author == creative.author,
-                     "View Transaction author is not the creative's objective author." );
-                  FC_ASSERT( view_op.permlink == creative.objective,
-                     "View Transaction permlink is not the creative's objective permlink." );
-                  FC_ASSERT( view_op.interface == inventory.provider,
-                     "View Transaction interface is not the inventory provider." );
-                  const account_object* acc_ptr = _db.find_account( view_op.viewer );
-                  FC_ASSERT( acc_ptr->membership == NONE,
-                     "Account: ${a} is a member, and should not receive advertising.",("a", view_op.viewer ) );
-                  inventory_accounts.insert( acc_ptr );
-                  valid_inventory_count++;
-               }
-            }
-            break;
-            case VOTE_METRIC:
-            {
-               if( op.which() == operation::tag< vote_operation >::value )
-               {
-                  vote_operation& vote_op = op.get< vote_operation >();
-                  FC_ASSERT( audience.is_audience( vote_op.voter ),
-                     "Account is not within the bid audience." );
-                  FC_ASSERT( vote_op.author == creative.author,
-                     "Vote Transaction author is not the creative's objective author." );
-                  FC_ASSERT( vote_op.permlink == creative.objective,
-                     "vote Transaction permlink is not the creative's objective permlink." );
-                  FC_ASSERT( vote_op.interface == inventory.provider,   
-                     "vote Transaction interface is not the inventory provider." );
-                  const account_object* acc_ptr = _db.find_account( vote_op.voter );
-                  FC_ASSERT( acc_ptr->membership == NONE,
-                     "Account: ${a} is a member, and should not receive advertising.",("a", vote_op.voter ) );
-                  inventory_accounts.insert( acc_ptr );
-                  valid_inventory_count++;
-               }
-            }
-            break;
-            case SHARE_METRIC:
-            {
-               if( op.which() == operation::tag< share_operation >::value )
-               {
-                  share_operation& share_op = op.get< share_operation >();
-                  FC_ASSERT( audience.is_audience( share_op.sharer ),
-                     "Account is not within the bid audience." );
-                  FC_ASSERT( share_op.author == creative.author,
-                     "Share Transaction author is not the creative's objective author." );
-                  FC_ASSERT( share_op.permlink == creative.objective,
-                     "Share Transaction permlink is not the creative's objective permlink." );
-                  FC_ASSERT( share_op.interface == inventory.provider,
-                     "Share Transaction interface is not the inventory provider." );
-                  const account_object* acc_ptr = _db.find_account( share_op.sharer );
-                  FC_ASSERT( acc_ptr->membership == NONE,
-                     "Account: ${a} is a member, and should not receive advertising.",("a", share_op.sharer ) );
-                  inventory_accounts.insert( acc_ptr );
-                  valid_inventory_count++;
-               }
-            }
-            break;
-            case FOLLOW_METRIC:
-            {
-               if( op.which() == operation::tag< account_follow_operation >::value )
-               {
-                  account_follow_operation& follow_op = op.get< account_follow_operation >();
-                  FC_ASSERT( audience.is_audience( follow_op.follower ),
-                     "Account is not within the bid audience." );
-                  FC_ASSERT( follow_op.following == creative.author,
-                     "Follow Transaction following is not the creative's objective author." );
-                  FC_ASSERT( follow_op.interface == inventory.provider,
-                     "Follow Transaction interface is not the inventory provider." );
-                  const account_object* acc_ptr = _db.find_account( follow_op.follower );
-                  FC_ASSERT( acc_ptr->membership == NONE,
-                     "Account: ${a} is a member, and should not receive advertising.",("a", follow_op.follower ) );
-                  inventory_accounts.insert( acc_ptr );
-                  valid_inventory_count++;
-               }
-            }
-            break;
-            case PREMIUM_METRIC:
-            {
-
-            }
-            break;
-            case PURCHASE_METRIC:
-            {
-
-            }
-            break;
-            default:
-            {
-               FC_ASSERT( false,
-                  "Invalid ad metric type" );
-            }
-         }
-      }
-   }
-
-   FC_ASSERT( valid_inventory_count > 0,
-      "Transaction does not deliver any valid inventory transactions." );
-
-   uint32_t deliverable_inventory = std::min( inventory.remaining, valid_inventory_count );
-   deliverable_inventory = std::min( bid.remaining, deliverable_inventory );
-
-   asset delivery_value = o.delivery_price * deliverable_inventory;
-
-   FC_ASSERT( campaign.budget >= delivery_value,
-      "Campaign does not have sufficient budget to pay the delivery." );
-
-   _db.modify( campaign, [&]( ad_campaign_object& aco )
-   {
-      aco.budget -= delivery_value;
-      aco.total_bids -= delivery_value;
-      aco.last_updated = now;
-   });
-
-   _db.modify( inventory, [&]( ad_inventory_object& aio )
-   {
-      aio.remaining -= valid_inventory_count;
-      aio.last_updated = now;
-   });
-
-   _db.modify( bid, [&]( ad_bid_object& abo )
-   {
-      abo.remaining -= valid_inventory_count;
-      abo.last_updated = now;
-   });
-
-   _db.pay_advertising_delivery( provider, demand, bidder, account, inventory_accounts, delivery_value );
-
-   if( bid.remaining == 0 )
-   {
-      _db.remove( bid );
-   }
-   if( inventory.remaining == 0 )
-   {
-      _db.remove( inventory );
-   }
-   if( campaign.budget.amount == 0 )
-   {
-      _db.remove( campaign );
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
