@@ -1754,8 +1754,8 @@ namespace node { namespace protocol {
    void unstake_asset_route_operation::validate() const
    {
       validate_account_name( signatory );
-      validate_account_name( from_account );
-      validate_account_name( to_account );
+      validate_account_name( from );
+      validate_account_name( to );
       FC_ASSERT( 0 < percent && percent <= PERCENT_100,
          "Percent must be valid percent (1 - 10000)" );
    }
@@ -2205,17 +2205,6 @@ namespace node { namespace protocol {
       return true;
    }
 
-   void bitasset_options::validate() const
-   {
-      FC_ASSERT( minimum_feeds > 0 );
-      FC_ASSERT( force_settlement_offset_percent <= PERCENT_100 );
-      FC_ASSERT( maximum_force_settlement_volume <= PERCENT_100 );
-      FC_ASSERT( feed_lifetime >= MIN_FEED_LIFETIME,
-         "Feed lifetime must be greater than network minimum." );
-      FC_ASSERT( force_settlement_delay >= MIN_SETTLEMENT_DELAY,
-         "Force Settlement delay must be greater than network minimum." );
-   }
-
    void asset_options::validate()const
    {
       FC_ASSERT( max_supply > 0, 
@@ -2261,7 +2250,7 @@ namespace node { namespace protocol {
 
       if( !whitelist_authorities.empty() || !blacklist_authorities.empty() )
       {
-         FC_ASSERT( flags & balance_white_list );
+         FC_ASSERT( flags & balance_whitelist );
       }
          
       for( auto item : whitelist_markets )
@@ -2271,7 +2260,14 @@ namespace node { namespace protocol {
       for( auto item : blacklist_markets )
       {
          FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end() );
-      }  
+      } 
+      FC_ASSERT( minimum_feeds > 0 );
+      FC_ASSERT( force_settlement_offset_percent <= PERCENT_100 );
+      FC_ASSERT( maximum_force_settlement_volume <= PERCENT_100 );
+      FC_ASSERT( feed_lifetime >= MIN_FEED_LIFETIME,
+         "Feed lifetime must be greater than network minimum." );
+      FC_ASSERT( force_settlement_delay >= MIN_SETTLEMENT_DELAY,
+         "Force Settlement delay must be greater than network minimum." );
    }
 
    void asset_create_operation::validate()const
@@ -2301,43 +2297,18 @@ namespace node { namespace protocol {
       switch( asset_type )
       {
          case STANDARD_ASSET:
-         {
-
-         }
-         break;
          case CURRENCY_ASSET:
-         {
-            FC_ASSERT( currency_opts.valid(),
-               "Currency asset must have valid currency options." );
-         }
-         break;
          case EQUITY_ASSET:
-         {
-            FC_ASSERT( equity_opts.valid(),
-               "Equity asset must have valid equity options." );
-         }
-         break;
          case CREDIT_ASSET:
-         {
-            FC_ASSERT( credit_opts.valid(),
-               "Credit asset must have valid credit options." );
-         }
-         break;
          case BITASSET_ASSET:
-         {
-            FC_ASSERT( bitasset_opts.valid(),
-               "Bitasset asset must have valid bitasset options." );
-         }
-         break;
          case GATEWAY_ASSET:
+         case UNIQUE_ASSET:
          {
-            FC_ASSERT( gateway_opts.valid(),
-               "Gateway asset must have valid gateway options." );
+            break;
          }
-         break;
          case LIQUIDITY_POOL_ASSET:
          {
-            FC_ASSERT( false, 
+            FC_ASSERT( false,
                "Cannot directly create a new liquidity pool asset. Please create a liquidity pool between two existing assets." );
          }
          break;
@@ -2359,48 +2330,14 @@ namespace node { namespace protocol {
                "Cannot directly create a new prediction asset. Prediction assets are issued from a Prediction market." );
          }
          break;
-         case UNIQUE_ASSET:
-         {
-            FC_ASSERT( unique_opts.valid(),
-               "Unique asset must have valid unique options." );
-         }
-         break;
          default:
          {
             FC_ASSERT( false, "Invalid asset type." );
          }
       }
       
-      common_options.validate();
+      options.validate();
 
-      if( common_options.issuer_permissions & ( disable_force_settle|global_settle ) )
-      {
-         FC_ASSERT( bitasset_opts.valid() );
-      }
-      if( bitasset_opts )
-      {
-         bitasset_opts->validate();
-      } 
-      if( equity_opts )
-      {
-         equity_opts->validate();
-      }
-      if( credit_opts )
-      {
-         credit_opts->validate();
-      }
-      if( currency_opts )
-      {
-         currency_opts->validate();
-      }
-      if( gateway_opts )
-      {
-         gateway_opts->validate();
-      }
-      if( unique_opts )
-      {
-         unique_opts->validate();
-      }
    }
 
    void asset_update_operation::validate()const
@@ -2412,31 +2349,6 @@ namespace node { namespace protocol {
          "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_update ) );
 
       new_options.validate();
-
-      if( new_bitasset_opts.valid() )
-      {
-         new_bitasset_opts->validate();
-      } 
-      if( new_equity_opts.valid() )
-      {
-         new_equity_opts->validate();
-      }
-      if( new_credit_opts.valid() )
-      {
-         new_credit_opts->validate();
-      }
-      if( new_currency_opts.valid() )
-      {
-         new_currency_opts->validate();
-      }
-      if( new_gateway_opts.valid() )
-      {
-         new_gateway_opts->validate();
-      }
-      if( new_unique_opts.valid() )
-      {
-         new_unique_opts->validate();
-      }
    }
 
    void asset_issue_operation::validate()const

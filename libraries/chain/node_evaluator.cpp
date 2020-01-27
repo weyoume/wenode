@@ -6617,14 +6617,14 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
    }
    else
    {
-      if( asset_object.options.stake_intervals == 0 )
+      if( asset_object.stake_intervals == 0 )
       {
          _db.adjust_liquid_balance( from_account, -o.amount );
          _db.adjust_staked_balance( to_account, o.amount );
       }
-      else if( asset_object.options.stake_intervals >= 1 )
+      else if( asset_object.stake_intervals >= 1 )
       {
-         share_type new_stake_rate = ( o.amount.amount / asset_object.options.stake_intervals );
+         share_type new_stake_rate = ( o.amount.amount / asset_object.stake_intervals );
 
          FC_ASSERT( account_balance.stake_rate != new_stake_rate,
             "This operation would not change the stake rate." );
@@ -6694,14 +6694,14 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
    }
    else
    {
-      if( asset_object.options.unstake_intervals == 0 )
+      if( asset_object.unstake_intervals == 0 )
       {
          _db.adjust_staked_balance( from_account, -o.amount );
          _db.adjust_liquid_balance( to_account, o.amount );
       }
-      else if( asset_object.options.unstake_intervals >= 1 )
+      else if( asset_object.unstake_intervals >= 1 )
       {
-         share_type new_unstake_rate = ( o.amount.amount / asset_object.options.unstake_intervals );
+         share_type new_unstake_rate = ( o.amount.amount / asset_object.unstake_intervals );
          FC_ASSERT( account_balance.unstake_rate != new_unstake_rate, 
             "This operation would not change the unstake rate." );
 
@@ -6723,7 +6723,7 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 
 void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operation& o )
 { try {
-   const account_name_type& signed_for = o.from_account;
+   const account_name_type& signed_for = o.from;
    if( o.signatory != signed_for )
    {
       const account_object& signatory = _db.get_account( o.signatory );
@@ -6732,25 +6732,25 @@ void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operatio
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& from_account = _db.get_account( o.from_account );
-   const account_object& to_account = _db.get_account( o.to_account );
+   const account_object& from = _db.get_account( o.from );
+   const account_object& to = _db.get_account( o.to );
    const auto& wd_idx = _db.get_index< unstake_asset_route_index >().indices().get< by_withdraw_route >();
-   auto itr = wd_idx.find( boost::make_tuple( from_account.name, to_account.name ) );
+   auto itr = wd_idx.find( boost::make_tuple( from.name, to.name ) );
 
    if( itr == wd_idx.end() )
    {
-      FC_ASSERT( from_account.withdraw_routes < MAX_WITHDRAW_ROUTES,
+      FC_ASSERT( from.withdraw_routes < MAX_WITHDRAW_ROUTES,
          "Account already has the maximum number of routes." );
 
       _db.create< unstake_asset_route_object >( [&]( unstake_asset_route_object& wvdo )
       {
-         wvdo.from_account = from_account.name;
-         wvdo.to_account = to_account.name;
+         wvdo.from = from.name;
+         wvdo.to = to.name;
          wvdo.percent = o.percent;
          wvdo.auto_stake = o.auto_stake;
       });
 
-      _db.modify( from_account, [&]( account_object& a )
+      _db.modify( from, [&]( account_object& a )
       {
          a.withdraw_routes++;
       });
@@ -6759,7 +6759,7 @@ void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operatio
    {
       _db.remove( *itr );
 
-      _db.modify( from_account, [&]( account_object& a )
+      _db.modify( from, [&]( account_object& a )
       {
          a.withdraw_routes--;
       });
@@ -6768,17 +6768,17 @@ void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operatio
    {
       _db.modify( *itr, [&]( unstake_asset_route_object& wvdo )
       {
-         wvdo.from_account = from_account.name;
-         wvdo.to_account = to_account.name;
+         wvdo.from = from.name;
+         wvdo.to = to.name;
          wvdo.percent = o.percent;
          wvdo.auto_stake = o.auto_stake;
       });
    }
 
-   itr = wd_idx.upper_bound( boost::make_tuple( from_account.name, account_name_type() ) );
+   itr = wd_idx.upper_bound( boost::make_tuple( from.name, account_name_type() ) );
    uint16_t total_percent = 0;
 
-   while( itr->from_account == from_account.name && itr != wd_idx.end() )
+   while( itr->from == from.name && itr != wd_idx.end() )
    {
       total_percent += itr->percent;
       ++itr;
@@ -7638,7 +7638,7 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
 
    if( call_obj_ptr = nullptr )    // creating new debt position
    {
-      FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount <= debt_asset.options.max_supply,
+      FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount <= debt_asset.max_supply,
          "Borrowing this quantity would exceed the assets Maximum supply." );
       FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount >= 0,
          "This transaction would bring current supply below zero.");
@@ -8421,21 +8421,21 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
    FC_ASSERT( liquid_coin >= o.coin_liquidity, 
       "Issuer has insufficient coin balance to provide specified initial liquidity." );
-   FC_ASSERT( o.common_options.whitelist_authorities.size() <= props.median_props.maximum_asset_whitelist_authorities,
+   FC_ASSERT( o.options.whitelist_authorities.size() <= props.median_props.maximum_asset_whitelist_authorities,
       "Too many Whitelist authorities." );
-   FC_ASSERT( o.common_options.blacklist_authorities.size() <= props.median_props.maximum_asset_whitelist_authorities,
+   FC_ASSERT( o.options.blacklist_authorities.size() <= props.median_props.maximum_asset_whitelist_authorities,
       "Too many Blacklist authorities." );
-   FC_ASSERT( o.common_options.stake_intervals <= props.median_props.max_stake_intervals && o.common_options.stake_intervals >= 0, 
+   FC_ASSERT( o.options.stake_intervals <= props.median_props.max_stake_intervals && o.options.stake_intervals >= 0, 
       "Asset stake intervals outside of acceptable limits." );
-   FC_ASSERT( o.common_options.unstake_intervals <= props.median_props.max_unstake_intervals && o.common_options.unstake_intervals >= 0, 
+   FC_ASSERT( o.options.unstake_intervals <= props.median_props.max_unstake_intervals && o.options.unstake_intervals >= 0, 
       "Asset unstake intervals outside of acceptable limits." );
 
-   for( auto account : o.common_options.whitelist_authorities )
+   for( auto account : o.options.whitelist_authorities )
    {
       _db.get_account( account );    // Check that all authorities are valid accounts
    }
      
-   for( auto account : o.common_options.blacklist_authorities )
+   for( auto account : o.options.blacklist_authorities )
    {
       _db.get_account( account );
    }
@@ -8467,19 +8467,15 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       case CURRENCY_ASSET:
       {
          issuer_account_name = NULL_ACCOUNT;
-         FC_ASSERT( o.currency_opts.valid(),
-            "Currency Asset requires valid currency options." );
       }
       break;
       case EQUITY_ASSET:
       {
          FC_ASSERT( issuer.account_type == BUSINESS,
             "Equity Asset can only be issued by a business account." );
-         FC_ASSERT( o.equity_opts.valid(),
-            "Equity Asset requires valid equity options." );
 
-         const asset_object& dividend_asset = _db.get_asset( o.equity_opts->dividend_asset );
-         uint16_t revenue_share_sum = o.equity_opts->dividend_share_percent;
+         const asset_object& dividend_asset = _db.get_asset( o.options.dividend_asset );
+         uint16_t revenue_share_sum = o.options.dividend_share_percent;
          for( auto share : bus_acc_ptr->equity_revenue_shares )
          {
             revenue_share_sum += share.second;
@@ -8490,17 +8486,54 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          }
          FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
             "Cannot share more than 50 percent of account revenue." );
+
+         _db.create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
+         {
+            a.symbol = o.symbol;
+            a.business_account = o.issuer;
+            a.dividend_asset = o.options.dividend_asset;
+            a.dividend_pool = asset( 0, a.dividend_asset );
+            a.last_dividend = time_point::min();
+            a.dividend_share_percent = o.options.dividend_share_percent;
+            a.liquid_dividend_percent = o.options.liquid_dividend_percent;
+            a.staked_dividend_percent = o.options.staked_dividend_percent;
+            a.savings_dividend_percent = o.options.savings_dividend_percent;
+            a.liquid_voting_rights = o.options.liquid_voting_rights;
+            a.staked_voting_rights = o.options.staked_voting_rights;
+            a.savings_voting_rights = o.options.savings_voting_rights;
+            a.min_active_time = o.options.min_active_time;
+            a.min_balance = o.options.min_balance;
+            a.min_witnesses = o.options.min_witnesses;
+            a.boost_balance = o.options.boost_balance;
+            a.boost_activity = o.options.boost_activity;
+            a.boost_witnesses = o.options.boost_witnesses;
+            a.boost_top = o.options.boost_top;
+         });
+
+         _db.modify( issuer, [&]( account_object& a )
+         {
+            a.revenue_share = true;
+         });
+
+         _db.modify( *bus_acc_ptr, [&]( account_business_object& a )
+         {
+            a.equity_revenue_shares[ o.symbol ] = o.options.dividend_share_percent;
+         });
       }
       break;
       case CREDIT_ASSET:
       {
          FC_ASSERT( issuer.account_type == BUSINESS,
             "Credit Asset can only be issued by a business account." );
-         FC_ASSERT( o.credit_opts.valid(),
-            "Credit Asset requires valid credit options." );
-
-         const asset_object& buyback_asset = _db.get_asset( o.credit_opts->buyback_asset ); 
-         uint16_t revenue_share_sum = o.credit_opts->buyback_share_percent;
+         FC_ASSERT( !o.options.buyback_price.is_null(),
+            "Buyback price cannot be null." );
+         FC_ASSERT( o.options.buyback_price.base.symbol == o.options.buyback_asset,
+            "Buyback price must have buyback asset as base." );
+         FC_ASSERT( o.options.buyback_price.quote.symbol == o.symbol,
+            "Buyback price must have credit asset as quote." );
+         
+         const asset_object& buyback_asset = _db.get_asset( o.options.buyback_asset ); 
+         uint16_t revenue_share_sum = o.options.buyback_share_percent;
 
          for( auto share : bus_acc_ptr->equity_revenue_shares )
          {
@@ -8510,21 +8543,47 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          {
             revenue_share_sum += share.second;
          }
-         FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1, 
-            "Cannot share more than 50 percent of account revenue." ); 
+         FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
+            "Cannot share more than 50 percent of account revenue." );
+
+         _db.create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
+         {
+            a.business_account = o.issuer;
+            a.symbol = o.symbol;
+            a.buyback_asset = o.options.buyback_asset;
+            a.buyback_pool = asset( 0, a.buyback_asset );
+            a.buyback_price = o.options.buyback_price;
+            a.last_buyback = time_point::min();
+            a.buyback_share_percent = o.options.buyback_share_percent;
+            a.liquid_fixed_interest_rate = o.options.liquid_fixed_interest_rate;
+            a.liquid_variable_interest_rate = o.options.liquid_variable_interest_rate;
+            a.staked_fixed_interest_rate = o.options.staked_fixed_interest_rate;
+            a.staked_variable_interest_rate = o.options.staked_variable_interest_rate;
+            a.savings_fixed_interest_rate = o.options.savings_fixed_interest_rate;
+            a.savings_variable_interest_rate = o.options.savings_variable_interest_rate;
+            a.var_interest_range = o.options.var_interest_range;
+         });
+
+         _db.modify( issuer, [&]( account_object& a )
+         {
+            a.revenue_share = true;
+         });
+
+         _db.modify( *bus_acc_ptr, [&]( account_business_object& a )
+         {
+            a.credit_revenue_shares[ o.symbol ] = o.options.buyback_share_percent;
+         });
       }
       break;
       case BITASSET_ASSET:
       {
-         FC_ASSERT( o.bitasset_opts.valid(),
-            "Bitasset must contain valid bitasset options." );
-         const asset_object& backing_asset = _db.get_asset( o.bitasset_opts->short_backing_asset );
+         const asset_object& backing_asset = _db.get_asset( o.options.backing_asset );
          if( backing_asset.is_market_issued() )
          {
             const asset_bitasset_data_object& backing_bitasset_data = _db.get_bitasset_data( backing_asset.symbol );
             const asset_object& backing_backing_asset = _db.get_asset( backing_bitasset_data.backing_asset );
 
-            FC_ASSERT( !backing_backing_asset.is_market_issued(), 
+            FC_ASSERT( !backing_backing_asset.is_market_issued(),
                "May not create a bitasset backed by a bitasset backed by a bitasset." );
             FC_ASSERT( backing_backing_asset.symbol == SYMBOL_COIN,
                "Backing asset should be the core asset.");
@@ -8535,36 +8594,58 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
                "Backing asset should be the core asset.");
          }
             
-         FC_ASSERT( o.bitasset_opts->feed_lifetime > MIN_FEED_LIFETIME,
+         FC_ASSERT( o.options.feed_lifetime > MIN_FEED_LIFETIME,
             "Feed lifetime must be greater than network minimum." );
-         FC_ASSERT( o.bitasset_opts->force_settlement_delay > MIN_SETTLEMENT_DELAY,
+         FC_ASSERT( o.options.force_settlement_delay > MIN_SETTLEMENT_DELAY,
             "Force Settlement delay must be greater than network minimum." );
+
+         _db.create< asset_bitasset_data_object >( [&]( asset_bitasset_data_object& a )
+         {
+            a.symbol = o.symbol;
+            a.backing_asset = o.options.backing_asset;
+            a.feed_lifetime = o.options.feed_lifetime;
+            a.minimum_feeds = o.options.minimum_feeds;
+            a.force_settlement_delay = o.options.force_settlement_delay;
+            a.force_settlement_offset_percent = o.options.force_settlement_offset_percent;
+            a.maximum_force_settlement_volume = o.options.maximum_force_settlement_volume;
+         });
       }
       break;
       case GATEWAY_ASSET:
       {
          FC_ASSERT( issuer.account_type == BUSINESS,
             "Gateway Asset can only be issued by a business account." );
-         FC_ASSERT( o.gateway_opts.valid(),
-            "Gateway Asset requires valid gateway options." );
       }
       break;
       case UNIQUE_ASSET:
       {
-         FC_ASSERT( o.common_options.max_supply == BLOCKCHAIN_PRECISION,
+         FC_ASSERT( o.options.max_supply == BLOCKCHAIN_PRECISION,
             "Unique assets must have a maximum supply of exactly one unit." );
-         FC_ASSERT( o.unique_opts.valid(),
-            "Unique Asset requires valid unique options." );
       }
       break;
    }
    
-   _db.create< asset_object >( [&]( asset_object& a )
+   // Create the new asset object.
+
+   _db.create< asset_object >( [&]( asset_object& a )      
    {
-      a.issuer = o.issuer;    // Create the asset object 
       a.symbol = o.symbol;
       a.asset_type = o.asset_type;
-      a.options = o.common_options;
+      a.issuer = o.issuer;
+      from_string( a.display_symbol, o.options.display_symbol );
+      from_string( a.details, o.options.details );
+      from_string( a.json, o.options.json );
+      from_string( a.url, o.options.url );
+      a.stake_intervals = o.options.stake_intervals;
+      a.unstake_intervals = o.options.unstake_intervals;
+      a.market_fee_percent = o.options.market_fee_percent;
+      a.market_fee_share_percent = o.options.market_fee_share_percent;
+      a.issuer_permissions = o.options.issuer_permissions;
+      a.flags = o.options.flags;
+      a.whitelist_authorities = o.options.whitelist_authorities;
+      a.blacklist_authorities = o.options.blacklist_authorities;
+      a.whitelist_markets = o.options.whitelist_markets;
+      a.blacklist_markets = o.options.blacklist_markets;
       a.created = now;
       a.last_updated = now;
    });
@@ -8575,65 +8656,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.symbol = o.symbol;
    });
 
-   if( o.bitasset_opts.valid() )     // Bitasset options
-   {
-      _db.create< asset_bitasset_data_object >( [&]( asset_bitasset_data_object& a ) 
-      {
-         a.symbol = o.symbol;
-         a.options = *o.bitasset_opts;
-         a.backing_asset = o.bitasset_opts->short_backing_asset;
-      });
-   }
-   else if( o.equity_opts.valid() )      // Cryptoequity options 
-   {
-      _db.create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
-      {
-         a.symbol = o.symbol;
-         a.business_account = o.issuer;
-         a.options = *o.equity_opts;
-         a.dividend_asset = o.equity_opts->dividend_asset;
-         a.dividend_pool = asset( 0, a.dividend_asset );
-         a.last_dividend = time_point::min();
-      });
-
-      _db.modify( issuer, [&]( account_object& a )
-      {
-         a.revenue_share = true;
-      });
-
-      _db.modify( *bus_acc_ptr, [&]( account_business_object& a )
-      {
-         a.equity_revenue_shares[ o.symbol ] = o.equity_opts->dividend_share_percent;
-      });
-   }
-   else if( o.credit_opts.valid() )
-   {
-      _db.create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
-      {
-         a.symbol = o.symbol;
-         a.business_account = o.issuer;
-         a.options = *o.credit_opts;
-         a.buyback_asset = o.credit_opts->buyback_asset;
-         a.buyback_pool = asset( 0, a.buyback_asset );
-         a.last_buyback = time_point::min();
-
-         if( o.credit_opts->buyback_price != price() )
-         {
-            a.buyback_price = o.credit_opts->buyback_price;
-         }
-      });
-
-      _db.modify( issuer, [&]( account_object& a )
-      {
-         a.revenue_share = true;
-      });
-
-      _db.modify( *bus_acc_ptr, [&]( account_business_object& a )
-      {
-         a.credit_revenue_shares[ o.symbol ] = o.credit_opts->buyback_share_percent;
-      });
-   }
-
    asset_symbol_type core_liq_symbol = string( LIQUIDITY_ASSET_PREFIX )+ string( SYMBOL_COIN )+"."+ string( o.symbol );
    
    _db.create< asset_object >( [&]( asset_object& a )
@@ -8641,6 +8663,20 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.issuer = o.issuer;
       a.symbol = core_liq_symbol;
       a.asset_type = LIQUIDITY_POOL_ASSET;    // Create the core liquidity pool for the new asset.
+      from_string( a.display_symbol, core_liq_symbol );
+      from_string( a.details, o.options.details );
+      from_string( a.json, o.options.json );
+      from_string( a.url, o.options.url );
+      a.stake_intervals = o.options.stake_intervals;
+      a.unstake_intervals = o.options.unstake_intervals;
+      a.market_fee_percent = o.options.market_fee_percent;
+      a.market_fee_share_percent = o.options.market_fee_share_percent;
+      a.issuer_permissions = o.options.issuer_permissions;
+      a.flags = o.options.flags;
+      a.whitelist_authorities = o.options.whitelist_authorities;
+      a.blacklist_authorities = o.options.blacklist_authorities;
+      a.whitelist_markets = o.options.whitelist_markets;
+      a.blacklist_markets = o.options.blacklist_markets;
       a.created = now;
       a.last_updated = now;
    });
@@ -8678,6 +8714,20 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.issuer = o.issuer;
       a.symbol = usd_liq_symbol;
       a.asset_type = LIQUIDITY_POOL_ASSET;    // Create the USD liquidity pool for the new asset.
+      from_string( a.display_symbol, usd_liq_symbol );
+      from_string( a.details, o.options.details );
+      from_string( a.json, o.options.json );
+      from_string( a.url, o.options.url );
+      a.stake_intervals = o.options.stake_intervals;
+      a.unstake_intervals = o.options.unstake_intervals;
+      a.market_fee_percent = o.options.market_fee_percent;
+      a.market_fee_share_percent = o.options.market_fee_share_percent;
+      a.issuer_permissions = o.options.issuer_permissions;
+      a.flags = o.options.flags;
+      a.whitelist_authorities = o.options.whitelist_authorities;
+      a.blacklist_authorities = o.options.blacklist_authorities;
+      a.whitelist_markets = o.options.whitelist_markets;
+      a.blacklist_markets = o.options.blacklist_markets;
       a.created = now;
       a.last_updated = now;
    });
@@ -8715,6 +8765,20 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.issuer = o.issuer;
       a.symbol = credit_asset_symbol;
       a.asset_type = CREDIT_POOL_ASSET; // Create the asset credit pool for the new asset.
+      from_string( a.display_symbol, credit_asset_symbol );
+      from_string( a.details, o.options.details );
+      from_string( a.json, o.options.json );
+      from_string( a.url, o.options.url );
+      a.stake_intervals = o.options.stake_intervals;
+      a.unstake_intervals = o.options.unstake_intervals;
+      a.market_fee_percent = o.options.market_fee_percent;
+      a.market_fee_share_percent = o.options.market_fee_share_percent;
+      a.issuer_permissions = o.options.issuer_permissions;
+      a.flags = o.options.flags;
+      a.whitelist_authorities = o.options.whitelist_authorities;
+      a.blacklist_authorities = o.options.blacklist_authorities;
+      a.whitelist_markets = o.options.whitelist_markets;
+      a.blacklist_markets = o.options.blacklist_markets;
       a.created = now;
       a.last_updated = now;
    });
@@ -8767,20 +8831,17 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
 
    const account_object& issuer = _db.get_account( o.issuer );
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
-   auto asset_copy = asset_obj;
-   asset_copy.options = o.new_options;
-   asset_copy.validate();
-
    const asset_dynamic_data_object& dyn_data = _db.get_dynamic_data( o.asset_to_update );
 
    if( ( dyn_data.total_supply != 0 ) )      // new issuer_permissions must be subset of old issuer permissions
    {
-      FC_ASSERT(!( o.new_options.issuer_permissions & ~asset_obj.options.issuer_permissions ), 
+      FC_ASSERT(!( o.new_options.issuer_permissions & ~asset_obj.issuer_permissions ), 
          "Cannot reinstate previously revoked issuer permissions on an asset.");
    }
 
-   // changed flags must be subset of old issuer permissions
-   FC_ASSERT(!(( o.new_options.flags ^ asset_obj.options.flags) & ~asset_obj.options.issuer_permissions ),
+   // Changed flags must be subset of old issuer permissions
+
+   FC_ASSERT(!(( o.new_options.flags ^ asset_obj.flags) & ~asset_obj.issuer_permissions ),
       "Flag change is forbidden by issuer permissions" );
    FC_ASSERT( o.issuer == asset_obj.issuer,
       "Incorrect issuer for asset! (${o.issuer} != ${a.issuer})",
@@ -8828,13 +8889,11 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       {
          FC_ASSERT( issuer.account_type == BUSINESS,
             "Equity Asset can only be issued by a business account." );
-         FC_ASSERT( o.new_equity_opts.valid(),
-            "Equity Asset requires valid equity options." );
 
          const account_business_object& bus_acc = _db.get_account_business( o.issuer );
-         const asset_object& dividend_asset = _db.get_asset( o.new_equity_opts->dividend_asset );
+         const asset_object& dividend_asset = _db.get_asset( o.new_options.dividend_asset );
          const asset_equity_data_object& equity_obj = _db.get_equity_data( o.asset_to_update );
-         uint16_t revenue_share_sum = o.new_equity_opts->dividend_share_percent;
+         uint16_t revenue_share_sum = o.new_options.dividend_share_percent;
 
          for( auto share : bus_acc.equity_revenue_shares )
          {
@@ -8847,17 +8906,30 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
 
          FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
             "Cannot share more than 50 percent of account revenue." );
-         FC_ASSERT( o.new_equity_opts->dividend_asset == equity_obj.dividend_asset,
+         FC_ASSERT( o.new_options.dividend_asset == equity_obj.dividend_asset,
             "Equity dividend asset cannot be altered." );
 
          _db.modify( equity_obj, [&]( asset_equity_data_object& a )
          {
-            a.options = *o.new_equity_opts;
+            a.dividend_share_percent = o.new_options.dividend_share_percent;
+            a.liquid_dividend_percent = o.new_options.liquid_dividend_percent;
+            a.staked_dividend_percent = o.new_options.staked_dividend_percent;
+            a.savings_dividend_percent = o.new_options.savings_dividend_percent;
+            a.liquid_voting_rights = o.new_options.liquid_voting_rights;
+            a.staked_voting_rights = o.new_options.staked_voting_rights;
+            a.savings_voting_rights = o.new_options.savings_voting_rights;
+            a.min_active_time = o.new_options.min_active_time;
+            a.min_balance = o.new_options.min_balance;
+            a.min_witnesses = o.new_options.min_witnesses;
+            a.boost_balance = o.new_options.boost_balance;
+            a.boost_activity = o.new_options.boost_activity;
+            a.boost_witnesses = o.new_options.boost_witnesses;
+            a.boost_top = o.new_options.boost_top;
          });
 
          _db.modify( bus_acc, [&]( account_business_object& a )
          {
-            a.equity_revenue_shares[ o.asset_to_update ] = o.new_equity_opts->dividend_share_percent;
+            a.equity_revenue_shares[ o.asset_to_update ] = o.new_options.dividend_share_percent;
          });
       }
       break;
@@ -8865,13 +8937,11 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       {
          FC_ASSERT( issuer.account_type == BUSINESS,
             "Credit Asset can only be issued by a business account." );
-         FC_ASSERT( o.new_credit_opts.valid(),
-            "Credit Asset requires valid credit options." );
 
          const account_business_object& bus_acc = _db.get_account_business( o.issuer );
-         const asset_object& buyback_asset = _db.get_asset( o.new_credit_opts->buyback_asset );
+         const asset_object& buyback_asset = _db.get_asset( o.new_options.buyback_asset );
          const asset_credit_data_object& credit_obj = _db.get_credit_data( o.asset_to_update );
-         uint16_t revenue_share_sum = o.new_credit_opts->buyback_share_percent;
+         uint16_t revenue_share_sum = o.new_options.buyback_share_percent;
 
          for( auto share : bus_acc.equity_revenue_shares )
          {
@@ -8883,29 +8953,31 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          }
          FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
             "Cannot share more than 50 percent of account revenue." );
-         FC_ASSERT( o.new_credit_opts->buyback_asset == credit_obj.buyback_asset,
+         FC_ASSERT( o.new_options.buyback_asset == credit_obj.buyback_asset,
             "Credit buyback asset cannot be altered." );
-
-         if( o.new_credit_opts->buyback_price != price() )
-         {
-            FC_ASSERT( o.new_credit_opts->buyback_price.base.symbol == credit_obj.buyback_price.base.symbol,
-               "Credit buyback price base asset cannot be altered." );
-            FC_ASSERT( o.new_credit_opts->buyback_price.quote.symbol == credit_obj.buyback_price.quote.symbol,
-               "Credit buyback price quote asset cannot be altered." );
-         }
+         FC_ASSERT( !o.new_options.buyback_price.is_null(),
+            "Buyback price cannot be null." );
+         FC_ASSERT( o.new_options.buyback_price.base.symbol == credit_obj.buyback_asset,
+            "Credit buyback price base asset cannot be altered." );
+         FC_ASSERT( o.new_options.buyback_price.quote.symbol == credit_obj.symbol,
+            "Credit buyback price quote asset cannot be altered." );
          
          _db.modify( credit_obj, [&]( asset_credit_data_object& a )
          {
-            a.options = *o.new_credit_opts;
-            if( o.new_credit_opts->buyback_price != price() )
-            {
-               a.buyback_price = o.new_credit_opts->buyback_price;
-            }
+            a.buyback_price = o.new_options.buyback_price;
+            a.buyback_share_percent = o.new_options.buyback_share_percent;
+            a.liquid_fixed_interest_rate = o.new_options.liquid_fixed_interest_rate;
+            a.liquid_variable_interest_rate = o.new_options.liquid_variable_interest_rate;
+            a.staked_fixed_interest_rate = o.new_options.staked_fixed_interest_rate;
+            a.staked_variable_interest_rate = o.new_options.staked_variable_interest_rate;
+            a.savings_fixed_interest_rate = o.new_options.savings_fixed_interest_rate;
+            a.savings_variable_interest_rate = o.new_options.savings_variable_interest_rate;
+            a.var_interest_range = o.new_options.var_interest_range;
          });
 
          _db.modify( bus_acc, [&]( account_business_object& a )
          {
-            a.credit_revenue_shares[ o.asset_to_update ] = o.new_credit_opts->buyback_share_percent;
+            a.credit_revenue_shares[ o.asset_to_update ] = o.new_options.buyback_share_percent;
          });
       }
       break;
@@ -8918,18 +8990,16 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
 
          FC_ASSERT( !current_bitasset_data.has_settlement(), 
             "Cannot update a bitasset after a global settlement has executed." );
-         
-         bitasset_options b = *o.new_bitasset_opts;
 
-         const asset_object& backing_asset = _db.get_asset( b.short_backing_asset );
+         const asset_object& backing_asset = _db.get_asset( o.new_options.backing_asset );
 
-         if( b.short_backing_asset != current_bitasset_data.options.short_backing_asset )   // Are we changing the backing asset?
+         if( o.new_options.backing_asset != current_bitasset_data.backing_asset )   // Are we changing the backing asset?
          {
             FC_ASSERT( dyn_data.get_total_supply().amount == 0,
                "Cannot update a bitasset's backing asset if there is already a current supply. Please globally settle first." );
-            FC_ASSERT( b.short_backing_asset != asset_obj.symbol,
+            FC_ASSERT( o.new_options.backing_asset != asset_obj.symbol,
                "Cannot update a bitasset to be backed by itself. Please select a different backing asset." );
-            const asset_object& new_backing_asset = _db.get_asset( b.short_backing_asset ); // Check if the new backing asset exists
+            const asset_object& new_backing_asset = _db.get_asset( o.new_options.backing_asset ); // Check if the new backing asset exists
 
             if ( new_backing_asset.symbol != SYMBOL_COIN ) // not backed by CORE
             {
@@ -8940,7 +9010,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
             if ( new_backing_asset.is_market_issued() )
             {
                const asset_bitasset_data_object& backing_bitasset_data = _db.get_bitasset_data( new_backing_asset.symbol );
-               const asset_object& backing_backing_asset = _db.get_asset( backing_bitasset_data.options.short_backing_asset );
+               const asset_object& backing_backing_asset = _db.get_asset( backing_bitasset_data.backing_asset );
                FC_ASSERT( ( backing_backing_asset.symbol == SYMBOL_COIN || !backing_backing_asset.is_market_issued() ),
                   "A BitAsset cannot be backed by a BitAsset that itself is backed by a BitAsset.");
             }
@@ -8994,16 +9064,12 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       {
          FC_ASSERT( issuer.account_type == BUSINESS,
             "Gateway Asset can only be issued by a business account." );
-         FC_ASSERT( o.new_gateway_opts.valid(),
-            "Gateway Asset requires valid gateway options." );
       }
       break;
       case UNIQUE_ASSET:
       {
          FC_ASSERT( o.new_options.max_supply == BLOCKCHAIN_PRECISION,
             "Unique assets must have a maximum supply of exactly one unit." );
-         FC_ASSERT( o.new_unique_opts.valid(),
-            "Unique Asset requires valid unique options." );
       }
       break;
       default:
@@ -9014,7 +9080,20 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
 
    _db.modify( asset_obj, [&]( asset_object& a )
    {
-      a.options = o.new_options;
+      from_string( a.display_symbol, o.new_options.display_symbol );
+      from_string( a.details, o.new_options.details );
+      from_string( a.json, o.new_options.json );
+      from_string( a.url, o.new_options.url );
+      a.stake_intervals = o.new_options.stake_intervals;
+      a.unstake_intervals = o.new_options.unstake_intervals;
+      a.market_fee_percent = o.new_options.market_fee_percent;
+      a.market_fee_share_percent = o.new_options.market_fee_share_percent;
+      a.issuer_permissions = o.new_options.issuer_permissions;
+      a.flags = o.new_options.flags;
+      a.whitelist_authorities = o.new_options.whitelist_authorities;
+      a.blacklist_authorities = o.new_options.blacklist_authorities;
+      a.whitelist_markets = o.new_options.whitelist_markets;
+      a.blacklist_markets = o.new_options.blacklist_markets;
       a.last_updated = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -9044,7 +9123,7 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
       ("s", o.asset_to_issue.symbol) );
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.issue_to_account, asset_obj ),
       "The recipient account is not authorized to receive the asset being issued.");
-   FC_ASSERT( ( asset_dyn_data.total_supply + o.asset_to_issue.amount ) <= asset_obj.options.max_supply,
+   FC_ASSERT( ( asset_dyn_data.total_supply + o.asset_to_issue.amount ) <= asset_obj.max_supply,
       "Issuing this amount would exceed the asset's maximum supply. Please raise the maximum supply, or reduce issuance amount." );
 
    _db.adjust_liquid_balance( o.issue_to_account, o.asset_to_issue );
@@ -9104,9 +9183,9 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-/*
- * Loop through assets, looking for ones that are backed by the asset being changed. When found,
- * perform checks to verify validity.
+/**
+ * Loop through assets, looking for ones that are backed by the asset being changed. 
+ * When found, perform checks to verify validity.
  *
  * @param op the bitasset update operation being performed
  * @param new_backing_asset
@@ -9115,14 +9194,14 @@ void check_children_of_bitasset( database& db, const asset_update_operation& o, 
 {
    if( new_backing_asset.symbol != SYMBOL_COIN )    //  If new backing asset is CORE, no child bitassets to review. 
    {
-      const auto& idx = db.get_index< asset_bitasset_data_index >().indices().get< by_short_backing_asset >();
+      const auto& idx = db.get_index< asset_bitasset_data_index >().indices().get< by_backing_asset >();
       auto backed_range = idx.equal_range( o.asset_to_update );
       std::for_each( backed_range.first, backed_range.second, // loop through all assets that have this asset as a backing asset
          [&new_backing_asset, &o, &db]( const asset_bitasset_data_object& bitasset_data )
          {
             const auto& child = db.get_bitasset_data( bitasset_data.symbol );
 
-            FC_ASSERT( child.symbol != o.new_bitasset_opts->short_backing_asset,
+            FC_ASSERT( child.symbol != o.new_options.backing_asset,
                "The BitAsset would be invalidated by changing this backing asset ('A' backed by 'B' backed by 'A')." );
          });
    }
@@ -9149,34 +9228,37 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
 
    // If the minimum number of feeds to calculate a median has changed, recalculate the median
    bool should_update_feeds = false;
-   const bitasset_options& options = bdo.options;
-   const bitasset_options& new_options = *o.new_bitasset_opts;
 
-   if( new_options.minimum_feeds != options.minimum_feeds )
+   if( o.new_options.minimum_feeds != bdo.minimum_feeds )
    {
       should_update_feeds = true;
    }
       
-   if( new_options.feed_lifetime != options.feed_lifetime )
+   if( o.new_options.feed_lifetime != bdo.feed_lifetime )
    {
       should_update_feeds = true;    // call update_median_feeds if the feed_lifetime changed
    }
 
    bool backing_asset_changed = false;    // feeds must be reset if the backing asset is changed
    bool is_witness_fed = false;
-   if( new_options.short_backing_asset != bdo.backing_asset )
+   if( o.new_options.backing_asset != bdo.backing_asset )
    {
       backing_asset_changed = true;
       should_update_feeds = true;
-      if( asset_to_update.options.flags & witness_fed_asset  )
+      if( asset_to_update.is_witness_fed() )
       {
          is_witness_fed = true;
       }   
    }
 
-   bdo.options = new_options;
+   bdo.backing_asset = o.new_options.backing_asset;
+   bdo.feed_lifetime = o.new_options.feed_lifetime;
+   bdo.minimum_feeds = o.new_options.minimum_feeds;
+   bdo.force_settlement_delay = o.new_options.force_settlement_delay;
+   bdo.force_settlement_offset_percent = o.new_options.force_settlement_offset_percent;
+   bdo.maximum_force_settlement_volume = o.new_options.maximum_force_settlement_volume;
 
-   if( backing_asset_changed ) // Reset price feeds if modifying backing asset
+   if( backing_asset_changed )        // Reset price feeds if modifying backing asset
    {
       if( is_witness_fed )
       {
@@ -9222,7 +9304,7 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
       "Cannot specify more feed producers than maximum allowed." );
    FC_ASSERT( asset_obj.asset_type == BITASSET_ASSET,
       "Cannot update feed producers on a non-BitAsset." );
-   FC_ASSERT(!( asset_obj.options.flags & witness_fed_asset ),
+   FC_ASSERT(!( asset_obj.is_witness_fed() ),
       "Cannot set feed producers on a witness-fed asset." );
    FC_ASSERT( asset_obj.issuer == o.issuer,
       "Only asset issuer can update feed producers of an asset" );
@@ -9276,10 +9358,10 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
    const asset_bitasset_data_object& bitasset = _db.get_bitasset_data( base.symbol );
 
    // The settlement price must be quoted in terms of the backing asset.
-   FC_ASSERT( o.feed.settlement_price.quote.symbol == bitasset.options.short_backing_asset,
+   FC_ASSERT( o.feed.settlement_price.quote.symbol == bitasset.backing_asset,
       "Quote asset type in settlement price should be same as backing asset of this asset" );
    
-   if( base.options.flags & witness_fed_asset )     // Verify that the publisher is authoritative to publish a feed.
+   if( base.is_witness_fed() )     // Verify that the publisher is authoritative to publish a feed.
    {
       FC_ASSERT( _db.get_account_authority( WITNESS_ACCOUNT ).active.account_auths.count( o.publisher ),
          "Only active witnesses are allowed to publish price feeds for this asset" );
@@ -9396,7 +9478,7 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
       const auto& settle_idx = _db.get_index< force_settlement_index >().indices().get< by_account_asset >();
       auto settle_itr = settle_idx.find( boost::make_tuple( o.account, o.amount.symbol ) );
 
-      time_point settlement_time = now + bitasset.options.force_settlement_delay;
+      time_point settlement_time = now + bitasset.force_settlement_delay;
 
       if( settle_itr == settle_idx.end() )
       {
@@ -9472,7 +9554,7 @@ void asset_global_settle_evaluator::do_apply( const asset_global_settle_operatio
    FC_ASSERT( !call_idx.empty(), 
       "Critical error: No debt positions found on entire network. Bitasset supply should not exist." );
 
-   auto call_itr = call_idx.lower_bound( price::min( bitasset.options.short_backing_asset, o.asset_to_settle ) );
+   auto call_itr = call_idx.lower_bound( price::min( bitasset.backing_asset, o.asset_to_settle ) );
 
    FC_ASSERT( call_itr != call_idx.end() && call_itr->debt_type() == o.asset_to_settle,
       "Critical error: No debt positions found for the asset being settled. Bitasset supply should not exist." );

@@ -71,7 +71,7 @@ void database::process_asset_staking()
 
       adjust_staked_balance( from_account_balance.owner, -unstake_asset );
       
-      for( auto itr = didx.lower_bound( from_account_balance.owner ); itr != didx.end() && itr->from_account == from_account_balance.owner; ++itr )
+      for( auto itr = didx.lower_bound( from_account_balance.owner ); itr != didx.end() && itr->from == from_account_balance.owner; ++itr )
       {
          if( itr->auto_stake )
          {
@@ -80,7 +80,7 @@ void database::process_asset_staking()
 
             if( to_restake > 0 )
             {
-               adjust_staked_balance( itr->to_account, to_restake );
+               adjust_staked_balance( itr->to, to_restake );
             }
          }
          else
@@ -91,7 +91,7 @@ void database::process_asset_staking()
 
             if( to_withdraw > 0 )
             {
-               adjust_liquid_balance( itr->to_account, withdraw_asset );
+               adjust_liquid_balance( itr->to, withdraw_asset );
             }
          }
       }
@@ -139,7 +139,7 @@ void database::process_asset_staking()
 
       adjust_staked_balance( from_account_balance.owner, -stake_asset );
 
-      for( auto itr = didx.lower_bound( from_account_balance.owner ); itr != didx.end() && itr->from_account == from_account_balance.owner; ++itr )
+      for( auto itr = didx.lower_bound( from_account_balance.owner ); itr != didx.end() && itr->from == from_account_balance.owner; ++itr )
       {
          share_type to_vest = (( to_stake * itr->percent ) / PERCENT_100 );
          total_vested += to_vest;
@@ -147,7 +147,7 @@ void database::process_asset_staking()
 
          if( to_vest > 0 )
          {
-            adjust_staked_balance( itr->to_account, vest_asset );
+            adjust_staked_balance( itr->to, vest_asset );
          }
       }
 
@@ -374,7 +374,7 @@ void database::process_credit_buybacks()
    if( (head_block_num() % CREDIT_BUYBACK_INTERVAL_BLOCKS) != 0 )
       return;
 
-   const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol>();
+   const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol >();
    auto credit_itr = credit_idx.begin();
 
    while( credit_itr != credit_idx.end() )
@@ -420,8 +420,8 @@ void database::process_credit_interest()
    }
 
    time_point now = head_block_time();
-   const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol>();
-   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol>();
+   const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol >();
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
    auto credit_itr = credit_idx.begin();
 
    while( credit_itr != credit_idx.end() )
@@ -429,23 +429,23 @@ void database::process_credit_interest()
       const asset_credit_data_object& credit = *credit_itr;
       asset_symbol_type cs = credit.symbol;
       const asset_dynamic_data_object& dyn_data = get_dynamic_data( cs );
-      price buyback = credit.buyback_price;
-      price market = get_liquidity_pool( credit.buyback_asset, credit.symbol ).base_hour_median_price( buyback.base.symbol );
+      price buyback = credit.buyback_price;      // Base is buyback asset, Quote is Credit asset.
+      price market = get_liquidity_pool( credit.buyback_asset, credit.symbol ).base_hour_median_price( credit.buyback_asset );
       
-      asset unit = asset( BLOCKCHAIN_PRECISION, buyback.quote.symbol );
-      share_type range = credit.options.var_interest_range;     // Percentage range that caps the price divergence between market and buyback
+      asset unit = asset( BLOCKCHAIN_PRECISION, credit.buyback_asset );    // One unit of the Credit asset.
+      share_type range = credit.var_interest_range;                        // Percentage range that caps the price divergence between market and buyback.
       share_type pr = PERCENT_100;
       share_type hpr = PERCENT_100 / 2;
 
-      share_type mar = ( market * unit ).amount;    // Market price of the credit asset
-      share_type buy = ( buy * unit ).amount;       // Buyback price of the credit asset
+      share_type buy = ( buyback * unit ).amount;       // Buyback price of the credit asset.
+      share_type mar = ( market * unit ).amount;        // Market price of the credit asset.
 
-      share_type liqf = credit.options.liquid_fixed_interest_rate;
-      share_type staf = credit.options.staked_fixed_interest_rate;
-      share_type savf = credit.options.savings_fixed_interest_rate;
-      share_type liqv = credit.options.liquid_variable_interest_rate;
-      share_type stav = credit.options.staked_variable_interest_rate;
-      share_type savv = credit.options.savings_variable_interest_rate;
+      share_type liqf = credit.liquid_fixed_interest_rate;
+      share_type staf = credit.staked_fixed_interest_rate;
+      share_type savf = credit.savings_fixed_interest_rate;
+      share_type liqv = credit.liquid_variable_interest_rate;
+      share_type stav = credit.staked_variable_interest_rate;
+      share_type savv = credit.savings_variable_interest_rate;
 
       share_type var_factor = ( ( -hpr * std::min( pr, std::max( -pr, pr * ( mar-buy ) / ( ( ( buy * range ) / pr ) ) ) ) ) / pr ) + hpr;
 
@@ -1192,9 +1192,9 @@ share_type database::get_equity_voting_power( const account_name_type& a, const 
       const account_balance_object* abo_ptr = find_account_balance( a, symbol );
       if( abo_ptr != nullptr )
       {
-         voting_power += abo_ptr->get_liquid_balance() * equity.options.liquid_voting_rights;
-         voting_power += abo_ptr->get_voting_power() * equity.options.staked_voting_rights;
-         voting_power += abo_ptr->get_savings_balance() * equity.options.savings_voting_rights;
+         voting_power += abo_ptr->get_liquid_balance() * equity.liquid_voting_rights;
+         voting_power += abo_ptr->get_voting_power() * equity.staked_voting_rights;
+         voting_power += abo_ptr->get_savings_balance() * equity.savings_voting_rights;
       }
    }
    return voting_power;
@@ -1245,7 +1245,7 @@ void database::process_bids( const asset_bitasset_data_object& bad )
    const asset_dynamic_data_object& bdd = get_dynamic_data( bad.symbol );
 
    const auto& bid_idx = get_index< collateral_bid_index >().indices().get< by_price >();
-   const auto start = bid_idx.lower_bound( boost::make_tuple( bad.symbol, price::max( bad.options.short_backing_asset, bad.symbol ) ) );
+   const auto start = bid_idx.lower_bound( boost::make_tuple( bad.symbol, price::max( bad.backing_asset, bad.symbol ) ) );
 
    share_type covered = 0;
 

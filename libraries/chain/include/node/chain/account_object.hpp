@@ -756,7 +756,7 @@ namespace node { namespace chain {
  
          bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          // Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
-            bool fast_check = !( asset_obj.options.flags & balance_white_list );
+            bool fast_check = !( asset_obj.flags & balance_whitelist );
             fast_check &= !( whitelisted_assets.size() );
             fast_check &= !( blacklisted_assets.size() );
             fast_check &= !( whitelisted_accounts.size() );
@@ -799,17 +799,17 @@ namespace node { namespace chain {
                } 
             }
 
-            if( asset_obj.options.blacklist_authorities.size() )
+            if( asset_obj.blacklist_authorities.size() )
             {
-               if( asset_obj.options.blacklist_authorities.find( name ) != asset_obj.options.blacklist_authorities.end() )
+               if( asset_obj.blacklist_authorities.find( name ) != asset_obj.blacklist_authorities.end() )
                {
                   return false; // The account is in the asset's blacklist
                }
             }
 
-            if( asset_obj.options.whitelist_authorities.size() )
+            if( asset_obj.whitelist_authorities.size() )
             {
-               if( asset_obj.options.whitelist_authorities.find( name ) == asset_obj.options.whitelist_authorities.end() )
+               if( asset_obj.whitelist_authorities.find( name ) == asset_obj.whitelist_authorities.end() )
                {
                   return false; // The account is not in the asset's whitelist
                }

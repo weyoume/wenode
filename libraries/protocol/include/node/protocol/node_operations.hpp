@@ -483,9 +483,9 @@ namespace node { namespace protocol {
 
       account_name_type                 account;              ///< Name of account.
 
-      optional<account_name_type>       listed_account;       ///< Name of account being added to a black or white list.
+      optional< account_name_type >     listed_account;       ///< Name of account being added to a black or white list.
 
-      optional<asset_symbol_type>       listed_asset;         ///< Name of asset being added to a black or white list.
+      optional< asset_symbol_type >     listed_asset;         ///< Name of asset being added to a black or white list.
 
       bool                              blacklisted = true;   ///< True to add to blacklist, false to remove. 
 
@@ -2147,11 +2147,13 @@ namespace node { namespace protocol {
 
 
    /**
-    * Transfers an asset from one account to another.
+    * Transfers funds from one account to another.
     * 
-    * Includes a memo for reference. When the memo refers to a specific comment, 
-    * the transfer is interpretted as a comment payment, and enables the account 
-    * to comment on the post and registers as a direct tip for the creator.
+    * Includes a memo for reference. When the memo contains 
+    * an author/permlink that refers to a specific comment, 
+    * the transfer is interpretted as a comment payment, 
+    * and enables the account to comment on the post 
+    * and registers as a direct tip for the creator.
     */
    struct transfer_operation : public base_operation
    {
@@ -2161,9 +2163,9 @@ namespace node { namespace protocol {
       
       account_name_type           to;         ///< Recieving account to transfer asset to.
       
-      asset                       amount;     ///< The amount of asset to transfer.
+      asset                       amount;     ///< The funds being transferred.
 
-      string                      memo;       ///< The memo is plain-text, encryption on the memo is advised. 
+      string                      memo;       ///< The memo for the transaction, encryption on the memo is advised. 
 
       void              validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
@@ -2182,9 +2184,9 @@ namespace node { namespace protocol {
       
       account_name_type            from;               ///< Account that is being requested to accept the transfer.
       
-      asset                        amount;             ///< The amount of asset to transfer.
+      asset                        amount;             ///< The funds being transferred.
 
-      string                       memo;               ///< The memo is plain-text, encryption on the memo is advised. 
+      string                       memo;               ///< The memo for the transaction, encryption on the memo is advised. 
 
       string                       request_id;         ///< uuidv4 of the request transaction.
 
@@ -2240,7 +2242,7 @@ namespace node { namespace protocol {
 
       fc::microseconds            interval;               ///< Microseconds between each transfer event.
 
-      string                      memo;                   ///< The memo is plain-text, encryption on the memo is advised. 
+      string                      memo;                   ///< The memo for the transaction, encryption on the memo is advised.
 
       bool                        extensible = false;     ///< True if the payment duration should be extended in the event a payment is missed.
 
@@ -2275,9 +2277,9 @@ namespace node { namespace protocol {
 
       fc::microseconds             interval;               ///< Microseconds between each transfer event.
 
-      string                       memo;                   ///< The memo is plain-text, encryption on the memo is advised. 
+      string                       memo;                   ///< The memo for the transaction, encryption on the memo is advised.
 
-      time_point                   expiration;             ///< time that the request expires.
+      time_point                   expiration;             ///< Time that the request expires.
 
       bool                         extensible = false;     ///< True if the payment duration should be extended in the event a payment is missed.
 
@@ -2324,9 +2326,9 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      account;
+      account_name_type      account;      ///< Account claiming its reward balance from the network.
 
-      asset                  reward;
+      asset                  reward;       ///< Amount of Reward balance to claim.
 
       void get_required_posting_authorities( flat_set< account_name_type >& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
@@ -2341,11 +2343,11 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      from;         ///< Account staking the asset
+      account_name_type      from;         ///< Account staking the asset.
 
-      account_name_type      to;           ///< if null, then same as from
+      account_name_type      to;           ///< Account to stake the asset to, Same as from if null.
 
-      asset                  amount;       ///< Asset amount and symbol
+      asset                  amount;       ///< Amount of Funds to transfer to staked balance from liquid balance.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2360,11 +2362,11 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      from;         ///< Account unstaking the asset
+      account_name_type      from;         ///< Account unstaking the asset.
 
-      account_name_type      to;           ///< if null, then same as from
+      account_name_type      to;           ///< Account to unstake the asset to, Same as from if null.
 
-      asset                  amount;       ///< Asset amount and symbol
+      asset                  amount;       ///< Amount of Funds to transfer from staked balance to liquid balance.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2373,42 +2375,47 @@ namespace node { namespace protocol {
 
 
    /**
-    * Allows an account to setup an unstake asset withdraw but with the additional
-    * request for the funds to be transferred directly to another account's
+    * Allows an account to setup an unstake asset withdraw.
+    * 
+    * The funds unstaked will be transferred directly to another account's
     * balance rather than the withdrawing account. In addition, those funds
-    * can be immediately staked again in the new account's balance
+    * can be immediately staked again in the new account's balance.
     */
    struct unstake_asset_route_operation : public base_operation
    {
-      account_name_type       signatory;
+      account_name_type       signatory;              ///< The account the assets are withdrawn from.
 
-      account_name_type       from_account;
+      account_name_type       from;                   ///< The account the assets are withdrawn from.
 
-      account_name_type       to_account;
+      account_name_type       to;                     ///< The account receiving either assets or new stake.
 
-      uint16_t                percent = 0;
+      uint16_t                percent = 0;            ///< The percent of the withdraw to go to the 'to' account.
 
-      bool                    auto_stake = false;
+      bool                    auto_stake = false;     ///< True if the stake should automatically be staked on the to account.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      const account_name_type& get_creator_name() const { return from_account; }
+      const account_name_type& get_creator_name() const { return from; }
    };
 
    /**
-    * Places a specified liquid asset balance into savings for security.
+    * Transfer liquid funds balance into savings for security.
+    * 
+    * Savings have a three day delay period for withdrawals, 
+    * which places funds in a more protected state in the event that
+    * an account is compromised. 
     */
    struct transfer_to_savings_operation : public base_operation 
    {
       account_name_type         signatory;
 
-      account_name_type         from;
+      account_name_type         from;       ///< The account the assets are transferred from.
 
-      account_name_type         to;
+      account_name_type         to;         ///< The account that is recieving the savings balance, same as from if null.
 
-      asset                     amount;
+      asset                     amount;     ///< Funds to be transferred from liquid to savings balance.
 
-      string                    memo;
+      string                    memo;       ///< The memo for the transaction, encryption on the memo is advised.
 
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return from; }
@@ -2422,17 +2429,17 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      from;                 ///< Account to transfer savings balance from
+      account_name_type      from;                 ///< Account to transfer savings balance from.
 
-      string                 request_id;           ///< uuidv4 referring to the transfer
+      account_name_type      to;                   ///< Account to recieve the savings withdrawal.
 
-      account_name_type      to;                   ///< Account to recive the savings withdrawal
+      asset                  amount;               ///< Amount of asset to transfer from savings.
 
-      asset                  amount;               ///< Amount of asset to transfer from savings
+      string                 request_id;           ///< uuidv4 referring to the transfer.
 
-      string                 memo;                 ///< Description of transfer
+      string                 memo;                 ///< The memo for the transaction, encryption on the memo is advised.
 
-      bool                   transferred = true;   ///< True if the transfer is accepted, false to cancel transfer
+      bool                   transferred = true;   ///< True if the transfer is accepted, false to cancel transfer.
 
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return from; }
@@ -2451,11 +2458,11 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      delegator;        ///< The account delegating the asset
+      account_name_type      delegator;        ///< The account delegating the asset.
 
-      account_name_type      delegatee;        ///< The account receiving the asset
+      account_name_type      delegatee;        ///< The account receiving the asset.
 
-      asset                  amount;           ///<  The amount of the asset delegated         
+      asset                  amount;           ///< The amount of the asset delegated.
 
       void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return delegator; }
@@ -2508,21 +2515,21 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      account;                 ///< Account creating the transaction to initate the escrow
+      account_name_type      account;                 ///< Account creating the transaction to initate the escrow.
 
-      account_name_type      from;                    ///< Account sending funds for a purchase
+      account_name_type      from;                    ///< Account sending funds for a purchase.
 
-      account_name_type      to;                      ///< Account receiving funds from a purchase
+      account_name_type      to;                      ///< Account receiving funds from a purchase.
 
-      string                 escrow_id;               ///< uuidv4 referring to the escrow transaction
+      string                 escrow_id;               ///< uuidv4 referring to the escrow transaction.
 
-      asset                  amount;                  ///< Amount of the asset to be transferred upon success
+      asset                  amount;                  ///< Amount of the asset to be transferred upon success.
 
-      time_point             acceptance_time;         ///< Time that the escrow proposal must be approved before
+      time_point             acceptance_time;         ///< Time that the escrow proposal must be approved before.
 
-      time_point             escrow_expiration;       ///< time after which balance can be claimed by FROM or TO freely.
+      time_point             escrow_expiration;       ///< Time after which balance can be claimed by FROM or TO freely.
 
-      string                 memo;                    ///< Details of the transaction for reference. 
+      string                 memo;                    ///< The memo for the transaction, encryption on the memo is advised.
 
       string                 json;                    ///< Additonal JSON object attribute details.
 
@@ -2626,7 +2633,7 @@ namespace node { namespace protocol {
 
       string                   escrow_id;         ///< uuidv4 referring to the escrow.
 
-      uint16_t                 release_percent;   ///< percentage of escrow to release to the TO Account / remaining will be refunded to FROM account
+      uint16_t                 release_percent;   ///< Percentage of escrow to release to the TO Account / remaining will be refunded to FROM account
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2650,9 +2657,9 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      owner;                 ///< Account that owns the asset being sold
+      account_name_type      owner;                 ///< Account that owns the asset being sold.
 
-      string                 order_id;              ///< UUIDv4 of the order for reference.
+      string                 order_id;              ///< uuidv4 of the order for reference.
 
       asset                  amount_to_sell;        ///< Asset being sold on exchange.
 
@@ -2685,15 +2692,15 @@ namespace node { namespace protocol {
    {
       account_name_type      signatory;
 
-      account_name_type      owner;
+      account_name_type      owner;                      ///< Account that is the owner of the new margin position.
 
-      string                 order_id;                   ///< UUIDv4 of the order for reference.
+      string                 order_id;                   ///< uuidv4 of the order for reference.
 
-      price                  exchange_rate;              ///< The asset pair price to sell the borrowed amount at on the exchange
+      price                  exchange_rate;              ///< The asset pair price to sell the borrowed amount at on the exchange.
 
       asset                  collateral;                 ///< Collateral asset used to back the loan value. Returned to credit collateral object when position is closed. 
 
-      asset                  amount_to_borrow;           ///< Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed.                
+      asset                  amount_to_borrow;           ///< Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed.       
 
       optional< price >      stop_loss_price;            ///< Price at which the position will be closed if it falls into a net loss.
 
@@ -2703,15 +2710,15 @@ namespace node { namespace protocol {
 
       optional< price >      limit_take_profit_price;    ///< Price at which the order will be closed if it rises into a net profit.
 
-      account_name_type      interface;                  ///< Name of the interface that broadcasted the transaction
+      account_name_type      interface;                  ///< Name of the interface that broadcasted the transaction.
 
-      time_point             expiration;                 ///< Time that the order expires and is refunded
+      time_point             expiration;                 ///< Time that the order expires.
 
-      bool                   fill_or_kill = false;       ///< Set true to cancel the order if it does not fill against the orderbook immediately
+      bool                   opened = true;              ///< Set true to open the order, false to close existing order.
 
-      bool                   opened = true;              ///< Set true to open the order, false to close existing order
+      bool                   fill_or_kill = false;       ///< Set true to cancel the order if it does not fill against the orderbook immediately.
 
-      bool                   force_close = false;        ///< Set true when closing to force liquidate the order against the liquidity pool at available price
+      bool                   force_close = false;        ///< Set true when closing to force liquidate the order against the liquidity pool at available price.
 
       void  validate()const;
       const account_name_type& get_creator_name() const { return owner; }
@@ -2756,7 +2763,7 @@ namespace node { namespace protocol {
    {
       account_name_type     signatory;
 
-      account_name_type     bidder;           ///< Pays fee and additional collateral.
+      account_name_type     bidder;           ///< Adds additional collateral to the market issued asset.
 
       asset                 collateral;       ///< The amount of collateral to bid for the debt.
 
@@ -2817,7 +2824,7 @@ namespace node { namespace protocol {
 
       account_name_type     interface;          ///< Name of the interface account broadcasting the transaction.
 
-      optional<price>       limit_price;        ///< The price of acquistion at which to cap the exchange to.
+      optional< price >     limit_price;        ///< The price of acquistion at which to cap the exchange to.
 
       bool                  acquire = false;    ///< Set true to acquire the specified amount, false to exchange in.
 
@@ -2882,9 +2889,9 @@ namespace node { namespace protocol {
    {
       account_name_type     signatory;
 
-      account_name_type     account;         ///< Account locking an asset as collateral. 
+      account_name_type     account;         ///< Account locking an asset as collateral.
 
-      asset                 amount;          ///< Amount of collateral balance to lock, 0 to unlock existing collateral. 
+      asset                 amount;          ///< Amount of collateral balance to lock, 0 to unlock existing collateral.
 
       void                  validate()const;
       const account_name_type& get_creator_name() const { return account; }
@@ -2908,7 +2915,7 @@ namespace node { namespace protocol {
 
       asset                 collateral;      ///< Amount of an asset to use as collateral for the loan. Set to 0 to reclaim collateral to collateral balance. 
 
-      string                loan_id;         ///< uuidv4 unique identifier for the loan
+      string                loan_id;         ///< uuidv4 unique identifier for the loan.
 
       void                  validate()const;
       const account_name_type& get_creator_name() const { return account; }
@@ -2950,7 +2957,7 @@ namespace node { namespace protocol {
 
       account_name_type     account;       ///< Account withdrawing its lent asset from the credit pool by redeeming credit-assets. 
 
-      asset                 amount;        ///< Amount of interest bearing credit assets being redeemed for thier underlying assts. 
+      asset                 amount;        ///< Amount of interest bearing credit assets being redeemed for thier underlying assets. 
 
       void                     validate()const;
       const account_name_type& get_creator_name() const { return account; }
@@ -3001,135 +3008,75 @@ namespace node { namespace protocol {
 
       flat_set< asset_symbol_type >   whitelist_markets;                     ///< The assets that this asset may be traded against in the market
 
-      flat_set< asset_symbol_type >   blacklist_markets;                     ///< The assets that this asset may not be traded against in the market, must not overlap whitelist
+      flat_set< asset_symbol_type >   blacklist_markets;                     ///< The assets that this asset may not be traded against in the market.
 
-      void validate()const;
-   };
+      // === Bitasset Options === //
 
+      fc::microseconds                feed_lifetime = PRICE_FEED_LIFETIME;                            ///< Time before a price feed expires.
 
-   /**
-    * Options available to currency assets.
-    */
-   struct currency_options 
-   {
-      share_type          annual_issuance = ANNUAL_COIN_ISSUANCE;
+      uint8_t                         minimum_feeds = 1;                                              ///< Minimum number of unexpired feeds required to extract a median feed from.
 
-      uint16_t            block_producer_percent = PRODUCER_REWARD_PERCENT;
+      fc::microseconds                force_settlement_delay = FORCE_SETTLEMENT_DELAY;                ///< This is the delay between the time a long requests settlement and the chain evaluates the settlement.
 
-      void validate()const;
-   };
+      uint16_t                        force_settlement_offset_percent = FORCE_SETTLEMENT_OFFSET;      ///< The percentage to adjust the feed price in the short's favor in the event of a forced settlement.
 
+      uint16_t                        maximum_force_settlement_volume = FORCE_SETTLEMENT_MAX_VOLUME;  ///< the percentage of current supply which may be force settled within each 24h interval.
 
-   /**
-    * Options available to BitAssets.
-    */
-   struct bitasset_options 
-   {
-      fc::microseconds    feed_lifetime = PRICE_FEED_LIFETIME;                            ///< Time before a price feed expires
+      asset_symbol_type               backing_asset = SYMBOL_COIN;                                    ///< The symbol of the asset that the bitasset is collateralized by.
 
-      uint8_t             minimum_feeds = 1;                                              ///< Minimum number of unexpired feeds required to extract a median feed from
+      // === Equity Asset Options === //
+      
+      asset_symbol_type               dividend_asset = SYMBOL_USD;                            ///< Asset that is distributed to equity stakeholders.
 
-      fc::microseconds    force_settlement_delay = FORCE_SETTLEMENT_DELAY;                ///< This is the delay between the time a long requests settlement and the chain evaluates the settlement
+      uint16_t                        dividend_share_percent = DIVIDEND_SHARE_PERCENT;        ///< Percentage of incoming assets added to the dividends pool.
 
-      uint16_t            force_settlement_offset_percent = FORCE_SETTLEMENT_OFFSET;      ///< The percentage to adjust the feed price in the short's favor in the event of a forced settlement
+      uint16_t                        liquid_dividend_percent = LIQUID_DIVIDEND_PERCENT;      ///< Percentage of equity dividends distributed to liquid balances.
 
-      uint16_t            maximum_force_settlement_volume = FORCE_SETTLEMENT_MAX_VOLUME;  ///< the percentage of current supply which may be force settled within each 24h interval.
+      uint16_t                        staked_dividend_percent = STAKED_DIVIDEND_PERCENT;      ///< Percentage of equity dividends distributed to staked balances.
 
-      asset_symbol_type   short_backing_asset = SYMBOL_COIN;                              ///< The symbol of the asset that the bitasset is collateralized by.
+      uint16_t                        savings_dividend_percent = SAVINGS_DIVIDEND_PERCENT;    ///< Percentage of equity dividends distributed to savings balances.
 
-      void validate()const;
-   };
+      uint16_t                        liquid_voting_rights = PERCENT_100;                     ///< Amount of votes per asset conveyed to liquid holders of the asset.
 
+      uint16_t                        staked_voting_rights = PERCENT_100;                     ///< Amount of votes per asset conveyed to staked holders of the asset.
 
-   /**
-    * Options available to equity assets.
-    */
-   struct equity_options 
-   {
-      asset_symbol_type   dividend_asset = SYMBOL_USD;                            ///< Asset that is distributed to equity stakeholders
+      uint16_t                        savings_voting_rights = PERCENT_100;                    ///< Amount of votes per asset conveyed to savings holders of the asset.
 
-      uint16_t            dividend_share_percent = DIVIDEND_SHARE_PERCENT;        ///< Percentage of incoming assets added to the dividends pool
+      fc::microseconds                min_active_time = EQUITY_ACTIVITY_TIME;                 ///< Time that account must have a recent activity reward within to earn dividend.
 
-      uint16_t            liquid_dividend_percent = LIQUID_DIVIDEND_PERCENT;      ///< Percentage of equity dividends distributed to liquid balances
+      share_type                      min_balance = BLOCKCHAIN_PRECISION;                     ///< Minimum amount of equity required to earn dividends.
 
-      uint16_t            staked_dividend_percent = STAKED_DIVIDEND_PERCENT;      ///< Percentage of equity dividends distributed to staked balances
+      uint16_t                        min_witnesses = EQUITY_MIN_WITNESSES;                   ///< Minimum amount of witness votes required to earn dividends.
 
-      uint16_t            savings_dividend_percent = SAVINGS_DIVIDEND_PERCENT;    ///< Percentage of equity dividends distributed to savings balances
+      uint16_t                        boost_balance = EQUITY_BOOST_BALANCE;                   ///< Amount of equity balance to earn double dividends.
 
-      uint16_t            liquid_voting_rights = PERCENT_100;                     ///< Amount of votes per asset conveyed to liquid holders of the asset
+      uint16_t                        boost_activity = EQUITY_BOOST_ACTIVITY;                 ///< Amount of recent activity rewards required to earn double dividends.
 
-      uint16_t            staked_voting_rights = PERCENT_100;                     ///< Amount of votes per asset conveyed to staked holders of the asset
+      uint16_t                        boost_witnesses = EQUITY_BOOST_WITNESSES;               ///< Amount of witness votes required to earn double dividends.
 
-      uint16_t            savings_voting_rights = PERCENT_100;                    ///< Amount of votes per asset conveyed to savings holders of the asset
+      uint16_t                        boost_top = EQUITY_BOOST_TOP_PERCENT;                   ///< Percent bonus earned by Top membership accounts.
 
-      fc::microseconds    min_active_time = EQUITY_ACTIVITY_TIME;                 ///< Time that account must have a recent activity reward within to earn dividend
+      // === Credit Asset options === //
 
-      share_type          min_balance = BLOCKCHAIN_PRECISION;                     ///< Minimum amount of equity required to earn dividends
+      asset_symbol_type               buyback_asset = SYMBOL_USD;                                        ///< Asset used to repurchase the credit asset.
 
-      uint16_t            min_witnesses = EQUITY_MIN_WITNESSES;                   ///< Minimum amount of witness votes required to earn dividends
+      price                           buyback_price = price();                                           ///< Price that credit asset is repurchased at to repay creditors.
 
-      uint16_t            boost_balance = EQUITY_BOOST_BALANCE;                   ///< Amount of equity balance to earn double dividends
+      uint32_t                        buyback_share_percent = BUYBACK_SHARE_PERCENT;                     ///< Percentage of incoming assets added to the buyback pool.
 
-      uint16_t            boost_activity = EQUITY_BOOST_ACTIVITY;                 ///< Amount of recent activity rewards required to earn double dividends
+      uint32_t                        liquid_fixed_interest_rate = LIQUID_FIXED_INTEREST_RATE;           ///< Fixed component of Interest rate of the asset for liquid balances.
 
-      uint16_t            boost_witnesses = EQUITY_BOOST_WITNESSES;               ///< Amount of witness votes required to earn double dividends
+      uint32_t                        liquid_variable_interest_rate = LIQUID_VARIABLE_INTEREST_RATE;     ///< Variable component of Interest rate of the asset for liquid balances.
 
-      uint16_t            boost_top = EQUITY_BOOST_TOP_PERCENT;                   ///< Percent bonus earned by Top membership accounts
+      uint32_t                        staked_fixed_interest_rate = STAKED_FIXED_INTEREST_RATE;           ///< Fixed component of Interest rate of the asset for staked balances.
 
-      void validate()const;
-   };
+      uint32_t                        staked_variable_interest_rate = STAKED_VARIABLE_INTEREST_RATE;     ///< Variable component of Interest rate of the asset for staked balances.
 
+      uint32_t                        savings_fixed_interest_rate = SAVINGS_FIXED_INTEREST_RATE;         ///< Fixed component of Interest rate of the asset for savings balances.
 
-   /**
-    * Options available to credit assets.
-    */
-   struct credit_options 
-   {
-      asset_symbol_type   buyback_asset = SYMBOL_USD;                                        ///< Asset used to repurchase the credit asset
+      uint32_t                        savings_variable_interest_rate = SAVINGS_VARIABLE_INTEREST_RATE;   ///< Variable component of Interest rate of the asset for savings balances.
 
-      price               buyback_price = price();                                           ///< Price that credit asset is repurchased at to repay creditors.
-
-      uint32_t            buyback_share_percent = BUYBACK_SHARE_PERCENT;                     ///< Percentage of incoming assets added to the buyback pool
-
-      uint32_t            liquid_fixed_interest_rate = LIQUID_FIXED_INTEREST_RATE;           ///< Fixed component of Interest rate of the asset for liquid balances.
-
-      uint32_t            liquid_variable_interest_rate = LIQUID_VARIABLE_INTEREST_RATE;     ///< Variable component of Interest rate of the asset for liquid balances.
-
-      uint32_t            staked_fixed_interest_rate = STAKED_FIXED_INTEREST_RATE;           ///< Fixed component of Interest rate of the asset for staked balances.
-
-      uint32_t            staked_variable_interest_rate = STAKED_VARIABLE_INTEREST_RATE;     ///< Variable component of Interest rate of the asset for staked balances.
-
-      uint32_t            savings_fixed_interest_rate = SAVINGS_FIXED_INTEREST_RATE;         ///< Fixed component of Interest rate of the asset for savings balances.
-
-      uint32_t            savings_variable_interest_rate = SAVINGS_VARIABLE_INTEREST_RATE;   ///< Variable component of Interest rate of the asset for savings balances.
-
-      uint32_t            var_interest_range = VAR_INTEREST_RANGE;                           ///< The percentage range from the buyback price over which to apply the variable interest rate.
-
-      void validate()const;
-   };
-
-
-   /**
-    * Options available to unique assets.
-    */
-   struct unique_options 
-   {
-      share_type          annual_issuance = ANNUAL_COIN_ISSUANCE;
-
-      uint16_t            block_producer_percent = PRODUCER_REWARD_PERCENT;
-
-      void validate()const;
-   };
-
-
-   /**
-    * Options available to gateway assets.
-    */
-   struct gateway_options 
-   {
-      share_type          annual_issuance = ANNUAL_COIN_ISSUANCE;
-
-      uint16_t            block_producer_percent = PRODUCER_REWARD_PERCENT;
+      uint32_t                        var_interest_range = VAR_INTEREST_RANGE;                           ///< The percentage range from the buyback price over which to apply the variable interest rate.
 
       void validate()const;
    };
@@ -3146,31 +3093,19 @@ namespace node { namespace protocol {
    {
       account_name_type               signatory;
 
-      account_name_type               issuer;                  ///< Name of the issuing account, can create units and administrate the asset
+      account_name_type               issuer;                  ///< Name of the issuing account, can create units and administrate the asset.
       
       asset_symbol_type               symbol;                  ///< The ticker symbol of this asset.
 
-      asset_property_type             asset_type;              ///< The type of the asset.
+      asset_property_type             asset_type;              ///< The type of the asset. Determines asset characteristics and features.
 
       asset                           coin_liquidity;          ///< Amount of COIN asset to inject into the Coin liquidity pool.  
 
       asset                           usd_liquidity;           ///< Amount of USD asset to inject into the USD liquidity pool.
 
-      asset                           credit_liquidity;        ///< Amount of the new asset to issue and inject into the credit pool.                     
+      asset                           credit_liquidity;        ///< Amount of the new asset to issue and inject into the credit pool.
 
-      asset_options                   common_options;          ///< Series of options paramters that apply to all asset types. 
-
-      optional< currency_options >    currency_opts;           ///< Options available for currency assets.
-
-      optional< bitasset_options >    bitasset_opts;           ///< Options available for BitAssets.
-
-      optional< equity_options >      equity_opts;             ///< Options available for equity assets.
-
-      optional< credit_options >      credit_opts;             ///< Options available for credit assets.
-
-      optional< gateway_options >     gateway_opts;            ///< Options available for gateway assets.
-
-      optional< unique_options >      unique_opts;             ///< Options available for unique assets.
+      asset_options                   options;                 ///< Series of options paramters that apply to all asset types.
 
       void                            validate()const;
       const account_name_type&        get_creator_name() const { return issuer; }
@@ -3187,21 +3122,9 @@ namespace node { namespace protocol {
 
       account_name_type             issuer;                   ///< Account that issued the asset.
 
-      asset_symbol_type             asset_to_update;          ///< Asset symbol that is being updated
+      asset_symbol_type             asset_to_update;          ///< Asset symbol that is being updated.
 
-      asset_options                 new_options;              ///< Options used for all asset types
-
-      optional< currency_options >  new_currency_opts;        ///< Options available for currency assets
-
-      optional< bitasset_options >  new_bitasset_opts;        ///< Options available for BitAssets.
-
-      optional< equity_options >    new_equity_opts;          ///< Options available for equity assets
-
-      optional< credit_options >    new_credit_opts;          ///< Options available for credit assets
-
-      optional< gateway_options >   new_gateway_opts;         ///< Options available for gateway assets
-
-      optional< unique_options >    new_unique_opts;          ///< Options available for unique assets
+      asset_options                 new_options;              ///< Options used for all asset types.
 
       void                          validate()const;
       const account_name_type& get_creator_name() const { return issuer; }
@@ -3210,21 +3133,21 @@ namespace node { namespace protocol {
 
 
    /**
-    * Issues an amount of an asset.
+    * Issues an amount of an asset to a specified account.
     * 
-    * Account must be the issuer of the asset.
+    * The asset must be user issued, cannot be market issued.
     */
    struct asset_issue_operation : public base_operation
    {
       account_name_type      signatory;
 
-      account_name_type      issuer;               ///< The issuer of the asset
+      account_name_type      issuer;               ///< The issuer of the asset.
 
-      asset                  asset_to_issue;       ///< amount of asset being issued to the account
+      asset                  asset_to_issue;       ///< Amount of asset being issued to the account.
 
       account_name_type      issue_to_account;     ///< Account receiving the newly issued asset.
 
-      string                 memo;                 ///< user provided data encrypted to the memo key of the "to" account 
+      string                 memo;                 ///< The memo for the transaction, encryption on the memo is advised.
 
       void                   validate()const;
       const account_name_type& get_creator_name() const { return issuer; }
@@ -3233,7 +3156,9 @@ namespace node { namespace protocol {
 
 
    /**
-    * Used to take an asset out of circulation, returning to the issuer.
+    * Takes a specified amount of an asset out of circulation.
+    * 
+    * Returns the asset to the reserved, available supply for new issuance.
     */
    struct asset_reserve_operation : public base_operation
    {
@@ -3241,7 +3166,7 @@ namespace node { namespace protocol {
 
       account_name_type     payer;               ///< Account that is reserving the asset back to the unissued supply.
 
-      asset                 amount_to_reserve;   ///< amount of the asset begin reserved.
+      asset                 amount_to_reserve;   ///< Amount of the asset being reserved.
 
       void                  validate()const;
       const account_name_type& get_creator_name() const { return payer; }
@@ -3252,18 +3177,19 @@ namespace node { namespace protocol {
    /**
     * Updates the issuer account of an asset.
     * 
-    * Transferring effective ownership of it to another account,
-    * and enabling the new account to issue additional supply, and change the asset's properties. 
+    * Transfers effective ownership of the asset to another account,
+    * and enables the new account to issue additional supply, 
+    * and change the asset's properties.
     */
    struct asset_update_issuer_operation : public base_operation
    {
       account_name_type         signatory;
       
-      account_name_type         issuer;
+      account_name_type         issuer;             ///< The current issuer of the asset.
 
-      asset_symbol_type         asset_to_update;
+      asset_symbol_type         asset_to_update;    ///< The asset being updated.
 
-      account_name_type         new_issuer;
+      account_name_type         new_issuer;         ///< Name of the account specified to become the new issuer of the asset.
 
       void                      validate()const;
       const account_name_type&  get_creator_name() const { return issuer; }
@@ -3286,11 +3212,11 @@ namespace node { namespace protocol {
    {
       account_name_type               signatory;
       
-      account_name_type               issuer;
+      account_name_type               issuer;                  ///< The issuer of the BitAsset.
 
-      asset_symbol_type               asset_to_update;
+      asset_symbol_type               asset_to_update;         ///< The BitAsset being updated.
 
-      flat_set< account_name_type >   new_feed_producers;
+      flat_set< account_name_type >   new_feed_producers;      ///< Set of accounts that can determine the price feed of the asset.
 
       void                            validate()const;
       const account_name_type&        get_creator_name() const { return issuer; }
@@ -3299,36 +3225,39 @@ namespace node { namespace protocol {
 
 
    /**
-    * Publish price feeds for market-issued assets.
+    * Publish price feeds for BitAssets.
     *
     * Price feed providers use this operation to publish 
-    * their price feeds for market-issued assets. A price feed is
-    * used to tune the market for a particular market-issued asset. 
+    * their price feeds for BitAssets. A price feed is
+    * used to tune the market for a particular BitAssets. 
     * For each value in the feed, the median across all
     * committee_member feeds for that asset is calculated and the 
     * market for the asset is configured with the median of that value.
     *
-    * The feed in the operation contains three prices:
-    * a call price limit, a short price limit, and a settlement price.
+    * The feed in the operation contains three elements:
+    * 
+    * - A call price limit
+    * - A short price limit
+    * - A settlement price
+    * 
     * The call limit price is structured as (collateral asset) / (debt asset) 
     * and the short limit price is structured
     * as (asset for sale) / (collateral asset).
-    * Note that the asset IDs are opposite to eachother, so if we're
+    * 
+    * Note that the call price limit and settlement price are
+    * directionally opposite to eachother, so if we're
     * publishing a feed for USD, the call limit price 
-    * will be CORE/USD and the short limit price will be USD/CORE. The
-    * settlement price may be flipped either direction, 
-    * as long as it is a ratio between the market-issued asset and
-    * its collateral.
+    * will be CORE/USD and the short limit price will be USD/CORE.
     */
    struct asset_publish_feed_operation : public base_operation
    {
       account_name_type          signatory;
       
-      account_name_type          publisher;     ///< Account publishing the price feed
+      account_name_type          publisher;     ///< Account publishing the price feed.
 
-      asset_symbol_type          symbol;        ///< Asset for which the feed is published
+      asset_symbol_type          symbol;        ///< Asset for which the feed is published.
 
-      price_feed                 feed;          ///< Exchange rate between bitasset and backing asset
+      price_feed                 feed;          ///< Exchange rate between bitasset and backing asset.
 
       void                       validate()const;
       const account_name_type&   get_creator_name() const { return publisher; }
@@ -3337,7 +3266,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * Schedules a market-issued asset for automatic settlement.
+    * Schedules a BitAsset balance for automatic settlement.
     *
     * Holders of market-issued assests may request a 
     * forced settlement for some amount of their asset. 
@@ -3348,15 +3277,15 @@ namespace node { namespace protocol {
     * settled asset using the margin's collateral.
     * 
     * The price of this sale will be based on the feed 
-    * price for the market-issued asset being settled.
+    * price for the BitAsset being settled.
     */
    struct asset_settle_operation : public base_operation
    {
       account_name_type       signatory;
 
-      account_name_type       account;          ///< Account requesting the force settlement. This account pays the fee.
+      account_name_type       account;          ///< Account requesting the force settlement.
       
-      asset                   amount;           ///< Amount of asset to force settle. Set to 0 to cancel order. Must be a market-issued asset.
+      asset                   amount;           ///< Amount of asset to force settle. Set to 0 to cancel order.
 
       account_name_type       interface;        ///< Account of the interface used to broadcast the operation.
 
@@ -3367,7 +3296,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * Allows global settling of bitassets.
+    * Globally Settles a BitAsset, collecting all remaining collateral and debt and setting a global settlement price.
     *
     * In order to use this operation, asset_to_settle 
     * must have the global_settle flag set.
@@ -4614,60 +4543,6 @@ FC_REFLECT( node::protocol::asset_options,
          (blacklist_markets)
          );
 
-FC_REFLECT( node::protocol::currency_options,
-         (annual_issuance)
-         (block_producer_percent)
-         );
-
-FC_REFLECT( node::protocol::bitasset_options,
-         (feed_lifetime)
-         (minimum_feeds)
-         (force_settlement_delay)
-         (force_settlement_offset_percent)
-         (maximum_force_settlement_volume)
-         (short_backing_asset)
-         );
-
-FC_REFLECT( node::protocol::equity_options,
-         (dividend_asset)
-         (dividend_share_percent)
-         (liquid_dividend_percent)
-         (staked_dividend_percent)
-         (savings_dividend_percent)
-         (liquid_voting_rights)
-         (staked_voting_rights)
-         (savings_voting_rights)
-         (min_active_time)
-         (min_balance)
-         (min_witnesses)
-         (boost_balance)
-         (boost_activity)
-         (boost_witnesses)
-         (boost_top)
-         );
-
-FC_REFLECT( node::protocol::credit_options,
-         (buyback_asset)
-         (buyback_share_percent)
-         (liquid_fixed_interest_rate)
-         (liquid_variable_interest_rate)
-         (staked_fixed_interest_rate)
-         (staked_variable_interest_rate)
-         (savings_fixed_interest_rate)
-         (savings_variable_interest_rate)
-         (var_interest_range)
-         );
-
-FC_REFLECT( node::protocol::unique_options,
-         (annual_issuance)
-         (block_producer_percent)
-         );
-
-FC_REFLECT( node::protocol::gateway_options,
-         (annual_issuance)
-         (block_producer_percent)
-         );
-
 FC_REFLECT( node::protocol::asset_create_operation,
          (signatory)
          (issuer)
@@ -4676,13 +4551,7 @@ FC_REFLECT( node::protocol::asset_create_operation,
          (coin_liquidity)
          (usd_liquidity)
          (credit_liquidity)
-         (common_options)
-         (currency_opts)
-         (bitasset_opts)
-         (equity_opts)
-         (credit_opts)
-         (gateway_opts)
-         (unique_opts)
+         (options)
          );
 
 FC_REFLECT( node::protocol::asset_update_operation,
@@ -4691,12 +4560,6 @@ FC_REFLECT( node::protocol::asset_update_operation,
          (asset_to_update)
          (new_issuer)
          (new_options)
-         (new_currency_opts)
-         (new_bitasset_opts)
-         (new_equity_opts)
-         (new_credit_opts)
-         (new_gateway_opts)
-         (new_unique_opts)
          );
 
 FC_REFLECT( node::protocol::asset_issue_operation, 

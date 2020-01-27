@@ -46,23 +46,53 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                               id; 
+         id_type                         id; 
 
-         asset_symbol_type                     symbol;                 ///< Consensus enforced unique Ticker symbol string for this asset. 
+         asset_symbol_type               symbol;                    ///< Consensus enforced unique Ticker symbol string for this asset.
 
-         asset_property_type                   asset_type;             ///< The type of the asset.
+         asset_property_type             asset_type;                ///< The type of the asset.
          
-         account_name_type                     issuer;                 ///< name of the account which issued this asset.
+         account_name_type               issuer;                    ///< name of the account which issued this asset.
 
-         asset_options                         options;                ///< Object containing the variable option settings of the asset
+         shared_string                   display_symbol;            ///< Non-consensus display name for interface reference.
 
-         time_point                            created;                ///< Time that the asset was created. 
+         shared_string                   details;                   ///< Data that describes the purpose of this asset.
 
-         time_point                            last_updated;           ///< Time that the asset details were last updated. 
+         shared_string                   json;                      ///< Additional JSON metadata of this asset.
 
-         static bool is_valid_symbol( const string& symbol );          ///< True if symbol is a valid ticker symbol; false otherwise.
+         shared_string                   url;                       ///< Reference URL for the asset. 
+         
+         share_type                      max_supply;                ///< The maximum supply of this asset which may exist at any given time. 
 
-         bool is_market_issued()const                                  ///< True if this is a market-issued asset; false otherwise. Market issued assets cannot be issued by the asset issuer. 
+         uint8_t                         stake_intervals;           ///< Weeks required to stake the asset.
+
+         uint8_t                         unstake_intervals;         ///< Weeks require to unstake the asset.
+
+         uint16_t                        market_fee_percent;        ///< Percentage of the total traded will be paid to the issuer of the asset.
+
+         uint16_t                        market_fee_share_percent;  ///< Percentage of the market fee that will be shared with the account's referrers.
+
+         share_type                      max_market_fee;            ///< Market fee charged on a trade is capped to this value.
+         
+         uint32_t                        issuer_permissions;        ///< The flags which the issuer has permission to update.
+
+         uint32_t                        flags;                     ///< The currently active flags on this permission.
+
+         flat_set< account_name_type >   whitelist_authorities;     ///< Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
+
+         flat_set< account_name_type >   blacklist_authorities;     ///< Accounts which cannot transfer or recieve this asset.
+
+         flat_set< asset_symbol_type >   whitelist_markets;         ///< The assets that this asset may be traded against in the market
+
+         flat_set< asset_symbol_type >   blacklist_markets;         ///< The assets that this asset may not be traded against in the market.
+
+         time_point                      created;                   ///< Time that the asset was created.
+
+         time_point                      last_updated;              ///< Time that the asset details were last updated.
+
+         static bool is_valid_symbol( const string& symbol );       ///< True if symbol is a valid ticker symbol; false otherwise.
+
+         bool is_market_issued()const                               ///< True if this is a market-issued asset; false otherwise. Market issued assets cannot be issued by the asset issuer. 
          { 
             switch( asset_type )
             {
@@ -83,105 +113,105 @@ namespace node { namespace chain {
 
          bool require_balance_whitelist()const   ///< true if Holders must be whitelisted
          { 
-            return ( options.flags & asset_issuer_permission_flags::balance_whitelist );
+            return ( flags & asset_issuer_permission_flags::balance_whitelist );
          }
 
          bool require_trade_whitelist()const     ///< true if Traders must be whitelisted
          { 
-            return ( options.flags & asset_issuer_permission_flags::trade_whitelist );
+            return ( flags & asset_issuer_permission_flags::trade_whitelist );
          }
 
          bool is_maker_restricted()const        ///< true if only the asset issuer can create new trade orders into the orderbook
          { 
-            return ( options.flags & asset_issuer_permission_flags::maker_restricted );
+            return ( flags & asset_issuer_permission_flags::maker_restricted );
          }
 
          bool issuer_accept_requests()const      ///< true if the asset issuer can accept transfer requests from any holders
          { 
-            return ( options.flags & asset_issuer_permission_flags::maker_restricted );
+            return ( flags & asset_issuer_permission_flags::maker_restricted );
          }
 
          bool is_transfer_restricted()const     ///< true if this asset may only be transferred to/from the issuer or market orders
          { 
-            return ( options.flags & asset_issuer_permission_flags::transfer_restricted );
+            return ( flags & asset_issuer_permission_flags::transfer_restricted );
          }
 
          bool can_request_transfer()const       ///< true if the asset can use transfer requests
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_requests );
+            return !( flags & asset_issuer_permission_flags::disable_requests );
          }
 
          bool can_recurring_transfer()const      ///< true if the asset can use recurring transfers
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_recurring );
+            return !( flags & asset_issuer_permission_flags::disable_recurring );
          }
 
          bool enable_credit()const              ///< true if the asset can use credit pools, margin orders, and credit loans
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_credit );
+            return !( flags & asset_issuer_permission_flags::disable_credit );
          }
 
          bool enable_liquid()const              ///< true if the asset can be included in liquidity pools and use liquidity pool orders
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_liquid );
+            return !( flags & asset_issuer_permission_flags::disable_liquid );
          }
 
          bool enable_options()const              ///< true if the asset can be included in option pools and generate option asset derivatives
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_options );
+            return !( flags & asset_issuer_permission_flags::disable_options );
          }
 
          bool enable_escrow()const              ///< true if the asset can be used in escrow transfers and marketplace purchases
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_escrow );
+            return !( flags & asset_issuer_permission_flags::disable_escrow );
          }
 
          bool enable_escrow()const              ///< true if the asset can be used in escrow transfers and marketplace purchases
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_escrow );
+            return !( flags & asset_issuer_permission_flags::disable_escrow );
          }
 
          bool enable_force_settle()const        ///< true if users may request force-settlement of the market-issued asset
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_force_settle );
+            return !( flags & asset_issuer_permission_flags::disable_force_settle );
          }
 
          bool enable_confidential()const        ///< true if the asset supports confidential transfers
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_confidential );
+            return !( flags & asset_issuer_permission_flags::disable_confidential );
          }
 
          bool enable_auction()const            ///< true if the asset supports auction orders
          { 
-            return !( options.flags & asset_issuer_permission_flags::disable_auction );
+            return !( flags & asset_issuer_permission_flags::disable_auction );
          }
 
          bool is_witness_fed()const            ///< true if the top elected witnesses may produce price feeds for the market issued asset
          { 
-            return ( options.flags & asset_issuer_permission_flags::witness_fed_asset );
+            return ( flags & asset_issuer_permission_flags::witness_fed_asset );
          }
 
          bool can_global_settle()const         ///< true if the issuer of this market-issued asset may globally settle the asset
          { 
-            return ( options.flags & asset_issuer_permission_flags::global_settle );
+            return ( flags & asset_issuer_permission_flags::global_settle );
          }
 
          bool require_governance()const         ///< true if the governance account of the issuer must approve asset issuance and changes
          { 
-            return ( options.flags & asset_issuer_permission_flags::governance_oversight );
+            return ( flags & asset_issuer_permission_flags::governance_oversight );
          }
 
          bool immutable_properties()const       ///< true if the asset cannot be modified after creation
          { 
-            return ( options.flags & asset_issuer_permission_flags::immutable_properties );
+            return ( flags & asset_issuer_permission_flags::immutable_properties );
          }
          
          void validate()const                    ///< UIAs may not have force settlement, or global settlements
          {
             if( !is_market_issued() )
             {
-               FC_ASSERT(!(options.flags & disable_force_settle || options.flags & global_settle));
-               FC_ASSERT(!(options.issuer_permissions & disable_force_settle || options.issuer_permissions & global_settle));
+               FC_ASSERT(!(flags & disable_force_settle || flags & global_settle));
+               FC_ASSERT(!(issuer_permissions & disable_force_settle || issuer_permissions & global_settle));
             }
          }
    };
@@ -304,9 +334,9 @@ namespace node { namespace chain {
     *
     * In the event of a black swan, the swan price is saved
     * in the settlement price, and all margin positions
-    * are settled at the same price with the seized collateral
+    * are settled at the same price with the collected collateral
     * being moved into the settlement fund. From this
-    * point on no further updates to the asset are permitted 
+    * point on, no further updates to the asset are permitted 
     * (no feeds, etc) and forced settlement occurs
     * immediately when requested, using the settlement price and fund.
     */
@@ -321,44 +351,52 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                                       id;
+         id_type                   id;
 
-         asset_symbol_type                             symbol;                                  ///< The symbol of the bitasset that this object belongs to
+         asset_symbol_type         symbol;                                        ///< The symbol of the bitasset that this object belongs to
 
-         account_name_type                             issuer;                                  ///< The account name of the issuer 
+         account_name_type         issuer;                                        ///< The account name of the issuer 
 
-         asset_symbol_type                             backing_asset;                           ///< The collateral backing asset of the bitasset
+         asset_symbol_type         backing_asset;                                 ///< The collateral backing asset of the bitasset
 
-         bitasset_options                              options;                                 ///< The tunable options for BitAssets are stored in this field.
+         flat_map< account_name_type, pair< time_point, price_feed > >  feeds;    ///< Feeds published for this asset. 
 
-         flat_map< account_name_type, pair< time_point, price_feed > >  feeds;                  ///< Feeds published for this asset. 
+         price_feed                current_feed;                                  ///< Currently active price feed, median of values from the currently active feeds.
 
-         price_feed                                    current_feed;                            ///< Currently active price feed, median of values from the currently active feeds.
+         time_point                current_feed_publication_time;                 ///< Publication time of the oldest feed which was factored into current_feed.
 
-         time_point                                    current_feed_publication_time;           ///< Publication time of the oldest feed which was factored into current_feed.
+         price                     current_maintenance_collateralization;         ///< Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
 
-         price                                         current_maintenance_collateralization;   ///< Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
-
-         share_type                                    force_settled_volume;                    ///< This is the volume of this asset which has been force-settled this 24h interval
+         share_type                force_settled_volume;                          ///< This is the volume of this asset which has been force-settled this 24h interval
          
-         price                                         settlement_price;                        ///< Price at which force settlements of a black swanned asset will occur
+         price                     settlement_price;                              ///< Price at which force settlements of a black swanned asset will occur
          
-         asset                                         settlement_fund;                         ///< Amount of collateral which is available for force settlement
+         asset                     settlement_fund;                               ///< Amount of collateral which is available for force settlement
 
-         share_type                                    max_force_settlement_volume( share_type total_supply )const    ///< Calculate the maximum force settlement volume per 24h interval, given the current share supply     
+         fc::microseconds          feed_lifetime;                                 ///< Time before a price feed expires
+
+         uint8_t                   minimum_feeds;                                 ///< Minimum number of unexpired feeds required to extract a median feed from
+
+         fc::microseconds          force_settlement_delay;                        ///< This is the delay between the time a long requests settlement and the chain evaluates the settlement
+
+         uint16_t                  force_settlement_offset_percent;               ///< The percentage to adjust the feed price in the short's favor in the event of a forced settlement
+
+         uint16_t                  maximum_force_settlement_volume;               ///< the percentage of current supply which may be force settled within each 24h interval.
+
+         share_type                max_force_settlement_volume( share_type total_supply )const     ///< Calculate the maximum force settlement volume per 24h interval, given the current share supply     
          {
-            if( options.maximum_force_settlement_volume == 0 )
+            if( maximum_force_settlement_volume == 0 )
             {
                return 0;
             }
             
-            if( options.maximum_force_settlement_volume == PERCENT_100 )
+            if( maximum_force_settlement_volume == PERCENT_100 )
             {
                return total_supply + force_settled_volume;
             }
 
             fc::uint128 volume = total_supply.value + force_settled_volume.value;
-            volume *= options.maximum_force_settlement_volume;
+            volume *= maximum_force_settlement_volume;
             volume /= PERCENT_100;
             return volume.to_uint64();
          }
@@ -370,7 +408,7 @@ namespace node { namespace chain {
 
          time_point                                    feed_expiration_time()const    ///< The time when current_feed would expire
          {
-            return current_feed_publication_time + options.feed_lifetime;   
+            return current_feed_publication_time + feed_lifetime;   
          }
 
          bool                                          feed_is_expired(time_point current_time)const
@@ -379,8 +417,8 @@ namespace node { namespace chain {
          }
 
          /**
-          * Calculates the median feed from feeds, feed_lifetime
-          * in options, and the given parameters.
+          * Calculates the median feed from feeds, feed_lifetime.
+          * 
           * It may update the current_feed_publication_time, current_feed and
           * current_maintenance_collateralization member variables.
           * @param current_time the current time to use in the calculations
@@ -402,23 +440,49 @@ namespace node { namespace chain {
 
          id_type                    id;
 
-         account_name_type          business_account;                       ///< The business account name of the issuer 
+         account_name_type          business_account;            ///< The business account name of the issuer.
 
-         asset_symbol_type          symbol;                                 ///< The symbol of the equity asset of the business
+         asset_symbol_type          symbol;                      ///< The symbol of the equity asset of the business.
 
-         equity_options             options;                                ///< Tuneable options for equity assets
+         asset_symbol_type          dividend_asset;              ///< The asset used to distribute dividends to asset holders.
 
-         asset_symbol_type          dividend_asset = SYMBOL_USD;            ///< The asset used to distribute dividends to asset holders
-
-         asset                      dividend_pool = asset( 0,SYMBOL_USD );  ///< Amount of assets pooled for distribution at the next interval
+         asset                      dividend_pool;               ///< Amount of assets pooled for distribution at the next interval.
          
-         time_point                 last_dividend;                          ///< Time that the asset last distributed a dividend.
+         time_point                 last_dividend;               ///< Time that the asset last distributed a dividend.
+
+         uint16_t                   dividend_share_percent;      ///< Percentage of incoming assets added to the dividends pool.
+
+         uint16_t                   liquid_dividend_percent;     ///< Percentage of equity dividends distributed to liquid balances.
+
+         uint16_t                   staked_dividend_percent;     ///< Percentage of equity dividends distributed to staked balances.
+
+         uint16_t                   savings_dividend_percent;    ///< Percentage of equity dividends distributed to savings balances.
+
+         uint16_t                   liquid_voting_rights;        ///< Amount of votes per asset conveyed to liquid holders of the asset.
+
+         uint16_t                   staked_voting_rights;        ///< Amount of votes per asset conveyed to staked holders of the asset.
+
+         uint16_t                   savings_voting_rights;       ///< Amount of votes per asset conveyed to savings holders of the asset
+
+         fc::microseconds           min_active_time;             ///< Time that account must have a recent activity reward within to earn dividend.
+
+         share_type                 min_balance;                 ///< Minimum amount of equity required to earn dividends.
+
+         uint16_t                   min_witnesses;               ///< Minimum amount of witness votes required to earn dividends.
+
+         uint16_t                   boost_balance;               ///< Amount of equity balance to earn double dividends.
+
+         uint16_t                   boost_activity;              ///< Amount of recent activity rewards required to earn double dividends.
+
+         uint16_t                   boost_witnesses;             ///< Amount of witness votes required to earn double dividends.
+
+         uint16_t                   boost_top;                   ///< Percent bonus earned by Top membership accounts.
 
          void adjust_pool( const asset& delta )
          {
             assert( delta.symbol == dividend_asset );
             dividend_pool += delta;
-         }
+         };
    };
 
 
@@ -453,25 +517,35 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                    id;
+         id_type                id;
 
-         account_name_type          business_account;                       ///< The business account name of the issuer 
+         account_name_type      business_account;                ///< The business account name of the issuer.
 
-         asset_symbol_type          symbol;                                 ///< The symbol of the credit asset of the business
+         asset_symbol_type      symbol;                          ///< The symbol of the credit asset of the business.
 
-         credit_options             options;                                ///< Tuneable options for credit assets
+         asset_symbol_type      buyback_asset;                   ///< Symbol used to buyback credit assets.
 
-         asset_symbol_type          buyback_asset = SYMBOL_USD;             ///< Symbol used to buyback credit assets
+         asset                  buyback_pool;                    ///< Amount of assets pooled to buyback the asset at next interval.
 
-         asset                      buyback_pool = asset( 0,SYMBOL_USD );   ///< Amount of assets pooled to buyback the asset at next interval
-
-         price                      buyback_price = price( asset( 1,buyback_asset ), asset( 1, symbol ) );   ///< Price at which the credit asset is bought back
-
-         asset_symbol_type          symbol_a;                               ///< the asset with the lower id in the buyback price pair
-
-         asset_symbol_type          symbol_b;                               ///< the asset with the greater id in the buyback price pair
+         price                  buyback_price;                   ///< Price at which the credit asset is bought back.
          
-         time_point                 last_buyback;                           ///< Time that the asset was last updated
+         time_point             last_buyback;                    ///< Time that the asset was last updated.
+
+         uint32_t               buyback_share_percent;           ///< Percentage of incoming assets added to the buyback pool
+
+         uint32_t               liquid_fixed_interest_rate;      ///< Fixed component of Interest rate of the asset for liquid balances.
+
+         uint32_t               liquid_variable_interest_rate;   ///< Variable component of Interest rate of the asset for liquid balances.
+
+         uint32_t               staked_fixed_interest_rate;      ///< Fixed component of Interest rate of the asset for staked balances.
+
+         uint32_t               staked_variable_interest_rate;   ///< Variable component of Interest rate of the asset for staked balances.
+
+         uint32_t               savings_fixed_interest_rate;     ///< Fixed component of Interest rate of the asset for savings balances.
+
+         uint32_t               savings_variable_interest_rate;  ///< Variable component of Interest rate of the asset for savings balances.
+
+         uint32_t               var_interest_range;              ///< The percentage range from the buyback price over which to apply the variable interest rate.
 
          void adjust_pool( const asset& delta )
          {
@@ -704,7 +778,7 @@ namespace node { namespace chain {
       allocator< asset_dynamic_data_object >
    > asset_dynamic_data_index;
 
-   struct by_short_backing_asset;
+   struct by_backing_asset;
    struct by_feed_expiration;
 
    typedef multi_index_container<
@@ -712,7 +786,7 @@ namespace node { namespace chain {
       indexed_by<
          ordered_unique< tag<by_id>, member< asset_bitasset_data_object, asset_bitasset_data_id_type, &asset_bitasset_data_object::id > >,
          ordered_unique< tag<by_symbol>, member< asset_bitasset_data_object, asset_symbol_type, &asset_bitasset_data_object::symbol > >,
-         ordered_non_unique< tag<by_short_backing_asset>, 
+         ordered_non_unique< tag<by_backing_asset>, 
             member< asset_bitasset_data_object, asset_symbol_type, &asset_bitasset_data_object::backing_asset > 
          >,
          ordered_unique< tag<by_feed_expiration>,

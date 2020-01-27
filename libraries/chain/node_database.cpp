@@ -392,13 +392,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< asset_object >( [&]( asset_object& a ) 
    {
       a.symbol = SYMBOL_COIN;
-      a.options.max_supply = MAX_ASSET_SUPPLY;
+      a.max_supply = MAX_ASSET_SUPPLY;
       a.asset_type = CURRENCY_ASSET;
-      a.options.flags = 0;
-      a.options.issuer_permissions = 0;
+      a.flags = 0;
+      a.issuer_permissions = 0;
       a.issuer = NULL_ACCOUNT;
-      a.options.unstake_intervals = 4;
-      a.options.stake_intervals = 0;
+      a.unstake_intervals = 4;
+      a.stake_intervals = 0;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -412,13 +412,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< asset_object >( [&]( asset_object& a )
    {
       a.symbol = SYMBOL_EQUITY;
-      a.options.max_supply = INIT_EQUITY_SUPPLY;
+      a.max_supply = INIT_EQUITY_SUPPLY;
       a.asset_type = EQUITY_ASSET;
-      a.options.flags = 0;
-      a.options.issuer_permissions = 0;
+      a.flags = 0;
+      a.issuer_permissions = 0;
       a.issuer = INIT_ACCOUNT;
-      a.options.unstake_intervals = 0;
-      a.options.stake_intervals = 4;
+      a.unstake_intervals = 0;
+      a.stake_intervals = 4;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -435,11 +435,11 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.symbol = SYMBOL_USD;
       a.issuer = NULL_ACCOUNT;
       a.asset_type = BITASSET_ASSET;
-      a.options.max_supply = MAX_ASSET_SUPPLY;
-      a.options.flags = witness_fed_asset;
-      a.options.issuer_permissions = 0;
-      a.options.unstake_intervals = 4;
-      a.options.stake_intervals = 0;
+      a.max_supply = MAX_ASSET_SUPPLY;
+      a.flags = witness_fed_asset;
+      a.issuer_permissions = 0;
+      a.unstake_intervals = 4;
+      a.stake_intervals = 0;
    });
 
    create< asset_bitasset_data_object >( [&]( asset_bitasset_data_object& a )
@@ -454,11 +454,11 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.symbol = SYMBOL_CREDIT;
       a.asset_type = CREDIT_ASSET;
-      a.options.flags = 0;
-      a.options.issuer_permissions = 0;
+      a.flags = 0;
+      a.issuer_permissions = 0;
       a.issuer = INIT_ACCOUNT;
-      a.options.unstake_intervals = 4;
-      a.options.stake_intervals = 0;
+      a.unstake_intervals = 4;
+      a.stake_intervals = 0;
    });
 
    create< asset_dynamic_data_object >([&](asset_dynamic_data_object& a) 
@@ -2643,8 +2643,8 @@ void database::process_bitassets()
    {
       const asset_bitasset_data_object& bitasset = *bitasset_itr;
       const asset_object& asset_obj = get_asset( bitasset.symbol );
-      uint32_t flags = asset_obj.options.flags;
-      uint64_t feed_lifetime = bitasset.options.feed_lifetime.to_seconds();
+      uint32_t flags = asset_obj.flags;
+      uint64_t feed_lifetime = bitasset.feed_lifetime.to_seconds();
 
       if( bitasset.has_settlement() )
       {
@@ -2737,27 +2737,27 @@ share_type database::get_equity_shares( const account_balance_object& balance, c
 {
    const account_object& account = get_account( balance.owner );
    time_point now = head_block_time();
-   if( ( account.witness_vote_count < equity.options.min_witnesses ) || 
-      ( now > (account.last_activity_reward + equity.options.min_active_time ) ) )
+   if( ( account.witness_vote_count < equity.min_witnesses ) || 
+      ( now > (account.last_activity_reward + equity.min_active_time ) ) )
    {
       return 0;  // Account does not recieve equity reward when witness votes or last activity are insufficient.
    }
 
    share_type equity_shares = 0;
-   equity_shares += ( equity.options.liquid_dividend_percent * balance.liquid_balance ) / PERCENT_100;
-   equity_shares += ( equity.options.staked_dividend_percent * balance.staked_balance ) / PERCENT_100;
-   equity_shares += ( equity.options.savings_dividend_percent * balance.savings_balance ) / PERCENT_100; 
+   equity_shares += ( equity.liquid_dividend_percent * balance.liquid_balance ) / PERCENT_100;
+   equity_shares += ( equity.staked_dividend_percent * balance.staked_balance ) / PERCENT_100;
+   equity_shares += ( equity.savings_dividend_percent * balance.savings_balance ) / PERCENT_100; 
 
-   if( (balance.staked_balance >= equity.options.boost_balance ) &&
-      (account.witness_vote_count >= equity.options.boost_witnesses ) &&
-      (account.recent_activity_claims >= equity.options.boost_activity ) )
+   if( (balance.staked_balance >= equity.boost_balance ) &&
+      (account.witness_vote_count >= equity.boost_witnesses ) &&
+      (account.recent_activity_claims >= equity.boost_activity ) )
    {
       equity_shares *= 2;    // Doubles equity reward when 10+ WYM balance, 50+ witness votes, and 15+ Activity rewards in last 30 days
    }
 
    if( account.membership == TOP_MEMBERSHIP ) 
    {
-      equity_shares = (equity_shares * equity.options.boost_top ) / PERCENT_100;
+      equity_shares = (equity_shares * equity.boost_top ) / PERCENT_100;
    }
 
    return equity_shares;
@@ -4902,17 +4902,17 @@ asset database::calculate_issuer_fee( const asset_object& trade_asset, const ass
    FC_ASSERT( trade_asset.symbol == trade_amount.symbol,
    "Trade asset symbol must be equal to trade amount symbol." );
       
-   if( trade_asset.options.market_fee_percent == 0 )
+   if( trade_asset.market_fee_percent == 0 )
    {
       return asset( 0, trade_asset.symbol );
    }
 
-   share_type value = (( trade_amount.amount * trade_asset.options.market_fee_percent ) / PERCENT_100  );
+   share_type value = (( trade_amount.amount * trade_asset.market_fee_percent ) / PERCENT_100  );
    asset percent_fee = asset( value, trade_asset.symbol );
 
-   if( percent_fee.amount > trade_asset.options.max_market_fee )
+   if( percent_fee.amount > trade_asset.max_market_fee )
    {
-      percent_fee.amount = trade_asset.options.max_market_fee;
+      percent_fee.amount = trade_asset.max_market_fee;
    }
       
    return percent_fee;
@@ -4945,7 +4945,7 @@ asset database::pay_issuer_fees( const account_object& seller, const asset_objec
       asset reward = asset( 0, recv_asset.symbol );
       asset reward_paid = asset( 0, recv_asset.symbol );
 
-      uint16_t reward_percent = recv_asset.options.market_fee_share_percent;  // Percentage of market fees shared with registrars
+      uint16_t reward_percent = recv_asset.market_fee_share_percent;  // Percentage of market fees shared with registrars
 
       if( reward_percent > 0 )    // calculate and pay market fee sharing rewards
       {
@@ -5580,8 +5580,7 @@ void database::clear_expired_operations()
 
          if( settlement_fill_price.base.symbol != current_asset )  // only calculate once per asset
          {
-            bitasset_options options = mia_bitasset.options;
-            uint16_t offset = options.force_settlement_offset_percent;
+            uint16_t offset = mia_bitasset.force_settlement_offset_percent;
             settlement_fill_price = mia_bitasset.current_feed.settlement_price / ratio_type( PERCENT_100 - offset, PERCENT_100 );
          }
             

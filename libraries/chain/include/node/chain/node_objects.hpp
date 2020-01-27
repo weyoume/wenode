@@ -671,9 +671,9 @@ namespace node { namespace chain {
 
          id_type             id;
 
-         account_name_type   from_account;          ///< Account that is unstaking the asset balance
+         account_name_type   from;                 ///< Account that is unstaking the asset balance
 
-         account_name_type   to_account;            ///< Account name that receives the unstaked assets
+         account_name_type   to;                    ///< Account name that receives the unstaked assets
 
          asset_symbol_type   symbol;                ///< Asset to be unstaked
 
@@ -1061,14 +1061,14 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >, member< unstake_asset_route_object, unstake_asset_route_id_type, &unstake_asset_route_object::id > >,
          ordered_unique< tag< by_withdraw_route >,
             composite_key< unstake_asset_route_object,
-               member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::from_account >,
-               member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::to_account >
+               member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::from >,
+               member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::to >
             >,
             composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
          >,
          ordered_unique< tag< by_destination >,
             composite_key< unstake_asset_route_object,
-               member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::to_account >,
+               member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::to >,
                member< unstake_asset_route_object, unstake_asset_route_id_type, &unstake_asset_route_object::id >
             >
          >

@@ -1060,31 +1060,31 @@ struct asset_api_obj
       asset_type( asset_property_values[ a.asset_type ] ),
       issuer( a.issuer ),
       created( a.created ),
-      display_symbol( a.options.display_symbol ),
-      details( a.options.details ),
-      json( a.options.json ),
-      url( a.options.url ),
-      max_supply( a.options.max_supply.value ),
-      stake_intervals( a.options.stake_intervals ),
-      unstake_intervals( a.options.unstake_intervals ),
-      market_fee_percent( a.options.market_fee_percent ),
-      market_fee_share_percent( a.options.market_fee_share_percent ),
-      issuer_permissions( a.options.issuer_permissions ),
-      flags( a.options.flags )
+      display_symbol( to_string( a.display_symbol ) ),
+      details( to_string( a.details ) ),
+      json( to_string( a.json ) ),
+      url( to_string( a.url ) ),
+      max_supply( a.max_supply.value ),
+      stake_intervals( a.stake_intervals ),
+      unstake_intervals( a.unstake_intervals ),
+      market_fee_percent( a.market_fee_percent ),
+      market_fee_share_percent( a.market_fee_share_percent ),
+      issuer_permissions( a.issuer_permissions ),
+      flags( a.flags )
       {
-         for( auto auth : a.options.whitelist_authorities )
+         for( auto auth : a.whitelist_authorities )
          {
             whitelist_authorities.push_back( auth );
          }
-         for( auto auth : a.options.blacklist_authorities )
+         for( auto auth : a.blacklist_authorities )
          {
             blacklist_authorities.push_back( auth );
          }
-         for( auto market : a.options.whitelist_markets )
+         for( auto market : a.whitelist_markets )
          {
             whitelist_markets.push_back( market );
          }
-         for( auto market : a.options.blacklist_markets )
+         for( auto market : a.blacklist_markets )
          {
             blacklist_markets.push_back( market );
          }
@@ -1128,11 +1128,11 @@ struct bitasset_data_api_obj
       force_settled_volume( b.force_settled_volume.value ),
       settlement_price( b.settlement_price ),
       settlement_fund( b.settlement_fund ),
-      feed_lifetime( b.options.feed_lifetime ),
-      minimum_feeds( b.options.minimum_feeds ),
-      force_settlement_delay( b.options.force_settlement_delay ),
-      force_settlement_offset_percent( b.options.force_settlement_offset_percent ),
-      maximum_force_settlement_volume( b.options.maximum_force_settlement_volume )
+      feed_lifetime( b.feed_lifetime ),
+      minimum_feeds( b.minimum_feeds ),
+      force_settlement_delay( b.force_settlement_delay ),
+      force_settlement_offset_percent( b.force_settlement_offset_percent ),
+      maximum_force_settlement_volume( b.maximum_force_settlement_volume )
       {
          for( auto feed: b.feeds )
          {
@@ -1168,20 +1168,20 @@ struct equity_data_api_obj
       dividend_asset( e.dividend_asset ),
       dividend_pool( e.dividend_pool ),
       last_dividend( e.last_dividend ),
-      dividend_share_percent( e.options.dividend_share_percent ),
-      liquid_dividend_percent( e.options.liquid_dividend_percent ),
-      staked_dividend_percent( e.options.staked_dividend_percent ),
-      savings_dividend_percent( e.options.savings_dividend_percent ),
-      liquid_voting_rights( e.options.liquid_voting_rights ),
-      staked_voting_rights( e.options.staked_voting_rights ),
-      savings_voting_rights( e.options.savings_voting_rights ),
-      min_active_time( e.options.min_active_time ),
-      min_balance( e.options.min_balance.value ),
-      min_witnesses( e.options.min_witnesses ),
-      boost_balance( e.options.boost_balance ),
-      boost_activity( e.options.boost_activity ),
-      boost_witnesses( e.options.boost_witnesses ),
-      boost_top( e.options.boost_top ){}
+      dividend_share_percent( e.dividend_share_percent ),
+      liquid_dividend_percent( e.liquid_dividend_percent ),
+      staked_dividend_percent( e.staked_dividend_percent ),
+      savings_dividend_percent( e.savings_dividend_percent ),
+      liquid_voting_rights( e.liquid_voting_rights ),
+      staked_voting_rights( e.staked_voting_rights ),
+      savings_voting_rights( e.savings_voting_rights ),
+      min_active_time( e.min_active_time ),
+      min_balance( e.min_balance.value ),
+      min_witnesses( e.min_witnesses ),
+      boost_balance( e.boost_balance ),
+      boost_activity( e.boost_activity ),
+      boost_witnesses( e.boost_witnesses ),
+      boost_top( e.boost_top ){}
 
    equity_data_api_obj(){}
 
@@ -1214,14 +1214,14 @@ struct credit_data_api_obj
       buyback_pool( c.buyback_pool ),
       buyback_price( c.buyback_price ),
       last_buyback( c.last_buyback ),
-      buyback_share_percent( c.options.buyback_share_percent ),
-      liquid_fixed_interest_rate( c.options.liquid_fixed_interest_rate ),
-      liquid_variable_interest_rate( c.options.liquid_variable_interest_rate ),
-      staked_fixed_interest_rate( c.options.staked_fixed_interest_rate ),
-      staked_variable_interest_rate( c.options.staked_variable_interest_rate ),
-      savings_fixed_interest_rate( c.options.savings_fixed_interest_rate ),
-      savings_variable_interest_rate( c.options.savings_variable_interest_rate ),
-      var_interest_range( c.options.var_interest_range ){}
+      buyback_share_percent( c.buyback_share_percent ),
+      liquid_fixed_interest_rate( c.liquid_fixed_interest_rate ),
+      liquid_variable_interest_rate( c.liquid_variable_interest_rate ),
+      staked_fixed_interest_rate( c.staked_fixed_interest_rate ),
+      staked_variable_interest_rate( c.staked_variable_interest_rate ),
+      savings_fixed_interest_rate( c.savings_fixed_interest_rate ),
+      savings_variable_interest_rate( c.savings_variable_interest_rate ),
+      var_interest_range( c.var_interest_range ){}
 
    credit_data_api_obj(){}
 

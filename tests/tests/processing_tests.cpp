@@ -707,22 +707,22 @@ BOOST_AUTO_TEST_CASE( network_credit_interest_test )
       asset_symbol_type cs = credit.symbol;
       const asset_dynamic_data_object& dyn_data = db.get_dynamic_data( cs );
       price buyback = credit.buyback_price;
-      price market = db.get_liquidity_pool( credit.buyback_asset, credit.symbol ).base_hour_median_price( buyback.base.symbol );
+      price market = db.get_liquidity_pool( credit.buyback_asset, credit.symbol ).base_hour_median_price( credit.buyback_asset );
       
-      asset unit = asset( BLOCKCHAIN_PRECISION, buyback.quote.symbol );
-      share_type range = credit.options.var_interest_range;     // Percentage range that caps the price divergence between market and buyback
+      asset unit = asset( BLOCKCHAIN_PRECISION, credit.symbol );
+      share_type range = credit.var_interest_range;     // Percentage range that caps the price divergence between market and buyback
       share_type pr = PERCENT_100;
       share_type hpr = PERCENT_100 / 2;
 
       share_type mar = ( market * unit ).amount;    // Market price of the credit asset
-      share_type buy = ( buy * unit ).amount;       // Buyback price of the credit asset
+      share_type buy = ( buyback * unit ).amount;   // Buyback price of the credit asset
 
-      share_type liqf = credit.options.liquid_fixed_interest_rate;
-      share_type staf = credit.options.staked_fixed_interest_rate;
-      share_type savf = credit.options.savings_fixed_interest_rate;
-      share_type liqv = credit.options.liquid_variable_interest_rate;
-      share_type stav = credit.options.staked_variable_interest_rate;
-      share_type savv = credit.options.savings_variable_interest_rate;
+      share_type liqf = credit.liquid_fixed_interest_rate;
+      share_type staf = credit.staked_fixed_interest_rate;
+      share_type savf = credit.savings_fixed_interest_rate;
+      share_type liqv = credit.liquid_variable_interest_rate;
+      share_type stav = credit.staked_variable_interest_rate;
+      share_type savv = credit.savings_variable_interest_rate;
 
       share_type var_factor = ( ( -hpr * std::min( pr, std::max( -pr, pr * ( mar-buy ) / ( ( ( buy * range ) / pr ) ) ) ) ) / pr ) + hpr;
 

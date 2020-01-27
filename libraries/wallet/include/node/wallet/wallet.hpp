@@ -2276,17 +2276,150 @@ class wallet_api
       /**
        * Transfer funds from one account to another.
        *
-       * @param from The account the funds are coming from
-       * @param to The account the funds are going to
-       * @param amount The funds being transferred
-       * @param memo A memo for the transactionm, encrypted with the to account's public memo key
+       * @param signatory The name of the account signing the transaction.
+       * @param from The account the funds are coming from.
+       * @param to The account the funds are going to.
+       * @param amount The funds being transferred.
+       * @param memo The memo for the transaction, encryption on the memo is advised. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer(
-         string from, 
+         string signatory,
+         string from,
          string to,
-         asset amount, 
-         string memo, 
+         asset amount,
+         string memo,
+         bool broadcast = false );
+
+
+      /**
+       * Requests a Transfer from an account to another account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param to Account requesting the transfer.
+       * @param from Account that is being requested to accept the transfer.
+       * @param amount The funds being transferred.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
+       * @param request_id uuidv4 of the request transaction.
+       * @param expiration time that the request expires.
+       * @param requested True to send the request, false to cancel an existing request.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_request(
+         string signatory,
+         string to,
+         string from,
+         asset amount,
+         string memo,
+         string request_id,
+         time_point expiration,
+         bool requested,
+         bool broadcast = false );
+
+
+      /**
+       * Accepts a transfer request from an account to another account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param from Account that is accepting the transfer.
+       * @param to Account requesting the transfer.
+       * @param request_id uuidv4 of the request transaction.
+       * @param accepted True to accept the request, false to reject. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_accept(
+         string signatory,
+         string from,
+         string to,
+         string request_id,
+         bool accepted,
+         bool broadcast = false );
+
+
+      /**
+       * Transfers an asset periodically from one account to another.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param from Sending account to transfer asset from.
+       * @param to Recieving account to transfer asset to.
+       * @param amount The amount of asset to transfer for each payment interval.
+       * @param transfer_id uuidv4 of the transfer for reference.
+       * @param begin Starting time of the first payment.
+       * @param payments Number of payments to process in total.
+       * @param interval Microseconds between each transfer event.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
+       * @param extensible True if the payment duration should be extended in the event a payment is missed.
+       * @param fill_or_kill True if the payment should be cancelled if a payment is missed.
+       * @param active True if recurring payment is active, false to cancel.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_recurring(
+         string signatory,
+         string from,
+         string to,
+         asset amount,
+         string transfer_id,
+         time_point begin,
+         uint32_t payments,
+         fc::microseconds interval,
+         string memo,
+         bool extensible,
+         bool fill_or_kill,
+         bool active,
+         bool broadcast = false );
+
+
+      /**
+       * Requests a periodic transfer from an account to another account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param to Account requesting the transfer.
+       * @param from Account that is being requested to accept the transfer.
+       * @param amount The amount of asset to transfer for each payment interval.
+       * @param request_id uuidv4 of the request transaction, becomes transfer id when accepted.
+       * @param begin Starting time of the first payment.
+       * @param payments Number of payments to process in total.
+       * @param interval Microseconds between each transfer event.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
+       * @param expiration Time that the request expires.
+       * @param extensible True if the payment duration should be extended in the event a payment is missed.
+       * @param fill_or_kill True if the payment should be cancelled if a payment is missed.
+       * @param requested True to send the request, false to cancel an existing request. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_recurring_request(
+         string signatory,
+         string from,
+         string to,
+         asset amount,
+         string request_id,
+         time_point begin,
+         uint32_t payments,
+         fc::microseconds interval,
+         string memo,
+         time_point expiration,
+         bool extensible,
+         bool fill_or_kill,
+         bool requested,
+         bool broadcast = false );
+
+
+      /**
+       * Accepts a periodic transfer request from an account to another account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param from Account that is accepting the recurring transfer.
+       * @param to Account requesting the recurring transfer.
+       * @param request_id uuidv4 of the request transaction.
+       * @param accepted True to accept the request, false to reject. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_recurring_accept(
+         string signatory,
+         string from,
+         string to,
+         string request_id,
+         bool accepted,
          bool broadcast = false );
 
 
@@ -2296,54 +2429,67 @@ class wallet_api
       //==============================//
 
 
-      annotated_signed_transaction            claim_reward_balance( 
-         string account, 
-         asset reward, 
-         bool broadcast );
-
       /**
-       * Stake Asset Transaction
-       * 
-       * @param from The account the assets is coming from
-       * @param to The account getting the staked assets
-       * @param amount The amount of assets to stake.
+       * Claims an account's reward balance into it's liquid balance from newly issued assets.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account claiming its reward balance from the network.
+       * @param reward Amount of Reward balance to claim.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction            stake_asset( 
-         string from, 
-         string to, 
-         asset amount, 
-         bool broadcast = false );
+      annotated_signed_transaction            claim_reward_balance(
+         string signatory,
+         string account,
+         asset reward,
+         bool broadcast );
+
 
       /**
-       * Set up an unstake assets request.
+       * Stakes a liquid balance of an account into it's staked balance.
        * 
-       * The request is fulfilled once a week over the duration of the operation.
+       * @param signatory The name of the account signing the transaction.
+       * @param from Account staking the asset.
+       * @param to Account to stake the asset to, Same as from if null.
+       * @param amount Amount of Funds to transfer to staked balance from liquid balance.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            stake_asset(
+         string signatory,
+         string from,
+         string to,
+         asset amount,
+         bool broadcast = false );
+
+
+      /**
+       * Divests an amount of the staked balance of an account to it's liquid balance.
        *
-       * @param from The account the assets are withdrawn from
-       * @param assets The amount of assets to withdraw 
+       * @param signatory The name of the account signing the transaction.
+       * @param from Account unstaking the asset.
+       * @param to Account to unstake the asset to, Same as from if null.
+       * @param amount Amount of Funds to transfer from staked balance to liquid balance.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            unstake_asset(
-         string from, 
+         string signatory,
+         string from,
+         string to,
          asset amount,
          bool broadcast = false );
+
 
       /**
        * Set up an asset withdraw route.
        * 
-       * When assets are withdrawn, they will be routed to these accounts
-       * based on the specified weights.
-       *
+       * @param signatory The name of the account signing the transaction.
        * @param from The account the assets are withdrawn from.
-       * @param to   The account receiving either assets or new stake.
-       * @param percent The percent of the withdraw to go to the 'to' account. This is denoted in hundreths of a percent.
-       *    i.e. 100 is 1% and 10000 is 100%. This value must be between 1 and 100000
-       * @param auto_stake Set to true if the from account should receive the withdrawn assets as stake, or false if it should receive
-       *    them as a liquid balance.
+       * @param to The account receiving either assets or new stake.
+       * @param percent The percent of the withdraw to go to the 'to' account.
+       * @param auto_stake True if the stake should automatically be staked on the to account.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            unstake_asset_route(
+         string signatory,
          string from, 
          string to, 
          uint16_t percent, 
@@ -2351,40 +2497,62 @@ class wallet_api
          bool broadcast = false );
 
       /**
-       * Transfers into savings happen immediately, transfers from savings take 72 hours
-       */
-      annotated_signed_transaction            transfer_to_savings( 
-         string from, 
-         string to, 
-         asset amount, 
-         string memo, 
-         bool broadcast = false );
-
-      /**
-       * @param request_id - an unique ID assigned by from account, the id is used to cancel the operation and can be reused after the transfer completes
-       */
-      annotated_signed_transaction            transfer_from_savings( 
-         string from, 
-         uint32_t request_id, 
-         string to, 
-         asset amount, 
-         string memo, 
-         bool broadcast = false );
-
-
-      /**
-       * Delegate assets from one account to another.
-       *
-       * @param delegator The name of the account delegating assets.
-       * @param delegatee The name of the account receiving assets.
-       * @param assets The amount of assets to delegate.
+       * Transfer liquid funds balance into savings for security.
+       * 
+       * @param signatory The name of the account signing the transaction.
+       * @param from The account the assets are transferred from.
+       * @param to The account that is recieving the savings balance, same as from if null.
+       * @param amount Funds to be transferred from liquid to savings balance.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction            delegate_asset( 
+      annotated_signed_transaction            transfer_to_savings(
+         string signatory,
+         string from,
+         string to,
+         asset amount,
+         string memo,
+         bool broadcast = false );
+
+      /**
+       * Withdraws a specified balance from savings after a time duration.
+       * 
+       * @param signatory The name of the account signing the transaction.
+       * @param from Account to transfer savings balance from.
+       * @param to Account to recieve the savings withdrawal.
+       * @param amount Amount of asset to transfer from savings.
+       * @param request_id uuidv4 referring to the transfer.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
+       * @param transferred True if the transfer is accepted, false to cancel transfer.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_from_savings(
+         string signatory,
+         string from,
+         string to,
+         asset amount,
+         string request_id,
+         string memo,
+         bool transferred,
+         bool broadcast = false );
+
+
+      /**
+       * Delegate a staked asset balance from one account to the other.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param delegator The account delegating the asset.
+       * @param delegatee The account receiving the asset.
+       * @param amount The amount of the asset delegated.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            delegate_asset(
+         string signatory,
          string delegator, 
          string delegatee, 
-         asset assets, 
+         asset amount, 
          bool broadcast );
+
 
 
       //=============================//
@@ -2393,92 +2561,86 @@ class wallet_api
 
 
       /**
-       * Transfer funds from one account to another using escrow.
+       * Creates a proposed escrow transfer between two accounts.
        *
-       * @param from The account the funds are coming from
-       * @param to The account the funds are going to
-       * @param agent The account acting as the agent in case of dispute
-       * @param escrow_id A unique id for the escrow transfer. (from, escrow_id) must be a unique pair
-       * @param amount The amount of assets to transfer
-       * @param fee The fee paid to the agent
-       * @param ratification_deadline The deadline for 'to' and 'agent' to approve the escrow transfer
-       * @param escrow_expiration The expiration of the escrow transfer, after which either party can claim the funds
-       * @param json JSON encoded meta data
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account creating the transaction to initate the escrow.
+       * @param from Account sending funds for a purchase.
+       * @param to Account receiving funds from a purchase.
+       * @param escrow_id uuidv4 referring to the escrow transaction.
+       * @param amount Amount of the asset to be transferred upon success.
+       * @param acceptance_time Time that the escrow proposal must be approved before.
+       * @param escrow_expiration Time after which balance can be claimed by FROM or TO freely.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
+       * @param json Additonal JSON object attribute details.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_transfer(
+         string signatory,
+         string account,
          string from,
          string to,
-         string agent,
          string escrow_id,
          asset amount,
-         asset fee,
-         time_point ratification_deadline,
+         time_point acceptance_time,
          time_point escrow_expiration,
+         string memo,
          string json,
          bool broadcast = false );
 
       /**
-       * Approve a proposed escrow transfer.
-       * 
-       * Funds cannot be released until after approval.
+       * Approves an escrow transfer, causing it to be locked in.
        *
-       * @param from The account that funded the escrow.
-       * @param to The destination of the escrow.
-       * @param agent The account acting as the agent in case of dispute.
-       * @param who The account approving the escrow transfer (either 'to' or 'agent)
-       * @param escrow_id A unique id for the escrow transfer
-       * @param approve true to approve the escrow transfer, otherwise cancels it and refunds 'from'
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account creating the transaction to approve the escrow.
+       * @param mediator Nominated mediator to join the escrow for potential dispute resolution.
+       * @param escrow_from The account sending funds into the escrow.
+       * @param escrow_id uuidv4 referring to the escrow being approved.
+       * @param approved Set true to approve escrow, false to reject the escrow. All accounts must approve before activation.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_approve(
-         string from,
-         string to,
-         string agent,
-         string who,
+         string signatory,
+         string account,
+         string mediator,
+         string escrow_from,
          string escrow_id,
-         bool approve,
+         bool approved,
          bool broadcast = false
       );
 
       /**
        * Raise a dispute on the escrow transfer before it expires
        *
-       * @param from The account that funded the escrow
-       * @param to The destination of the escrow
-       * @param agent The account acting as the agent in case of dispute
-       * @param who The account raising the dispute (either 'from' or 'to')
-       * @param escrow_id A unique id for the escrow transfer
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account creating the transaction to dispute the escrow and raise it for resolution
+       * @param escrow_from The account sending funds into the escrow.
+       * @param escrow_id  uuidv4 referring to the escrow being disputed.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_dispute(
-         string from,
-         string to,
-         string agent,
-         string who,
+         string signatory,
+         string account,
+         string escrow_from,
          string escrow_id,
          bool broadcast = false );
 
       /**
-       * Release funds held in escrow.
+       * Raise a dispute on the escrow transfer before it expires
        *
-       * @param from The account that funded the escrow
-       * @param to The account the funds are originally going to
-       * @param agent The account acting as the agent in case of dispute
-       * @param who The account authorizing the release
-       * @param receiver The account that will receive funds being released
-       * @param escrow_id A unique id for the escrow transfer
-       * @param amount The amount of assets that will be released
+       * @param signatory The name of the account signing the transaction.
+       * @param account The account creating the operation to release the funds.
+       * @param escrow_from The escrow FROM account.
+       * @param escrow_id uuidv4 referring to the escrow.
+       * @param release_percent Percentage of escrow to release to the TO Account / remaining will be refunded to FROM account.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_release(
-         string from,
-         string to,
-         string agent,
-         string who,
-         string receiver,
+         string signatory,
+         string account,
+         string escrow_from,
          string escrow_id,
-         asset amount,
+         uint16_t release_percent,
          bool broadcast = false );
 
 
@@ -2489,24 +2651,106 @@ class wallet_api
 
 
       /**
-       * Creates a limit order at the price amount_to_sell / min_to_receive 
-       * and will deduct amount_to_sell from account.
+       * Creates a new limit order for exchanging assets at a specifed price.
        *
-       * @param owner The name of the account creating the order.
-       * @param order_id is a unique identifier assigned by the registrar of the order, it can be reused after the order has been filled.
-       * @param amount_to_sell The amount you wish to sell.
-       * @param min_to_receive The amount of the other asset you will receive at a minimum.
-       * @param fill_or_kill true if you want the order to be killed if it cannot immediately be filled.
-       * @param expiration the time the order should expire if it has not been filled.
+       * @param signatory The name of the account signing the transaction.
+       * @param owner Account that owns the asset being sold.
+       * @param order_id uuidv4 of the order for reference.
+       * @param amount_to_sell Asset being sold on exchange.
+       * @param exchange_rate Minimum price to sell asset.
+       * @param interface Name of the interface that broadcasted the transaction.
+       * @param expiration Time that the order expires.
+       * @param opened True to open new order, false to cancel existing order. 
+       * @param fill_or_kill True if the order should be removed if it does not immediately fill on the orderbook.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction             create_order(
-         string owner, 
-         uint32_t order_id, 
-         asset amount_to_sell, 
-         asset min_to_receive, 
-         bool fill_or_kill, 
-         uint32_t expiration, 
+      annotated_signed_transaction             limit_order(
+         string signatory,
+         string owner,
+         string order_id,
+         asset amount_to_sell,
+         price exchange_rate,
+         string interface,
+         time_point expiration,
+         bool opened,
+         bool fill_or_kill,
+         bool broadcast );
+
+
+      /**
+       * Creates a new margin order for trading assets.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param owner Account that is the owner of the new margin position.
+       * @param order_id uuidv4 of the order for reference.
+       * @param exchange_rate The asset pair price to sell the borrowed amount at on the exchange.
+       * @param collateral Collateral asset used to back the loan value. Returned to credit collateral object when position is closed. 
+       * @param amount_to_borrow Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed.
+       * @param stop_loss_price Price at which the position will be closed if it falls into a net loss.
+       * @param take_profit_price Price at which the order will be closed if it rises into a net profit.
+       * @param limit_stop_loss_price Price at which the position will be closed if it falls into a net loss.
+       * @param limit_take_profit_price Price at which the order will be closed if it rises into a net profit.
+       * @param interface Name of the interface that broadcasted the transaction.
+       * @param expiration Time that the order expires.
+       * @param opened Set true to open the order, false to close existing order.
+       * @param fill_or_kill Set true to cancel the order if it does not fill against the orderbook immediately.
+       * @param force_close Set true when closing to force liquidate the order against the liquidity pool at available price.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             margin_order(
+         string signatory,
+         string owner,
+         string order_id,
+         price exchange_rate,
+         asset collateral,
+         asset amount_to_borrow,
+         price stop_loss_price,
+         price take_profit_price,
+         price limit_top_loss_price,
+         price limit_take_profit_price,
+         string interface,
+         time_point expiration,
+         bool opened,
+         bool fill_or_kill,
+         bool force_close,
+         bool broadcast );
+
+
+      /**
+       * Creates a new collateralized debt position in a market issued asset.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param owner Owner of the debt position and collateral.
+       * @param collateral Amount of collateral to add to the margin position.
+       * @param debt Amount of the debt to be issued.
+       * @param target_collateral_ratio Maximum CR to maintain when selling collateral on margin call.
+       * @param interface Name of the interface that broadcasted the transaction.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             call_order(
+         string signatory,
+         string owner,
+         asset collateral,
+         asset debt,
+         uint16_t target_collateral_ratio,
+         string interface,
+         bool broadcast );
+
+
+      /**
+       * Used to create a bid for outstanding debt of a globally settled market issued asset.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param bidder Adds additional collateral to the market issued asset.
+       * @param collateral The amount of collateral to bid for the debt.
+       * @param debt The amount of debt to take over.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             bid_collateral(
+         string signatory,
+         string bidder,
+         asset collateral,
+         asset debt,
          bool broadcast );
 
 
@@ -2517,9 +2761,309 @@ class wallet_api
 
 
 
+      /**
+       * Creates a new liquidity pool between two assets.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Creator of the new liquidity pool.
+       * @param first_amount Initial balance of one asset.
+       * @param second_amount Initial balance of second asset, initial price is the ratio of these two amounts.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             liquidity_pool_create(
+         string signatory,
+         string account,
+         asset first_amount,
+         asset second_amount,
+         bool broadcast );
+
+
+      /**
+       * Exchanges an asset directly from liquidity pools.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account executing the exchange with the pool.
+       * @param amount Amount of asset to be exchanged.
+       * @param receive_asset The asset to recieve from the liquidity pool.
+       * @param interface Name of the interface account broadcasting the transaction.
+       * @param limit_price The price of acquistion at which to cap the exchange to.
+       * @param acquire Set true to acquire the specified amount, false to exchange in.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             liquidity_pool_exchange(
+         string signatory,
+         string account,
+         asset amount,
+         asset_symbol_type receive_asset,
+         string interface,
+         price limit_price,
+         bool acquire,
+         bool broadcast );
+
+
+      /**
+       * Adds capital to a liquidity pool.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account funding the liquidity pool to recieve the liquidity pool asset.
+       * @param amount Amount of an asset to contribute to the liquidity pool.
+       * @param pair_asset Pair asset to the liquidity pool to recieve liquidity pool assets of. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             liquidity_pool_fund(
+         string signatory,
+         string account,
+         asset amount,
+         asset_symbol_type pair_asset,
+         bool broadcast );
+
+
+      /**
+       * Removes capital from a liquidity pool.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account withdrawing liquidity pool assets from the pool.
+       * @param amount Amount of the liquidity pool asset to redeem for underlying deposited assets. 
+       * @param recieve_asset The asset to recieve from the liquidity pool.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             liquidity_pool_withdraw(
+         string signatory,
+         string account,
+         asset amount,
+         asset_symbol_type recieve_asset,
+         bool broadcast );
+
+
+      /**
+       * Adds an asset to an account's credit collateral position of that asset.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account locking an asset as collateral. 
+       * @param amount Amount of collateral balance to lock, 0 to unlock existing collateral.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             credit_pool_collateral(
+         string signatory,
+         string account,
+         asset amount,
+         bool broadcast );
+
+
+      /**
+       * Borrows an asset from the credit pool of the asset.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account borrowing funds from the pool, must have sufficient collateral.
+       * @param amount Amount of an asset to borrow. Limit of 75% of collateral value. Set to 0 to repay loan.
+       * @param collateral Amount of an asset to use as collateral for the loan. Set to 0 to reclaim collateral to collateral balance.
+       * @param loan_id uuidv4 unique identifier for the loan.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             credit_pool_borrow(
+         string signatory,
+         string account,
+         asset amount,
+         asset collateral,
+         string load_id,
+         bool broadcast );
+
+
+      /**
+       * Lends an asset to a credit pool.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account lending an asset to the credit pool.
+       * @param amount Amount of asset being lent.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             credit_pool_lend(
+         string signatory,
+         string account,
+         asset amount,
+         bool broadcast );
+
+
+      /**
+       * Withdraws an asset from the specified credit pool.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account withdrawing its lent asset from the credit pool by redeeming credit-assets. 
+       * @param amount Amount of interest bearing credit assets being redeemed for thier underlying assets. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             credit_pool_withdraw(
+         string signatory,
+         string account,
+         asset amount,
+         bool broadcast );
+
+
       //============================//
       // === Asset Transactions === //
       //============================//
+
+
+
+      /**
+       * Creates a new asset object of the asset type provided.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param issuer Name of the issuing account, can create units and administrate the asset.
+       * @param symbol The ticker symbol of this asset.
+       * @param asset_type The type of the asset. Determines asset characteristics and features.
+       * @param coin_liquidity Amount of COIN asset to inject into the Coin liquidity pool.
+       * @param usd_liquidity Amount of USD asset to inject into the USD liquidity pool.
+       * @param credit_liquidity Amount of the new asset to issue and inject into the credit pool.
+       * @param options Series of options parameters that determine asset charactertistics.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_create(
+         string signatory,
+         string issuer,
+         string symbol,
+         string asset_type,
+         asset coin_liquidity,
+         asset usd_liquidity,
+         asset credit_liquidity,
+         asset_options options,
+         bool broadcast );
+
+
+      /**
+       * Updates an Asset to use a new set of options.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param issuer Name of the issuing account, can create units and administrate the asset.
+       * @param asset_to_update The ticker symbol of this asset.
+       * @param options Series of options paramters that apply to all asset types.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_update(
+         string signatory,
+         string issuer,
+         string asset_to_update,
+         asset_options new_options,
+         bool broadcast );
+
+
+      /**
+       * Issues an amount of an asset to a specified account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param issuer The issuer of the asset.
+       * @param asset_to_issue Amount of asset being issued to the account.
+       * @param issue_to_account Account receiving the newly issued asset.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_issue(
+         string signatory,
+         string issuer,
+         asset asset_to_issue,
+         string issue_to_account,
+         string memo,
+         bool broadcast );
+
+
+      /**
+       * Takes a specified amount of an asset out of circulation.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param payer Account that is reserving the asset back to the unissued supply.
+       * @param amount_to_reserve Amount of the asset being reserved.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_reserve(
+         string signatory,
+         string payer,
+         asset amount_to_reserve,
+         bool broadcast );
+
+
+      /**
+       * Updates the issuer account of an asset.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param issuer The current issuer of the asset.
+       * @param asset_to_update The asset symbol being updated.
+       * @param new_issuer Name of the account specified to become the new issuer of the asset.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_update_issuer(
+         string signatory,
+         string issuer,
+         string asset_to_update,
+         string new_issuer,
+         bool broadcast );
+
+
+      /**
+       * Update the set of feed-producing accounts for a BitAsset.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param issuer The issuer of the BitAsset.
+       * @param asset_to_update The BitAsset being updated.
+       * @param new_feed_producers Set of accounts that can determine the price feed of the asset.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_update_feed_producers(
+         string signatory,
+         string issuer,
+         string asset_to_update,
+         flat_set< account_name_type > new_feed_producers,
+         bool broadcast );
+
+
+      /**
+       * Publish price feeds for BitAssets.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param publisher Account publishing the price feed.
+       * @param symbol Asset for which the feed is published.
+       * @param feed Exchange rate between bitasset and backing asset.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_publish_feed(
+         string signatory,
+         string publisher,
+         string symbol,
+         price_feed feed,
+         bool broadcast );
+
+
+      /**
+       * Schedules a BitAsset balance for automatic settlement.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account requesting the force settlement.
+       * @param amount Amount of asset to force settle. Set to 0 to cancel order.
+       * @param interface  Account of the interface used to broadcast the operation.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_settle(
+         string signatory,
+         string account,
+         asset amount,
+         string interface,
+         bool broadcast );
+
+
+      /**
+       * Globally Settles a BitAsset, collecting all remaining collateral and debt and setting a global settlement price.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param issuer Issuer of the asset being settled. 
+       * @param asset_to_settle Symbol of the asset being settled. 
+       * @param settle_price Global settlement price, must be in asset / backing asset. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_global_settle(
+         string signatory,
+         string issuer,
+         string asset_to_settle
+         price settle_price,
+         bool broadcast );
 
 
 
@@ -2532,8 +3076,8 @@ class wallet_api
        * Update a witness object owned by the given account.
        *
        * @param witness_name The name of the witness account.
-       * @param url A URL containing some information about the witness.  The empty string makes it remain the same.
-       * @param block_signing_key The new block signing public key.  The empty string disables block production.
+       * @param url A URL containing some information about the witness. The empty string makes it remain the same.
+       * @param block_signing_key The new block signing public key. The empty string disables block production.
        * @param props The chain properties the witness is voting on.
        * @param broadcast Set True to broadcast transaction.
        */

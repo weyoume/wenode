@@ -105,10 +105,10 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
-      asset_create.common_options.display_symbol = "Alice Coin";
-      asset_create.common_options.details = "Details";
-      asset_create.common_options.json = "{\"json\":\"valid\"}";
-      asset_create.common_options.url = "www.url.com";
+      asset_create.options.display_symbol = "Alice Coin";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -187,13 +187,10 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
-      asset_create.common_options.display_symbol = "Bob Coin";
-      asset_create.common_options.details = "Details";
-      asset_create.common_options.json = "{\"json\":\"valid\"}";
-      asset_create.common_options.url = "www.url.com";
-
-      currency_options currency_opts;
-      asset_create.currency_opts = currency_opts;
+      asset_create.options.display_symbol = "Bob Coin";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -294,13 +291,10 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TROPICO" );
-      asset_create.common_options.display_symbol = "Tropico";
-      asset_create.common_options.details = "Details";
-      asset_create.common_options.json = "{\"json\":\"valid\"}";
-      asset_create.common_options.url = "www.url.com";
-
-      equity_options equity_opts;
-      asset_create.equity_opts = equity_opts;
+      asset_create.options.display_symbol = "Tropico";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -349,14 +343,12 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
       asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.dividend_share_percent = 10 * PERCENT_1;
+      asset_update.new_options.liquid_dividend_percent = 20 * PERCENT_1;
+      asset_update.new_options.savings_dividend_percent = 20 * PERCENT_1;
+      asset_update.new_options.staked_dividend_percent = 60 * PERCENT_1;
 
-      equity_options equity_opts;
-      equity_opts.dividend_share_percent = 10 * PERCENT_1;
-      equity_opts.liquid_dividend_percent = 20 * PERCENT_1;
-      equity_opts.savings_dividend_percent = 20 * PERCENT_1;
-      equity_opts.staked_dividend_percent = 60 * PERCENT_1;
-
-      asset_update.new_equity_opts = equity_opts;
+      
       asset_update.validate();
 
       tx.operations.push_back( asset_update );
@@ -379,10 +371,10 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       const asset_equity_data_object& candice_equity = db.get_equity_data( "TROPICO" );
 
-      BOOST_REQUIRE( candice_equity.options.dividend_share_percent == equity_opts.dividend_share_percent );
-      BOOST_REQUIRE( candice_equity.options.liquid_dividend_percent == equity_opts.liquid_dividend_percent );
-      BOOST_REQUIRE( candice_equity.options.savings_dividend_percent == equity_opts.savings_dividend_percent );
-      BOOST_REQUIRE( candice_equity.options.staked_dividend_percent == equity_opts.staked_dividend_percent );
+      BOOST_REQUIRE( candice_equity.options.dividend_share_percent == asset_update.new_options.dividend_share_percent );
+      BOOST_REQUIRE( candice_equity.options.liquid_dividend_percent == asset_update.new_options.liquid_dividend_percent );
+      BOOST_REQUIRE( candice_equity.options.savings_dividend_percent == asset_update.new_options.savings_dividend_percent );
+      BOOST_REQUIRE( candice_equity.options.staked_dividend_percent == asset_update.new_options.staked_dividend_percent );
 
       validate_database();
 
@@ -431,13 +423,10 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKTWO" );
-      asset_create.common_options.display_symbol = "Block Two";
-      asset_create.common_options.details = "Details";
-      asset_create.common_options.json = "{\"json\":\"valid\"}";
-      asset_create.common_options.url = "www.url.com";
-
-      credit_options op;
-      asset_create.credit_opts = op;
+      asset_create.options.display_symbol = "Block Two";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -487,17 +476,16 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
       asset_update.new_options.url = "www.newurl.com";
 
-      credit_options credit_opts;
-      credit_opts.buyback_share_percent = 10 * PERCENT_1;
-      credit_opts.liquid_fixed_interest_rate = 2 * PERCENT_1;
-      credit_opts.liquid_variable_interest_rate = 3 * PERCENT_1;
-      credit_opts.staked_fixed_interest_rate = 2 * PERCENT_1;
-      credit_opts.staked_variable_interest_rate = 12 * PERCENT_1;
-      credit_opts.savings_fixed_interest_rate = 2 * PERCENT_1;
-      credit_opts.savings_variable_interest_rate = 3 * PERCENT_1;
-      credit_opts.var_interest_range = 30 * PERCENT_1;
+      asset_update.new_options.buyback_share_percent = 10 * PERCENT_1;
+      asset_update.new_options.liquid_fixed_interest_rate = 2 * PERCENT_1;
+      asset_update.new_options.liquid_variable_interest_rate = 3 * PERCENT_1;
+      asset_update.new_options.staked_fixed_interest_rate = 2 * PERCENT_1;
+      asset_update.new_options.staked_variable_interest_rate = 12 * PERCENT_1;
+      asset_update.new_options.savings_fixed_interest_rate = 2 * PERCENT_1;
+      asset_update.new_options.savings_variable_interest_rate = 3 * PERCENT_1;
+      asset_update.new_options.var_interest_range = 30 * PERCENT_1;
 
-      asset_update.new_credit_opts = credit_opts;
+   
       asset_update.validate();
 
       tx.operations.push_back( asset_update );
@@ -520,14 +508,14 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       const asset_credit_data_object& dan_credit = db.get_credit_data( "BLOCKTWO" );
 
-      BOOST_REQUIRE( dan_credit.options.buyback_share_percent == credit_opts.buyback_share_percent );
-      BOOST_REQUIRE( dan_credit.options.liquid_fixed_interest_rate == credit_opts.liquid_fixed_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.liquid_variable_interest_rate == credit_opts.liquid_variable_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.staked_fixed_interest_rate == credit_opts.staked_fixed_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.staked_variable_interest_rate == credit_opts.staked_variable_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.savings_fixed_interest_rate == credit_opts.savings_fixed_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.savings_variable_interest_rate == credit_opts.savings_variable_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.var_interest_range == credit_opts.var_interest_range );
+      BOOST_REQUIRE( dan_credit.options.buyback_share_percent == asset_update.new_options.buyback_share_percent );
+      BOOST_REQUIRE( dan_credit.options.liquid_fixed_interest_rate == asset_update.new_options.liquid_fixed_interest_rate );
+      BOOST_REQUIRE( dan_credit.options.liquid_variable_interest_rate == asset_update.new_options.liquid_variable_interest_rate );
+      BOOST_REQUIRE( dan_credit.options.staked_fixed_interest_rate == asset_update.new_options.staked_fixed_interest_rate );
+      BOOST_REQUIRE( dan_credit.options.staked_variable_interest_rate == asset_update.new_options.staked_variable_interest_rate );
+      BOOST_REQUIRE( dan_credit.options.savings_fixed_interest_rate == asset_update.new_options.savings_fixed_interest_rate );
+      BOOST_REQUIRE( dan_credit.options.savings_variable_interest_rate == asset_update.new_options.savings_variable_interest_rate );
+      BOOST_REQUIRE( dan_credit.options.var_interest_range == asset_update.new_options.var_interest_range );
 
       validate_database();
 
@@ -542,13 +530,10 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TSLA" );
-      asset_create.common_options.display_symbol = "Tesla";
-      asset_create.common_options.details = "Details";
-      asset_create.common_options.json = "{\"json\":\"valid\"}";
-      asset_create.common_options.url = "www.url.com";
-
-      bitasset_options bitasset_opts;
-      asset_create.bitasset_opts = bitasset_opts;
+      asset_create.options.display_symbol = "Tesla";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -596,16 +581,12 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
       asset_update.new_options.url = "www.newurl.com";
-
-      bitasset_options bitasset_opts;
-      bitasset_opts.short_backing_asset = SYMBOL_COIN;
-      bitasset_opts.feed_lifetime = fc::days(2);
-      bitasset_opts.minimum_feeds = 3;
-      bitasset_opts.force_settlement_delay = fc::hours(6);
-      bitasset_opts.force_settlement_offset_percent = 3 * PERCENT_1;
-      bitasset_opts.maximum_force_settlement_volume = 10 * PERCENT_1;
-
-      asset_create.bitasset_opts = bitasset_opts;
+      asset_update.new_options.backing_asset = SYMBOL_COIN;
+      asset_update.new_options.feed_lifetime = fc::days(2);
+      asset_update.new_options.minimum_feeds = 3;
+      asset_update.new_options.force_settlement_delay = fc::hours(6);
+      asset_update.new_options.force_settlement_offset_percent = 3 * PERCENT_1;
+      asset_update.new_options.maximum_force_settlement_volume = 10 * PERCENT_1;
 
       tx.operations.push_back( asset_update );
       tx.sign( elon_private_active_key, db.get_chain_id() );
@@ -627,13 +608,12 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       const asset_bitasset_data_object& elon_bitasset = db.get_bitasset_data( "TSLA" );
 
-      BOOST_REQUIRE( elon_bitasset.options.short_backing_asset == bitasset_opts.short_backing_asset );
-      BOOST_REQUIRE( elon_bitasset.backing_asset == bitasset_opts.short_backing_asset );
-      BOOST_REQUIRE( elon_bitasset.options.feed_lifetime == bitasset_opts.feed_lifetime );
-      BOOST_REQUIRE( elon_bitasset.options.minimum_feeds == bitasset_opts.minimum_feeds );
-      BOOST_REQUIRE( elon_bitasset.options.force_settlement_delay == bitasset_opts.force_settlement_delay );
-      BOOST_REQUIRE( elon_bitasset.options.force_settlement_offset_percent == bitasset_opts.force_settlement_offset_percent );
-      BOOST_REQUIRE( elon_bitasset.options.maximum_force_settlement_volume == bitasset_opts.maximum_force_settlement_volume );
+      BOOST_REQUIRE( elon_bitasset.backing_asset == asset_update.new_options.backing_asset );
+      BOOST_REQUIRE( elon_bitasset.feed_lifetime == asset_update.new_options.feed_lifetime );
+      BOOST_REQUIRE( elon_bitasset.minimum_feeds == asset_update.new_options.minimum_feeds );
+      BOOST_REQUIRE( elon_bitasset.force_settlement_delay == asset_update.new_options.force_settlement_delay );
+      BOOST_REQUIRE( elon_bitasset.force_settlement_offset_percent == asset_update.new_options.force_settlement_offset_percent );
+      BOOST_REQUIRE( elon_bitasset.maximum_force_settlement_volume == asset_update.new_options.maximum_force_settlement_volume );
 
       validate_database();
 
