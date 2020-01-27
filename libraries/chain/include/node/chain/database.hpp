@@ -98,8 +98,8 @@ namespace node { namespace chain {
          enum validation_steps
          {
             skip_nothing                = 0,
-            skip_witness_signature      = 1 << 0,  ///< used while reindexing
-            skip_transaction_signatures = 1 << 1,  ///< used by non-witness nodes
+            skip_producer_signature      = 1 << 0,  ///< used while reindexing
+            skip_transaction_signatures = 1 << 1,  ///< used by non-producer nodes
             skip_transaction_dupe_check = 1 << 2,  ///< used while reindexing
             skip_fork_db                = 1 << 3,  ///< used while reindexing
             skip_block_size_check       = 1 << 4,  ///< used when applying locally generated transactions
@@ -107,7 +107,7 @@ namespace node { namespace chain {
             skip_authority_check        = 1 << 6,  ///< used while reindexing -- disables any checking of authority on transactions
             skip_merkle_check           = 1 << 7,  ///< used while reindexing
             skip_undo_history_check     = 1 << 8,  ///< used while reindexing
-            skip_witness_schedule_check = 1 << 9,  ///< used while reindexing
+            skip_producer_schedule_check = 1 << 9,  ///< used while reindexing
             skip_validate               = 1 << 10, ///< used prior to checkpoint, skips validate() call on transaction
             skip_validate_invariants    = 1 << 11, ///< used to skip database invariant check on block application
             skip_undo_block             = 1 << 12, ///< used to skip undo db on reindex
@@ -162,19 +162,19 @@ namespace node { namespace chain {
          bool                                   is_known_transaction( const transaction_id_type& id )const;
          
          uint128_t                              pow_difficulty()const;
-         block_id_type                          find_block_id_for_num( uint32_t block_num )const;
-         block_id_type                          get_block_id_for_num( uint32_t block_num )const;
+         block_id_type                          find_block_id_for_num( uint64_t block_num )const;
+         block_id_type                          get_block_id_for_num( uint64_t block_num )const;
          optional<signed_block>                 fetch_block_by_id( const block_id_type& id )const;
-         optional<signed_block>                 fetch_block_by_number( uint32_t num )const;
+         optional<signed_block>                 fetch_block_by_number( uint64_t num )const;
          const signed_transaction               get_recent_transaction( const transaction_id_type& trx_id )const;
          std::vector<block_id_type>             get_block_ids_on_fork(block_id_type head_of_fork) const;
 
          chain_id_type                          get_chain_id()const;
          const dynamic_global_property_object&  get_dynamic_global_properties()const;
          time_point                             head_block_time()const;
-         uint32_t                               head_block_num()const;
+         uint64_t                               head_block_num()const;
          block_id_type                          head_block_id()const;
-         const witness_schedule_object&         get_witness_schedule()const;
+         const producer_schedule_object&         get_producer_schedule()const;
          const chain_properties&                get_chain_properties()const;
          const price&                           get_usd_price()const;
          const reward_fund_object&              get_reward_fund() const;
@@ -245,14 +245,14 @@ namespace node { namespace chain {
          const account_authority_object& get_account_authority( const account_name_type& account )const;
          const account_authority_object* find_account_authority( const account_name_type& account )const;
 
-         const witness_object& get_witness( const account_name_type& name ) const;
-         const witness_object* find_witness( const account_name_type& name ) const;
+         const producer_object& get_producer( const account_name_type& name ) const;
+         const producer_object* find_producer( const account_name_type& name ) const;
 
-         const witness_vote_object& get_witness_vote( const account_name_type& account, const account_name_type& witness )const;
-         const witness_vote_object* find_witness_vote( const account_name_type& account, const account_name_type& witness )const;
+         const producer_vote_object& get_producer_vote( const account_name_type& account, const account_name_type& producer )const;
+         const producer_vote_object* find_producer_vote( const account_name_type& account, const account_name_type& producer )const;
 
-         const block_validation_object& get_block_validation( const account_name_type& producer, uint32_t height ) const;
-         const block_validation_object* find_block_validation( const account_name_type& producer, uint32_t height ) const;
+         const block_validation_object& get_block_validation( const account_name_type& producer, uint64_t height ) const;
+         const block_validation_object* find_block_validation( const account_name_type& producer, uint64_t height ) const;
 
          const network_officer_object& get_network_officer( const account_name_type& account )const;
          const network_officer_object* find_network_officer( const account_name_type& account )const;
@@ -379,7 +379,7 @@ namespace node { namespace chain {
 
          node_property_object& node_properties();
 
-         uint32_t last_non_undoable_block_num() const;
+         uint64_t last_non_undoable_block_num() const;
          //////////////////// db_init.cpp ////////////////////
 
          void initialize_evaluators();
@@ -418,29 +418,29 @@ namespace node { namespace chain {
           *  Calculate the percent of block production slots that were missed in the
           *  past 128 blocks, not including the current block.
           */
-         uint32_t witness_participation_rate()const;
+         uint32_t producer_participation_rate()const;
 
          vector< account_name_type > shuffle_accounts( vector< account_name_type > accounts ) const;
 
-         void                                   add_checkpoints( const flat_map<uint32_t,block_id_type>& checkpts );
-         const flat_map<uint32_t,block_id_type> get_checkpoints()const { return _checkpoints; }
+         void                                   add_checkpoints( const flat_map<uint64_t,block_id_type>& checkpts );
+         const flat_map<uint64_t,block_id_type> get_checkpoints()const { return _checkpoints; }
          bool                                   before_last_checkpoint()const;
 
          bool push_block( const signed_block& b, uint32_t skip = skip_nothing );
          void push_transaction( const signed_transaction& trx, uint32_t skip = skip_nothing );
-         void _maybe_warn_multiple_production( uint32_t height )const;
+         void _maybe_warn_multiple_production( uint64_t height )const;
          bool _push_block( const signed_block& b );
          void _push_transaction( const signed_transaction& trx );
 
          signed_block generate_block(
             const fc::time_point when,
-            const account_name_type& witness_owner,
+            const account_name_type& producer_owner,
             const fc::ecc::private_key& block_signing_private_key,
             uint32_t skip
             );
          signed_block _generate_block(
             const fc::time_point when,
-            const account_name_type& witness_owner,
+            const account_name_type& producer_owner,
             const fc::ecc::private_key& block_signing_private_key
             );
 
@@ -498,23 +498,23 @@ namespace node { namespace chain {
           */
          fc::signal<void(const signed_transaction&)>     on_applied_transaction;
 
-         //////////////////// db_witness_schedule.cpp ////////////////////
+         //////////////////// db_producer_schedule.cpp ////////////////////
 
          /**
-          * @brief Get the witness scheduled for block production in a slot.
+          * @brief Get the producer scheduled for block production in a slot.
           *
           * slot_num always corresponds to a time in the future.
           *
-          * If slot_num == 1, returns the next scheduled witness.
-          * If slot_num == 2, returns the next scheduled witness after
+          * If slot_num == 1, returns the next scheduled producer.
+          * If slot_num == 2, returns the next scheduled producer after
           * 1 block gap.
           *
           * Use the get_slot_time() and get_slot_at_time() functions
           * to convert between slot_num and timestamp.
           *
-          * Passing slot_num == 0 returns NULL_WITNESS
+          * Passing slot_num == 0 returns NULL_PRODUCER
           */
-         account_name_type get_scheduled_witness(uint32_t slot_num)const;
+         account_name_type get_scheduled_producer(uint64_t slot_num)const;
 
          /**
           * Get the time at which the given slot occurs.
@@ -524,7 +524,7 @@ namespace node { namespace chain {
           * If slot_num == N for N > 0, return the Nth next
           * block-interval-aligned time greater than head_block_time().
           */
-         fc::time_point get_slot_time(uint32_t slot_num)const;
+         fc::time_point get_slot_time(uint64_t slot_num)const;
 
          /**
           * Get the last slot which occurs AT or BEFORE the given time.
@@ -534,13 +534,13 @@ namespace node { namespace chain {
           *
           * If no such N exists, return 0.
           */
-         uint32_t get_slot_at_time(fc::time_point when)const;
+         uint64_t get_slot_at_time(fc::time_point when)const;
 
-         share_type update_witness( const witness_object& witness, const witness_schedule_object& wso, const dynamic_global_property_object& props );
+         share_type update_producer( const producer_object& producer, const producer_schedule_object& pso, const dynamic_global_property_object& props );
 
-         void update_witness_set();
+         void update_producer_set();
 
-         void process_update_witness_set();
+         void process_update_producer_set();
 
          void update_board_moderators( const board_member_object& board );
 
@@ -570,7 +570,7 @@ namespace node { namespace chain {
          void process_producer_activity_rewards();
 
          void update_network_officer( const network_officer_object& network_officer, 
-            const witness_schedule_object& wso, const dynamic_global_property_object& props );
+            const producer_schedule_object& pso, const dynamic_global_property_object& props );
 
          void process_network_officer_rewards();
 
@@ -581,17 +581,17 @@ namespace node { namespace chain {
          void process_community_enterprise_fund();
          
          void update_enterprise( const community_enterprise_object& enterprise, 
-            const witness_schedule_object& wso, const dynamic_global_property_object& props );
+            const producer_schedule_object& pso, const dynamic_global_property_object& props );
 
          void process_executive_board_budgets();
 
          void update_executive_board( const executive_board_object& executive_board, 
-            const witness_schedule_object& wso, const dynamic_global_property_object& props );
+            const producer_schedule_object& pso, const dynamic_global_property_object& props );
 
          void update_governance_account_set();
 
          void update_governance_account( const governance_account_object& network_officer, 
-            const witness_schedule_object& wso, const dynamic_global_property_object& props );
+            const producer_schedule_object& pso, const dynamic_global_property_object& props );
 
          share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
 
@@ -640,12 +640,12 @@ namespace node { namespace chain {
          asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
          asset pay_membership_fees( const account_object& member, const asset& payment );
 
-         asset claim_activity_reward( const account_object& account, const witness_object& witness );
+         asset claim_activity_reward( const account_object& account, const producer_object& producer );
 
          void update_owner_authority( const account_object& account, const authority& owner_authority );
 
-         void update_witness_votes(const account_object& account );
-         void update_witness_votes(const account_object& account, const account_name_type& witness, uint16_t vote_rank );
+         void update_producer_votes(const account_object& account );
+         void update_producer_votes(const account_object& account, const account_name_type& producer, uint16_t vote_rank );
 
          void update_network_officer_votes(const account_object& account );
          void update_network_officer_votes(const account_object& account, const account_name_type& officer, 
@@ -672,7 +672,7 @@ namespace node { namespace chain {
 
          void process_decline_voting_rights();
 
-         void clear_witness_votes( const account_object& a );
+         void clear_producer_votes( const account_object& a );
 
 
 
@@ -938,12 +938,12 @@ namespace node { namespace chain {
 
          ///Steps involved in applying a new block
 
-         const witness_object& validate_block_header( uint32_t skip, const signed_block& next_block )const;
+         const producer_object& validate_block_header( uint32_t skip, const signed_block& next_block )const;
          void create_block_summary(const signed_block& next_block);
 
          void update_global_dynamic_data( const signed_block& b );
-         void update_signing_witness(const witness_object& signing_witness, const signed_block& new_block);
-         void update_transaction_stake(const witness_object& signing_witness, const uint128_t& transaction_stake);
+         void update_signing_producer(const producer_object& signing_producer, const signed_block& new_block);
+         void update_transaction_stake(const producer_object& signing_producer, const uint128_t& transaction_stake);
          void update_last_irreversible_block();
          void clear_expired_transactions();
          void clear_expired_operations();
@@ -974,19 +974,18 @@ namespace node { namespace chain {
          fc::signal< void() >          _plugin_index_signal;
 
          transaction_id_type           _current_trx_id;
-         uint32_t                      _current_block_num           = 0;
+         uint64_t                      _current_block_num           = 0;
          uint16_t                      _current_trx_in_block        = 0;
          uint16_t                      _current_op_in_trx           = 0;
          uint16_t                      _current_virtual_op          = 0;
          uint128_t                     _current_trx_stake_weight    = 0;
 
-         flat_map<uint32_t,block_id_type>  _checkpoints;
+         flat_map<uint64_t,block_id_type>  _checkpoints;
 
          node_property_object              _node_property_object;
 
          uint32_t                      _flush_blocks = 0;
-         uint32_t                      _next_flush_block = 0;
-
+         uint64_t                      _next_flush_block = 0;
          uint32_t                      _last_free_gb_printed = 0;
 
          flat_map< std::string, std::shared_ptr< custom_operation_interpreter > >   _custom_operation_interpreters;

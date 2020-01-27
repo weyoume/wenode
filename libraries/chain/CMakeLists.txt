@@ -25,7 +25,7 @@ add_library( node_chain
              comment_database.cpp
 
              fork_database.cpp
-             witness_schedule.cpp
+             producer_schedule.cpp
 
              node_evaluator.cpp
 

@@ -17,7 +17,7 @@ class raw_block_api_impl;
 
 struct get_raw_block_args
 {
-   uint32_t block_num = 0;
+   uint64_t block_num = 0;
 };
 
 struct get_raw_block_result

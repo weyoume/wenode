@@ -298,9 +298,9 @@ BOOST_AUTO_TEST_CASE( hardfork_version_test )
 BOOST_AUTO_TEST_CASE( min_block_size )
 {
    signed_block b;
-   while( b.witness.length() < MIN_ACCOUNT_NAME_LENGTH )
+   while( b.producer.length() < MIN_ACCOUNT_NAME_LENGTH )
    {
-      b.witness += 'a';
+      b.producer += 'a';
    }
       
    size_t min_size = fc::raw::pack_size( b );

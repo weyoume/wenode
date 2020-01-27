@@ -52,7 +52,7 @@ struct debug_mine_state
    debug_mine_state();
    virtual ~debug_mine_state();
 
-   std::string                    worker_account;
+   std::string                    miner_account;
    chain::block_id_type           prev_block;
    uint32_t                       summary_target = 0;
    fc::promise< chain::proof_of_work >::ptr work;
@@ -68,7 +68,7 @@ void debug_node_plugin::debug_mine_work(
    )
 {
    std::shared_ptr< debug_mine_state > mine_state = std::make_shared< debug_mine_state >();
-   mine_state->worker_account = work.input.worker_account;
+   mine_state->miner_account = work.input.miner_account;
    mine_state->prev_block = work.input.prev_block;
    mine_state->summary_target = summary_target;
    mine_state->work = fc::promise< chain::proof_of_work >::ptr( new fc::promise< chain::proof_of_work >() );
@@ -77,7 +77,7 @@ void debug_node_plugin::debug_mine_work(
    uint32_t num_threads = _my->_mining_threads;
 
    wlog( "Mining for worker account ${a} on block ${b} with target ${t} using ${n} threads",
-      ("a", work.input.worker_account) ("b", work.input.prev_block) ("c", summary_target) ("n", num_threads) ("t", summary_target) );
+      ("a", work.input.miner_account) ("b", work.input.prev_block) ("c", summary_target) ("n", num_threads) ("t", summary_target) );
 
    uint32_t nonce_start = 0;
 
@@ -89,16 +89,16 @@ void debug_node_plugin::debug_mine_work(
       t->async( [mine_state,nonce_offset,nonce_stride]()
       {
          chain::proof_of_work work;
-         std::string worker_account = mine_state->worker_account;
+         std::string miner_account = mine_state->miner_account;
          chain::block_id_type prev_block = mine_state->prev_block;
          uint32_t summary_target = mine_state->summary_target;
          wlog( "Starting thread mining at offset ${o}", ("o", nonce_offset) );
          work.input.prev_block = prev_block;
-         work.input.worker_account = worker_account;
+         work.input.miner_account = miner_account;
          work.input.nonce = nonce_offset;
          while( !(mine_state->work->ready()) )
          {
-            work.create( prev_block, worker_account, work.input.nonce );
+            work.create( prev_block, miner_account, work.input.nonce );
             if( work.pow_summary < summary_target )
             {
                wlog( "Found work with nonce ${n}", ("n", work.input.nonce) );
@@ -294,21 +294,21 @@ uint32_t debug_node_plugin::debug_generate_blocks(
    while( produced < count )
    {
       uint32_t new_slot = miss_blocks+1;
-      std::string scheduled_witness_name = db.get_scheduled_witness( slot );
+      std::string scheduled_producer_name = db.get_scheduled_producer( slot );
       fc::time_point scheduled_time = db.get_slot_time( slot );
-      const chain::witness_object& scheduled_witness = db.get_witness( scheduled_witness_name );
-      node::chain::public_key_type scheduled_key = scheduled_witness.signing_key;
+      const chain::producer_object& scheduled_producer = db.get_producer( scheduled_producer_name );
+      node::chain::public_key_type scheduled_key = scheduled_producer.signing_key;
       if( debug_key != "" )
       {
          if( logging ) wlog( "scheduled key is: ${sk}   dbg key is: ${dk}", ("sk", scheduled_key)("dk", debug_public_key) );
          if( scheduled_key != debug_public_key )
          {
-            if( logging ) wlog( "Modified key for witness ${w}", ("w", scheduled_witness_name) );
+            if( logging ) wlog( "Modified key for producer ${w}", ("w", scheduled_producer_name) );
             debug_update( [=]( chain::database& db )
             {
-               db.modify( db.get_witness( scheduled_witness_name ), [&]( chain::witness_object& w )
+               db.modify( db.get_producer( scheduled_producer_name ), [&]( chain::producer_object& p )
                {
-                  w.signing_key = debug_public_key;
+                  p.signing_key = debug_public_key;
                });
             }, skip );
          }
@@ -317,15 +317,15 @@ uint32_t debug_node_plugin::debug_generate_blocks(
       {
          debug_private_key.reset();
          if( key_storage != nullptr )
-            key_storage->maybe_get_private_key( debug_private_key, scheduled_key, scheduled_witness_name );
+            key_storage->maybe_get_private_key( debug_private_key, scheduled_key, scheduled_producer_name );
          if( !debug_private_key.valid() )
          {
-            if( logging ) elog( "Skipping ${wit} because I don't know the private key", ("wit", scheduled_witness_name) );
+            if( logging ) elog( "Skipping ${wit} because I don't know the private key", ("wit", scheduled_producer_name) );
             new_slot = slot+1;
             FC_ASSERT( slot < miss_blocks+50 );
          }
       }
-      db.generate_block( scheduled_time, scheduled_witness_name, *debug_private_key, skip );
+      db.generate_block( scheduled_time, scheduled_producer_name, *debug_private_key, skip );
       ++produced;
       slot = new_slot;
    }

@@ -3,105 +3,111 @@
 #include <node/protocol/config.hpp>
 
 namespace node { namespace protocol {
+
    /**
-    * Witnesses and miners vote on how to set certain chain properties to ensure a smooth
-    * and well functioning network, and can be responsive to changing network conditions.
-    * The active set of witnesses will be used to control the blockchain configuration by
+    * Set of Network parameters that are selected by block producers.
+    * 
+    * Producers vote on how to set certain chain properties
+    * to ensure a smooth and well functioning network, 
+    * and can be responsive to changing network conditions.
+    * 
+    * The active set of producers will be used to 
+    * control the blockchain configuration by
     * selecting the median value of all properties listed.
     */
    struct chain_properties
    {
-      asset                  account_creation_fee = MIN_ACCOUNT_CREATION_FEE;               // Minimum fee required to create a new account by staking.
+      asset                  account_creation_fee = MIN_ACCOUNT_CREATION_FEE;               ///< Minimum fee required to create a new account by staking.
 
-      uint32_t               maximum_block_size = MAX_BLOCK_SIZE;                           // The maximum block size of the network in bytes.
+      uint64_t               maximum_block_size = MAX_BLOCK_SIZE;                           ///< The maximum block size of the network in bytes. No Upper bound on block size limit.
 
-      fc::microseconds       pow_target_time = POW_TARGET_TIME;                             // The targeted time for each proof of work
+      fc::microseconds       pow_target_time = POW_TARGET_TIME;                             ///< The targeted time for each proof of work
 
-      fc::microseconds       pow_decay_time = POW_DECAY_TIME;                               // Time over which proof of work output is averaged over
+      fc::microseconds       pow_decay_time = POW_DECAY_TIME;                               ///< Time over which proof of work output is averaged over
 
-      fc::microseconds       txn_stake_decay_time = TXN_STAKE_DECAY_TIME;                   // Time over which transaction stake is averaged over
+      fc::microseconds       txn_stake_decay_time = TXN_STAKE_DECAY_TIME;                   ///< Time over which transaction stake is averaged over
 
-      uint16_t               escrow_bond_percent = ESCROW_BOND_PERCENT;                     // Percentage of an escrow transfer that is deposited for dispute resolution
+      uint16_t               escrow_bond_percent = ESCROW_BOND_PERCENT;                     ///< Percentage of an escrow transfer that is deposited for dispute resolution
 
-      uint16_t               credit_interest_rate = CREDIT_INTEREST_RATE;                   // The credit interest rate paid to holders of network credit assets.
+      uint16_t               credit_interest_rate = CREDIT_INTEREST_RATE;                   ///< The credit interest rate paid to holders of network credit assets.
 
-      uint16_t               credit_open_ratio = CREDIT_OPEN_RATIO;                         // The minimum required collateralization ratio for a credit loan to be opened. 
+      uint16_t               credit_open_ratio = CREDIT_OPEN_RATIO;                         ///< The minimum required collateralization ratio for a credit loan to be opened. 
 
-      uint16_t               credit_liquidation_ratio = CREDIT_LIQUIDATION_RATIO;           // The minimum permissible collateralization ratio before a loan is liquidated. 
+      uint16_t               credit_liquidation_ratio = CREDIT_LIQUIDATION_RATIO;           ///< The minimum permissible collateralization ratio before a loan is liquidated. 
 
-      uint16_t               credit_min_interest = CREDIT_MIN_INTEREST;                     // The minimum component of credit pool interest rates. 
+      uint16_t               credit_min_interest = CREDIT_MIN_INTEREST;                     ///< The minimum component of credit pool interest rates. 
 
-      uint16_t               credit_variable_interest = CREDIT_VARIABLE_INTEREST;           // The variable component of credit pool interest rates, applied at equal base and borrowed balances.
+      uint16_t               credit_variable_interest = CREDIT_VARIABLE_INTEREST;           ///< The variable component of credit pool interest rates, applied at equal base and borrowed balances.
 
-      uint16_t               market_max_credit_ratio = MARKET_MAX_CREDIT_RATIO;             // The maximum percentage of core asset liquidity balances that can be loaned.
+      uint16_t               market_max_credit_ratio = MARKET_MAX_CREDIT_RATIO;             ///< The maximum percentage of core asset liquidity balances that can be loaned.
 
-      uint16_t               margin_open_ratio = MARGIN_OPEN_RATIO;                         // The minimum required collateralization ratio for a credit loan to be opened. 
+      uint16_t               margin_open_ratio = MARGIN_OPEN_RATIO;                         ///< The minimum required collateralization ratio for a credit loan to be opened. 
 
-      uint16_t               margin_liquidation_ratio = MARGIN_LIQUIDATION_RATIO;           // The minimum permissible collateralization ratio before a loan is liquidated. 
+      uint16_t               margin_liquidation_ratio = MARGIN_LIQUIDATION_RATIO;           ///< The minimum permissible collateralization ratio before a loan is liquidated. 
 
-      uint16_t               maximum_asset_feed_publishers = MAX_ASSET_FEED_PUBLISHERS;     // The maximum number of accounts that can publish price feeds for a bitasset.
+      uint16_t               maximum_asset_feed_publishers = MAX_ASSET_FEED_PUBLISHERS;     ///< The maximum number of accounts that can publish price feeds for a bitasset.
 
-      asset                  membership_base_price = MEMBERSHIP_FEE_BASE;                   // The price for standard membership per month.
+      asset                  membership_base_price = MEMBERSHIP_FEE_BASE;                   ///< The price for standard membership per month.
 
-      asset                  membership_mid_price = MEMBERSHIP_FEE_MID;                     // The price for Mezzanine membership per month.
+      asset                  membership_mid_price = MEMBERSHIP_FEE_MID;                     ///< The price for Mezzanine membership per month.
 
-      asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                     // The price for top level membership per month.
+      asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                     ///< The price for top level membership per month.
 
-      uint32_t               author_reward_percent = AUTHOR_REWARD_PERCENT;                 // The percentage of content rewards distributed to post authors.
+      uint32_t               author_reward_percent = AUTHOR_REWARD_PERCENT;                 ///< The percentage of content rewards distributed to post authors.
 
-      uint32_t               vote_reward_percent = VOTE_REWARD_PERCENT;                     // The percentage of content rewards distributed to post voters.
+      uint32_t               vote_reward_percent = VOTE_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post voters.
 
-      uint32_t               view_reward_percent = VIEW_REWARD_PERCENT;                     // The percentage of content rewards distributed to post viewers.
+      uint32_t               view_reward_percent = VIEW_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post viewers.
 
-      uint32_t               share_reward_percent = SHARE_REWARD_PERCENT;                   // The percentage of content rewards distributed to post sharers.
+      uint32_t               share_reward_percent = SHARE_REWARD_PERCENT;                   ///< The percentage of content rewards distributed to post sharers.
 
-      uint32_t               comment_reward_percent = COMMENT_REWARD_PERCENT;               // The percentage of content rewards distributed to post commenters.
+      uint32_t               comment_reward_percent = COMMENT_REWARD_PERCENT;               ///< The percentage of content rewards distributed to post commenters.
 
-      uint32_t               storage_reward_percent = STORAGE_REWARD_PERCENT;               // The percentage of content rewards distributed to viewing supernodes.
+      uint32_t               storage_reward_percent = STORAGE_REWARD_PERCENT;               ///< The percentage of content rewards distributed to viewing supernodes.
 
-      uint32_t               moderator_reward_percent = MODERATOR_REWARD_PERCENT;           // The percentage of content rewards distributed to board moderators.
+      uint32_t               moderator_reward_percent = MODERATOR_REWARD_PERCENT;           ///< The percentage of content rewards distributed to board moderators.
 
-      fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;         // The time over which content rewards are distributed
+      fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;         ///< The time over which content rewards are distributed
 
-      fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;             // Time taken per distribution of content rewards.
+      fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;             ///< Time taken per distribution of content rewards.
 
-      uint32_t               vote_reserve_rate = VOTE_RESERVE_RATE;                         // The number of votes regenerated per day.
+      uint32_t               vote_reserve_rate = VOTE_RESERVE_RATE;                         ///< The number of votes regenerated per day.
 
-      uint32_t               view_reserve_rate = VIEW_RESERVE_RATE;                         // The number of views regenerated per day.
+      uint32_t               view_reserve_rate = VIEW_RESERVE_RATE;                         ///< The number of views regenerated per day.
 
-      uint32_t               share_reserve_rate = SHARE_RESERVE_RATE;                       // The number of shares regenerated per day.
+      uint32_t               share_reserve_rate = SHARE_RESERVE_RATE;                       ///< The number of shares regenerated per day.
 
-      uint32_t               comment_reserve_rate = COMMENT_RESERVE_RATE;                   // The number of comments regenerated per day.
+      uint32_t               comment_reserve_rate = COMMENT_RESERVE_RATE;                   ///< The number of comments regenerated per day.
 
-      fc::microseconds       vote_recharge_time = VOTE_RECHARGE_TIME;                       // Time taken to fully recharge voting power.
+      fc::microseconds       vote_recharge_time = VOTE_RECHARGE_TIME;                       ///< Time taken to fully recharge voting power.
 
-      fc::microseconds       view_recharge_time = VIEW_RECHARGE_TIME;                       // Time taken to fully recharge viewing power.
+      fc::microseconds       view_recharge_time = VIEW_RECHARGE_TIME;                       ///< Time taken to fully recharge viewing power.
 
-      fc::microseconds       share_recharge_time = SHARE_RECHARGE_TIME;                     // Time taken to fully recharge sharing power.
+      fc::microseconds       share_recharge_time = SHARE_RECHARGE_TIME;                     ///< Time taken to fully recharge sharing power.
 
-      fc::microseconds       comment_recharge_time = COMMENT_RECHARGE_TIME;                 // Time taken to fully recharge commenting power.
+      fc::microseconds       comment_recharge_time = COMMENT_RECHARGE_TIME;                 ///< Time taken to fully recharge commenting power.
 
-      fc::microseconds       curation_auction_decay_time = CURATION_AUCTION_DECAY_TIME;     // time of curation reward decay after a post is created. 
+      fc::microseconds       curation_auction_decay_time = CURATION_AUCTION_DECAY_TIME;     ///< time of curation reward decay after a post is created. 
 
-      double                 vote_curation_decay = VOTE_CURATION_DECAY;                     // Number of votes for the half life of voting curation reward decay.
+      double                 vote_curation_decay = VOTE_CURATION_DECAY;                     ///< Number of votes for the half life of voting curation reward decay.
 
-      double                 view_curation_decay = VIEW_CURATION_DECAY;                     // Number of views for the half life of viewer curation reward decay.
+      double                 view_curation_decay = VIEW_CURATION_DECAY;                     ///< Number of views for the half life of viewer curation reward decay.
 
-      double                 share_curation_decay = SHARE_CURATION_DECAY;                   // Number of shares for the half life of sharing curation reward decay.
+      double                 share_curation_decay = SHARE_CURATION_DECAY;                   ///< Number of shares for the half life of sharing curation reward decay.
 
-      double                 comment_curation_decay = COMMENT_CURATION_DECAY;               // Number of comments for the half life of comment curation reward decay.
+      double                 comment_curation_decay = COMMENT_CURATION_DECAY;               ///< Number of comments for the half life of comment curation reward decay.
 
-      fc::microseconds       supernode_decay_time = SUPERNODE_DECAY_TIME;                   // Amount of time to average the supernode file weight over. 
+      fc::microseconds       supernode_decay_time = SUPERNODE_DECAY_TIME;                   ///< Amount of time to average the supernode file weight over. 
 
-      uint16_t               enterprise_vote_percent_required = VOTE_THRESHOLD_PERCENT;     // Percentage of total voting power required to approve enterprise milestones. 
+      uint16_t               enterprise_vote_percent_required = VOTE_THRESHOLD_PERCENT;     ///< Percentage of total voting power required to approve enterprise milestones. 
 
-      uint64_t               maximum_asset_whitelist_authorities = MAX_ASSET_WHITELIST_AUTHORITIES;  // The maximum amount of whitelisted or blacklisted authorities for user issued assets 
+      uint64_t               maximum_asset_whitelist_authorities = MAX_ASSET_WHITELIST_AUTHORITIES;  ///< The maximum amount of whitelisted or blacklisted authorities for user issued assets 
 
-      uint8_t                max_stake_intervals = MAX_ASSET_STAKE_INTERVALS;               // Maximum weeks that an asset can stake over.
+      uint8_t                max_stake_intervals = MAX_ASSET_STAKE_INTERVALS;               ///< Maximum weeks that an asset can stake over.
 
-      uint8_t                max_unstake_intervals = MAX_ASSET_UNSTAKE_INTERVALS;           // Maximum weeks that an asset can unstake over.
+      uint8_t                max_unstake_intervals = MAX_ASSET_UNSTAKE_INTERVALS;           ///< Maximum weeks that an asset can unstake over.
 
-      asset                  max_exec_budget = MAX_EXEC_BUDGET;                             // Maximum budget that an executive board can claim.
+      asset                  max_exec_budget = MAX_EXEC_BUDGET;                             ///< Maximum budget that an executive board can claim.
 
       void validate()const
       {
@@ -110,7 +116,7 @@ namespace node { namespace protocol {
          FC_ASSERT( account_creation_fee >= MIN_ACCOUNT_CREATION_FEE,
             "Account creation fee must be at least 1 Unit of core asset." );
          FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT,
-            "Maximum blocksize must be greater than minimum limit requirement." );    // No Upper bound on block size limit
+            "Maximum blocksize must be greater than minimum limit requirement." );
          FC_ASSERT( pow_target_time >= fc::minutes(1) && pow_target_time <= fc::hours(1),
             "POW target time must be between 1 minute and 1 hour." );
          FC_ASSERT( pow_decay_time >= fc::days(1) && pow_decay_time <= fc::days(30),
@@ -213,11 +219,10 @@ namespace node { namespace protocol {
             "Max Excutive Budget must be in the CREDIT asset." );
          FC_ASSERT( max_exec_budget >= MAX_EXEC_BUDGET,
             "Max Excutive Budget must be less than or equal to 1,000,000 MCR." );
-         
       };
    };
 
-} } // node::protocol
+} } ///< node::protocol
 
 FC_REFLECT( node::protocol::chain_properties,
          (account_creation_fee)

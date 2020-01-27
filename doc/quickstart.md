@@ -4,7 +4,7 @@
 
 Suitable for:
 - Seed nodes.
-- Witness nodes.
+- Producer nodes.
 - Exchanges.
 
 ```

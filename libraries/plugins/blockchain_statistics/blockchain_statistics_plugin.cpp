@@ -80,14 +80,14 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         auto& worker = _db.get_account( op.worker_account );
+         auto& worker = _db.get_account( op.miner_account );
 
          if( worker.created == _db.head_block_time() )
             b.mined_accounts_created++;
 
          b.total_pow++;
 
-         uint64_t bits = ( _db.get_dynamic_global_properties().num_pow_witnesses / 4 ) + 4;
+         uint64_t bits = ( _db.get_dynamic_global_properties().num_pow_producers / 4 ) + 4;
          uint128_t estimated_hashes = ( 1 << bits );
          uint32_t delta_t;
 

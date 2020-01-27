@@ -36,17 +36,17 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          database db;
          db._log_hardforks = false;
          db.open( data_dir.path(), data_dir.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
-         b = db.generate_block(db.get_slot_time(1), db.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+         b = db.generate_block(db.get_slot_time(1), db.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
 
          // n.b. we generate MIN_UNDO_HISTORY+1 extra blocks which will be discarded on save
          for( uint32_t i = 1; ; ++i )
          {
             BOOST_CHECK( db.head_block_id() == b.id() );
-            //witness_id_type prev_witness = b.witness;
-            string cur_witness = db.get_scheduled_witness(1);
-            //BOOST_CHECK( cur_witness != prev_witness );
-            b = db.generate_block(db.get_slot_time(1), cur_witness, init_account_priv_key, database::skip_nothing);
-            BOOST_CHECK( b.witness == cur_witness );
+            //producer_id_type prev_producer = b.producer;
+            string cur_producer = db.get_scheduled_producer(1);
+            //BOOST_CHECK( cur_producer != prev_producer );
+            b = db.generate_block(db.get_slot_time(1), cur_producer, init_account_priv_key, database::skip_nothing);
+            BOOST_CHECK( b.producer == cur_producer );
             uint32_t cutoff_height = db.get_dynamic_global_properties().last_irreversible_block_num;
             if( cutoff_height >= 200 )
             {
@@ -67,10 +67,10 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          for( uint32_t i = 0; i < 200; ++i )
          {
             BOOST_CHECK( db.head_block_id() == b.id() );
-            //witness_id_type prev_witness = b.witness;
-            string cur_witness = db.get_scheduled_witness(1);
-            //BOOST_CHECK( cur_witness != prev_witness );
-            b = db.generate_block(db.get_slot_time(1), cur_witness, init_account_priv_key, database::skip_nothing);
+            //producer_id_type prev_producer = b.producer;
+            string cur_producer = db.get_scheduled_producer(1);
+            //BOOST_CHECK( cur_producer != prev_producer );
+            b = db.generate_block(db.get_slot_time(1), cur_producer, init_account_priv_key, database::skip_nothing);
          }
          BOOST_CHECK_EQUAL( db.head_block_num(), cutoff_block.block_num()+200 );
       }
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE( undo_block )
          {
             now = db.get_slot_time(1);
             time_stack.push_back( now );
-            auto b = db.generate_block( now, db.get_scheduled_witness( 1 ), init_account_priv_key, database::skip_nothing );
+            auto b = db.generate_block( now, db.get_scheduled_producer( 1 ), init_account_priv_key, database::skip_nothing );
          }
          BOOST_CHECK( db.head_block_num() == 5 );
          BOOST_CHECK( db.head_block_time() == now );
@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE( undo_block )
          {
             now = db.get_slot_time(1);
             time_stack.push_back( now );
-            auto b = db.generate_block( now, db.get_scheduled_witness( 1 ), init_account_priv_key, database::skip_nothing );
+            auto b = db.generate_block( now, db.get_scheduled_producer( 1 ), init_account_priv_key, database::skip_nothing );
          }
          BOOST_CHECK( db.head_block_num() == 7 );
       }
@@ -139,8 +139,6 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
       fc::temp_directory data_dir1( graphene::utilities::temp_directory_path() );
       fc::temp_directory data_dir2( graphene::utilities::temp_directory_path() );
 
-      //TODO This test needs 6-7 ish witnesses prior to fork
-
       database db1;
       db1._log_hardforks = false;
       db1.open( data_dir1.path(), data_dir1.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
@@ -151,20 +149,20 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
       auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
       for( uint32_t i = 0; i < 10; ++i )
       {
-         auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+         auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
          try {
             PUSH_BLOCK( db2, b );
          } FC_CAPTURE_AND_RETHROW( ("db2") );
       }
       for( uint32_t i = 10; i < 13; ++i )
       {
-         auto b =  db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+         auto b =  db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
       }
       string db1_tip = db1.head_block_id().str();
       uint32_t next_slot = 3;
       for( uint32_t i = 13; i < 16; ++i )
       {
-         auto b =  db2.generate_block(db2.get_slot_time(next_slot), db2.get_scheduled_witness(next_slot), init_account_priv_key, database::skip_nothing);
+         auto b =  db2.generate_block(db2.get_slot_time(next_slot), db2.get_scheduled_producer(next_slot), init_account_priv_key, database::skip_nothing);
          next_slot = 1;
          // notify both databases of the new block.
          // only db2 should switch to the new fork, db1 should not
@@ -179,7 +177,7 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
       BOOST_CHECK_EQUAL(db1.head_block_num(), 13);
       BOOST_CHECK_EQUAL(db2.head_block_num(), 13);
       {
-         auto b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+         auto b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
          good_block = b;
          b.transactions.emplace_back(signed_transaction());
          b.transactions.back().operations.emplace_back(transfer_operation());
@@ -239,14 +237,14 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       // db1 : A
       // db2 : B C D
 
-      auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+      auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
 
       auto alice_id = db1.get_account( "alice" ).id;
       BOOST_CHECK( db1.get(alice_id).name == "alice" );
 
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
       db1.push_block(b);
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
       db1.push_block(b);
       REQUIRE_THROW(db2.get(alice_id), std::exception);
       db1.get(alice_id); /// it should be included in the pending state
@@ -255,7 +253,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       PUSH_TX( db2, trx );
 
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
       db1.push_block(b);
 
       BOOST_CHECK( db1.get(alice_id).name == "alice");
@@ -320,7 +318,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       CHECK_THROW(PUSH_TX( db1, trx, skip_sigs ), fc::exception);
 
-      auto b = db1.generate_block( db1.get_slot_time(1), db1.get_scheduled_witness( 1 ), init_account_priv_key, skip_sigs );
+      auto b = db1.generate_block( db1.get_slot_time(1), db1.get_scheduled_producer( 1 ), init_account_priv_key, skip_sigs );
       PUSH_BLOCK( db2, b, skip_sigs );
 
       CHECK_THROW(PUSH_TX( db1, trx, skip_sigs ), fc::exception);
@@ -346,7 +344,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
       public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
 
-      auto b = db1.generate_block( db1.get_slot_time(1), db1.get_scheduled_witness( 1 ), init_account_priv_key, database::skip_nothing);
+      auto b = db1.generate_block( db1.get_slot_time(1), db1.get_scheduled_producer( 1 ), init_account_priv_key, database::skip_nothing);
 
       BOOST_TEST_MESSAGE( "Creating a transaction with reference block" );
       idump((db1.head_block_id()));
@@ -369,7 +367,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       idump((trx));
       db1.push_transaction(trx);
       BOOST_TEST_MESSAGE( "Generating a block" );
-      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
       trx.clear();
 
       transfer_operation t;
@@ -383,9 +381,9 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.set_expiration( db1.head_block_time() + fc::seconds(2) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
       idump((trx)(db1.head_block_time()));
-      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
       idump((b));
-      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
+      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), init_account_priv_key, database::skip_nothing);
       trx.signatures.clear();
       trx.sign( init_account_priv_key, db1.get_chain_id() );
       BOOST_REQUIRE_THROW( db1.push_transaction(trx, 0/*database::skip_transaction_signatures | database::skip_authority_check*/), fc::exception );
@@ -520,7 +518,7 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
    try
    {
       uint32_t skip_flags = (
-           database::skip_witness_signature
+           database::skip_producer_signature
          | database::skip_transaction_signatures
          | database::skip_authority_check
          );
@@ -584,7 +582,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "1111111111111111111111111111111111111111111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), PERCENT_100 );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), PERCENT_100 );
 
       BOOST_TEST_MESSAGE("Generating a block skipping 1" );
       generate_block( ~database::skip_fork_db, init_account_priv_key, 1 );
@@ -592,7 +590,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "0111111111111111111111111111111111111111111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(127) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(127) );
 
       BOOST_TEST_MESSAGE("Generating a block skipping 1" );
       generate_block( ~database::skip_fork_db, init_account_priv_key, 1 );
@@ -600,7 +598,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "0101111111111111111111111111111111111111111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(126) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(126) );
 
       BOOST_TEST_MESSAGE("Generating a block skipping 2" );
       generate_block( ~database::skip_fork_db, init_account_priv_key, 2 );
@@ -608,7 +606,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "0010101111111111111111111111111111111111111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(124) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(124) );
 
       BOOST_TEST_MESSAGE("Generating a block for skipping 3" );
       generate_block( ~database::skip_fork_db, init_account_priv_key, 3 );
@@ -616,7 +614,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "0001001010111111111111111111111111111111111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(121) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(121) );
 
       BOOST_TEST_MESSAGE("Generating a block skipping 5" );
       generate_block( ~database::skip_fork_db, init_account_priv_key, 5 );
@@ -624,7 +622,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "0000010001001010111111111111111111111111111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(116) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(116) );
 
       BOOST_TEST_MESSAGE("Generating a block skipping 8" );
       generate_block( ~database::skip_fork_db, init_account_priv_key, 8 );
@@ -632,7 +630,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "0000000010000010001001010111111111111111111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(108) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(108) );
 
       BOOST_TEST_MESSAGE("Generating a block skipping 13" );
       generate_block( ~database::skip_fork_db, init_account_priv_key, 13 );
@@ -640,7 +638,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "0000000000000100000000100000100010010101111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(95) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(95) );
 
       BOOST_TEST_MESSAGE("Generating a block skipping none" );
       generate_block();
@@ -648,7 +646,7 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "1000000000000010000000010000010001001010111111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(95) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(95) );
 
       BOOST_TEST_MESSAGE("Generating a block" );
       generate_block();
@@ -656,35 +654,35 @@ BOOST_FIXTURE_TEST_CASE( rsf_missed_blocks, clean_database_fixture )
          "1100000000000001000000001000001000100101011111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(95) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(95) );
 
       generate_block();
       BOOST_CHECK_EQUAL( rsf(),
          "1110000000000000100000000100000100010010101111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(95) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(95) );
 
       generate_block();
       BOOST_CHECK_EQUAL( rsf(),
          "1111000000000000010000000010000010001001010111111111111111111111"
          "1111111111111111111111111111111111111111111111111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(95) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(95) );
 
       generate_block( ~database::skip_fork_db, init_account_priv_key, 64 );
       BOOST_CHECK_EQUAL( rsf(),
          "0000000000000000000000000000000000000000000000000000000000000000"
          "1111100000000000001000000001000001000100101011111111111111111111"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(31) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(31) );
 
       generate_block( ~database::skip_fork_db, init_account_priv_key, 32 );
       BOOST_CHECK_EQUAL( rsf(),
          "0000000000000000000000000000000010000000000000000000000000000000"
          "0000000000000000000000000000000001111100000000000001000000001000"
       );
-      BOOST_CHECK_EQUAL( db.witness_participation_rate(), pct(8) );
+      BOOST_CHECK_EQUAL( db.producer_participation_rate(), pct(8) );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -698,9 +696,9 @@ BOOST_FIXTURE_TEST_CASE( skip_block, clean_database_fixture )
 
       int init_block_num = db.head_block_num();
       int miss_blocks = fc::minutes( 1 ).to_seconds() / BLOCK_INTERVAL.to_seconds();
-      auto witness = db.get_scheduled_witness( miss_blocks );
+      account_name_type producer = db.get_scheduled_producer( miss_blocks );
       auto block_time = db.get_slot_time( miss_blocks );
-      db.generate_block( block_time , witness, init_account_priv_key, 0 );
+      db.generate_block( block_time , producer, init_account_priv_key, 0 );
 
       BOOST_CHECK_EQUAL( db.head_block_num(), init_block_num + 1 );
       BOOST_CHECK( db.head_block_time() == block_time );

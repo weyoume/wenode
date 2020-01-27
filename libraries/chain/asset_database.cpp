@@ -13,8 +13,8 @@
 #include <node/chain/transaction_object.hpp>
 #include <node/chain/shared_db_merkle.hpp>
 #include <node/chain/operation_notification.hpp>
-#include <node/chain/witness_schedule.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/chain/producer_schedule.hpp>
+#include <node/producer/producer_objects.hpp>
 
 #include <node/chain/util/asset.hpp>
 #include <node/chain/util/reward.hpp>
@@ -501,11 +501,11 @@ void database::update_median_feed()
       return;
 
    auto now = head_block_time();
-   const witness_schedule_object& wso = get_witness_schedule_object();
-   vector<price> feeds; feeds.reserve( wso.num_scheduled_witnesses );
-   for( int i = 0; i < wso.num_scheduled_witnesses; i++ )
+   const producer_schedule_object& pso = get_producer_schedule_object();
+   vector<price> feeds; feeds.reserve( pso.num_scheduled_producers );
+   for( int i = 0; i < pso.num_scheduled_producers; i++ )
    {
-      const auto& wit = get_witness( wso.current_shuffled_producers[i] );
+      const auto& wit = get_producer( pso.current_shuffled_producers[i] );
       if( now < wit.last_USD_exchange_update + MAX_FEED_AGE
          && !wit.USD_exchange_rate.is_null() )
       {
@@ -543,31 +543,46 @@ void database::update_median_feed()
 } FC_CAPTURE_AND_RETHROW() }
 */
 
-
+/**
+ * Decrement an active asset delegation upon the expiration of
+ * a delegation expiration object.
+ * 
+ * Withdrawing a delegation has a 24 hour time delay to ensure stake is not 
+ * used to vote multiple times in rapid succession.
+ */
 void database::clear_expired_delegations()
 {
    auto now = head_block_time();
-   const auto& delegations_by_exp = get_index< asset_delegation_expiration_index, by_expiration >();
-   auto itr = delegations_by_exp.begin();
-   while( itr != delegations_by_exp.end() && itr->expiration < now )
+   const auto& exp_idx = get_index< asset_delegation_expiration_index, by_expiration >();
+   
+   auto exp_itr = exp_idx.begin();
+
+   while( exp_itr != exp_idx.end() && exp_itr->expiration < now )
    {
-      modify( get_account( itr->delegator ), [&]( account_object& a )
-      {
-         adjust_delegated_balance(a, itr->amount);
-      });
+      const asset_delegation_expiration_object& exp = *exp_itr;
+      ++exp_itr;
+      const asset_delegation_object& delegation = get_asset_delegation( exp.delegator, exp.delegatee, exp.amount.symbol );
 
-      push_virtual_operation( return_asset_delegation_operation( itr->delegator, itr->amount ) );
+      adjust_delegated_balance( exp.delegator, -exp.amount );     // decrease delegated balance of delegator account.
+      adjust_receiving_balance( exp.delegatee, -exp.amount );     // decrease receiving balance of delegatee account.
+         
+      push_virtual_operation( return_asset_delegation_operation( exp_itr->delegator, exp_itr->amount ) );
 
-      remove( *itr );
-      itr = delegations_by_exp.begin();
+      remove( exp );
    }
 }
 
+/**
+ * Adjusts an account's liquid balance of a specified asset.
+ */
 void database::adjust_liquid_balance( const account_object& a, const asset& delta )
 {
-   adjust_liquid_balance(a.name, delta);
+   adjust_liquid_balance( a.name, delta );
 }
 
+/**
+ * Adjusts an account's liquid balance of a specified asset.
+ */
 void database::adjust_liquid_balance( const account_name_type& a, const asset& delta )
 { try {
    if( delta.amount == 0 )
@@ -632,11 +647,17 @@ void database::adjust_liquid_balance( const account_name_type& a, const asset& d
    }
 } FC_CAPTURE_AND_RETHROW( (a)(delta) ) }
 
+/**
+ * Adjusts an account's staked balance of a specified asset.
+ */
 void database::adjust_staked_balance( const account_object& a, const asset& delta )
 {
    adjust_staked_balance(a.name, delta);
 }
 
+/**
+ * Adjusts an account's staked balance of a specified asset.
+ */
 void database::adjust_staked_balance( const account_name_type& a, const asset& delta )
 { try {
    if( delta.amount == 0 )
@@ -701,11 +722,17 @@ void database::adjust_staked_balance( const account_name_type& a, const asset& d
    }
 } FC_CAPTURE_AND_RETHROW( (a)(delta) ) }
 
+/**
+ * Adjusts an account's savings balance of a specified asset.
+ */
 void database::adjust_savings_balance( const account_object& a, const asset& delta )
 {
    adjust_savings_balance(a.name, delta);
 }
 
+/**
+ * Adjusts an account's savings balance of a specified asset.
+ */
 void database::adjust_savings_balance( const account_name_type& a, const asset& delta )
 { try {
    if( delta.amount == 0 )
@@ -770,11 +797,17 @@ void database::adjust_savings_balance( const account_name_type& a, const asset& 
    }
 } FC_CAPTURE_AND_RETHROW( (a)(delta) ) }
 
+/**
+ * Adjusts an account's reward balance of a specified asset.
+ */
 void database::adjust_reward_balance( const account_object& a, const asset& delta )
 {
    adjust_reward_balance(a.name, delta);
 }
 
+/**
+ * Adjusts an account's reward balance of a specified asset.
+ */
 void database::adjust_reward_balance( const account_name_type& a, const asset& delta )
 { try {
    if( delta.amount == 0 )
@@ -839,11 +872,17 @@ void database::adjust_reward_balance( const account_name_type& a, const asset& d
    }
 } FC_CAPTURE_AND_RETHROW( (a)(delta) ) }
 
+/**
+ * Adjusts an account's delegated balance of a specified asset.
+ */
 void database::adjust_delegated_balance( const account_object& a, const asset& delta )
 {
    adjust_delegated_balance(a.name, delta);
 }
 
+/**
+ * Adjusts an account's delegated balance of a specified asset.
+ */
 void database::adjust_delegated_balance( const account_name_type& a, const asset& delta )
 { try {
    if( delta.amount == 0 )
@@ -908,11 +947,17 @@ void database::adjust_delegated_balance( const account_name_type& a, const asset
    }
 } FC_CAPTURE_AND_RETHROW( (a)(delta) ) }
 
+/**
+ * Adjusts an account's recieving balance of a specified asset.
+ */
 void database::adjust_receiving_balance( const account_object& a, const asset& delta )
 {
    adjust_receiving_balance(a.name, delta);
 }
 
+/**
+ * Adjusts an account's recieving balance of a specified asset.
+ */
 void database::adjust_receiving_balance( const account_name_type& a, const asset& delta )
 { try {
    if( delta.amount == 0 )
@@ -977,7 +1022,9 @@ void database::adjust_receiving_balance( const account_name_type& a, const asset
    }
 } FC_CAPTURE_AND_RETHROW( (a)(delta) ) }
 
-
+/**
+ * Adjusts the network's pending supply of a specified asset.
+ */
 void database::adjust_pending_supply( const asset& delta )
 { try {
    if( delta.amount == 0 )
@@ -1002,12 +1049,17 @@ void database::adjust_pending_supply( const asset& delta )
    
 } FC_CAPTURE_AND_RETHROW( (delta) ) }
 
-
+/**
+ * Retrieves an account's liquid balance of a specified asset.
+ */
 asset database::get_liquid_balance( const account_object& a, const asset_symbol_type& symbol )const
 {
    return get_liquid_balance(a.name, symbol);
 }
 
+/**
+ * Retrieves an account's liquid balance of a specified asset.
+ */
 asset database::get_liquid_balance( const account_name_type& a, const asset_symbol_type& symbol)const
 { try {
    const account_balance_object* abo_ptr = find_account_balance(a, symbol);
@@ -1021,11 +1073,17 @@ asset database::get_liquid_balance( const account_name_type& a, const asset_symb
    }
 } FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
 
+/**
+ * Retrieves an account's staked balance of a specified asset.
+ */
 asset database::get_staked_balance( const account_object& a, const asset_symbol_type& symbol )const
 {
    return get_staked_balance(a.name, symbol);
 }
 
+/**
+ * Retrieves an account's staked balance of a specified asset.
+ */
 asset database::get_staked_balance( const account_name_type& a, const asset_symbol_type& symbol)const
 { try {
    const account_balance_object* abo_ptr = find_account_balance(a, symbol);
@@ -1039,11 +1097,17 @@ asset database::get_staked_balance( const account_name_type& a, const asset_symb
    }
 } FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
 
+/**
+ * Retrieves an account's reward balance of a specified asset.
+ */
 asset database::get_reward_balance( const account_object& a, const asset_symbol_type& symbol )const
 {
    return get_reward_balance(a.name, symbol);
 }
 
+/**
+ * Retrieves an account's reward balance of a specified asset.
+ */
 asset database::get_reward_balance( const account_name_type& a, const asset_symbol_type& symbol)const
 { try {
    const account_balance_object* abo_ptr = find_account_balance(a, symbol);
@@ -1057,11 +1121,17 @@ asset database::get_reward_balance( const account_name_type& a, const asset_symb
    }
 } FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
 
+/**
+ * Retrieves an account's savings balance of a specified asset.
+ */
 asset database::get_savings_balance( const account_object& a, const asset_symbol_type& symbol )const
 {
    return get_savings_balance(a.name, symbol);
 }
 
+/**
+ * Retrieves an account's savings balance of a specified asset.
+ */
 asset database::get_savings_balance( const account_name_type& a, const asset_symbol_type& symbol)const
 { try {
    const account_balance_object* abo_ptr = find_account_balance(a, symbol);
@@ -1075,11 +1145,17 @@ asset database::get_savings_balance( const account_name_type& a, const asset_sym
    }
 } FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
 
+/**
+ * Retrieves an account's delegated balance of a specified asset.
+ */
 asset database::get_delegated_balance( const account_object& a, const asset_symbol_type& symbol )const
 {
    return get_delegated_balance(a.name, symbol);
 }
 
+/**
+ * Retrieves an account's delegated balance of a specified asset.
+ */
 asset database::get_delegated_balance( const account_name_type& a, const asset_symbol_type& symbol)const
 { try {
    const account_balance_object* abo_ptr = find_account_balance(a, symbol);
@@ -1093,11 +1169,17 @@ asset database::get_delegated_balance( const account_name_type& a, const asset_s
    }
 } FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
 
+/**
+ * Retrieves an account's recieving balance of a specified asset.
+ */
 asset database::get_receiving_balance( const account_object& a, const asset_symbol_type& symbol )const
 {
    return get_receiving_balance(a.name, symbol);
 }
 
+/**
+ * Retrieves an account's recieving balance of a specified asset.
+ */
 asset database::get_receiving_balance( const account_name_type& a, const asset_symbol_type& symbol)const
 { try {
    const account_balance_object* abo_ptr = find_account_balance(a, symbol);
@@ -1111,11 +1193,21 @@ asset database::get_receiving_balance( const account_name_type& a, const asset_s
    }
 } FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
 
+/**
+ * Retrieves an account's voting power.
+ * 
+ * Determined by the staked and net delegated balance of SYMBOL_EQUITY and SYMBOL_COIN.
+ */
 share_type database::get_voting_power( const account_object& a )const
 {
    return get_voting_power(a.name);
 }
 
+/**
+ * Retrieves an account's voting power.
+ * 
+ * Determined by the staked and net delegated balance of SYMBOL_EQUITY and SYMBOL_COIN.
+ */
 share_type database::get_voting_power( const account_name_type& a )const
 {
    const account_balance_object* coin_ptr = find_account_balance( a, SYMBOL_COIN );
@@ -1133,11 +1225,21 @@ share_type database::get_voting_power( const account_name_type& a )const
    return voting_power;
 }
 
+/**
+ * Retrieves an account's voting power.
+ * 
+ * Determined by the staked and net delegated balance of SYMBOL_EQUITY and SYMBOL_COIN.
+ */
 share_type database::get_voting_power( const account_object& a, const price& equity_coin_price )const
 {
    return get_voting_power( a.name, equity_coin_price );
 }
 
+/**
+ * Retrieves an account's voting power.
+ * 
+ * Determined by the staked and net delegated balance of SYMBOL_EQUITY and SYMBOL_COIN.
+ */
 share_type database::get_voting_power( const account_name_type& a, const price& equity_coin_price )const
 {
    const account_balance_object* coin_ptr = find_account_balance(a, SYMBOL_COIN);

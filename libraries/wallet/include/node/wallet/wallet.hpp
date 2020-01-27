@@ -313,7 +313,7 @@ class wallet_api
        * 
        * The returned @ref dynamic_global_property_object contains
        * information that changes every block interval
-       * such as the head block number, and the next witness.
+       * such as the head block number, and the next producer.
        * 
        * @returns The current dynamic global properties.
        */
@@ -333,6 +333,7 @@ class wallet_api
        */
       account_api_obj                                 get_account( string name ) const;
 
+
       /** 
        * Returns information about a list of given accounts.
        *
@@ -341,15 +342,52 @@ class wallet_api
        */
       vector< account_api_obj >                       get_accounts( vector< string > names ) const;
 
+
+      /** 
+       * Returns an ordered list of the accounts with the most followers.
+       *
+       * @param from The name of the first account to include.
+       * @param limit Number of accounts to include.
+       * @returns Account objects of the most followed accounts.
+       */
       vector< account_api_obj >                       get_accounts_by_followers( string from, uint32_t limit ) const;
 
+
+      /** 
+       * Returns concise information about the given account.
+       *
+       * @param name The name of the account to provide information about.
+       * @returns Account Object information pertaining to the specified account.
+       */
       account_concise_api_obj                         get_concise_account( string name ) const;
 
+
+      /** 
+       * Returns concise information about a list of given accounts.
+       *
+       * @param names The name of the accounts to provide information about.
+       * @returns Account Object information pertaining to the specified accounts.
+       */
       vector< account_concise_api_obj >               get_concise_accounts( vector< string > names ) const;
 
+
+      /** 
+       * Returns full representation of the given account, and all objects that it controls.
+       *
+       * @param name The name of the account to provide information about.
+       * @returns Account Object information pertaining to the specified account.
+       */
       extended_account                                get_full_account( string name ) const;
 
+
+      /** 
+       * Returns full representation of the given list of accounts, and all objects that it controls.
+       *
+       * @param names The name of the accounts to provide information about.
+       * @returns Account Object information pertaining to the specified accounts.
+       */
       vector< extended_account >                      get_full_accounts( vector< string > names ) const;
+
 
       /**
        * Account operations have sequence numbers from 0 to N where N is the most recent operation.
@@ -361,43 +399,88 @@ class wallet_api
        */
       map< uint32_t, applied_operation >              get_account_history( string account, uint32_t from, uint32_t limit );
 
-      vector< message_state >                         get_messages( vector< string > names ) const;
-
-      vector< balance_state >                         get_balances( vector< string > names ) const;
-
-      vector< key_state >                             get_keychains( vector< string > names) const;
-
-      vector< optional< account_api_obj > >           lookup_account_names( vector< string > account_names )const;
 
       /** 
-       * Lists all accounts registered in the blockchain.
+       * Returns the message states of a list of accounts.
        * 
-       * This returns a list of all account names and their account ids, sorted by account name.
+       * Includes inbox and outbox, and conversational threads.
+       *
+       * @param names The names of the accounts to provide message information.
+       * @returns Message state information pertaining to the specified accounts.
+       */
+      vector< message_state >                         get_messages( vector< string > names ) const;
+
+
+      /** 
+       * Returns the balance states of a list of accounts.
+       * 
+       * Includes all balances that an account owns.
+       *
+       * @param names The names of the accounts to provide balance information.
+       * @returns Balance state information pertaining to the specified accounts.
+       */
+      vector< balance_state >                         get_balances( vector< string > names ) const;
+
+
+      /** 
+       * Returns the key state sets of a list of accounts.
+       * 
+       * Includes all key objects from accounts and boards that are connected.
+       *
+       * @param names The names of the accounts to provide key information.
+       * @returns Key state information pertaining to the specified accounts.
+       */
+      vector< key_state >                             get_keychains( vector< string > names ) const;
+
+
+      /** 
+       * Lists all account names registered on the blockchain.
+       * 
+       * This returns a list of all account names sorted by account name.
        *
        * Use the \c lowerbound and limit parameters to page through the list.
        * To retrieve all accounts, start by setting \c lowerbound to the empty string \c "",
        * and then each iteration, pass the last account name returned 
        * as the \c lowerbound for the next \c list_accounts() call.
        *
-       * @param lowerbound the name of the first account to return. 
-       * If the named account does not exist, the list will start at the first account that comes after \c lowerbound .
-       * @param limit the maximum number of accounts to return (max: 1000).
-       * @returns a list of accounts mapping account names to account ids.
+       * @param lowerbound The name of the first account to return. If the named account does not exist, the list will start at the first account that comes after \c lowerbound .
+       * @param limit Maximum number of accounts to return (max: 1000).
+       * @returns List of alphabetically ordered account names.
        */
       set< string >                                   lookup_accounts( string lower_bound_name, uint32_t limit )const;
 
+
+      /** 
+       * Returns the number of registered accounts.
+       * 
+       * @returns Number of accounts that have been created on the network.
+       */
       uint64_t                                        get_account_count()const;
 
       /**
-       * Gets the details of an accounts history of owner
-       * keys, including all previous keys and thier durations.
-       * @param account The name of the accoutn to query.
+       * Gets the details of an accounts history of owner keys, including all previous keys and their times in use.
+       * 
+       * @param account The name of the account to query.
+       * @returns Previously used owner authority keys.
        */
       vector< owner_authority_history_api_obj >       get_owner_history( string account )const;
 
+      /**
+       * Gets an active account recovery request for a specified account.
+       * 
+       * @param account The name of the account to query.
+       * @returns If an account recovery request is active, returns it.
+       */
       optional< account_recovery_request_api_obj >    get_recovery_request( string account ) const;
 
-      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, witness::bandwidth_type type )const;
+
+      /**
+       * Gets an accounts bandwidth information.
+       * 
+       * @param account The name of the account to query.
+       * @returns Account bandwidth object from the specified account.
+       */
+      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
 
 
 
@@ -405,27 +488,86 @@ class wallet_api
       // === Asset API === //
       //===================//
 
+      /** 
+       * Returns all available information about a specified asset.
+       *
+       * @param asset The name of the asset to retrieve information about.
+       * @returns Asset Object information pertaining to the specified asset.
+       */
+      extended_asset                                  get_asset( string asset )const;
 
+
+      /** 
+       * Returns all available information about a list of specified assets.
+       *
+       * @param assets The list of assets to retrieve information about.
+       * @returns Asset Objects information pertaining to the specified list of assets.
+       */
       vector< extended_asset >                        get_assets( vector< string > assets )const;
 
+
+      /** 
+       * Returns the number of registered assets.
+       * 
+       * @returns Number of assets that have been created on the network.
+       */
       uint64_t                                        get_asset_count()const;
 
+
+      /** 
+       * Retrieves the details of an active escrow transfer.
+       *
+       * @param from The account that is the sender of the funds into the escrow.
+       * @param escrow_id The uuidv4 of the escrow transfer.
+       * @returns Escrow information of the transfer with the specified id. 
+       */
       optional< escrow_api_obj >                      get_escrow( string from, string escrow_id )const;
 
       /**
-       * Returns fund withdraw routes for an account.
+       * Returns staked fund withdraw routes for an account.
        *
-       * @param account Account to query routes
-       * @param type Withdraw type type [incoming, outgoing, all]
+       * @param account Account to query routes.
+       * @param type Withdraw type type [incoming, outgoing, all].
+       * @returns Withdraw routes of an account.
        */
       vector< withdraw_route >                        get_withdraw_routes( string account, withdraw_route_type type = all )const;
 
+
+      /**
+       * Returns active savings withdrawals from an account.
+       *
+       * @param account Account to query withdrawls.
+       * @returns Savings withdrawals from an account.
+       */
       vector< savings_withdraw_api_obj >              get_savings_withdraw_from( string account )const;
 
+
+      /**
+       * Returns active savings withdrawals to an account.
+       *
+       * @param account Account to query withdrawls.
+       * @returns Savings withdrawals to an account.
+       */
       vector< savings_withdraw_api_obj >              get_savings_withdraw_to( string account )const;
 
+
+      /**
+       * Returns active asset delegations from an account.
+       *
+       * @param account Account to query delegations.
+       * @returns Delegation balances from an account.
+       */
       vector< asset_delegation_api_obj >              get_asset_delegations( string account, string from, uint32_t limit = 100 )const;
 
+
+      /**
+       * Returns delegation expirations from an account that will return deletaed balance after expiration.
+       *
+       * @param account Account to query delegations.
+       * @param from Time to begin from.
+       * @param limit maximum amount of delegation expirations to retrieve.
+       * @returns Delegation balances from an account.
+       */
       vector< asset_delegation_expiration_api_obj >   get_expiring_asset_delegations( string account, time_point from, uint32_t limit = 100 )const;
 
 
@@ -435,13 +577,41 @@ class wallet_api
       //===================//
 
 
+      /** 
+       * Returns all available information about a specified board.
+       *
+       * @param board The name of the board to retrieve information about.
+       * @returns Board Object information pertaining to the specified board.
+       */
+      extended_board                                  get_board( string board )const;
+
+
+      /** 
+       * Returns all available information about a specified list of boards.
+       *
+       * @param boards List of boards to retrieve information about.
+       * @returns Board Object information pertaining to the specified board.
+       */
       vector< extended_board >                        get_boards( vector< string > boards )const;
 
+
+
+      /** 
+       * Returns a list of the boards with the highest number of subscribers.
+       *
+       * @param from First board to retrieve in the ranking order.
+       * @param limit Amount of boards to retrieve.
+       * @returns List of Board Objects pertaining to the top subscribed boards.
+       */
       vector< extended_board >                        get_boards_by_subscribers( string from, uint32_t limit )const;
 
+
+      /** 
+       * Returns the number of registered boards.
+       * 
+       * @returns Number of boards that have been created on the network.
+       */
       uint64_t                                        get_board_count()const;
-
-
 
 
       //=====================//
@@ -449,48 +619,134 @@ class wallet_api
       //=====================//
 
 
-      /**
-       * Returns the list of block producers in the current round.
-       */
-      vector<account_name_type>                       get_active_producers()const;
-
-      vector< optional< witness_api_obj > >           get_witnesses( vector< witness_id_type > witness_ids )const;
-
       /** 
-       * Lists all witnesses registered in the blockchain.
-       * This returns a list of all account names that own witnesses, and the associated witness id,
-       * sorted by name.  This lists witnesses whether they are currently voted in or not.
-       *
-       * Use the \c lowerbound and limit parameters to page through the list.  To retrieve all witnesss,
-       * start by setting \c lowerbound to the empty string \c "", and then each iteration, pass
-       * the last witness name returned as the \c lowerbound for the next \c list_witnesss() call.
-       *
-       * @param lowerbound the name of the first witness to return.  If the named witness does not exist,
-       *                   the list will start at the witness that comes after \c lowerbound
-       * @param limit the maximum number of witnesss to return (max: 1000)
-       * @returns a list of witnesss mapping witness names to witness ids
-       */
-      set< account_name_type >                        lookup_witness_accounts( string lower_bound_name, uint32_t limit )const;
-
-      uint64_t                                        get_witness_count()const;
-
-      /** 
-       * Returns information about the given witness.
+       * Returns information about a specified producer.
        * 
-       * @param owner_account the name or id of the witness account owner, or the id of the witness
-       * @returns the information about the witness stored in the blockchain
+       * @param name The name of the producer account.
+       * @returns Producer object information pertaining to the specified producer. 
        */
-      fc::optional< witness_api_obj >                 get_witness_by_account( string account_name )const;
+      producer_api_obj                                get_producer_by_account( string name )const;
 
-      vector< witness_api_obj >                       get_witnesses_by_voting_power( string from, uint32_t limit )const;
 
-      vector< witness_api_obj >                       get_witnesses_by_mining_power( string from, uint32_t limit )const;
+      /** 
+       * Returns information about a list of producers.
+       * 
+       * @param names List of names of the producers.
+       * @returns Producer objects information pertaining to the list of specified producers. 
+       */
+      vector< producer_api_obj >                      get_producers_by_account( vector< string > names )const;
 
+
+      /**
+       * Retrieves the current list of active block producers in the current round.
+       * 
+       * @returns All Producers in the current round of block production.
+       */
+      vector< account_name_type >                     get_active_producers()const;
+
+
+      /** 
+       * Lists all producers that have been created.
+       *
+       * @param from The name of the first producer to return.
+       * @param limit The maximum number of producers to return (max: 1000)
+       * @returns List of producers in alphabetical order.
+       */
+      set< account_name_type >                        lookup_producer_accounts( string from, uint32_t limit )const;
+
+
+      /** 
+       * Returns the number of registered producers.
+       * 
+       * @returns Number of producers that have been created on the network.
+       */
+      uint64_t                                        get_producer_count()const;
+
+      
+      /** 
+       * Returns a list of the producers with the highest voting power from stakeholders.
+       *
+       * @param from First producer to retrieve in the ranking order.
+       * @param limit Amount of producers to retrieve.
+       * @returns List of Producer Objects pertaining to the top voting producers.
+       */
+      vector< producer_api_obj >                      get_producers_by_voting_power( string from, uint32_t limit )const;
+
+
+      /** 
+       * Returns a list of the producers with the highest mining power from proofs of work.
+       *
+       * @param from First producer to retrieve in the ranking order.
+       * @param limit Amount of producers to retrieve.
+       * @returns List of Producer Objects pertaining to the top mining producers.
+       */
+      vector< producer_api_obj >                      get_producers_by_mining_power( string from, uint32_t limit )const;
+
+
+      /** 
+       * Returns a specifed network officer.
+       *
+       * @param names names of the officer.
+       * @returns Network officer object information pertaining to the specified officer. 
+       */
+      network_officer_api_obj                         get_network_officer_by_account( string name )const;
+
+
+      /** 
+       * Returns a specifed list of the network officers.
+       *
+       * @param names List of names of the officers.
+       * @returns Network officer object information pertaining to the list of specified officers. 
+       */
+      vector< network_officer_api_obj >               get_network_officers_by_account( vector< string > names )const;
+
+
+      /** 
+       * Returns a list of the network development officers with the highest voting power from stakeholders.
+       *
+       * @param from First officer to retrieve in the ranking order.
+       * @param limit Amount of officers to retrieve.
+       * @returns List of network officer objects pertaining to the top officers.
+       */
       vector< network_officer_api_obj >               get_development_officers_by_voting_power( string from, uint32_t limit )const;
 
+
+      /** 
+       * Returns a list of the network marketing officers with the highest voting power from stakeholders.
+       *
+       * @param from First officer to retrieve in the ranking order.
+       * @param limit Amount of officers to retrieve.
+       * @returns List of network officer objects pertaining to the top officers.
+       */
       vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
 
+      /** 
+       * Returns a list of the network advocacy officers with the highest voting power from stakeholders.
+       *
+       * @param from First officer to retrieve in the ranking order.
+       * @param limit Amount of officers to retrieve.
+       * @returns List of network officer objects pertaining to the top officers.
+       */
       vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+
+
+
+      /** 
+       * Returns a specifed executive board.
+       *
+       * @param name name of the board business account.
+       * @returns Executive board object information pertaining to the account.
+       */
+      executive_board_api_obj                         get_executive_board_by_account( string name )const;
+
+
+      /** 
+       * Returns a specifed list of executive boards.
+       *
+       * @param names List of names of executive boards.
+       * @returns List of Executive board object information pertaining to the specified accounts.
+       */
+      vector< executive_board_api_obj >               get_executive_boards_by_account( vector< string > names )const;
 
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
@@ -608,7 +864,7 @@ class wallet_api
        * 
        * @returns Operations included in a specified block.
        */
-      vector< applied_operation >                     get_ops_in_block( uint32_t block_num, bool only_virtual = true );
+      vector< applied_operation >                     get_ops_in_block( uint64_t block_num, bool only_virtual = true );
 
       /**
        * Returns transaction by ID.
@@ -1120,20 +1376,20 @@ class wallet_api
 
 
       /**
-       * Vote for a witness to become a block producer. 
+       * Vote for a Producer for selection to producer blocks. 
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account The account voting for a witness.
+       * @param account The account voting for a producer.
        * @param vote_rank Rank ordering of the vote.
-       * @param witness The witness that is being voted for.
+       * @param producer The producer that is being voted for.
        * @param approved  True to create vote, false to remove vote.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           vote_witness(
+      annotated_signed_transaction           vote_producer(
          string signatory,
          string account,
          uint16_t vote_rank,
-         string witness,
+         string producer,
          bool approve = true,
          bool broadcast = false );
 
@@ -3073,38 +3329,145 @@ class wallet_api
 
       
       /**
-       * Update a witness object owned by the given account.
+       * Creates or updates a producer for a specified account, enabling block production.
        *
-       * @param witness_name The name of the witness account.
-       * @param url A URL containing some information about the witness. The empty string makes it remain the same.
-       * @param block_signing_key The new block signing public key. The empty string disables block production.
-       * @param props The chain properties the witness is voting on.
+       * @param signatory The name of the account signing the transaction.
+       * @param owner The account that owns the producer.
+       * @param details The producer's details for stakeholder voting reference.
+       * @param url Producer's reference URL for more information.
+       * @param json The producers json metadata.
+       * @param latitude Latitude co-ordinates of the producer.
+       * @param longitude Longitude co-ordinates of the producer.
+       * @param block_signing_key The public key used to sign blocks.
+       * @param props Chain properties values for selection of adjustable network parameters. 
+       * @param active Set active to true to activate producer, false to deactivate
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction              update_witness(
-         string witness_name,
+      annotated_signed_transaction              producer_update(
+         string signatory,
+         string owner,
+         string details,
          string url,
-         public_key_type block_signing_key,
-         const chain_properties& props,
+         string json,
+         double latitude,
+         double longitude,
+         string block_signing_key,
+         chain_properties props,
+         bool active,
          bool broadcast = false );
 
 
-      
+      /**
+       * Enables mining producers to publish cryptographic proofs of work.
+       *
+       * @param work Proof of work, containing a reference to a prior block, and a nonce resulting in a low hash value.
+       * @param new_owner_key If creating a new account with a proof of work, the owner key of the new account.
+       * @param props Chain properties values for selection of adjustable network parameters. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction              proof_of_work(
+         proof_of_work_type work,
+         string new_owner_key,
+         chain_properties props,
+         bool broadcast = false );
 
-      
+
+      /**
+       * Enables block producers to verify that a valid block exists at a given height.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param producer The name of the block producing account.
+       * @param block_id The block id of the block being verifed as valid and received. 
+       * @param block_height The height of the block being verified.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction              verify_block(
+         string signatory,
+         string producer,
+         string block_id,
+         uint64_t block_height,
+         bool broadcast = false );
+
+
+      /**
+       * Stakes COIN on the validity and acceptance of a block.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param producer The name of the block producing account.
+       * @param block_id The block id of the block being committed as irreversible to that producer. 
+       * @param block_height The height of the block being committed to.
+       * @param verifications The set of attesting transaction ids of verification transactions from currently active producers.
+       * @param commitment_stake The value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction              commit_block(
+         string signatory,
+         string producer,
+         string block_id,
+         uint64_t block_height,
+         flat_set< transaction_id_type > verifications,
+         asset commitment_stake,
+         bool broadcast = false );
+
+
+      /**
+       * Declares a violation of a block commitment.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param reporter The account detecting and reporting the violation.
+       * @param first_trx The first transaction signed by the producer.
+       * @param second_trx The second transaction that is in contravention of the first commitment transaction. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction              producer_violation(
+         string signatory,
+         string reporter,
+         signed_transaction first_trx,
+         signed_transaction second_trx,
+         bool broadcast = false );
+
+
+
+      //=============================//
+      //==== Custom Transactions ====//
+      //=============================//
+
+
+      /**
+       * Provides a generic way (using char vector) to add higher level protocols on top of network consensus.
+       *
+       * @param required_auths Set of account authorities required for the transaction signature.
+       * @param id ID of the custom operation, determines the how to interpret the operation.
+       * @param data Char vector of data contained within the operation.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction              custom_operation(
+         flat_set< account_name_type > required_auths,
+         uint16_t id,
+         vector< char > data,
+         bool broadcast = false );
+
+
+      /**
+       * Provides a generic way (using JSON String) to add higher level protocols on top of network consensus.
+       *
+       * @param required_auths Set of account active authorities required for the transaction signature.
+       * @param required_posting_auths Set of posting authorities required for the transaction signature.
+       * @param id ID of the operation, refers to the plugin used to interpret the operation. Less than 32 characters long.
+       * @param json Valid UTF8 / JSON string of operation data.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction              custom_json_operation(
+         flat_set< account_name_type > required_auths,
+         uint16_t id,
+         vector< char > data,
+         bool broadcast = false );
 
       
       /**
        * Sets the amount of time in the future until a transaction expires.
        */
       void set_transaction_expiration( uint32_t seconds );
-
-
-      
-
-
-      
-
 
       std::map<string,std::function<string(fc::variant,const fc::variants&)>> get_result_formatters() const;
 
@@ -3135,7 +3498,7 @@ struct plain_keys {
    map<public_key_type,string> keys;
 };
 
-} }
+} }     // node::wallet
 
 FC_REFLECT( node::wallet::wallet_data,
             (cipher_keys)
@@ -3179,8 +3542,8 @@ FC_API( node::wallet::wallet_api,
         (info)
         (list_my_accounts)
         (list_accounts)
-        (list_witnesses)
-        (get_witness)
+        (list_producers)
+        (get_producer)
         (get_account)
         (get_block)
         (get_ops_in_block)
@@ -3203,9 +3566,9 @@ FC_API( node::wallet::wallet_api,
         (update_account_meta)
         (update_account_secure_public_key)
         (delegate_asset)
-        (update_witness)
+        (update_producer)
         (set_voting_proxy)
-        (vote_for_witness)
+        (vote_producer)
         (follow)
         (transfer)
         (escrow_transfer)
@@ -3252,7 +3615,7 @@ FC_API( node::wallet::wallet_api,
         (network_add_nodes)
         (network_get_connected_peers)
 
-        (get_active_witnesses)
+        (get_active_producers)
         (get_miner_queue)
         (get_transaction)
       )

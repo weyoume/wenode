@@ -13,8 +13,8 @@
 #include <node/chain/transaction_object.hpp>
 #include <node/chain/shared_db_merkle.hpp>
 #include <node/chain/operation_notification.hpp>
-#include <node/chain/witness_schedule.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/chain/producer_schedule.hpp>
+#include <node/producer/producer_objects.hpp>
 
 #include <node/chain/util/asset.hpp>
 #include <node/chain/util/reward.hpp>
@@ -139,7 +139,7 @@ void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, u
 /**
  * Creates a new blockchain from the genesis block, 
  * creates all necessary network objects.
- * Generates initial assets, accounts, witnesses, boards
+ * Generates initial assets, accounts, producers, boards
  * and sets initial global dynamic properties. 
  */
 void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLIC_KEY )
@@ -353,12 +353,12 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
 
    create< account_object >( [&]( account_object& a )
    {
-      a.name = WITNESS_ACCOUNT;
+      a.name = PRODUCER_ACCOUNT;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
-      auth.account = WITNESS_ACCOUNT;
+      auth.account = PRODUCER_ACCOUNT;
       auth.owner.weight_threshold = 1;
       auth.active.weight_threshold = 1;
    });
@@ -436,7 +436,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.asset_type = BITASSET_ASSET;
       a.max_supply = MAX_ASSET_SUPPLY;
-      a.flags = witness_fed_asset;
+      a.flags = producer_fed_asset;
       a.issuer_permissions = 0;
       a.unstake_intervals = 4;
       a.stake_intervals = 0;
@@ -742,15 +742,15 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.last_price = price( asset( 0, SYMBOL_CREDIT ), asset( 0, credit_asset_credit_symbol ) );
    });
 
-   for( int i = 0; i < ( GENESIS_WITNESS_AMOUNT + GENESIS_EXTRA_WITNESSES ); ++i )
+   for( int i = 0; i < ( GENESIS_PRODUCER_AMOUNT + GENESIS_EXTRA_PRODUCERS ); ++i )
    {
-      // Create account for genesis witness
+      // Create account for genesis producer
       create< account_object >( [&]( account_object& a )
       {
          a.name = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
       });
 
-      // Create Core asset balance object for witness
+      // Create Core asset balance object for producer
       create< account_balance_object >( [&]( account_balance_object& abo )
       {
          abo.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
@@ -768,13 +768,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
          auth.posting = auth.active;
       });
 
-      if( i < GENESIS_WITNESS_AMOUNT )
+      if( i < GENESIS_PRODUCER_AMOUNT )
       {
-         create< witness_object >( [&]( witness_object& w )
+         create< producer_object >( [&]( producer_object& p )
          {
-            w.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
-            w.signing_key = init_public_key;
-            w.schedule = witness_object::top_witness;
+            p.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
+            p.signing_key = init_public_key;
+            p.schedule = producer_object::top_voting_producer;
          });
       }
    }
@@ -835,9 +835,9 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
 
    });
    
-   create< witness_schedule_object >( [&]( witness_schedule_object& wso )
+   create< producer_schedule_object >( [&]( producer_schedule_object& pso )
    {
-      wso.current_shuffled_producers[0] = GENESIS_ACCOUNT_BASE_NAME;    // Create witness schedule
+      pso.current_shuffled_producers[0] = GENESIS_ACCOUNT_BASE_NAME;    // Create producer schedule
    });
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -856,12 +856,12 @@ void database::reindex( const fc::path& data_dir, const fc::path& shared_mem_dir
    ilog( "Replaying blocks..." );
 
    uint64_t skip_flags =
-      skip_witness_signature |
+      skip_producer_signature |
       skip_transaction_signatures |
       skip_transaction_dupe_check |
       skip_tapos_check |
       skip_merkle_check |
-      skip_witness_schedule_check |
+      skip_producer_schedule_check |
       skip_authority_check |
       skip_validate | /// no need to validate operations
       skip_validate_invariants |
@@ -939,7 +939,7 @@ bool database::is_known_transaction( const transaction_id_type& id )const
    return trx_idx.find( id ) != trx_idx.end();
 } FC_CAPTURE_AND_RETHROW() }
 
-block_id_type database::find_block_id_for_num( uint32_t block_num )const
+block_id_type database::find_block_id_for_num( uint64_t block_num )const
 { try {
    if( block_num == 0 )
       return block_id_type();
@@ -967,7 +967,7 @@ block_id_type database::find_block_id_for_num( uint32_t block_num )const
    return block_id_type();
 } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
-block_id_type database::get_block_id_for_num( uint32_t block_num )const
+block_id_type database::get_block_id_for_num( uint64_t block_num )const
 {
    block_id_type bid = find_block_id_for_num( block_num );
    FC_ASSERT( bid != block_id_type() );
@@ -991,7 +991,7 @@ optional<signed_block> database::fetch_block_by_id( const block_id_type& id )con
    return b->data;
 } FC_CAPTURE_AND_RETHROW() }
 
-optional<signed_block> database::fetch_block_by_number( uint32_t block_num )const
+optional<signed_block> database::fetch_block_by_number( uint64_t block_num )const
 { try {
    optional< signed_block > b;
 
@@ -1066,7 +1066,7 @@ time_point database::head_block_time()const
    return get_dynamic_global_properties().time;
 }
 
-uint32_t database::head_block_num()const
+uint64_t database::head_block_num()const
 {
    return get_dynamic_global_properties().head_block_number;
 }
@@ -1076,19 +1076,19 @@ block_id_type database::head_block_id()const
    return get_dynamic_global_properties().head_block_id;
 }
 
-const witness_schedule_object& database::get_witness_schedule()const
+const producer_schedule_object& database::get_producer_schedule()const
 { try {
-   return get< witness_schedule_object >();
+   return get< producer_schedule_object >();
 } FC_CAPTURE_AND_RETHROW() }
 
 const chain_properties& database::get_chain_properties()const
 {
-   return get_witness_schedule().median_props;      // Gets the median chain properties object from the Witness Schedule object.
+   return get_producer_schedule().median_props;      // Gets the median chain properties object from the Producer Schedule object.
 }
 
 uint128_t database::pow_difficulty()const
 {
-   return get_witness_schedule().pow_target_difficulty;
+   return get_producer_schedule().pow_target_difficulty;
 }
 
 node_property_object& database::node_properties()
@@ -1101,7 +1101,7 @@ const node_property_object& database::get_node_properties() const
    return _node_property_object;
 }
 
-uint32_t database::last_non_undoable_block_num() const
+uint64_t database::last_non_undoable_block_num() const
 {
    return get_dynamic_global_properties().last_irreversible_block_num;
 }
@@ -1311,32 +1311,32 @@ const account_authority_object* database::find_account_authority( const account_
    return find< account_authority_object, by_account >( account );
 }
 
-const witness_object& database::get_witness( const account_name_type& name ) const
+const producer_object& database::get_producer( const account_name_type& name ) const
 { try {
-   return get< witness_object, by_name >( name );
+   return get< producer_object, by_name >( name );
 } FC_CAPTURE_AND_RETHROW( (name) ) }
 
-const witness_object* database::find_witness( const account_name_type& name ) const
+const producer_object* database::find_producer( const account_name_type& name ) const
 {
-   return find< witness_object, by_name >( name );
+   return find< producer_object, by_name >( name );
 }
 
-const witness_vote_object& database::get_witness_vote( const account_name_type& account, const account_name_type& witness )const
+const producer_vote_object& database::get_producer_vote( const account_name_type& account, const account_name_type& producer )const
 { try {
-   return get< witness_vote_object, by_account_witness >( boost::make_tuple( account, witness ) );
-} FC_CAPTURE_AND_RETHROW( (account)(witness) ) }
+   return get< producer_vote_object, by_account_producer >( boost::make_tuple( account, producer ) );
+} FC_CAPTURE_AND_RETHROW( (account)(producer) ) }
 
-const witness_vote_object* database::find_witness_vote( const account_name_type& account, const account_name_type& witness )const
+const producer_vote_object* database::find_producer_vote( const account_name_type& account, const account_name_type& producer )const
 {
-   return find< witness_vote_object, by_account_witness >( boost::make_tuple( account, witness ) );
+   return find< producer_vote_object, by_account_producer >( boost::make_tuple( account, producer ) );
 }
 
-const block_validation_object& database::get_block_validation( const account_name_type& producer, uint32_t height ) const
+const block_validation_object& database::get_block_validation( const account_name_type& producer, uint64_t height ) const
 { try {
    return get< block_validation_object, by_producer_height >( boost::make_tuple( producer, height) );
 } FC_CAPTURE_AND_RETHROW( (producer)(height) ) }
 
-const block_validation_object* database::find_block_validation( const account_name_type& producer, uint32_t height ) const
+const block_validation_object* database::find_block_validation( const account_name_type& producer, uint64_t height ) const
 {
    return find< block_validation_object, by_producer_height >( boost::make_tuple( producer, height) );
 }
@@ -1782,7 +1782,7 @@ vector< account_name_type > database::shuffle_accounts( vector< account_name_typ
 {
    vector< account_name_type > set = accounts;
    auto now_hi = uint64_t( head_block_time().time_since_epoch().count() ) << 32;
-   for( uint32_t i = 0; i < accounts.size(); ++i )
+   for( uint64_t i = 0; i < accounts.size(); ++i )
    {
       uint64_t k = now_hi +      uint64_t(i)*26857571057736338717ULL;
       uint64_t l = now_hi >> 1 + uint64_t(i)*95198191871878293511ULL;
@@ -1810,21 +1810,21 @@ vector< account_name_type > database::shuffle_accounts( vector< account_name_typ
       n*= 31902236862011382134ULL;
 
       uint64_t rand = (k ^ l) ^ (m ^ n) ; 
-      uint32_t max = set.size() - i;
+      uint64_t max = set.size() - i;
 
-      uint32_t j = i + rand % max;
+      uint64_t j = i + rand % max;
       std::swap( set[i], set[j] );
    }
    return set;
 };
 
-uint32_t database::witness_participation_rate()const
+uint32_t database::producer_participation_rate()const
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    return uint64_t(PERCENT_100) * props.recent_slots_filled.popcount() / 128;
 }
 
-void database::add_checkpoints( const flat_map< uint32_t, block_id_type >& checkpts )
+void database::add_checkpoints( const flat_map< uint64_t, block_id_type >& checkpts )
 {
    for( const auto& i : checkpts )
       _checkpoints[i.first] = i.second;
@@ -1841,7 +1841,7 @@ bool database::before_last_checkpoint()const
  *
  * @return true if we switched forks as a result of this push.
  */
-bool database::push_block(const signed_block& new_block, uint32_t skip)
+bool database::push_block(const signed_block& new_block, uint32_t skip )
 {
    //fc::time_point begin_time = fc::time_point::now();
 
@@ -1868,18 +1868,18 @@ bool database::push_block(const signed_block& new_block, uint32_t skip)
    return result;
 }
 
-void database::_maybe_warn_multiple_production( uint32_t height )const
+void database::_maybe_warn_multiple_production( uint64_t height )const
 {
    auto blocks = _fork_db.fetch_block_by_number( height );
    if( blocks.size() > 1 )
    {
-      vector< std::pair< account_name_type, fc::time_point > > witness_time_pairs;
+      vector< std::pair< account_name_type, fc::time_point > > producer_time_pairs;
       for( const auto& b : blocks )
       {
-         witness_time_pairs.push_back( std::make_pair( b->data.witness, b->data.timestamp ) );
+         producer_time_pairs.push_back( std::make_pair( b->data.producer, b->data.timestamp ) );
       }
 
-      ilog( "Encountered block num collision at block ${n} due to a fork, witnesses are: ${w}", ("n", height)("w", witness_time_pairs) );
+      ilog( "Encountered block num collision at block ${n} due to a fork, producers are: ${w}", ("n", height)("w", producer_time_pairs) );
    }
    return;
 }
@@ -2028,12 +2028,12 @@ void database::_push_transaction( const signed_transaction& trx )
 }
 
 
-/** Creates a new block using the keys provided to the witness node, 
- * when the witness is scheduled and syncronised.
+/** Creates a new block using the keys provided to the producer node, 
+ * when the producer is scheduled and syncronised.
  */
 signed_block database::generate_block(
    time_point when,
-   const account_name_type& witness_owner,
+   const account_name_type& producer_owner,
    const fc::ecc::private_key& block_signing_private_key,
    uint32_t skip /* = 0 */
    )
@@ -2043,41 +2043,41 @@ signed_block database::generate_block(
    {
       try
       {
-         result = _generate_block( when, witness_owner, block_signing_private_key );
+         result = _generate_block( when, producer_owner, block_signing_private_key );
       }
-      FC_CAPTURE_AND_RETHROW( (witness_owner) )
+      FC_CAPTURE_AND_RETHROW( (producer_owner) )
    });
    return result;
 }
 
-signed_block database::_generate_block( fc::time_point when, const account_name_type& witness_owner, const fc::ecc::private_key& block_signing_private_key )
+signed_block database::_generate_block( fc::time_point when, const account_name_type& producer_owner, const fc::ecc::private_key& block_signing_private_key )
 {
    uint32_t skip = get_node_properties().skip_flags;
-   uint32_t slot_num = get_slot_at_time( when );
+   uint64_t slot_num = get_slot_at_time( when );
    const dynamic_global_property_object& props = get_dynamic_global_properties();
 
    FC_ASSERT( slot_num > 0,
       "Slot number must be greater than zero." );
-   string scheduled_witness = get_scheduled_witness( slot_num );
-   FC_ASSERT( scheduled_witness == witness_owner,
-      "Scheduled witness must be the same as witness owner." );
+   string scheduled_producer = get_scheduled_producer( slot_num );
+   FC_ASSERT( scheduled_producer == producer_owner,
+      "Scheduled producer must be the same as producer owner." );
 
-   const witness_object& witness_obj = get_witness( witness_owner );
+   const producer_object& producer = get_producer( producer_owner );
 
-   if( !(skip & skip_witness_signature) )
+   if( !(skip & skip_producer_signature) )
    {
-      FC_ASSERT( witness_obj.signing_key == block_signing_private_key.get_public_key(),
-         "Block signing key must be equal to the witnesses block signing key." );
+      FC_ASSERT( producer.signing_key == block_signing_private_key.get_public_key(),
+         "Block signing key must be equal to the producers block signing key." );
    }
       
    signed_block pending_block;
    pending_block.previous = head_block_id();
    pending_block.timestamp = when;
-   pending_block.witness = witness_owner;
+   pending_block.producer = producer_owner;
    
-   const witness_object& witness = get_witness( witness_owner );
+   const producer_object& producer = get_producer( producer_owner );
    auto blockchainVersion = BLOCKCHAIN_VERSION;
-   if( witness.running_version != BLOCKCHAIN_VERSION )
+   if( producer.running_version != BLOCKCHAIN_VERSION )
    {
       pending_block.extensions.insert( block_header_extensions( BLOCKCHAIN_VERSION ) );
    }
@@ -2086,21 +2086,21 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
 
    auto blockchainHardforkVersion = BLOCKCHAIN_HARDFORK_VERSION;
    if( hfp.current_hardfork_version < BLOCKCHAIN_HARDFORK_VERSION // Binary is newer hardfork than has been applied
-      && ( witness.hardfork_version_vote != _hardfork_versions[ hfp.last_hardfork + 1 ] || 
-      witness.hardfork_time_vote != _hardfork_times[ hfp.last_hardfork + 1 ] ) ) // Witness vote does not match binary configuration
+      && ( producer.hardfork_version_vote != _hardfork_versions[ hfp.last_hardfork + 1 ] || 
+      producer.hardfork_time_vote != _hardfork_times[ hfp.last_hardfork + 1 ] ) ) // producer vote does not match binary configuration
    {
       // Make vote match binary configuration
       pending_block.extensions.insert( block_header_extensions( hardfork_version_vote( _hardfork_versions[ hfp.last_hardfork + 1 ], _hardfork_times[ hfp.last_hardfork + 1 ] ) ) );
    }
    else if( hfp.current_hardfork_version == BLOCKCHAIN_HARDFORK_VERSION     // Binary does not know of a new hardfork
-      && witness.hardfork_version_vote > BLOCKCHAIN_HARDFORK_VERSION )      // Voting for hardfork in the future, that we do not know of...
+      && producer.hardfork_version_vote > BLOCKCHAIN_HARDFORK_VERSION )      // Voting for hardfork in the future, that we do not know of...
    {
       // Make vote match binary configuration. This is vote to not apply the new hardfork.
       pending_block.extensions.insert( block_header_extensions( hardfork_version_vote( _hardfork_versions[ hfp.last_hardfork ], _hardfork_times[ hfp.last_hardfork ] ) ) );
    }
    
    size_t total_block_size = fc::raw::pack_size( pending_block ) + 4;       // The 4 is for the max size of the transaction vector length
-   uint32_t maximum_block_size = props.median_props.maximum_block_size;     // MAX_BLOCK_SIZE;
+   uint64_t maximum_block_size = props.median_props.maximum_block_size;     // MAX_BLOCK_SIZE;
 
    with_write_lock( [&]()
    {
@@ -2161,7 +2161,7 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
 
    pending_block.transaction_merkle_root = pending_block.calculate_merkle_root();
 
-   if( !(skip & skip_witness_signature) )
+   if( !(skip & skip_producer_signature) )
    {
       pending_block.sign( block_signing_private_key );
    }
@@ -2255,15 +2255,15 @@ void database::notify_on_applied_transaction( const signed_transaction& tx )
    TRY_NOTIFY( on_applied_transaction, tx )
 }
 
-account_name_type database::get_scheduled_witness( uint32_t slot_num )const
+account_name_type database::get_scheduled_producer( uint64_t slot_num )const
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    uint64_t current_aslot = props.current_aslot + slot_num;
-   return wso.current_shuffled_producers[ current_aslot % wso.num_scheduled_producers ];
+   return pso.current_shuffled_producers[ current_aslot % pso.num_scheduled_producers ];
 }
 
-fc::time_point database::get_slot_time(uint32_t slot_num)const
+fc::time_point database::get_slot_time(uint64_t slot_num)const
 {
    if( slot_num == 0 )
       return fc::time_point();
@@ -2285,67 +2285,67 @@ fc::time_point database::get_slot_time(uint32_t slot_num)const
    return fc::time_point( fc::microseconds( head_block_abs_slot * interval_micsec + slot_num * interval_micsec ) );
 }
 
-uint32_t database::get_slot_at_time(fc::time_point when)const
+uint64_t database::get_slot_at_time(fc::time_point when)const
 {
    fc::time_point first_slot_time = get_slot_time( 1 );
    if( when < first_slot_time ) {
       return 0;
    }
-   uint32_t slot_number = ((when.time_since_epoch().count() - first_slot_time.time_since_epoch().count()) / BLOCK_INTERVAL.count()) + 1;
+   uint64_t slot_number = ((when.time_since_epoch().count() - first_slot_time.time_since_epoch().count()) / BLOCK_INTERVAL.count()) + 1;
    return slot_number;
 }
 
-void database::update_witness_set()
+void database::update_producer_set()
 { try {
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
 
-   process_update_witness_set();
+   process_update_producer_set();
 
 } FC_CAPTURE_AND_RETHROW() }
 
 
-void database::process_update_witness_set()
+void database::process_update_producer_set()
 { try {
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const auto& wit_idx = get_index< witness_index >().indices().get< by_voting_power >();
-   auto wit_itr = wit_idx.begin();
-   uint128_t total_witness_voting_power = 0;
+   const auto& producer_idx = get_index< producer_index >().indices().get< by_voting_power >();
+   auto producer_itr = producer_idx.begin();
+   uint128_t total_producer_voting_power = 0;
    
-   while( wit_itr != wit_idx.end() )
+   while( producer_itr != producer_idx.end() )
    {
-      total_witness_voting_power += update_witness( *wit_itr, wso, props).value;
-      ++wit_itr;
+      total_producer_voting_power += update_producer( *producer_itr, pso, props).value;
+      ++producer_itr;
    }
 
-   modify( wso, [&]( witness_schedule_object& w )
+   modify( pso, [&]( producer_schedule_object& pso )
    {
-      w.total_witness_voting_power = total_witness_voting_power;
+      pso.total_producer_voting_power = total_producer_voting_power;
    });
 
 } FC_CAPTURE_AND_RETHROW() }
 
 
 /**
- * Updates the voting power and vote count of a witness
- * and returns the total voting power supporting the witness.
+ * Updates the voting power and vote count of a producer
+ * and returns the total voting power supporting the producer.
  */
-share_type database::update_witness( const witness_object& witness, const witness_schedule_object& wso, 
+share_type database::update_producer( const producer_object& producer, const producer_schedule_object& pso, 
    const dynamic_global_property_object& props )
 { try {
-   const auto& wit_vote_idx = get_index< witness_vote_index >().indices().get< by_witness_account >();
-   auto wit_vote_itr = wit_vote_idx.lower_bound( witness.owner );
+   const auto& producer_vote_idx = get_index< producer_vote_index >().indices().get< by_producer_account >();
+   auto producer_vote_itr = producer_vote_idx.lower_bound( producer.owner );
    price equity_price = props.current_median_equity_price;
    time_point now = props.time;
    share_type voting_power = 0;
    uint32_t vote_count = 0;
 
-   while( wit_vote_itr != wit_vote_idx.end() && wit_vote_itr->witness == witness.owner )
+   while( producer_vote_itr != producer_vote_idx.end() && producer_vote_itr->producer == producer.owner )
    {
-      const witness_vote_object& vote = *wit_vote_itr;
+      const producer_vote_object& vote = *producer_vote_itr;
       const account_object& voter = get_account( vote.account );
-      share_type weight = get_voting_power( wit_vote_itr->account, equity_price );
+      share_type weight = get_voting_power( producer_vote_itr->account, equity_price );
       if( voter.proxied.size() )
       {
          weight += get_proxied_voting_power( voter, equity_price );
@@ -2353,23 +2353,23 @@ share_type database::update_witness( const witness_object& witness, const witnes
       // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
       voting_power += ( weight.value >> vote.vote_rank );
       vote_count++;
-      ++wit_vote_itr;
+      ++producer_vote_itr;
    }
 
-   modify( witness, [&]( witness_object& w )
+   modify( producer, [&]( producer_object& p )
    {
-      w.voting_power = voting_power;
-      w.vote_count = vote_count;
-      auto delta_pos = w.voting_power.value * (wso.current_witness_virtual_time - w.witness_virtual_last_update);
-      w.witness_virtual_position += delta_pos;
-      w.witness_virtual_scheduled_time = w.witness_virtual_last_update + (VIRTUAL_SCHEDULE_LAP_LENGTH - w.witness_virtual_position)/(w.voting_power.value+1);
-      /** witnesses with a low number of votes could overflow the time field and end up with a scheduled time in the past */
-      if( w.witness_virtual_scheduled_time < wso.current_witness_virtual_time ) 
+      p.voting_power = voting_power;
+      p.vote_count = vote_count;
+      auto delta_pos = p.voting_power.value * (pso.current_voting_virtual_time - p.voting_virtual_last_update);
+      p.voting_virtual_position += delta_pos;
+      p.voting_virtual_scheduled_time = p.voting_virtual_last_update + (VIRTUAL_SCHEDULE_LAP_LENGTH - p.voting_virtual_position)/(p.voting_power.value+1);
+      /** producers with a low number of votes could overflow the time field and end up with a scheduled time in the past */
+      if( p.voting_virtual_scheduled_time < pso.current_voting_virtual_time ) 
       {
-         w.witness_virtual_scheduled_time = fc::uint128::max_value();
+         p.voting_virtual_scheduled_time = fc::uint128::max_value();
       }
-      w.decay_weights( now, wso );
-      w.witness_virtual_last_update = wso.current_witness_virtual_time;
+      p.decay_weights( now, pso );
+      p.voting_virtual_last_update = pso.current_voting_virtual_time;
    });
 
    return voting_power;
@@ -2655,7 +2655,7 @@ void database::process_bitassets()
       {
          abdo.force_settled_volume = 0; // Reset all BitAsset force settlement volumes to zero
 
-         if ( ( flags & ( witness_fed_asset ) ) &&
+         if ( ( flags & ( producer_fed_asset ) ) &&
               feed_lifetime < head_epoch_seconds )            // if smartcoin && check overflow
          {
             fc::time_point calculated = now - feed_lifetime;
@@ -2737,10 +2737,10 @@ share_type database::get_equity_shares( const account_balance_object& balance, c
 {
    const account_object& account = get_account( balance.owner );
    time_point now = head_block_time();
-   if( ( account.witness_vote_count < equity.min_witnesses ) || 
+   if( ( account.producer_vote_count < equity.min_producers ) || 
       ( now > (account.last_activity_reward + equity.min_active_time ) ) )
    {
-      return 0;  // Account does not recieve equity reward when witness votes or last activity are insufficient.
+      return 0;  // Account does not recieve equity reward when producer votes or last activity are insufficient.
    }
 
    share_type equity_shares = 0;
@@ -2749,10 +2749,10 @@ share_type database::get_equity_shares( const account_balance_object& balance, c
    equity_shares += ( equity.savings_dividend_percent * balance.savings_balance ) / PERCENT_100; 
 
    if( (balance.staked_balance >= equity.boost_balance ) &&
-      (account.witness_vote_count >= equity.boost_witnesses ) &&
+      (account.producer_vote_count >= equity.boost_producers ) &&
       (account.recent_activity_claims >= equity.boost_activity ) )
    {
-      equity_shares *= 2;    // Doubles equity reward when 10+ WYM balance, 50+ witness votes, and 15+ Activity rewards in last 30 days
+      equity_shares *= 2;    // Doubles equity reward when 10+ WYM balance, 50+ producer votes, and 15+ Activity rewards in last 30 days
    }
 
    if( account.membership == TOP_MEMBERSHIP ) 
@@ -2834,16 +2834,16 @@ void database::update_proof_of_work_target()
       return;
 
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const witness_schedule_object& wso = get_witness_schedule();
-   uint128_t recent_pow = wso.recent_pow;        // Amount of proofs of work, times block precision, decayed over 7 days
-   uint128_t target_pow = ( BLOCKCHAIN_PRECISION * wso.median_props.pow_decay_time.to_seconds() ) / wso.median_props.pow_target_time.to_seconds();
-   uint128_t new_difficulty = ( wso.pow_target_difficulty * target_pow ) / recent_pow;
+   const producer_schedule_object& pso = get_producer_schedule();
+   uint128_t recent_pow = pso.recent_pow;        // Amount of proofs of work, times block precision, decayed over 7 days
+   uint128_t target_pow = ( BLOCKCHAIN_PRECISION * pso.median_props.pow_decay_time.to_seconds() ) / pso.median_props.pow_target_time.to_seconds();
+   uint128_t new_difficulty = ( pso.pow_target_difficulty * target_pow ) / recent_pow;
    time_point now = props.time;
 
-   modify( wso, [&]( witness_schedule_object& w )
+   modify( pso, [&]( producer_schedule_object& pso )
    {
-      w.pow_target_difficulty = new_difficulty;
-      w.decay_pow( now );
+      pso.pow_target_difficulty = new_difficulty;
+      pso.decay_pow( now );
    });
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -2854,22 +2854,22 @@ void database::claim_proof_of_work_reward( const account_name_type& miner )
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    asset pow_reward = rfo.work_reward_balance;
-   const witness_object& witness = get_witness( miner );
+   const producer_object& producer = get_producer( miner );
 
-   modify( witness, [&]( witness_object& w )
+   modify( producer, [&]( producer_object& p )
    {
-      w.mining_power += BLOCKCHAIN_PRECISION;
-      w.mining_count ++;
-      w.last_pow_time = now;
-      w.decay_weights( now, wso );
+      p.mining_power += BLOCKCHAIN_PRECISION;
+      p.mining_count ++;
+      p.last_pow_time = now;
+      p.decay_weights( now, pso );
    });
 
-   modify( wso, [&]( witness_schedule_object& w )
+   modify( pso, [&]( producer_schedule_object& pso )
    {
-      w.recent_pow += BLOCKCHAIN_PRECISION;
-      w.decay_pow( now );
+      pso.recent_pow += BLOCKCHAIN_PRECISION;
+      pso.decay_pow( now );
    });
 
    modify( rfo, [&]( reward_fund_object& r )
@@ -2896,26 +2896,26 @@ void database::process_txn_stake_rewards()
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    asset txn_stake_reward = rfo.txn_stake_reward_balance;     // Record the opening balance of the transaction stake reward fund
-   const auto& witness_idx = get_index< witness_index >().indices().get< by_txn_stake_weight >();
-   auto witness_itr = witness_idx.begin();
+   const auto& producer_idx = get_index< producer_index >().indices().get< by_txn_stake_weight >();
+   auto producer_itr = producer_idx.begin();
     
    flat_map < account_name_type, share_type > stake_map;
    share_type total_stake_shares = 0;
    asset distributed = asset( 0, SYMBOL_COIN );
 
-   while( witness_itr != witness_idx.end() &&
-      witness_itr->recent_txn_stake_weight > BLOCKCHAIN_PRECISION ) 
+   while( producer_itr != producer_idx.end() &&
+      producer_itr->recent_txn_stake_weight > BLOCKCHAIN_PRECISION ) 
    {
-      share_type stake_shares = witness_itr->recent_txn_stake_weight;  // Get the recent txn stake for each witness
+      share_type stake_shares = producer_itr->recent_txn_stake_weight;  // Get the recent txn stake for each producer
 
       if( stake_shares > 0 )
       {
          total_stake_shares += stake_shares;
-         stake_map[ witness_itr->owner ] = stake_shares;
+         stake_map[ producer_itr->owner ] = stake_shares;
       }
-      ++witness_itr;
+      ++producer_itr;
    }
 
    for( auto b : stake_map )
@@ -2936,7 +2936,7 @@ void database::process_txn_stake_rewards()
 
 
 /**
- * Distributes the block reward for validating blocks to witnesses
+ * Distributes the block reward for validating blocks to producers
  * and miners according to the stake weight of their commitment transactions
  * upon the block becoming irreversible after majority of producers have created
  * a block on top of it.
@@ -2951,7 +2951,7 @@ void database::process_validation_rewards()
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    asset validation_reward = rfo.validation_reward_balance;     // Record the opening balance of the validation reward fund
    const auto& valid_idx = get_index< block_validation_index >().indices().get< by_height_stake >();
    auto valid_itr = valid_idx.lower_bound( props.last_irreversible_block_num );
@@ -2964,7 +2964,7 @@ void database::process_validation_rewards()
       valid_itr->block_height == props.last_irreversible_block_num &&
       valid_itr->commitment_stake.amount >= BLOCKCHAIN_PRECISION ) 
    {
-      share_type validation_shares = valid_itr->commitment_stake;  // Get the commitment stake for each witness
+      share_type validation_shares = valid_itr->commitment_stake;  // Get the commitment stake for each producer
 
       if( validation_shares > 0 )
       {
@@ -2992,12 +2992,12 @@ void database::process_validation_rewards()
 
 
 /** 
- * Rewards witnesses when they have the current highest accumulated 
+ * Rewards producers when they have the current highest accumulated 
  * activity stake. Each time an account produces an activity reward transaction, 
- * they implicitly nominate thier highest voted witness to receive a daily vote as their Prime Witness.
+ * they implicitly nominate thier highest voted producer to receive a daily vote as their Prime Producer.
  * Award is distributed every eight hours to the leader by activity stake.
- * This incentivizes witnesses to campign to achieve prime witness designation with 
- * high stake, active accounts, in a competitive manner against other block producers. 
+ * This incentivizes producers to campaign to achieve prime producer designation with 
+ * high stake, active accounts, in a competitive manner. 
  */
 void database::process_producer_activity_rewards()
 { try {
@@ -3007,18 +3007,18 @@ void database::process_producer_activity_rewards()
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
-   const witness_schedule_object& wso = get_witness_schedule();
-   asset poa_reward = rfo.producer_activity_reward_balance;          // Record the opening balance of the witness activity reward fund.
-   const auto& witness_idx = get_index< witness_index >().indices().get< by_activity_stake >();
-   auto witness_itr = witness_idx.begin();
+   const producer_schedule_object& pso = get_producer_schedule();
+   asset poa_reward = rfo.producer_activity_reward_balance;          // Record the opening balance of the producer activity reward fund.
+   const auto& producer_idx = get_index< producer_index >().indices().get< by_activity_stake >();
+   auto producer_itr = producer_idx.begin();
 
-   if( witness_itr != witness_idx.end() )
+   if( producer_itr != producer_idx.end() )
    {
-      const witness_object& prime_witness = *witness_itr;
+      const producer_object& prime_producer = *producer_itr;
 
-      modify( prime_witness, [&]( witness_object& w )
+      modify( prime_producer, [&]( producer_object& p )
       {
-         w.accumulated_activity_stake = 0;     // Reset activity stake for top witness.
+         p.accumulated_activity_stake = 0;     // Reset activity stake for top producer.
       });
 
       modify( rfo, [&]( reward_fund_object& r )
@@ -3026,7 +3026,7 @@ void database::process_producer_activity_rewards()
          r.adjust_producer_activity_reward_balance( -poa_reward );     // Remove the distributed amount from the reward pool.
       });
 
-      adjust_reward_balance( prime_witness.owner, poa_reward );   // Pay witness activity reward to the witness with the highest accumulated activity stake.
+      adjust_reward_balance( prime_producer.owner, poa_reward );   // Pay producer activity reward to the producer with the highest accumulated activity stake.
       adjust_pending_supply( -poa_reward );        // Deduct distributed amount from pending supply.
    }
 
@@ -3093,15 +3093,15 @@ void database::process_supernode_rewards()
 /**
  * Update a network officer's voting approval statisitics
  * and updates its approval if there are
- * sufficient votes from witnesses and other accounts.
+ * sufficient votes from producers and other accounts.
  */
 void database::update_network_officer( const network_officer_object& network_officer, 
-   const witness_schedule_object& wso, const dynamic_global_property_object& props )
+   const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
    share_type voting_power = 0;
-   uint32_t witness_vote_count = 0;
-   share_type witness_voting_power = 0;
+   uint32_t producer_vote_count = 0;
+   share_type producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_officer_account >();
@@ -3112,7 +3112,7 @@ void database::update_network_officer( const network_officer_object& network_off
    {
       const network_officer_vote_object& vote = *vote_itr;
       const account_object& voter = get_account( vote.account );
-      bool is_witness = wso.is_top_witness( voter.name );
+      bool is_producer = pso.is_top_voting_producer( voter.name );
       vote_count++;
       share_type weight = 0;
       weight += get_voting_power( vote.account, equity_price );
@@ -3122,27 +3122,27 @@ void database::update_network_officer( const network_officer_object& network_off
       }
       voting_power += ( weight.value >> vote.vote_rank );
 
-      if( is_witness )
+      if( is_producer )
       {
-         witness_vote_count++;
-         const witness_object& witness = get_witness( voter.name );
-         witness_voting_power += ( witness.voting_power.value >> vote.vote_rank );
+         producer_vote_count++;
+         const producer_object& producer = get_producer( voter.name );
+         producer_voting_power += ( producer.voting_power.value >> vote.vote_rank );
       }
       ++vote_itr;
    }
 
    // Approve the network officer when a threshold of voting power and vote amount supports it.
    bool approve_officer = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
-      ( witness_vote_count >= VOTE_THRESHOLD_AMOUNT ) &&
+      ( producer_vote_count >= VOTE_THRESHOLD_AMOUNT ) &&
       ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( witness_voting_power >= ( wso.total_witness_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( producer_voting_power >= ( pso.total_producer_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( network_officer, [&]( network_officer_object& n )
    {
       n.vote_count = vote_count;
       n.voting_power = voting_power;
-      n.witness_vote_count = witness_vote_count;
-      n.witness_voting_power = witness_voting_power;
+      n.producer_vote_count = producer_vote_count;
+      n.producer_voting_power = producer_voting_power;
       n.officer_approved = approve_officer;
    });
 } FC_CAPTURE_AND_RETHROW() }
@@ -3160,14 +3160,14 @@ void database::process_network_officer_rewards()
 
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
    time_point now = props.time;
    auto officer_itr = officer_idx.begin();
 
    while( officer_itr != officer_idx.end() ) 
    {
-      update_network_officer( *officer_itr, wso, props );
+      update_network_officer( *officer_itr, pso, props );
       ++officer_itr;
    }
 
@@ -3270,15 +3270,15 @@ void database::process_network_officer_rewards()
 /**
  * Update an executive board's voting approval statisitics
  * and update its approval if there are
- * sufficient votes from witnesses and other accounts.
+ * sufficient votes from producers and other accounts.
  */
 void database::update_executive_board( const executive_board_object& executive_board, 
-   const witness_schedule_object& wso, const dynamic_global_property_object& props )
+   const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
    share_type voting_power = 0;
-   uint32_t witness_vote_count = 0;
-   share_type witness_voting_power = 0;
+   uint32_t producer_vote_count = 0;
+   share_type producer_voting_power = 0;
    price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
 
    const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_executive_account >();
@@ -3289,7 +3289,7 @@ void database::update_executive_board( const executive_board_object& executive_b
    {
       const executive_board_vote_object& vote = *vote_itr;
       const account_object& voter = get_account( vote.account );
-      bool is_witness = wso.is_top_witness( voter.name );
+      bool is_producer = pso.is_top_voting_producer( voter.name );
       vote_count++;
       share_type weight = 0;
       weight += get_voting_power( vote.account, equity_price );
@@ -3299,27 +3299,27 @@ void database::update_executive_board( const executive_board_object& executive_b
       }
       voting_power += ( weight.value >> vote.vote_rank );
 
-      if( is_witness )
+      if( is_producer )
       {
-         witness_vote_count++;
-         const witness_object& witness = get_witness( voter.name );
-         witness_voting_power += ( witness.voting_power.value >> vote.vote_rank );
+         producer_vote_count++;
+         const producer_object& producer = get_producer( voter.name );
+         producer_voting_power += ( producer.voting_power.value >> vote.vote_rank );
       }
       ++vote_itr;
    }
 
    // Approve the executive board when a threshold of votes to support its budget.
    bool approve_board = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 8 ) &&
-      ( witness_vote_count >= VOTE_THRESHOLD_AMOUNT * 2 ) &&
+      ( producer_vote_count >= VOTE_THRESHOLD_AMOUNT * 2 ) &&
       ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT * 2 ) / PERCENT_100 ) &&
-      ( witness_voting_power >= ( wso.total_witness_voting_power * VOTE_THRESHOLD_PERCENT * 2 ) / PERCENT_100 );
+      ( producer_voting_power >= ( pso.total_producer_voting_power * VOTE_THRESHOLD_PERCENT * 2 ) / PERCENT_100 );
    
    modify( executive_board, [&]( executive_board_object& e )
    {
       e.vote_count = vote_count;
       e.voting_power = voting_power;
-      e.witness_vote_count = witness_vote_count;
-      e.witness_voting_power = witness_voting_power;
+      e.producer_vote_count = producer_vote_count;
+      e.producer_voting_power = producer_voting_power;
       e.board_approved = approve_board;
    });
 } FC_CAPTURE_AND_RETHROW() }
@@ -3327,7 +3327,7 @@ void database::update_executive_board( const executive_board_object& executive_b
 
 /**
  * Pays the requested budgets fo the top 5 voted executive boards on the network, that have
- * sufficient approval from accounts and witnesses once per day.
+ * sufficient approval from accounts and producers once per day.
  * Price of network credit asset must be greater than $0.90 USD to issue new units, or 
  * executive budgets are suspended. 
  * Network credit is a digital fiat currency that is issued to executive boards
@@ -3342,7 +3342,7 @@ void database::process_executive_board_budgets()
    if( (head_block_num() % EXECUTIVE_BOARD_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
       return;
 
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
 
@@ -3353,7 +3353,7 @@ void database::process_executive_board_budgets()
    while( exec_itr != exec_idx.end() )   // update all executive board approvals and vote statistics. 
    {
       const executive_board_object& exec = *exec_itr;
-      update_executive_board( exec, wso, props );
+      update_executive_board( exec, pso, props );
       ++exec_itr;
    }
 
@@ -3381,15 +3381,15 @@ void database::process_executive_board_budgets()
 /**
  * Update a governance account's voting approval statisitics
  * and update its approval if there are
- * sufficient votes from witnesses and other accounts.
+ * sufficient votes from producers and other accounts.
  */
 void database::update_governance_account( const governance_account_object& governance_account, 
-   const witness_schedule_object& wso, const dynamic_global_property_object& props )
+   const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
    share_type voting_power = 0;
-   uint32_t witness_vote_count = 0;
-   share_type witness_voting_power = 0;
+   uint32_t producer_vote_count = 0;
+   share_type producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& vote_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
@@ -3400,7 +3400,7 @@ void database::update_governance_account( const governance_account_object& gover
    {
       const governance_subscription_object& vote = *vote_itr;
       const account_object& voter = get_account( vote.account );
-      bool is_witness = wso.is_top_witness( voter.name );
+      bool is_producer = pso.is_top_voting_producer( voter.name );
       vote_count++;
       share_type weight = 0;
       weight += get_voting_power( vote.account, equity_price );
@@ -3410,27 +3410,27 @@ void database::update_governance_account( const governance_account_object& gover
       }
       voting_power += ( weight.value >> vote.vote_rank );
 
-      if( is_witness )
+      if( is_producer )
       {
-         witness_vote_count++;
-         const witness_object& witness = get_witness( voter.name );
-         witness_voting_power += ( witness.voting_power.value >> vote.vote_rank );
+         producer_vote_count++;
+         const producer_object& producer = get_producer( voter.name );
+         producer_voting_power += ( producer.voting_power.value >> vote.vote_rank );
       }
       ++vote_itr;
    }
 
    // Approve the executive board when a threshold of votes to support its budget.
    bool approve_account = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
-      ( witness_vote_count >= VOTE_THRESHOLD_AMOUNT ) &&
+      ( producer_vote_count >= VOTE_THRESHOLD_AMOUNT ) &&
       ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( witness_voting_power >= ( wso.total_witness_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( producer_voting_power >= ( pso.total_producer_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( governance_account, [&]( governance_account_object& g )
    {
       g.subscriber_count = vote_count;
       g.subscriber_power = voting_power;
-      g.witness_subscriber_count = witness_vote_count;
-      g.witness_subscriber_power = witness_voting_power;
+      g.producer_subscriber_count = producer_vote_count;
+      g.producer_subscriber_power = producer_voting_power;
       g.account_approved = approve_account;
    });
 } FC_CAPTURE_AND_RETHROW() }
@@ -3441,14 +3441,14 @@ void database::update_governance_account_set()
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL ) != 0 )    // Runs once per day
       return;
    
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const auto& g_idx = get_index< governance_account_index >().indices().get< by_subscriber_power >();
    auto g_itr = g_idx.begin();
    
    while( g_itr != g_idx.end() )
    {
-      update_governance_account( *g_itr, wso, props );
+      update_governance_account( *g_itr, pso, props );
       ++g_itr;
    }
 
@@ -3458,19 +3458,19 @@ void database::update_governance_account_set()
 /**
  * Update a community enterprise proposal's voting approval statisitics
  * and increment the approved milestone if there are
- * sufficient current approvals from witnesses and other accounts.
+ * sufficient current approvals from producers and other accounts.
  */
 void database::update_enterprise( const community_enterprise_object& enterprise, 
-   const witness_schedule_object& wso, const dynamic_global_property_object& props )
+   const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t total_approvals = 0;
    share_type total_voting_power = 0;
-   uint32_t total_witness_approvals = 0;
-   share_type total_witness_voting_power = 0;
+   uint32_t total_producer_approvals = 0;
+   share_type total_producer_voting_power = 0;
    uint32_t current_approvals = 0;
    share_type current_voting_power = 0;
-   uint32_t current_witness_approvals = 0;
-   share_type current_witness_voting_power = 0;
+   uint32_t current_producer_approvals = 0;
+   share_type current_producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& approval_idx = get_index< enterprise_approval_index >().indices().get< by_enterprise_id >();
@@ -3482,7 +3482,7 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
    {
       const enterprise_approval_object& approval = *approval_itr;
       const account_object& voter = get_account( approval.account );
-      bool is_witness = wso.is_top_witness( voter.name );
+      bool is_producer = pso.is_top_voting_producer( voter.name );
       total_approvals++;
       total_voting_power += get_voting_power( approval.account, equity_price );
       if( voter.proxied.size() )
@@ -3490,11 +3490,11 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
          total_voting_power += get_proxied_voting_power( voter, equity_price );
       }
 
-      if( is_witness )
+      if( is_producer )
       {
-         total_witness_approvals++;
-         const witness_object& witness = get_witness( voter.name );
-         total_witness_voting_power += witness.voting_power;
+         total_producer_approvals++;
+         const producer_object& producer = get_producer( voter.name );
+         total_producer_voting_power += producer.voting_power;
       }
 
       if( approval.milestone == enterprise.claimed_milestones ) // approval is current 
@@ -3506,11 +3506,11 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
             current_voting_power += get_proxied_voting_power( voter, equity_price );
          }
 
-         if( is_witness )
+         if( is_producer )
          {
-            current_witness_approvals++;
-            const witness_object& witness = get_witness( voter.name );
-            current_witness_voting_power += witness.voting_power;
+            current_producer_approvals++;
+            const producer_object& producer = get_producer( voter.name );
+            current_producer_voting_power += producer.voting_power;
          }
       }
       ++approval_itr;
@@ -3518,20 +3518,20 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
 
    // Approve the latest claimed milestone when a threshold of approvals support its release.
    bool approve_milestone = ( current_approvals >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
-      ( current_witness_approvals >= VOTE_THRESHOLD_AMOUNT ) &&
+      ( current_producer_approvals >= VOTE_THRESHOLD_AMOUNT ) &&
       ( current_voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( current_witness_voting_power >= ( wso.total_witness_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( current_producer_voting_power >= ( pso.total_producer_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
 
    modify( enterprise, [&]( community_enterprise_object& e )
    {
       e.total_approvals = total_approvals;
       e.total_voting_power = total_voting_power;
-      e.total_witness_approvals = total_witness_approvals;
-      e.total_witness_voting_power = total_witness_voting_power;
+      e.total_producer_approvals = total_producer_approvals;
+      e.total_producer_voting_power = total_producer_voting_power;
       e.current_approvals = current_approvals;
       e.current_voting_power = current_voting_power;
-      e.current_witness_approvals = current_witness_approvals;
-      e.current_witness_voting_power = current_witness_voting_power;
+      e.current_producer_approvals = current_producer_approvals;
+      e.current_producer_voting_power = current_producer_voting_power;
       if( approve_milestone )
       {
          e.approved_milestones = e.claimed_milestones;
@@ -3543,7 +3543,7 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
 /**
  * Updates all community enterprise proposals, by checking 
  * if they have sufficient approvals from accounts on 
- * the network and witnesses.
+ * the network and producers.
  * Processes budget payments for all proposals that have milestone approvals.
  */
 void database::process_community_enterprise_fund()
@@ -3552,7 +3552,7 @@ void database::process_community_enterprise_fund()
       return;
 
    const reward_fund_object& rfo = get_reward_fund();
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
    const auto& enterprise_idx = get_index< community_enterprise_index >().indices().get< by_total_voting_power >();
@@ -3560,7 +3560,7 @@ void database::process_community_enterprise_fund()
 
    while( enterprise_itr != enterprise_idx.end() ) 
    {
-      update_enterprise( *enterprise_itr, wso, props );
+      update_enterprise( *enterprise_itr, pso, props );
       ++enterprise_itr;
    }
 
@@ -3891,25 +3891,27 @@ void database::adjust_interface_users( const interface_object& interface, bool a
 
 
 /**
- *  Overall the network has a MeCoin Issuance rate of one Billion per year
- *   25% of issuance is directed to Content Creator rewards
- *   20% of issuance is directed to Equity Holder rewards
- *   20% of issuance is directed to Block producers (Witnesses + Miners)
- *   10% of issuance is directed to Supernode Operator rewards
- *   10% of issuance is directed to Staked MeCoin Holder rewards
- *    5% of issuance is directed to The Community Enterprise fund
- *  2.5% of issuance is directed to The Development reward pool
- *  2.5% of issuance is directed to The Marketing reward pool
- *  2.5% of issuance is directed to The Advocacy reward pool
- *  2.5% of issuance is directed to The Activity reward pool
- *  This method pays out Staked and liquid COIN every block to all network contributors
+ *  Overall the network has a MeCoin Issuance rate of one Billion per year.
+ * 
+ *  - 25% of issuance is directed to Content Creator rewards.
+ *  - 20% of issuance is directed to Equity Holder rewards.
+ *  - 20% of issuance is directed to Block producers.
+ *  - 10% of issuance is directed to Supernode Operator rewards.
+ *  - 10% of issuance is directed to Staked MeCoin Holder rewards.
+ *  -  5% of issuance is directed to The Community Enterprise fund.
+ *  - 2.5% of issuance is directed to The Development reward pool.
+ *  - 2.5% of issuance is directed to The Marketing reward pool.
+ *  - 2.5% of issuance is directed to The Advocacy reward pool.
+ *  - 2.5% of issuance is directed to The Activity reward pool.
+ * 
+ *  Pays out Staked and liquid COIN every block to all network contributors.
  */
 void database::process_funds()
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const witness_schedule_object& wso = get_witness_schedule();
-   const witness_object& current_producer = get_witness( props.current_producer );
-   const account_object& witness_account = get_account( props.current_producer );
+   const producer_schedule_object& pso = get_producer_schedule();
+   const producer_object& current_producer = get_producer( props.current_producer );
+   const account_object& producer_account = get_account( props.current_producer );
 
    asset block_reward = BLOCK_REWARD;
 
@@ -3961,11 +3963,11 @@ void database::process_funds()
       aedo.adjust_pool( equity_reward );
    });
 
-   adjust_reward_balance( witness_account, producer_block_reward );
+   adjust_reward_balance( producer_account, producer_block_reward );
 
    adjust_pending_supply( pending_issuance + producer_pending );
    
-   push_virtual_operation( producer_reward_operation( witness_account.name, producer_block_reward ) );
+   push_virtual_operation( producer_reward_operation( producer_account.name, producer_block_reward ) );
    
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -3985,7 +3987,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< account_accept_invite_evaluator          >();
    _my->_evaluator_registry.register_evaluator< account_remove_member_evaluator          >();
    _my->_evaluator_registry.register_evaluator< account_update_list_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< account_witness_vote_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< account_producer_vote_evaluator           >();
    _my->_evaluator_registry.register_evaluator< account_update_proxy_evaluator           >();
    _my->_evaluator_registry.register_evaluator< request_account_recovery_evaluator       >();
    _my->_evaluator_registry.register_evaluator< recover_account_evaluator                >();
@@ -4105,7 +4107,7 @@ void database::initialize_evaluators()
    
    // Block Producer Evaluators
 
-   _my->_evaluator_registry.register_evaluator< witness_update_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< producer_update_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< proof_of_work_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< verify_block_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< commit_block_evaluator                   >();
@@ -4251,9 +4253,9 @@ void database::initialize_indexes()
 
    // Block Producer Objects 
 
-   add_core_index< witness_index                           >(*this);
-   add_core_index< witness_schedule_index                  >(*this);
-   add_core_index< witness_vote_index                      >(*this);
+   add_core_index< producer_index                           >(*this);
+   add_core_index< producer_schedule_index                  >(*this);
+   add_core_index< producer_vote_index                      >(*this);
    add_core_index< block_validation_index                  >(*this);
    add_core_index< commit_violation_index                  >(*this);
 
@@ -4296,7 +4298,7 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
          FC_ASSERT( next_block.id() == itr->second, "Block did not match checkpoint", ("checkpoint",*itr)("block_id",next_block.id()) );
 
       if( _checkpoints.rbegin()->first >= block_num )
-         skip = skip_witness_signature
+         skip = skip_producer_signature
               | skip_transaction_signatures
               | skip_transaction_dupe_check
               | skip_fork_db
@@ -4305,7 +4307,7 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
               | skip_authority_check
               | skip_merkle_check //While blockchain is being downloaded, txs need to be validated against block headers
               | skip_undo_history_check
-              | skip_witness_schedule_check
+              | skip_producer_schedule_check
               | skip_validate
               | skip_validate_invariants
               ;
@@ -4330,12 +4332,12 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
    {
       if( _next_flush_block == 0 )
       {
-         uint32_t lep = block_num + 1 + _flush_blocks * 9 / 10;
-         uint32_t rep = block_num + 1 + _flush_blocks;
+         uint64_t lep = block_num + 1 + _flush_blocks * 9 / 10;
+         uint64_t rep = block_num + 1 + _flush_blocks;
 
          // use time_point::now() as RNG source to pick block randomly between lep and rep
-         uint32_t span = rep - lep;
-         uint32_t x = lep;
+         uint64_t span = rep - lep;
+         uint64_t x = lep;
          if( span > 0 )
          {
             uint64_t now = uint64_t( fc::time_point::now().time_since_epoch().count() );
@@ -4359,26 +4361,30 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
 
 void database::show_free_memory( bool force )
 {
-   uint32_t free_gb = uint32_t( get_free_memory() / (1024*1024*1024) );
+   uint64_t free_gb = uint64_t( get_free_memory() / (1024*1024*1024) );
    if( force || (free_gb < _last_free_gb_printed) || (free_gb > _last_free_gb_printed+1) )
    {
-      ilog( "Free memory is now ${n}G", ("n", free_gb) );
+      ilog( "Free memory is now ${n} GB", ("n", free_gb) );
       _last_free_gb_printed = free_gb;
    }
 
    if( free_gb == 0 )
    {
-      uint32_t free_mb = uint32_t( get_free_memory() / (1024*1024) );
+      uint64_t free_mb = uint64_t( get_free_memory() / (1024*1024) );
 
-      if( free_mb <= 100 && head_block_num() % 10 == 0 )
-         elog( "Free memory is now ${n}M. Increase shared file size immediately!" , ("n", free_mb) );
+      if( free_mb <= 500 && head_block_num() % 10 == 0 )
+      {
+         elog( "Free memory is now ${n} MB. Shared Memory Capacity is insufficient, and may cause a node failure when depleted. Please increase shared file size.", 
+         ("n", free_mb) );
+      }
+         
    }
 }
 
 void database::_apply_block( const signed_block& next_block )
 { try {
    notify_pre_apply_block( next_block );
-   uint32_t next_block_num = next_block.block_num();
+   uint64_t next_block_num = next_block.block_num();
    block_id_type next_block_id = next_block.id();
    uint32_t skip = get_node_properties().skip_flags;
 
@@ -4403,7 +4409,7 @@ void database::_apply_block( const signed_block& next_block )
       }
    }
 
-   const witness_object& signing_witness = validate_block_header(skip, next_block);
+   const producer_object& signing_producer = validate_block_header(skip, next_block);
 
    _current_block_num = next_block_num;
    _current_trx_in_block = 0;
@@ -4424,22 +4430,22 @@ void database::_apply_block( const signed_block& next_block )
       );
    }
 
-   // Modify current witness so transaction evaluators can know who included the transaction,
+   // Modify current producer so transaction evaluators can know who included the transaction,
    // this is mostly for POW operations which must pay the current_producer.
 
    modify( props, [&]( dynamic_global_property_object& dgp )
    {
-      dgp.current_producer = next_block.witness;
+      dgp.current_producer = next_block.producer;
    });
 
-   process_header_extensions( next_block );     // parse witness version reporting
+   process_header_extensions( next_block );     // parse producer version reporting
 
-   const witness_object& witness = get_witness( next_block.witness );
+   const producer_object& producer = get_producer( next_block.producer );
    const hardfork_property_object& hardfork_state = get_hardfork_property_object();
 
-   FC_ASSERT( witness.running_version >= hardfork_state.current_hardfork_version,
-      "Block produced by witness that is not running current hardfork.",
-      ("witness",witness)("next_block.witness",next_block.witness)("hardfork_state", hardfork_state)
+   FC_ASSERT( producer.running_version >= hardfork_state.current_hardfork_version,
+      "Block produced by producer that is not running current hardfork.",
+      ("producer",producer)("next_block.producer",next_block.producer)("hardfork_state", hardfork_state)
    );
    
    /** 
@@ -4456,17 +4462,17 @@ void database::_apply_block( const signed_block& next_block )
    }
 
    update_global_dynamic_data( next_block);
-   update_signing_witness( signing_witness, next_block );
+   update_signing_producer( signing_producer, next_block );
 
    update_last_irreversible_block();
-   update_transaction_stake( signing_witness, _current_trx_stake_weight );
+   update_transaction_stake( signing_producer, _current_trx_stake_weight );
    create_block_summary( next_block );
    clear_expired_transactions();
    clear_expired_operations();
    clear_expired_delegations();
-   update_witness_schedule(*this);
+   update_producer_schedule(*this);
 
-   update_witness_set();
+   update_producer_set();
    update_governance_account_set();
    update_board_moderator_set();
    update_business_account_set();
@@ -4522,14 +4528,14 @@ void database::process_header_extensions( const signed_block& next_block )
          case 1: // version
          {
             auto reported_version = itr->get< version >();
-            const auto& signing_witness = get_witness( next_block.witness );
-            //idump( (next_block.witness)(signing_witness.running_version)(reported_version) );
+            const auto& signing_producer = get_producer( next_block.producer );
+            //idump( (next_block.producer)(signing_producer.running_version)(reported_version) );
 
-            if( reported_version != signing_witness.running_version )
+            if( reported_version != signing_producer.running_version )
             {
-               modify( signing_witness, [&]( witness_object& wo )
+               modify( signing_producer, [&]( producer_object& p )
                {
-                  wo.running_version = reported_version;
+                  p.running_version = reported_version;
                });
             }
             break;
@@ -4537,14 +4543,14 @@ void database::process_header_extensions( const signed_block& next_block )
          case 2: // hardfork_version vote
          {
             auto hfv = itr->get< hardfork_version_vote >();
-            const auto& signing_witness = get_witness( next_block.witness );
-            //idump( (next_block.witness)(signing_witness.running_version)(hfv) );
+            const auto& signing_producer = get_producer( next_block.producer );
+            //idump( (next_block.producer)(signing_producer.running_version)(hfv) );
 
-            if( hfv.hf_version != signing_witness.hardfork_version_vote || hfv.hf_time != signing_witness.hardfork_time_vote )
-               modify( signing_witness, [&]( witness_object& wo )
+            if( hfv.hf_version != signing_producer.hardfork_version_vote || hfv.hf_time != signing_producer.hardfork_time_vote )
+               modify( signing_producer, [&]( producer_object& p )
                {
-                  wo.hardfork_version_vote = hfv.hf_version;
-                  wo.hardfork_time_vote = hfv.hf_time;
+                  p.hardfork_version_vote = hfv.hf_version;
+                  p.hardfork_time_vote = hfv.hf_time;
                });
 
             break;
@@ -4663,19 +4669,19 @@ void database::update_stake( const signed_transaction& trx)
 }
 
 /**
- * Decays and increments the current witness according to the stake
+ * Decays and increments the current producer according to the stake
  * weight of all the transactions in the block they have created.
  */
-void database::update_transaction_stake(const witness_object& signing_witness, const uint128_t& transaction_stake)
+void database::update_transaction_stake(const producer_object& signing_producer, const uint128_t& transaction_stake)
 {
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    const time_point now = head_block_time();
-   fc::microseconds decay_time = wso.median_props.txn_stake_decay_time;
-   modify( signing_witness, [&]( witness_object& w ) 
+   fc::microseconds decay_time = pso.median_props.txn_stake_decay_time;
+   modify( signing_producer, [&]( producer_object& p ) 
    {
-      w.recent_txn_stake_weight -= ( w.recent_txn_stake_weight * ( now - w.last_txn_stake_weight_update).to_seconds() ) / decay_time.to_seconds();
-      w.recent_txn_stake_weight += transaction_stake;
-      w.last_txn_stake_weight_update = now;
+      p.recent_txn_stake_weight -= ( p.recent_txn_stake_weight * ( now - p.last_txn_stake_weight_update).to_seconds() ) / decay_time.to_seconds();
+      p.recent_txn_stake_weight += transaction_stake;
+      p.last_txn_stake_weight_update = now;
    });
 }
 
@@ -4687,7 +4693,7 @@ void database::apply_operation(const operation& op)
    notify_post_apply_operation( note );
 }
 
-const witness_object& database::validate_block_header( uint32_t skip, const signed_block& next_block )const
+const producer_object& database::validate_block_header( uint32_t skip, const signed_block& next_block )const
 { try {
    FC_ASSERT( head_block_id() == next_block.previous,
       "Head Block ID must equal previous block header in new block.", 
@@ -4696,26 +4702,26 @@ const witness_object& database::validate_block_header( uint32_t skip, const sign
       "Head Block time must be less than timestamp of new block.",
       ("head_block_time",head_block_time())("next",next_block.timestamp)("blocknum",next_block.block_num()) );
 
-   const witness_object& witness = get_witness( next_block.witness );
+   const producer_object& producer = get_producer( next_block.producer );
 
-   if( !( skip&skip_witness_signature ) )
+   if( !( skip&skip_producer_signature ) )
    {
-      FC_ASSERT( next_block.validate_signee( witness.signing_key ) );
+      FC_ASSERT( next_block.validate_signee( producer.signing_key ) );
    }  
 
-   if( !( skip&skip_witness_schedule_check ) )
+   if( !( skip&skip_producer_schedule_check ) )
    {
-      uint32_t slot_num = get_slot_at_time( next_block.timestamp );
+      uint64_t slot_num = get_slot_at_time( next_block.timestamp );
       FC_ASSERT( slot_num > 0,
          "slot number must be greater than 0." );
 
-      string scheduled_witness = get_scheduled_witness( slot_num );
+      string scheduled_producer = get_scheduled_producer( slot_num );
 
-      FC_ASSERT( witness.owner == scheduled_witness, "Witness produced block at wrong time",
-         ("block witness",next_block.witness)("scheduled",scheduled_witness)("slot_num",slot_num) );
+      FC_ASSERT( producer.owner == scheduled_producer, "producer produced block at wrong time",
+         ("block producer",next_block.producer)("scheduled",scheduled_producer)("slot_num",slot_num) );
    }
 
-   return witness;
+   return producer;
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -4743,16 +4749,16 @@ void database::update_global_dynamic_data( const signed_block& b )
       missed_blocks--;
       for( uint32_t i = 0; i < missed_blocks; ++i )
       {
-         const auto& witness_missed = get_witness( get_scheduled_witness( i + 1 ) );
-         if( witness_missed.owner != b.witness )
+         const auto& producer_missed = get_producer( get_scheduled_producer( i + 1 ) );
+         if( producer_missed.owner != b.producer )
          {
-            modify( witness_missed, [&]( witness_object& w )
+            modify( producer_missed, [&]( producer_object& p )
             {
-               w.total_missed++;
-               if( head_block_num() - w.last_confirmed_block_num  > BLOCKS_PER_DAY )
+               p.total_missed++;
+               if( head_block_num() - p.last_confirmed_block_num  > BLOCKS_PER_DAY )
                {
-                  w.signing_key = public_key_type();
-                  push_virtual_operation( shutdown_witness_operation( w.owner ) );
+                  p.active = false;
+                  push_virtual_operation( shutdown_producer_operation( p.owner ) );
                }
             } );
          }
@@ -4786,16 +4792,16 @@ void database::update_global_dynamic_data( const signed_block& b )
    }
 } FC_CAPTURE_AND_RETHROW() }
 
-void database::update_signing_witness( const witness_object& signing_witness, const signed_block& new_block )
+void database::update_signing_producer( const producer_object& signing_producer, const signed_block& new_block )
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    uint64_t new_block_aslot = props.current_aslot + get_slot_at_time( new_block.timestamp );
 
-   modify( signing_witness, [&]( witness_object& w )
+   modify( signing_producer, [&]( producer_object& p )
    {
-      w.last_aslot = new_block_aslot;
-      w.last_confirmed_block_num = new_block.block_num();
-      w.total_blocks++;
+      p.last_aslot = new_block_aslot;
+      p.last_confirmed_block_num = new_block.block_num();
+      p.total_blocks++;
    });
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -4808,13 +4814,13 @@ void database::update_signing_witness( const witness_object& signing_witness, co
 void database::update_last_irreversible_block()
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const witness_schedule_object& wso = witness_schedule_object();
+   const producer_schedule_object& pso = producer_schedule_object();
 
-   vector< const witness_object* > wit_objs;
-   wit_objs.reserve( wso.num_scheduled_producers );
-   for( int i = 0; i < wso.num_scheduled_producers; i++ )
+   vector< const producer_object* > producer_objs;
+   producer_objs.reserve( pso.num_scheduled_producers );
+   for( int i = 0; i < pso.num_scheduled_producers; i++ )
    {
-      wit_objs.push_back( &get_witness( wso.current_shuffled_producers[i] ) );
+      producer_objs.push_back( &get_producer( pso.current_shuffled_producers[i] ) );
    }
 
    static_assert( IRREVERSIBLE_THRESHOLD > 0, "irreversible threshold must be nonzero" );
@@ -4823,23 +4829,23 @@ void database::update_last_irreversible_block()
    // 1 1 1 1 1 1 1 2 2 2 -> 1
    // 3 3 3 3 3 3 3 3 3 3 -> 3
 
-   size_t offset = ( ( PERCENT_100 - IRREVERSIBLE_THRESHOLD ) * wit_objs.size() / PERCENT_100 );
+   size_t offset = ( ( PERCENT_100 - IRREVERSIBLE_THRESHOLD ) * producer_objs.size() / PERCENT_100 );
 
-   std::nth_element( wit_objs.begin(), wit_objs.begin() + offset, wit_objs.end(),
-      []( const witness_object* a, const witness_object* b )
+   std::nth_element( producer_objs.begin(), producer_objs.begin() + offset, producer_objs.end(),
+      []( const producer_object* a, const producer_object* b )
       {
          return a->last_confirmed_block_num < b->last_confirmed_block_num;
       });
 
-   uint32_t new_last_irreversible_block_num = wit_objs[offset]->last_confirmed_block_num;
+   uint64_t new_last_irreversible_block_num = producer_objs[offset]->last_confirmed_block_num;
 
-   std::nth_element( wit_objs.begin(), wit_objs.begin() + offset, wit_objs.end(),
-      []( const witness_object* a, const witness_object* b )
+   std::nth_element( producer_objs.begin(), producer_objs.begin() + offset, producer_objs.end(),
+      []( const producer_object* a, const producer_object* b )
       {
          return a->last_commit_height < b->last_commit_height;
       });
 
-   uint32_t new_last_committed_block_num = wit_objs[offset]->last_commit_height;
+   uint64_t new_last_committed_block_num = producer_objs[offset]->last_commit_height;
 
    if( new_last_irreversible_block_num > props.last_irreversible_block_num )
    {
@@ -4864,7 +4870,7 @@ void database::update_last_irreversible_block()
    }
 
    // Take the highest of last committed and irreverisble blocks, and commit it to the local database.
-   uint32_t commit_height = std::max( props.last_committed_block_num, props.last_irreversible_block_num );   
+   uint64_t commit_height = std::max( props.last_committed_block_num, props.last_irreversible_block_num );   
    
    commit( commit_height );  // Node will not reverse blocks after they have been committed or produced on by two thirds of producers.
 

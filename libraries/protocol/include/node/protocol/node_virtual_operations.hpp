@@ -54,10 +54,10 @@ namespace node { namespace protocol {
    };
 
 
-   struct shutdown_witness_operation : public virtual_operation
+   struct shutdown_producer_operation : public virtual_operation
    {
-      shutdown_witness_operation(){}
-      shutdown_witness_operation( const string& o ):owner(o) {}
+      shutdown_producer_operation(){}
+      shutdown_producer_operation( const string& o ):owner(o) {}
 
       account_name_type owner;
    };
@@ -221,7 +221,7 @@ FC_REFLECT( node::protocol::interest_operation,
          (interest) 
          );
 
-FC_REFLECT( node::protocol::shutdown_witness_operation, 
+FC_REFLECT( node::protocol::shutdown_producer_operation, 
          (owner) 
          );
 

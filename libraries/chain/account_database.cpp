@@ -13,8 +13,8 @@
 #include <node/chain/transaction_object.hpp>
 #include <node/chain/shared_db_merkle.hpp>
 #include <node/chain/operation_notification.hpp>
-#include <node/chain/witness_schedule.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/chain/producer_schedule.hpp>
+#include <node/producer/producer_objects.hpp>
 
 #include <node/chain/util/asset.hpp>
 #include <node/chain/util/reward.hpp>
@@ -247,11 +247,11 @@ void database::update_account_reputations()
 /**
  * Pays an account its activity reward shares from the reward pool.
  */
-asset database::claim_activity_reward( const account_object& account, const witness_object& witness)
+asset database::claim_activity_reward( const account_object& account, const producer_object& producer)
 { try {
    const account_balance_object& abo = get_account_balance(account.name, SYMBOL_EQUITY);
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const witness_schedule_object& wso = get_witness_schedule();
+   const producer_schedule_object& pso = get_producer_schedule();
    time_point now = props.time;
    auto decay_rate = RECENT_REWARD_DECAY_RATE;
    const reward_fund_object& reward_fund = get_reward_fund();
@@ -304,10 +304,10 @@ asset database::claim_activity_reward( const account_object& account, const witn
 
    uint128_t voting_power = get_voting_power( account.name, equity_price ).value + get_proxied_voting_power( account.name, equity_price ).value;
 
-   modify( witness, [&]( witness_object& w )
+   modify( producer, [&]( producer_object& p )
    {
-      w.accumulated_activity_stake += voting_power;
-      w.decay_weights( now, wso );
+      p.accumulated_activity_stake += voting_power;
+      p.decay_weights( now, pso );
    });
 
    return activity_reward;
@@ -335,22 +335,22 @@ void database::update_owner_authority( const account_object& account, const auth
 }
 
 /**
- * Aligns witness votes in order of highest to lowest,
+ * Aligns producer votes in order of highest to lowest,
  * with continual ordering.
  */
-void database::update_witness_votes( const account_object& account )
+void database::update_producer_votes( const account_object& account )
 {
-   const auto& vote_idx = get_index< witness_vote_index >().indices().get< by_account_rank >();
+   const auto& vote_idx = get_index< producer_vote_index >().indices().get< by_account_rank >();
    auto vote_itr = vote_idx.lower_bound( account.name );
 
    uint16_t new_vote_rank = 1;
 
    while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
    {
-      const witness_vote_object& vote = *vote_itr;
+      const producer_vote_object& vote = *vote_itr;
       if( vote.vote_rank != new_vote_rank )
       {
-         modify( vote, [&]( witness_vote_object& v )
+         modify( vote, [&]( producer_vote_object& v )
          {
             v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
          });
@@ -361,31 +361,31 @@ void database::update_witness_votes( const account_object& account )
 
    modify( account, [&]( account_object& a )
    {
-      a.witness_vote_count = ( new_vote_rank - 1 );
+      a.producer_vote_count = ( new_vote_rank - 1 );
    });
 }
 
 /**
- * Aligns witness votes in a continuous order, and inputs a new vote
+ * Aligns producer votes in a continuous order, and inputs a new vote
  * at a specified vote number.
  */
-void database::update_witness_votes( const account_object& account, const account_name_type& witness, uint16_t input_vote_rank )
+void database::update_producer_votes( const account_object& account, const account_name_type& producer, uint16_t input_vote_rank )
 {
-   const auto& vote_idx = get_index< witness_vote_index >().indices().get< by_account_rank >();
+   const auto& vote_idx = get_index< producer_vote_index >().indices().get< by_account_rank >();
    auto vote_itr = vote_idx.lower_bound( account.name );
 
    uint16_t new_vote_rank = 1;
 
    while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
    {
-      const witness_vote_object& vote = *vote_itr;
+      const producer_vote_object& vote = *vote_itr;
       if( vote.vote_rank == input_vote_rank )
       {
          new_vote_rank++;
       }
       if( vote.vote_rank != new_vote_rank )
       {
-         modify( vote, [&]( witness_vote_object& v )
+         modify( vote, [&]( producer_vote_object& v )
          {
             v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
          });
@@ -394,16 +394,16 @@ void database::update_witness_votes( const account_object& account, const accoun
       ++vote_itr;
    }
 
-   create< witness_vote_object >([&]( witness_vote_object& v )
+   create< producer_vote_object >([&]( producer_vote_object& v )
    {
       v.account = account.name;
-      v.witness = witness;
+      v.producer = producer;
       v.vote_rank = input_vote_rank;
    });
 
    modify( account, [&]( account_object& a )
    {
-      a.witness_vote_count = ( new_vote_rank - 1 );
+      a.producer_vote_count = ( new_vote_rank - 1 );
    });
 }
 
@@ -426,7 +426,7 @@ void database::update_network_officer_votes( const account_object& account )
       const network_officer_vote_object& vote = *vote_itr;
       if( vote.vote_rank != vote_rank[ vote.officer_type ] )
       {
-         modify( vote, [&]( witness_vote_object& v )
+         modify( vote, [&]( producer_vote_object& v )
          {
             v.vote_rank = vote_rank[ vote.officer_type ];   // Updates vote rank to linear order of index retrieval.
          });
@@ -466,7 +466,7 @@ void database::update_network_officer_votes( const account_object& account, cons
       }
       if( vote.vote_rank != vote_rank[ vote.officer_type ] )
       {
-         modify( vote, [&]( witness_vote_object& v )
+         modify( vote, [&]( producer_vote_object& v )
          {
             v.vote_rank = vote_rank[ vote.officer_type ];   // Updates vote rank to linear order of index retrieval.
          });
@@ -559,7 +559,7 @@ void database::update_executive_board_votes( const account_object& account, cons
 
    modify( account, [&]( account_object& a )
    {
-      a.executive_board_votes = ( new_vote_rank - 1 );
+      a.executive_board_vote_count = ( new_vote_rank - 1 );
    });
 }
 
@@ -930,10 +930,10 @@ void database::process_decline_voting_rights()
    }
 }
 
-void database::clear_witness_votes( const account_object& a )
+void database::clear_producer_votes( const account_object& a )
 {
-   const auto& vidx = get_index< witness_vote_index >().indices().get<by_account_witness>();
-   auto itr = vidx.lower_bound( boost::make_tuple( a.id, witness_id_type() ) );
+   const auto& vidx = get_index< producer_vote_index >().indices().get<by_account_producer>();
+   auto itr = vidx.lower_bound( boost::make_tuple( a.id, producer_id_type() ) );
    while( itr != vidx.end() && itr->account == a.id )
    {
       const auto& current = *itr;
@@ -943,7 +943,7 @@ void database::clear_witness_votes( const account_object& a )
 
    modify( a, [&](account_object& acc )
    {
-      acc.witness_vote_count = 0;
+      acc.producer_vote_count = 0;
    });
 }
 

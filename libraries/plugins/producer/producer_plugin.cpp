@@ -1,7 +1,7 @@
 
-#include <node/witness/witness_plugin.hpp>
-#include <node/witness/witness_objects.hpp>
-#include <node/witness/witness_operations.hpp>
+#include <node/producer/producer_plugin.hpp>
+#include <node/producer/producer_objects.hpp>
+#include <node/producer/producer_operations.hpp>
 
 #include <node/chain/account_object.hpp>
 #include <node/chain/database.hpp>
@@ -26,7 +26,7 @@
 #define DISTANCE_CALC_PRECISION (10000)
 
 
-namespace node { namespace witness {
+namespace node { namespace producer {
 
 namespace bpo = boost::program_options;
 
@@ -83,10 +83,10 @@ namespace detail
 {
    using namespace node::chain;
 
-   class witness_plugin_impl
+   class producer_plugin_impl
    {
       public:
-         witness_plugin_impl( witness_plugin& plugin )
+         producer_plugin_impl( producer_plugin& plugin )
             : _self( plugin ){}
 
          void plugin_initialize();
@@ -99,15 +99,15 @@ namespace detail
 
          void update_account_bandwidth( const account_object& a, uint32_t trx_size, const bandwidth_type type );
 
-         witness_plugin& _self;
-         std::shared_ptr< generic_custom_operation_interpreter< witness_plugin_operation > > _custom_operation_interpreter;
+         producer_plugin& _self;
+         std::shared_ptr< generic_custom_operation_interpreter< producer_plugin_operation > > _custom_operation_interpreter;
 
          std::set< node::protocol::account_name_type >                     _dupe_customs;
    };
 
-   void witness_plugin_impl::plugin_initialize()
+   void producer_plugin_impl::plugin_initialize()
    {
-      _custom_operation_interpreter = std::make_shared< generic_custom_operation_interpreter< witness_plugin_operation > >( _self.database() );
+      _custom_operation_interpreter = std::make_shared< generic_custom_operation_interpreter< producer_plugin_operation > >( _self.database() );
 
       _custom_operation_interpreter->register_evaluator< enable_content_editing_evaluator >( &_self );
 
@@ -131,7 +131,7 @@ namespace detail
       }
    };
 
-   void witness_plugin_impl::pre_apply_block( const node::protocol::signed_block& b )
+   void producer_plugin_impl::pre_apply_block( const node::protocol::signed_block& b )
    {
       _dupe_customs.clear();
    }
@@ -249,7 +249,7 @@ namespace detail
       }
    };
 
-   void witness_plugin_impl::pre_transaction( const signed_transaction& trx )
+   void producer_plugin_impl::pre_transaction( const signed_transaction& trx )
    {
       const auto& _db = _self.database();
       flat_set< account_name_type > required; vector<authority> other;
@@ -274,7 +274,7 @@ namespace detail
       }
    }
 
-   void witness_plugin_impl::pre_operation( const operation_notification& note )
+   void producer_plugin_impl::pre_operation( const operation_notification& note )
    {
       const auto& _db = _self.database();
       if( _db.is_producing() )
@@ -283,7 +283,7 @@ namespace detail
       }
    }
 
-   void witness_plugin_impl::post_operation( const operation_notification& note )
+   void producer_plugin_impl::post_operation( const operation_notification& note )
    {
       const auto& db = _self.database();
 
@@ -307,7 +307,7 @@ namespace detail
       }
    }
 
-   void witness_plugin_impl::on_block( const signed_block& b )
+   void producer_plugin_impl::on_block( const signed_block& b )
    {
       auto& db = _self.database();
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
@@ -389,7 +389,7 @@ namespace detail
       _dupe_customs.clear();
    }
 
-   void witness_plugin_impl::update_account_bandwidth( const account_object& a, uint32_t trx_size, const bandwidth_type type )
+   void producer_plugin_impl::update_account_bandwidth( const account_object& a, uint32_t trx_size, const bandwidth_type type )
    {
       database& _db = _self.database();
       const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
@@ -462,10 +462,10 @@ namespace detail
    }
 }
 
-witness_plugin::witness_plugin( application* app )
-   : plugin( app ), _my( new detail::witness_plugin_impl( *this ) ) {}
+producer_plugin::producer_plugin( application* app )
+   : plugin( app ), _my( new detail::producer_plugin_impl( *this ) ) {}
 
-witness_plugin::~witness_plugin()
+producer_plugin::~producer_plugin()
 {
    try
    {
@@ -482,34 +482,34 @@ witness_plugin::~witness_plugin()
    }
 }
 
-void witness_plugin::plugin_set_program_options(
+void producer_plugin::plugin_set_program_options(
    boost::program_options::options_description& command_line_options,
    boost::program_options::options_description& config_file_options)
 {
-   string witness_id_example = "initwitness";
+   string producer_id_example = "init_producer";
    command_line_options.add_options()
          ("enable-stale-production", bpo::bool_switch()->notifier([this](bool e){_production_enabled = e;}), "Enable block production, even if the chain is stale.")
-         ("required-participation", bpo::bool_switch()->notifier([this](int e){_required_witness_participation = uint32_t(e*PERCENT_1);}), "Percent of witnesses (0-99) that must be participating in order to produce blocks")
-         ("witness,w", bpo::value<vector<string>>()->composing()->multitoken(),
-          ("name of witness controlled by this node (e.g. " + witness_id_example+" )" ).c_str())
-         ("private-key", bpo::value<vector<string>>()->composing()->multitoken(), "WIF PRIVATE KEY to be used by one or more witnesses or miners" )
+         ("required-participation", bpo::bool_switch()->notifier([this](int e){_required_producer_participation = uint32_t(e*PERCENT_1);}), "Percent of producers (0-99) that must be participating in order to produce blocks")
+         ("producer,w", bpo::value<vector<string>>()->composing()->multitoken(),
+          ("name of producer controlled by this node (e.g. " + producer_id_example+" )" ).c_str())
+         ("private-key", bpo::value<vector<string>>()->composing()->multitoken(), "WIF PRIVATE KEY to be used by one or more producers or miners" )
          ;
    config_file_options.add(command_line_options);
 }
 
-std::string witness_plugin::plugin_name()const
+std::string producer_plugin::plugin_name()const
 {
-   return "witness";
+   return "producer";
 }
 
 using std::vector;
 using std::pair;
 using std::string;
 
-void witness_plugin::plugin_initialize(const boost::program_options::variables_map& options)
+void producer_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 { try {
    _options = &options;
-   LOAD_VALUE_SET(options, "witness", _witnesses, string)
+   LOAD_VALUE_SET(options, "producer", _producers, string)
 
    if( options.count("private-key") )
    {
@@ -535,15 +535,15 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
    add_plugin_index< reserve_ratio_index     >( db );
 } FC_LOG_AND_RETHROW() }
 
-void witness_plugin::plugin_startup()
+void producer_plugin::plugin_startup()
 { try {
-   ilog("witness plugin:  plugin_startup() begin");
+   ilog("producer plugin:  plugin_startup() begin");
    chain::database& d = database();
 
-   if( !_witnesses.empty() )
+   if( !_producers.empty() )
    {
-      ilog("Launching block production for ${n} witnesses.", ("n", _witnesses.size()));
-      idump( (_witnesses) );
+      ilog("Launching block production for ${n} producers.", ("n", _producers.size()));
+      idump( (_producers) );
       app().set_block_production(true);
       if( _production_enabled )
       {
@@ -557,17 +557,17 @@ void witness_plugin::plugin_startup()
    }
    else
    {
-      elog("No witnesses configured! Please add witness names and private keys to configuration.");
+      elog("No producers configured! Please add producer names and private keys to configuration.");
    }
-   ilog("witness plugin:  plugin_startup() end");
+   ilog("producer plugin:  plugin_startup() end");
 } FC_CAPTURE_AND_RETHROW() }
 
-void witness_plugin::plugin_shutdown()
+void producer_plugin::plugin_shutdown()
 {
    return;
 }
 
-void witness_plugin::schedule_production_loop()
+void producer_plugin::schedule_production_loop()
 {
    //Schedule for the next second's tick regardless of chain state
    // If we would wait less than 50ms, wait for the whole second.
@@ -580,10 +580,10 @@ void witness_plugin::schedule_production_loop()
 
    //wdump( (now.time_since_epoch().count())(next_wakeup.time_since_epoch().count()) );
    _block_production_task = fc::schedule([this]{block_production_loop();},
-                                         next_wakeup, "Witness Block Production");
+                                         next_wakeup, "producer Block Production");
 }
 
-block_production_condition::block_production_condition_enum witness_plugin::block_production_loop()
+block_production_condition::block_production_condition_enum producer_plugin::block_production_loop()
 {
    if( fc::time_point::now() < fc::time_point(GENESIS_TIME) )
    {
@@ -618,7 +618,7 @@ block_production_condition::block_production_condition_enum witness_plugin::bloc
    switch( result )
    {
       case block_production_condition::produced:
-         ilog("Witness: ${w} Successfully Generated block #${n} with timestamp ${t}.", (capture));
+         ilog("Producer: ${w} Successfully Generated block #${n} with timestamp ${t}.", (capture));
          break;
       case block_production_condition::not_synced:
          ilog("Not Producing Block: Production is disabled until we receive a recent block.");
@@ -630,16 +630,16 @@ block_production_condition::block_production_condition_enum witness_plugin::bloc
          ilog("Not Producing Block: Production Slot has not yet arrived.");
          break;
       case block_production_condition::no_private_key:
-         ilog("Not Producing Block: Node with Witness: ${sw} does not have access to the private key for Publick key: ${sk}", (capture) );
+         ilog("Not Producing Block: Node with Producer: ${sw} does not have access to the private key for Publick key: ${sk}", (capture) );
          break;
       case block_production_condition::low_participation:
-         elog("Not Producing Block: Node appears to be on a minority fork with only ${pct}% witness participation.", (capture) );
+         elog("Not Producing Block: Node appears to be on a minority fork with only ${pct}% producer participation.", (capture) );
          break;
       case block_production_condition::lag:
          elog("Not Producing Block: Node unresponsive within 500ms of the allocated slot time. Actual response time: ${lag} ms");
          break;
       case block_production_condition::consecutive:
-         elog("Not Producing Block: Last block was generated by the same witness.\nThis node is probably disconnected from the network so block production has been disabled.\nDisable this check with --allow-consecutive option.");
+         elog("Not Producing Block: Last block was generated by the same producer.\nThis node is probably disconnected from the network so block production has been disabled.\nDisable this check with --allow-consecutive option.");
          break;
       case block_production_condition::exception_producing_block:
          elog("Failure when producing block with no transactions");
@@ -652,7 +652,7 @@ block_production_condition::block_production_condition_enum witness_plugin::bloc
    return result;
 }
 
-block_production_condition::block_production_condition_enum witness_plugin::maybe_produce_block( fc::mutable_variant_object& capture )
+block_production_condition::block_production_condition_enum producer_plugin::maybe_produce_block( fc::mutable_variant_object& capture )
 {
    chain::database& db = database();
    fc::time_point now_fine = fc::time_point::now();
@@ -684,17 +684,17 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
 	 
    assert( now > db.head_block_time() );
 
-   string scheduled_witness = db.get_scheduled_witness( slot );
-	 ilog("the scheduled_witness is ${witness}", ("witness", scheduled_witness));
-   // we must control the witness scheduled to produce the next block.
-   if( _witnesses.find( scheduled_witness ) == _witnesses.end() )
+   string scheduled_producer = db.get_scheduled_producer( slot );
+	 ilog("the scheduled_producer is ${producer}", ("producer", scheduled_producer));
+   // we must control the producer scheduled to produce the next block.
+   if( _producers.find( scheduled_producer ) == _producers.end() )
    {
-      capture("sw", scheduled_witness);
+      capture("sw", scheduled_producer);
       return block_production_condition::not_my_turn;
    }
 
-   const auto& witness_by_name = db.get_index< chain::witness_index >().indices().get< chain::by_name >();
-   auto itr = witness_by_name.find( scheduled_witness );
+   const auto& producer_by_name = db.get_index< chain::producer_index >().indices().get< chain::by_name >();
+   auto itr = producer_by_name.find( scheduled_producer );
 
    fc::time_point scheduled_time = db.get_slot_time( slot );
    node::protocol::public_key_type scheduled_key = itr->signing_key;
@@ -702,13 +702,13 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
 
    if( private_key_itr == _private_keys.end() )
    {
-      capture("sw", scheduled_witness);
+      capture("sw", scheduled_producer);
       capture("sk", scheduled_key);
       return block_production_condition::no_private_key;
    }
 
-   uint32_t prate = db.witness_participation_rate();
-   if( prate < _required_witness_participation )
+   uint32_t prate = db.producer_participation_rate();
+   if( prate < _required_producer_participation )
    {
       capture("pct", uint32_t(100*uint64_t(prate) / PERCENT_1));
       return block_production_condition::low_participation;
@@ -727,11 +727,11 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
       {
       auto block = db.generate_block(
          scheduled_time,
-         scheduled_witness,
+         scheduled_producer,
          private_key_itr->second,
          _production_skip_flags
          );
-         capture("n", block.block_num())("t", block.timestamp)("c", now)("w",scheduled_witness);
+         capture("n", block.block_num())("t", block.timestamp)("c", now)("w",scheduled_producer);
          fc::async( [this,block](){ p2p_node().broadcast(graphene::net::block_message(block)); } );
 
          return block_production_condition::produced;
@@ -748,6 +748,6 @@ block_production_condition::block_production_condition_enum witness_plugin::mayb
    return block_production_condition::exception_producing_block;
 }
 
-} } // node::witness
+} } // node::producer
 
-DEFINE_PLUGIN( witness, node::witness::witness_plugin )
+DEFINE_PLUGIN( producer, node::producer::producer_plugin )

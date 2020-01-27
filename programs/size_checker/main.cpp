@@ -49,18 +49,18 @@ int main( int argc, char** argv )
       node::protocol::operation op;
 
 
-      std::vector<uint64_t> witnesses; witnesses.resize(50);
+      std::vector<uint64_t> producers; producers.resize(50);
       for( uint32_t i = 0; i < 60*60*24*30; ++i )
       {
-         witnesses[ rand() % 50 ]++;
+         producers[ rand() % 50 ]++;
       }
 
-      std::sort( witnesses.begin(), witnesses.end() );
-      idump((witnesses.back() - witnesses.front()) );
+      std::sort( producers.begin(), producers.end() );
+      idump((producers.back() - producers.front()) );
       idump((60*60*24*30/50));
-      idump(("deviation: ")((60*60*24*30/50-witnesses.front())/(60*60*24*30/50.0)));
+      idump(("deviation: ")((60*60*24*30/50-producers.front())/(60*60*24*30/50.0)));
 
-      idump( (witnesses) );
+      idump( (producers) );
 
       for( int32_t i = 0; i < op.count(); ++i )
       {

@@ -34,7 +34,7 @@ There are a couple of examples already made that you can try modifying yourself.
 This script starts a debug node, replays blocks, schedules a hardfork, and finally generates
 new blocks after the hardfork. The script also communicates via the general purpose rpc
 interface in Xeroc's Library to do a simple analysis of the results. In this case it
-generates a historgram of block producers to verify the witness scheduling algorithm works
+generates a historgram of block producers to verify the producer scheduling algorithm works
 properly. The purpose of the script is it verify any given hardfork does not have a bug that
 could crash the chain entirely.
 
@@ -59,7 +59,7 @@ When the `with` block ends, the node automatically shutsdown and cleans up. The 
 a system standard temp directory through the standard Python TemporaryDirectory as the
 working data directory for the running node. The only work your script needs to do is
 specify the node binary location and a populated data directory. For most configurations
-this will be `programs/node/node` and `witness_node_data_dir` respectively, from the
+this will be `programs/node/node` and `node_data_dir` respectively, from the
 git root directory for WeYouMe.
 
 TODO/ Long Term Goals

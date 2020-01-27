@@ -604,13 +604,13 @@ BOOST_AUTO_TEST_CASE( asset_feed_publish_mean )
       vector< asset_publish_feed_operation > ops;
       vector< signed_transaction > txs;
 
-      // Upgrade accounts to witnesses
+      // Upgrade accounts to producers
 
       for( int i = 0; i < 7; i++ )
       {
          fund( accounts[i], asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
          fund_stake( accounts[i], asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-         witness_create( accounts[i], keys[i], keys[i].get_public_key() );
+         producer_create( accounts[i], keys[i], keys[i].get_public_key() );
          ops.push_back( asset_publish_feed_operation() );
          ops[i].publisher = accounts[i];
          ops[i].symbol = SYMBOL_USD;

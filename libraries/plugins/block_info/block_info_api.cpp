@@ -37,7 +37,7 @@ void block_info_api_impl::get_block_info( const get_block_info_args& args, std::
    FC_ASSERT( args.start_block_num > 0 );
    FC_ASSERT( args.count <= 10000 );
    uint32_t n = std::min( uint32_t( _block_info.size() ), args.start_block_num + args.count );
-   for( uint32_t block_num=args.start_block_num; block_num<n; block_num++ )
+   for( uint64_t block_num=args.start_block_num; block_num<n; block_num++ )
       result.emplace_back( _block_info[block_num] );
    return;
 }
@@ -51,7 +51,7 @@ void block_info_api_impl::get_blocks_with_info( const get_block_info_args& args,
    FC_ASSERT( args.count <= 10000 );
    uint32_t n = std::min( uint32_t( _block_info.size() ), args.start_block_num + args.count );
    uint64_t total_size = 0;
-   for( uint32_t block_num=args.start_block_num; block_num<n; block_num++ )
+   for( uint64_t block_num=args.start_block_num; block_num<n; block_num++ )
    {
       uint64_t new_size = total_size + _block_info[block_num].block_size;
       if( (new_size > 8*1024*1024) && (block_num != args.start_block_num) )

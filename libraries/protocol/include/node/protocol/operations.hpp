@@ -25,7 +25,7 @@ namespace node { namespace protocol {
             account_accept_invite_operation,
             account_remove_member_operation,
             account_update_list_operation,
-            account_witness_vote_operation,
+            account_producer_vote_operation,
             account_update_proxy_operation,
             request_account_recovery_operation,
             recover_account_operation,
@@ -145,7 +145,7 @@ namespace node { namespace protocol {
             
             // Block producer operations
 
-            witness_update_operation,
+            producer_update_operation,
             proof_of_work_operation,
             verify_block_operation,
             commit_block_operation,
@@ -164,7 +164,7 @@ namespace node { namespace protocol {
             interest_operation,
             fill_order_operation,
             asset_settle_cancel_operation,
-            shutdown_witness_operation,
+            shutdown_producer_operation,
             fill_transfer_from_savings_operation,
             hardfork_operation,
             comment_payout_update_operation,

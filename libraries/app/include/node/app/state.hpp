@@ -191,7 +191,7 @@ namespace node { namespace app {
 
    struct network_state
    {
-      witness_api_obj                                                      witness;
+      producer_api_obj                                                     producer;
       network_officer_api_obj                                              network_officer;
       executive_board_api_obj                                              executive_board;
       interface_api_obj                                                    interface;
@@ -199,7 +199,7 @@ namespace node { namespace app {
       governance_account_api_obj                                           governance_account;
       vector< community_enterprise_api_obj >                               enterprise_proposals;
 
-      map< account_name_type, uint16_t >                                   witness_votes;
+      map< account_name_type, uint16_t >                                   producer_votes;
       map< string, map< account_name_type, uint16_t > >                    network_officer_votes;
       map< account_name_type, uint16_t >                                   executive_board_votes;
       map< account_name_type, map< string, pair< account_name_type, uint16_t > > >   account_executive_votes;
@@ -381,13 +381,13 @@ namespace node { namespace app {
       map< string, discussion_index >         discussion_idx;
       map< string, tag_api_obj >              tag_stats;
       map< string, discussion >               content;
-      map< string, witness_api_obj >          witnesses;
-      map< string, witness_api_obj >          miners;
+      map< string, producer_api_obj >         voting_producers;
+      map< string, producer_api_obj >         mining_producers;
       map< string, vector< string > >         blogs;
       map< string, vector< string > >         feeds;
       map< string, vector< string > >         comments;
       map< string, vector< string > >         recent_replies;
-      witness_schedule_api_obj                witness_schedule;
+      producer_schedule_api_obj               producer_schedule;
       string                                  error;
    };
 
@@ -556,14 +556,14 @@ FC_REFLECT( node::app::business_account_state,
          );
 
 FC_REFLECT( node::app::network_state,
-         (witness)
+         (producer)
          (network_officer)
          (executive_board)
          (interface)
          (supernode)
          (governance_account)
          (enterprise_proposals)
-         (witness_votes)
+         (producer_votes)
          (network_officer_votes)
          (executive_board_votes)
          (account_executive_votes)
@@ -710,12 +710,12 @@ FC_REFLECT( node::app::state,
          (discussion_idx)
          (tag_stats)
          (content)
-         (witnesses)
-         (miners)
+         (voting_producers)
+         (mining_producers)
          (blogs)
          (feeds)
          (comments)
          (recent_replies)
-         (witness_schedule)
+         (producer_schedule)
          (error)
          );

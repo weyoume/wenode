@@ -11,7 +11,7 @@
 #include <node/chain/block_log.hpp>
 #include <node/chain/account_object.hpp>
 #include <node/chain/database.hpp>
-#include <node/chain/witness_objects.hpp>
+#include <node/chain/producer_objects.hpp>
 
 #include <graphene/utilities/key_conversion.hpp>
 
@@ -48,7 +48,7 @@ class debug_node_api_impl
       uint32_t debug_generate_blocks_until( const std::string& debug_key, const fc::time_point& head_block_time, bool generate_sparsely );
       fc::optional< node::chain::signed_block > debug_pop_block();
       //void debug_push_block( const node::chain::signed_block& block );
-      node::chain::witness_schedule_object debug_get_witness_schedule();
+      node::chain::producer_schedule_object debug_get_producer_schedule();
       node::chain::hardfork_property_object debug_get_hardfork_property_object();
       void debug_update_object( const fc::variant_object& update );
       fc::variant_object debug_get_edits();
@@ -120,7 +120,7 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
    std::shared_ptr< chain::database > db = app.chain_database();
 
    chain::proof_of_work work;
-   work.input.worker_account = args.worker_account;
+   work.input.miner_account = args.miner_account;
    work.input.prev_block = db->head_block_id();
    get_plugin()->debug_mine_work( work, db->pow_difficulty() );
 
@@ -130,18 +130,18 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
    if( args.props.valid() )
       op.props = *(args.props);
    else
-      op.props = db->get_witness_schedule().median_props;
+      op.props = db->get_producer_schedule().median_props;
 
    const auto& acct_idx  = db->get_index< chain::account_index >().indices().get< chain::by_name >();
-   auto acct_it = acct_idx.find( args.worker_account );
-   auto acct_auth = db->find< chain::account_authority_object, chain::by_account >( args.worker_account );
+   auto acct_it = acct_idx.find( args.miner_account );
+   auto acct_auth = db->find< chain::account_authority_object, chain::by_account >( args.miner_account );
    bool has_account = (acct_it != acct_idx.end());
 
    fc::optional< fc::ecc::private_key > priv;
    if( !has_account )
    {
       // this copies logic from get_dev_key
-      priv = fc::ecc::private_key::regenerate( fc::sha256::hash( key_storage.dev_key_prefix + args.worker_account ) );
+      priv = fc::ecc::private_key::regenerate( fc::sha256::hash( key_storage.dev_key_prefix + args.miner_account ) );
       op.new_owner_key = priv->get_public_key();
    }
    else
@@ -149,13 +149,13 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
       chain::public_key_type pubkey;
       if( acct_auth->active.key_auths.size() != 1 )
       {
-         elog( "debug_mine does not understand authority for miner account ${miner}", ("miner", args.worker_account) );
+         elog( "debug_mine does not understand authority for miner account ${miner}", ("miner", args.miner_account) );
       }
       FC_ASSERT( acct_auth->active.key_auths.size() == 1 );
       pubkey = acct_auth->active.key_auths.begin()->first;
-      key_storage.maybe_get_private_key( priv, pubkey, args.worker_account );
+      key_storage.maybe_get_private_key( priv, pubkey, args.miner_account );
    }
-   FC_ASSERT( priv.valid(), "debug_node_api does not know private key for miner account ${miner}", ("miner", args.worker_account) );
+   FC_ASSERT( priv.valid(), "debug_node_api does not know private key for miner account ${miner}", ("miner", args.miner_account) );
 
    chain::signed_transaction tx;
    tx.operations.push_back(op);
@@ -248,9 +248,9 @@ fc::optional< node::chain::signed_block > debug_node_api_impl::debug_pop_block()
    app.chain_database()->push_block( block );
 }*/
 
-node::chain::witness_schedule_object debug_node_api_impl::debug_get_witness_schedule()
+node::chain::producer_schedule_object debug_node_api_impl::debug_get_producer_schedule()
 {
-   return app.chain_database()->get( node::chain::witness_schedule_id_type() );
+   return app.chain_database()->get( node::chain::producer_schedule_id_type() );
 }
 
 node::chain::hardfork_property_object debug_node_api_impl::debug_get_hardfork_property_object()
@@ -347,9 +347,9 @@ fc::optional< node::chain::signed_block > debug_node_api::debug_pop_block()
    my->debug_push_block( block );
 }*/
 
-node::chain::witness_schedule_object debug_node_api::debug_get_witness_schedule()
+node::chain::producer_schedule_object debug_node_api::debug_get_producer_schedule()
 {
-   return my->debug_get_witness_schedule();
+   return my->debug_get_producer_schedule();
 }
 
 node::chain::hardfork_property_object debug_node_api::debug_get_hardfork_property_object()

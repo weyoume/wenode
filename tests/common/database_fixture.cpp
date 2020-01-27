@@ -6,7 +6,7 @@
 #include <node/chain/node_objects.hpp>
 #include <node/chain/history_object.hpp>
 #include <node/account_history/account_history_plugin.hpp>
-#include <node/witness/witness_plugin.hpp>
+#include <node/producer/producer_plugin.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -43,7 +43,7 @@ clean_database_fixture::clean_database_fixture()
    }
    auto ahplugin = app.register_plugin< node::account_history::account_history_plugin >();
    db_plugin = app.register_plugin< node::plugin::debug_node::debug_node_plugin >();
-   auto wit_plugin = app.register_plugin< node::witness::witness_plugin >();
+   auto producer_plugin = app.register_plugin< node::producer::producer_plugin >();
    init_account_pub_key = init_account_priv_key.get_public_key();
 
    boost::program_options::variables_map options;
@@ -51,7 +51,7 @@ clean_database_fixture::clean_database_fixture()
    db_plugin->logging = false;
    ahplugin->plugin_initialize( options );
    db_plugin->plugin_initialize( options );
-   wit_plugin->plugin_initialize( options );
+   producer_plugin->plugin_initialize( options );
 
    open_database();
 
@@ -262,7 +262,7 @@ const account_object& database_fixture::account_create(
          INIT_ACCOUNT,
          INIT_ACCOUNT,
          init_account_priv_key,
-         std::max( db.get_witness_schedule().median_props.account_creation_fee.amount, share_type( 100 ) ),
+         std::max( db.get_producer_schedule().median_props.account_creation_fee.amount, share_type( 100 ) ),
          owner_key,
          posting_key,
          "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.",
@@ -478,14 +478,14 @@ const asset_object& database_fixture::asset_create(
    FC_CAPTURE_AND_RETHROW()
 }
 
-const witness_object& database_fixture::witness_create(
+const producer_object& database_fixture::producer_create(
    const string& owner,
    const private_key_type& owner_key,
    const public_key_type& signing_key )
 {
    try
    {
-      witness_update_operation op;
+      producer_update_operation op;
 
       op.signatory = owner;
       op.owner = owner;
@@ -502,7 +502,7 @@ const witness_object& database_fixture::witness_create(
       trx.operations.clear();
       trx.signatures.clear();
 
-      return db.get_witness( owner );
+      return db.get_producer( owner );
    }
    FC_CAPTURE_AND_RETHROW( (owner) )
 }

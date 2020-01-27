@@ -1,9 +1,9 @@
-#include <node/witness/witness_operations.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/producer/producer_operations.hpp>
+#include <node/producer/producer_objects.hpp>
 
 #include <node/chain/comment_object.hpp>
 
-namespace node { namespace witness {
+namespace node { namespace producer {
 
 void enable_content_editing_evaluator::do_apply( const enable_content_editing_operation& o )
 {
@@ -30,4 +30,4 @@ void enable_content_editing_evaluator::do_apply( const enable_content_editing_op
    FC_CAPTURE_AND_RETHROW( (o) )
 }
 
-} } // node::witness
+} } // node::producer

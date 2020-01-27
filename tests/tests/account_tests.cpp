@@ -9,7 +9,7 @@
 //#include <node/chain/hardfork.hpp>
 
 #include <node/chain/util/reward.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/producer/producer_objects.hpp>
 #include <fc/crypto/digest.hpp>
 #include <tests/common/database_fixture.hpp>
 
@@ -254,9 +254,9 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       db_plugin->debug_update( [=]( database& db )
       {
-         db.modify( db.get_witness_schedule(), [&]( witness_schedule_object& wso )
+         db.modify( db.get_producer_schedule(), [&]( producer_schedule_object& pso )
          {
-            wso.median_props.account_creation_fee = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );    // Fee much too high.
+            pso.median_props.account_creation_fee = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );    // Fee much too high.
          });
       });
 
@@ -1188,13 +1188,13 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
+BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT WITNESS VOTE" );
+      BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT PRODUCER VOTE" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account witness vote" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: normal account producer vote" );
    
       ACTORS( (alice)(bob)(candice)(dan)(elon)(sam) );
 
@@ -1205,26 +1205,26 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
       fund( "candice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
       fund_stake( "candice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
 
-      private_key_type alice_witness_key = generate_private_key( "alicewitnesscorrecthorsebatterystaple" );
+      private_key_type alice_producer_key = generate_private_key( "aliceproducercorrecthorsebatterystaple" );
 
-      witness_create(
+      producer_create(
          "alice", 
          alice_private_owner_key, 
-         alice_witness_key.get_public_key()
+         alice_producer_key.get_public_key()
       );
 
-      private_key_type candice_witness_key = generate_private_key( "candicewitnesscorrecthorsebatterystaple" );
+      private_key_type candice_producer_key = generate_private_key( "candiceproducercorrecthorsebatterystaple" );
 
-      witness_create(
+      producer_create(
          "candice", 
          candice_private_owner_key, 
-         candice_witness_key.get_public_key()
+         candice_producer_key.get_public_key()
       );
 
-      account_witness_vote_operation op;
+      account_producer_vote_operation op;
       op.signatory = "bob";
       op.account = "bob";
-      op.witness = "alice";
+      op.producer = "alice";
       op.vote_rank = 1;
       op.approved = true;
 
@@ -1234,47 +1234,47 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const witness_vote_object& vote = db.get_witness_vote( "bob", "alice" );
+      const producer_vote_object& vote = db.get_producer_vote( "bob", "alice" );
       const account_object& acc = db.get_account( "bob" ); 
-      const witness_object& witness = db.get_witness( "alice" );
+      const producer_object& producer = db.get_producer( "alice" );
       BOOST_REQUIRE( vote.account == "bob" );
-      BOOST_REQUIRE( vote.witness == "alice" );
+      BOOST_REQUIRE( vote.producer == "alice" );
       BOOST_REQUIRE( vote.vote_rank == 1 );
-      BOOST_REQUIRE( acc.witness_vote_count == 1 );
-      BOOST_REQUIRE( witness.vote_count == 1 );
+      BOOST_REQUIRE( acc.producer_vote_count == 1 );
+      BOOST_REQUIRE( producer.vote_count == 1 );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: normal account witness vote" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: normal account producer vote" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: additional witness vote" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: additional producer vote" );
 
-      op.witness = "candice";   // Vote for candice at rank one will move alice to rank two
+      op.producer = "candice";   // Vote for candice at rank one will move alice to rank two
 
       tx.operations.push_back( op );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const witness_vote_object& vote_a = db.get_witness_vote( "bob", "alice" );
-      const witness_vote_object& vote_c = db.get_witness_vote( "bob", "candice" );
+      const producer_vote_object& vote_a = db.get_producer_vote( "bob", "alice" );
+      const producer_vote_object& vote_c = db.get_producer_vote( "bob", "candice" );
       const account_object& acc = db.get_account( "bob" ); 
-      const witness_object& witness_a = db.get_witness( "alice" );
-      const witness_object& witness_c = db.get_witness( "candice" );
+      const producer_object& producer_a = db.get_producer( "alice" );
+      const producer_object& producer_c = db.get_producer( "candice" );
       BOOST_REQUIRE( vote_a.account == "bob" );
-      BOOST_REQUIRE( vote_a.witness == "alice" );
+      BOOST_REQUIRE( vote_a.producer == "alice" );
       BOOST_REQUIRE( vote_a.vote_rank == 2 );
       BOOST_REQUIRE( vote_c.account == "bob" );
-      BOOST_REQUIRE( vote_c.witness == "candice" );
+      BOOST_REQUIRE( vote_c.producer == "candice" );
       BOOST_REQUIRE( vote_c.vote_rank == 1 );
-      BOOST_REQUIRE( acc.witness_vote_count == 2 );
-      BOOST_REQUIRE( witness_a.vote_count == 1 );
-      BOOST_REQUIRE( witness_c.vote_count == 1 );
+      BOOST_REQUIRE( acc.producer_vote_count == 2 );
+      BOOST_REQUIRE( producer_a.vote_count == 1 );
+      BOOST_REQUIRE( producer_c.vote_count == 1 );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: additional witness vote" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: additional producer vote" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: cancel witness vote" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: cancel producer vote" );
 
       op.approved = false;
 
@@ -1285,20 +1285,20 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
 
       db.push_transaction( tx, 0 );
 
-      const witness_vote_object* vote_ptr = db.find_witness_vote( "bob", "candice" );
+      const producer_vote_object* vote_ptr = db.find_producer_vote( "bob", "candice" );
       const account_object& acc = db.get_account( "bob" );
-      const witness_object& witness = db.get_witness( "candice" );
+      const producer_object& producer = db.get_producer( "candice" );
       BOOST_REQUIRE( vote_ptr == nullptr );
-      BOOST_REQUIRE( acc.witness_vote_count == 1 );
-      BOOST_REQUIRE( witness.vote_count == 0 );
+      BOOST_REQUIRE( acc.producer_vote_count == 1 );
+      BOOST_REQUIRE( producer.vote_count == 0 );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: cancel witness vote" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: cancel producer vote" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: cancel additional witness vote" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: cancel additional producer vote" );
 
-      op.witness = "alice";
+      op.producer = "alice";
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1307,16 +1307,16 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
 
       db.push_transaction( tx, 0 );
 
-      const witness_vote_object* vote_ptr = db.find_witness_vote( "bob", "alice" );
+      const producer_vote_object* vote_ptr = db.find_producer_vote( "bob", "alice" );
       const account_object& acc = db.get_account( "bob" );
-      const witness_object& witness = db.get_witness( "alice" );
+      const producer_object& producer = db.get_producer( "alice" );
       BOOST_REQUIRE( vote_ptr == nullptr );
-      BOOST_REQUIRE( acc.witness_vote_count == 0 );
-      BOOST_REQUIRE( witness.vote_count == 0 );
+      BOOST_REQUIRE( acc.producer_vote_count == 0 );
+      BOOST_REQUIRE( producer.vote_count == 0 );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: cancel additional witness vote" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: cancel additional producer vote" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when attempting to revoke a non-existent vote" );
 
@@ -1329,7 +1329,7 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.witness = "eve";
+      op.producer = "eve";
       op.approved = true;
 
       tx.operations.push_back( op );
@@ -1340,20 +1340,20 @@ BOOST_AUTO_TEST_CASE( account_witness_vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when voting for a non-existent account" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when voting for an account that is not a witness" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when voting for an account that is not a producer" );
 
       tx.operations.clear();
       tx.signatures.clear();
-      op.witness = "elon";
+      op.producer = "elon";
       tx.operations.push_back( op );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when voting for an account that is not a witness" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when voting for an account that is not a producer" );
 
-      BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT WITNESS VOTE" );
+      BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT PRODUCER VOTE" );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -2115,23 +2115,23 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       BOOST_REQUIRE( db.get_account( "alice" ).can_vote );   // Alice can still vote
 
-      witness_create( 
+      producer_create( 
          "alice", 
          alice_private_owner_key,
          alice_private_owner_key.get_public_key()
          );
 
-      account_witness_vote_operation witness_vote;
+      account_producer_vote_operation producer_vote;
 
-      witness_vote.signatory = "alice";
-      witness_vote.account = "alice";
-      witness_vote.witness = "alice";
-      witness_vote.vote_rank = 1;
+      producer_vote.signatory = "alice";
+      producer_vote.account = "alice";
+      producer_vote.producer = "alice";
+      producer_vote.vote_rank = 1;
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( witness_vote );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2177,15 +2177,15 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       const auto& comment_idx = db.get_index< comment_index >().indices().get< by_permlink >();
       const auto& comment_vote_idx = db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
-      const auto& witness_vote_idx = db.get_index< witness_vote_index >().indices().get< by_witness_account >();
+      const auto& producer_vote_idx = db.get_index< producer_vote_index >().indices().get< by_producer_account >();
 
       auto comment_itr = comment_idx.find( boost::make_tuple( "alice", "test" ) );
       auto comment_vote_itr = comment_vote_idx.find( boost::make_tuple( "alice", comment_itr->id ) );
-      auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
+      auto producer_vote_itr = producer_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
 
       BOOST_REQUIRE( comment_itr->author == "alice" );
       BOOST_REQUIRE( comment_vote_itr->voter == "alice" );
-      BOOST_REQUIRE( witness_vote_itr->account == "alice" );
+      BOOST_REQUIRE( producer_vote_itr->account == "alice" );
 
       validate_database();
 
@@ -2200,14 +2200,14 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       auto req_itr = req_idx.find( "alice" );
       BOOST_REQUIRE( req_itr == req_idx.end() );   // Request no longer exists
 
-      auto witness_vote_itr = witness_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
-      BOOST_REQUIRE( witness_vote_itr == witness_vote_idx.end() );   // Vote has been removed
+      auto producer_vote_itr = producer_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
+      BOOST_REQUIRE( producer_vote_itr == producer_vote_idx.end() );   // Vote has been removed
 
       tx.operations.clear();
       tx.signatures.clear();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( witness_vote );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -2658,47 +2658,47 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "bob", bob_private_owner_key, bob_public_owner_key );
+      producer_create( "bob", bob_private_owner_key, bob_public_owner_key );
 
       fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "candice", candice_private_owner_key, candice_public_owner_key );
+      producer_create( "candice", candice_private_owner_key, candice_public_owner_key );
 
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "dan", dan_private_owner_key, dan_public_owner_key );
+      producer_create( "dan", dan_private_owner_key, dan_public_owner_key );
 
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "elon", elon_private_owner_key, elon_public_owner_key );
+      producer_create( "elon", elon_private_owner_key, elon_public_owner_key );
 
       fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "fred", fred_private_owner_key, fred_public_owner_key );
+      producer_create( "fred", fred_private_owner_key, fred_public_owner_key );
 
       fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "george", george_private_owner_key, george_public_owner_key );
+      producer_create( "george", george_private_owner_key, george_public_owner_key );
 
       fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "haz", haz_private_owner_key, haz_public_owner_key );
+      producer_create( "haz", haz_private_owner_key, haz_public_owner_key );
 
       fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
+      producer_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
 
       fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
+      producer_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
 
       fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
+      producer_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
 
       const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
       const comment_object& bob_post = comment_create( "bob", bob_private_posting_key, "bobtestpost" );
@@ -2832,106 +2832,106 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
 
       db.update_comment_metrics();     // calculate median values.
 
-      account_witness_vote_operation wv;
+      account_producer_vote_operation producer_vote;
 
-      wv.signatory = "alice";
-      wv.account = "alice";
-      wv.witness = "bob";
-      wv.vote_rank = 1;
-      wv.approved = true;
-      wv.validate();
+      producer_vote.signatory = "alice";
+      producer_vote.account = "alice";
+      producer_vote.producer = "bob";
+      producer_vote.vote_rank = 1;
+      producer_vote.approved = true;
+      producer_vote.validate();
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "candice";
-      wv.vote_rank = 2;
+      producer_vote.producer = "candice";
+      producer_vote.vote_rank = 2;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "dan";
-      wv.vote_rank = 3;
+      producer_vote.producer = "dan";
+      producer_vote.vote_rank = 3;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "elon";
-      wv.vote_rank = 5;
+      producer_vote.producer = "elon";
+      producer_vote.vote_rank = 5;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "fred";
-      wv.vote_rank = 6;
+      producer_vote.producer = "fred";
+      producer_vote.vote_rank = 6;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "george";
-      wv.vote_rank = 7;
+      producer_vote.producer = "george";
+      producer_vote.vote_rank = 7;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "haz";
-      wv.vote_rank = 8;
+      producer_vote.producer = "haz";
+      producer_vote.vote_rank = 8;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "isabelle";
-      wv.vote_rank = 9;
+      producer_vote.producer = "isabelle";
+      producer_vote.vote_rank = 9;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "jayme";
-      wv.vote_rank = 10;
+      producer_vote.producer = "jayme";
+      producer_vote.vote_rank = 10;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      wv.witness = "kathryn";
-      wv.vote_rank = 11;
+      producer_vote.producer = "kathryn";
+      producer_vote.vote_rank = 11;
 
-      tx.operations.push_back( wv );
+      tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 

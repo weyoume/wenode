@@ -21,7 +21,7 @@ DEFINE_EVALUATOR( account_accept_request )
 DEFINE_EVALUATOR( account_accept_invite )
 DEFINE_EVALUATOR( account_remove_member )
 DEFINE_EVALUATOR( account_update_list )
-DEFINE_EVALUATOR( account_witness_vote )
+DEFINE_EVALUATOR( account_producer_vote )
 DEFINE_EVALUATOR( account_update_proxy )
 DEFINE_EVALUATOR( request_account_recovery )
 DEFINE_EVALUATOR( recover_account )
@@ -141,7 +141,7 @@ DEFINE_EVALUATOR( asset_global_settle )
 
 // Block Producer Evaluators
 
-DEFINE_EVALUATOR( witness_update )
+DEFINE_EVALUATOR( producer_update )
 DEFINE_EVALUATOR( proof_of_work )
 DEFINE_EVALUATOR( verify_block )
 DEFINE_EVALUATOR( commit_block )

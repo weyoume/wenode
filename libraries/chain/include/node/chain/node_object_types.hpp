@@ -158,9 +158,9 @@ enum object_type
 
    // Block producer objects
 
-   witness_object_type,
-   witness_schedule_object_type,
-   witness_vote_object_type,
+   producer_object_type,
+   producer_schedule_object_type,
+   producer_vote_object_type,
    block_validation_object_type,
    commit_violation_object_type
 };
@@ -285,9 +285,9 @@ class credit_loan_object;
 
 // Block producer objects
 
-class witness_object;
-class witness_schedule_object;
-class witness_vote_object;
+class producer_object;
+class producer_schedule_object;
+class producer_vote_object;
 class block_validation_object;
 class commit_violation_object;
 
@@ -411,9 +411,9 @@ typedef oid< credit_loan_object                     > credit_loan_id_type;
 
 // Block producer objects
 
-typedef oid< witness_object                         > witness_id_type;
-typedef oid< witness_schedule_object                > witness_schedule_id_type;
-typedef oid< witness_vote_object                    > witness_vote_id_type;
+typedef oid< producer_object                        > producer_id_type;
+typedef oid< producer_schedule_object               > producer_schedule_id_type;
+typedef oid< producer_vote_object                   > producer_vote_id_type;
 typedef oid< block_validation_object                > block_validation_id_type;
 typedef oid< commit_violation_object                > commit_violation_id_type;
 
@@ -608,9 +608,9 @@ FC_REFLECT_ENUM( node::chain::object_type,
 
          // Block producer objects
          
-         (witness_object_type)
-         (witness_schedule_object_type)
-         (witness_vote_object_type)
+         (producer_object_type)
+         (producer_schedule_object_type)
+         (producer_vote_object_type)
          (block_validation_object_type)
          (commit_violation_object_type)
          );

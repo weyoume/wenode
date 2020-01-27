@@ -10,7 +10,7 @@ fi
 
 chown -R node:node $HOME
 
-# witness nodes come from doc/seednodes.txt which is
+# producer nodes come from doc/seednodes.txt which is
 # installed by docker into /etc/node/seednodes.txt
 SEED_NODES="$(cat /etc/node/seednodes.txt | awk -F' ' '{print $1}')"
 
@@ -32,14 +32,14 @@ if [[ ! -z "$SEED_NODES" ]]; then
     done
 fi
 
-if [[ ! -z "$WITNESS_NAMES" ]]; then
-    for WITNESS in $WITNESS_NAMES ; do
-        ARGS+=" --witness=\"$WITNESS\""
+if [[ ! -z "$PRODUCER_NAMES" ]]; then
+    for PRODUCER in $PRODUCER_NAMES ; do
+        ARGS+=" --producer=\"$PRODUCER\""
     done
 fi
 
-if [[ ! -z "$WITNESS_NAME" ]]; then
-    ARGS+=" --witness=\"$WITNESS_NAME\""
+if [[ ! -z "$PRODUCER_NAME" ]]; then
+    ARGS+=" --producer=\"$PRODUCER_NAME\""
 fi
 
 if [[ ! -z "$MINER_NAME" ]]; then

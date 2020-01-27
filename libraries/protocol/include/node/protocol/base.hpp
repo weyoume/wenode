@@ -27,7 +27,7 @@ namespace node { namespace protocol {
 
    typedef static_variant<
       void_t,
-      version,              // Normal witness version reporting, for diagnostics and voting
+      version,              // Normal producer version reporting, for diagnostics and voting
       hardfork_version_vote // Voting for the next hardfork to trigger
       >                                block_header_extensions;
 

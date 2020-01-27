@@ -10,7 +10,7 @@
 
 #include <node/protocol/block.hpp>
 
-#include <node/chain/witness_objects.hpp>
+#include <node/chain/producer_objects.hpp>
 
 namespace node { namespace app {
    struct api_context;
@@ -35,7 +35,7 @@ struct get_dev_key_result
 
 struct debug_mine_args
 {
-   std::string                             worker_account;
+   std::string                             miner_account;
    fc::optional< chain::chain_properties > props;
 };
 
@@ -76,7 +76,7 @@ class debug_node_api
       // not implemented
       //void debug_push_block( node::chain::signed_block& block );
 
-      node::chain::witness_schedule_object debug_get_witness_schedule();
+      node::chain::producer_schedule_object debug_get_producer_schedule();
 
       node::chain::hardfork_property_object debug_get_hardfork_property_object();
 
@@ -150,7 +150,7 @@ FC_REFLECT( node::plugin::debug_node::get_dev_key_result,
    )
 
 FC_REFLECT( node::plugin::debug_node::debug_mine_args,
-   (worker_account)
+   (miner_account)
    (props)
    )
 
@@ -170,7 +170,7 @@ FC_API(node::plugin::debug_node::debug_node_api,
        //(debug_stream_json_objects_flush)
        (debug_set_hardfork)
        (debug_has_hardfork)
-       (debug_get_witness_schedule)
+       (debug_get_producer_schedule)
        (debug_get_hardfork_property_object)
        (debug_get_json_schema)
        (debug_set_dev_key_prefix)

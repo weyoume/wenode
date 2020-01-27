@@ -77,7 +77,7 @@ struct proof_of_work_get_account_visitor
    template< typename WorkType >
    result_type operator()( const WorkType& work )const
    {
-      return &work.input.worker_account;
+      return &work.input.miner_account;
    }
 };
 
@@ -112,10 +112,10 @@ struct post_operation_visitor
 
    void operator()( const proof_of_work_operation& op )const
    {
-      const account_name_type* worker_account = op.work.visit( proof_of_work_get_account_visitor() );
-      if( worker_account == nullptr )
+      const account_name_type* miner_account = op.work.visit( proof_of_work_get_account_visitor() );
+      if( miner_account == nullptr )
          return;
-      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( *worker_account );
+      auto acct_itr = _plugin.database().find< account_authority_object, by_account >( *miner_account );
       if( acct_itr ) _plugin.my->update_key_lookup( *acct_itr );
    }
 };

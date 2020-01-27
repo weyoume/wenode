@@ -5,7 +5,7 @@
 #include <node/protocol/node_operations.hpp>
 
 #include <node/chain/node_object_types.hpp>
-#include <node/chain/witness_objects.hpp>
+#include <node/chain/producer_objects.hpp>
 #include <node/chain/shared_authority.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
@@ -107,7 +107,7 @@ namespace node { namespace chain {
 
          share_type                       recent_activity_claims = 0;            // Value of activity rewards claimed in last 30 days / BLOCKCHAIN_PRECISION
 
-         uint16_t                         witness_vote_count = 0;                // Number of witnesses voted for.
+         uint16_t                         producer_vote_count = 0;                // Number of producers voted for.
 
          uint16_t                         officer_vote_count = 0;                // Number of network officers that the account has voted for.
 
@@ -549,7 +549,7 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_authorized_network( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to alter interface, supernode, network officers, witnesses, exec board
+         bool is_authorized_network( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to alter interface, supernode, network officers, producers, exec board
          {
             if( obj.blacklisted_accounts.size() )
             {
@@ -2195,7 +2195,7 @@ FC_REFLECT( node::chain::account_object,
          (author_reputation)
          (loan_default_balance)
          (recent_activity_claims)
-         (witness_vote_count)
+         (producer_vote_count)
          (officer_vote_count)
          (executive_board_vote_count)
          (governance_subscriptions)

@@ -5,7 +5,7 @@
 #include <node/protocol/node_operations.hpp>
 
 #include <node/chain/node_object_types.hpp>
-#include <node/chain/witness_objects.hpp>
+#include <node/chain/producer_objects.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
 

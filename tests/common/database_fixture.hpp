@@ -251,7 +251,7 @@ struct database_fixture {
       const share_type& liquidity
    );
 
-   const witness_object& witness_create(
+   const producer_object& producer_create(
       const string& owner,
       const private_key_type& owner_key,
       const public_key_type& signing_key

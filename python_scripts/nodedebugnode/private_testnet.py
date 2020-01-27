@@ -38,7 +38,7 @@ def main( ):
    parser.add_argument( '--data-dir', '-d', type=str, required=True, help='The location of an existing data directory. ' + \
                         'The debug node will pull blocks from this directory when replaying the chain. The directory ' + \
                         'will not be changed.' )
-   parser.add_argument( '--plugins', '-p', type=str, required=False, help='A list of plugins to load. witness and ' + \
+   parser.add_argument( '--plugins', '-p', type=str, required=False, help='A list of plugins to load. producer and ' + \
                         'debug_node are always loaded.' )
    parser.add_argument( '--apis', '-a', type=str, required=False, help='A list of apis to load. database_api, login_api, ' + \
                         'and debug_node_api are always loaded' )

@@ -5,7 +5,7 @@
 #include <node/protocol/node_operations.hpp>
 
 #include <node/chain/node_object_types.hpp>
-#include <node/chain/witness_objects.hpp>
+#include <node/chain/producer_objects.hpp>
 #include <node/chain/shared_authority.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
@@ -49,9 +49,9 @@ namespace node { namespace chain {
 
          share_type                     voting_power = 0;            // The amount of voting power that votes for the officer.
 
-         uint32_t                       witness_vote_count = 0;      // The number of accounts that support the officer.
+         uint32_t                       producer_vote_count = 0;      // The number of accounts that support the officer.
 
-         share_type                     witness_voting_power = 0;    // The amount of voting power that votes for the officer.
+         share_type                     producer_voting_power = 0;    // The amount of voting power that votes for the officer.
    };
 
 
@@ -107,9 +107,9 @@ namespace node { namespace chain {
 
          share_type                     voting_power = 0;                     // The amount of voting power that votes for the executive team. 
 
-         uint32_t                       witness_vote_count = 0;               // The number of accounts that support the executive team.
+         uint32_t                       producer_vote_count = 0;               // The number of accounts that support the executive team.
 
-         share_type                     witness_voting_power = 0;             // The amount of voting power that votes for the executive team.
+         share_type                     producer_voting_power = 0;             // The amount of voting power that votes for the executive team.
    };
 
 
@@ -161,9 +161,9 @@ namespace node { namespace chain {
 
          share_type                     subscriber_power = 0;           // The amount of voting power the subscribes to the governance account.
 
-         uint32_t                       witness_subscriber_count = 0;   // The number of accounts that subscribe to the governance account.
+         uint32_t                       producer_subscriber_count = 0;   // The number of accounts that subscribe to the governance account.
 
-         share_type                     witness_subscriber_power = 0;   // The amount of voting power the subscribes to the governance account.
+         share_type                     producer_subscriber_power = 0;   // The amount of voting power the subscribes to the governance account.
    };
 
 
@@ -370,17 +370,17 @@ namespace node { namespace chain {
 
          share_type                     total_voting_power = 0;                     // The oveall amount of voting power that supports the enterprise proposal.
 
-         uint32_t                       total_witness_approvals = 0;                // The overall number of top 50 witnesses that support the enterprise proposal.
+         uint32_t                       total_producer_approvals = 0;                // The overall number of top 50 producers that support the enterprise proposal.
 
-         share_type                     total_witness_voting_power = 0;             // The overall amount of witness voting power that supports the enterprise proposal.
+         share_type                     total_producer_voting_power = 0;             // The overall amount of producer voting power that supports the enterprise proposal.
 
          uint32_t                       current_approvals = 0;                      // The number of accounts that support the latest claimed milestone.
 
          share_type                     current_voting_power = 0;                   // The amount of voting power that supports the latest claimed milestone.
 
-         uint32_t                       current_witness_approvals = 0;              // The number of top 50 witnesses that support the latest claimed milestone.
+         uint32_t                       current_producer_approvals = 0;              // The number of top 50 producers that support the latest claimed milestone.
 
-         share_type                     current_witness_voting_power = 0;           // The amount of witness voting power that supports the latest claimed milestone.
+         share_type                     current_producer_voting_power = 0;           // The amount of producer voting power that supports the latest claimed milestone.
 
          time_point                     created;                                    // The time the proposal was created.
 
@@ -715,8 +715,8 @@ namespace node { namespace chain {
    struct by_next_payment;
    struct by_total_voting_power;
    struct by_total_approvals;
-   struct by_total_witness_voting_power;
-   struct by_total_witness_approvals;
+   struct by_total_producer_voting_power;
+   struct by_total_producer_approvals;
 
    typedef multi_index_container <
       community_enterprise_object,
@@ -764,9 +764,9 @@ namespace node { namespace chain {
             >,
             composite_key_compare< std::greater< share_type >, std::less< community_enterprise_id_type > >
          >,
-         ordered_unique< tag< by_total_witness_voting_power >,
+         ordered_unique< tag< by_total_producer_voting_power >,
             composite_key< community_enterprise_object,
-               member< community_enterprise_object, share_type, &community_enterprise_object::total_witness_voting_power >,
+               member< community_enterprise_object, share_type, &community_enterprise_object::total_producer_voting_power >,
                member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
             >,
             composite_key_compare< std::greater< share_type >, std::less< community_enterprise_id_type > >
@@ -830,8 +830,8 @@ FC_REFLECT( node::chain::network_officer_object,
          (created)
          (vote_count)
          (voting_power)
-         (witness_vote_count)
-         (witness_voting_power)
+         (producer_vote_count)
+         (producer_voting_power)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::network_officer_object, node::chain::network_officer_index );
@@ -858,8 +858,8 @@ FC_REFLECT( node::chain::executive_board_object,
          (created)
          (vote_count)
          (voting_power)
-         (witness_vote_count)
-         (witness_voting_power)
+         (producer_vote_count)
+         (producer_voting_power)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::executive_board_object, node::chain::executive_board_index );
@@ -884,8 +884,8 @@ FC_REFLECT( node::chain::governance_account_object,
          (created)
          (subscriber_count)
          (subscriber_power)
-         (witness_subscriber_count)
-         (witness_subscriber_power)
+         (producer_subscriber_count)
+         (producer_subscriber_power)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::governance_account_object, node::chain::governance_account_index );
@@ -977,12 +977,12 @@ FC_REFLECT( node::chain::community_enterprise_object,
          (days_paid)
          (total_approvals)
          (total_voting_power)
-         (total_witness_approvals)
-         (total_witness_voting_power)
+         (total_producer_approvals)
+         (total_producer_voting_power)
          (current_approvals)
          (current_voting_power)
-         (current_witness_approvals)
-         (current_witness_voting_power)
+         (current_producer_approvals)
+         (current_producer_voting_power)
          (created)
          );
 

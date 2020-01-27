@@ -42,7 +42,7 @@ namespace node { namespace chain {
 
          block_id_type          last_committed_block_id;                                  // The block id of the last irreversible block.
   
-         account_name_type      current_producer;                                         // The account name of the current block producing witness or miner. 
+         account_name_type      current_producer;                                         // The account name of the current block producing producer. 
 
          time_point             time;                                                     // Current blockchain time in microseconds;
          
@@ -60,7 +60,7 @@ namespace node { namespace chain {
 
          uint64_t               current_aslot = 0;                                        // The current absolute slot number. Equal to the total number of slots since genesis.
 
-         fc::uint128_t          recent_slots_filled;                                      // parameter used to compute witness participation.
+         fc::uint128_t          recent_slots_filled;                                      // parameter used to compute producer participation.
 
          uint8_t                participation_count = 0;                                  // Divide by 128 to compute participation percentage
    };

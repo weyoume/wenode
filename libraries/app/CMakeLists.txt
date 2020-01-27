@@ -9,7 +9,7 @@ add_library( node_app
              ${HEADERS}
            )
 
-target_link_libraries( node_app node_chain node_protocol node_tags node_follow node_witness node_mf_plugins fc graphene_net graphene_utilities )
+target_link_libraries( node_app node_chain node_protocol node_tags node_follow node_producer node_mf_plugins fc graphene_net graphene_utilities )
 target_include_directories( node_app
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 

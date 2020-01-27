@@ -3,7 +3,7 @@
 #include <node/protocol/node_operations.hpp>
 #include <node/protocol/authority.hpp>
 #include <node/chain/node_object_types.hpp>
-#include <node/chain/witness_objects.hpp>
+#include <node/chain/producer_objects.hpp>
 #include <node/chain/shared_authority.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
@@ -186,9 +186,9 @@ namespace node { namespace chain {
             return !( flags & asset_issuer_permission_flags::disable_auction );
          }
 
-         bool is_witness_fed()const            ///< true if the top elected witnesses may produce price feeds for the market issued asset
+         bool is_producer_fed()const            ///< true if the top elected producers may produce price feeds for the market issued asset
          { 
-            return ( flags & asset_issuer_permission_flags::witness_fed_asset );
+            return ( flags & asset_issuer_permission_flags::producer_fed_asset );
          }
 
          bool can_global_settle()const         ///< true if the issuer of this market-issued asset may globally settle the asset
@@ -468,13 +468,13 @@ namespace node { namespace chain {
 
          share_type                 min_balance;                 ///< Minimum amount of equity required to earn dividends.
 
-         uint16_t                   min_witnesses;               ///< Minimum amount of witness votes required to earn dividends.
+         uint16_t                   min_producers;               ///< Minimum amount of producer votes required to earn dividends.
 
          uint16_t                   boost_balance;               ///< Amount of equity balance to earn double dividends.
 
          uint16_t                   boost_activity;              ///< Amount of recent activity rewards required to earn double dividends.
 
-         uint16_t                   boost_witnesses;             ///< Amount of witness votes required to earn double dividends.
+         uint16_t                   boost_producers;             ///< Amount of producer votes required to earn double dividends.
 
          uint16_t                   boost_top;                   ///< Percent bonus earned by Top membership accounts.
 

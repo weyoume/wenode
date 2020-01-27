@@ -20,16 +20,16 @@ if [[ ! -z "$PRIVATE_KEYS" ]]; then
 fi
 
 # The node software will automatically match the private keys with
-# all the corresponding witness account names you input or generate
+# all the corresponding producer account names you input or generate
 
 # either generate with the following code
 # will make webuilder1 - webuilder99 if start=0 and end=100
 start=1
 end=50
-witness_base_name="webuilder"
-args+=" --witness=\"$witness_base_name\""
+producer_base_name="webuilder"
+args+=" --producer=\"$producer_base_name\""
 for ((n=$start;n<$end;n++)); do
-	args+=" --witness=\"$witness_base_name$((n))\""
+	args+=" --producer=\"$producer_base_name$((n))\""
 done
 
 # add argument
@@ -48,15 +48,15 @@ configPath="contrib/config.ini"
 # add argument
 args+=' --config="'$configPath'"'
 
-# or set witness names manually as a list
-# witness_names="witnessname1 witnessname2 witnessname3"
+# or set producer names manually as a list
+# producer_names="producername1 producername2 producername3"
 # or use a file
-# witness_names=$(cat ./scripts/private-witness-names)
-# witness names don't need to be private but the repo ignores
+# producer_names=$(cat ./scripts/private-producer-names)
+# producer names don't need to be private but the repo ignores
 # files beginning with scripts/private* when commiting and publishing
 
-# output witness names
-echo [$witness_names]
+# output producer names
+echo [$producer_names]
 
 # $repos is an environment variable which is 
 # an absolute path to the directory your github 

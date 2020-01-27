@@ -75,8 +75,8 @@ namespace node { namespace chain {
           */
          pair< branch_type, branch_type >  fetch_branch_from(block_id_type first,
                                                              block_id_type second)const;
-         shared_ptr<fork_item>            walk_main_branch_to_num( uint32_t block_num )const;
-         shared_ptr<fork_item>            fetch_block_on_main_branch_by_number( uint32_t block_num )const;
+         shared_ptr<fork_item>            walk_main_branch_to_num( uint64_t block_num )const;
+         shared_ptr<fork_item>            fetch_block_on_main_branch_by_number( uint64_t block_num )const;
 
          struct block_id;
          struct block_num;

@@ -9,7 +9,7 @@
 //#include <node/chain/hardfork.hpp>
 
 #include <node/chain/util/reward.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/producer/producer_objects.hpp>
 #include <fc/crypto/digest.hpp>
 #include <tests/common/database_fixture.hpp>
 

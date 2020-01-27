@@ -9,7 +9,7 @@
 //#include <node/chain/hardfork.hpp>
 
 #include <node/chain/util/reward.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/producer/producer_objects.hpp>
 #include <fc/crypto/digest.hpp>
 #include <tests/common/database_fixture.hpp>
 
@@ -623,25 +623,25 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "bob", bob_private_owner_key, bob_public_owner_key );
+      producer_create( "bob", bob_private_owner_key, bob_public_owner_key );
       
       fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "candice", candice_private_owner_key, candice_public_owner_key );
+      producer_create( "candice", candice_private_owner_key, candice_public_owner_key );
 
       fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "dan", dan_private_owner_key, dan_public_owner_key );
+      producer_create( "dan", dan_private_owner_key, dan_public_owner_key );
       
       signed_transaction tx;
 
@@ -921,25 +921,25 @@ BOOST_AUTO_TEST_CASE( bid_collateral_operation_test )
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "bob", bob_private_owner_key, bob_public_owner_key );
+      producer_create( "bob", bob_private_owner_key, bob_public_owner_key );
       
       fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "candice", candice_private_owner_key, candice_public_owner_key );
+      producer_create( "candice", candice_private_owner_key, candice_public_owner_key );
 
       fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "dan", dan_private_owner_key, dan_public_owner_key );
+      producer_create( "dan", dan_private_owner_key, dan_public_owner_key );
       
       signed_transaction tx;
 

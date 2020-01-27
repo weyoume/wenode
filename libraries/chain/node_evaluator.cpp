@@ -2,7 +2,7 @@
 #include <node/chain/database.hpp>
 #include <node/chain/custom_operation_interpreter.hpp>
 #include <node/chain/node_objects.hpp>
-#include <node/chain/witness_objects.hpp>
+#include <node/chain/producer_objects.hpp>
 #include <node/chain/block_summary_object.hpp>
 #include <cmath>
 
@@ -88,8 +88,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    FC_ASSERT( account_ptr == nullptr,
       "Account with the name: ${n} already exists.", ("n", o.new_account_name) );
    
-   const witness_schedule_object& wso = _db.get_witness_schedule();
-   asset acc_fee = wso.median_props.account_creation_fee;
+   const producer_schedule_object& pso = _db.get_producer_schedule();
+   asset acc_fee = pso.median_props.account_creation_fee;
    
    FC_ASSERT( o.fee >= asset( acc_fee.amount, SYMBOL_COIN ), 
       "Insufficient Fee: ${f} required, ${p} provided.", ("f", acc_fee )("p", o.fee) );
@@ -148,7 +148,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       FC_ASSERT( o.governance_account.size() && o.governance_account == registrar.name,
          "Profile accounts must be registered by its nominated governance account." );
       FC_ASSERT( governance_approved,
-         "Governance Accounts must be approved by a threshold of network voting subscriptions and witnesses before creating profile accounts." );
+         "Governance Accounts must be approved by a threshold of subscriptions before creating profile accounts." );
    }
    else if( o.account_type == BUSINESS )    // Business account validation
    {
@@ -332,11 +332,11 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       });
    }
 
-   if( _db.find_witness( o.registrar ) != nullptr )
+   if( _db.find_producer( o.registrar ) != nullptr )
    {
-      _db.create< witness_vote_object >( [&]( witness_vote_object& wvo )
+      _db.create< producer_vote_object >( [&]( producer_vote_object& wvo )
       {
-         wvo.witness = o.registrar;
+         wvo.producer = o.registrar;
          wvo.account = o.new_account_name;
          wvo.vote_rank = 1;
       });
@@ -634,7 +634,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
 
    if( o.approved ) // Adding or modifying vote
    {
-      if( executive_itr == executive_idx.end() && rank_itr == rank_idx.end() ) // No vote for witness or type rank, create new vote.
+      if( executive_itr == executive_idx.end() && rank_itr == rank_idx.end() ) // No vote for executive board or type rank, create new vote.
       {
          _db.create< account_executive_vote_object>( [&]( account_executive_vote_object& v )
          {
@@ -718,7 +718,7 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
 
    if( o.approved )       // Adding or modifying vote
    {
-      if( officer_itr == officer_idx.end() && rank_itr == rank_idx.end() ) // No vote for witness or type rank, create new vote.
+      if( officer_itr == officer_idx.end() && rank_itr == rank_idx.end() ) // No vote for officer or type rank, create new vote.
       {
          _db.create< account_officer_vote_object>( [&]( account_officer_vote_object& v )
          {
@@ -1096,7 +1096,7 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
-void account_witness_vote_evaluator::do_apply( const account_witness_vote_operation& o )
+void account_producer_vote_evaluator::do_apply( const account_producer_vote_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    if( o.signatory != signed_for )
@@ -1107,73 +1107,73 @@ void account_witness_vote_evaluator::do_apply( const account_witness_vote_operat
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& voter = _db.get_account( o.account );
-   const witness_object& witness = _db.get_witness( o.witness );
+   const producer_object& producer = _db.get_producer( o.producer );
 
    FC_ASSERT( voter.proxy.size() == 0,
-      "A proxy is currently set, please clear the proxy before voting for a witness." );
+      "A proxy is currently set, please clear the proxy before voting for a producer." );
 
    if( o.approved )
    {
       FC_ASSERT( voter.can_vote,
          "Account has declined its voting rights." );
-      FC_ASSERT( witness.active,
-         "Witness is inactive, and not accepting approval votes at this time." );
+      FC_ASSERT( producer.active,
+         "Producer is inactive, and not accepting approval votes at this time." );
    }
 
-   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    
-   const auto& account_rank_idx = _db.get_index< witness_vote_index >().indices().get< by_account_rank >();
-   const auto& account_witness_idx = _db.get_index< witness_vote_index >().indices().get< by_account_witness >();
+   const auto& account_rank_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
+   const auto& account_producer_idx = _db.get_index< producer_vote_index >().indices().get< by_account_producer >();
    auto rank_itr = account_rank_idx.find( boost::make_tuple( voter.name, o.vote_rank ) );   // vote at rank number
-   auto witness_itr = account_witness_idx.find( boost::make_tuple( voter.name, witness.owner ) );    // vote for specified witness
+   auto producer_itr = account_producer_idx.find( boost::make_tuple( voter.name, producer.owner ) );    // vote for specified producer
 
    if( o.approved )       // Adding or modifying vote
    {
-      if( witness_itr == account_witness_idx.end() && rank_itr == account_rank_idx.end() )    // No vote for witness or rank
+      if( producer_itr == account_producer_idx.end() && rank_itr == account_rank_idx.end() )    // No vote for producer or rank
       {
-         FC_ASSERT( voter.witness_vote_count < MAX_ACC_WITNESS_VOTES,
-            "Account has voted for too many witnesses." );
+         FC_ASSERT( voter.producer_vote_count < MAX_ACC_producer_voteS,
+            "Account has voted for too many producers." );
 
-         _db.create< witness_vote_object >( [&]( witness_vote_object& v )
+         _db.create< producer_vote_object >( [&]( producer_vote_object& v )
          {
-            v.witness = witness.owner;
+            v.producer = producer.owner;
             v.account = voter.name;
             v.vote_rank = o.vote_rank;
          });
          
-         _db.update_witness_votes( voter );
+         _db.update_producer_votes( voter );
       }
       else
       {
-         if( witness_itr != account_witness_idx.end() && rank_itr != account_rank_idx.end() )
+         if( producer_itr != account_producer_idx.end() && rank_itr != account_rank_idx.end() )
          {
-            FC_ASSERT( witness_itr->witness != rank_itr->witness,
-               "Vote at rank is already specified witness." );
+            FC_ASSERT( producer_itr->producer != rank_itr->producer,
+               "Vote at rank is already specified producer." );
          }
          
-         if( witness_itr != account_witness_idx.end() )
+         if( producer_itr != account_producer_idx.end() )
          {
-            _db.remove( *witness_itr );
+            _db.remove( *producer_itr );
          }
 
-         _db.update_witness_votes( voter, o.witness, o.vote_rank );   // Remove existing witness vote, and add at new rank.
+         _db.update_producer_votes( voter, o.producer, o.vote_rank );   // Remove existing producer vote, and add at new rank.
       }
    }
    else  // Removing existing vote
    {
-      if( witness_itr != account_witness_idx.end() )
+      if( producer_itr != account_producer_idx.end() )
       {
-         _db.remove( *witness_itr );
+         _db.remove( *producer_itr );
       }
       else if( rank_itr != account_rank_idx.end() )
       {
          _db.remove( *rank_itr );
       }
-      _db.update_witness_votes( voter );
+      _db.update_producer_votes( voter );
    }
 
-   _db.process_update_witness_set();     // Recalculates the voting power for all witnesses.
+   _db.process_update_producer_set();     // Recalculates the voting power for all producers.
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -1240,7 +1240,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
       });
    }
 
-   _db.process_update_witness_set();    // Recalculates the voting power for all witnesses.
+   _db.process_update_producer_set();    // Recalculates the voting power for all producers.
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -1259,17 +1259,17 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
    const account_object& account_to_recover = _db.get_account( o.account_to_recover );
    const account_object& account = _db.get_account( o.recovery_account );
    time_point now = _db.head_block_time();
-   const auto& witness_idx = _db.get_index< witness_index >().indices().get< by_voting_power >();
+   const auto& producer_idx = _db.get_index< producer_index >().indices().get< by_voting_power >();
 
    if( account_to_recover.recovery_account.length() )   // Make sure recovery matches expected recovery account
    {
       FC_ASSERT( account_to_recover.recovery_account == o.recovery_account,
          "Cannot recover an account that does not specify the given recovery account." );
    }
-   else     // Empty string recovery account defaults to top witness
+   else     // Empty string recovery account defaults to top producer
    {
-      FC_ASSERT( witness_idx.begin()->owner == o.recovery_account,
-         "Top witness must recover an account with no recovery partner." );
+      FC_ASSERT( producer_idx.begin()->owner == o.recovery_account,
+         "Top producer must recover an account with no recovery partner." );
    }                                           
 
    const auto& recovery_request_idx = _db.get_index< account_recovery_request_index >().indices().get< by_account >();
@@ -2063,8 +2063,8 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    time_point now = _db.head_block_time();
    const account_object& account = _db.get_account( o.account );
 
-   FC_ASSERT( account.witness_vote_count >= MIN_ACTIVITY_WITNESSES,
-      "Account must have at least 10 witness votes to claim activity reward." );
+   FC_ASSERT( account.producer_vote_count >= MIN_ACTIVITY_PRODUCERS,
+      "Account must have at least 10 producer votes to claim activity reward." );
 
    asset stake = _db.get_staked_balance( o.account, SYMBOL_EQUITY );
 
@@ -2103,12 +2103,12 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    FC_ASSERT( now < ( vote.created + fc::days(1) ),
       "Referred Recent Vote should have been made in the last 24 hours." );
 
-   const auto& vote_idx = _db.get_index< witness_vote_index >().indices().get< by_account_witness >();
-   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, 1 ) );     // Gets top voted witness of account.
+   const auto& vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_producer >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, 1 ) );     // Gets top voted producer of account.
 
-   const witness_object& witness = _db.get_witness( vote_itr->witness );
+   const producer_object& producer = _db.get_producer( vote_itr->producer );
 
-   _db.claim_activity_reward( account, witness );
+   _db.claim_activity_reward( account, producer );
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -2204,7 +2204,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
    const account_object& voter = _db.get_account( o.account );
    const account_object& officer_account = _db.get_account( o.network_officer );
    const network_officer_object& officer = _db.get_network_officer( o.network_officer );
-   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
    if( o.approved )
@@ -2218,11 +2218,11 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
    const auto& account_type_rank_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    const auto& account_officer_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_officer >();
    auto account_type_rank_itr = account_type_rank_idx.find( boost::make_tuple( voter.name, officer.officer_type, o.vote_rank) );      // vote at type and rank number
-   auto account_officer_itr = account_officer_idx.find( boost::make_tuple( voter.name, o.network_officer ) );       // vote for specified witness
+   auto account_officer_itr = account_officer_idx.find( boost::make_tuple( voter.name, o.network_officer ) );       // vote for specified producer
 
    if( o.approved )       // Adding or modifying vote
    {
-      if( account_officer_itr == account_officer_idx.end() && account_type_rank_itr == account_type_rank_idx.end() )     // No vote for witness or type rank, create new vote.
+      if( account_officer_itr == account_officer_idx.end() && account_type_rank_itr == account_type_rank_idx.end() )     // No vote for producer or type rank, create new vote.
       {
          FC_ASSERT( voter.officer_vote_count < MAX_OFFICER_VOTES,
             "Account has voted for too many network officers." );
@@ -2266,7 +2266,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
       _db.update_network_officer_votes( voter );
    }
 
-   _db.update_network_officer( officer, wso, props );
+   _db.update_network_officer( officer, pso, props );
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -2280,11 +2280,11 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
  * 3 - Operate active interface account with at least 100 daily active users.
  * 4 - Operate an active governance account with at least 100 subscribers.
  * 5 - Have at least 3 members or officers that are top 50 network officers, 1 from each role.
- * 6 - Have at least one member or officer that is an active top 50 witness.
+ * 6 - Have at least one member or officer that is an active top 50 voting producer.
  * 
  * Executive boards receive their budget payments when:
  * 1 - They are approved by at least 40 Accounts, with at least 20% of total voting power.
- * 2 - They are approved by at least 10 Witnesses, with at least 20% of total witness voting power.
+ * 2 - They are approved by at least 10 producers, with at least 20% of total producer voting power.
  * 3 - The Current price of the credit asset is greater than $0.90 USD.
  * 4 - They are in the top 5 voted executive boards. 
  */
@@ -2311,7 +2311,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    FC_ASSERT( o.budget <= props.median_props.max_exec_budget, 
       "Executive board Budget is too high. Please reduce budget." );
-   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    time_point now = props.time;
      
    const executive_board_object* exec_ptr = _db.find_executive_board( o.executive );
@@ -2361,14 +2361,14 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
       FC_ASSERT( supernode.daily_active_users >= 100 * PERCENT_100, 
          "Supernode requires 100 daily active users to create Executive board.");
       
-      bool wit_check = false;
+      bool producer_check = false;
       bool dev_check = false;
       bool mar_check = false;
       bool adv_check = false;
 
-      if( wso.is_top_witness( executive.name ) )
+      if( pso.is_top_voting_producer( executive.name ) )
       {
-         wit_check = true;
+         producer_check = true;
       }
       const network_officer_object* off_ptr = _db.find_network_officer( executive.name );
       if( off_ptr != nullptr )
@@ -2400,9 +2400,9 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
 
       for( auto name_role : b.executives )
       {
-         if( wso.is_top_witness( name_role.first ) )
+         if( pso.is_top_voting_producer( name_role.first ) )
          {
-            wit_check = true;
+            producer_check = true;
          }
          const account_object& off_account = _db.get_account( name_role.first );
          const network_officer_object* off_ptr = _db.find_network_officer( name_role.first );
@@ -2436,9 +2436,9 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
 
       for( auto name : b.officers )
       {
-         if( wso.is_top_witness( name.first ) )
+         if( pso.is_top_voting_producer( name.first ) )
          {
-            wit_check = true;
+            producer_check = true;
          }
          const account_object& off_account = _db.get_account( name.first );
          const network_officer_object* off_ptr = _db.find_network_officer( name.first );
@@ -2470,8 +2470,8 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          } 
       }
 
-      FC_ASSERT( wit_check && dev_check && mar_check && adv_check, 
-         "Executive Board must contain at least one witness, developer, marketer, and advocate.");
+      FC_ASSERT( producer_check && dev_check && mar_check && adv_check, 
+         "Executive Board must contain at least one producer, developer, marketer, and advocate.");
 
       _db.create< executive_board_object >( [&]( executive_board_object& ebo )
       {
@@ -2509,7 +2509,7 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
    const account_object& voter = _db.get_account( o.account );
    const executive_board_object& executive = _db.get_executive_board( o.executive_board );
    const account_object& executive_account = _db.get_account( o.executive_board );
-   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
    if( o.approved )
@@ -2570,7 +2570,7 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
       _db.update_executive_board_votes( voter );
    }
 
-   _db.update_executive_board( executive, wso, props );
+   _db.update_executive_board( executive, pso, props );
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -2649,7 +2649,7 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
    const account_object& account = _db.get_account( o.account );
    const governance_account_object& gov_account = _db.get_governance_account( o.governance_account );
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    share_type voting_power = _db.get_voting_power( account );
    const auto& gov_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_governance >();
    auto itr = gov_idx.find( boost::make_tuple( o.account, gov_account.account ) );
@@ -2686,7 +2686,7 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
       _db.remove( *itr );
    }
 
-   _db.update_governance_account( gov_account, wso, props );
+   _db.update_governance_account( gov_account, pso, props );
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -3126,7 +3126,7 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
       "This operaiton would not change the claimed milestone." );
 
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   const witness_schedule_object& witness_schedule = _db.get_witness_schedule();
+   const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
    time_point now = props.time;
    shared_string new_history;
    from_string( new_history, o.details );
@@ -3140,7 +3140,7 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
       ceo.claimed_milestones = o.milestone;
    });
 
-   _db.update_enterprise( enterprise, witness_schedule, props );
+   _db.update_enterprise( enterprise, producer_schedule, props );
    
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -3164,7 +3164,7 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
    FC_ASSERT( o.milestone <= enterprise.claimed_milestones,
       "Cannot approve milestone that has not yet been claimed by the enterprise creator." );
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   const witness_schedule_object& witness_schedule = _db.get_witness_schedule();
+   const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
    time_point now = props.time;
    const enterprise_approval_object* approval_ptr = _db.find_enterprise_approval( creator.name, enterprise_id, account.name );
 
@@ -3199,7 +3199,7 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
       });
    }
 
-   _db.update_enterprise( enterprise, witness_schedule, props );
+   _db.update_enterprise( enterprise, producer_schedule, props );
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -4852,7 +4852,7 @@ void board_vote_mod_evaluator::do_apply( const board_vote_mod_operation& o )
    const account_object& moderator_account = _db.get_account( o.moderator );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
-   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
    if( o.approved )
@@ -6669,8 +6669,8 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
    if( !from_account.mined && o.amount.symbol == SYMBOL_COIN )
    {
       const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-      const witness_schedule_object& wso = _db.get_witness_schedule();
-      asset min_stake = asset( wso.median_props.account_creation_fee * 10, SYMBOL_COIN );
+      const producer_schedule_object& pso = _db.get_producer_schedule();
+      asset min_stake = asset( pso.median_props.account_creation_fee * 10, SYMBOL_COIN );
       FC_ASSERT( stake >= min_stake,
          "Account registered by another account requires 10x account creation before it can be powered down." );
    }
@@ -6910,10 +6910,10 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 
    asset available_stake = delegator_balance.get_staked_balance() - delegator_balance.get_delegated_balance() - asset( delegator_balance.to_unstake - delegator_balance.total_unstaked, o.amount.symbol );
 
-   const witness_schedule_object& wso = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
-   if( delegation_ptr == nullptr )          // If delegation doesn't exist, create it
+   if( delegation_ptr == nullptr )          // If delegation doesn't exist, create it.
    {
       FC_ASSERT( available_stake >= o.amount, 
          "Account does not have enough stake to delegate." );
@@ -6943,15 +6943,15 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
          ado.amount = o.amount;
       });
    }
-   else        // Else the delegation is decreasing ( delegation->asset > o.amount)
+   else        // Else the delegation is decreasing ( delegation->asset > o.amount )
    {
-      asset delta = delegation_ptr->amount - o.amount;
+      const asset_delegation_object& delegation = *delegation_ptr;
+      asset delta = delegation.amount - o.amount;
 
-      if( o.amount.amount == 0 )
-      {
-         FC_ASSERT( delegation_ptr->amount.amount > 0,
-            "Delegation would be set to zero, but it is already zero");
-      }
+      FC_ASSERT( delta.amount != 0,
+         "Delegation amount must change." );
+
+      // Asset delegation expiration object causes delegated and recieving balance to decrement after a delay.
 
       _db.create< asset_delegation_expiration_object >( [&]( asset_delegation_expiration_object& obj )
       {
@@ -6961,19 +6961,14 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
          obj.expiration = now + CONTENT_REWARD_INTERVAL;
       });
 
-      _db.adjust_delegated_balance( delegator_account, -delta );     // decrease delegated balance of delegator account
-      _db.adjust_receiving_balance( delegatee_account, -delta );     // decrease receiving balance of delegatee account
-
-      if( o.amount.amount > 0 )
+      _db.modify( delegation, [&]( asset_delegation_object& ado )
       {
-         _db.modify( *delegation_ptr, [&]( asset_delegation_object& ado )
-         {
-            ado.amount = o.amount;
-         });
-      }
-      else
+         ado.amount = o.amount;
+      });
+      
+      if( o.amount.amount == 0 )
       {
-         _db.remove( *delegation_ptr );
+         _db.remove( delegation );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -8503,10 +8498,10 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.savings_voting_rights = o.options.savings_voting_rights;
             a.min_active_time = o.options.min_active_time;
             a.min_balance = o.options.min_balance;
-            a.min_witnesses = o.options.min_witnesses;
+            a.min_producers = o.options.min_producers;
             a.boost_balance = o.options.boost_balance;
             a.boost_activity = o.options.boost_activity;
-            a.boost_witnesses = o.options.boost_witnesses;
+            a.boost_producers = o.options.boost_producers;
             a.boost_top = o.options.boost_top;
          });
 
@@ -8920,10 +8915,10 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
             a.savings_voting_rights = o.new_options.savings_voting_rights;
             a.min_active_time = o.new_options.min_active_time;
             a.min_balance = o.new_options.min_balance;
-            a.min_witnesses = o.new_options.min_witnesses;
+            a.min_producers = o.new_options.min_producers;
             a.boost_balance = o.new_options.boost_balance;
             a.boost_activity = o.new_options.boost_activity;
-            a.boost_witnesses = o.new_options.boost_witnesses;
+            a.boost_producers = o.new_options.boost_producers;
             a.boost_top = o.new_options.boost_top;
          });
 
@@ -9240,14 +9235,14 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
    }
 
    bool backing_asset_changed = false;    // feeds must be reset if the backing asset is changed
-   bool is_witness_fed = false;
+   bool is_producer_fed = false;
    if( o.new_options.backing_asset != bdo.backing_asset )
    {
       backing_asset_changed = true;
       should_update_feeds = true;
-      if( asset_to_update.is_witness_fed() )
+      if( asset_to_update.is_producer_fed() )
       {
-         is_witness_fed = true;
+         is_producer_fed = true;
       }   
    }
 
@@ -9260,7 +9255,7 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
 
    if( backing_asset_changed )        // Reset price feeds if modifying backing asset
    {
-      if( is_witness_fed )
+      if( is_producer_fed )
       {
          bdo.feeds.clear();
       }
@@ -9304,8 +9299,8 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
       "Cannot specify more feed producers than maximum allowed." );
    FC_ASSERT( asset_obj.asset_type == BITASSET_ASSET,
       "Cannot update feed producers on a non-BitAsset." );
-   FC_ASSERT(!( asset_obj.is_witness_fed() ),
-      "Cannot set feed producers on a witness-fed asset." );
+   FC_ASSERT(!( asset_obj.is_producer_fed() ),
+      "Cannot set feed producers on a producer-fed asset." );
    FC_ASSERT( asset_obj.issuer == o.issuer,
       "Only asset issuer can update feed producers of an asset" );
    
@@ -9361,10 +9356,10 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
    FC_ASSERT( o.feed.settlement_price.quote.symbol == bitasset.backing_asset,
       "Quote asset type in settlement price should be same as backing asset of this asset" );
    
-   if( base.is_witness_fed() )     // Verify that the publisher is authoritative to publish a feed.
+   if( base.is_producer_fed() )     // Verify that the publisher is authoritative to publish a feed.
    {
-      FC_ASSERT( _db.get_account_authority( WITNESS_ACCOUNT ).active.account_auths.count( o.publisher ),
-         "Only active witnesses are allowed to publish price feeds for this asset" );
+      FC_ASSERT( _db.get_account_authority( PRODUCER_ACCOUNT ).active.account_auths.count( o.publisher ),
+         "Only active producers are allowed to publish price feeds for this asset" );
    }
    else
    {
@@ -9573,7 +9568,7 @@ void asset_global_settle_evaluator::do_apply( const asset_global_settle_operatio
 //==================================//
 
 
-void witness_update_evaluator::do_apply( const witness_update_operation& o )
+void producer_update_evaluator::do_apply( const producer_update_operation& o )
 { try {
    const account_object& owner = _db.get_account( o.owner ); // verify owner exists
    const account_name_type& signed_for = o.owner;
@@ -9586,55 +9581,55 @@ void witness_update_evaluator::do_apply( const witness_update_operation& o )
    }
 
    time_point now = _db.head_block_time();
-   const auto& by_witness_name_idx = _db.get_index< witness_index >().indices().get< by_name >();
-   auto wit_itr = by_witness_name_idx.find( o.owner );
+   const auto& by_producer_name_idx = _db.get_index< producer_index >().indices().get< by_name >();
+   auto producer_itr = by_producer_name_idx.find( o.owner );
 
-   if( wit_itr != by_witness_name_idx.end() )
+   if( producer_itr != by_producer_name_idx.end() )
    {
-      _db.modify( *wit_itr, [&]( witness_object& w )
+      _db.modify( *producer_itr, [&]( producer_object& p )
       {
          if ( o.json.size() > 0 )
          {
-            from_string( w.json, o.json );
+            from_string( p.json, o.json );
          }
          if ( o.details.size() > 0 )
          {
-            from_string( w.details, o.details );
+            from_string( p.details, o.details );
          }
          if ( o.url.size() > 0 )
          {
-            from_string( w.url, o.url );
+            from_string( p.url, o.url );
          }
-         w.latitude = o.latitude;
-         w.longitude = o.longitude;
-         w.signing_key = public_key_type( o.block_signing_key );
-         w.props = o.props;
-         w.active = o.active;
+         p.latitude = o.latitude;
+         p.longitude = o.longitude;
+         p.signing_key = public_key_type( o.block_signing_key );
+         p.props = o.props;
+         p.active = o.active;
       });
    }
    else
    {
-      _db.create< witness_object >( [&]( witness_object& w )
+      _db.create< producer_object >( [&]( producer_object& p )
       {
-         w.owner = o.owner;
+         p.owner = o.owner;
          if ( o.json.size() > 0 )
          {
-            from_string( w.json, o.json );
+            from_string( p.json, o.json );
          }
          if ( o.details.size() > 0 )
          {
-            from_string( w.details, o.details );
+            from_string( p.details, o.details );
          }
          if ( o.url.size() > 0 )
          {
-            from_string( w.url, o.url );
+            from_string( p.url, o.url );
          }
-         w.latitude = o.latitude;
-         w.longitude = o.longitude;
-         w.signing_key = public_key_type( o.block_signing_key );
-         w.created = now;
-         w.props = o.props;
-         w.active = true;
+         p.latitude = o.latitude;
+         p.longitude = o.longitude;
+         p.signing_key = public_key_type( o.block_signing_key );
+         p.created = now;
+         p.props = o.props;
+         p.active = true;
       });
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -9656,14 +9651,14 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
    FC_ASSERT( work.pow_summary < target_pow,
       "Insufficient work difficulty. Work: ${w}, Target: ${t} .", ("w",work.pow_summary)("t", target_pow) );
 
-   const witness_schedule_object& witness_schedule = _db.get_witness_schedule();
-   fc::microseconds decay_rate = witness_schedule.median_props.pow_decay_time;  // Averaging window of the targetting adjustment
-   account_name_type worker_account = work.input.miner_account;
+   const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
+   fc::microseconds decay_rate = producer_schedule.median_props.pow_decay_time;  // Averaging window of the targetting adjustment
+   account_name_type miner_account = work.input.miner_account;
 
    uint128_t work_difficulty = ( 1 << 30 ) / work.pow_summary;
 
    const auto& accounts_by_name = _db.get_index< account_index >().indices().get< by_name >();
-   auto itr = accounts_by_name.find( worker_account );
+   auto itr = accounts_by_name.find( miner_account );
 
    if( itr == accounts_by_name.end() )
    {
@@ -9675,8 +9670,8 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       _db.create< account_object >( [&]( account_object& acc )
       {
          acc.registrar = NULL_ACCOUNT;       // Create brand new account for miner
-         acc.name = worker_account;
-         acc.recovery_account = "";          // Highest voted witness at time of recovery.
+         acc.name = miner_account;
+         acc.recovery_account = "";          // Highest voted producer at time of recovery.
          acc.secure_public_key = ok;
          acc.connection_public_key = ok;
          acc.friend_public_key = ok;
@@ -9696,20 +9691,20 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
 
       _db.create< account_authority_object >( [&]( account_authority_object& auth )
       {
-         auth.account = worker_account;
+         auth.account = miner_account;
          auth.owner = authority( 1, ok, 1 );
          auth.active = auth.owner;
          auth.posting = auth.owner;
       });
 
-      _db.create< witness_object >( [&]( witness_object& w )
+      _db.create< producer_object >( [&]( producer_object& p )
       {
-         w.owner = worker_account;
-         w.props = o.props;
-         w.signing_key = ok;
-         w.mining_count = 1;
-         w.mining_power = BLOCKCHAIN_PRECISION;
-         w.last_mining_update = now;
+         p.owner = miner_account;
+         p.props = o.props;
+         p.signing_key = ok;
+         p.mining_count = 1;
+         p.mining_power = BLOCKCHAIN_PRECISION;
+         p.last_mining_update = now;
       });
    }
    else
@@ -9717,14 +9712,14 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       FC_ASSERT( !o.new_owner_key.valid(),
          "Cannot specify an owner key unless creating new mined account." );
 
-      const witness_object& cur_witness = _db.get_witness( worker_account );
+      const producer_object& cur_producer = _db.get_producer( miner_account );
       
-      _db.modify( cur_witness, [&]( witness_object& w )
+      _db.modify( cur_producer, [&]( producer_object& p )
       {
-         w.mining_count++;
-         w.props = o.props;
-         w.decay_weights( now, witness_schedule );    // Decay and increment mining power for the miner. 
-         w.mining_power += BLOCKCHAIN_PRECISION;
+         p.mining_count++;
+         p.props = o.props;
+         p.decay_weights( now, producer_schedule );    // Decay and increment mining power for the miner. 
+         p.mining_power += BLOCKCHAIN_PRECISION;
       });
    }
 
@@ -9733,7 +9728,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       p.total_pow + work_difficulty;
    });
 
-   _db.claim_proof_of_work_reward( worker_account );     // Rewards miner account from mining POW reward pool.
+   _db.claim_proof_of_work_reward( miner_account );     // Rewards miner account from mining POW reward pool.
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -9749,8 +9744,8 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
    }
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = props.time;
-   const account_object& producer = _db.get_account( o.producer ); 
-   const witness_object& witness = _db.get_witness( o.producer );
+   const account_object& producer_acc = _db.get_account( o.producer ); 
+   const producer_object& producer = _db.get_producer( o.producer );
    uint32_t recent_block_num = protocol::block_header::num_from_id( o.block_id );
    
    FC_ASSERT( recent_block_num == o.block_height,
@@ -9760,22 +9755,22 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
    FC_ASSERT( recent_block_num > props.last_committed_block_num,
       "Verify Block done for block older than last committed block number." );
 
-   const witness_schedule_object& witness_schedule = _db.get_witness_schedule();
-   vector< account_name_type > top_witnesses = witness_schedule.top_witnesses;
-   vector< account_name_type > top_miners = witness_schedule.top_miners;
+   const producer_schedule_object& pso = _db.get_producer_schedule();
+   vector< account_name_type > top_voting_producers = pso.top_voting_producers;
+   vector< account_name_type > top_mining_producers = pso.top_mining_producers;
 
-   FC_ASSERT( std::find( top_witnesses.begin(), top_witnesses.end(), witness.owner ) != top_witnesses.end() ||
-      std::find( top_miners.begin(), top_miners.end(), witness.owner ) != top_miners.end(),
-      "Producer must be a top witness or miner to publish a block verification." );
+   FC_ASSERT( std::find( top_voting_producers.begin(), top_voting_producers.end(), o.producer ) != top_voting_producers.end() ||
+      std::find( top_mining_producers.begin(), top_mining_producers.end(), o.producer ) != top_mining_producers.end(),
+      "Producer must be a top producer or miner to publish a block verification." );
 
    const auto& valid_idx = _db.get_index< block_validation_index >().indices().get< by_producer_height >();
-   auto valid_itr = valid_idx.find( boost::make_tuple( witness.owner, o.block_height ) );
+   auto valid_itr = valid_idx.find( boost::make_tuple( o.producer, o.block_height ) );
    
    if( valid_itr == valid_idx.end() )     // New verification object at this height.
    {
       _db.create< block_validation_object >( [&]( block_validation_object& bvo )
       {
-         bvo.producer = producer.name;
+         bvo.producer = o.producer;
          bvo.block_id = o.block_id;
          bvo.block_height = o.block_height;
          bvo.created  = now;
@@ -9813,8 +9808,8 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = props.time;
    uint32_t recent_block_num = protocol::block_header::num_from_id( o.block_id );
-   const account_object& producer = _db.get_account( o.producer );
-   const witness_object& witness = _db.get_witness( o.producer );
+   const account_object& producer_acc = _db.get_account( o.producer );
+   const producer_object& producer = _db.get_producer( o.producer );
 
    FC_ASSERT( recent_block_num == o.block_height,
       "Block with this ID not found at this height." );
@@ -9823,12 +9818,12 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
    FC_ASSERT( recent_block_num > props.last_committed_block_num,
       "Commit Block done for block older than last irreversible block number." );
    
-   const witness_schedule_object& witness_schedule = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    const auto& valid_idx = _db.get_index< block_validation_index >().indices().get< by_producer_height >();
-   auto valid_itr = valid_idx.find( boost::make_tuple( witness.owner, o.block_height ) );
+   auto valid_itr = valid_idx.find( boost::make_tuple( o.producer, o.block_height ) );
 
-   FC_ASSERT( witness_schedule.is_top_producer( o.producer ),
-      "Producer must be a top witness or miner to publish a block commit." );
+   FC_ASSERT( pso.is_top_producer( o.producer ),
+      "Producer must be a top producer or miner to publish a block commit." );
    FC_ASSERT( valid_itr != valid_idx.end(),
       "Please broadcast verify block transaction before commit block transaction." );
    
@@ -9837,7 +9832,7 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
    FC_ASSERT( val.block_id == o.block_id, 
       "Different block ID than the verification ID, please update verification." );
 
-   asset stake = _db.get_staked_balance( producer.name, SYMBOL_COIN );
+   asset stake = _db.get_staked_balance( o.producer, SYMBOL_COIN );
 
    FC_ASSERT( stake >= o.commitment_stake,
       "Producer has insufficient staked balance to provide a commitment stake for the specified amount." );
@@ -9857,10 +9852,10 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
             const verify_block_operation& verify_op = op.get< verify_block_operation >();
             verify_op.validate();
             const account_object& verify_acc = _db.get_account( verify_op.producer );
-            const witness_object& verify_wit = _db.get_witness( verify_op.producer );
+            const producer_object& verify_wit = _db.get_producer( verify_op.producer );
             if( verify_op.block_id == o.block_id && 
                verify_op.block_height == o.block_height &&
-               witness_schedule.is_top_producer( verify_wit.owner ) )
+               pso.is_top_producer( verify_wit.owner ) )
             {
                verifiers.insert( verify_wit.owner );
             }
@@ -9868,7 +9863,7 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
       }
    }
 
-   FC_ASSERT( verifiers.size() >=( IRREVERSIBLE_THRESHOLD * ( DPOS_WITNESS_PRODUCERS + POW_MINER_PRODUCERS ) / PERCENT_100 ),
+   FC_ASSERT( verifiers.size() >=( IRREVERSIBLE_THRESHOLD * ( DPOS_VOTING_PRODUCERS + POW_MINING_PRODUCERS ) / PERCENT_100 ),
       "Insufficient Unique Concurrent Valid Verifications for commit transaction. Please await further verifications from block producers." );
 
    _db.modify( val, [&]( block_validation_object& bvo )
@@ -9880,10 +9875,10 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
       bvo.verifiers = verifiers;
    });
 
-   _db.modify( witness, [&]( witness_object& w )
+   _db.modify( producer, [&]( producer_object& p )
    {
-      w.last_commit_height = o.block_height;
-      w.last_commit_id = o.block_id;
+      p.last_commit_height = o.block_height;
+      p.last_commit_id = o.block_id;
    });
    
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -9908,7 +9903,7 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
    const account_object& reporter = _db.get_account( o.reporter );
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = props.time;
-   const witness_schedule_object& witness_schedule = _db.get_witness_schedule();
+   const producer_schedule_object& pso = _db.get_producer_schedule();
    const chain_id_type& chain_id = CHAIN_ID;
 
    // Check signatures on transactions to ensure that they are signed by the producers
@@ -9958,7 +9953,7 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
    }
 
    const account_object& acc = _db.get_account( first_producer );
-   const witness_object& wit = _db.get_witness( first_producer );
+   const producer_object& prod = _db.get_producer( first_producer );
 
    FC_ASSERT( first_height != 0 && second_height != 0 && first_height == second_height,
       "Producer violation claim must include two valid commit block operations at the same height." );
@@ -9970,8 +9965,8 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
       first_stake >= asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) &&
       second_stake >= asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ),
       "Producer violation claim must include two valid commit block operations with at least 1 Core asset staked." );
-   FC_ASSERT( witness_schedule.is_top_producer( first_producer ),
-      "Violating witness is not a current top producer." );
+   FC_ASSERT( pso.is_top_producer( first_producer ),
+      "Violating producer is not a current top producer." );
 
    asset available_stake = _db.get_staked_balance( first_producer, SYMBOL_COIN );
    asset commitment_stake = std::max( first_stake, second_stake );
@@ -10010,17 +10005,17 @@ void custom_evaluator::do_apply( const custom_operation& o )
    if( _db.is_producing() )
    {
       FC_ASSERT( o.data.size() <= 8192,
-         "custom_operation data must be less than 8k" );
+         "Data must be less than 8192 characters" );
    }  
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void custom_json_evaluator::do_apply( const custom_json_operation& o )
-{
+{ try {
    if( _db.is_producing() )
    {
-      FC_ASSERT( o.json.length() <= 8192,
-         "customJson_operation json must be less than 8k" );
+      FC_ASSERT( o.json.size() <= 8192,
+         "JSON must be less than 8192 characters" );
    }
       
    std::shared_ptr< custom_operation_interpreter > eval = _db.get_custom_json_evaluator( o.id );
@@ -10044,7 +10039,7 @@ void custom_json_evaluator::do_apply( const custom_json_operation& o )
    {
       elog( "Unexpected exception applying custom json evaluator." );
    }
-}
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 } } // node::chain

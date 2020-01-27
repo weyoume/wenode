@@ -68,7 +68,7 @@ def parse_arguments(src_default):
                         help="OpenSSL root directory (can alternatively specify with OPENSSL_ROOT_DIR environment variable)")
     node_type = parser.add_mutually_exclusive_group()
     node_type.add_argument("-f", "--full", dest="low_mem_node", action="store_false", default=argparse.SUPPRESS, help="build with LOW_MEMORY_NODE=OFF (default)")
-    node_type.add_argument("-w", "--witness", dest="low_mem_node", action="store_true", default=argparse.SUPPRESS, help="build with LOW_MEMORY_NODE=ON")
+    node_type.add_argument("-w", "--producer", dest="low_mem_node", action="store_true", default=argparse.SUPPRESS, help="build with LOW_MEMORY_NODE=ON")
     build_type = parser.add_mutually_exclusive_group()
     build_type.add_argument("-r", "--release", dest="release", action="store_true", default=argparse.SUPPRESS, help="build with CMAKE_BUILD_TYPE=RELEASE (default)")
     build_type.add_argument("-d", "--debug", dest="release", action="store_false", default=argparse.SUPPRESS, help="built with CMAKE_BUILD_TYPE=DEBUG")

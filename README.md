@@ -38,7 +38,7 @@
   - Encrypted private messaging between connected accounts.
   - Private posting with selected audience groups.
 - Hybrid Delegated Proof of Stake and Proof of Work consensus alogorithm.
-  - Blocks produced and validated by a set of 50 witnesses and 50 miners.
+  - Blocks produced and validated by a set of 100 Producers.
   - Block times of aprox 0.75 Seconds.
 - Advertising Exchange System for interfaces and businesses.
   - Bidding for display on participating applications.
@@ -60,14 +60,14 @@
 
 - 10 Million WYM fixed supply, with no inflation.
 - Active WYM stakeholder accounts earn a weekly reward.
-- WYM stakeholders are able to vote for network witnesses.
+- WYM stakeholders are able to vote for Producers.
 
 ### MEC is earned by network contributors, and is consumed to utilize network features.
 
 - 1 Billion MEC issuance per year, with no initial supply.
 - 25% of MEC issuance directed to content rewards, distributed according to stake weighted votes, views, shares and comments.
 - 20% of MEC issuance directed to holders of WYM Cryptoequity when they are active on the network.
-- 20% of MEC issuance is directed to Block producing Witnesses, which are elected by stakeholders, and to Block producing Miners, which create proofs of work.
+- 20% of MEC issuance is directed to Block Producers, which are elected by stakeholders, and create proofs of work.
 - 10% of MEC issuance is directed to Supernode Operator rewards.
 - 10% of MEC issuance is directed to Staked MeCoin Holder rewards.
 - 5% of MEC issuance is directed to The Community Enterprise fund.
@@ -80,10 +80,10 @@
 
 ## Hybrid between Delegated Proof of Stake and Proof of Work.
 
-### Block producers are seleted by stake weighted votes, acting as witnesses.
-- The top 50 elected witnesses particpate in each round of block production.
-- 10 Additional random witnesses are selected each round proportionally to the votes received.
-- Witness voting uses a ranked list, according to preference order.
+### Block producers are seleted by stake weighted votes.
+- The top 50 elected voting producers particpate in each round of block production.
+- 10 Additional random producers are selected each round proportionally to the votes received.
+- Producer voting uses a ranked list, according to preference order.
 
 ### Block Producers are also selected by proof of work output.
 - The top 50 Miners participate in each round of block production.
@@ -93,6 +93,6 @@
 ### Block rewards are distributed to Producing nodes:
 - 40%: Base block reward to individual producer.
 - 15%: Proof of work reward on each proof broadcast.
-- 15%: Proof of Activity for each witness voted as rank 1 when claiming activity rewards.
+- 15%: Proof of Activity for each producer voted as rank 1 when claiming activity rewards.
 - 15%: Proof of transaction stake, based on transactions included in blocks.
 - 15%: Block Validatio reward, for commiting stake on incoming blocks.

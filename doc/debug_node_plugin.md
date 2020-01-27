@@ -44,8 +44,8 @@ One basic question to ask is, if we apply that code to the current chain, does b
 as expected on January 1?  If the process segfaults, or block production hangs, or nobody can do transactions
 after January 1, those are certainly showstopping problems that need to be fixed before your code is ready to
 be included in a release.  So to test that it would be nice to speed up time and simulate creating blocks to
-January 1, but you don't have any witness private keys.  With `debug_node_plugin` you can simulate changing
-of witness keys to a key you control and produce as many blocks as you'd like.
+January 1, but you don't have any producer private keys.  With `debug_node_plugin` you can simulate changing
+of producer keys to a key you control and produce as many blocks as you'd like.
 
 Example usage
 -------------
@@ -61,7 +61,7 @@ access to its API to anyone:
     # no seed-node in config file or command line
     p2p-endpoint = 127.0.0.1:2001       # bind to localhost to prevent remote p2p nodes from connecting to us
     rpc-endpoint = 127.0.0.1:8090       # bind to localhost to secure RPC API access
-    enable-plugin = witness account_history debug_node
+    enable-plugin = producer account_history debug_node
     public-api = database_api login_api debug_node_api
 
 The `public-api` section lists API's accessible to the RPC endpoint.  Since (as explained above) the `debug_node_api`
@@ -98,10 +98,10 @@ Let's generate some blocks:
 
     curl --data '{"jsonrpc": "2.0", "method": "call", "params": [2,"debug_generate_blocks",["5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3",5]], "id": 4}' http://127.0.0.1:8090/rpc
 
-As you can see, the `debug_node` performs a local edit of each witness's public key:
+As you can see, the `debug_node` performs a local edit of each producer's public key:
 
-    curl --data '{"jsonrpc": "2.0", "method": "call", "params": [0,"get_witness_by_account",["dantheman4"]], "id": 5}' http://127.0.0.1:8990/rpc
-    curl --data '{"jsonrpc": "2.0", "method": "call", "params": [0,"get_witness_by_account",["thisisnice4"]], "id": 6}' http://127.0.0.1:8990/rpc
+    curl --data '{"jsonrpc": "2.0", "method": "call", "params": [0,"get_producer_by_account",["dantheman4"]], "id": 5}' http://127.0.0.1:8990/rpc
+    curl --data '{"jsonrpc": "2.0", "method": "call", "params": [0,"get_producer_by_account",["thisisnice4"]], "id": 6}' http://127.0.0.1:8990/rpc
     curl --data '{"jsonrpc": "2.0", "method": "call", "params": [0,"get_dynamic_global_properties",[]], "id": 7}' http://127.0.0.1:8090/rpc
 
 The important information in the above is:
@@ -109,11 +109,11 @@ The important information in the above is:
     ... "signing_key":"STM6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV" ...
     ... "head_block_number":1505 ...
 
-which demonstrates the witness keys have been reset and the head block number has been advanced with new blocks.  The blocks are signed by the above private key, and the database is edited to set the block signing key of the scheduled witnesses accordingly so the node accepts the simulated signatures as valid.
+which demonstrates the producer keys have been reset and the head block number has been advanced with new blocks.  The blocks are signed by the above private key, and the database is edited to set the block signing key of the scheduled producers accordingly so the node accepts the simulated signatures as valid.
 
 If we want to take control of an account we can do so by editing its key with `debug_update_object` command like this:
 
-    curl --data '{"jsonrpc": "2.0", "method": "call", "params": [0,"lookup_account_names",[["WeYouMe"]]], "id": 8}' http://127.0.0.1:8090/rpc    # find out ID of account we want is 2.2.28
+    curl --data '{"jsonrpc": "2.0", "method": "call", "params": [0,"get_account",[["WeYouMe"]]], "id": 8}' http://127.0.0.1:8090/rpc    # find out ID of account we want is 2.2.28
     curl --data '{"jsonrpc": "2.0", "method": "call", "params": [2,"debug_update_object",[{"_action":"update","id":"2.2.28","active":{"weight_threshold":1,"key_auths":[["STM6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",1]]}}]], "id": 9}]' http://127.0.0.1:8090/rpc
 
 Now that we've reset its key, we can take control of it in the wallet:

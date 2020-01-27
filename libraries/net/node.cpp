@@ -729,8 +729,8 @@ namespace graphene { namespace net { namespace detail {
       fc::variant_object         network_get_info() const;
       fc::variant_object         network_get_usage_stats() const;
 
-      bool is_hard_fork_block(uint32_t block_number) const;
-      uint32_t get_next_known_hard_fork_block_number(uint32_t block_number) const;
+      bool is_hard_fork_block(uint64_t block_number) const;
+      uint32_t get_next_known_hard_fork_block_number(uint64_t block_number) const;
     }; // end class node_impl
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3458,7 +3458,7 @@ namespace graphene { namespace net { namespace detail {
         dlog( "this client validated the incoming block, advertising it to other peers" );
 
         item_id block_message_item_id(core_message_type_enum::block_message_type, message_hash);
-        uint32_t block_number = block_message_to_process.block.block_num();
+        uint64_t block_number = block_message_to_process.block.block_num();
         fc::time_point block_time = block_message_to_process.block.timestamp;
 
         for (const peer_connection_ptr& peer : _active_connections)
@@ -5165,11 +5165,11 @@ namespace graphene { namespace net { namespace detail {
       return result;
     }
 
-    bool node_impl::is_hard_fork_block(uint32_t block_number) const
+    bool node_impl::is_hard_fork_block(uint64_t block_number) const
     {
       return std::binary_search(_hard_fork_block_numbers.begin(), _hard_fork_block_numbers.end(), block_number);
     }
-    uint32_t node_impl::get_next_known_hard_fork_block_number(uint32_t block_number) const
+    uint32_t node_impl::get_next_known_hard_fork_block_number(uint64_t block_number) const
     {
       auto iter = std::upper_bound(_hard_fork_block_numbers.begin(), _hard_fork_block_numbers.end(),
                                    block_number);

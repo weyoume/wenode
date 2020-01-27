@@ -140,7 +140,7 @@ namespace node { namespace app {
        auto capture_this = shared_from_this();
 
        fc::async( [this,capture_this,b]() {
-          int32_t block_num = int32_t(b.block_num());
+          int64_t block_num = int64_t(b.block_num());
           if( _callbacks.size() )
           {
              for( size_t trx_num = 0; trx_num < b.transactions.size(); ++trx_num )

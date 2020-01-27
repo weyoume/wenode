@@ -6,9 +6,9 @@
 #include <node/chain/history_object.hpp>
 #include <node/chain/node_objects.hpp>
 #include <node/chain/transaction_object.hpp>
-#include <node/chain/witness_objects.hpp>
+#include <node/chain/producer_objects.hpp>
 #include <node/tags/tags_plugin.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/producer/producer_objects.hpp>
 
 namespace node { namespace app {
 
@@ -23,12 +23,12 @@ typedef chain::comment_share_object                    comment_share_api_obj;
 typedef chain::escrow_object                           escrow_api_obj;
 typedef chain::unstake_asset_route_object              unstake_asset_route_api_obj;
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
-typedef chain::witness_vote_object                     witness_vote_api_obj;
-typedef chain::witness_schedule_object                 witness_schedule_api_obj;
+typedef chain::producer_vote_object                     producer_vote_api_obj;
+typedef chain::producer_schedule_object                 producer_schedule_api_obj;
 typedef chain::asset_delegation_object                 asset_delegation_api_obj;
 typedef chain::asset_delegation_expiration_object      asset_delegation_expiration_api_obj;
 typedef chain::reward_fund_object                      reward_fund_api_obj;
-typedef witness::account_bandwidth_object              account_bandwidth_api_obj;
+typedef producer::account_bandwidth_object              account_bandwidth_api_obj;
 
 struct comment_api_obj
 {
@@ -314,7 +314,7 @@ struct account_api_obj
       author_reputation( a.author_reputation.value ),
       loan_default_balance( a.loan_default_balance ),
       recent_activity_claims( a.recent_activity_claims.value ),
-      witness_vote_count( a.witness_vote_count ),
+      producer_vote_count( a.producer_vote_count ),
       officer_vote_count( a.officer_vote_count ),
       executive_board_vote_count( a.executive_board_vote_count ),
       governance_subscriptions( a.governance_subscriptions ),
@@ -343,9 +343,9 @@ struct account_api_obj
          posting = authority( auth.posting );
          last_owner_update = auth.last_owner_update;
 
-         if( db.has_index< witness::account_bandwidth_index >() )
+         if( db.has_index< producer::account_bandwidth_index >() )
          {
-            auto forum_bandwidth = db.find< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( name, witness::bandwidth_type::forum ) );
+            auto forum_bandwidth = db.find< producer::account_bandwidth_object, producer::by_account_bandwidth_type >( boost::make_tuple( name, producer::bandwidth_type::forum ) );
 
             if( forum_bandwidth != nullptr )
             {
@@ -354,7 +354,7 @@ struct account_api_obj
                last_bandwidth_update = forum_bandwidth->last_bandwidth_update;
             }
 
-            auto market_bandwidth = db.find< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( name, witness::bandwidth_type::market ) );
+            auto market_bandwidth = db.find< producer::account_bandwidth_object, producer::by_account_bandwidth_type >( boost::make_tuple( name, producer::bandwidth_type::market ) );
 
             if( market_bandwidth != nullptr )
             {
@@ -414,7 +414,7 @@ struct account_api_obj
    int64_t                          author_reputation;                    // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
    asset                            loan_default_balance;
    int64_t                          recent_activity_claims;
-   uint16_t                         witness_vote_count;
+   uint16_t                         producer_vote_count;
    uint16_t                         officer_vote_count;                         // Number of network officers that the account has voted for.
    uint16_t                         executive_board_vote_count;                 // Number of Executive boards that the account has voted for.
    uint16_t                         governance_subscriptions;                  // Number of governance accounts that the account subscribes to.   
@@ -1177,10 +1177,10 @@ struct equity_data_api_obj
       savings_voting_rights( e.savings_voting_rights ),
       min_active_time( e.min_active_time ),
       min_balance( e.min_balance.value ),
-      min_witnesses( e.min_witnesses ),
+      min_producers( e.min_producers ),
       boost_balance( e.boost_balance ),
       boost_activity( e.boost_activity ),
-      boost_witnesses( e.boost_witnesses ),
+      boost_producers( e.boost_producers ),
       boost_top( e.boost_top ){}
 
    equity_data_api_obj(){}
@@ -1198,10 +1198,10 @@ struct equity_data_api_obj
    uint16_t                                     savings_voting_rights;         // Amount of votes per asset conveyed to savings holders of the asset
    fc::microseconds                             min_active_time;
    int64_t                                      min_balance;
-   uint16_t                                     min_witnesses;
+   uint16_t                                     min_producers;
    uint16_t                                     boost_balance;
    uint16_t                                     boost_activity;
-   uint16_t                                     boost_witnesses;
+   uint16_t                                     boost_producers;
    uint16_t                                     boost_top;
 };
 
@@ -1515,82 +1515,82 @@ struct savings_withdraw_api_obj
    time_point                 complete;
 };
 
-struct witness_api_obj
+struct producer_api_obj
 {
-   witness_api_obj( const chain::witness_object& w ) :
-      id( w.id ),
-      owner( w.owner ),
-      active( w.active ),
-      schedule( w.schedule ),
-      last_confirmed_block_num( w.last_confirmed_block_num ),
-      details( to_string( w.details ) ),
-      url( to_string( w.url ) ),
-      json( to_string( w.json ) ),
-      latitude( w.latitude ),
-      longitude( w.longitude ),
-      signing_key( w.signing_key ),
-      created( w.created ),
-      last_commit_height( w.last_commit_height ),
-      last_commit_id( w.last_commit_id ),
-      total_blocks( w.total_blocks ),
-      voting_power( w.voting_power.value ),
-      vote_count( w.vote_count ),
-      mining_power( w.mining_power.value ),
-      mining_count( w.mining_count ),
-      last_mining_update( w.last_mining_update ),
-      last_pow_time( w.last_pow_time ),
-      recent_txn_stake_weight( w.recent_txn_stake_weight.value ),
-      last_txn_stake_weight_update( w.last_txn_stake_weight_update ),
-      accumulated_activity_stake( w.accumulated_activity_stake ),
-      total_missed( w.total_missed ),
-      last_aslot( w.last_aslot ),
-      props( w.props ),
-      witness_virtual_last_update( w.witness_virtual_last_update ),
-      witness_virtual_position( w.witness_virtual_position ),
-      witness_virtual_scheduled_time( w.witness_virtual_scheduled_time ),
-      miner_virtual_last_update( w.miner_virtual_last_update ),
-      miner_virtual_position( w.miner_virtual_position ),
-      miner_virtual_scheduled_time( w.miner_virtual_scheduled_time ),
-      running_version( w.running_version ),
-      hardfork_version_vote( w.hardfork_version_vote ),
-      hardfork_time_vote( w.hardfork_time_vote ){}
+   producer_api_obj( const chain::producer_object& p ) :
+      id( p.id ),
+      owner( p.owner ),
+      active( p.active ),
+      schedule( p.schedule ),
+      last_confirmed_block_num( p.last_confirmed_block_num ),
+      details( to_string( p.details ) ),
+      url( to_string( p.url ) ),
+      json( to_string( p.json ) ),
+      latitude( p.latitude ),
+      longitude( p.longitude ),
+      signing_key( p.signing_key ),
+      created( p.created ),
+      last_commit_height( p.last_commit_height ),
+      last_commit_id( p.last_commit_id ),
+      total_blocks( p.total_blocks ),
+      voting_power( p.voting_power.value ),
+      vote_count( p.vote_count ),
+      mining_power( p.mining_power.value ),
+      mining_count( p.mining_count ),
+      last_mining_update( p.last_mining_update ),
+      last_pow_time( p.last_pow_time ),
+      recent_txn_stake_weight( p.recent_txn_stake_weight.value ),
+      last_txn_stake_weight_update( p.last_txn_stake_weight_update ),
+      accumulated_activity_stake( p.accumulated_activity_stake ),
+      total_missed( p.total_missed ),
+      last_aslot( p.last_aslot ),
+      props( p.props ),
+      voting_virtual_last_update( p.voting_virtual_last_update ),
+      voting_virtual_position( p.voting_virtual_position ),
+      voting_virtual_scheduled_time( p.voting_virtual_scheduled_time ),
+      mining_virtual_last_update( p.mining_virtual_last_update ),
+      mining_virtual_position( p.mining_virtual_position ),
+      mining_virtual_scheduled_time( p.mining_virtual_scheduled_time ),
+      running_version( p.running_version ),
+      hardfork_version_vote( p.hardfork_version_vote ),
+      hardfork_time_vote( p.hardfork_time_vote ){}
 
-   witness_api_obj(){}
+   producer_api_obj(){}
 
-   witness_id_type              id;
-   account_name_type            owner;                            // The name of the account that has authority over this witness.
-   bool                         active;                           // True if the witness is actively seeking to produce blocks, set false to deactivate the witness and remove from production.
-   witness_object::witness_schedule_type        schedule;         // How the witness was scheduled the last time it was scheduled.
-   uint64_t                     last_confirmed_block_num;         // Number of the last block that was successfully produced by this witness. 
-   string                       details;                          // Witness or miner's details, explaining who they are, machine specs, capabilties.
-   string                       url;                              // The witnesses or miners URL explaining their details.
-   string                       json;                             // The witnesses or miners json metadata.
-   double                       latitude;                         // Latitude Co-ordinates of the witness or miner's approximate geo-location.
-   double                       longitude;                        // Longitude Co-ordinates of the witness or miner's approximate geo-location.
-   public_key_type              signing_key;                      // The key used to sign blocks on behalf of this witness or miner.
-   time_point                   created;                          // The time the witness was created.
+   producer_id_type              id;
+   account_name_type            owner;                            // The name of the account that has authority over this producer.
+   bool                         active;                           // True if the producer is actively seeking to produce blocks, set false to deactivate the producer and remove from production.
+   producer_object::producer_schedule_type        schedule;       // How the producer was scheduled the last time it was scheduled.
+   uint64_t                     last_confirmed_block_num;         // Number of the last block that was successfully produced by this producer. 
+   string                       details;                          // Producer's details, explaining who they are, machine specs, capabilties.
+   string                       url;                              // The producer's URL explaining their details.
+   string                       json;                             // The producer's json metadata.
+   double                       latitude;                         // Latitude Co-ordinates of the producer's approximate geo-location.
+   double                       longitude;                        // Longitude Co-ordinates of the producer's approximate geo-location.
+   public_key_type              signing_key;                      // The key used to sign blocks on behalf of this producer.
+   time_point                   created;                          // The time the producer was created.
    uint32_t                     last_commit_height;               // Block height that has been most recently committed by the producer
    block_id_type                last_commit_id;                   // Block ID of the height that was most recently committed by the producer. 
    uint32_t                     total_blocks;                     // Accumulated number of blocks produced.
-   int64_t                      voting_power;                     // The total weighted voting power that supports the witness. 
-   uint32_t                     vote_count;                       // The number of accounts that have voted for the witness.
+   int64_t                      voting_power;                     // The total weighted voting power that supports the producer. 
+   uint32_t                     vote_count;                       // The number of accounts that have voted for the producer.
    int64_t                      mining_power;                     // The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
    uint32_t                     mining_count;                     // Accumulated number of proofs of work published.
    time_point                   last_mining_update;               // Time that the account last updated its mining power.
    time_point                   last_pow_time;                    // Time that the miner last created a proof of work.
    int64_t                      recent_txn_stake_weight;          // Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
    time_point                   last_txn_stake_weight_update;     // Time that the recent bandwith and txn stake were last updated.
-   uint128_t                    accumulated_activity_stake;       // Recent amount of activity reward stake for the prime witness. 
+   uint128_t                    accumulated_activity_stake;       // Recent amount of activity reward stake for the prime producer. 
    uint32_t                     total_missed;                     // Number of blocks missed recently.
-   uint64_t                     last_aslot;                       // Last absolute slot that the witness was assigned to produce a block.
-   chain_properties             props;                            // The chain properties object that the witness currently proposes for global network variables
-   uint128_t                    witness_virtual_last_update;
-   uint128_t                    witness_virtual_position;
-   uint128_t                    witness_virtual_scheduled_time;
-   uint128_t                    miner_virtual_last_update;
-   uint128_t                    miner_virtual_position;
-   uint128_t                    miner_virtual_scheduled_time;
-   version                      running_version;                  // The WeYouMe blockchain version the witness is running.
+   uint64_t                     last_aslot;                       // Last absolute slot that the producer was assigned to produce a block.
+   chain_properties             props;                            // The chain properties object that the producer currently proposes for global network variables
+   uint128_t                    voting_virtual_last_update;
+   uint128_t                    voting_virtual_position;
+   uint128_t                    voting_virtual_scheduled_time;
+   uint128_t                    mining_virtual_last_update;
+   uint128_t                    mining_virtual_position;
+   uint128_t                    mining_virtual_scheduled_time;
+   version                      running_version;                  // The blockchain version the producer is running.
    hardfork_version             hardfork_version_vote;
    time_point                   hardfork_time_vote;
 };
@@ -1610,8 +1610,8 @@ struct network_officer_api_obj
       created( o.created ),
       vote_count( o.vote_count ),
       voting_power( o.voting_power.value ),
-      witness_vote_count( o.witness_vote_count ),
-      witness_voting_power( o.witness_voting_power.value ){}
+      producer_vote_count( o.producer_vote_count ),
+      producer_voting_power( o.producer_voting_power.value ){}
       
    network_officer_api_obj(){}
 
@@ -1626,8 +1626,8 @@ struct network_officer_api_obj
    time_point                     created;                 // The time the officer was created.
    uint32_t                       vote_count;              // The number of accounts that support the officer.
    int64_t                        voting_power;            // The amount of voting power that votes for the officer.
-   uint32_t                       witness_vote_count;      // The number of accounts that support the officer.
-   int64_t                        witness_voting_power;    // The amount of voting power that votes for the officer.
+   uint32_t                       producer_vote_count;      // The number of accounts that support the officer.
+   int64_t                        producer_voting_power;    // The amount of voting power that votes for the officer.
 };
 
 
@@ -1645,8 +1645,8 @@ struct executive_board_api_obj
       created( o.created ),
       vote_count( o.vote_count ),
       voting_power( o.voting_power.value ),
-      witness_vote_count( o.witness_vote_count ),
-      witness_voting_power( o.witness_voting_power.value ){}
+      producer_vote_count( o.producer_vote_count ),
+      producer_voting_power( o.producer_voting_power.value ){}
 
    executive_board_api_obj(){}
 
@@ -1661,8 +1661,8 @@ struct executive_board_api_obj
    time_point                     created;                    // The time the executive team was created.
    uint32_t                       vote_count;                 // The number of accounts that support the executive team.
    int64_t                        voting_power;               // The amount of voting power that votes for the executive team. 
-   uint32_t                       witness_vote_count;         // The number of accounts that support the executive team.
-   int64_t                        witness_voting_power;       // The amount of voting power that votes for the executive team.
+   uint32_t                       producer_vote_count;         // The number of accounts that support the executive team.
+   int64_t                        producer_voting_power;       // The amount of voting power that votes for the executive team.
 };
 
 
@@ -1679,8 +1679,8 @@ struct governance_account_api_obj
       created( o.created ),
       subscriber_count( o.subscriber_count ),
       subscriber_power( o.subscriber_power.value ),
-      witness_subscriber_count( o.witness_subscriber_count ),
-      witness_subscriber_power( o.witness_subscriber_power.value ){}
+      producer_subscriber_count( o.producer_subscriber_count ),
+      producer_subscriber_power( o.producer_subscriber_power.value ){}
 
    governance_account_api_obj(){}
 
@@ -1694,8 +1694,8 @@ struct governance_account_api_obj
    time_point                     created;                    // The time the governance account was created.
    uint32_t                       subscriber_count;           // The number of accounts that support the governance account.
    int64_t                        subscriber_power;           // The amount of voting power that votes for the governance account. 
-   uint32_t                       witness_subscriber_count;   // The number of accounts that support the governance account.
-   int64_t                        witness_subscriber_power;   // The amount of voting power that votes for the governance account.
+   uint32_t                       producer_subscriber_count;   // The number of accounts that support the governance account.
+   int64_t                        producer_subscriber_power;   // The amount of voting power that votes for the governance account.
 };
 
 
@@ -1797,12 +1797,12 @@ struct community_enterprise_api_obj
       days_paid( o.days_paid ),
       total_approvals( o.total_approvals ),
       total_voting_power( o.total_voting_power.value ),
-      total_witness_approvals( o.total_witness_approvals ),
-      total_witness_voting_power( o.total_witness_voting_power.value ),
+      total_producer_approvals( o.total_producer_approvals ),
+      total_producer_voting_power( o.total_producer_voting_power.value ),
       current_approvals( o.current_approvals ),
       current_voting_power( o.current_voting_power.value ),
-      current_witness_approvals( o.current_witness_approvals ),
-      current_witness_voting_power( o.current_witness_voting_power.value ),
+      current_producer_approvals( o.current_producer_approvals ),
+      current_producer_voting_power( o.current_producer_voting_power.value ),
       created( o.created )
       {
          for( auto beneficiary : o.beneficiaries )
@@ -1845,12 +1845,12 @@ struct community_enterprise_api_obj
    uint16_t                           days_paid;                                  // Number of days that the proposal has been paid for. 
    uint32_t                           total_approvals;                            // The overall number of accounts that support the enterprise proposal.
    int64_t                            total_voting_power;                         // The oveall amount of voting power that supports the enterprise proposal.
-   uint32_t                           total_witness_approvals;                    // The overall number of top 50 witnesses that support the enterprise proposal.
-   int64_t                            total_witness_voting_power;                 // The overall amount of witness voting power that supports the enterprise proposal.
+   uint32_t                           total_producer_approvals;                   // The overall number of top 50 producers that support the enterprise proposal.
+   int64_t                            total_producer_voting_power;                // The overall amount of producer voting power that supports the enterprise proposal.
    uint32_t                           current_approvals;                          // The number of accounts that support the latest claimed milestone.
    int64_t                            current_voting_power;                       // The amount of voting power that supports the latest claimed milestone.
-   uint32_t                           current_witness_approvals;                  // The number of top 50 witnesses that support the latest claimed milestone.
-   int64_t                            current_witness_voting_power;               // The amount of witness voting power that supports the latest claimed milestone.
+   uint32_t                           current_producer_approvals;                 // The number of top 50 producers that support the latest claimed milestone.
+   int64_t                            current_producer_voting_power;              // The amount of producer voting power that supports the latest claimed milestone.
    time_point                         created;                                    // The time the proposal was created.
 };
 
@@ -2098,9 +2098,9 @@ struct dynamic_global_property_api_obj : public dynamic_global_property_object
    dynamic_global_property_api_obj( const dynamic_global_property_object& gpo, const chain::database& db ) :
       dynamic_global_property_object( gpo )
    {
-      if( db.has_index< witness::reserve_ratio_index >() )
+      if( db.has_index< producer::reserve_ratio_index >() )
       {
-         const auto& r = db.find( witness::reserve_ratio_id_type() );
+         const auto& r = db.find( producer::reserve_ratio_id_type() );
 
          if( BOOST_LIKELY( r != nullptr ) )
          {
@@ -2258,7 +2258,7 @@ FC_REFLECT( node::app::account_api_obj,
          (author_reputation)
          (loan_default_balance)
          (recent_activity_claims)
-         (witness_vote_count)
+         (producer_vote_count)
          (officer_vote_count)
          (executive_board_vote_count)
          (governance_subscriptions)
@@ -2576,10 +2576,10 @@ FC_REFLECT( node::app::equity_data_api_obj,
          (savings_voting_rights)
          (min_active_time)
          (min_balance)
-         (min_witnesses)
+         (min_producers)
          (boost_balance)
          (boost_activity)
-         (boost_witnesses)
+         (boost_producers)
          (boost_top)
          );
 
@@ -2723,7 +2723,7 @@ FC_REFLECT( node::app::savings_withdraw_api_obj,
          (complete)
          );
 
-FC_REFLECT( node::app::witness_api_obj,
+FC_REFLECT( node::app::producer_api_obj,
          (id)
          (owner)
          (active)
@@ -2751,12 +2751,12 @@ FC_REFLECT( node::app::witness_api_obj,
          (total_missed)
          (last_aslot)
          (props)
-         (witness_virtual_last_update)
-         (witness_virtual_position)
-         (witness_virtual_scheduled_time)
-         (miner_virtual_last_update)
-         (miner_virtual_position)
-         (miner_virtual_scheduled_time)
+         (voting_virtual_last_update)
+         (voting_virtual_position)
+         (voting_virtual_scheduled_time)
+         (mining_virtual_last_update)
+         (mining_virtual_position)
+         (mining_virtual_scheduled_time)
          (running_version)
          (hardfork_version_vote)
          (hardfork_time_vote)
@@ -2774,8 +2774,8 @@ FC_REFLECT( node::app::network_officer_api_obj,
          (created)
          (vote_count)
          (voting_power)
-         (witness_vote_count)
-         (witness_voting_power)
+         (producer_vote_count)
+         (producer_voting_power)
          );
 
 FC_REFLECT( node::app::executive_board_api_obj,
@@ -2790,8 +2790,8 @@ FC_REFLECT( node::app::executive_board_api_obj,
          (created)
          (vote_count)
          (voting_power)
-         (witness_vote_count)
-         (witness_voting_power)
+         (producer_vote_count)
+         (producer_voting_power)
          );
 
 FC_REFLECT( node::app::governance_account_api_obj,
@@ -2805,8 +2805,8 @@ FC_REFLECT( node::app::governance_account_api_obj,
          (created)
          (subscriber_count)
          (subscriber_power)
-         (witness_subscriber_count)
-         (witness_subscriber_power)
+         (producer_subscriber_count)
+         (producer_subscriber_power)
          );
 
 FC_REFLECT( node::app::supernode_api_obj,
@@ -2868,12 +2868,12 @@ FC_REFLECT( node::app::community_enterprise_api_obj,
          (days_paid)
          (total_approvals)
          (total_voting_power)
-         (total_witness_approvals)
-         (total_witness_voting_power)
+         (total_producer_approvals)
+         (total_producer_voting_power)
          (current_approvals)
          (current_voting_power)
-         (current_witness_approvals)
-         (current_witness_voting_power)
+         (current_producer_approvals)
+         (current_producer_voting_power)
          (created)
          );
 

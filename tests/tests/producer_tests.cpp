@@ -9,7 +9,7 @@
 //#include <node/chain/hardfork.hpp>
 
 #include <node/chain/util/reward.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/producer/producer_objects.hpp>
 #include <fc/crypto/digest.hpp>
 #include <tests/common/database_fixture.hpp>
 
@@ -32,13 +32,13 @@ BOOST_FIXTURE_TEST_SUITE( producer_operation_tests, clean_database_fixture );
 
 
 
-BOOST_AUTO_TEST_CASE( witness_update_operation_tests )
+BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "├── Testing: WITNESS UPDATE" );
+      BOOST_TEST_MESSAGE( "├── Testing: PRODUCER UPDATE" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Create new witness" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create new Producer" );
 
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
@@ -51,82 +51,82 @@ BOOST_AUTO_TEST_CASE( witness_update_operation_tests )
       
       signed_transaction tx;
 
-      witness_update_operation witness_update;
+      producer_update_operation producer_update;
 
       private_key_type signing_key = generate_private_key( "alice_signing_key" );
 
-      witness_update.signatory = "alice";
-      witness_update.owner = "alice";
-      witness_update.details = "My Details";
-      witness_update.url = "www.url.com";
-      witness_update.json = "{\"json\":\"valid\"}";
-      witness_update.latitude = -37.840935;
-      witness_update.longitude = 144.946457;
+      producer_update.signatory = "alice";
+      producer_update.owner = "alice";
+      producer_update.details = "My Details";
+      producer_update.url = "www.url.com";
+      producer_update.json = "{\"json\":\"valid\"}";
+      producer_update.latitude = -37.840935;
+      producer_update.longitude = 144.946457;
 
       chain_properties chain_props;
       chain_props.validate();
 
-      witness_update.props = chain_props;
-      witness_update.active = true;
-      witness_update.block_signing_key = string( public_key_type( signing_key.get_public_key() ) );
-      witness_update.validate();
+      producer_update.props = chain_props;
+      producer_update.active = true;
+      producer_update.block_signing_key = string( public_key_type( signing_key.get_public_key() ) );
+      producer_update.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( witness_update );
+      tx.operations.push_back( producer_update );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const witness_object& alice_witness = db.get_witness( "alice" );
+      const producer_object& alice_producer = db.get_producer( "alice" );
 
-      alice_witness.props.validate();
+      alice_producer.props.validate();
 
-      BOOST_REQUIRE( alice_witness.owner == "alice" );
-      BOOST_REQUIRE( alice_witness.active == true );
-      BOOST_REQUIRE( alice_witness.schedule == witness_object::none );
-      BOOST_REQUIRE( alice_witness.last_confirmed_block_num == 0 );
-      BOOST_REQUIRE( to_string( alice_witness.details ) == witness_update.details );
-      BOOST_REQUIRE( to_string( alice_witness.url ) == witness_update.url );
-      BOOST_REQUIRE( to_string( alice_witness.json ) == witness_update.json );
-      BOOST_REQUIRE( alice_witness.latitude == witness_update.latitude );
-      BOOST_REQUIRE( alice_witness.longitude == witness_update.longitude );
-      BOOST_REQUIRE( alice_witness.signing_key == public_key_type( witness_update.block_signing_key ) );
-      BOOST_REQUIRE( alice_witness.created == now() );
-      BOOST_REQUIRE( alice_witness.last_commit_height == 0);
-      BOOST_REQUIRE( alice_witness.last_commit_id == block_id_type() );
-      BOOST_REQUIRE( alice_witness.total_blocks == 0 );
-      BOOST_REQUIRE( alice_witness.voting_power == 0 );
-      BOOST_REQUIRE( alice_witness.vote_count == 0 );
-      BOOST_REQUIRE( alice_witness.mining_power == 0 );
-      BOOST_REQUIRE( alice_witness.mining_count == 0 );
-      BOOST_REQUIRE( alice_witness.last_mining_update == now() );
-      BOOST_REQUIRE( alice_witness.last_pow_time == now() );
-      BOOST_REQUIRE( alice_witness.recent_txn_stake_weight == 0 );
-      BOOST_REQUIRE( alice_witness.last_txn_stake_weight_update == now() );
-      BOOST_REQUIRE( alice_witness.accumulated_activity_stake == 0 );
-      BOOST_REQUIRE( alice_witness.total_missed == 0 );
-      BOOST_REQUIRE( alice_witness.last_aslot == 0 );
+      BOOST_REQUIRE( alice_producer.owner == "alice" );
+      BOOST_REQUIRE( alice_producer.active == true );
+      BOOST_REQUIRE( alice_producer.schedule == producer_object::none );
+      BOOST_REQUIRE( alice_producer.last_confirmed_block_num == 0 );
+      BOOST_REQUIRE( to_string( alice_producer.details ) == producer_update.details );
+      BOOST_REQUIRE( to_string( alice_producer.url ) == producer_update.url );
+      BOOST_REQUIRE( to_string( alice_producer.json ) == producer_update.json );
+      BOOST_REQUIRE( alice_producer.latitude == producer_update.latitude );
+      BOOST_REQUIRE( alice_producer.longitude == producer_update.longitude );
+      BOOST_REQUIRE( alice_producer.signing_key == public_key_type( producer_update.block_signing_key ) );
+      BOOST_REQUIRE( alice_producer.created == now() );
+      BOOST_REQUIRE( alice_producer.last_commit_height == 0);
+      BOOST_REQUIRE( alice_producer.last_commit_id == block_id_type() );
+      BOOST_REQUIRE( alice_producer.total_blocks == 0 );
+      BOOST_REQUIRE( alice_producer.voting_power == 0 );
+      BOOST_REQUIRE( alice_producer.vote_count == 0 );
+      BOOST_REQUIRE( alice_producer.mining_power == 0 );
+      BOOST_REQUIRE( alice_producer.mining_count == 0 );
+      BOOST_REQUIRE( alice_producer.last_mining_update == now() );
+      BOOST_REQUIRE( alice_producer.last_pow_time == now() );
+      BOOST_REQUIRE( alice_producer.recent_txn_stake_weight == 0 );
+      BOOST_REQUIRE( alice_producer.last_txn_stake_weight_update == now() );
+      BOOST_REQUIRE( alice_producer.accumulated_activity_stake == 0 );
+      BOOST_REQUIRE( alice_producer.total_missed == 0 );
+      BOOST_REQUIRE( alice_producer.last_aslot == 0 );
 
-      BOOST_REQUIRE( alice_witness.witness_virtual_last_update == 0 );
-      BOOST_REQUIRE( alice_witness.witness_virtual_position == 0 );
-      BOOST_REQUIRE( alice_witness.witness_virtual_scheduled_time == fc::uint128_t::max_value() );
-      BOOST_REQUIRE( alice_witness.miner_virtual_last_update == 0 );
-      BOOST_REQUIRE( alice_witness.miner_virtual_position == 0 );
-      BOOST_REQUIRE( alice_witness.miner_virtual_scheduled_time == fc::uint128_t::max_value() );
+      BOOST_REQUIRE( alice_producer.voting_virtual_last_update == 0 );
+      BOOST_REQUIRE( alice_producer.voting_virtual_position == 0 );
+      BOOST_REQUIRE( alice_producer.voting_virtual_scheduled_time == fc::uint128_t::max_value() );
+      BOOST_REQUIRE( alice_producer.mining_virtual_last_update == 0 );
+      BOOST_REQUIRE( alice_producer.mining_virtual_position == 0 );
+      BOOST_REQUIRE( alice_producer.mining_virtual_scheduled_time == fc::uint128_t::max_value() );
       
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Create new witness" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create new Producer" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Update existing Witness and chain properties" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Update existing Producer and chain properties" );
 
-      witness_update.details = "My New Details";
-      witness_update.url = "www.newurl.com";
-      witness_update.json = "{\"json\":\"veryvalid\"}";
-      witness_update.latitude = -38.840935;
-      witness_update.longitude = 145.946457;
+      producer_update.details = "My New Details";
+      producer_update.url = "www.newurl.com";
+      producer_update.json = "{\"json\":\"veryvalid\"}";
+      producer_update.latitude = -38.840935;
+      producer_update.longitude = 145.946457;
 
       chain_properties chain_props;
 
@@ -135,62 +135,62 @@ BOOST_AUTO_TEST_CASE( witness_update_operation_tests )
       chain_props.credit_variable_interest = 7 * PERCENT_1;
       chain_props.validate();
 
-      witness_update.props = chain_props;
-      witness_update.validate();
+      producer_update.props = chain_props;
+      producer_update.validate();
 
-      tx.operations.push_back( witness_update );
+      tx.operations.push_back( producer_update );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const witness_object& alice_witness = db.get_witness( "alice" );
+      const producer_object& alice_producer = db.get_producer( "alice" );
 
-      alice_witness.props.validate();
+      alice_producer.props.validate();
 
-      BOOST_REQUIRE( alice_witness.owner == "alice" );
-      BOOST_REQUIRE( alice_witness.active == true );
-      BOOST_REQUIRE( alice_witness.schedule == witness_object::none );
-      BOOST_REQUIRE( alice_witness.last_confirmed_block_num == 0 );
-      BOOST_REQUIRE( to_string( alice_witness.details ) == witness_update.details );
-      BOOST_REQUIRE( to_string( alice_witness.url ) == witness_update.url );
-      BOOST_REQUIRE( to_string( alice_witness.json ) == witness_update.json );
-      BOOST_REQUIRE( alice_witness.latitude == witness_update.latitude );
-      BOOST_REQUIRE( alice_witness.longitude == witness_update.longitude );
-      BOOST_REQUIRE( alice_witness.signing_key == public_key_type( witness_update.block_signing_key ) );
-      BOOST_REQUIRE( alice_witness.created == now() );
-      BOOST_REQUIRE( alice_witness.last_commit_height == 0);
-      BOOST_REQUIRE( alice_witness.last_commit_id == block_id_type() );
-      BOOST_REQUIRE( alice_witness.total_blocks == 0 );
-      BOOST_REQUIRE( alice_witness.voting_power == 0 );
-      BOOST_REQUIRE( alice_witness.vote_count == 0 );
-      BOOST_REQUIRE( alice_witness.mining_power == 0 );
-      BOOST_REQUIRE( alice_witness.mining_count == 0 );
-      BOOST_REQUIRE( alice_witness.last_mining_update == now() );
-      BOOST_REQUIRE( alice_witness.last_pow_time == now() );
-      BOOST_REQUIRE( alice_witness.recent_txn_stake_weight == 0 );
-      BOOST_REQUIRE( alice_witness.last_txn_stake_weight_update == now() );
-      BOOST_REQUIRE( alice_witness.accumulated_activity_stake == 0 );
-      BOOST_REQUIRE( alice_witness.total_missed == 0 );
-      BOOST_REQUIRE( alice_witness.last_aslot == 0 );
+      BOOST_REQUIRE( alice_producer.owner == "alice" );
+      BOOST_REQUIRE( alice_producer.active == true );
+      BOOST_REQUIRE( alice_producer.schedule == producer_object::none );
+      BOOST_REQUIRE( alice_producer.last_confirmed_block_num == 0 );
+      BOOST_REQUIRE( to_string( alice_producer.details ) == producer_update.details );
+      BOOST_REQUIRE( to_string( alice_producer.url ) == producer_update.url );
+      BOOST_REQUIRE( to_string( alice_producer.json ) == producer_update.json );
+      BOOST_REQUIRE( alice_producer.latitude == producer_update.latitude );
+      BOOST_REQUIRE( alice_producer.longitude == producer_update.longitude );
+      BOOST_REQUIRE( alice_producer.signing_key == public_key_type( producer_update.block_signing_key ) );
+      BOOST_REQUIRE( alice_producer.created == now() );
+      BOOST_REQUIRE( alice_producer.last_commit_height == 0);
+      BOOST_REQUIRE( alice_producer.last_commit_id == block_id_type() );
+      BOOST_REQUIRE( alice_producer.total_blocks == 0 );
+      BOOST_REQUIRE( alice_producer.voting_power == 0 );
+      BOOST_REQUIRE( alice_producer.vote_count == 0 );
+      BOOST_REQUIRE( alice_producer.mining_power == 0 );
+      BOOST_REQUIRE( alice_producer.mining_count == 0 );
+      BOOST_REQUIRE( alice_producer.last_mining_update == now() );
+      BOOST_REQUIRE( alice_producer.last_pow_time == now() );
+      BOOST_REQUIRE( alice_producer.recent_txn_stake_weight == 0 );
+      BOOST_REQUIRE( alice_producer.last_txn_stake_weight_update == now() );
+      BOOST_REQUIRE( alice_producer.accumulated_activity_stake == 0 );
+      BOOST_REQUIRE( alice_producer.total_missed == 0 );
+      BOOST_REQUIRE( alice_producer.last_aslot == 0 );
 
-      BOOST_REQUIRE( alice_witness.witness_virtual_last_update == 0 );
-      BOOST_REQUIRE( alice_witness.witness_virtual_position == 0 );
-      BOOST_REQUIRE( alice_witness.witness_virtual_scheduled_time == fc::uint128_t::max_value() );
-      BOOST_REQUIRE( alice_witness.miner_virtual_last_update == 0 );
-      BOOST_REQUIRE( alice_witness.miner_virtual_position == 0 );
-      BOOST_REQUIRE( alice_witness.miner_virtual_scheduled_time == fc::uint128_t::max_value() );
+      BOOST_REQUIRE( alice_producer.voting_virtual_last_update == 0 );
+      BOOST_REQUIRE( alice_producer.voting_virtual_position == 0 );
+      BOOST_REQUIRE( alice_producer.voting_virtual_scheduled_time == fc::uint128_t::max_value() );
+      BOOST_REQUIRE( alice_producer.mining_virtual_last_update == 0 );
+      BOOST_REQUIRE( alice_producer.mining_virtual_position == 0 );
+      BOOST_REQUIRE( alice_producer.mining_virtual_scheduled_time == fc::uint128_t::max_value() );
 
-      BOOST_REQUIRE( alice_witness.props.maximum_block_size == witness_update.props.maximum_block_size );
-      BOOST_REQUIRE( alice_witness.props.credit_min_interest == witness_update.props.credit_variable_interest );
-      BOOST_REQUIRE( alice_witness.props.credit_variable_interest == witness_update.props.credit_variable_interest );
+      BOOST_REQUIRE( alice_producer.props.maximum_block_size == producer_update.props.maximum_block_size );
+      BOOST_REQUIRE( alice_producer.props.credit_min_interest == producer_update.props.credit_variable_interest );
+      BOOST_REQUIRE( alice_producer.props.credit_variable_interest == producer_update.props.credit_variable_interest );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Update existing Witness and chain properties" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Update existing Producer and chain properties" );
 
-      BOOST_TEST_MESSAGE( "├── Testing: WITNESS UPDATE" );
+      BOOST_TEST_MESSAGE( "├── Testing: PRODUCER UPDATE" );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -212,7 +212,7 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       generate_block();
       
@@ -247,15 +247,15 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const witness_object& alice_witness = db.get_witness( "alice" );
+      const producer_object& alice_producer = db.get_producer( "alice" );
 
-      alice_witness.props.validate();
+      alice_producer.props.validate();
 
-      BOOST_REQUIRE( alice_witness.owner == "alice" );
-      BOOST_REQUIRE( alice_witness.active == true );
-      BOOST_REQUIRE( alice_witness.mining_power > 0 );
-      BOOST_REQUIRE( alice_witness.mining_count == 1 );
-      BOOST_REQUIRE( alice_witness.last_mining_update == now() );
+      BOOST_REQUIRE( alice_producer.owner == "alice" );
+      BOOST_REQUIRE( alice_producer.active == true );
+      BOOST_REQUIRE( alice_producer.mining_power > 0 );
+      BOOST_REQUIRE( alice_producer.mining_count == 1 );
+      BOOST_REQUIRE( alice_producer.last_mining_update == now() );
       
       validate_database();
 
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -309,11 +309,11 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       
       signed_transaction tx;
 
-      account_witness_vote_operation vote;
+      account_producer_vote_operation vote;
 
       vote.signatory = "alice";
       vote.account = "alice";
-      vote.witness = "alice";
+      vote.producer = "alice";
       vote.vote_rank = 1;
       vote.validate();
 
@@ -420,11 +420,11 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
          fund( name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
          fund_stake( name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-         witness_create( name, alice_private_active_key, alice_public_active_key );
+         producer_create( name, alice_private_active_key, alice_public_active_key );
 
          vote.signatory = name;
          vote.account = name;
-         vote.witness = name;
+         vote.producer = name;
 
          tx.operations.push_back( vote );
          tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -490,228 +490,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       BOOST_TEST_MESSAGE( "│   ├── Passed: Commit block" );
 
       BOOST_TEST_MESSAGE( "├── Testing: VERIFY BLOCK OPERATION SEQUENCE" );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-
-
-   //===========================//
-   // === Custom Operations === //
-   //===========================//
-
-
-
-BOOST_AUTO_TEST_CASE( custom_authorities )
-{
-   custom_operation op;
-   op.required_auths.insert( "alice" );
-   op.required_auths.insert( "bob" );
-
-   flat_set< account_name_type > auths;
-   flat_set< account_name_type > expected;
-
-   op.get_required_owner_authorities( auths );
-   BOOST_REQUIRE( auths == expected );
-
-   op.get_required_posting_authorities( auths );
-   BOOST_REQUIRE( auths == expected );
-
-   expected.insert( "alice" );
-   expected.insert( "bob" );
-   op.get_required_active_authorities( auths );
-   BOOST_REQUIRE( auths == expected );
-}
-
-BOOST_AUTO_TEST_CASE( custom_json_authorities )
-{
-   custom_json_operation op;
-   op.required_auths.insert( "alice" );
-   op.required_posting_auths.insert( "bob" );
-
-   flat_set< account_name_type > auths;
-   flat_set< account_name_type > expected;
-
-   op.get_required_owner_authorities( auths );
-   BOOST_REQUIRE( auths == expected );
-
-   expected.insert( "alice" );
-   op.get_required_active_authorities( auths );
-   BOOST_REQUIRE( auths == expected );
-
-   auths.clear();
-   expected.clear();
-   expected.insert( "bob" );
-   op.get_required_posting_authorities( auths );
-   BOOST_REQUIRE( auths == expected );
-}
-
-/**
- * 
- * BOOST_AUTO_TEST_CASE( feed_publish_validate )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: feed_publish_validate" );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( feed_publish_authorities )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: feed_publish_authorities" );
-
-      ACTORS( (alice)(bob) )
-      fund( "alice", 10000 );
-      witness_create( "alice", alice_private_owner_key, "foo.bar", alice_private_owner_key.get_public_key(), 1000 );
-
-      feed_publish_operation op;
-      op.publisher = "alice";
-      op.exchange_rate = price( ASSET( "1.000 TESTS" ), ASSET( "1.000 USD" ) );
-
-      signed_transaction tx;
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-
-      BOOST_TEST_MESSAGE( "--- Test failure when no signature." );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with incorrect signature" );
-      tx.signatures.clear();
-      tx.sign( alice_post_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with duplicate signature" );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_duplicate_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test failure with additional incorrect signature" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_irrelevant_sig );
-
-      BOOST_TEST_MESSAGE( "--- Test success with witness account signature" );
-      tx.signatures.clear();
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, database::skip_transaction_dupe_check );
-
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-BOOST_AUTO_TEST_CASE( feed_publish_apply )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: feed_publish_apply" );
-
-      ACTORS( (alice) )
-      fund( "alice", 10000 );
-      witness_create( "alice", alice_private_owner_key, "foo.bar", alice_private_owner_key.get_public_key(), 1000 );
-
-      BOOST_TEST_MESSAGE( "--- Test publishing price feed" );
-      feed_publish_operation op;
-      op.publisher = "alice";
-      op.exchange_rate = price( ASSET( "1000.000 TESTS" ), ASSET( "1.000 USD" ) ); // 1000 TME : 1 USD
-
-      signed_transaction tx;
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      db.push_transaction( tx, 0 );
-
-      witness_object& alice_witness = const_cast< witness_object& >( db.get_witness( "alice" ) );
-
-      BOOST_REQUIRE( alice_witness.USD_exchange_rate == op.exchange_rate );
-      BOOST_REQUIRE( alice_witness.last_USD_exchange_update == db.head_block_time() );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test failure publishing to non-existent witness" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      op.publisher = "bob";
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "--- Test updating price feed" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      op.exchange_rate = price( ASSET(" 1500.000 TESTS" ), ASSET( "1.000 USD" ) );
-      op.publisher = "alice";
-      tx.operations.push_back( op );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      db.push_transaction( tx, 0 );
-
-      alice_witness = const_cast< witness_object& >( db.get_witness( "alice" ) );
-      BOOST_REQUIRE( std::abs( alice_witness.USD_exchange_rate.to_real() - op.exchange_rate.to_real() ) < 0.0000005 );
-      BOOST_REQUIRE( alice_witness.last_USD_exchange_update == db.head_block_time() );
-      validate_database();
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-*/
-
-BOOST_AUTO_TEST_CASE( account_bandwidth )
-{
-   try
-   {
-      BOOST_TEST_MESSAGE( "Testing: account_bandwidth" );
-      ACTORS( (alice)(bob) )
-      generate_block();
-      fund_stake( "alice", ASSET( "10.000 TESTS" ) );
-      fund( "alice", ASSET( "10.000 TESTS" ) );
-      fund_stake( "bob", ASSET( "10.000 TESTS" ) );
-
-      generate_block();
-      db.skip_transaction_delta_check = false;
-
-      BOOST_TEST_MESSAGE( "--- Test first tx in block" );
-
-      signed_transaction tx;
-      transfer_operation op;
-
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = ASSET( "1.000 TESTS" );
-
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      db.push_transaction( tx, 0 );
-
-      auto last_bandwidth_update = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).last_bandwidth_update;
-      auto average_bandwidth = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).average_bandwidth;
-      BOOST_REQUIRE( last_bandwidth_update == db.head_block_time() );
-      BOOST_REQUIRE( average_bandwidth == fc::raw::pack_size( tx ) * 10 * BANDWIDTH_PRECISION );
-      auto total_bandwidth = average_bandwidth;
-
-      BOOST_TEST_MESSAGE( "--- Test second tx in block" );
-
-      op.amount = ASSET( "0.100 TESTS" );
-      tx.clear();
-      tx.operations.push_back( op );
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-
-      db.push_transaction( tx, 0 );
-
-      last_bandwidth_update = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).last_bandwidth_update;
-      average_bandwidth = db.get< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( "alice", witness::bandwidth_type::market ) ).average_bandwidth;
-      BOOST_REQUIRE( last_bandwidth_update == db.head_block_time() );
-      BOOST_REQUIRE( average_bandwidth == total_bandwidth + fc::raw::pack_size( tx ) * 10 * BANDWIDTH_PRECISION );
    }
    FC_LOG_AND_RETHROW()
 }

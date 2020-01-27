@@ -139,7 +139,7 @@ class DebugNode( object ):
       return "# no seed-node in config file or command line\n" \
           + "p2p-endpoint = 127.0.0.1:2001       # bind to localhost to prevent remote p2p nodes from connecting to us\n" \
           + "rpc-endpoint = 127.0.0.1:8095       # bind to localhost to secure RPC API access\n" \
-          + "enable-plugin = witness debug_node " + " ".join( self.plugins ) + "\n" \
+          + "enable-plugin = producer debug_node " + " ".join( self.plugins ) + "\n" \
           + "public-api = database_api login_api debug_node_api " + " ".join( self.apis ) + "\n"
 
 
@@ -219,8 +219,8 @@ class DebugNode( object ):
       return self._rpc.rpcexec( json.loads( '{"jsonrpc": "2.0", "method": "call", "params": [2,"debug_has_hardfork",[' + str( hardfork_id ) + ']], "id":1}' ) )
 
 
-   def debug_get_witness_schedule( self ):
-      return self._rpc.rpcexec( json.loads( '{"jsonrpc": "2.0", "method": "call", "params": [2,"debug_get_witness_schedule",[]], "id":1}' ) )
+   def debug_get_producer_schedule( self ):
+      return self._rpc.rpcexec( json.loads( '{"jsonrpc": "2.0", "method": "call", "params": [2,"debug_get_producer_schedule",[]], "id":1}' ) )
 
 
    def debug_get_hardfork_property_object( self ):

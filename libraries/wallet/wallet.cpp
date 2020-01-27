@@ -288,7 +288,7 @@ public:
       auto dynamic_props = _remote_db->get_dynamic_global_properties();
       fc::mutable_variant_object result(fc::variant(dynamic_props).get_object());
       result["chain_id"] = CHAIN_ID;
-      result["witness_majority_version"] = fc::string( _remote_db->get_witness_schedule().majority_version );
+      result["producer_majority_version"] = fc::string( _remote_db->get_producer_schedule().majority_version );
       result["hardfork_version"] = fc::string( _remote_db->get_hardfork_version() );
       result["head_block_num"] = dynamic_props.head_block_number;
       result["head_block_id"] = dynamic_props.head_block_id;
@@ -541,9 +541,9 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (account_to_modify)(proxy)(broadcast) ) }
 
-   optional< witness_api_obj > get_witness( string owner_account )
+   optional< producer_api_obj > get_producer( string owner_account )
    {
-      return _remote_db->get_witness_by_account( owner_account );
+      return _remote_db->get_producer_by_account( owner_account );
    }
 
    void set_transaction_expiration( uint32_t tx_expiration_seconds )
@@ -983,7 +983,7 @@ optional<signed_block_api_obj> wallet_api::get_block(uint32_t num)
    return my->_remote_db->get_block(num);
 }
 
-vector<applied_operation> wallet_api::get_ops_in_block(uint32_t block_num, bool only_virtual)
+vector<applied_operation> wallet_api::get_ops_in_block(uint64_t block_num, bool only_virtual)
 {
    return my->_remote_db->get_ops_in_block(block_num, only_virtual);
 }
@@ -1032,8 +1032,8 @@ vector<account_name_type> wallet_api::get_miner_queue()const {
    return my->_remote_db->get_miner_queue();
 }
 
-std::vector< account_name_type > wallet_api::get_active_witnesses()const {
-   return my->_remote_db->get_active_witnesses();
+std::vector< account_name_type > wallet_api::get_active_producers()const {
+   return my->_remote_db->get_active_producers();
 }
 
 brain_key_info wallet_api::suggest_brain_key()const
@@ -1123,14 +1123,14 @@ fc::ecc::private_key wallet_api::derive_private_key(const std::string& prefix_st
 }
 */
 
-set<account_name_type> wallet_api::list_witnesses(const string& lowerbound, uint32_t limit)
+set<account_name_type> wallet_api::list_producers(const string& lowerbound, uint32_t limit)
 {
-   return my->_remote_db->lookup_witness_accounts(lowerbound, limit);
+   return my->_remote_db->lookup_producer_accounts(lowerbound, limit);
 }
 
-optional< witness_api_obj > wallet_api::get_witness(string owner_account)
+optional< producer_api_obj > wallet_api::get_producer(string owner_account)
 {
-   return my->get_witness(owner_account);
+   return my->get_producer(owner_account);
 }
 
 annotated_signed_transaction wallet_api::set_voting_proxy(string account_to_modify, string voting_account, bool broadcast /* = false */)
@@ -1676,7 +1676,7 @@ annotated_signed_transaction wallet_api::create_account_delegated( string creato
 } FC_CAPTURE_AND_RETHROW( (creator)(new_account_name)(json) ) }
 
 
-annotated_signed_transaction wallet_api::update_witness( string witness_account_name,
+annotated_signed_transaction wallet_api::update_producer( string producer_account_name,
                                                string url,
                                                public_key_type block_signing_key,
                                                const chain_properties& props,
@@ -1684,22 +1684,22 @@ annotated_signed_transaction wallet_api::update_witness( string witness_account_
 {
    FC_ASSERT( !is_locked() );
 
-   witness_update_operation op;
+   producer_update_operation op;
 
-   fc::optional< witness_api_obj > wit = my->_remote_db->get_witness_by_account( witness_account_name );
+   fc::optional< producer_api_obj > wit = my->_remote_db->get_producer_by_account( producer_account_name );
    if( !wit.valid() )
    {
       op.url = url;
    }
    else
    {
-      FC_ASSERT( wit->owner == witness_account_name );
+      FC_ASSERT( wit->owner == producer_account_name );
       if( url != "" )
          op.url = url;
       else
          op.url = wit->url;
    }
-   op.owner = witness_account_name;
+   op.owner = producer_account_name;
    op.block_signing_key = block_signing_key;
    op.props = props;
 
@@ -1710,12 +1710,12 @@ annotated_signed_transaction wallet_api::update_witness( string witness_account_
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::vote_for_witness(string voting_account, string witness_to_vote_for, bool approve, bool broadcast )
+annotated_signed_transaction wallet_api::vote_producer(string voting_account, string producer_to_vote_for, bool approve, bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
-    account_witness_vote_operation op;
+    account_producer_vote_operation op;
     op.account = voting_account;
-    op.witness = witness_to_vote_for;
+    op.producer = producer_to_vote_for;
     op.approve = approve;
 
     signed_transaction tx;
@@ -1723,7 +1723,7 @@ annotated_signed_transaction wallet_api::vote_for_witness(string voting_account,
     tx.validate();
 
    return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW( (voting_account)(witness_to_vote_for)(approve)(broadcast) ) }
+} FC_CAPTURE_AND_RETHROW( (voting_account)(producer_to_vote_for)(approve)(broadcast) ) }
 
 void wallet_api::check_memo( const string& memo, const account_api_obj& account )const
 {
@@ -2021,19 +2021,6 @@ annotated_signed_transaction wallet_api::unstake_asset_route( string from, strin
    return my->sign_transaction( tx, broadcast );
 }
 
-annotated_signed_transaction wallet_api::publishFeed(string witness, price exchange_rate, bool broadcast )
-{
-   FC_ASSERT( !is_locked() );
-    feed_publish_operation op;
-    op.publisher     = witness;
-    op.exchange_rate = exchange_rate;
-
-    signed_transaction tx;
-    tx.operations.push_back( op );
-    tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-}
 
 string wallet_api::decrypt_memo( string encrypted_memo ) {
    if( is_locked() ) return encrypted_memo;

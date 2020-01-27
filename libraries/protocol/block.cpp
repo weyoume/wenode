@@ -9,15 +9,15 @@ namespace node { namespace protocol {
       return digest_type::hash(*this);
    }
 
-   uint32_t block_header::num_from_id(const block_id_type& id)
+   uint64_t block_header::num_from_id(const block_id_type& id)
    {
-      return fc::endian_reverse_u32(id._hash[0]);
+      return fc::endian_reverse_u64(id._hash[0]);
    }
 
    block_id_type signed_block_header::id()const
    {
       auto tmp = fc::sha224::hash( *this );
-      tmp._hash[0] = fc::endian_reverse_u32(block_num()); // store the block num in the ID, 160 bits is plenty for the hash
+      tmp._hash[0] = fc::endian_reverse_u64(block_num());
       static_assert( sizeof(tmp._hash[0]) == 4, "should be 4 bytes" );
       block_id_type result;
       memcpy(result._hash, tmp._hash, std::min(sizeof(result), sizeof(tmp)));
@@ -26,12 +26,12 @@ namespace node { namespace protocol {
 
    fc::ecc::public_key signed_block_header::signee()const
    {
-      return fc::ecc::public_key( witness_signature, digest(), true/*enforce canonical*/ );
+      return fc::ecc::public_key( producer_signature, digest(), true/*enforce canonical*/ );
    }
 
    void signed_block_header::sign( const fc::ecc::private_key& signer )
    {
-      witness_signature = signer.sign_compact( digest() );
+      producer_signature = signer.sign_compact( digest() );
    }
 
    bool signed_block_header::validate_signee( const fc::ecc::public_key& expected_signee )const

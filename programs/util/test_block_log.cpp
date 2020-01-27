@@ -17,7 +17,7 @@ int main( int argc, char** argv, char** envp )
       idump( (log.head() ) );
 
       node::protocol::signed_block b1;
-      b1.witness = "alice";
+      b1.producer = "alice";
       b1.previous = node::protocol::block_id_type();
 
       log.append( b1 );
@@ -27,7 +27,7 @@ int main( int argc, char** argv, char** envp )
       idump( (fc::raw::pack_size(b1)) );
 
       node::protocol::signed_block b2;
-      b2.witness = "bob";
+      b2.producer = "bob";
       b2.previous = b1.id();
 
       log.append( b2 );

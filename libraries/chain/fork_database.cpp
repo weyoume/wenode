@@ -209,7 +209,7 @@ pair<fork_database::branch_type,fork_database::branch_type>
    return result;
 } FC_CAPTURE_AND_RETHROW( (first)(second) ) }
 
-shared_ptr<fork_item> fork_database::walk_main_branch_to_num( uint32_t block_num )const
+shared_ptr<fork_item> fork_database::walk_main_branch_to_num( uint64_t block_num )const
 {
    shared_ptr<fork_item> next = head();
    if( block_num > next->num )
@@ -220,7 +220,7 @@ shared_ptr<fork_item> fork_database::walk_main_branch_to_num( uint32_t block_num
    return next;
 }
 
-shared_ptr<fork_item> fork_database::fetch_block_on_main_branch_by_number( uint32_t block_num )const
+shared_ptr<fork_item> fork_database::fetch_block_on_main_branch_by_number( uint64_t block_num )const
 {
    vector<item_ptr> blocks = fetch_block_by_number(block_num);
    if( blocks.size() == 1 )

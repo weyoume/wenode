@@ -4,20 +4,20 @@
 
 #include <boost/multi_index/composite_key.hpp>
 
-namespace node { namespace witness {
+namespace node { namespace producer {
 
 using namespace std;
 using namespace node::chain;
 
-#ifndef WITNESS_SPACE_ID
-#define WITNESS_SPACE_ID 12
+#ifndef PRODUCER_SPACE_ID
+#define PRODUCER_SPACE_ID 12
 #endif
 
-enum witness_plugin_object_type
+enum producer_plugin_object_type
 {
-   account_bandwidth_object_type = ( WITNESS_SPACE_ID << 8 ),
-   content_edit_lock_object_type = ( WITNESS_SPACE_ID << 8 ) + 1,
-   reserve_ratio_object_type      = ( WITNESS_SPACE_ID << 8 ) + 2
+   account_bandwidth_object_type = ( PRODUCER_SPACE_ID << 8 ),
+   content_edit_lock_object_type = ( PRODUCER_SPACE_ID << 8 ) + 1,
+   reserve_ratio_object_type      = ( PRODUCER_SPACE_ID << 8 ) + 2
 };
 
 enum bandwidth_type
@@ -160,15 +160,15 @@ typedef multi_index_container <
    allocator< reserve_ratio_object >
 > reserve_ratio_index;
 
-} } // node::witness
+} } // node::producer
 
-FC_REFLECT_ENUM( node::witness::bandwidth_type, 
+FC_REFLECT_ENUM( node::producer::bandwidth_type, 
          (post)
          (forum)
          (market)
          );
 
-FC_REFLECT( node::witness::account_bandwidth_object,
+FC_REFLECT( node::producer::account_bandwidth_object,
          (id)
          (account)
          (type)
@@ -177,21 +177,21 @@ FC_REFLECT( node::witness::account_bandwidth_object,
          (last_bandwidth_update)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::witness::account_bandwidth_object, node::witness::account_bandwidth_index );
+CHAINBASE_SET_INDEX_TYPE( node::producer::account_bandwidth_object, node::producer::account_bandwidth_index );
 
-FC_REFLECT( node::witness::content_edit_lock_object,
+FC_REFLECT( node::producer::content_edit_lock_object,
          (id)
          (account)
          (lock_time)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::witness::content_edit_lock_object, node::witness::content_edit_lock_index );
+CHAINBASE_SET_INDEX_TYPE( node::producer::content_edit_lock_object, node::producer::content_edit_lock_index );
 
-FC_REFLECT( node::witness::reserve_ratio_object,
+FC_REFLECT( node::producer::reserve_ratio_object,
          (id)
          (average_block_size)
          (current_reserve_ratio)
          (max_virtual_bandwidth)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::witness::reserve_ratio_object, node::witness::reserve_ratio_index );
+CHAINBASE_SET_INDEX_TYPE( node::producer::reserve_ratio_object, node::producer::reserve_ratio_index );

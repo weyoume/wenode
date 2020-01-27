@@ -1,10 +1,10 @@
 # Block Producers Guide
 
-## There are two types of block producers, witnesses, and miners.
+## Producers earn voting power from being selected by network stakeholders, and mining power by broadcasting proofs of work.
 
 ### Begin by starting a full node on a reliable server.
 
-### Use the witness_update operation to create your account's witness.
+### Use the producer_update operation to create your account's producer.
 
 Include in the operation:
 
@@ -34,7 +34,7 @@ Include in the operation:
 
     string   block_signing_key  
     
-    // The public key used to sign blocks for your witness.
+    // The public key used to sign blocks for your producer.
 
     chain_properties    props   
     
@@ -43,8 +43,4 @@ Include in the operation:
     bool     active = true   
     
     // Set active to true to activate, false to deactivate; 
-
-    asset    fee    
-    
-    // The fee paid to register a new witness.
 

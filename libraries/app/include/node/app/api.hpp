@@ -37,11 +37,11 @@ namespace node { namespace app {
 
          struct transaction_confirmation
          {
-            transaction_confirmation( transaction_id_type txid, int32_t bn, int32_t tn, bool ex )
+            transaction_confirmation( transaction_id_type txid, int64_t bn, int32_t tn, bool ex )
             : id(txid), block_num(bn), trx_num(tn), expired(ex) {}
 
             transaction_id_type   id;
-            int32_t               block_num = 0;
+            int64_t               block_num = 0;
             int32_t               trx_num   = 0;
             bool                  expired   = false;
          };
@@ -71,10 +71,10 @@ namespace node { namespace app {
 
          void broadcast_block( const signed_block& block );
 
-         void set_max_block_age( int32_t max_block_age );
+         void set_max_block_age( int64_t max_block_age );
 
          // implementation detail, not reflected
-         bool check_max_block_age( int32_t max_block_age );
+         bool check_max_block_age( int64_t max_block_age );
 
          /**
           * @brief Not reflected, thus not accessible to API clients.
@@ -95,7 +95,7 @@ namespace node { namespace app {
          map<transaction_id_type,confirmation_callback>     _callbacks;
          map<time_point, vector<transaction_id_type> >  _callbacks_expirations;
 
-         int32_t                                        _max_block_age = -1;
+         int64_t                                        _max_block_age = -1;
 
          application&                                   _app;
    };

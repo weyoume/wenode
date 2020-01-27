@@ -294,7 +294,7 @@ namespace detail {
             {
                try
                {
-                  _chain_db->open(_data_dir / "blockchain", _shared_dir, INIT_COIN_SUPPLY, _shared_file_size, chainbase::database::read_write );\
+                  _chain_db->open(_data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_write, INIT_PUBLIC_KEY );
                }
                catch( fc::assert_exception& )
                {
@@ -307,7 +307,7 @@ namespace detail {
                   catch( chain::block_log_exception& )
                   {
                      wlog( "Error opening block log. Having to resync from network..." );
-                     _chain_db->open( _data_dir / "blockchain", _shared_dir, INIT_COIN_SUPPLY, _shared_file_size, chainbase::database::read_write );
+                     _chain_db->open( _data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_write, INIT_PUBLIC_KEY );
                   }
                }
             }
@@ -321,7 +321,7 @@ namespace detail {
          else
          {
             ilog( "Starting WeYouMe node in read mode." );
-            _chain_db->open( _data_dir / "blockchain", _shared_dir, INIT_COIN_SUPPLY, _shared_file_size, chainbase::database::read_only );
+            _chain_db->open( _data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_only, INIT_PUBLIC_KEY );
 
             if( _options->count( "read-forward-rpc" ) )
             {
@@ -449,7 +449,7 @@ namespace detail {
       { try {
          if( _running )
          {
-            uint32_t head_block_num;
+            uint64_t head_block_num;
 
             _chain_db->with_read_lock( [&]()
             {
@@ -477,8 +477,8 @@ namespace detail {
 
             time_point now = fc::time_point::now();
 
-            uint64_t max_accept_time = now.time_since_epoch();
-            max_accept_time += allow_future_time;
+            fc::microseconds max_accept_time = now.time_since_epoch();
+            max_accept_time += fc::seconds( allow_future_time );
             FC_ASSERT( blk_msg.block.timestamp.time_since_epoch() <= max_accept_time );
 
             try {
@@ -490,7 +490,7 @@ namespace detail {
                   ilog( "Got ${t} transactions on block ${b} by ${w} -- latency: ${l} ms",
                      ("t", blk_msg.block.transactions.size())
                      ("b", blk_msg.block.block_num())
-                     ("w", blk_msg.block.witness)
+                     ("w", blk_msg.block.producer)
                      ("l", latency.count() / 1000) );
                }
 
@@ -531,7 +531,7 @@ namespace detail {
       {
          return _chain_db->with_read_lock( [&]()
          {
-            uint32_t block_num = block_header::num_from_id(block_id);
+            uint64_t block_num = block_header::num_from_id(block_id);
             block_id_type block_id_in_preferred_chain = _chain_db->get_block_id_for_num(block_num);
             return block_id == block_id_in_preferred_chain;
          });
@@ -899,21 +899,21 @@ namespace detail {
       api_access _apiaccess;
 
       //std::shared_ptr<graphene::db::object_database>   _pending_trx_db;
-      std::shared_ptr<node::chain::database>        _chain_db;
-      std::shared_ptr<graphene::net::node>             _p2p_network;
-      std::shared_ptr<fc::http::websocket_server>      _websocket_server;
-      std::shared_ptr<fc::http::websocket_tls_server>  _websocket_tls_server;
+      std::shared_ptr<node::chain::database>             _chain_db;
+      std::shared_ptr<graphene::net::node>               _p2p_network;
+      std::shared_ptr<fc::http::websocket_server>        _websocket_server;
+      std::shared_ptr<fc::http::websocket_tls_server>    _websocket_tls_server;
 
       std::map<string, std::shared_ptr<abstract_plugin> > _plugins_available;
       std::map<string, std::shared_ptr<abstract_plugin> > _plugins_enabled;
       flat_map< std::string, std::function< fc::api_ptr( const api_context& ) > >   _api_factories_by_name;
-      std::vector< std::string >                       _public_apis;
-      int32_t                                          _max_block_age = -1;
-      uint64_t                                         _shared_file_size;
+      std::vector< std::string >                          _public_apis;
+      int32_t                                             _max_block_age = -1;
+      uint64_t                                            _shared_file_size;
 
-      bool                                             _running;
+      bool                                                _running;
 
-      uint32_t allow_future_time = 5;
+      uint32_t allow_future_time = 5;        ///< Number of seconds that transactions that are future dated will be accepted
    };
 
 }
@@ -949,7 +949,7 @@ void application::set_program_options(boost::program_options::options_descriptio
    std::string str_default_apis = boost::algorithm::join( default_apis, " " );
 
    std::vector< std::string > default_plugins;
-   default_plugins.push_back( "witness" );
+   default_plugins.push_back( "producer" );
    default_plugins.push_back( "account_history" );
    default_plugins.push_back( "account_by_key" );
    std::string str_default_plugins = boost::algorithm::join( default_plugins, " " );

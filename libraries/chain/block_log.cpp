@@ -225,7 +225,7 @@ namespace node { namespace chain {
       FC_LOG_AND_RETHROW()
    }
 
-   optional< signed_block > block_log::read_block_by_num( uint32_t block_num )const
+   optional< signed_block > block_log::read_block_by_num( uint64_t block_num )const
    {
       try
       {
@@ -241,7 +241,7 @@ namespace node { namespace chain {
       FC_LOG_AND_RETHROW()
    }
 
-   uint64_t block_log::get_block_pos( uint32_t block_num ) const
+   uint64_t block_log::get_block_pos( uint64_t block_num ) const
    {
       try
       {

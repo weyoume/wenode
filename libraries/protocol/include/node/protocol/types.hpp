@@ -504,7 +504,7 @@ namespace node {
          disable_force_settle        = 2048,    // Disable force settling of bitassets, only global settle may return collateral.
          disable_confidential        = 4096,    // Asset cannot be used with confidential transactions.
          disable_auction             = 8192,    // Disable creation of auction orders for the asset.
-         witness_fed_asset           = 16384,   // Allow the asset to be price food to be published by top elected witnesses.
+         producer_fed_asset          = 16384,   // Allow the asset to be price food to be published by top voting producers.
          global_settle               = 32768,   // Allow the bitasset issuer to force a global settlement: Set in permissions, but not flags.
          governance_oversight        = 65536,   // Asset update, issuer transfer and issuance require the account's governance address to approve
          immutable_properties        = 131072,  // Disable any future asset options updates or changes to flags
@@ -525,7 +525,7 @@ namespace node {
             | disable_force_settle
             | disable_confidential
             | disable_auction
-            | witness_fed_asset
+            | producer_fed_asset
             | global_settle
             | governance_oversight
             | immutable_properties;

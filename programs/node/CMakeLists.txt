@@ -15,7 +15,7 @@ if( STATIC_BUILD )
       node_plugins
       node_mf_plugins
       node_app
-      node_witness
+      node_producer
       node_account_history
       node_chain
       node_protocol
@@ -28,7 +28,7 @@ else( STATIC_BUILD )
       node_plugins
       node_mf_plugins
       node_app
-      node_witness
+      node_producer
       node_account_history
       node_chain
       node_protocol

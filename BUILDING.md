@@ -93,7 +93,7 @@ running tests, it is recommended to build as release.
 
 Builds node to be a consensus-only low memory node. Data and fields not
 needed for consensus are not stored in the object database. This option is
-recommended for witnesses and seed-nodes.
+recommended for producers and seed-nodes.
 
 ### CLEAR_VOTES=[ON/OFF]
 
@@ -384,7 +384,7 @@ All make targets:
 		node_private_message
 		node_raw_block
 		node_tags
-		node_witness
+		node_producer
 		node_protocol
 		graphene_schema
 		graphene_utilities
@@ -430,4 +430,4 @@ If you get a c++ error like so:
 
 you are most likely trying to parse some string via ```json_relaxed.hpp```, you need to make sure the string is being read by the program as literally ```\"string\"```
 
-so if it's a program argument it needs to be eg. ```--witness=\"witnessname\"```
+so if it's a program argument it needs to be eg. ```--producer=\"producername\"```

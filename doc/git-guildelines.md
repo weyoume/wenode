@@ -7,7 +7,7 @@ post](http://www.draconianoverlord.com/2013/09/07/no-cherry-picking.html).
 
 ## Branches
 
-- `master`: Points to the current release of WeYouMe.  Witnesses should be
+- `master`: Points to the current release of WeYouMe. Producers should be
   running this branch. Each release commit will be tagged
   `vMajor.Hardfork.Release`. When we get ready to release we will merge
   feature branches into `develop` and then do a single merge into `master`

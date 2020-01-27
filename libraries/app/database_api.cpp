@@ -62,7 +62,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       chain_properties                          get_chain_properties()const;
 
-      witness_schedule_api_obj                  get_witness_schedule()const;
+      producer_schedule_api_obj                 get_producer_schedule()const;
 
       hardfork_version                          get_hardfork_version()const;
 
@@ -92,8 +92,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector< key_state >                             get_keychains( vector< string > names )const;
 
-      vector< optional< account_api_obj > >           lookup_account_names( vector< string > account_names )const;
-
       set< string >                                   lookup_accounts( string lower_bound_name, uint32_t limit )const;
 
       uint64_t                                        get_account_count()const;
@@ -102,7 +100,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       optional< account_recovery_request_api_obj >    get_recovery_request( string account )const;
 
-      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, witness::bandwidth_type type )const;
+      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
 
 
       //================//
@@ -144,21 +142,27 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       //=================//
 
 
+      vector< producer_api_obj >                get_producers_by_account( vector< string > names )const;
+
       vector< account_name_type >               get_active_producers()const;
 
-      vector< optional< witness_api_obj > >     get_witnesses( vector< witness_id_type > witness_ids )const;
+      set< account_name_type >                  lookup_producer_accounts( string lower_bound_name, uint32_t limit )const;
 
-      fc::optional< witness_api_obj >           get_witness_by_account( string account_name )const;
+      uint64_t                                  get_producer_count()const;
 
-      vector< witness_api_obj >                 get_witnesses_by_voting_power( string from, uint32_t limit )const;
+      vector< producer_api_obj >                get_producers_by_voting_power( string from, uint32_t limit )const;
 
-      vector< witness_api_obj >                 get_witnesses_by_mining_power( string from, uint32_t limit )const;
+      vector< producer_api_obj >                get_producers_by_mining_power( string from, uint32_t limit )const;
+
+      vector< network_officer_api_obj >         get_network_officers_by_account( vector< string > names )const;
 
       vector< network_officer_api_obj >         get_development_officers_by_voting_power( string from, uint32_t limit )const;
 
       vector< network_officer_api_obj >         get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
 
       vector< network_officer_api_obj >         get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+
+      vector< executive_board_api_obj >         get_executive_boards_by_account( vector< string > names )const;
 
       vector< executive_board_api_obj >         get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
@@ -169,10 +173,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector< governance_account_api_obj >      get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
 
       vector< community_enterprise_api_obj >    get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
-
-      set< account_name_type >                  lookup_witness_accounts( string lower_bound_name, uint32_t limit )const;
-
-      uint64_t                                  get_witness_count()const;
 
 
       //================//
@@ -220,11 +220,11 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       //=================================//
 
 
-      optional< block_header >                  get_block_header( uint32_t block_num )const;
+      optional< block_header >                  get_block_header( uint64_t block_num )const;
 
-      optional< signed_block_api_obj >          get_block( uint32_t block_num )const;
+      optional< signed_block_api_obj >          get_block( uint64_t block_num )const;
 
-      vector< applied_operation >               get_ops_in_block( uint32_t block_num, bool only_virtual )const;
+      vector< applied_operation >               get_ops_in_block( uint64_t block_num, bool only_virtual )const;
 
       std::string                               get_transaction_hex( const signed_transaction& trx)const;
 
@@ -471,17 +471,17 @@ chain_properties database_api_impl::get_chain_properties()const
    return _db.get_chain_properties();
 }
 
-witness_schedule_api_obj database_api::get_witness_schedule()const
+producer_schedule_api_obj database_api::get_producer_schedule()const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_witness_schedule();
+      return my->get_producer_schedule();
    });
 }
 
-witness_schedule_api_obj database_api_impl::get_witness_schedule()const
+producer_schedule_api_obj database_api_impl::get_producer_schedule()const
 {
-   return witness_schedule_api_obj( _db.get_witness_schedule() );
+   return producer_schedule_api_obj( _db.get_producer_schedule() );
 }
 
 hardfork_version database_api::get_hardfork_version()const
@@ -551,7 +551,7 @@ vector< account_api_obj > database_api_impl::get_accounts( vector< string > name
    for( auto name: names )
    {
       auto account_itr = account_idx.find( name );
-      if ( account_itr != account_idx.end() )
+      if( account_itr != account_idx.end() )
       {
          results.push_back( account_api_obj( *account_itr, _db ) );
       }  
@@ -637,7 +637,7 @@ vector< extended_account > database_api::get_full_accounts( vector< string > nam
  * - Connection Details and requests.
  * - Incoming and Outgoing messages, and conversations with accounts.
  * - Board Moderation and ownership details, and invites and requests.
- * - Witnesses, network officer, and executive board details and votes.
+ * - Producer, network officer, and executive board details and votes.
  * - Interface and Supernode details.
  * - Advertising Campaigns, inventory, creative, bids, and audiences.
  */
@@ -660,7 +660,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_owner >();
    const auto& collateral_idx = _db.get_index< credit_collateral_index >().indices().get< by_owner >();
 
-   const auto& witness_vote_idx = _db.get_index< witness_vote_index >().indices().get< by_account_rank >();
+   const auto& producer_vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
    const auto& executive_vote_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_rank >();
    const auto& officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    const auto& enterprise_vote_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
@@ -689,7 +689,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& recurring_req_idx = _db.get_index< transfer_recurring_request_index >().indices().get< by_request_id >();
    const auto& recurring_from_req_idx = _db.get_index< transfer_recurring_request_index >().indices().get< by_from_account >();
 
-   const auto& witness_idx = _db.get_index< witness_index >().indices().get< by_name >();
+   const auto& producer_idx = _db.get_index< producer_index >().indices().get< by_name >();
    const auto& executive_idx = _db.get_index< executive_board_index >().indices().get< by_account >();
    const auto& officer_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
    const auto& enterprise_idx = _db.get_index< community_enterprise_index >().indices().get< by_creator >();
@@ -756,10 +756,10 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             results.back().following = *following_itr;
          }
 
-         auto witness_itr = witness_idx.find( name );
-         if( witness_itr != witness_idx.end() )
+         auto producer_itr = producer_idx.find( name );
+         if( producer_itr != producer_idx.end() )
          {
-            results.back().network.witness = witness_api_obj( *witness_itr );
+            results.back().network.producer = producer_api_obj( *producer_itr );
          }
 
          auto executive_itr = executive_idx.find( name );
@@ -1079,11 +1079,11 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          mstate.conversations = conversations;
          results.back().messages = mstate;
 
-         auto witness_vote_itr = witness_vote_idx.lower_bound( name );
-         while( witness_vote_itr != witness_vote_idx.end() && witness_vote_itr->account == name ) 
+         auto producer_vote_itr = producer_vote_idx.lower_bound( name );
+         while( producer_vote_itr != producer_vote_idx.end() && producer_vote_itr->account == name ) 
          {
-            results.back().network.witness_votes[ witness_vote_itr->witness ] = witness_vote_itr->vote_rank;
-            ++witness_vote_itr;
+            results.back().network.producer_votes[ producer_vote_itr->producer ] = producer_vote_itr->vote_rank;
+            ++producer_vote_itr;
          }
 
          auto executive_vote_itr = executive_vote_idx.lower_bound( name );
@@ -1310,7 +1310,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                   results.back().operations.asset_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<account_witness_vote_operation>::value:
+               case operation::tag<account_producer_vote_operation>::value:
                case operation::tag<account_update_proxy_operation>::value:
                case operation::tag<update_network_officer_operation>::value:
                case operation::tag<network_officer_vote_operation>::value:
@@ -1324,7 +1324,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<create_community_enterprise_operation>::value:
                case operation::tag<claim_enterprise_milestone_operation>::value:
                case operation::tag<approve_enterprise_milestone_operation>::value:
-               case operation::tag<witness_update_operation>::value:
+               case operation::tag<producer_update_operation>::value:
                case operation::tag<proof_of_work_operation>::value:
                case operation::tag<producer_reward_operation>::value:
                case operation::tag<verify_block_operation>::value:
@@ -1563,36 +1563,6 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
    return results;
 }
 
-vector< optional< account_api_obj > > database_api::lookup_account_names( vector< string > account_names )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->lookup_account_names( account_names );
-   });
-}
-
-vector< optional< account_api_obj > > database_api_impl::lookup_account_names( vector< string > account_names )const
-{
-   vector< optional< account_api_obj > > result;
-   result.reserve(account_names.size());
-
-   for( auto& name : account_names )
-   {
-      auto itr = _db.find< account_object, by_name >( name );
-
-      if( itr )
-      {
-         result.push_back( account_api_obj( *itr, _db ) );
-      }
-      else
-      {
-         result.push_back( optional< account_api_obj>() );
-      }
-   }
-
-   return result;
-}
-
 set< string > database_api::lookup_accounts( string lower_bound_name, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
@@ -1604,14 +1574,14 @@ set< string > database_api::lookup_accounts( string lower_bound_name, uint32_t l
 set< string > database_api_impl::lookup_accounts( string lower_bound_name, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
-   const auto& accounts_by_name = _db.get_index<account_index>().indices().get<by_name>();
+   const auto& accounts_by_name = _db.get_index< account_index >().indices().get< by_name >();
    set< string > result;
 
-   for( auto itr = accounts_by_name.lower_bound(lower_bound_name);
-        limit-- && itr != accounts_by_name.end();
-        ++itr )
+   for( auto acc_itr = accounts_by_name.lower_bound( lower_bound_name );
+      limit-- && acc_itr != accounts_by_name.end();
+      ++acc_itr )
    {
-      result.insert( itr->name );
+      result.insert( acc_itr->name );
    }
 
    return result;
@@ -1677,7 +1647,7 @@ optional< account_recovery_request_api_obj > database_api_impl::get_recovery_req
    return result;
 }
 
-optional< account_bandwidth_api_obj > database_api::get_account_bandwidth( string account, witness::bandwidth_type type )const
+optional< account_bandwidth_api_obj > database_api::get_account_bandwidth( string account, producer::bandwidth_type type )const
 {
    return my->_db.with_read_lock( [&]()
    {
@@ -1685,12 +1655,12 @@ optional< account_bandwidth_api_obj > database_api::get_account_bandwidth( strin
    });
 }
 
-optional< account_bandwidth_api_obj > database_api_impl::get_account_bandwidth( string account, witness::bandwidth_type type )const
+optional< account_bandwidth_api_obj > database_api_impl::get_account_bandwidth( string account, producer::bandwidth_type type )const
 {
    optional< account_bandwidth_api_obj > result;
-   if( _db.has_index< witness::account_bandwidth_index >() )
+   if( _db.has_index< producer::account_bandwidth_index >() )
    {
-      auto band = _db.find< witness::account_bandwidth_object, witness::by_account_bandwidth_type >( boost::make_tuple( account, type ) );
+      auto band = _db.find< producer::account_bandwidth_object, producer::by_account_bandwidth_type >( boost::make_tuple( account, type ) );
       if( band != nullptr )
       {
          result = *band;
@@ -1841,39 +1811,39 @@ vector< withdraw_route > database_api_impl::get_withdraw_routes( string account,
    if( type == outgoing || type == all )
    {
       const auto& by_route = _db.get_index< unstake_asset_route_index >().indices().get< by_withdraw_route >();
-      auto route = by_route.lower_bound( acc.id );
+      auto route_itr = by_route.lower_bound( acc.name );
 
-      while( route != by_route.end() && route->from_account == acc.id )
+      while( route_itr != by_route.end() && route_itr->from == acc.name )
       {
          withdraw_route r;
-         r.from_account = account;
-         r.to_account = route->to_account;
-         r.percent = route->percent;
-         r.auto_stake = route->auto_stake;
+         r.from = route_itr->from;
+         r.to = route_itr->to;
+         r.percent = route_itr->percent;
+         r.auto_stake = route_itr->auto_stake;
 
          result.push_back( r );
 
-         ++route;
+         ++route_itr;
       }
    }
 
    if( type == incoming || type == all )
    {
       const auto& by_dest = _db.get_index< unstake_asset_route_index >().indices().get< by_destination >();
-      auto route = by_dest.lower_bound( acc.id );
+      auto route_itr = by_dest.lower_bound( acc.name );
 
-      while( route != by_dest.end() && route->to_account == acc.id )
+      while( route_itr != by_dest.end() && route_itr->to == acc.name )
       {
          withdraw_route r;
 
-         r.from_account = route->from_account;
-         r.to_account = account;
-         r.percent = route->percent;
-         r.auto_stake = route->auto_stake;
+         r.from = route_itr->from;
+         r.to = route_itr->to;
+         r.percent = route_itr->percent;
+         r.auto_stake = route_itr->auto_stake;
 
          result.push_back( r );
 
-         ++route;
+         ++route_itr;
       }
    }
 
@@ -2160,180 +2130,183 @@ vector< account_name_type > database_api::get_active_producers()const
 
 vector< account_name_type > database_api_impl::get_active_producers()const
 {
-   const witness_schedule_object& wso = _db.get_witness_schedule();
-   size_t n = wso.current_shuffled_producers.size();
-   vector< account_name_type > result;
-   result.reserve( n );
+   const producer_schedule_object& pso = _db.get_producer_schedule();
+   size_t n = pso.current_shuffled_producers.size();
+   vector< account_name_type > results;
+   results.reserve( n );
    for( size_t i=0; i<n; i++ )
    {
-      result.push_back( wso.current_shuffled_producers[i] );
+      results.push_back( pso.current_shuffled_producers[i] );
    }
       
-   return result;
+   return results;
 }
 
-vector< optional< witness_api_obj > > database_api::get_witnesses( vector< witness_id_type > witness_ids)const
+set< account_name_type > database_api::lookup_producer_accounts( string lower_bound_name, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_witnesses( witness_ids );
+      return my->lookup_producer_accounts( lower_bound_name, limit );
    });
 }
 
-vector< optional< witness_api_obj > > database_api_impl::get_witnesses( vector< witness_id_type > witness_ids )const
-{
-   vector< optional < witness_api_obj > > result; 
-   result.reserve( witness_ids.size() );
-
-   std::transform( witness_ids.begin(), witness_ids.end(), std::back_inserter( result ),
-      [this](witness_id_type id)->optional<witness_api_obj> 
-      { 
-         if( auto o = _db.find( id ) )
-         {
-            return *o;
-         }
-         else
-         {
-            return {};
-         }  
-      });
-   return result;
-}
-
-set< account_name_type > database_api::lookup_witness_accounts( string lower_bound_name, uint32_t limit ) const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->lookup_witness_accounts( lower_bound_name, limit );
-   });
-}
-
-set< account_name_type > database_api_impl::lookup_witness_accounts( string lower_bound_name, uint32_t limit ) const
+set< account_name_type > database_api_impl::lookup_producer_accounts( string lower_bound_name, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
-   const auto& witnesses_by_id = _db.get_index< witness_index >().indices().get< by_id >();
+   const auto& producers_by_id = _db.get_index< producer_index >().indices().get< by_id >();
 
-   set< account_name_type > witnesses_by_account_name;
+   set< account_name_type > producers_by_account_name;
 
-   for( const witness_api_obj& witness : witnesses_by_id )
+   for( const producer_api_obj& producer : producers_by_id )
    {
-      if( witness.owner >= lower_bound_name )
+      if( producer.owner >= lower_bound_name )
       {
-         witnesses_by_account_name.insert( witness.owner );
+         producers_by_account_name.insert( producer.owner );
       } 
    }
       
-   auto end_iter = witnesses_by_account_name.begin();
-   while ( end_iter != witnesses_by_account_name.end() && limit-- )
+   auto end_iter = producers_by_account_name.begin();
+   while ( end_iter != producers_by_account_name.end() && limit-- )
    {
       ++end_iter;
    }
-   witnesses_by_account_name.erase( end_iter, witnesses_by_account_name.end() );
-   return witnesses_by_account_name;
+   producers_by_account_name.erase( end_iter, producers_by_account_name.end() );
+   return producers_by_account_name;
 }
 
-uint64_t database_api::get_witness_count()const
+uint64_t database_api::get_producer_count()const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_witness_count();
+      return my->get_producer_count();
    });
 }
 
-uint64_t database_api_impl::get_witness_count()const
+uint64_t database_api_impl::get_producer_count()const
 {
-   return _db.get_index<witness_index>().indices().size();
+   return _db.get_index<producer_index>().indices().size();
 }
 
-fc::optional<witness_api_obj> database_api_impl::get_witness_by_account( string account_name )const
+vector< producer_api_obj > database_api::get_producers_by_account( vector< string > names )const
 {
-   const auto& idx = _db.get_index< witness_index >().indices().get< by_name >();
-   auto itr = idx.find( account_name );
-   if( itr != idx.end() )
+   return my->_db.with_read_lock( [&]()
    {
-      return witness_api_obj( *itr );
+      return my->get_producers_by_account( names );
+   });
+}
+
+vector< producer_api_obj > database_api_impl::get_producers_by_account( vector< string > names )const
+{
+   vector< producer_api_obj > results;
+   results.reserve( names.size() );
+
+   const auto& producer_idx = _db.get_index< producer_index >().indices().get< by_name >();
+
+   for( auto producer : names )
+   {
+      auto producer_itr = producer_idx.find( producer );
+      if( producer_itr != producer_idx.end() )
+      {
+         results.push_back( producer_api_obj( *producer_itr ) );
+      }
    }
-   else
-   {
-      return {};
-   }
+   return results;
 }
 
-fc::optional<witness_api_obj> database_api::get_witness_by_account( string account_name )const
+vector< producer_api_obj > database_api::get_producers_by_voting_power( string from, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_witness_by_account( account_name );
+      return my->get_producers_by_voting_power( from, limit );
    });
 }
 
-vector< witness_api_obj > database_api::get_witnesses_by_voting_power( string from, uint32_t limit )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_witnesses_by_voting_power( from, limit );
-   });
-}
-
-vector< witness_api_obj > database_api_impl::get_witnesses_by_voting_power( string from, uint32_t limit )const
+vector< producer_api_obj > database_api_impl::get_producers_by_voting_power( string from, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
-   vector< witness_api_obj > result;
+   vector< producer_api_obj > result;
    result.reserve( limit );
 
-   const auto& name_idx = _db.get_index< witness_index >().indices().get< by_name >();
-   const auto& vote_idx = _db.get_index< witness_index >().indices().get< by_voting_power >();
+   const auto& name_idx = _db.get_index< producer_index >().indices().get< by_name >();
+   const auto& vote_idx = _db.get_index< producer_index >().indices().get< by_voting_power >();
 
    auto itr = vote_idx.begin();
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(),
-         "Invalid witness name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *nameitr );
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(),
+         "Invalid producer name ${n}", ("n",from) );
+      itr = vote_idx.iterator_to( *name_itr );
    }
 
    while( itr != vote_idx.end() && result.size() < limit && itr->vote_count > 0 )
    {
-      result.push_back( witness_api_obj( *itr ) );
+      result.push_back( producer_api_obj( *itr ) );
       ++itr;
    }
    return result;
 }
 
-vector< witness_api_obj > database_api::get_witnesses_by_mining_power( string from, uint32_t limit )const
+vector< producer_api_obj > database_api::get_producers_by_mining_power( string from, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_witnesses_by_mining_power( from, limit );
+      return my->get_producers_by_mining_power( from, limit );
    });
 }
 
-vector< witness_api_obj > database_api_impl::get_witnesses_by_mining_power( string from, uint32_t limit )const
+vector< producer_api_obj > database_api_impl::get_producers_by_mining_power( string from, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
-   vector< witness_api_obj > result;
+   vector< producer_api_obj > result;
    result.reserve( limit );
 
-   const auto& name_idx = _db.get_index< witness_index >().indices().get< by_name >();
-   const auto& mining_idx = _db.get_index< witness_index >().indices().get< by_mining_power >();
+   const auto& name_idx = _db.get_index< producer_index >().indices().get< by_name >();
+   const auto& mining_idx = _db.get_index< producer_index >().indices().get< by_mining_power >();
 
    auto itr = mining_idx.begin();
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(),
-         "Invalid witness name ${n}", ("n",from) );
-      itr = mining_idx.iterator_to( *nameitr );
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(),
+         "Invalid producer name ${n}", ("n",from) );
+      itr = mining_idx.iterator_to( *name_itr );
    }
 
    while( itr != mining_idx.end() && result.size() < limit && itr->mining_count > 0 )
    {
-      result.push_back( witness_api_obj( *itr ) );
+      result.push_back( producer_api_obj( *itr ) );
       ++itr;
    }
    return result;
 }
+
+vector< network_officer_api_obj > database_api::get_network_officers_by_account( vector< string > names )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_network_officers_by_account( names );
+   });
+}
+
+vector< network_officer_api_obj > database_api_impl::get_network_officers_by_account( vector< string > names )const
+{
+   vector< network_officer_api_obj > results;
+   results.reserve( names.size() );
+
+   const auto& officer_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
+
+   for( auto officer : names )
+   {
+      auto officer_itr = officer_idx.find( officer );
+      if( officer_itr != officer_idx.end() )
+      {
+         results.push_back( network_officer_api_obj( *officer_itr ) );
+      }
+   }
+   return results;
+}
+
 
 vector< network_officer_api_obj > database_api::get_development_officers_by_voting_power( string from, uint32_t limit )const
 {
@@ -2356,10 +2329,10 @@ vector< network_officer_api_obj > database_api_impl::get_development_officers_by
 
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(),
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(),
          "Invalid network officer name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *nameitr );
+      itr = vote_idx.iterator_to( *name_itr );
    }
 
    while( itr != vote_idx.end() && result.size() < limit && itr->vote_count > 0 && itr->officer_type == DEVELOPMENT )
@@ -2391,9 +2364,9 @@ vector< network_officer_api_obj > database_api_impl::get_marketing_officers_by_v
 
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(), "Invalid network officer name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *nameitr );
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(), "Invalid network officer name ${n}", ("n",from) );
+      itr = vote_idx.iterator_to( *name_itr );
    }
 
    while( itr != vote_idx.end() && result.size() < limit && itr->vote_count > 0 && itr->officer_type == MARKETING )
@@ -2425,10 +2398,10 @@ vector< network_officer_api_obj > database_api_impl::get_advocacy_officers_by_vo
 
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(),
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(),
          "Invalid network officer name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *nameitr );
+      itr = vote_idx.iterator_to( *name_itr );
    }
 
    while( itr != vote_idx.end() && result.size() < limit && itr->vote_count > 0 && itr->officer_type == ADVOCACY )
@@ -2438,6 +2411,35 @@ vector< network_officer_api_obj > database_api_impl::get_advocacy_officers_by_vo
    }
    return result;
 }
+
+
+vector< executive_board_api_obj > database_api::get_executive_boards_by_account( vector< string > names )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_executive_boards_by_account( names );
+   });
+}
+
+vector< executive_board_api_obj > database_api_impl::get_executive_boards_by_account( vector< string > names )const
+{
+   vector< executive_board_api_obj > results;
+   results.reserve( names.size() );
+
+   const auto& exec_idx = _db.get_index< executive_board_index >().indices().get< by_account >();
+
+   for( auto exec : names )
+   {
+      auto exec_itr = exec_idx.find( exec );
+      if( exec_itr != exec_idx.end() )
+      {
+         results.push_back( executive_board_api_obj( *exec_itr ) );
+      }
+   }
+  
+   return results;
+}
+
 
 vector< executive_board_api_obj > database_api::get_executive_boards_by_voting_power( string from, uint32_t limit )const
 {
@@ -2459,10 +2461,10 @@ vector< executive_board_api_obj > database_api_impl::get_executive_boards_by_vot
    auto itr = vote_idx.begin();
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(),
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(),
          "Invalid executive board name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *nameitr );
+      itr = vote_idx.iterator_to( *name_itr );
    }
 
    while( itr != vote_idx.end() && result.size() < limit && itr->vote_count > 0 )
@@ -2493,10 +2495,10 @@ vector< supernode_api_obj > database_api_impl::get_supernodes_by_view_weight( st
    auto itr = view_idx.begin();
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(),
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(),
          "Invalid supernode name ${n}", ("n",from) );
-      itr = view_idx.iterator_to( *nameitr );
+      itr = view_idx.iterator_to( *name_itr );
    }
 
    while( itr != view_idx.end() && result.size() < limit && itr->monthly_active_users > 0 )
@@ -2528,10 +2530,10 @@ vector< interface_api_obj > database_api_impl::get_interfaces_by_users( string f
    auto itr = user_idx.begin();
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(),
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(),
          "Invalid interface name ${n}", ("n",from) );
-      itr = user_idx.iterator_to( *nameitr );
+      itr = user_idx.iterator_to( *name_itr );
    }
 
    while( itr != user_idx.end() && result.size() < limit && itr->monthly_active_users > 0 )
@@ -2563,10 +2565,10 @@ vector< governance_account_api_obj > database_api_impl::get_governance_accounts_
    auto itr = sub_idx.begin();
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( from );
-      FC_ASSERT( nameitr != name_idx.end(),
+      auto name_itr = name_idx.find( from );
+      FC_ASSERT( name_itr != name_idx.end(),
          "Invalid governance account name ${n}", ("n",from) );
-      itr = sub_idx.iterator_to( *nameitr );
+      itr = sub_idx.iterator_to( *name_itr );
    }
 
    while( itr != sub_idx.end() && result.size() < limit && itr->subscriber_count > 0 )
@@ -2598,10 +2600,10 @@ vector< community_enterprise_api_obj > database_api_impl::get_enterprise_by_voti
    auto itr = vote_idx.begin();
    if( from.size() ) 
    {
-      auto nameitr = name_idx.find( boost::make_tuple( from, from_id ) );
-      FC_ASSERT( nameitr != name_idx.end(),
+      auto name_itr = name_idx.find( boost::make_tuple( from, from_id ) );
+      FC_ASSERT( name_itr != name_idx.end(),
          "Invalid enterprise Creator: ${c} with enterprise_id: ${i}", ("c",from)("i",from_id) );
-      itr = vote_idx.iterator_to( *nameitr );
+      itr = vote_idx.iterator_to( *name_itr );
    }
 
    while( itr != vote_idx.end() && result.size() < limit && itr->total_approvals > 0 )
@@ -3378,7 +3380,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
    //=================================//
 
 
-optional< block_header > database_api::get_block_header( uint32_t block_num )const
+optional< block_header > database_api::get_block_header( uint64_t block_num )const
 {
    FC_ASSERT( !my->_disable_get_block,
       "get_block_header is disabled on this node." );
@@ -3390,7 +3392,7 @@ optional< block_header > database_api::get_block_header( uint32_t block_num )con
 }
 
 
-optional< block_header > database_api_impl::get_block_header( uint32_t block_num ) const
+optional< block_header > database_api_impl::get_block_header( uint64_t block_num ) const
 {
    auto result = _db.fetch_block_by_number( block_num );
    if( result )
@@ -3402,7 +3404,7 @@ optional< block_header > database_api_impl::get_block_header( uint32_t block_num
 }
 
 
-optional< signed_block_api_obj > database_api::get_block( uint32_t block_num )const
+optional< signed_block_api_obj > database_api::get_block( uint64_t block_num )const
 {
    FC_ASSERT( !my->_disable_get_block,
       "get_block is disabled on this node." );
@@ -3414,13 +3416,13 @@ optional< signed_block_api_obj > database_api::get_block( uint32_t block_num )co
 }
 
 
-optional< signed_block_api_obj > database_api_impl::get_block( uint32_t block_num )const
+optional< signed_block_api_obj > database_api_impl::get_block( uint64_t block_num )const
 {
    return _db.fetch_block_by_number( block_num );
 }
 
 
-vector< applied_operation > database_api::get_ops_in_block( uint32_t block_num, bool only_virtual )const
+vector< applied_operation > database_api::get_ops_in_block( uint64_t block_num, bool only_virtual )const
 {
    return my->_db.with_read_lock( [&]()
    {
@@ -3429,7 +3431,7 @@ vector< applied_operation > database_api::get_ops_in_block( uint32_t block_num, 
 }
 
 
-vector< applied_operation > database_api_impl::get_ops_in_block(uint32_t block_num, bool only_virtual)const
+vector< applied_operation > database_api_impl::get_ops_in_block(uint64_t block_num, bool only_virtual)const
 {
    const auto& idx = _db.get_index< operation_index >().indices().get< by_location >();
    auto itr = idx.lower_bound( block_num );
@@ -5699,23 +5701,23 @@ state database_api_impl::get_state( string path )const
             _state.content[ link ] = f;
          }
       }
-      else if( section == "witnesses" || section == "~witnesses") 
+      else if( section == "voting_producers" || section == "~voting_producers")
       {
-         vector< witness_api_obj > wits = get_witnesses_by_voting_power( "", 50 );
-         for( const auto& w : wits )
+         vector< producer_api_obj > producers = get_producers_by_voting_power( "", 50 );
+         for( const auto& p : producers )
          {
-            _state.witnesses[ w.owner ] = w;
+            _state.voting_producers[ p.owner ] = p;
          }
       }
-      else if( section == "miners" || section == "~miners") 
+      else if( section == "mining_producers" || section == "~mining_producers")
       {
-         vector< witness_api_obj > miners = get_witnesses_by_mining_power( "", 50 );
-         for( const auto& w : miners )
+         vector< producer_api_obj > producers = get_producers_by_mining_power( "", 50 );
+         for( const auto& p : producers )
          {
-            _state.miners[ w.owner ] = w;
+            _state.mining_producers[ p.owner ] = p;
          }
       }
-      else if( section == "boards" || section == "~boards") 
+      else if( section == "boards" || section == "~boards")
       {
          vector< extended_board > boards = get_boards_by_subscribers( "", 50 );
          for( const auto& b : boards )
@@ -6029,7 +6031,7 @@ state database_api_impl::get_state( string path )const
          d.second.active_mod_tags = get_active_mod_tags( d.second.author, d.second.permlink );
       }
 
-      _state.witness_schedule = _db.get_witness_schedule();
+      _state.producer_schedule = _db.get_producer_schedule();
    }
    catch ( const fc::exception& e ) 
    {

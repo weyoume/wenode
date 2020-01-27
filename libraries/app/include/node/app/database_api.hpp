@@ -10,7 +10,7 @@
 #include <node/tags/tags_plugin.hpp>
 
 #include <node/follow/follow_plugin.hpp>
-#include <node/witness/witness_plugin.hpp>
+#include <node/producer/producer_plugin.hpp>
 
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
@@ -41,8 +41,8 @@ struct scheduled_hardfork
 
 struct withdraw_route
 {
-   string               from_account;
-   string               to_account;
+   string               from;
+   string               to;
    uint16_t             percent;
    bool                 auto_stake;
 };
@@ -187,7 +187,7 @@ class database_api
 
       chain_properties                    get_chain_properties()const;
 
-      witness_schedule_api_obj            get_witness_schedule()const;
+      producer_schedule_api_obj            get_producer_schedule()const;
 
       hardfork_version                    get_hardfork_version()const;
 
@@ -217,8 +217,6 @@ class database_api
 
       vector< key_state >                             get_keychains( vector< string > names) const;
 
-      vector< optional< account_api_obj > >           lookup_account_names( vector< string > account_names )const;
-
       set< string >                                   lookup_accounts( string lower_bound_name, uint32_t limit )const;
 
       uint64_t                                        get_account_count()const;
@@ -227,7 +225,7 @@ class database_api
 
       optional< account_recovery_request_api_obj >    get_recovery_request( string account ) const;
 
-      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, witness::bandwidth_type type )const;
+      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
 
 
       //================//
@@ -269,25 +267,27 @@ class database_api
       //=================//
 
 
+      vector< producer_api_obj >                      get_producers_by_account( vector< string > names )const;
+
       vector< account_name_type >                     get_active_producers()const;
 
-      vector< optional< witness_api_obj > >           get_witnesses( vector< witness_id_type > witness_ids )const;
+      set< account_name_type >                        lookup_producer_accounts( string lower_bound_name, uint32_t limit )const;
 
-      set< account_name_type >                        lookup_witness_accounts( string lower_bound_name, uint32_t limit )const;
+      uint64_t                                        get_producer_count()const;
 
-      uint64_t                                        get_witness_count()const;
+      vector< producer_api_obj >                      get_producers_by_voting_power( string from, uint32_t limit )const;
 
-      fc::optional< witness_api_obj >                 get_witness_by_account( string account_name )const;
+      vector< producer_api_obj >                      get_producers_by_mining_power( string from, uint32_t limit )const;
 
-      vector< witness_api_obj >                       get_witnesses_by_voting_power( string from, uint32_t limit )const;
-
-      vector< witness_api_obj >                       get_witnesses_by_mining_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_network_officers_by_account( vector< string > names )const;
 
       vector< network_officer_api_obj >               get_development_officers_by_voting_power( string from, uint32_t limit )const;
 
       vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
 
       vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+
+      vector< executive_board_api_obj >               get_executive_boards_by_account( vector< string > names )const;
 
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
@@ -345,11 +345,11 @@ class database_api
       //=================================//
 
 
-      optional< block_header >             get_block_header( uint32_t block_num )const;
+      optional< block_header >             get_block_header( uint64_t block_num )const;
 
-      optional< signed_block_api_obj >     get_block( uint32_t block_num )const;
+      optional< signed_block_api_obj >     get_block( uint64_t block_num )const;
 
-      vector< applied_operation >          get_ops_in_block( uint32_t block_num, bool only_virtual = true)const;
+      vector< applied_operation >          get_ops_in_block( uint64_t block_num, bool only_virtual = true)const;
 
       std::string                          get_transaction_hex( const signed_transaction& trx )const;
 
@@ -572,7 +572,7 @@ FC_API( node::app::database_api,
          (get_config)
          (get_dynamic_global_properties)
          (get_chain_properties)
-         (get_witness_schedule)
+         (get_producer_schedule)
          (get_hardfork_version)
          (get_next_scheduled_hardfork)
          (get_reward_fund)
@@ -587,7 +587,6 @@ FC_API( node::app::database_api,
          (get_messages)
          (get_balances)
          (get_keychains)
-         (lookup_account_names)
          (lookup_accounts)
          (get_account_count)
          (get_owner_history)
@@ -612,10 +611,9 @@ FC_API( node::app::database_api,
          // Network
 
          (get_active_producers)
-         (get_witnesses)
-         (get_witness_by_account)
-         (get_witnesses_by_voting_power)
-         (get_witnesses_by_mining_power)
+         (get_producers_by_account)
+         (get_producers_by_voting_power)
+         (get_producers_by_mining_power)
          (get_development_officers_by_voting_power)
          (get_marketing_officers_by_voting_power)
          (get_advocacy_officers_by_voting_power)
@@ -624,8 +622,8 @@ FC_API( node::app::database_api,
          (get_interfaces_by_users)
          (get_governance_accounts_by_subscriber_power)
          (get_enterprise_by_voting_power)
-         (lookup_witness_accounts)
-         (get_witness_count)
+         (lookup_producer_accounts)
+         (get_producer_count)
 
          // Market
 

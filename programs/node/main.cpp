@@ -1,6 +1,6 @@
 #include <node/app/application.hpp>
 
-#include <node/witness/witness_plugin.hpp>
+#include <node/producer/producer_plugin.hpp>
 #include <node/manifest/plugins.hpp>
 
 #include <fc/exception/exception.hpp>
@@ -159,7 +159,7 @@ int main(int argc, char** argv)
       bpo::options_description cfg_options("Daemon");
       app_options.add_options()
             ("help,h", "Print this help message and exit.")
-            ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"), "Directory containing databases, etc.")
+            ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("node_data_dir"), "Directory containing databases, etc.")
             ("config,c", bpo::value<boost::filesystem::path>()->default_value("contrib/config.ini"), "Configuration file path.")
             ("version,v", "Print node version and exit.")
             ;
@@ -292,7 +292,7 @@ int main(int argc, char** argv)
 
       node->chain_database()->with_read_lock( [&]()
       {
-         ilog("Started witness node on a chain with ${h} blocks.", ("h", node->chain_database()->head_block_num()));
+         ilog("Started Producer Node on a Blockchain with ${h} blocks.", ("h", node->chain_database()->head_block_num()));
       });
 
       exit_promise->wait();

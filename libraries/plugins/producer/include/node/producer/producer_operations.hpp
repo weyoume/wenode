@@ -5,13 +5,13 @@
 
 #include <node/app/plugin.hpp>
 
-namespace node { namespace witness {
+namespace node { namespace producer {
 
 using namespace std;
 using node::protocol::base_operation;
 using node::chain::database;
 
-class witness_plugin;
+class producer_plugin;
 
 struct enable_content_editing_operation : base_operation
 {
@@ -25,14 +25,14 @@ struct enable_content_editing_operation : base_operation
 
 typedef fc::static_variant<
          enable_content_editing_operation
-      > witness_plugin_operation;
+      > producer_plugin_operation;
 
-DEFINE_PLUGIN_EVALUATOR( witness_plugin, witness_plugin_operation, enable_content_editing );
+DEFINE_PLUGIN_EVALUATOR( producer_plugin, producer_plugin_operation, enable_content_editing );
 
-} } // node::witness
+} } // node::producer
 
-FC_REFLECT( node::witness::enable_content_editing_operation, (account)(relock_time) )
+FC_REFLECT( node::producer::enable_content_editing_operation, (account)(relock_time) )
 
-FC_REFLECT_TYPENAME( node::witness::witness_plugin_operation )
+FC_REFLECT_TYPENAME( node::producer::producer_plugin_operation )
 
-DECLARE_OPERATION_TYPE( node::witness::witness_plugin_operation )
+DECLARE_OPERATION_TYPE( node::producer::producer_plugin_operation )

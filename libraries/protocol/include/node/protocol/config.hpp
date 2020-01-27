@@ -81,7 +81,7 @@
 #define POW_TARGET_TIME                       fc::minutes(10)           // Aim for approximately one proof of work every 10 minutes to be produced. 
 #define POW_DECAY_TIME                        fc::days(7)               // Averaging time of one week for adjusting proof of work difficulty. 
 #define POW_UPDATE_BLOCK_INTERVAL             (1 * BLOCKS_PER_HOUR)     // Updates the mining dificulty once per hour.            
-#define POA_BLOCK_INTERVAL                    (8 * BLOCKS_PER_HOUR)     // Distributes the proof of activity reward every 8 hours to the highest activity voted witness. 
+#define POA_BLOCK_INTERVAL                    (8 * BLOCKS_PER_HOUR)     // Distributes the proof of activity reward every 8 hours to the highest activity voted producer. 
 #define TXN_STAKE_BLOCK_INTERVAL              (1 * BLOCKS_PER_HOUR)     // Transaction stake rewards are distributed each hour.
 #define TXN_STAKE_DECAY_TIME                  fc::days(7)               // Transaction stake is averaged over a rolling 7 day window. 
 #define NETWORK_OFFICER_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
@@ -112,7 +112,7 @@
 #define SHARE_CURATION_DECAY            (50)                  // Curation reward decays by 50% per 50 shares.
 #define COMMENT_CURATION_DECAY          (100)                 // Curation reward decays by 50% per 100 comments.
 
-#define MIN_ACTIVITY_WITNESSES           (10)                 // Accounts need at least 10 witness votes to claim activity reward. 
+#define MIN_ACTIVITY_PRODUCERS           (10)                 // Accounts need at least 10 producer votes to claim activity reward. 
 #define MIN_ACCOUNT_CREATION_FEE         asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN )
 
 #define OWNER_AUTH_RECOVERY_PERIOD                       fc::days(30)
@@ -126,19 +126,19 @@
 #define MIN_ASSET_UPDATE_INTERVAL                        fc::minutes(10)
 
 #define GENESIS_ACCOUNT_BASE_NAME       ("producer")
-#define GENESIS_WITNESS_AMOUNT          (120)
-#define TOTAL_PRODUCERS                 (GENESIS_WITNESS_AMOUNT)
-#define GENESIS_EXTRA_WITNESSES         (200-GENESIS_WITNESS_AMOUNT)
+#define GENESIS_PRODUCER_AMOUNT          (120)
+#define TOTAL_PRODUCERS                 (GENESIS_PRODUCER_AMOUNT)
+#define GENESIS_EXTRA_PRODUCERS         (200-GENESIS_PRODUCER_AMOUNT)
 #define INIT_TIME                       (fc::time_point())
 #define GENESIS_ACCOUNT_COIN_STAKE		(1 * BLOCKCHAIN_PRECISION)
 #define GENESIS_ACCOUNT_COIN            (1 * BLOCKCHAIN_PRECISION)
 
-#define DPOS_WITNESS_PRODUCERS          (50) // The Top 50 Highest voted witnesses are selected for block production each round
-#define POW_MINER_PRODUCERS             (50) // The top 50 Highest producing miners are selected for block production each round
-#define DPOS_WITNESS_ADDITONAL          (10) // 10 Additonal witnesses are randomly selected for block production each round, according to stake voting weight
-#define POW_MINER_ADDITIONAL            (10) // 10 Additonal miners are selected for block production each round, according to proof of work weight
+#define DPOS_VOTING_PRODUCERS          (50) // The Top 50 Highest voted producers are selected for block production each round
+#define POW_MINING_PRODUCERS             (50) // The top 50 Highest producing miners are selected for block production each round
+#define DPOS_VOTING_ADDITIONAL_PRODUCERS          (10) // 10 Additonal producers are randomly selected for block production each round, according to stake voting weight
+#define POW_MINING_ADDITIONAL_PRODUCERS            (10) // 10 Additonal miners are selected for block production each round, according to proof of work weight
 
-#define HARDFORK_REQUIRED_WITNESSES     ((GENESIS_WITNESS_AMOUNT/4)*3) // 3 Quarters of producers required for hardfork version upgrade acceptance.
+#define HARDFORK_REQUIRED_PRODUCERS     ((GENESIS_PRODUCER_AMOUNT/4)*3) // 3 Quarters of producers required for hardfork version upgrade acceptance.
 #define MAX_TIME_UNTIL_EXPIRATION       (60*60) // seconds,  aka: 1 hour
 #define MAX_MEMO_SIZE                   2048
 #define MAX_PROXY_RECURSION_DEPTH       4
@@ -162,7 +162,7 @@
 #define POST_AVERAGE_WINDOW             (60*60*24u) // 1 day
 #define POST_MAX_BANDWIDTH              (4*PERCENT_100) // 2 posts per 1 days, average 1 every 12 hours
 #define POST_WEIGHT_CONSTANT            (uint64_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
-#define MAX_ACC_WITNESS_VOTES           1000
+#define MAX_ACC_producer_voteS           1000
 #define MAX_BODY_SIZE                   (1024 * 1024 * 128 )  // 128 mb of body text limit
 
 #define MINER_PAY_PERCENT               (PERCENT_1) // 1%
@@ -200,7 +200,7 @@
 
 #define CONTENT_REWARD_PERCENT           (25 * PERCENT_1) // Percentage of coin issuance distributed to content creators and curators: 25%
 #define EQUITY_REWARD_PERCENT            (20 * PERCENT_1) // Percentage of coin issuance distributed to holders of the network cryptoequity: 20%
-#define PRODUCER_REWARD_PERCENT          (20 * PERCENT_1) // Percentage of coin issuance distributed to elected witnesses and miners that produce blocks: 20%
+#define PRODUCER_REWARD_PERCENT          (20 * PERCENT_1) // Percentage of coin issuance distributed to block producers: 20%
 #define SUPERNODE_REWARD_PERCENT         (10 * PERCENT_1) // Percentage of coin issuance distributed to Full archive + IPFS storage providers + Public API : 10%
 #define POWER_REWARD_PERCENT             (10 * PERCENT_1) // Percentage of coin issuance distributed to holders of staked coin: 10%
 #define COMMUNITY_FUND_PERCENT           (5 * PERCENT_1)  // Percentage of coin issuance distributed to the community fund for project proposals: 5%
@@ -225,14 +225,14 @@
 #define CONTENT_CONSTANT                 uint128_t(uint64_t(2000000000000ll))
 
 // Block Producer reward allocation percentages:
-// 40% of producer rewards are shared equally between all elected witnesses and highest performing miners.
+// 40% of producer rewards are shared equally between top selected producers.
 // 60% of producer rewards are issued competively based on reward factors that incentivise fast validation for finality, high transaction throughput, Proofs of Work, and Proofs of Activity.
 
-#define PRODUCER_BLOCK_PERCENT           (40 * PERCENT_1) // Issued to the Witness or Miner that signs and creates each individual block: 40%
-#define PRODUCER_VALIDATOR_PERCENT       (15 * PERCENT_1) // Issued to the first two-thirds plus one witnesses and miners to broadcast validation commitment transactions for each block generated: 15%
-#define PRODUCER_TXN_STAKE_PERCENT       (15 * PERCENT_1) // Issued to the witnesses and miners proportionally to the amount of transaction stake value included in their blocks in the preceding 7 days: 15%
+#define PRODUCER_BLOCK_PERCENT           (40 * PERCENT_1) // Issued to the Producer that signs and creates each individual block: 40%
+#define PRODUCER_VALIDATOR_PERCENT       (15 * PERCENT_1) // Issued to the first two-thirds plus one producers to broadcast validation commitment transactions for each block generated: 15%
+#define PRODUCER_TXN_STAKE_PERCENT       (15 * PERCENT_1) // Issued to the producers proportionally to the amount of transaction stake value included in their blocks in the preceding 7 days: 15%
 #define PRODUCER_WORK_PERCENT            (15 * PERCENT_1) // Issued to the first miner that broadcasts a valid Proof of Work with sufficient difficulty after each block: 15%
-#define PRODUCER_ACTIVITY_PERCENT        (15 * PERCENT_1) // Issued to the highest activity voted prime witness each 8 hours: 15%
+#define PRODUCER_ACTIVITY_PERCENT        (15 * PERCENT_1) // Issued to the highest activity voted prime producer each 8 hours: 15%
 
 #define GOVERNANCE_SHARE_PERCENT         (10 * PERCENT_1) // Percentage of network revenue distributed to each account's governance addresses: 10%
 #define REFERRAL_SHARE_PERCENT           (10 * PERCENT_1) // Percentage of network revenue distributed to each account's referrers: 10%
@@ -319,8 +319,8 @@
 #define INTEREST_MIN_AMOUNT                    (100)                 // Minimum units of asset required to pay interest in credit pools each block.
 #define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)      // Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity. 
 
-#define EQUITY_MIN_WITNESSES                   (10)                          // Accounts need at least 10 witness votes to claim equity reward. 
-#define EQUITY_BOOST_WITNESSES                 (50)                          // Boost when account has min 50 witness votes
+#define EQUITY_MIN_PRODUCERS                   (10)                          // Accounts need at least 10 producer votes to claim equity reward. 
+#define EQUITY_BOOST_PRODUCERS                 (50)                          // Boost when account has min 50 producer votes
 #define EQUITY_ACTIVITY_TIME                   fc::days(30)                  // Dividends available when activity in the last 30 days
 #define EQUITY_BOOST_ACTIVITY                  (15 * BLOCKCHAIN_PRECISION)   // Dividends are doubled when account has a rolling average of 15 activity rewards in the last 30 days.
 #define EQUITY_BOOST_BALANCE                   (10 * BLOCKCHAIN_PRECISION)   // Dividends are doubled when account has balance greater than 10 units.
@@ -398,7 +398,7 @@
  */
 
 
-#define WITNESS_ACCOUNT                 "witnesses"              // Represents the current witnesses
+#define PRODUCER_ACCOUNT                "producers"              // Represents the current producers
 #define NULL_ACCOUNT                    "null"                   // Represents the canonical account with NO authority (nobody can access funds in null account)
 #define TEMP_ACCOUNT                    "temp"                   // Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
 #define PROXY_TO_SELF_ACCOUNT           ""                       // Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)

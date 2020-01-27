@@ -9,7 +9,7 @@
 #define RESERVE_RATIO_PRECISION ((int64_t)10000)
 #define RESERVE_RATIO_MIN_INCREMENT ((int64_t)5000)
 
-namespace node { namespace witness {
+namespace node { namespace producer {
 
 using std::string;
 using protocol::public_key_type;
@@ -35,14 +35,14 @@ namespace block_production_condition
 
 namespace detail
 {
-   class witness_plugin_impl;
+   class producer_plugin_impl;
 }
 
-class witness_plugin : public node::app::plugin
+class producer_plugin : public node::app::plugin
 {
 public:
-   witness_plugin( application* app );
-   virtual ~witness_plugin();
+   producer_plugin( application* app );
+   virtual ~producer_plugin();
 
    std::string plugin_name()const override;
 
@@ -64,18 +64,18 @@ private:
 
    boost::program_options::variables_map _options;
    bool _production_enabled = false;
-   uint32_t _required_witness_participation = 33 * PERCENT_1;
+   uint32_t _required_producer_participation = 33 * PERCENT_1;
    uint32_t _production_skip_flags = node::chain::database::skip_nothing;
 
    block_id_type    _head_block_id        = block_id_type();
    fc::time_point   _hash_start_time;
 
    std::map<public_key_type, fc::ecc::private_key> _private_keys;
-   std::set<string>                                _witnesses;
+   std::set<string>                                _producers;
    fc::future<void>                                _block_production_task;
 
-   friend class detail::witness_plugin_impl;
-   std::unique_ptr< detail::witness_plugin_impl > _my;
+   friend class detail::producer_plugin_impl;
+   std::unique_ptr< detail::producer_plugin_impl > _my;
 };
 
-} } //node::witness
+} } //node::producer

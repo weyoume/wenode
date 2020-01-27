@@ -54,7 +54,7 @@
     0,
     0
   ],
-  "witness_vote_count": 0,
+  "producer_vote_count": 0,
   "average_bandwidth": 271000000,
   "lifetime_bandwidth": 271000000,
   "last_bandwidth_update": "2018-09-25T01:16:42",

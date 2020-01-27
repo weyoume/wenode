@@ -341,11 +341,11 @@ namespace node { namespace protocol {
       }
    }
 
-   void account_witness_vote_operation::validate() const
+   void account_producer_vote_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( witness );
+      validate_account_name( producer );
       FC_ASSERT( vote_rank >= 1 && vote_rank <= 100, 
          "Vote rank must be between zero and one hundred." );
    }
@@ -2441,13 +2441,13 @@ namespace node { namespace protocol {
    //=====================================//
 
 
-   void witness_update_operation::validate() const
+   void producer_update_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( owner );
 
       FC_ASSERT( details.size() > 0,
-         "Witness requires details." );
+         "producer requires details." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
          "Details are too long." );
       FC_ASSERT( fc::is_utf8( details ), 
@@ -2506,7 +2506,7 @@ namespace node { namespace protocol {
       template< typename PowType >
       void operator()( const PowType& work )const
       {
-         _required_active.insert( work.input.worker_account );
+         _required_active.insert( work.input.miner_account );
       }
 
       flat_set<account_name_type>& _required_active;
@@ -2569,7 +2569,7 @@ namespace node { namespace protocol {
       FC_ASSERT( proof.seed == seed,
          "Proof of work seed does not match expected seed" );
       FC_ASSERT( proof.is_valid(),
-         "Proof of work is not a solution", ("block_id", input.prev_block)("worker_account", input.miner_account)("nonce", input.nonce) );
+         "Proof of work is not a solution", ("block_id", input.prev_block)("miner_account", input.miner_account)("nonce", input.nonce) );
       FC_ASSERT( pow_summary == fc::sha256::hash( proof.inputs ).approx_log_32() );
    }
 

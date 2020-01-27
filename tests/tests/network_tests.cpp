@@ -9,7 +9,7 @@
 //#include <node/chain/hardfork.hpp>
 
 #include <node/chain/util/reward.hpp>
-#include <node/witness/witness_objects.hpp>
+#include <node/producer/producer_objects.hpp>
 #include <fc/crypto/digest.hpp>
 #include <tests/common/database_fixture.hpp>
 
@@ -42,87 +42,87 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "bob", bob_private_owner_key, bob_public_owner_key );
+      producer_create( "bob", bob_private_owner_key, bob_public_owner_key );
 
       fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "candice", candice_private_owner_key, candice_public_owner_key );
+      producer_create( "candice", candice_private_owner_key, candice_public_owner_key );
 
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "dan", dan_private_owner_key, dan_public_owner_key );
+      producer_create( "dan", dan_private_owner_key, dan_public_owner_key );
 
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "elon", elon_private_owner_key, elon_public_owner_key );
+      producer_create( "elon", elon_private_owner_key, elon_public_owner_key );
 
       fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "fred", fred_private_owner_key, fred_public_owner_key );
+      producer_create( "fred", fred_private_owner_key, fred_public_owner_key );
 
       fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "george", george_private_owner_key, george_public_owner_key );
+      producer_create( "george", george_private_owner_key, george_public_owner_key );
 
       fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "haz", haz_private_owner_key, haz_public_owner_key );
+      producer_create( "haz", haz_private_owner_key, haz_public_owner_key );
 
       fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
+      producer_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
 
       fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
+      producer_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
 
       fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
+      producer_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
 
       fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "leonie", leonie_private_owner_key, leonie_public_owner_key );
+      producer_create( "leonie", leonie_private_owner_key, leonie_public_owner_key );
 
       fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "margot", margot_private_owner_key, margot_public_owner_key );
+      producer_create( "margot", margot_private_owner_key, margot_public_owner_key );
 
       fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "natalie", natalie_private_owner_key, natalie_public_owner_key );
+      producer_create( "natalie", natalie_private_owner_key, natalie_public_owner_key );
 
       fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
+      producer_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
 
       fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "peter", peter_private_owner_key, peter_public_owner_key );
+      producer_create( "peter", peter_private_owner_key, peter_public_owner_key );
 
       fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "quentin", quentin_private_owner_key, quentin_public_owner_key );
+      producer_create( "quentin", quentin_private_owner_key, quentin_public_owner_key );
 
       fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "rachel", rachel_private_owner_key, rachel_public_owner_key );
+      producer_create( "rachel", rachel_private_owner_key, rachel_public_owner_key );
 
       fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "sam", sam_private_owner_key, sam_public_owner_key );
+      producer_create( "sam", sam_private_owner_key, sam_public_owner_key );
 
       fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "tim", tim_private_owner_key, tim_public_owner_key );
+      producer_create( "tim", tim_private_owner_key, tim_public_owner_key );
 
       fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key );
+      producer_create( "veronica", veronica_private_owner_key, veronica_public_owner_key );
 
       account_membership_operation membership;
 
@@ -401,171 +401,171 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "bob", bob_private_owner_key, bob_public_owner_key );
+      producer_create( "bob", bob_private_owner_key, bob_public_owner_key );
 
       fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "candice", candice_private_owner_key, candice_public_owner_key );
+      producer_create( "candice", candice_private_owner_key, candice_public_owner_key );
 
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "dan", dan_private_owner_key, dan_public_owner_key );
+      producer_create( "dan", dan_private_owner_key, dan_public_owner_key );
 
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "elon", elon_private_owner_key, elon_public_owner_key );
+      producer_create( "elon", elon_private_owner_key, elon_public_owner_key );
 
       fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "fred", fred_private_owner_key, fred_public_owner_key );
+      producer_create( "fred", fred_private_owner_key, fred_public_owner_key );
 
       fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "george", george_private_owner_key, george_public_owner_key );
+      producer_create( "george", george_private_owner_key, george_public_owner_key );
 
       fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "haz", haz_private_owner_key, haz_public_owner_key );
+      producer_create( "haz", haz_private_owner_key, haz_public_owner_key );
 
       fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
+      producer_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
 
       fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
+      producer_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
 
       fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
+      producer_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
 
       fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "leonie", leonie_private_owner_key, leonie_public_owner_key );
+      producer_create( "leonie", leonie_private_owner_key, leonie_public_owner_key );
 
       fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "margot", margot_private_owner_key, margot_public_owner_key );
+      producer_create( "margot", margot_private_owner_key, margot_public_owner_key );
 
       fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "natalie", natalie_private_owner_key, natalie_public_owner_key );
+      producer_create( "natalie", natalie_private_owner_key, natalie_public_owner_key );
 
       fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
+      producer_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
 
       fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "peter", peter_private_owner_key, peter_public_owner_key );
+      producer_create( "peter", peter_private_owner_key, peter_public_owner_key );
 
       fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "quentin", quentin_private_owner_key, quentin_public_owner_key );
+      producer_create( "quentin", quentin_private_owner_key, quentin_public_owner_key );
 
       fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "rachel", rachel_private_owner_key, rachel_public_owner_key );
+      producer_create( "rachel", rachel_private_owner_key, rachel_public_owner_key );
 
       fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "sam", sam_private_owner_key, sam_public_owner_key );
+      producer_create( "sam", sam_private_owner_key, sam_public_owner_key );
 
       fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "tim", tim_private_owner_key, tim_public_owner_key );
+      producer_create( "tim", tim_private_owner_key, tim_public_owner_key );
 
       fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key );
+      producer_create( "veronica", veronica_private_owner_key, veronica_public_owner_key );
 
       fund_stake( "alice2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "alice2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "alice2", alice2_private_owner_key, alice2_public_owner_key );
+      producer_create( "alice2", alice2_private_owner_key, alice2_public_owner_key );
 
       fund_stake( "bob2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "bob2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "bob2", bob2_private_owner_key, bob2_public_owner_key );
+      producer_create( "bob2", bob2_private_owner_key, bob2_public_owner_key );
 
       fund_stake( "candice2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "candice2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "candice2", candice2_private_owner_key, candice2_public_owner_key );
+      producer_create( "candice2", candice2_private_owner_key, candice2_public_owner_key );
 
       fund_stake( "dan2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "dan2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "dan2", dan2_private_owner_key, dan2_public_owner_key );
+      producer_create( "dan2", dan2_private_owner_key, dan2_public_owner_key );
 
       fund_stake( "elon2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "elon2", elon2_private_owner_key, elon2_public_owner_key );
+      producer_create( "elon2", elon2_private_owner_key, elon2_public_owner_key );
 
       fund_stake( "fred2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "fred2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "fred2", fred2_private_owner_key, fred2_public_owner_key );
+      producer_create( "fred2", fred2_private_owner_key, fred2_public_owner_key );
 
       fund_stake( "george2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "george2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "george2", george2_private_owner_key, george2_public_owner_key );
+      producer_create( "george2", george2_private_owner_key, george2_public_owner_key );
 
       fund_stake( "haz2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "haz2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "haz2", haz2_private_owner_key, haz2_public_owner_key );
+      producer_create( "haz2", haz2_private_owner_key, haz2_public_owner_key );
 
       fund_stake( "isabelle2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "isabelle2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "isabelle2", isabelle2_private_owner_key, isabelle2_public_owner_key );
+      producer_create( "isabelle2", isabelle2_private_owner_key, isabelle2_public_owner_key );
 
       fund_stake( "jayme2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "jayme2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "jayme2", jayme2_private_owner_key, jayme2_public_owner_key );
+      producer_create( "jayme2", jayme2_private_owner_key, jayme2_public_owner_key );
 
       fund_stake( "kathryn2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "kathryn2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "kathryn2", kathryn2_private_owner_key, kathryn2_public_owner_key );
+      producer_create( "kathryn2", kathryn2_private_owner_key, kathryn2_public_owner_key );
 
       fund_stake( "leonie2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "leonie2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "leonie2", leonie2_private_owner_key, leonie2_public_owner_key );
+      producer_create( "leonie2", leonie2_private_owner_key, leonie2_public_owner_key );
 
       fund_stake( "margot2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "margot2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "margot2", margot2_private_owner_key, margot2_public_owner_key );
+      producer_create( "margot2", margot2_private_owner_key, margot2_public_owner_key );
 
       fund_stake( "natalie2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "natalie2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "natalie2", natalie2_private_owner_key, natalie2_public_owner_key );
+      producer_create( "natalie2", natalie2_private_owner_key, natalie2_public_owner_key );
 
       fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
+      producer_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
 
       fund_stake( "peter2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "peter2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "peter2", peter2_private_owner_key, peter2_public_owner_key );
+      producer_create( "peter2", peter2_private_owner_key, peter2_public_owner_key );
 
       fund_stake( "quentin2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "quentin2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "quentin2", quentin2_private_owner_key, quentin2_public_owner_key );
+      producer_create( "quentin2", quentin2_private_owner_key, quentin2_public_owner_key );
 
       fund_stake( "rachel2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "rachel2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "rachel2", rachel2_private_owner_key, rachel2_public_owner_key );
+      producer_create( "rachel2", rachel2_private_owner_key, rachel2_public_owner_key );
 
       fund_stake( "sam2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "sam2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "sam2", sam2_private_owner_key, sam2_public_owner_key );
+      producer_create( "sam2", sam2_private_owner_key, sam2_public_owner_key );
 
       fund_stake( "tim2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "tim2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "tim2", tim2_private_owner_key, tim2_public_owner_key );
+      producer_create( "tim2", tim2_private_owner_key, tim2_public_owner_key );
 
       fund_stake( "veronica2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "veronica2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "veronica2", veronica2_private_owner_key, veronica2_public_owner_key );
+      producer_create( "veronica2", veronica2_private_owner_key, veronica2_public_owner_key );
 
       account_create_operation create;
 
@@ -1335,87 +1335,87 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "bob", bob_private_owner_key, bob_public_owner_key );
+      producer_create( "bob", bob_private_owner_key, bob_public_owner_key );
 
       fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "candice", candice_private_owner_key, candice_public_owner_key );
+      producer_create( "candice", candice_private_owner_key, candice_public_owner_key );
 
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "dan", dan_private_owner_key, dan_public_owner_key );
+      producer_create( "dan", dan_private_owner_key, dan_public_owner_key );
 
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "elon", elon_private_owner_key, elon_public_owner_key );
+      producer_create( "elon", elon_private_owner_key, elon_public_owner_key );
 
       fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "fred", fred_private_owner_key, fred_public_owner_key );
+      producer_create( "fred", fred_private_owner_key, fred_public_owner_key );
 
       fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "george", george_private_owner_key, george_public_owner_key );
+      producer_create( "george", george_private_owner_key, george_public_owner_key );
 
       fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "haz", haz_private_owner_key, haz_public_owner_key );
+      producer_create( "haz", haz_private_owner_key, haz_public_owner_key );
 
       fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
+      producer_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
 
       fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
+      producer_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
 
       fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
+      producer_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
 
       fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "leonie", leonie_private_owner_key, leonie_public_owner_key );
+      producer_create( "leonie", leonie_private_owner_key, leonie_public_owner_key );
 
       fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "margot", margot_private_owner_key, margot_public_owner_key );
+      producer_create( "margot", margot_private_owner_key, margot_public_owner_key );
 
       fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "natalie", natalie_private_owner_key, natalie_public_owner_key );
+      producer_create( "natalie", natalie_private_owner_key, natalie_public_owner_key );
 
       fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
+      producer_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
 
       fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "peter", peter_private_owner_key, peter_public_owner_key );
+      producer_create( "peter", peter_private_owner_key, peter_public_owner_key );
 
       fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "quentin", quentin_private_owner_key, quentin_public_owner_key );
+      producer_create( "quentin", quentin_private_owner_key, quentin_public_owner_key );
 
       fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "rachel", rachel_private_owner_key, rachel_public_owner_key );
+      producer_create( "rachel", rachel_private_owner_key, rachel_public_owner_key );
 
       fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "sam", sam_private_owner_key, sam_public_owner_key );
+      producer_create( "sam", sam_private_owner_key, sam_public_owner_key );
 
       fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "tim", tim_private_owner_key, tim_public_owner_key );
+      producer_create( "tim", tim_private_owner_key, tim_public_owner_key );
 
       fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key );
+      producer_create( "veronica", veronica_private_owner_key, veronica_public_owner_key );
 
       account_create_operation create;
 
@@ -1990,87 +1990,87 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "bob", bob_private_owner_key, bob_public_owner_key );
+      producer_create( "bob", bob_private_owner_key, bob_public_owner_key );
 
       fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "candice", candice_private_owner_key, candice_public_owner_key );
+      producer_create( "candice", candice_private_owner_key, candice_public_owner_key );
 
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "dan", dan_private_owner_key, dan_public_owner_key );
+      producer_create( "dan", dan_private_owner_key, dan_public_owner_key );
 
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "elon", elon_private_owner_key, elon_public_owner_key );
+      producer_create( "elon", elon_private_owner_key, elon_public_owner_key );
 
       fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "fred", fred_private_owner_key, fred_public_owner_key );
+      producer_create( "fred", fred_private_owner_key, fred_public_owner_key );
 
       fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "george", george_private_owner_key, george_public_owner_key );
+      producer_create( "george", george_private_owner_key, george_public_owner_key );
 
       fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "haz", haz_private_owner_key, haz_public_owner_key );
+      producer_create( "haz", haz_private_owner_key, haz_public_owner_key );
 
       fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
+      producer_create( "isabelle", isabelle_private_owner_key, isabelle_public_owner_key );
 
       fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
+      producer_create( "jayme", jayme_private_owner_key, jayme_public_owner_key );
 
       fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
+      producer_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
 
       fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "leonie", leonie_private_owner_key, leonie_public_owner_key );
+      producer_create( "leonie", leonie_private_owner_key, leonie_public_owner_key );
 
       fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "margot", margot_private_owner_key, margot_public_owner_key );
+      producer_create( "margot", margot_private_owner_key, margot_public_owner_key );
 
       fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "natalie", natalie_private_owner_key, natalie_public_owner_key );
+      producer_create( "natalie", natalie_private_owner_key, natalie_public_owner_key );
 
       fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
+      producer_create( "olivia", olivia_private_owner_key, olivia_public_owner_key );
 
       fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "peter", peter_private_owner_key, peter_public_owner_key );
+      producer_create( "peter", peter_private_owner_key, peter_public_owner_key );
 
       fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "quentin", quentin_private_owner_key, quentin_public_owner_key );
+      producer_create( "quentin", quentin_private_owner_key, quentin_public_owner_key );
 
       fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "rachel", rachel_private_owner_key, rachel_public_owner_key );
+      producer_create( "rachel", rachel_private_owner_key, rachel_public_owner_key );
 
       fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "sam", sam_private_owner_key, sam_public_owner_key );
+      producer_create( "sam", sam_private_owner_key, sam_public_owner_key );
 
       fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "tim", tim_private_owner_key, tim_public_owner_key );
+      producer_create( "tim", tim_private_owner_key, tim_public_owner_key );
 
       fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      witness_create( "veronica", veronica_private_owner_key, veronica_public_owner_key );
+      producer_create( "veronica", veronica_private_owner_key, veronica_public_owner_key );
 
       create_community_enterprise_operation create;
 
@@ -2328,8 +2328,8 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.signatures.clear();
 
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-      const witness_schedule_object& witness_schedule = db.get_witness_schedule();
-      db.update_enterprise( enterprise, witness_schedule, props );
+      const producer_schedule_object& producer_schedule = db.get_producer_schedule();
+      db.update_enterprise( enterprise, producer_schedule, props );
 
       const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
 
@@ -2368,8 +2368,8 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.signatures.clear();
 
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-      const witness_schedule_object& witness_schedule = db.get_witness_schedule();
-      db.update_enterprise( enterprise, witness_schedule, props );
+      const producer_schedule_object& producer_schedule = db.get_producer_schedule();
+      db.update_enterprise( enterprise, producer_schedule, props );
 
       const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
 
@@ -2600,8 +2600,8 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.signatures.clear();
 
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-      const witness_schedule_object& witness_schedule = db.get_witness_schedule();
-      db.update_enterprise( enterprise, witness_schedule, props );
+      const producer_schedule_object& producer_schedule = db.get_producer_schedule();
+      db.update_enterprise( enterprise, producer_schedule, props );
 
       const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
 

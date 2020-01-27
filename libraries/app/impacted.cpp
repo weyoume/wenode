@@ -95,10 +95,10 @@ struct get_impacted_account_visitor
       _impacted.insert( op.to_account );
    }
 
-   void operator()( const account_witness_vote_operation& op )
+   void operator()( const account_producer_vote_operation& op )
    {
       _impacted.insert( op.account );
-      _impacted.insert( op.witness );
+      _impacted.insert( op.producer );
    }
 
    void operator()( const account_update_proxy_operation& op )
@@ -116,7 +116,7 @@ struct get_impacted_account_visitor
       template< typename WorkType >
       result_type operator()( const WorkType& work )const
       {
-         return work.input.worker_account;
+         return work.input.miner_account;
       }
    };
 
@@ -176,7 +176,7 @@ struct get_impacted_account_visitor
       _impacted.insert( op.owner );
    }
 
-   void operator()( const shutdown_witness_operation& op )
+   void operator()( const shutdown_producer_operation& op )
    {
       _impacted.insert( op.owner );
    }

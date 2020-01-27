@@ -498,14 +498,14 @@ namespace node { namespace protocol {
 
 
    /**
-    * Vote for a witness to become a block producer. 
+    * Vote for a producer to be selected for block production. 
     * 
-    * All accounts with voting power can vote for witnesses to produce blocks, 
+    * All accounts with voting power can vote for producers to produce blocks, 
     * the top 50 voted producers are able to produce one block each round, 
     * combined with the top 50 miners.
     * If a proxy is specified then all existing votes are removed.
     */
-   struct account_witness_vote_operation : public base_operation
+   struct account_producer_vote_operation : public base_operation
    {
       account_name_type               signatory;
 
@@ -513,7 +513,7 @@ namespace node { namespace protocol {
 
       uint16_t                        vote_rank;         ///< Rank ordering of the vote.
 
-      account_name_type               witness;           ///< Witness being voted for.
+      account_name_type               producer;           ///< producer being voted for.
 
       bool                            approved = true;   ///< True to create vote, false to remove vote.
 
@@ -526,7 +526,7 @@ namespace node { namespace protocol {
    /**
     * Updates the Proxy account for a specified account.
     * 
-    * Proxy is able to vote for witnesses, network officers and 
+    * Proxy is able to vote for producers, network officers and 
     * additonal network functionalities on behalf of the account.
     */
    struct account_update_proxy_operation : public base_operation
@@ -702,11 +702,11 @@ namespace node { namespace protocol {
     * On account creation the recovery account is set either to the creator of
     * the account (The account that pays the creation fee and is a signer on the transaction)
     * or to the empty string if the account was mined. An account with no recovery
-    * has the top voted witness as a recovery account, at the time the recover
+    * has the top voted producer as a recovery account, at the time the recover
     * request is created. Note: This does mean the effective recovery account
     * of an account with no listed recovery account can change at any time as
-    * witness vote weights. The top voted witness is explicitly the most trusted
-    * witness according to stake.
+    * producer vote weights. The top voted producer is explicitly the most trusted
+    * producer according to stake.
     */
    struct change_recovery_account_operation : public base_operation
    {
@@ -872,7 +872,7 @@ namespace node { namespace protocol {
     * 2 - A recent comment transaction with at least 20% of the median number of votes and views, and vote and view power on all posts in the last 30 days.
     * 3 - A recent vote transaction.
     * 4 - A recent view transaction.
-    * 5 - At least 10 witness votes from their account.
+    * 5 - At least 10 producer votes from their account.
     */
    struct activity_reward_operation : public base_operation
    {
@@ -1017,7 +1017,7 @@ namespace node { namespace protocol {
     * 3 - Operate an active interface with at least 100 daily active users.
     * 4 - Operate an active governance account with at least 100 subscribers.
     * 5 - Have at least 3 members or officers that are top 50 network officers, 1 from each role.
-    * 6 - Have at least one member or officer that is an active top 50 witness.
+    * 6 - Have at least one member or officer that is an active top 50 producers.
     */
    struct update_executive_board_operation : public base_operation
    {
@@ -1304,7 +1304,7 @@ namespace node { namespace protocol {
     * This releases the funds that are in the pending budget to the proposal's beneficaries.
     * Community Enterprise proposals need to be approved by:
     * 
-    * - Approvals from at least 5 of the Top 50 witnesses, with a combined voting power of at least 10% of the total witness voting power.
+    * - Approvals from at least 5 of the Top 50 producers, with a combined voting power of at least 10% of the total producer voting power.
     * AND
     * - At least 20 total approvals, from accounts with a total combined voting power of at least 10% of total voting power. 
     */
@@ -3046,13 +3046,13 @@ namespace node { namespace protocol {
 
       share_type                      min_balance = BLOCKCHAIN_PRECISION;                     ///< Minimum amount of equity required to earn dividends.
 
-      uint16_t                        min_witnesses = EQUITY_MIN_WITNESSES;                   ///< Minimum amount of witness votes required to earn dividends.
+      uint16_t                        min_producers = EQUITY_MIN_PRODUCERS;                   ///< Minimum amount of producer votes required to earn dividends.
 
       uint16_t                        boost_balance = EQUITY_BOOST_BALANCE;                   ///< Amount of equity balance to earn double dividends.
 
       uint16_t                        boost_activity = EQUITY_BOOST_ACTIVITY;                 ///< Amount of recent activity rewards required to earn double dividends.
 
-      uint16_t                        boost_witnesses = EQUITY_BOOST_WITNESSES;               ///< Amount of witness votes required to earn double dividends.
+      uint16_t                        boost_producers = EQUITY_BOOST_PRODUCERS;               ///< Amount of producer votes required to earn double dividends.
 
       uint16_t                        boost_top = EQUITY_BOOST_TOP_PERCENT;                   ///< Percent bonus earned by Top membership accounts.
 
@@ -3331,37 +3331,53 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates a new witness for a specified account, 
-    * enabling block production.
+    * Creates or updates a producer for a specified account, enabling block production.
     * 
-    * If the owner isn't a witness they will become a witness, 
-    * and become eligible to recieve witness votes 
+    * If the owner isn't a producer they will become a producer, 
+    * and become eligible to recieve producer votes 
     * from all stakeholding accounts.
     *  
-    * The network will pick the top voted witnesses 
+    * The network will pick the top voted producers 
     * and top producing miners for producing blocks.
+    * 
+    * Producer Details should address the following particulars:
+    * 
+    * - The Hardware that the producer operating thier node on.
+    * - The Backup Node setup that is in use.
+    * - Any Relevant past experience operating block producers.
+    * - The Team members that are operating the producer.
+    * - Network services offered by the witness: API endpoints, applications, tools.
+    * - Estimated Hash Power of mining hardware in use.
+    * - Best reasons to vote in support of the Producer.
+    * 
+    * The Chain Properties Object: props contains a variety of network
+    * parameters that are used for managing the characteristics of the 
+    * protocol, and are voted on by block producers.
+    * The median value for each parameter is used, enabling each value to
+    * be updated with the support of the majority of the 
+    * block producers.
     */
-   struct witness_update_operation : public base_operation
+   struct producer_update_operation : public base_operation
    {
       account_name_type         signatory;
       
-      account_name_type         owner;                  ///< The account that owns the witness.
+      account_name_type         owner;                  ///< The account that owns the producer.
 
-      string                    details;                ///< The witnesses details.
+      string                    details;                ///< The producer's details for stakeholder voting reference.
 
-      string                    url;                    ///< External reference URL.
+      string                    url;                    ///< Producer's reference URL for more information.
 
-      string                    json;                   ///< The Witnesses json metadata.
+      string                    json;                   ///< The producers json metadata.
 
-      double                    latitude;               ///< Latitude co-ordinates of the witness.
+      double                    latitude;               ///< Latitude co-ordinates of the producer.
 
-      double                    longitude;              ///< Longitude co-ordinates of the witness.
+      double                    longitude;              ///< Longitude co-ordinates of the producer.
 
       string                    block_signing_key;      ///< The public key used to sign blocks.
 
-      chain_properties          props;                  ///< chain properties values for selection of adjustable network parameters. 
+      chain_properties          props;                  ///< Chain properties values for selection of adjustable network parameters. 
 
-      bool                      active = true;          ///< Set active to true to activate, false to deactivate; 
+      bool                      active = true;          ///< Set active to true to activate producer, false to deactivate.
 
       void validate()const;
       const account_name_type& get_creator_name() const { return owner; }
@@ -3408,24 +3424,26 @@ namespace node { namespace protocol {
    typedef fc::static_variant< proof_of_work, equihash_proof_of_work > proof_of_work_type;
 
    /**
-    * Enables miners to publish cryptographic proofs of mining security. 
+    * Enables mining producers to publish cryptographic proofs of work.
     * 
-    * Proofs of Work which make the chain thermodynamically secure
+    * Proofs of Work make the blockchain thermodynamically secure against rewriting
     * due to the energy expenditure required to redo the work.
     * 
-    * Network uses the X11 Mining algorithm for hashing.
+    * The Network uses the X11 Mining algorithm for hashing.
     * 
-    * Miners are added to the mining queue, according to the number of 
-    * proofs of work in the prior 7 days, and the highest producing miners
-    * are able to produce blocks in each round, and claim the proof of work reward.
+    * Miners are added to the block production set according to the number of 
+    * proofs of work in the prior 7 days.
+    * 
+    * The highest producing miners are able to produce blocks in each round, 
+    * and claim the proof of work reward when they publish a proof.
     */
    struct proof_of_work_operation : public base_operation
    {
       proof_of_work_type            work;              ///< Proof of work, containing a reference to a prior block, and a nonce resulting in a low hash value.
 
-      optional< public_key_type >   new_owner_key;     ///< If creating a new account with a proof of work, the owner key of the new account.
+      optional< string >            new_owner_key;     ///< If creating a new account with a proof of work, the owner key of the new account.
 
-      chain_properties              props;             ///< chain properties values for selection of adjustable network parameters. 
+      chain_properties              props;             ///< Chain properties values for selection of adjustable network parameters. 
 
       void validate()const;
 
@@ -3452,11 +3470,11 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             producer;      ///< The name of the block producing account
+      account_name_type             producer;      ///< The name of the block producing account.
 
       block_id_type                 block_id;      ///< The block id of the block being verifed as valid and received. 
 
-      uint32_t                      block_height;  ///< The height of the block being verified.
+      uint64_t                      block_height;  ///< The height of the block being verified.
 
       void validate()const;
       const account_name_type& get_creator_name() const { return producer; }
@@ -3464,13 +3482,13 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Stakes core asset on the validity and acceptance of a block.
+    * Stakes COIN on the validity and acceptance of a block.
     * 
     * The commit block operation enables producers to assert that:
     * 1 - A given block at a given height is valid.
     * 2 - A supermajority of least Two Thirds Plus One (67) block producers have verified the block.
     * 3 - They will not produce future blocks that do not contain that block as an ancestor.
-    * 4 - They stake a given value of core asset on their commitment.
+    * 4 - They stake a given value of COIN on their commitment.
     * 
     * In resolution of the Nothing At Stake problem of consensus, in which producers sign multiple
     * commitments without validating blocks to ensure maximum reward, they are penalized for commiting to
@@ -3494,11 +3512,11 @@ namespace node { namespace protocol {
 
       block_id_type                     block_id;            ///< The block id of the block being committed as irreversible to that producer. 
 
-      uint32_t                          block_height;        ///< The height of the block being committed to.
+      uint64_t                          block_height;        ///< The height of the block being committed to.
 
       flat_set< transaction_id_type >   verifications;       ///< The set of attesting transaction ids of verification transactions from currently active producers.
 
-      asset                             commitment_stake;    ///< the value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
+      asset                             commitment_stake;    ///< The value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
 
       void validate()const;
       const account_name_type& get_creator_name() const { return producer; }
@@ -3507,7 +3525,7 @@ namespace node { namespace protocol {
 
 
    /** 
-    * Operation used to declare a violation of a block commitment.
+    * Declares a violation of a block commitment.
     * 
     * Enables a reporter to claim the commitment stake of that producer.
     */
@@ -3515,7 +3533,7 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             reporter;      ///< The name of the account detecting and reporting the validation violation.
+      account_name_type             reporter;      ///< The account detecting and reporting the violation.
 
       signed_transaction            first_trx;     ///< The first transaction signed by the producer.
 
@@ -3539,11 +3557,11 @@ namespace node { namespace protocol {
     */
    struct custom_operation : public base_operation
    {
-      flat_set< account_name_type > required_auths;
+      flat_set< account_name_type > required_auths;    ///< Set of account authorities required for the transaction signature.
 
-      uint16_t                      id = 0;
+      uint16_t                      id = 0;            ///< ID of the custom operation, determines the how to interpret the operation.
 
-      vector< char >                data;
+      vector< char >                data;              ///< Char vector of data contained within the operation. Max size 8 KB
 
       void validate()const;
       const account_name_type& get_creator_name() const { return *required_auths.begin(); }
@@ -3562,13 +3580,13 @@ namespace node { namespace protocol {
     */
    struct custom_json_operation : public base_operation
    {
-      flat_set< account_name_type > required_auths;
+      flat_set< account_name_type > required_auths;           ///< Set of account active authorities required for the transaction signature.
 
-      flat_set< account_name_type > required_posting_auths;
+      flat_set< account_name_type > required_posting_auths;   ///< Set of posting authorities required for the transaction signature.
 
-      string                        id;      ///< must be less than 32 characters long, refers to the plugin used to interpret the operation. 
+      string                        id;                       ///< ID of the operation, refers to the plugin used to interpret the operation. Less than 32 characters long.
 
-      string                        json;    ///< must be proper UTF8 / JSON string.
+      string                        json;                     ///< Valid UTF8 / JSON string of operation data. Max size 8 KB
 
       void validate()const;
       const account_name_type& get_creator_name() const 
@@ -3719,10 +3737,10 @@ FC_REFLECT( node::protocol::account_update_list_operation,
          (whitelisted)
          );
 
-FC_REFLECT( node::protocol::account_witness_vote_operation,
+FC_REFLECT( node::protocol::account_producer_vote_operation,
          (signatory)
          (account)
-         (witness)
+         (producer)
          (approve) 
          );
 
@@ -4614,7 +4632,7 @@ FC_REFLECT( node::protocol::asset_global_settle_operation,
    //==== Block Production Operations ====//
    //=====================================//
 
-FC_REFLECT( node::protocol::witness_update_operation, 
+FC_REFLECT( node::protocol::producer_update_operation, 
          (signatory)
          (owner)
          (details)
@@ -4634,7 +4652,7 @@ FC_REFLECT( node::protocol::proof_of_work,
          );
 
 FC_REFLECT( node::protocol::proof_of_work_input,
-         (worker_account)
+         (miner_account)
          (prev_block)
          (nonce) 
          );
