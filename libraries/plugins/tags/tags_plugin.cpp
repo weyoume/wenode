@@ -151,8 +151,8 @@ struct operation_visitor
          }
       }
       
-      lower_tags.insert( string() );      // add the universal null string tag
-      lower_boards.insert( string() );      // add the universal null string board
+      lower_tags.insert( string() );      // Add the universal null string tag.
+      lower_boards.insert( string() );    // Add the universal null string board.
       
       meta.tags = lower_tags;
       meta.boards = lower_boards;
@@ -1116,7 +1116,11 @@ struct operation_visitor
       return sort;
    }
 
-   /** finds tags that have been added or removed or updated */
+   /**
+    * Updates the set of tags that are created on each comment.
+    * 
+    * Finds tags that have been added or removed or updated.
+    */
    void update_tags( const comment_object& c, const comment_metrics_object& m, bool parse_tags = false )const
    {
       sort_options sort = build_sort_options( c, m );

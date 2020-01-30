@@ -247,10 +247,8 @@
 
 #define ADVERTISING_FEE_PERCENT            (50 * PERCENT_1) // Percentage of advertising spend that is charged as a fee when a provider claims ad delivery: 50%
 #define NETWORK_ADVERTISING_FEE_PERCENT    (50 * PERCENT_1) // Percentage of advertising fee that is consumed as network revenue: 50%
-#define DEMAND_ADVERTISING_FEE_PERCENT     (15 * PERCENT_1) // Percentage of advertising fee that is shared with the advertising purchaser's interface: 15%
-#define AUDIENCE_ADVERTISING_FEE_PERCENT   (15 * PERCENT_1) // Percentage of advertising fee that is shared with the audience of the delivery: 15%
-#define BIDDER_ADVERTISING_FEE_PERCENT     (10 * PERCENT_1) // Percentage of advertising fee that is shared with the bidder account: 10%
-#define DELIVERY_ADVERTISING_FEE_PERCENT   (10 * PERCENT_1) // Percentage of advertising fee that is shared with the delivery account: 10%
+#define DEMAND_ADVERTISING_FEE_PERCENT     (25 * PERCENT_1) // Percentage of advertising fee that is shared with the advertising purchaser's interface: 25%
+#define AUDIENCE_ADVERTISING_FEE_PERCENT   (25 * PERCENT_1) // Percentage of advertising fee that is shared with the audience of the delivery: 25%
 
 #define MEMBERSHIP_FEE_BASE                (asset( 250000000, SYMBOL_USD)) // Monthly Price of Standard membership: $2.50 USD
 #define MEMBERSHIP_FEE_MID                 (asset( 25 * BLOCKCHAIN_PRECISION, SYMBOL_USD)) // Monthly Price of Mezzanine membership: $25.00 USD

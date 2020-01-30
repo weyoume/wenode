@@ -212,7 +212,7 @@ namespace node { namespace app {
       discussion( const comment_object& o ):comment_api_obj(o){}
       discussion(){}
 
-      string                        url;                         // /category/@rootauthor/root_permlink#author/permlink
+      string                        url;                 // /category/@rootauthor/root_permlink#author/permlink
       string                        root_title;
       vector< vote_state >          active_votes;
       vector< view_state >          active_views;

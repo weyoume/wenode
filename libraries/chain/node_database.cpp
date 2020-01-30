@@ -5179,23 +5179,19 @@ asset database::pay_trading_fees( const account_object& taker, const asset& rece
  * the bidder account, the audience members, and the network.
  */
 asset database::pay_advertising_delivery( const account_object& provider, const account_object& demand, 
-   const account_object& bidder, const account_object& delivery, const account_object& audience, const asset& value )
+   const account_object& audience, const asset& value )
 { try {
    asset total_fees = ( value * ADVERTISING_FEE_PERCENT ) / PERCENT_100;
    
    asset demand_share     = ( total_fees * DEMAND_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
    asset audience_share   = ( total_fees * AUDIENCE_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
-   asset bidder_share     = ( total_fees * BIDDER_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
-   asset delivery_share   = ( total_fees * DELIVERY_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
    asset network_fee      = ( total_fees * NETWORK_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
 
    asset demand_paid = pay_fee_share( demand, demand_share );
    asset audience_paid = pay_fee_share( audience, audience_share );
-   asset bidder_paid = pay_fee_share( bidder, bidder_share );
-   asset delivery_paid = pay_fee_share( delivery, delivery_share );
    asset network_paid = pay_network_fees( provider, network_fee );
 
-   asset fees_paid = network_paid + demand_paid + audience_paid + bidder_paid + delivery_paid;
+   asset fees_paid = network_paid + demand_paid + audience_paid;
 
    adjust_liquid_balance( provider.name, value - fees_paid );
 
@@ -5261,6 +5257,7 @@ asset database::pay_multi_fee_share( flat_set< const account_object* > payees, c
 
 } FC_CAPTURE_AND_RETHROW() }
 
+
 /**
  * Activates the delivery process for a bid
  * that has been triggered by an operation broadcast by
@@ -5317,7 +5314,7 @@ void database::deliver_ad_bid( const ad_bid_object& bid, const account_object& v
          abo.last_updated = now;
       });
 
-      pay_advertising_delivery( provider, demand, bidder, account, viewer, bid.bid_price );
+      pay_advertising_delivery( provider, demand, viewer, bid.bid_price );
 
       if( bid.remaining == 0 )
       {

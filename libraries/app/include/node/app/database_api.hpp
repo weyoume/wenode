@@ -69,53 +69,53 @@ struct discussion_query
       FC_ASSERT( limit <= 100 );
    }
 
-   string                  account;               // Name of the account being fetched for feed or blog queries.
+   string                  account = INIT_ACCOUNT;       // Name of the account being fetched for feed or blog queries.
 
-   string                  board;                 // Name of the board being queried.
+   string                  board = string();             // Name of the board being queried.
 
-   string                  tag;                   // Name of the tag being querired.
+   string                  tag = string();               // Name of the tag being querired.
 
-   string                  sort_type;             // Sorting index type.
+   string                  sort_type = "quality";        // Sorting index type.
 
-   string                  sort_time;             // Time preference of the sorting type.
+   string                  sort_time = "standard";       // Time preference of the sorting type.
    
-   string                  feed_type;             // Type of feed being queried.
+   string                  feed_type = "follow";         // Type of feed being queried.
 
-   string                  blog_type;             // Type of blog being queried.
+   string                  blog_type = "account";        // Type of blog being queried.
 
-   string                  post_include_time;     // Time limit for including posts.
+   string                  post_include_time = "all";    // Time limit for including posts.
 
-   bool                    include_private;       // True to include private encrypted posts.
+   bool                    include_private = false;      // True to include private encrypted posts.
 
-   string                  max_rating;            // Highest content rating to include in posts queried.
+   string                  max_rating = "general";       // Highest content rating to include in posts queried.
    
-   uint32_t                limit = 0;             // Amount of discussions to return
+   uint32_t                limit = 20;                   // Amount of discussions to return.
 
-   set<string>             select_boards;         // list of boards to include
+   set<string>             select_boards;                // list of boards to include.
 
-   set<string>             filter_boards;         // list of boards to filter, posts made in these boards are filtered
+   set<string>             filter_boards;                // list of boards to filter, posts made in these boards are filtered.
    
-   set<string>             select_tags;           // list of tags to include
+   set<string>             select_tags;                  // list of tags to include.
 
-   set<string>             filter_tags;           // list of tags to filter, posts with these tags are filtered
+   set<string>             filter_tags;                  // list of tags to filter, posts with these tags are filtered.
 
-   set<string>             select_authors;        // list of authors to include
+   set<string>             select_authors;               // list of authors to include.
 
-   set<string>             filter_authors;        // list of authors to filter, posts by these authors are filtered
+   set<string>             filter_authors;               // list of authors to filter, posts by these authors are filtered.
 
-   set<string>             select_languages;      // list of languages to include
+   set<string>             select_languages;             // list of languages to include.
 
-   set<string>             filter_languages;      // list of languages to filter, posts made in these boards are filtered
+   set<string>             filter_languages;             // list of languages to filter, posts made in these boards are filtered.
 
-   optional<string>        start_author;
+   optional<string>        start_author;                 // The Author of the first post to include in the ranking.
 
-   optional<string>        start_permlink;
+   optional<string>        start_permlink;               // The Permlink of the first post to include in the ranking.
 
-   optional<string>        parent_author;
+   optional<string>        parent_author;                // The Author of the parent post to to query comments from.
 
-   optional<string>        parent_permlink;
+   optional<string>        parent_permlink;              // The Permlink of the parent post to to query comments from.
 
-   uint32_t                truncate_body = 0;     // the number of bytes of the post body to return, 0 for all
+   uint32_t                truncate_body = 0;            // the number of bytes of the post body to return, 0 for all.
 };
 
 
@@ -127,13 +127,28 @@ struct search_query
    void validate()const
    {
       FC_ASSERT( limit <= 100 );
+      FC_ASSERT( margin_percent <= PERCENT_100 );
    }
 
-   string                            account;    // Name of the account creating the search.
+   string                            account;                            // Name of the account creating the search.
 
-   string                            query;      // Search String being queried.
+   string                            query;                              // Search String being queried.
 
-   uint32_t                          limit;      // The amount of results to include in the results.          
+   uint32_t                          limit = 20;                         // The amount of results to include in the results.
+
+   uint16_t                          margin_percent = 25 * PERCENT_100;  // Search result must match within this percentage to be included.
+
+   bool                              include_accounts = true;            // Set True to include account results.
+
+   bool                              include_boards = true;              // Set True to include board results.
+
+   bool                              include_tags = true;                // Set True to include tag results.
+
+   bool                              include_assets = true;              // Set True to include asset results.
+
+   bool                              include_posts = true;               // Set True to include post results by title.
+
+
 };
 
 /**
@@ -155,7 +170,7 @@ struct ad_query
 
    discussion_query        discussion_query;      // The Discussion feed display query of the ad context.
 
-   search_query            search_query;          // the Search display query of the ad context.
+   search_query            search_query;          // The Search display query of the ad context.
    
    uint32_t                limit = 0;
 };
@@ -187,7 +202,7 @@ class database_api
 
       chain_properties                    get_chain_properties()const;
 
-      producer_schedule_api_obj            get_producer_schedule()const;
+      producer_schedule_api_obj           get_producer_schedule()const;
 
       hardfork_version                    get_hardfork_version()const;
 
@@ -291,9 +306,15 @@ class database_api
 
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
+      vector< supernode_api_obj >                     get_supernodes_by_account( vector< string > names )const;
+
       vector< supernode_api_obj >                     get_supernodes_by_view_weight( string from, uint32_t limit )const;
 
+      vector< interface_api_obj >                     get_interfaces_by_account( vector< string > names )const;
+
       vector< interface_api_obj >                     get_interfaces_by_users( string from, uint32_t limit )const;
+
+      vector< governance_account_api_obj >            get_governance_accounts_by_account( vector< string > names )const;
 
       vector< governance_account_api_obj >            get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
 
@@ -377,13 +398,13 @@ class database_api
 
       vector< moderation_state >           get_active_mod_tags( string author, string permlink )const;
 
-      vector< account_vote >               get_account_votes( string account )const;
+      vector< account_vote >               get_account_votes( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< account_view >               get_account_views( string account )const;
+      vector< account_view >               get_account_views( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< account_share >              get_account_shares( string account )const;
+      vector< account_share >              get_account_shares( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< account_moderation >         get_account_moderation( string account )const;
+      vector< account_moderation >         get_account_moderation( string account, string from_author, string from_permlink, uint32_t limit )const;
 
       vector< tag_following_api_obj >      get_tag_followings( vector< string > tags )const;
 
@@ -403,13 +424,21 @@ class database_api
 
       vector< discussion >                 get_replies_by_last_update( account_name_type start_author, string start_permlink, uint32_t limit )const;
 
+      vector< discussion >                 get_discussions_by_sort_rank( const discussion_query& query )const;
+
+      vector< discussion >                 get_discussions_by_feed( const discussion_query& query )const;
+
+      vector< discussion >                 get_discussions_by_blog( const discussion_query& query )const;
+
+      vector< discussion >                 get_discussions_by_recommended( const discussion_query& query )const;
+
+      vector< discussion >                 get_discussions_by_comments( const discussion_query& query )const;
+
       vector< discussion >                 get_discussions_by_payout(const discussion_query& query )const;
 
       vector< discussion >                 get_post_discussions_by_payout( const discussion_query& query )const;
 
       vector< discussion >                 get_comment_discussions_by_payout( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_index( const discussion_query& query )const;
 
       vector< discussion >                 get_discussions_by_created( const discussion_query& query )const;
 
@@ -431,13 +460,9 @@ class database_api
 
       vector< discussion >                 get_discussions_by_comment_power( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_feed( const discussion_query& query )const;
+      
 
-      vector< discussion >                 get_discussions_by_blog( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_recommended( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_comments( const discussion_query& query )const;
+      
 
 
       //===============//
@@ -670,7 +695,7 @@ FC_API( node::app::database_api,
          (get_discussions_by_payout)
          (get_post_discussions_by_payout)
          (get_comment_discussions_by_payout)
-         (get_discussions_by_index)
+         (get_discussions_by_sort_rank)
          (get_discussions_by_created)
          (get_discussions_by_active)
          (get_discussions_by_votes)

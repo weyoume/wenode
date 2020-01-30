@@ -49,11 +49,13 @@ struct memo_data {
    }
 };
 
-struct brain_key_info
+struct seed_phrase_info
 {
-   string               brain_priv_key;
-   public_key_type      pub_key;
-   string               wif_priv_key;
+   string               brain_priv_key;       ///< 12 Word Seed phrase generated.
+
+   public_key_type      pub_key;              ///< Public key of the keypair derived by the seed phrase.
+   
+   string               wif_priv_key;         ///< Private key of the keypair derived by the seed phrase.
 };
 
 struct wallet_data
@@ -77,8 +79,14 @@ class wallet_api_impl;
 }
 
 /**
- * This wallet assumes it is connected to the database server with a high-bandwidth, low-latency connection and
- * performs minimal caching. This API could be provided locally to be used by a web interface.
+ * Wallet API Provides an extensive Command Line Interface with the
+ * Blockchain, and facilitates all operations broadcasting and database API.
+ * 
+ * Wallet assumes it is connected to the database server
+ * with a high-bandwidth, low-latency connection and
+ * performs minimal caching.
+ * 
+ * Wallet API can be provided locally to be used by a web interface.
  */
 class wallet_api
 {
@@ -86,13 +94,15 @@ class wallet_api
       wallet_api( const wallet_data& initial_data, fc::api<login_api> rapi );
       virtual ~wallet_api();
 
+      /**
+       * @defgroup wallet Wallet Commands
+       * @{
+       */
+
 
       //====================//
       // === Wallet API === //
       //====================//
-
-
-      bool copy_wallet_file( string destination_filename );
 
 
       /** 
@@ -122,7 +132,7 @@ class wallet_api
       /**
        * Gets the account information for all accounts for which this wallet has a private key.
        */
-      vector<account_api_obj>                list_my_accounts();
+      vector< account_api_obj >              list_my_accounts();
 
       /** 
        * Returns the current wallet filename.
@@ -238,6 +248,50 @@ class wallet_api
        */
       string                                 serialize_transaction( signed_transaction tx ) const;
 
+
+      /**
+       * Copies the wallet file to a specified file pathway.
+       * 
+       * @param destination_filename The Filepath to copy the active wallet to.
+       * @returns True if successful.
+       */
+      bool                                   copy_wallet_file( string destination_filename );
+
+      /**
+       * Sets the amount of time in the future until a transaction expires.
+       * 
+       * @param seconds the number of seconds to set each new transaction to expire within.
+       */
+      void                                   set_transaction_expiration( uint32_t seconds );
+
+
+      /**
+       * Checks memos against private keys on account and imported in wallet.
+       */
+      void                                   check_memo( const string& memo, const account_api_obj& account )const;
+
+      /**
+       *  Returns the encrypted memo if memo starts with '#' otherwise returns memo.
+       */
+      string                                 get_encrypted_memo( string from, string to, string memo );
+
+      /**
+       * Returns the decrypted memo if possible given wallet's known private keys.
+       */
+      string                                 decrypt_memo( string memo );
+
+      /**
+       * Returns the private key derived from the prefix and sequence number. 
+       */
+      fc::ecc::private_key                   derive_private_key( const std::string& prefix_string, int sequence_number ) const;
+
+
+      std::map<string,std::function<string(fc::variant,const fc::variants&)>> get_result_formatters() const;
+
+      fc::signal<void(bool)>                        lock_changed;
+      
+      std::shared_ptr<detail::wallet_api_impl>       my;
+
      
 
       //=================//
@@ -257,30 +311,30 @@ class wallet_api
       pair< public_key_type, string >        get_private_key_from_password( string account, string role, string password )const;
 
       /** 
-       * Suggests a safe brain key to use for creating your account.
+       * Suggests a safe seed phrase to use for creating your account.
        * 
-       * \c create_account_with_brain_key() requires you to specify a 'brain key',
+       * \c create_account_with_seed_phrase() requires you to specify a 'seed phrase',
        * a long passphrase that provides enough entropy to generate cryptographic
        * keys. This function will suggest a suitably random string that should
        * be easy to write down (and, with effort, memorize).
        * 
-       * @returns A suggested brain_key.
+       * @returns A suggested seed_phrase.
        */
-      brain_key_info                         suggest_brain_key()const;
+      seed_phrase_info                         suggest_seed_phrase()const;
 
       /** 
-       * Transforms a brain key to reduce the chance of errors when re-entering the key from memory.
+       * Transforms a seed phrase to reduce the chance of errors when re-entering the key from memory.
        *
-       * This takes a user-supplied brain key and
+       * This takes a user-supplied seed phrase and
        * normalizes it into the form used
        * for generating private keys. 
        * In particular, this upper-cases all ASCII characters
        * and collapses multiple spaces into one.
        * 
-       * @param s the brain key as supplied by the user
-       * @returns the brain key in its normalized form
+       * @param s the seed phrase as supplied by the user
+       * @returns the seed phrase in its normalized form
        */
-      string                                 normalize_brain_key( string s ) const;
+      string                                 normalize_seed_phrase( string s ) const;
 
       /**
        * Dumps all private keys owned by the wallet.
@@ -301,12 +355,22 @@ class wallet_api
        */
       bool                                   import_key( string wif_key );
 
+      void                                   encrypt_keys();
+
       
 
       //====================//
       // === Global API === //
       //====================//
 
+
+      
+      /** 
+       * Returns the Configuration variables of the protocol.
+       * 
+       * @returns All values of config.hpp preprocessor directive variables. 
+       */
+      fc::variant_object                              get_config()const;
 
       /** 
        * Returns the blockchain's rapidly-changing properties.
@@ -318,6 +382,46 @@ class wallet_api
        * @returns The current dynamic global properties.
        */
       dynamic_global_property_api_obj                 get_dynamic_global_properties() const;
+
+
+      /** 
+       * Returns the current median values of the Chain properties.
+       * 
+       * @returns All values of network selected chain properties.
+       */
+      chain_properties                                get_chain_properties()const;
+
+
+      /** 
+       * Returns the Producer schedule values.
+       * 
+       * @returns Producer schedule object values, determining block production conditions.
+       */
+      producer_schedule_api_obj                       get_producer_schedule()const;
+
+
+      /** 
+       * Returns the current harkfork version of the network.
+       * 
+       * @returns Version of the most recent hardfork activated on the network
+       */
+      hardfork_version                                get_hardfork_version()const;
+
+
+      /** 
+       * Returns the next planned harkfork version of the network.
+       * 
+       * @returns Version of the next planned hardfork to be activated on the network.
+       */
+      scheduled_hardfork                              get_next_scheduled_hardfork()const;
+
+
+      /** 
+       * Returns the current balances of the network reward fund pools.
+       * 
+       * @returns Funds contained within reward pools, pending allocation to network participants. 
+       */
+      reward_fund_api_obj                             get_reward_fund()const;
 
 
       //======================//
@@ -720,6 +824,7 @@ class wallet_api
        */
       vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
 
+
       /** 
        * Returns a list of the network advocacy officers with the highest voting power from stakeholders.
        *
@@ -728,7 +833,6 @@ class wallet_api
        * @returns List of network officer objects pertaining to the top officers.
        */
       vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
-
 
 
       /** 
@@ -748,16 +852,107 @@ class wallet_api
        */
       vector< executive_board_api_obj >               get_executive_boards_by_account( vector< string > names )const;
 
+
+      /** 
+       * Returns a list of the highest voted executive boards.
+       *
+       * @param from The first account in the rankings to retrieve.
+       * @param limit The amount of executive boards to return.
+       * @returns List of Executive boards with the highest stakeholder voting power.
+       */
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
+      /** 
+       * Returns a specifed Supernode.
+       *
+       * @param name The name of the supernode.
+       * @returns Executive board object information pertaining to the account.
+       */
+      supernode_api_obj                               get_supernode_by_account( string name )const;
+
+
+      /** 
+       * Returns a specifed list of supernodes.
+       *
+       * @param names List of names of supernodes.
+       * @returns List of supernode object information pertaining to the specified accounts.
+       */
+      vector< supernode_api_obj >                     get_supernodes_by_account( vector< string > names )const;
+
+
+      /** 
+       * Returns a list of the supernodes with the highest view weight from stakeholders.
+       *
+       * @param from The first account in the rankings to retrieve.
+       * @param limit The amount of supernodes to return.
+       * @returns List of Supernodes with the highest stakeholder view weight.
+       */
       vector< supernode_api_obj >                     get_supernodes_by_view_weight( string from, uint32_t limit )const;
 
+      /** 
+       * Returns a specifed Interface.
+       *
+       * @param name The name of the interface.
+       * @returns Executive board object information pertaining to the account.
+       */
+      interface_api_obj                               get_interface_by_account( string name )const;
+
+
+      /** 
+       * Returns a specifed list of interfaces.
+       *
+       * @param names List of names of interfaces.
+       * @returns List of interface object information pertaining to the specified accounts.
+       */
+      vector< interface_api_obj >                     get_interfaces_by_account( vector< string > names )const;
+
+
+      /** 
+       * Returns a list of the interfaces with the highest recent view count.
+       *
+       * @param from The first account in the rankings to retrieve.
+       * @param limit The amount of interfaces to return.
+       * @returns List of interfaces with the highest recent view count.
+       */
       vector< interface_api_obj >                     get_interfaces_by_users( string from, uint32_t limit )const;
 
+      /** 
+       * Returns a specifed Governance account.
+       *
+       * @param name The name of the governance account.
+       * @returns governance account object information pertaining to the account.
+       */
+      governance_account_api_obj                      get_governance_account_by_account( string name )const;
+
+
+      /** 
+       * Returns a specifed list of governance accounts.
+       *
+       * @param names List of names of governance accounts.
+       * @returns List of governance account object information pertaining to the specified accounts.
+       */
+      vector< governance_account_api_obj >            get_governance_accounts_by_account( vector< string > names )const;
+      
+
+      /** 
+       * Returns a list of the governance accounts with the highest subscriber voting power.
+       *
+       * @param from The first account in the rankings to retrieve.
+       * @param limit The amount of governance accounts to return.
+       * @returns List of governance accounts with the highest subscriber voting power.
+       */
       vector< governance_account_api_obj >            get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
 
-      vector< community_enterprise_api_obj >          get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
+      /** 
+       * Returns a list of the community enterprise proposals with the highest voting power from total approvals.
+       *
+       * @param from The creator of the first enterprise in the rankings to retrieve.
+       * @param from_id The enterprise_id of the first enterprise in the rankings to retrieve.
+       * @param limit The amount of enterprise proposals to return.
+       * @returns List of enterprise proposals with the highest voting power from total approvals.
+       */
+      vector< community_enterprise_api_obj >          get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
 
 
@@ -767,26 +962,85 @@ class wallet_api
 
 
 
-      /**
-       * Gets the currently open orders on the market for
-       * a specified account.
+      /** 
+       * Returns a list of open limit, margin, and call orders from a specified list of accounts.
+       *
+       * @param names List of account names
+       * @returns Open orders of the specified list of accounts.
        */
       vector< order_state >                           get_open_orders( vector< string > names )const;
 
+
+      /** 
+       * Returns a list of open limit orders on a market price pair.
+       *
+       * @param buy_symbol Asset to be the base price of ask orders.
+       * @param sell_symbol Asset to the the base price of bid orders.
+       * @param limit Maximum number of orders to retrieve from both sides of the orderbook.
+       * @returns Orders in a specified price pair.
+       */
       market_limit_orders                             get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
+
+      /** 
+       * Returns a list of open margin orders on a market price pair.
+       *
+       * @param buy_symbol Asset to be the base price of ask orders.
+       * @param sell_symbol Asset to the the base price of bid orders.
+       * @param limit Maximum number of orders to retrieve from both sides of the orderbook.
+       * @returns Orders in a specified price pair.
+       */
       market_margin_orders                            get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
+      /** 
+       * Returns a list of open call orders on a market price pair.
+       *
+       * @param buy_symbol Asset to be the base price of ask orders.
+       * @param sell_symbol Asset to the the base price of bid orders.
+       * @param limit Maximum number of orders to retrieve from both sides of the orderbook.
+       * @returns Orders in a specified price pair.
+       */
       market_call_orders                              get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
+
+      /** 
+       * Returns a list of open loans on a market price pair, between debt and collateral assets.
+       *
+       * @param buy_symbol Asset to be the base price of ask orders.
+       * @param sell_symbol Asset to the the base price of bid orders.
+       * @param limit Maximum number of orders to retrieve from both sides of the orderbook.
+       * @returns Orders in a specified price pair.
+       */
       market_credit_loans                             get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
-      vector< credit_pool_api_obj >                   get_credit_pools( vector< string > assets ) const;
 
-      vector< liquidity_pool_api_obj >                get_liquidity_pools( string buy_symbol, string sell_symbol ) const;
+      /** 
+       * Returns a set of the credit pools available on a list of assets.
+       *
+       * @param assets list of symbols of assets that credit pools should be included from.
+       * @returns Credit pool objects from a list of assets.
+       */
+      vector< credit_pool_api_obj >                   get_credit_pools( vector< string > assets )const;
 
+
+      /** 
+       * Returns a set of the credit pools available on a list of assets.
+       *
+       * @param buy_symbol Asset to be the included in the liquidity pools.
+       * @param sell_symbol Asset to be the included in the liquidity pools.
+       * @returns Liquidity pool objects relating to the specified symbols.
+       */
+      vector< liquidity_pool_api_obj >                get_liquidity_pools( string buy_symbol, string sell_symbol )const;
+
+
+      /** 
+       * Retrieves a full state of orders on an asset trading pair, including all open orders and asset pools.
+       *
+       * @param buy_symbol Asset to be the included in the market state.
+       * @param sell_symbol Asset to be the included in the market state.
+       * @returns Full state of the market trading asset pair.
+       */
       market_state                                    get_market_state( string buy_symbol, string sell_symbol )const;
-
 
 
 
@@ -794,10 +1048,30 @@ class wallet_api
       // === Ad API === //
       //================//
 
+
+
+      /** 
+       * Returns a list of active ad objects operated by a specifed list of accounts.
+       * 
+       * - Creatives
+       * - Campaigns
+       * - Audiences
+       * - Inventory
+       * - Bids: created by this account, incoming on creative, outgoing from campaigns, incoming on inventory.
+       *
+       * @param names List of account names to include in ad state objects.
+       * @returns Active ad objects of the specified list of accounts.
+       */
       vector< account_ad_state >                      get_account_ads( vector< string > names )const;
 
-      vector< ad_bid_state >                          get_interface_audience_bids( const ad_query& query )const;
 
+      /** 
+       * Returns the state of bids in response to an ad query.
+       *
+       * @param query Details of the interface, browsing account, format of display ads.
+       * @returns Active ad bids that fit the query parameters.
+       */
+      vector< ad_bid_state >                          get_interface_audience_bids( const ad_query& query )const;
 
 
 
@@ -805,6 +1079,14 @@ class wallet_api
       // === Search API === //
       //====================//
 
+
+
+      /** 
+       * Returns the results of a search query.
+       *
+       * @param query Details of the search term, result types, and searching account.
+       * @returns Active ad bids that fit the query parameters.
+       */
       search_result_state                             get_search_query( const search_query& query )const;  
 
 
@@ -821,9 +1103,9 @@ class wallet_api
        * Given a fully-formed transaction that is only lacking signatures, this signs
        * the transaction with the necessary keys and optionally broadcasts the transaction.
        * 
-       * @param tx the unsigned transaction
+       * @param tx The unsigned transaction.
        * @param broadcast Set True to broadcast transaction.
-       * @return the signed version of the transaction
+       * @return The signed version of the transaction.
        */
       annotated_signed_transaction                    sign_transaction( signed_transaction tx, bool broadcast = false );
 
@@ -836,32 +1118,43 @@ class wallet_api
        * Any operation the blockchain supports can be created using the transaction builder's
        * \c add_operation_to_builder_transaction() , describes the
        * JSON form of the operation for reference. 
+       * 
        * This will give you a template you can fill in.
        *
        * @param operation_type Type of operation to return, must be defined in `node/chain/operations.hpp`
-       * @return a default-constructed operation of the given type
+       * @return A default-constructed operation of the given type.
        */
       operation                                       get_prototype_operation( string operation_type );
 
+
+      /**
+       * Adds a set of specified nodes to the nodes peers.
+       * 
+       * @param nodes List of strings referring to the nodes.
+       */
       void                                            network_add_nodes( const vector<string>& nodes );
 
+
+      /**
+       * Finds the nodes that are currently connected as peers to the node. 
+       * 
+       * @returns List of connected nodes.
+       */
       vector< variant >                               network_get_connected_peers();
 
       /** 
        * Returns the information about a block.
        *
        * @param num Block number requested.
-       *
-       * @returns Public block data on the blockchain.
+       * @returns Public block data of the block at the specified height.
        */
-      optional< signed_block_api_obj >                get_block( uint32_t num );
+      optional< signed_block_api_obj >                get_block( uint64_t num );
 
       /** 
-       * Returns sequence of operations included/generated in a specified block.
+       * Returns sequence of operations included or generated in a specified block.
        *
        * @param block_num Block height of specified block.
        * @param only_virtual Whether to only return virtual operations.
-       * 
        * @returns Operations included in a specified block.
        */
       vector< applied_operation >                     get_ops_in_block( uint64_t block_num, bool only_virtual = true );
@@ -870,17 +1163,16 @@ class wallet_api
        * Returns transaction by ID.
        * 
        * @param trx_id Transaction ID of specified transaction.
-       * 
        * @returns Annotated signed transaction with trx_id
        */
       annotated_signed_transaction                    get_transaction( transaction_id_type trx_id )const;
 
       /**
        * Convert a JSON transaction to its transaction ID.
+       * 
+       * @param trx A transaction to find the ID of. 
        */
-      transaction_id_type                             get_transaction_id( const signed_transaction& trx )const { return trx.id(); }
-
-
+      transaction_id_type                             get_transaction_id( const signed_transaction& trx )const;
 
 
 
@@ -889,26 +1181,120 @@ class wallet_api
       //========================//
 
 
+
+      /**
+       * Returns the votes that have been made on a specified comment.
+       * 
+       * @param author Author of the comment.
+       * @param permlink Permlink of the comment.
+       * @returns List of the state of all votes made on the comment.
+       */
       vector< vote_state >                 get_active_votes( string author, string permlink )const;
 
+
+      /**
+       * Returns the views that have been made on a specified comment.
+       * 
+       * @param author Author of the comment.
+       * @param permlink Permlink of the comment.
+       * @returns List of the state of all views made on the comment.
+       */
       vector< view_state >                 get_active_views( string author, string permlink )const;
 
+
+      /**
+       * Returns the shares that have been made on a specified comment.
+       * 
+       * @param author Author of the comment.
+       * @param permlink Permlink of the comment.
+       * @returns List of the state of all shares made on the comment.
+       */
       vector< share_state >                get_active_shares( string author, string permlink )const;
 
+
+      /**
+       * Returns the moderation tags that have been made on a specified comment.
+       * 
+       * @param author Author of the comment.
+       * @param permlink Permlink of the comment.
+       * @returns List of the state of all moderation tags made on the comment.
+       */
       vector< moderation_state >           get_active_mod_tags( string author, string permlink )const;
 
-      vector< account_vote >               get_account_votes( string account )const;
 
-      vector< account_view >               get_account_views( string account )const;
+      /**
+       * Returns the votes that an account has made.
+       * 
+       * @param account The creator of the vote.
+       * @param from_author Author of the first comment.
+       * @param from_permlink Permlink of the first comment.
+       * @param limit The amount of votes to include.
+       * @returns List of the votes made by the account.
+       */
+      vector< account_vote >               get_account_votes( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< account_share >              get_account_shares( string account )const;
 
-      vector< account_moderation >         get_account_moderation( string account )const;
+      /**
+       * Returns the views that an account has made.
+       * 
+       * @param account The creator of the views.
+       * @param from_author Author of the first comment.
+       * @param from_permlink Permlink of the first comment.
+       * @param limit The amount of views to include.
+       * @returns List of the views made by the account.
+       */
+      vector< account_view >               get_account_views( string account, string from_author, string from_permlink, uint32_t limit )const;
 
+
+      /**
+       * Returns the shares that an account has made.
+       * 
+       * @param account The creator of the shares.
+       * @param from_author Author of the first comment.
+       * @param from_permlink Permlink of the first comment.
+       * @param limit The amount of shares to include.
+       * @returns List of the shares made by the account.
+       */
+      vector< account_share >              get_account_shares( string account, string from_author, string from_permlink, uint32_t limit )const;
+
+
+      /**
+       * Returns the moderation tags that an account has made.
+       * 
+       * @param account The creator of the moderation tags.
+       * @param from_author Author of the first comment.
+       * @param from_permlink Permlink of the first comment.
+       * @param limit The amount of moderation tags to include.
+       * @returns List of the moderation tags made by the account.
+       */
+      vector< account_moderation >         get_account_moderation( string account, string from_author, string from_permlink, uint32_t limit )const;
+
+
+      /**
+       * Retrieves the tag following information of a specified list of tags.
+       * 
+       * @param tags List of tags to return. 
+       * @returns Accounts that follow each tag.
+       */
       vector< tag_following_api_obj >      get_tag_followings( vector< string > tags )const;
 
+
+      /**
+       * Retrieves the top tags by the number of posts made using them.
+       * 
+       * @param after_tag The first tag to return.
+       * @param limit the number of tags to return. 
+       * @returns tag details for the top tags
+       */
       vector< tag_api_obj >                get_top_tags( string after_tag, uint32_t limit )const;
 
+
+      /**
+       * Retrieves the top tags used by a specifed author.
+       * 
+       * @param author The author to query.
+       * @returns The tags used by an author the most. 
+       */
       vector< pair< tag_name_type, uint32_t > >   get_tags_used_by_author( string author )const;
 
 
@@ -917,51 +1303,217 @@ class wallet_api
       // === Discussion API === //
       //========================//
 
-
+      /**
+       * Retrieves the Discussion information relating to a post with a specified author/permlink.
+       * 
+       * @param author The author to query.
+       * @param permlink The Permlink of the post to query.
+       * @returns The Discussion information from the post. 
+       */
       discussion                           get_content( string author, string permlink )const;
       
+
+      /**
+       * Retrieves the Discussion information relating to the comments of a parent post with a specified author/permlink.
+       * 
+       * @param parent The parent author to query.
+       * @param parent_permlink The parent Permlink of the post to query.
+       * @returns The Discussion information from the comments of the post. 
+       */
       vector< discussion >                 get_content_replies( string parent, string parent_permlink )const;
 
+
+      /**
+       * Retrieves the Discussion information relating to the comments most recently updated on posts made by a given author.
+       * 
+       * @param parent The author to query.
+       * @param parent_permlink The Permlink of the first post to return.
+       * @returns The Discussion information from the comments made on posts by the author.
+       */
       vector< discussion >                 get_replies_by_last_update( account_name_type start_author, string start_permlink, uint32_t limit )const;
 
-      vector< discussion >                 get_discussions_by_payout(const discussion_query& query )const;
 
-      vector< discussion >                 get_post_discussions_by_payout( const discussion_query& query )const;
+      /**
+       * Retrieves the Discussion information from a variety of variable sorting option combinations.
+       * 
+       * Can use any of 55 combinations of sorting type and sorting time preference options.
+       * to get a customized slice of the posts according to desired metrics and combinations of them.
+       * Utilizes the WeYouMe Sorting Algorithm, which combines both power and absolute amount of
+       * votes, views, shares and comments, and balances against time passed since uploading according to 
+       * the time preference option. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_sort_rank( const discussion_query& query )const;
 
-      vector< discussion >                 get_comment_discussions_by_payout( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_index( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_created( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_active( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_votes( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_views( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_shares( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_children( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_vote_power( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_view_power( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_share_power( const discussion_query& query )const;
-
-      vector< discussion >                 get_discussions_by_comment_power( const discussion_query& query )const;
-
+      /**
+       * Retrieves the Discussion information from posts that are in an account's feeds.
+       * 
+       * Feeds can include posts made by followed and connected accounts, as well as from
+       * followed boards, and followed tags. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
       vector< discussion >                 get_discussions_by_feed( const discussion_query& query )const;
 
+
+      /**
+       * Retrieves the Discussion information from posts that are in a specified blog from an account, board, or tag.
+       * 
+       * Blogs include all posts that are created by an account, created with a specifed tag, or in a specifed board.
+       * in addition to posts that are shared by the account, or shared with the board or tag. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
       vector< discussion >                 get_discussions_by_blog( const discussion_query& query )const;
 
+
+      /**
+       * Retrieves the Discussion information from posts that are recommended for an account.
+       * 
+       * Recommended posts include a randomized selection of not yet viewed posts from authors, boards and tags
+       * that are from authors, boards, and tags that the account 
+       * has previously positively engaged with, and authors boards and tags that are closely related to
+       * those that are engaged with, but not yet followed.
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
       vector< discussion >                 get_discussions_by_recommended( const discussion_query& query )const;
 
+
+      /**
+       * Retrieves the Discussion information relating to the comments most recently updated by a given author.
+       * 
+       * @param parent The author to query.
+       * @param parent_permlink The Permlink of the first post to return.
+       * @returns The Discussion information from the comments of the author.
+       */
       vector< discussion >                 get_discussions_by_comments( const discussion_query& query )const;
 
 
+      /**
+       * Retrieves the Discussion information from the posts and comments with the highest amount of net rewards.
+       * 
+       * @param query The details of the posts to return.
+       * @returns The Discussion information from the posts and comments.
+       */
+      vector< discussion >                 get_discussions_by_payout(const discussion_query& query )const;
 
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest amount of net rewards.
+       * 
+       * @param query The details of the posts to return.
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_post_discussions_by_payout( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the comments with the highest amount of net rewards.
+       * 
+       * @param query The details of the comments to return.
+       * @returns The Discussion information from the comments.
+       */
+      vector< discussion >                 get_comment_discussions_by_payout( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the most recently created posts.
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_created( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts that have been most recently created, updated, or replied to.
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_active( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest absolute amount of upvotes. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_votes( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest absolute amount of views. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_views( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest absolute amount of shares. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_shares( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest absolute amount of comments. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_children( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest stake weighted voting power. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_vote_power( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest stake weighted viewing power. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_view_power( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest stake weighted sharing power. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_share_power( const discussion_query& query )const;
+
+
+      /**
+       * Retrieves the Discussion information from the posts with the highest stake weighted commenting power. 
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_comment_power( const discussion_query& query )const;
+
+
+      
       //===================//
       // === State API === //
       //===================//
@@ -970,8 +1522,7 @@ class wallet_api
       /**
        * Returns the state information associated with the URL specified.
        * 
-       * @param url The string of the current URL
-       * 
+       * @param url The string of the current URL.
        * @returns state object containing the necessary details for the application page.
        */
       app::state                              get_state( string url );
@@ -985,210 +1536,108 @@ class wallet_api
 
 
       /**
-       * Genrates new keys for the new account which will be controlable by this wallet. 
+       * Generates a new Account with specified authorities.
        *
-       *  @param registrar The account creating the new account.
-       *  @param new_account_name The name of the new account.
-       *  @param json JSON Metadata associated with the new account.
-       *  @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           create_account( 
-         string registrar, 
-         string new_account_name, 
-         string json, 
-         bool broadcast );
-
-
-      /**
-       * Create new accounts for other users which must provide their desired keys. 
-       * The resulting account may not be controllable by this wallet.
-       *
+       * @param signatory The name of the account signing the transaction.
        * @param registrar The account creating the new account.
-       * @param newname The name of the new account.
-       * @param json JSON Metadata associated with the new account.
-       * @param owner public owner key of the new account.
-       * @param active public active key of the new account.
-       * @param posting public posting key of the new account.
-       * @param memo public memo key of the new account.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           create_account_with_keys( 
-         string registrar,
-         string newname,
-         string json,
-         public_key_type owner,
-         public_key_type active,
-         public_key_type posting,
-         public_key_type memo,
-         bool broadcast )const;
-
-
-      /**
-       * Generates new keys for the new account which will be controlable by this wallet. 
-       * 
-       * Accounts are created with Coin Fee and delegation.
-       *
-       * @param registrar The account creating the new account.
-       * @param fee The amount of the fee to be paid.
-       * @param delegation The amount of the fee to be paid with delegation.
        * @param new_account_name The name of the new account.
-       * @param json JSON Metadata associated with the new account.
+       * @param referrer The name of the account that lead to the creation of the account.
+       * @param proxy Account that is able to vote on behalf of the account.
+       * @param governance_account Account that is able to provide governance moderation and verification.
+       * @param recovery_account Account able to create recovery requests if the key is compromised.
+       * @param reset_account Account able to reset the owner key after inactivity.
+       * @param details The account's details string.
+       * @param url The account's selected personal URL.
+       * @param json The JSON string of public profile information.
+       * @param json_private The JSON string of encrypted profile information.
+       * @param owner The account authority required for changing the active and posting authorities.
+       * @param active The account authority required for sending payments and trading.
+       * @param posting The account authority required for posting content and voting.
+       * @param secure_public_key The secure encryption key for content only visible to this account.
+       * @param connection_public_key The connection public key used for encrypting Connection level content.
+       * @param friend_public_key The connection public key used for encrypting Friend level content.
+       * @param companion_public_key The connection public key used for encrypting Companion level content.
+       * @param business_type The type of business account being created.
+       * @param officer_vote_threshold The voting power required to be an active officer.
+       * @param business_public_key The public key used for encrypted business content.
+       * @param fee Account creation fee for stake on the new account.
+       * @param delegation Initial amount delegated to the new account.
+       * @param use_wallet_keys Set True to use keys generated locally by this wallet. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           create_account_delegated( 
-         string registrar, 
-         asset fee, 
-         asset delegation, 
-         string new_account_name, 
-         string json, 
-         bool broadcast );
-
-
-      /**
-       * Create new accounts for other users which must provide their desired keys. 
-       * 
-       * The resulting account may not be controllable by this wallet. 
-       * There is a fee associated with account creation that is paid by the registrar.
-       *
-       * These accounts are created with combination of Coin fee and delegated Stake
-       *
-       * @param registrar The account creating the new account.
-       * @param fee The amount of the fee to be paid.
-       * @param delegation The amount of the fee to be paid with delegation.
-       * @param newname The name of the new account.
-       * @param json JSON Metadata associated with the new account.
-       * @param owner public owner key of the new account.
-       * @param active public active key of the new account.
-       * @param posting public posting key of the new account.
-       * @param memo public memo key of the new account.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           create_account_with_keys_delegated( 
+      annotated_signed_transaction           account_create(
+         string signatory,
          string registrar,
+         string new_account_name,
+         string account_type,
+         string referrer,
+         string proxy,
+         string governance_account,
+         string recovery_account,
+         string reset_account,
+         string details,
+         string url,
+         string json,
+         string json_private,
+         authority owner,
+         authority active,
+         authority posting,
+         string secure_public_key,
+         string connection_public_key,
+         string friend_public_key,
+         string companion_public_key,
+         string business_type,
+         share_type officer_vote_threshold,
+         string business_public_key,
          asset fee,
          asset delegation,
-         string newname,
+         bool use_wallet_keys,
+         bool broadcast );
+     
+
+      /**
+       * Update the details and authorities of an existing account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The name of the new account.
+       * @param details The account's details string.
+       * @param url The account's selected personal URL.
+       * @param json The JSON string of public profile information.
+       * @param json_private The JSON string of encrypted profile information.
+       * @param pinned_permlink The permlink of the pinned comment of the author's blog. 
+       * @param owner The account authority required for changing the active and posting authorities.
+       * @param active The account authority required for sending payments and trading.
+       * @param posting The account authority required for posting content and voting.
+       * @param secure_public_key The secure encryption key for content only visible to this account.
+       * @param connection_public_key The connection public key used for encrypting Connection level content.
+       * @param friend_public_key The connection public key used for encrypting Friend level content.
+       * @param companion_public_key The connection public key used for encrypting Companion level content.
+       * @param business_type The type of business account being created.
+       * @param officer_vote_threshold The voting power required to be an active officer.
+       * @param business_public_key The public key used for encrypted business content.
+       * @param deleted Set to True to Delete Account.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           account_update( 
+         string signatory,
+         string account,
+         string details,
+         string url,
          string json,
-         public_key_type owner,
-         public_key_type active,
-         public_key_type posting,
-         public_key_type memo,
+         string json_private,
+         string pinned_permlink,
+         authority owner,
+         authority active,
+         authority posting,
+         string secure_public_key,
+         string connection_public_key,
+         string friend_public_key,
+         string companion_public_key,
+         string business_type,
+         share_type officer_vote_threshold,
+         string business_public_key,
+         bool deleted,
          bool broadcast )const;
-
-
-      /**
-       * Update the keys of an existing account.
-       *
-       * @param accountname The name of the account.
-       * @param json New JSON Metadata to be associated with the account.
-       * @param owner New public owner key for the account.
-       * @param active New public active key for the account.
-       * @param posting New public posting key for the account.
-       * @param memo New public memo key for the account.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           update_account( 
-         string accountname,
-         string json,
-         public_key_type owner,
-         public_key_type active,
-         public_key_type posting,
-         public_key_type memo,
-         bool broadcast )const;
-
-
-      /**
-       * Update the key of an authority for an exisiting account.
-       * 
-       * @warning You can create impossible authorities using this method.
-       * 
-       * The method will fail if you create an impossible owner authority, 
-       * but will allow impossible active and posting authorities.
-       *
-       * @param account_name The name of the account whose authority you wish to update.
-       * @param type The authority type. e.g. owner, active, or posting.
-       * @param key The public key to add to the authority.
-       * @param weight The weight the key should have in the authority. 
-       *    A weight of 0 indicates the removal of the key.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           update_account_auth_key( 
-         string account_name, 
-         authority_type type, 
-         public_key_type key, 
-         weight_type weight, 
-         bool broadcast );
-
-
-      /**
-       * Updates the account of an authority for an exisiting account.
-       * 
-       * @warning You can create impossible authorities using this method.
-       * 
-       * The method will fail if you create an impossible owner authority, 
-       * but will allow impossible active and posting authorities.
-       *
-       * @param account_name The name of the account whose authority you wish to update.
-       * @param type The authority type. e.g. owner, active, or posting.
-       * @param auth_account The account to add the the authority.
-       * @param weight The weight the account should have in the authority. 
-       *    A weight of 0 indicates the removal of the account.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           update_account_auth_account( 
-         string account_name, 
-         authority_type type, 
-         string auth_account, 
-         weight_type weight, 
-         bool broadcast );
-
-
-      /**
-       * Updates the weight threshold of an authority for an account.
-       * 
-       * @warning You can create impossible authorities using this method.
-       * 
-       * The method will fail if you create an impossible owner authority, 
-       * but will allow impossible active and posting authorities.
-       *
-       * @param account_name The name of the account whose authority you wish to update.
-       * @param type The authority type. e.g. owner, active, or posting.
-       * @param threshold The weight threshold required for the authority to be met.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           update_account_auth_threshold( 
-         string account_name, 
-         authority_type type, 
-         uint32_t threshold, 
-         bool broadcast );
-
-
-      /**
-       * Updates the account JSON metadata.
-       *
-       * @param account_name The name of the account you wish to update.
-       * @param json The new JSON metadata for the account. Overrides existing metadata.
-       * @param broadcast ture if you wish to broadcast the transaction.
-       */
-      annotated_signed_transaction           update_account_meta( 
-         string account_name, 
-         string json, 
-         bool broadcast );
-
-
-      /**
-       * Updates the Secure Public key of an account.
-       * 
-       * Used for Sending and reciving encrypted memos and messages.
-       *
-       * @param account_name The name of the account you wish to update.
-       * @param key The new secure public key.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           update_account_secure_public_key(
-         string account_name, 
-         public_key_type key, 
-         bool broadcast );
 
 
       /**
@@ -3463,33 +3912,9 @@ class wallet_api
          vector< char > data,
          bool broadcast = false );
 
-      
-      /**
-       * Sets the amount of time in the future until a transaction expires.
+       /**
+       * @}
        */
-      void set_transaction_expiration( uint32_t seconds );
-
-      std::map<string,std::function<string(fc::variant,const fc::variants&)>> get_result_formatters() const;
-
-      fc::signal<void(bool)> lock_changed;
-      std::shared_ptr<detail::wallet_api_impl> my;
-
-      void encrypt_keys();
-
-      /**
-       * Checks memos against private keys on account and imported in wallet
-       */
-      void check_memo( const string& memo, const account_api_obj& account )const;
-
-      /**
-       *  Returns the encrypted memo if memo starts with '#' otherwise returns memo
-       */
-      string get_encrypted_memo( string from, string to, string memo );
-
-      /**
-       * Returns the decrypted memo if possible given wallet's known private keys
-       */
-      string decrypt_memo( string memo );
 
 };
 
@@ -3507,7 +3932,7 @@ FC_REFLECT( node::wallet::wallet_data,
             (ws_password)
           )
 
-FC_REFLECT( node::wallet::brain_key_info, (brain_priv_key)(wif_priv_key) (pub_key))
+FC_REFLECT( node::wallet::seed_phrase_info, (brain_priv_key)(wif_priv_key) (pub_key))
 
 FC_REFLECT( node::wallet::plain_keys, (checksum)(keys) )
 
@@ -3531,11 +3956,11 @@ FC_API( node::wallet::wallet_api,
         // key api
 
         (import_key)
-        (suggest_brain_key)
+        (suggest_seed_phrase)
         (list_keys)
         (get_private_key)
         (get_private_key_from_password)
-        (normalize_brain_key)
+        (normalize_seed_phrase)
 
         // query api
 

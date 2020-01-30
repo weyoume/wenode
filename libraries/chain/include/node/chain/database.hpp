@@ -611,7 +611,7 @@ namespace node { namespace chain {
             const account_name_type& taker_int );
 
          asset pay_advertising_delivery( const account_object& provider, const account_object& demand, 
-            const account_object& bidder, const account_object& delivery, const account_object& audience, const asset& value );
+            const account_object& audience, const asset& value );
 
          asset pay_fee_share( const account_object& payee, const asset& amount );
 

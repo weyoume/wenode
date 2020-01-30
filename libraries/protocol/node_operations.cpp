@@ -142,19 +142,10 @@ namespace node { namespace protocol {
       FC_ASSERT( account != TEMP_ACCOUNT, 
          "Cannot update temp account." );
 
-      if( owner.valid() )
-      {
-         owner->validate();
-      } 
-      if( active.valid() )
-      {
-         active->validate();
-      }
-      if( posting.valid() )
-      {
-         posting->validate();
-      }
-
+      owner.validate();
+      active.validate();
+      posting.validate();
+      
       if( json.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json ), 

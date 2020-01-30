@@ -362,43 +362,28 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
    }
    time_point now = _db.head_block_time();
 
-   if( o.posting ) 
-   {
-      o.posting->validate();
-   }
-
    const account_object& account = _db.get_account( o.account );
    const account_authority_object& account_auth = _db.get< account_authority_object, by_account >( o.account );
-
-   if( o.owner )
-   {
-     FC_ASSERT( now - account_auth.last_owner_update > OWNER_UPDATE_LIMIT, 
-         "Owner authority can only be updated once an hour." );
    
-      for( auto a: o.owner->account_auths )
-      {
-         _db.get_account( a.first );
-      }
-      
-      _db.update_owner_authority( account, *o.owner );
-   }
-
-   if( o.active )
+   FC_ASSERT( now - account_auth.last_owner_update > OWNER_UPDATE_LIMIT,
+      "Owner authority can only be updated once an hour." );
+   for( auto a: o.owner.account_auths )
    {
-      for( auto a: o.active->account_auths )
-      {
-         _db.get_account( a.first );
-      }
+      _db.get_account( a.first );
    }
+   
+   _db.update_owner_authority( account, o.owner );
 
-   if( o.posting )
+   for( auto a: o.active.account_auths )
    {
-      for( auto a: o.posting->account_auths )
-      {
-         _db.get_account( a.first );
-      }
+      _db.get_account( a.first );
    }
 
+   for( auto a: o.posting.account_auths )
+   {
+      _db.get_account( a.first );
+   }
+   
    const comment_object* pinned_post_ptr;
    if( o.pinned_permlink.size() )
    {
@@ -453,20 +438,11 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       a.deleted = o.deleted;
    });
 
-   if( o.active || o.posting )
+   _db.modify( account_auth, [&]( account_authority_object& auth )
    {
-      _db.modify( account_auth, [&]( account_authority_object& auth )
-      {
-         if( o.active )  
-         {  
-            auth.active  = *o.active;
-         }
-         if( o.posting ) 
-         {  
-            auth.posting = *o.posting;
-         }
-      });
-   }
+      auth.active  = o.active;
+      auth.posting = o.posting;
+   });
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 

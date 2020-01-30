@@ -185,77 +185,89 @@ namespace node { namespace protocol {
 
       string                                 url;                           ///< The account's selected personal URL. 
 
-      string                                 json;                          ///< The JSON string of public profile information
+      string                                 json;                          ///< The JSON string of public profile information.
 
-      string                                 json_private;                  ///< The JSON string of encrypted profile information
+      string                                 json_private;                  ///< The JSON string of encrypted profile information.
 
-      authority                              owner;                         ///< The account authority required for changing the active and posting authorities
+      authority                              owner;                         ///< The account authority required for changing the active and posting authorities.
 
-      authority                              active;                        ///< The account authority required for sending payments and trading
+      authority                              active;                        ///< The account authority required for sending payments and trading.
 
-      authority                              posting;                       ///< The account authority required for posting content and voting
+      authority                              posting;                       ///< The account authority required for posting content and voting.
 
-      string                                 secure_public_key;             ///< The secure encryption key for conntent only visible ot this account. 
+      string                                 secure_public_key;             ///< The secure encryption key for content only visible to this account.
 
-      string                                 connection_public_key;         ///< The connection public key used for encrypting Connection level content
+      string                                 connection_public_key;         ///< The connection public key used for encrypting Connection level content.
 
-      string                                 friend_public_key;             ///< The connection public key used for encrypting Friend level content
+      string                                 friend_public_key;             ///< The connection public key used for encrypting Friend level content.
 
-      string                                 companion_public_key;          ///< The connection public key used for encrypting Companion level content
+      string                                 companion_public_key;          ///< The connection public key used for encrypting Companion level content.
 
-      optional< business_structure_type >    business_type;                 ///< The type of business account being created
+      optional< business_structure_type >    business_type;                 ///< The type of business account being created.
 
-      optional< share_type >                 officer_vote_threshold;        ///< The voting power required to be an active officer
+      optional< share_type >                 officer_vote_threshold;        ///< The voting power required to be an active officer.
 
       optional< string >                     business_public_key;           ///< The public key used for encrypted business content.
 
-      asset                                  fee;                           ///< At least min account creation fee for stake on the new account.
+      asset                                  fee;                           ///< Account creation fee for stake on the new account.
 
-      asset                                  delegation;                    ///< Initial amount delegated to the new account
+      asset                                  delegation;                    ///< Initial amount delegated to the new account.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return registrar; }
    };
 
+
    /**
     * Updates the details and authorities of an account.
+    * 
+    * @todo Account deletion process:
+    * Remove all outstanding orders / requests
+    * Wipe all comments
+    * Wipe all account data
+    * All APIs will skip account when retrieving data
+    * Account name is released, allowing a new account to be created with same name.
+    * Sells all assets to COIN and burns funds
+    * Wipes all messages, votes, views, shares
     */
    struct account_update_operation : public base_operation
    {
       account_name_type                      signatory;
 
-      account_name_type                      account;
+      account_name_type                      account;                       ///< Name of the account to update.
 
-      optional< authority >                  owner;                     ///< Creates a new owner authority for the account, changing the key and account auths required to sign transactions. 
+      authority                              owner;                         ///< Creates a new owner authority for the account, changing the key and account auths required to sign transactions.
 
-      optional< authority >                  active;
+      authority                              active;                        ///< Creates a new active authority for the account, changing the key and account auths required to sign transactions.
 
-      optional< authority >                  posting;
+      authority                              posting;                       ///< Creates a new posting authority for the account, changing the key and account auths required to sign transactions.                                                    
 
-      string                                 secure_public_key;
+      string                                 secure_public_key;             ///< The secure encryption key for content only visible to this account.
 
-      string                                 connection_public_key;
+      string                                 connection_public_key;         ///< The connection public key used for encrypting Connection level content.
 
-      string                                 friend_public_key;
+      string                                 friend_public_key;             ///< The connection public key used for encrypting Friend level content.
 
-      string                                 companion_public_key;
+      string                                 companion_public_key;          ///< The connection public key used for encrypting Companion level content.
 
-      string                                 json;
+      string                                 details;                       ///< The account's details string.
 
-      string                                 json_private;
+      string                                 url;                           ///< The account's selected personal URL. 
 
-      string                                 details;
+      string                                 json;                          ///< The JSON string of public profile information.
 
-      string                                 url;
+      string                                 json_private;                  ///< The JSON string of encrypted profile information.
 
       string                                 pinned_permlink;               ///< Permlink of the users pinned post.
 
-      bool                                   deleted = false;
+      optional< business_structure_type >    business_type;                 ///< Structure of the business to use for permissions and member selection mechanisms. 
 
-      optional< business_structure_type >    business_type;               
+      optional< share_type >                 officer_vote_threshold;        ///< Amount of voting power required for a member to become an officer. 
 
-      optional< share_type >                 officer_vote_threshold;
+      optional< string >                     business_public_key;           ///< The public key used for encrypted business content.
+
+      bool                                   deleted = false;               ///< Set to True to Delete Account. Takes effect after 7 days, can be cancelled in this time. 
 
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
@@ -3346,7 +3358,7 @@ namespace node { namespace protocol {
     * - The Backup Node setup that is in use.
     * - Any Relevant past experience operating block producers.
     * - The Team members that are operating the producer.
-    * - Network services offered by the witness: API endpoints, applications, tools.
+    * - Network services offered by the producer: API endpoints, applications, tools.
     * - Estimated Hash Power of mining hardware in use.
     * - Best reasons to vote in support of the Producer.
     * 
