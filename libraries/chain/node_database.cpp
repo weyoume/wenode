@@ -2730,7 +2730,7 @@ void database::process_power_rewards()
 
 
 /**
- * Calaulates the relative share of equity reward dividend distribution that an account should recieve
+ * Calaulates the relative share of equity reward dividend distribution that an account should receive
  * based on its balances, and account activity.
  */
 share_type database::get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity )
@@ -2740,7 +2740,7 @@ share_type database::get_equity_shares( const account_balance_object& balance, c
    if( ( account.producer_vote_count < equity.min_producers ) || 
       ( now > (account.last_activity_reward + equity.min_active_time ) ) )
    {
-      return 0;  // Account does not recieve equity reward when producer votes or last activity are insufficient.
+      return 0;  // Account does not receive equity reward when producer votes or last activity are insufficient.
    }
 
    share_type equity_shares = 0;

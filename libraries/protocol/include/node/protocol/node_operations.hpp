@@ -944,7 +944,7 @@ namespace node { namespace protocol {
    /**
     * Votes to support a network officer.
     * 
-    * Top voted Network Officers recieve a reward distribution to compensate them
+    * Top voted Network Officers receive a reward distribution to compensate them
     * for the work they have done.
     */
    struct network_officer_vote_operation : public base_operation
@@ -1373,7 +1373,7 @@ namespace node { namespace protocol {
 
       bool                                  allow_shares = true;            ///< Allows a post to receive shares.
       
-      bool                                  allow_curation_rewards = true;  ///< allows voters, viewers, sharers, and commenters to recieve curation rewards.
+      bool                                  allow_curation_rewards = true;  ///< allows voters, viewers, sharers, and commenters to receive curation rewards.
 
       vector< beneficiary_route_type >      beneficiaries;                  ///< Vector of accounts that will receive an allocation of content rewards from the post.
 
@@ -2443,7 +2443,7 @@ namespace node { namespace protocol {
 
       account_name_type      from;                 ///< Account to transfer savings balance from.
 
-      account_name_type      to;                   ///< Account to recieve the savings withdrawal.
+      account_name_type      to;                   ///< Account to receive the savings withdrawal.
 
       asset                  amount;               ///< Amount of asset to transfer from savings.
 
@@ -2821,7 +2821,7 @@ namespace node { namespace protocol {
     * Exchanges an asset directly from liquidity pools.
     * 
     * The asset is traded with the core asset's liquidity pool, and then
-    * the proceeds are trading with the recieve asset's liquidty pool for the 
+    * the proceeds are trading with the receive asset's liquidty pool for the 
     * best liquidity.
     */
    struct liquidity_pool_exchange_operation : public base_operation
@@ -2832,7 +2832,7 @@ namespace node { namespace protocol {
 
       asset                 amount;             ///< Amount of asset to be exchanged.
 
-      asset_symbol_type     receive_asset;      ///< The asset to recieve from the liquidity pool.
+      asset_symbol_type     receive_asset;      ///< The asset to receive from the liquidity pool.
 
       account_name_type     interface;          ///< Name of the interface account broadcasting the transaction.
 
@@ -2858,11 +2858,11 @@ namespace node { namespace protocol {
    {
       account_name_type     signatory;
 
-      account_name_type     account;            ///< Account funding the liquidity pool to recieve the liquidity pool asset.
+      account_name_type     account;            ///< Account funding the liquidity pool to receive the liquidity pool asset.
 
       asset                 amount;             ///< Amount of an asset to contribute to the liquidity pool.
 
-      asset_symbol_type     pair_asset;         ///< Pair asset to the liquidity pool to recieve liquidity pool assets of. 
+      asset_symbol_type     pair_asset;         ///< Pair asset to the liquidity pool to receive liquidity pool assets of. 
 
       void                  validate()const;
       const account_name_type& get_creator_name() const { return account; }
@@ -2884,7 +2884,7 @@ namespace node { namespace protocol {
 
       asset                 amount;            ///< Amount of the liquidity pool asset to redeem for underlying deposited assets. 
 
-      asset_symbol_type     receive_asset;     ///< The asset to recieve from the liquidity pool.
+      asset_symbol_type     receive_asset;     ///< The asset to receive from the liquidity pool.
 
       void                  validate()const;
       const account_name_type& get_creator_name() const { return account; }
@@ -3016,7 +3016,7 @@ namespace node { namespace protocol {
 
       flat_set< account_name_type >   whitelist_authorities;                 ///< Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
 
-      flat_set< account_name_type >   blacklist_authorities;                 ///< Accounts which cannot transfer or recieve this asset.
+      flat_set< account_name_type >   blacklist_authorities;                 ///< Accounts which cannot transfer or receive this asset.
 
       flat_set< asset_symbol_type >   whitelist_markets;                     ///< The assets that this asset may be traded against in the market
 
@@ -3099,7 +3099,7 @@ namespace node { namespace protocol {
     * 
     * Assets can be transferred between accounts
     * to represent ownership of anything of value.
-    * All assets can be staked and saved, delegated and recieved.
+    * All assets can be staked and saved, delegated and received.
     */
    struct asset_create_operation : public base_operation
    {
@@ -3346,7 +3346,7 @@ namespace node { namespace protocol {
     * Creates or updates a producer for a specified account, enabling block production.
     * 
     * If the owner isn't a producer they will become a producer, 
-    * and become eligible to recieve producer votes 
+    * and become eligible to receive producer votes 
     * from all stakeholding accounts.
     *  
     * The network will pick the top voted producers 

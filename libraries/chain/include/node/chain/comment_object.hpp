@@ -79,7 +79,7 @@ namespace node { namespace chain {
 
          time_point                     active;                       // The last time this post was replied to.
 
-         time_point                     last_payout;                  // The last time that the post recieved a content reward payout
+         time_point                     last_payout;                  // The last time that the post received a content reward payout
 
          share_type                     author_reputation;            // Used to measure author lifetime rewards, relative to other accounts.
 
@@ -147,7 +147,7 @@ namespace node { namespace chain {
 
          uint32_t                       moderator_reward_percent = MODERATOR_REWARD_PERCENT;
 
-         bool                           allow_replies = true;               // allows a post to recieve replies.
+         bool                           allow_replies = true;               // allows a post to receive replies.
 
          bool                           allow_votes = true;                 // allows a post to receive votes.
 

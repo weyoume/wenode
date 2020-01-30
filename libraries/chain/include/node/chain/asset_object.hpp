@@ -80,7 +80,7 @@ namespace node { namespace chain {
 
          flat_set< account_name_type >   whitelist_authorities;     ///< Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
 
-         flat_set< account_name_type >   blacklist_authorities;     ///< Accounts which cannot transfer or recieve this asset.
+         flat_set< account_name_type >   blacklist_authorities;     ///< Accounts which cannot transfer or receive this asset.
 
          flat_set< asset_symbol_type >   whitelist_markets;         ///< The assets that this asset may be traded against in the market
 
@@ -579,7 +579,7 @@ namespace node { namespace chain {
     * Si = Supply Input
     * 
     * 
-    * R      = Br * ( 1 - ( Bi / ( I + Bi ) ) )    Amount Recieved for a given input
+    * R      = Br * ( 1 - ( Bi / ( I + Bi ) ) )    Amount received for a given input
     * I      = Bi * ( 1 - ( R / Br ) ) - Bi        Input Required for a given return amount   
     * Pa     = ( Br * I ) / ( I * Bi + I^2 )       Average price of an exchange with a given input
     * Pf     = ( Br * Bi ) / ( Bi + I )^2          Final price after an exchange with a given input

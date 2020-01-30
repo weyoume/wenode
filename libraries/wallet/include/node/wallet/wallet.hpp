@@ -22,11 +22,14 @@ using namespace node::private_message;
 
 typedef uint16_t transaction_handle_type;
 
-struct memo_data {
-
-   static optional<memo_data> from_string( string str ) {
-      try {
-         if( str.size() > sizeof(memo_data) && str[0] == '#') {
+struct memo_data 
+{
+   static optional<memo_data> from_string( string str ) 
+   {
+      try 
+      {
+         if( str.size() > sizeof(memo_data) && str[0] == '#') 
+         {
             auto data = fc::from_base58( str.substr(1) );
             auto m  = fc::raw::unpack<memo_data>( data );
             FC_ASSERT( string(m) == str );
@@ -1700,7 +1703,6 @@ class wallet_api
          string account,
          string business_account,
          string officer_account,
-         string role,
          uint16_t vote_rank,
          bool approved,
          bool broadcast );
@@ -1839,8 +1841,8 @@ class wallet_api
          string account,
          uint16_t vote_rank,
          string producer,
-         bool approve = true,
-         bool broadcast = false );
+         bool approve,
+         bool broadcast );
 
 
       /** 
@@ -1855,7 +1857,7 @@ class wallet_api
          string signatory,
          string account,
          string proxy,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -1870,10 +1872,11 @@ class wallet_api
        * @param new_owner_authority The new owner authority the account to recover wishes to have.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           request_account_recovery( 
-         string recovery_account, 
-         string account_to_recover, 
-         authority new_owner_authority, 
+      annotated_signed_transaction           request_account_recovery(
+         string signatory,
+         string recovery_account,
+         string account_to_recover,
+         authority new_owner_authority,
          bool broadcast );
 
 
@@ -1908,9 +1911,9 @@ class wallet_api
        */
       annotated_signed_transaction           reset_account(
          string signatory,
-         string account_to_recover,
+         string reset_account,
+         string account_to_reset,
          authority new_owner_uthority,
-         authority recent_owner_authority,
          bool broadcast );
 
 
@@ -2092,7 +2095,7 @@ class wallet_api
          string details,
          string url,
          string json,
-         bool active
+         bool active,
          bool broadcast );
 
 
@@ -2176,7 +2179,7 @@ class wallet_api
          string details,
          string url,
          string json,
-         bool active
+         bool active,
          bool broadcast );
 
 
@@ -2224,7 +2227,7 @@ class wallet_api
          string ipfs_endpoint,
          string bittorrent_endpoint,
          string json,
-         bool active
+         bool active,
          bool broadcast );
 
       
@@ -2245,7 +2248,7 @@ class wallet_api
          string details,
          string url,
          string json,
-         bool active
+         bool active,
          bool broadcast );
 
 
@@ -2268,7 +2271,7 @@ class wallet_api
          string url,
          string json,
          asset mediator_bond,
-         bool active
+         bool active,
          bool broadcast );
 
 
@@ -2325,7 +2328,7 @@ class wallet_api
          string signatory,
          string creator,
          string enterprise_id,
-         uint16_t milestones,
+         uint16_t milestone,
          string details,
          bool broadcast );
 
@@ -2432,8 +2435,8 @@ class wallet_api
        */
       annotated_signed_transaction           message(
          string signatory,
-         string sender, 
-         string recipient, 
+         string sender,
+         string recipient,
          string message,
          string uuid,
          bool broadcast );
@@ -2600,7 +2603,7 @@ class wallet_api
          string details,
          string url,
          string pinned_author,
-         atring pinned_permlink,
+         string pinned_permlink,
          bool broadcast );
 
 
@@ -3224,7 +3227,7 @@ class wallet_api
        * 
        * @param signatory The name of the account signing the transaction.
        * @param from Account to transfer savings balance from.
-       * @param to Account to recieve the savings withdrawal.
+       * @param to Account to receive the savings withdrawal.
        * @param amount Amount of asset to transfer from savings.
        * @param request_id uuidv4 referring to the transfer.
        * @param memo The memo for the transaction, encryption on the memo is advised.
@@ -3489,7 +3492,7 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param account Account executing the exchange with the pool.
        * @param amount Amount of asset to be exchanged.
-       * @param receive_asset The asset to recieve from the liquidity pool.
+       * @param receive_asset The asset to receive from the liquidity pool.
        * @param interface Name of the interface account broadcasting the transaction.
        * @param limit_price The price of acquistion at which to cap the exchange to.
        * @param acquire Set true to acquire the specified amount, false to exchange in.
@@ -3499,7 +3502,7 @@ class wallet_api
          string signatory,
          string account,
          asset amount,
-         asset_symbol_type receive_asset,
+         string receive_asset,
          string interface,
          price limit_price,
          bool acquire,
@@ -3510,16 +3513,16 @@ class wallet_api
        * Adds capital to a liquidity pool.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account funding the liquidity pool to recieve the liquidity pool asset.
+       * @param account Account funding the liquidity pool to receive the liquidity pool asset.
        * @param amount Amount of an asset to contribute to the liquidity pool.
-       * @param pair_asset Pair asset to the liquidity pool to recieve liquidity pool assets of. 
+       * @param pair_asset Pair asset to the liquidity pool to receive liquidity pool assets of. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             liquidity_pool_fund(
          string signatory,
          string account,
          asset amount,
-         asset_symbol_type pair_asset,
+         string pair_asset,
          bool broadcast );
 
 
@@ -3529,14 +3532,14 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param account Account withdrawing liquidity pool assets from the pool.
        * @param amount Amount of the liquidity pool asset to redeem for underlying deposited assets. 
-       * @param recieve_asset The asset to recieve from the liquidity pool.
+       * @param receive_asset The asset to receive from the liquidity pool.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             liquidity_pool_withdraw(
          string signatory,
          string account,
          asset amount,
-         asset_symbol_type recieve_asset,
+         string receive_asset,
          bool broadcast );
 
 
@@ -3570,7 +3573,7 @@ class wallet_api
          string account,
          asset amount,
          asset collateral,
-         string load_id,
+         string loan_id,
          bool broadcast );
 
 
@@ -3602,6 +3605,7 @@ class wallet_api
          string account,
          asset amount,
          bool broadcast );
+
 
 
       //============================//

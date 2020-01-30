@@ -748,7 +748,7 @@ namespace node { namespace chain {
    
          flat_set<account_name_type>              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
 
-         flat_set<account_name_type>              blacklisted_accounts;          // List of accounts that are not able to recieve transfers from this account.
+         flat_set<account_name_type>              blacklisted_accounts;          // List of accounts that are not able to receive transfers from this account.
 
          flat_set<asset_symbol_type>              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
 

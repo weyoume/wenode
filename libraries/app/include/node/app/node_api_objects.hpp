@@ -148,7 +148,7 @@ struct comment_api_obj
    time_point                     last_update;                  // The time the comment was last edited by the author
    time_point                     created;                      // Time that the comment was created.
    time_point                     active;                       // The last time this post was replied to.
-   time_point                     last_payout;                  // The last time that the post recieved a content reward payout
+   time_point                     last_payout;                  // The last time that the post received a content reward payout
    int64_t                        author_reputation;            // Used to measure author lifetime rewards, relative to other accounts.
    uint16_t                       depth;                        // used to track max nested depth
    uint32_t                       children;                     // The total number of children, grandchildren, posts with this as root comment.
@@ -182,7 +182,7 @@ struct comment_api_obj
    uint32_t                       comment_reward_percent;
    uint32_t                       storage_reward_percent;
    uint32_t                       moderator_reward_percent;
-   bool                           allow_replies;               // allows a post to recieve replies.
+   bool                           allow_replies;               // allows a post to receive replies.
    bool                           allow_votes;                 // allows a post to receive votes.
    bool                           allow_views;                 // allows a post to receive views.
    bool                           allow_shares;                // allows a post to receive shares.
@@ -699,7 +699,7 @@ struct account_permission_api_obj
    account_permission_id_type               id;
    account_name_type                        account;                       // Name of the account with permissions set.
    vector< account_name_type >              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
-   vector< account_name_type >              blacklisted_accounts;          // List of accounts that are not able to recieve transfers from this account.
+   vector< account_name_type >              blacklisted_accounts;          // List of accounts that are not able to receive transfers from this account.
    vector< asset_symbol_type >              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
    vector< asset_symbol_type >              blacklisted_assets;            // List of assets that the account has blacklisted against incoming transfers.
 };
@@ -1110,7 +1110,7 @@ struct asset_api_obj
    uint32_t                        issuer_permissions;                    // The flags which the issuer has permission to update.
    uint32_t                        flags;                                 // The currently active flags on this permission.
    vector<account_name_type>       whitelist_authorities;                 // Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
-   vector<account_name_type>       blacklist_authorities;                 // Accounts which cannot transfer or recieve this asset.
+   vector<account_name_type>       blacklist_authorities;                 // Accounts which cannot transfer or receive this asset.
    vector<asset_symbol_type>       whitelist_markets;                     // The assets that this asset may be traded against in the market
    vector<asset_symbol_type>       blacklist_markets;                     // The assets that this asset may not be traded against in the market, must not overlap whitelist
 };
