@@ -23,12 +23,12 @@ typedef chain::comment_share_object                    comment_share_api_obj;
 typedef chain::escrow_object                           escrow_api_obj;
 typedef chain::unstake_asset_route_object              unstake_asset_route_api_obj;
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
-typedef chain::producer_vote_object                     producer_vote_api_obj;
-typedef chain::producer_schedule_object                 producer_schedule_api_obj;
+typedef chain::producer_vote_object                    producer_vote_api_obj;
+typedef chain::producer_schedule_object                producer_schedule_api_obj;
 typedef chain::asset_delegation_object                 asset_delegation_api_obj;
 typedef chain::asset_delegation_expiration_object      asset_delegation_expiration_api_obj;
 typedef chain::reward_fund_object                      reward_fund_api_obj;
-typedef producer::account_bandwidth_object              account_bandwidth_api_obj;
+typedef producer::account_bandwidth_object             account_bandwidth_api_obj;
 
 struct comment_api_obj
 {
@@ -39,6 +39,7 @@ struct comment_api_obj
       title( to_string( o.title ) ),
       post_type( post_format_values[ o.post_type ]),
       public_key( o.public_key ),
+      encrypted( o.is_encrypted() ),
       reach( feed_reach_values[ o.reach ] ),
       board( o.board ),
       body( to_string( o.body ) ),
@@ -123,58 +124,59 @@ struct comment_api_obj
    comment_api_obj(){}
 
    comment_id_type                id;
-   account_name_type              author;                       // Name of the account that created the post.
-   string                         permlink;                     // Unique identifing string for the post.
-   string                         title;                        // Name of the post for reference.
-   string                         post_type;                    // The type of post that is being created, image, text, article, video etc. 
-   public_key_type                public_key;                   // The public key used to encrypt the post, holders of the private key may decrypt. 
-   string                         reach;                        // The reach of the post across followers, connections, friends and companions
-   board_name_type                board;                        // The name of the board to which the post is uploaded to. Null string if no board. 
-   vector< tag_name_type >        tags;                         // Set of string tags for sorting the post by.
-   string                         body;                         // String containing text for display when the post is opened.
-   vector< string >               ipfs;                         // String containing a display image or video file as an IPFS file hash.
-   vector< string >               magnet;                       // String containing a bittorrent magnet link to a file swarm.
-   account_name_type              interface;                    // Name of the interface account that was used to broadcast the transaction and view the post.
-   string                         rating;                       // User nominated rating as to the maturity of the content, and display sensitivity. 
-   string                         language;                     // String containing a two letter language code that the post is broadcast in.
-   comment_id_type                root_comment;                 // The root post that the comment is an ancestor of. 
-   account_name_type              parent_author;                // Account that created the post this post is replying to, empty if root post. 
-   string                         parent_permlink;              // permlink of the post this post is replying to, empty if root post. 
-   string                         json;                         // IPFS link to file containing - Json metadata of the Title, Link, and additional interface specific data relating to the post.
+   account_name_type              author;                       ///< Name of the account that created the post.
+   string                         permlink;                     ///< Unique identifing string for the post.
+   string                         title;                        ///< Name of the post for reference.
+   string                         post_type;                    ///< The type of post that is being created, image, text, article, video etc. 
+   public_key_type                public_key;                   ///< The public key used to encrypt the post, holders of the private key may decrypt.
+   bool                           encrypted;                    ///< True if the post is encrypted for a specific audience. 
+   string                         reach;                        ///< The reach of the post across followers, connections, friends and companions
+   board_name_type                board;                        ///< The name of the board to which the post is uploaded to. Null string if no board. 
+   vector< tag_name_type >        tags;                         ///< Set of string tags for sorting the post by.
+   string                         body;                         ///< String containing text for display when the post is opened.
+   vector< string >               ipfs;                         ///< String containing a display image or video file as an IPFS file hash.
+   vector< string >               magnet;                       ///< String containing a bittorrent magnet link to a file swarm.
+   account_name_type              interface;                    ///< Name of the interface account that was used to broadcast the transaction and view the post.
+   string                         rating;                       ///< User nominated rating as to the maturity of the content, and display sensitivity. 
+   string                         language;                     ///< String containing a two letter language code that the post is broadcast in.
+   comment_id_type                root_comment;                 ///< The root post that the comment is an ancestor of. 
+   account_name_type              parent_author;                ///< Account that created the post this post is replying to, empty if root post. 
+   string                         parent_permlink;              ///< permlink of the post this post is replying to, empty if root post. 
+   string                         json;                         ///< IPFS link to file containing - Json metadata of the Title, Link, and additional interface specific data relating to the post.
    string                         category;
-   asset                          comment_price;                // The price paid to create a comment
-   vector< pair< account_name_type, asset > >  payments_received;    // Map of all transfers received that referenced this comment. 
+   asset                          comment_price;                ///< The price paid to create a comment
+   vector< pair< account_name_type, asset > >  payments_received;    ///< Map of all transfers received that referenced this comment. 
    vector< beneficiary_route_type > beneficiaries;
-   time_point                     last_update;                  // The time the comment was last edited by the author
-   time_point                     created;                      // Time that the comment was created.
-   time_point                     active;                       // The last time this post was replied to.
-   time_point                     last_payout;                  // The last time that the post received a content reward payout
-   int64_t                        author_reputation;            // Used to measure author lifetime rewards, relative to other accounts.
-   uint16_t                       depth;                        // used to track max nested depth
-   uint32_t                       children;                     // The total number of children, grandchildren, posts with this as root comment.
-   int32_t                        net_votes;                    // The amount of upvotes, minus downvotes on the post.
-   uint32_t                       view_count;                   // The amount of views on the post.
-   uint32_t                       share_count;                  // The amount of shares on the post.
-   int128_t                       net_reward;                   // Net reward is the sum of all vote, view, share and comment power.
-   int128_t                       vote_power;                   // Sum of weighted voting power from votes.
-   int128_t                       view_power;                   // Sum of weighted voting power from viewers.
-   int128_t                       share_power;                  // Sum of weighted voting power from shares.
-   int128_t                       comment_power;                // Sum of weighted voting power from comments.
-   time_point                     cashout_time;                 // 24 hours from the weighted average of vote time
-   uint32_t                       cashouts_received;            // Number of times that the comment has received content rewards
-   uint128_t                      total_vote_weight;            // the total weight of votes, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_view_weight;            // the total weight of views, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_share_weight;           // the total weight of shares, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_comment_weight;         // the total weight of comments, used to calculate pro-rata share of curation payouts
-   asset                          total_payout_value;           // The total payout this comment has received over time, measured in USD */
+   time_point                     last_update;                  ///< The time the comment was last edited by the author
+   time_point                     created;                      ///< Time that the comment was created.
+   time_point                     active;                       ///< The last time this post was replied to.
+   time_point                     last_payout;                  ///< The last time that the post received a content reward payout
+   int64_t                        author_reputation;            ///< Used to measure author lifetime rewards, relative to other accounts.
+   uint16_t                       depth;                        ///< used to track max nested depth
+   uint32_t                       children;                     ///< The total number of children, grandchildren, posts with this as root comment.
+   int32_t                        net_votes;                    ///< The amount of upvotes, minus downvotes on the post.
+   uint32_t                       view_count;                   ///< The amount of views on the post.
+   uint32_t                       share_count;                  ///< The amount of shares on the post.
+   int128_t                       net_reward;                   ///< Net reward is the sum of all vote, view, share and comment power.
+   int128_t                       vote_power;                   ///< Sum of weighted voting power from votes.
+   int128_t                       view_power;                   ///< Sum of weighted voting power from viewers.
+   int128_t                       share_power;                  ///< Sum of weighted voting power from shares.
+   int128_t                       comment_power;                ///< Sum of weighted voting power from comments.
+   time_point                     cashout_time;                 ///< 24 hours from the weighted average of vote time
+   uint32_t                       cashouts_received;            ///< Number of times that the comment has received content rewards
+   uint128_t                      total_vote_weight;            ///< the total weight of votes, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_view_weight;            ///< the total weight of views, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_share_weight;           ///< the total weight of shares, used to calculate pro-rata share of curation payouts
+   uint128_t                      total_comment_weight;         ///< the total weight of comments, used to calculate pro-rata share of curation payouts
+   asset                          total_payout_value;           ///< The total payout this comment has received over time, measured in USD */
    asset                          curator_payout_value;
    asset                          beneficiary_payout_value;
    asset                          content_rewards;
    int64_t                        percent_liquid;
-   uint128_t                      reward;                       // The amount of reward_curve this comment is responsible for in its root post.
-   uint128_t                      weight;                       // Used to define the comment curation reward this comment receives.
-   uint128_t                      max_weight;                   // Used to define relative contribution of this comment to rewards.
-   asset                          max_accepted_payout;          // USD value of the maximum payout this post will receive
+   uint128_t                      reward;                       ///< The amount of reward_curve this comment is responsible for in its root post.
+   uint128_t                      weight;                       ///< Used to define the comment curation reward this comment receives.
+   uint128_t                      max_weight;                   ///< Used to define relative contribution of this comment to rewards.
+   asset                          max_accepted_payout;          ///< USD value of the maximum payout this post will receive
    uint32_t                       author_reward_percent;
    uint32_t                       vote_reward_percent;
    uint32_t                       view_reward_percent;
@@ -182,13 +184,13 @@ struct comment_api_obj
    uint32_t                       comment_reward_percent;
    uint32_t                       storage_reward_percent;
    uint32_t                       moderator_reward_percent;
-   bool                           allow_replies;               // allows a post to receive replies.
-   bool                           allow_votes;                 // allows a post to receive votes.
-   bool                           allow_views;                 // allows a post to receive views.
-   bool                           allow_shares;                // allows a post to receive shares.
-   bool                           allow_curation_rewards;      // Allows a post to distribute curation rewards.
-   bool                           root;                        // True if post is a root post. 
-   bool                           deleted;                     // True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
+   bool                           allow_replies;               ///< allows a post to receive replies.
+   bool                           allow_votes;                 ///< allows a post to receive votes.
+   bool                           allow_views;                 ///< allows a post to receive views.
+   bool                           allow_shares;                ///< allows a post to receive shares.
+   bool                           allow_curation_rewards;      ///< Allows a post to distribute curation rewards.
+   bool                           root;                        ///< True if post is a root post. 
+   bool                           deleted;                     ///< True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
 };
 
 
@@ -214,15 +216,15 @@ struct blog_api_obj
    blog_api_obj(){}
 
    blog_id_type                            id;
-   account_name_type                       account;               // Blog or sharing account for account type blogs, null for other types.
-   board_name_type                         board;                 // Board posted or shared to for board type blogs.
-   tag_name_type                           tag;                   // Tag posted or shared to for tag type blogs.          
-   comment_id_type                         comment;               // Comment ID.
-   map< account_name_type, time_point >    shared_by;             // Map of the times that accounts that have shared the comment in the blog.
-   string                                  blog_type;             // Account, Board, or Tag blog.
-   account_name_type                       first_shared_by;       // First account that shared the comment with the account, board or tag.
-   uint32_t                                shares;                // Number of accounts that have shared the comment with account, board or tag.
-   time_point                              blog_time;             // Latest time that the comment was shared on the account, board or tag.
+   account_name_type                       account;               ///< Blog or sharing account for account type blogs, null for other types.
+   board_name_type                         board;                 ///< Board posted or shared to for board type blogs.
+   tag_name_type                           tag;                   ///< Tag posted or shared to for tag type blogs.          
+   comment_id_type                         comment;               ///< Comment ID.
+   map< account_name_type, time_point >    shared_by;             ///< Map of the times that accounts that have shared the comment in the blog.
+   string                                  blog_type;             ///< Account, Board, or Tag blog.
+   account_name_type                       first_shared_by;       ///< First account that shared the comment with the account, board or tag.
+   uint32_t                                shares;                ///< Number of accounts that have shared the comment with account, board or tag.
+   time_point                              blog_time;             ///< Latest time that the comment was shared on the account, board or tag.
 };
 
 
@@ -260,15 +262,15 @@ struct feed_api_obj
    feed_api_obj(){}
 
    feed_id_type                                id;
-   account_name_type                           account;               // Account that should see comment in their feed.
-   comment_id_type                             comment;               // ID of comment being shared
-   string                                      feed_type;             // Type of feed, follow, connection, board, tag etc. 
-   map< account_name_type, time_point >        shared_by;             // Map of the times that accounts that have shared the comment.
-   map< board_name_type, map< account_name_type, time_point > >   boards;  // Map of all boards that the comment has been shared with
-   map< tag_name_type, map< account_name_type, time_point > >     tags;    // Map of all tags that the comment has been shared with.
-   account_name_type                           first_shared_by;       // First account that shared the comment with account. 
-   uint32_t                                    shares;                // Number of accounts that have shared the comment with account.
-   time_point                                  feed_time;             // Time that the comment was added or last shared with account. 
+   account_name_type                           account;               ///< Account that should see comment in their feed.
+   comment_id_type                             comment;               ///< ID of comment being shared
+   string                                      feed_type;             ///< Type of feed, follow, connection, board, tag etc. 
+   map< account_name_type, time_point >        shared_by;             ///< Map of the times that accounts that have shared the comment.
+   map< board_name_type, map< account_name_type, time_point > >   boards;  ///< Map of all boards that the comment has been shared with
+   map< tag_name_type, map< account_name_type, time_point > >     tags;    ///< Map of all tags that the comment has been shared with.
+   account_name_type                           first_shared_by;       ///< First account that shared the comment with account. 
+   uint32_t                                    shares;                ///< Number of accounts that have shared the comment with account.
+   time_point                                  feed_time;             ///< Time that the comment was added or last shared with account. 
 };
 
 
@@ -372,62 +374,62 @@ struct account_api_obj
    account_api_obj(){}
 
    account_id_type                  id;
-   account_name_type                name;                                  // Username of the account, lowercase letter and numbers and hyphens only.
-   string                           details;                               // User's account details.
-   string                           json;                                  // Public plaintext json information.
-   string                           json_private;                          // Private ciphertext json information.
-   string                           url;                                   // Account's external reference URL.
-   string                           account_type;                          // Type of account, persona, profile or business.
-   string                           membership;                            // Level of account membership.
-   public_key_type                  secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
-   public_key_type                  connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
-   public_key_type                  friend_public_key;                     // Key used for encrypting posts for friend level visibility.
-   public_key_type                  companion_public_key;                  // Key used for encrypting posts for companion level visibility.
+   account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
+   string                           details;                               ///< User's account details.
+   string                           json;                                  ///< Public plaintext json information.
+   string                           json_private;                          ///< Private ciphertext json information.
+   string                           url;                                   ///< Account's external reference URL.
+   string                           account_type;                          ///< Type of account, persona, profile or business.
+   string                           membership;                            ///< Level of account membership.
+   public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
+   public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
+   public_key_type                  friend_public_key;                     ///< Key used for encrypting posts for friend level visibility.
+   public_key_type                  companion_public_key;                  ///< Key used for encrypting posts for companion level visibility.
    authority                        owner;
    authority                        active;
    authority                        posting;
-   comment_id_type                  pinned_post;                        // Post pinned to the top of the account's profile. 
-   account_name_type                proxy;                                 // Account that votes on behalf of this account
-   vector< account_name_type>       proxied;                               // Accounts that have set this account to be their proxy voter.
-   account_name_type                registrar;                             // The name of the account that created the account;
-   account_name_type                referrer;                              // The name of the account that originally referred the account to be created;
-   account_name_type                recovery_account;                      // Account that can request recovery using a recent owner key if compromised.  
-   account_name_type                reset_account;                         // Account that has the ability to reset owner authority after specified days of inactivity.
-   account_name_type                membership_interface;                  // Account of the last interface to sell a membership to the account.
+   comment_id_type                  pinned_post;                        ///< Post pinned to the top of the account's profile. 
+   account_name_type                proxy;                                 ///< Account that votes on behalf of this account
+   vector< account_name_type>       proxied;                               ///< Accounts that have set this account to be their proxy voter.
+   account_name_type                registrar;                             ///< The name of the account that created the account;
+   account_name_type                referrer;                              ///< The name of the account that originally referred the account to be created;
+   account_name_type                recovery_account;                      ///< Account that can request recovery using a recent owner key if compromised.  
+   account_name_type                reset_account;                         ///< Account that has the ability to reset owner authority after specified days of inactivity.
+   account_name_type                membership_interface;                  ///< Account of the last interface to sell a membership to the account.
    uint16_t                         reset_account_delay_days;
-   uint16_t                         referrer_rewards_percentage;           // The percentage of registrar rewards that are directed to the referrer.
+   uint16_t                         referrer_rewards_percentage;           ///< The percentage of registrar rewards that are directed to the referrer.
    uint32_t                         comment_count;
    uint32_t                         follower_count;
    uint32_t                         following_count;
    uint32_t                         post_vote_count;
    uint32_t                         post_count;
-   uint16_t                         voting_power;               // current voting power of this account, falls after every vote, recovers over time.
-   uint16_t                         viewing_power;              // current viewing power of this account, falls after every view, recovers over time.
-   uint16_t                         sharing_power;              // current sharing power of this account, falls after every share, recovers over time.
-   uint16_t                         commenting_power;           // current commenting power of this account, falls after every comment, recovers over time.
+   uint16_t                         voting_power;               ///< current voting power of this account, falls after every vote, recovers over time.
+   uint16_t                         viewing_power;              ///< current viewing power of this account, falls after every view, recovers over time.
+   uint16_t                         sharing_power;              ///< current sharing power of this account, falls after every share, recovers over time.
+   uint16_t                         commenting_power;           ///< current commenting power of this account, falls after every comment, recovers over time.
    uint8_t                          savings_withdraw_requests;
    uint16_t                         withdraw_routes;
-   int64_t                          posting_rewards;                      // Rewards in core asset earned from author rewards.
-   int64_t                          curation_rewards;                     // Rewards in core asset earned from voting, shares, views, and commenting
-   int64_t                          moderation_rewards;                   // Rewards in core asset from moderation rewards. 
-   int64_t                          total_rewards;                        // Rewards in core asset earned from all reward sources.
-   int64_t                          author_reputation;                    // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+   int64_t                          posting_rewards;                      ///< Rewards in core asset earned from author rewards.
+   int64_t                          curation_rewards;                     ///< Rewards in core asset earned from voting, shares, views, and commenting
+   int64_t                          moderation_rewards;                   ///< Rewards in core asset from moderation rewards. 
+   int64_t                          total_rewards;                        ///< Rewards in core asset earned from all reward sources.
+   int64_t                          author_reputation;                    ///< 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
    asset                            loan_default_balance;
    int64_t                          recent_activity_claims;
    uint16_t                         producer_vote_count;
-   uint16_t                         officer_vote_count;                         // Number of network officers that the account has voted for.
-   uint16_t                         executive_board_vote_count;                 // Number of Executive boards that the account has voted for.
-   uint16_t                         governance_subscriptions;                  // Number of governance accounts that the account subscribes to.   
-   uint16_t                         recurring_membership;                      // Amount of months membership should be automatically renewed for on expiration
-   time_point                       created;                                   // Time that the account was created.
-   time_point                       membership_expiration;                     // Time that the account has its current membership subscription until.
-   time_point                       last_account_update;                       // Time that the account's details were last updated.
-   time_point                       last_vote_time;                            // Time that the account last voted on a comment.
-   time_point                       last_view_time;                            // Time that the account last viewed a post.
-   time_point                       last_share_time;                           // Time that the account last viewed a post.
-   time_point                       last_post;                                 // Time that the user most recently created a comment 
-   time_point                       last_root_post;                            // Time that the account last created a post.
-   time_point                       last_transfer_time;                        // Time that the account last sent a transfer or created a trading txn. 
+   uint16_t                         officer_vote_count;                         ///< Number of network officers that the account has voted for.
+   uint16_t                         executive_board_vote_count;                 ///< Number of Executive boards that the account has voted for.
+   uint16_t                         governance_subscriptions;                  ///< Number of governance accounts that the account subscribes to.   
+   uint16_t                         recurring_membership;                      ///< Amount of months membership should be automatically renewed for on expiration
+   time_point                       created;                                   ///< Time that the account was created.
+   time_point                       membership_expiration;                     ///< Time that the account has its current membership subscription until.
+   time_point                       last_account_update;                       ///< Time that the account's details were last updated.
+   time_point                       last_vote_time;                            ///< Time that the account last voted on a comment.
+   time_point                       last_view_time;                            ///< Time that the account last viewed a post.
+   time_point                       last_share_time;                           ///< Time that the account last viewed a post.
+   time_point                       last_post;                                 ///< Time that the user most recently created a comment 
+   time_point                       last_root_post;                            ///< Time that the account last created a post.
+   time_point                       last_transfer_time;                        ///< Time that the account last sent a transfer or created a trading txn. 
    time_point                       last_activity_reward;
    time_point                       last_account_recovery;
    time_point                       last_board_created;
@@ -471,23 +473,23 @@ struct account_concise_api_obj
    account_concise_api_obj(){}
 
    account_id_type                  id;
-   account_name_type                name;                                  // Username of the account, lowercase letter and numbers and hyphens only.
-   string                           details;                               // User's account details.
-   string                           json;                                  // Public plaintext json information.
-   string                           json_private;                          // Private ciphertext json information.
-   string                           url;                                   // Account's external reference URL.
-   string                           account_type;                          // Type of account, persona, profile or business.
-   string                           membership;                            // Level of account membership.
-   public_key_type                  secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
-   public_key_type                  connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
-   public_key_type                  friend_public_key;                     // Key used for encrypting posts for friend level visibility.
-   public_key_type                  companion_public_key;                  // Key used for encrypting posts for companion level visibility.
-   comment_id_type                  pinned_post;                        // Post pinned to the top of the account's profile. 
-   uint32_t                         follower_count;                        // Number of account followers.
-   uint32_t                         following_count;                       // Number of accounts that the account follows. 
-   int64_t                          total_rewards;                         // Rewards in core asset earned from all reward sources.
-   int64_t                          author_reputation;                     // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
-   time_point                       created;                               // Time that the account was created.
+   account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
+   string                           details;                               ///< User's account details.
+   string                           json;                                  ///< Public plaintext json information.
+   string                           json_private;                          ///< Private ciphertext json information.
+   string                           url;                                   ///< Account's external reference URL.
+   string                           account_type;                          ///< Type of account, persona, profile or business.
+   string                           membership;                            ///< Level of account membership.
+   public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
+   public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
+   public_key_type                  friend_public_key;                     ///< Key used for encrypting posts for friend level visibility.
+   public_key_type                  companion_public_key;                  ///< Key used for encrypting posts for companion level visibility.
+   comment_id_type                  pinned_post;                        ///< Post pinned to the top of the account's profile. 
+   uint32_t                         follower_count;                        ///< Number of account followers.
+   uint32_t                         following_count;                       ///< Number of accounts that the account follows. 
+   int64_t                          total_rewards;                         ///< Rewards in core asset earned from all reward sources.
+   int64_t                          author_reputation;                     ///< 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+   time_point                       created;                               ///< Time that the account was created.
 };
 
 
@@ -519,22 +521,22 @@ struct account_balance_api_obj
    account_balance_id_type        id;
    account_name_type              owner;
    asset_symbol_type              symbol;
-   int64_t                        liquid_balance;             // Balance that can be freely transferred.
-   int64_t                        staked_balance;             // Balance that cannot be transferred, and is vested in the account for a period of time.
-   int64_t                        reward_balance;             // Balance that is newly issued from the network.
-   int64_t                        savings_balance;            // Balance that cannot be transferred, and must be withdrawn after a delay period. 
-   int64_t                        delegated_balance;          // Balance that is delegated to other accounts for voting power.
-   int64_t                        receiving_balance;          // Balance that has been delegated to the account by other delegators. 
-   int64_t                        total_balance;              // The total of all balances
-   int64_t                        stake_rate;                 // Amount of liquid balance that is being staked from the liquid balance to the staked balance.  
-   time_point                     next_stake_time;            // time at which the stake rate will be transferred from liquid to staked. 
-   int64_t                        to_stake;                   // total amount to stake over the staking period. 
-   int64_t                        total_staked;               // total amount that has been staked so far. 
-   int64_t                        unstake_rate;               // Amount of staked balance that is being unstaked from the staked balance to the liquid balance.  
-   time_point                     next_unstake_time;          // time at which the unstake rate will be transferred from staked to liquid. 
-   int64_t                        to_unstake;                 // total amount to unstake over the withdrawal period. 
-   int64_t                        total_unstaked;             // total amount that has been unstaked so far. 
-   time_point                     last_interest_time;         // Last time that interest was compounded.
+   int64_t                        liquid_balance;             ///< Balance that can be freely transferred.
+   int64_t                        staked_balance;             ///< Balance that cannot be transferred, and is vested in the account for a period of time.
+   int64_t                        reward_balance;             ///< Balance that is newly issued from the network.
+   int64_t                        savings_balance;            ///< Balance that cannot be transferred, and must be withdrawn after a delay period. 
+   int64_t                        delegated_balance;          ///< Balance that is delegated to other accounts for voting power.
+   int64_t                        receiving_balance;          ///< Balance that has been delegated to the account by other delegators. 
+   int64_t                        total_balance;              ///< The total of all balances
+   int64_t                        stake_rate;                 ///< Amount of liquid balance that is being staked from the liquid balance to the staked balance.  
+   time_point                     next_stake_time;            ///< time at which the stake rate will be transferred from liquid to staked. 
+   int64_t                        to_stake;                   ///< total amount to stake over the staking period. 
+   int64_t                        total_staked;               ///< total amount that has been staked so far. 
+   int64_t                        unstake_rate;               ///< Amount of staked balance that is being unstaked from the staked balance to the liquid balance.  
+   time_point                     next_unstake_time;          ///< time at which the unstake rate will be transferred from staked to liquid. 
+   int64_t                        to_unstake;                 ///< total amount to unstake over the withdrawal period. 
+   int64_t                        total_unstaked;             ///< total amount that has been unstaked so far. 
+   time_point                     last_interest_time;         ///< Last time that interest was compounded.
 };
 
 
@@ -580,17 +582,17 @@ struct account_business_api_obj
    account_business_api_obj(){}
 
    account_business_id_type                                        id;
-   account_name_type                                               account;                    // Username of the business account, lowercase letters only.
-   string                                                          business_type;              // Type of business account, controls authorizations for transactions of different types.
-   executive_officer_set                                           executive_board;            // Set of highest voted executive accounts for each role.
-   vector< pair< account_name_type, pair< string, int64_t > > >    executives;                 // Set of all executive names.    
-   vector< pair< account_name_type, int64_t > >                    officers;                   // Set of all officers in the business, and their supporting voting power.
-   vector< account_name_type >                                     members;                    // Set of all members of the business.
-   int64_t                                                         officer_vote_threshold;     // Amount of voting power required for an officer to be active. 
-   vector<asset_symbol_type >                                      equity_assets;              // Set of equity assets that offer dividends and voting power over the business account's structure
-   vector<asset_symbol_type >                                      credit_assets;              // Set of credit assets that offer interest and buybacks from the business account
-   vector< pair < asset_symbol_type,uint16_t > >                   equity_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
-   vector< pair < asset_symbol_type,uint16_t > >                   credit_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+   account_name_type                                               account;                    ///< Username of the business account, lowercase letters only.
+   string                                                          business_type;              ///< Type of business account, controls authorizations for transactions of different types.
+   executive_officer_set                                           executive_board;            ///< Set of highest voted executive accounts for each role.
+   vector< pair< account_name_type, pair< string, int64_t > > >    executives;                 ///< Set of all executive names.    
+   vector< pair< account_name_type, int64_t > >                    officers;                   ///< Set of all officers in the business, and their supporting voting power.
+   vector< account_name_type >                                     members;                    ///< Set of all members of the business.
+   int64_t                                                         officer_vote_threshold;     ///< Amount of voting power required for an officer to be active. 
+   vector<asset_symbol_type >                                      equity_assets;              ///< Set of equity assets that offer dividends and voting power over the business account's structure
+   vector<asset_symbol_type >                                      credit_assets;              ///< Set of credit assets that offer interest and buybacks from the business account
+   vector< pair < asset_symbol_type,uint16_t > >                   equity_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+   vector< pair < asset_symbol_type,uint16_t > >                   credit_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 };
 
 
@@ -650,19 +652,19 @@ struct account_following_api_obj
    account_following_api_obj(){}
 
    account_following_id_type       id;
-   account_name_type               account;              // Name of the account.
-   vector< account_name_type >     followers;            // Accounts that follow this account.
-   vector< account_name_type >     following;            // Accounts that this account follows.
-   vector< account_name_type >     mutual_followers;     // Accounts that are both following and followers of this account.
-   vector< account_name_type >     connections;          // Accounts that are connections of this account.
-   vector< account_name_type >     friends;              // Accounts that are friends of this account.
-   vector< account_name_type >     companions;           // Accounts that are companions of this account.
-   vector< board_name_type >       followed_boards;      // Boards that the account subscribes to.
-   vector< tag_name_type >         followed_tags;        // Tags that the account follows.
-   vector< account_name_type >     filtered;             // Accounts that this account has filtered. Interfaces should not show posts by these users.
-   vector< board_name_type >       filtered_boards;      // Boards that this account has filtered. Posts will not display if they are in these boards.
-   vector< tag_name_type >         filtered_tags;        // Tags that this account has filtered. Posts will not display if they have any of these tags. 
-   time_point                      last_update;          // Last time that the account changed its following sets.
+   account_name_type               account;              ///< Name of the account.
+   vector< account_name_type >     followers;            ///< Accounts that follow this account.
+   vector< account_name_type >     following;            ///< Accounts that this account follows.
+   vector< account_name_type >     mutual_followers;     ///< Accounts that are both following and followers of this account.
+   vector< account_name_type >     connections;          ///< Accounts that are connections of this account.
+   vector< account_name_type >     friends;              ///< Accounts that are friends of this account.
+   vector< account_name_type >     companions;           ///< Accounts that are companions of this account.
+   vector< board_name_type >       followed_boards;      ///< Boards that the account subscribes to.
+   vector< tag_name_type >         followed_tags;        ///< Tags that the account follows.
+   vector< account_name_type >     filtered;             ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
+   vector< board_name_type >       filtered_boards;      ///< Boards that this account has filtered. Posts will not display if they are in these boards.
+   vector< tag_name_type >         filtered_tags;        ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
+   time_point                      last_update;          ///< Last time that the account changed its following sets.
 };
 
 
@@ -697,11 +699,11 @@ struct account_permission_api_obj
 
 
    account_permission_id_type               id;
-   account_name_type                        account;                       // Name of the account with permissions set.
-   vector< account_name_type >              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
-   vector< account_name_type >              blacklisted_accounts;          // List of accounts that are not able to receive transfers from this account.
-   vector< asset_symbol_type >              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
-   vector< asset_symbol_type >              blacklisted_assets;            // List of assets that the account has blacklisted against incoming transfers.
+   account_name_type                        account;                       ///< Name of the account with permissions set.
+   vector< account_name_type >              whitelisted_accounts;          ///< List of accounts that are able to send transfers to this account.
+   vector< account_name_type >              blacklisted_accounts;          ///< List of accounts that are not able to receive transfers from this account.
+   vector< asset_symbol_type >              whitelisted_assets;            ///< List of assets that the account has whitelisted to receieve transfers of. 
+   vector< asset_symbol_type >              blacklisted_assets;            ///< List of assets that the account has blacklisted against incoming transfers.
 };
 
 
@@ -722,15 +724,15 @@ struct message_api_obj
    message_api_obj(){}
 
    message_id_type         id;
-   account_name_type       sender;                   // Name of the message sender.
-   account_name_type       recipient;                // Name of the intended message recipient.
-   public_key_type         sender_public_key;        // Public secure key of the sender.
-   public_key_type         recipient_public_key;     // Public secure key of the recipient.
-   string                  message;                  // Encrypted private message ciphertext.
-   string                  json;                     // Encrypted Message metadata.
-   string                  uuid;                     // uuidv4 uniquely identifying the message for local storage.
-   time_point              created;                  // Time the message was sent.
-   time_point              last_updated;             // Time the message was last changed, used to reload encrypted message storage.
+   account_name_type       sender;                   ///< Name of the message sender.
+   account_name_type       recipient;                ///< Name of the intended message recipient.
+   public_key_type         sender_public_key;        ///< Public secure key of the sender.
+   public_key_type         recipient_public_key;     ///< Public secure key of the recipient.
+   string                  message;                  ///< Encrypted private message ciphertext.
+   string                  json;                     ///< Encrypted Message metadata.
+   string                  uuid;                     ///< uuidv4 uniquely identifying the message for local storage.
+   time_point              created;                  ///< Time the message was sent.
+   time_point              last_updated;             ///< Time the message was last changed, used to reload encrypted message storage.
 };
 
 
@@ -753,17 +755,17 @@ struct connection_api_obj
    connection_api_obj(){}
 
    connection_id_type           id;                 
-   account_name_type            account_a;                // Account with the lower ID.
-   encrypted_keypair_type       encrypted_key_a;          // A's private connection key, encrypted with the public secure key of account B.
-   account_name_type            account_b;                // Account with the greater ID.
-   encrypted_keypair_type       encrypted_key_b;          // B's private connection key, encrypted with the public secure key of account A.
-   string                       connection_type;          // The connection level shared in this object
-   string                       connection_id;            // Unique uuidv4 for the connection, for local storage of decryption key.
-   uint32_t                     connection_strength;      // Number of total messages sent between connections
-   uint32_t                     consecutive_days;         // Number of consecutive days that the connected accounts have both sent a message.
-   time_point                   last_message_time_a;      // Time since the account A last sent a message
-   time_point                   last_message_time_b;      // Time since the account B last sent a message
-   time_point                   created;                  // Time the connection was created. 
+   account_name_type            account_a;                ///< Account with the lower ID.
+   encrypted_keypair_type       encrypted_key_a;          ///< A's private connection key, encrypted with the public secure key of account B.
+   account_name_type            account_b;                ///< Account with the greater ID.
+   encrypted_keypair_type       encrypted_key_b;          ///< B's private connection key, encrypted with the public secure key of account A.
+   string                       connection_type;          ///< The connection level shared in this object
+   string                       connection_id;            ///< Unique uuidv4 for the connection, for local storage of decryption key.
+   uint32_t                     connection_strength;      ///< Number of total messages sent between connections
+   uint32_t                     consecutive_days;         ///< Number of consecutive days that the connected accounts have both sent a message.
+   time_point                   last_message_time_a;      ///< Time since the account A last sent a message
+   time_point                   last_message_time_b;      ///< Time since the account B last sent a message
+   time_point                   created;                  ///< Time the connection was created. 
 };
 
 
@@ -780,7 +782,7 @@ struct connection_request_api_obj
    connection_request_api_obj(){}
 
    connection_request_id_type              id;                 
-   account_name_type                       account;               // Account that created the request
+   account_name_type                       account;               ///< Account that created the request
    account_name_type                       requested_account;  
    string                                  connection_type;
    string                                  message;
@@ -880,12 +882,12 @@ struct transfer_request_api_obj
    transfer_request_api_obj(){}
 
    transfer_request_id_type               id;
-   account_name_type                      to;             // Account requesting the transfer.
-   account_name_type                      from;           // Account that is being requested to accept the transfer.
-   asset                                  amount;         // The amount of asset to transfer.
-   string                                 request_id;     // uuidv4 of the request transaction.
-   string                                 memo;           // The memo is plain-text, encryption on the memo is advised. 
-   time_point                             expiration;     // time that the request expires. 
+   account_name_type                      to;             ///< Account requesting the transfer.
+   account_name_type                      from;           ///< Account that is being requested to accept the transfer.
+   asset                                  amount;         ///< The amount of asset to transfer.
+   string                                 request_id;     ///< uuidv4 of the request transaction.
+   string                                 memo;           ///< The memo is plain-text, encryption on the memo is advised. 
+   time_point                             expiration;     ///< time that the request expires. 
 };
 
 
@@ -906,15 +908,15 @@ struct transfer_recurring_api_obj
    transfer_recurring_api_obj(){}
 
    transfer_recurring_id_type        id;
-   account_name_type                 from;              // Sending account to transfer asset from.
-   account_name_type                 to;                // Recieving account to transfer asset to.
-   asset                             amount;            // The amount of asset to transfer for each payment interval.
-   string                            transfer_id;       // uuidv4 of the request transaction.
-   string                            memo;              // The memo is plain-text, encryption on the memo is advised.
-   time_point                        begin;             // Starting time of the first payment.
-   time_point                        end;               // Ending time of the recurring payment. 
-   fc::microseconds                  interval;          // Microseconds between each transfer event.
-   time_point                        next_transfer;     // Time of the next transfer.   
+   account_name_type                 from;              ///< Sending account to transfer asset from.
+   account_name_type                 to;                ///< Recieving account to transfer asset to.
+   asset                             amount;            ///< The amount of asset to transfer for each payment interval.
+   string                            transfer_id;       ///< uuidv4 of the request transaction.
+   string                            memo;              ///< The memo is plain-text, encryption on the memo is advised.
+   time_point                        begin;             ///< Starting time of the first payment.
+   time_point                        end;               ///< Ending time of the recurring payment. 
+   fc::microseconds                  interval;          ///< Microseconds between each transfer event.
+   time_point                        next_transfer;     ///< Time of the next transfer.   
 };
 
 
@@ -935,15 +937,15 @@ struct transfer_recurring_request_api_obj
    transfer_recurring_request_api_obj(){}
 
    transfer_recurring_request_id_type     id;
-   account_name_type                      from;              // Sending account to transfer asset from.
-   account_name_type                      to;                // Recieving account to transfer asset to.
-   asset                                  amount;            // The amount of asset to transfer for each payment interval.
-   string                                 request_id;        // uuidv4 of the request transaction.
-   string                                 memo;              // The memo is plain-text, encryption on the memo is advised.
-   time_point                             begin;             // Starting time of the first payment.
-   time_point                             end;               // Ending time of the recurring payment. 
-   fc::microseconds                       interval;          // Microseconds between each transfer event.
-   time_point                             expiration;        // time that the request expires.
+   account_name_type                      from;              ///< Sending account to transfer asset from.
+   account_name_type                      to;                ///< Recieving account to transfer asset to.
+   asset                                  amount;            ///< The amount of asset to transfer for each payment interval.
+   string                                 request_id;        ///< uuidv4 of the request transaction.
+   string                                 memo;              ///< The memo is plain-text, encryption on the memo is advised.
+   time_point                             begin;             ///< Starting time of the first payment.
+   time_point                             end;               ///< Ending time of the recurring payment. 
+   fc::microseconds                       interval;          ///< Microseconds between each transfer event.
+   time_point                             expiration;        ///< time that the request expires.
 };
 
 
@@ -974,25 +976,25 @@ struct board_api_obj
    board_api_obj(){}
 
    board_id_type                      id;
-   board_name_type                    name;                               // Name of the board, lowercase letters, numbers and hyphens only.
-   account_name_type                  founder;                            // The account that created the board, able to add and remove administrators.
-   string                             board_type;                         // Type of board, persona, profile or business.
-   string                             board_privacy;                      // Board privacy level, open, public, private, or exclusive
-   public_key_type                    board_public_key;                   // Key used for encrypting and decrypting posts. Private key shared with accepted members.
-   string                             json;                               // Public plaintext json information about the board, its topic and rules.
-   string                             json_private;                       // Private ciphertext json information about the board.
-   comment_id_type                    pinned_post;                     // Post pinned to the top of the board's page. 
-   uint32_t                           subscriber_count;               // number of accounts that are subscribed to the board
-   uint32_t                           post_count;                     // number of posts created in the board
-   uint32_t                           comment_count;                  // number of comments on posts in the board
-   uint32_t                           vote_count;                     // accumulated number of votes received by all posts in the board
-   uint32_t                           view_count;                     // accumulated number of views on posts in the board 
-   uint32_t                           share_count;                    // accumulated number of shares on posts in the board 
-   asset                              total_content_rewards = asset(0, SYMBOL_COIN);   // total amount of rewards earned by posts in the board
-   time_point                         created;                            // Time that the board was created.
-   time_point                         last_board_update;                  // Time that the board's details were last updated.
-   time_point                         last_post;                          // Time that the user most recently created a comment.
-   time_point                         last_root_post;                     // Time that the board last created a post. 
+   board_name_type                    name;                               ///< Name of the board, lowercase letters, numbers and hyphens only.
+   account_name_type                  founder;                            ///< The account that created the board, able to add and remove administrators.
+   string                             board_type;                         ///< Type of board, persona, profile or business.
+   string                             board_privacy;                      ///< Board privacy level, open, public, private, or exclusive
+   public_key_type                    board_public_key;                   ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
+   string                             json;                               ///< Public plaintext json information about the board, its topic and rules.
+   string                             json_private;                       ///< Private ciphertext json information about the board.
+   comment_id_type                    pinned_post;                     ///< Post pinned to the top of the board's page. 
+   uint32_t                           subscriber_count;               ///< number of accounts that are subscribed to the board
+   uint32_t                           post_count;                     ///< number of posts created in the board
+   uint32_t                           comment_count;                  ///< number of comments on posts in the board
+   uint32_t                           vote_count;                     ///< accumulated number of votes received by all posts in the board
+   uint32_t                           view_count;                     ///< accumulated number of views on posts in the board 
+   uint32_t                           share_count;                    ///< accumulated number of shares on posts in the board 
+   asset                              total_content_rewards = asset(0, SYMBOL_COIN);   ///< total amount of rewards earned by posts in the board
+   time_point                         created;                            ///< Time that the board was created.
+   time_point                         last_board_update;                  ///< Time that the board's details were last updated.
+   time_point                         last_post;                          ///< Time that the user most recently created a comment.
+   time_point                         last_root_post;                     ///< Time that the board last created a post. 
 };
 
 
@@ -1013,9 +1015,9 @@ struct tag_following_api_obj
    tag_following_api_obj(){}
 
    tag_following_id_type             id;
-   tag_name_type                     tag;                  // Name of the account.
-   vector< account_name_type >       followers;            // Accounts that follow this account. 
-   time_point                        last_update;          // Last time that the tag changed its following sets.
+   tag_name_type                     tag;                  ///< Name of the account.
+   vector< account_name_type >       followers;            ///< Accounts that follow this account. 
+   time_point                        last_update;          ///< Last time that the tag changed its following sets.
 };
 
 
@@ -1041,15 +1043,15 @@ struct moderation_tag_api_obj
    moderation_tag_api_obj(){}
 
    moderation_tag_id_type         id;
-   account_name_type              moderator;        // Name of the moderator or goverance account that created the comment tag.
-   comment_id_type                comment;          // ID of the comment.
-   board_name_type                board;            // The name of the board to which the post is uploaded to.
-   vector< tag_name_type >        tags;             // Set of string tags for sorting the post by
-   string                         rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
-   string                         details;          // Explaination as to what rule the post is in contravention of and why it was tagged.
-   bool                           filter;           // True if the post should be filtered by the board or governance address subscribers. 
-   time_point                     last_update;      // Time the comment tag was last edited by the author.
-   time_point                     created;          // Time that the comment tag was created.
+   account_name_type              moderator;        ///< Name of the moderator or goverance account that created the comment tag.
+   comment_id_type                comment;          ///< ID of the comment.
+   board_name_type                board;            ///< The name of the board to which the post is uploaded to.
+   vector< tag_name_type >        tags;             ///< Set of string tags for sorting the post by
+   string                         rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
+   string                         details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
+   bool                           filter;           ///< True if the post should be filtered by the board or governance address subscribers. 
+   time_point                     last_update;      ///< Time the comment tag was last edited by the author.
+   time_point                     created;          ///< Time that the comment tag was created.
 };
 
 struct asset_api_obj
@@ -1093,26 +1095,26 @@ struct asset_api_obj
    asset_api_obj(){}
 
    asset_id_type                   id; 
-   asset_symbol_type               symbol;                                // Consensus enforced unique Ticker symbol string for this asset. 
-   string                          asset_type;                            // The type of the asset.
-   account_name_type               issuer;                                // name of the account which issued this asset.
-   time_point                      created;                               // Time that the asset was created. 
-   asset_symbol_type               display_symbol;                        // Non-consensus display name for interface reference.
-   string                          details;                               // Data that describes the purpose of this asset.
-   string                          json;                                  // Additional JSON metadata of this asset.
-   string                          url;                                   // Reference URL for the asset. 
-   int64_t                         max_supply;                            // The maximum supply of this asset which may exist at any given time. 
-   uint8_t                         stake_intervals;                       // Weeks required to stake the asset.
-   uint8_t                         unstake_intervals;                     // Weeks require to unstake the asset.
-   uint16_t                        market_fee_percent;                    // Percentage of the total traded will be paid to the issuer of the asset.
-   uint16_t                        market_fee_share_percent;              // Percentage of the market fee that will be shared with the account's referrers.
-   int64_t                         max_market_fee;                        // Market fee charged on a trade is capped to this value.
-   uint32_t                        issuer_permissions;                    // The flags which the issuer has permission to update.
-   uint32_t                        flags;                                 // The currently active flags on this permission.
-   vector<account_name_type>       whitelist_authorities;                 // Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
-   vector<account_name_type>       blacklist_authorities;                 // Accounts which cannot transfer or receive this asset.
-   vector<asset_symbol_type>       whitelist_markets;                     // The assets that this asset may be traded against in the market
-   vector<asset_symbol_type>       blacklist_markets;                     // The assets that this asset may not be traded against in the market, must not overlap whitelist
+   asset_symbol_type               symbol;                                ///< Consensus enforced unique Ticker symbol string for this asset. 
+   string                          asset_type;                            ///< The type of the asset.
+   account_name_type               issuer;                                ///< name of the account which issued this asset.
+   time_point                      created;                               ///< Time that the asset was created. 
+   asset_symbol_type               display_symbol;                        ///< Non-consensus display name for interface reference.
+   string                          details;                               ///< Data that describes the purpose of this asset.
+   string                          json;                                  ///< Additional JSON metadata of this asset.
+   string                          url;                                   ///< Reference URL for the asset. 
+   int64_t                         max_supply;                            ///< The maximum supply of this asset which may exist at any given time. 
+   uint8_t                         stake_intervals;                       ///< Weeks required to stake the asset.
+   uint8_t                         unstake_intervals;                     ///< Weeks require to unstake the asset.
+   uint16_t                        market_fee_percent;                    ///< Percentage of the total traded will be paid to the issuer of the asset.
+   uint16_t                        market_fee_share_percent;              ///< Percentage of the market fee that will be shared with the account's referrers.
+   int64_t                         max_market_fee;                        ///< Market fee charged on a trade is capped to this value.
+   uint32_t                        issuer_permissions;                    ///< The flags which the issuer has permission to update.
+   uint32_t                        flags;                                 ///< The currently active flags on this permission.
+   vector<account_name_type>       whitelist_authorities;                 ///< Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
+   vector<account_name_type>       blacklist_authorities;                 ///< Accounts which cannot transfer or receive this asset.
+   vector<asset_symbol_type>       whitelist_markets;                     ///< The assets that this asset may be traded against in the market
+   vector<asset_symbol_type>       blacklist_markets;                     ///< The assets that this asset may not be traded against in the market, must not overlap whitelist
 };
 
 
@@ -1143,21 +1145,21 @@ struct bitasset_data_api_obj
    bitasset_data_api_obj(){}
 
    asset_bitasset_data_id_type                             id;
-   asset_symbol_type                                       symbol;                                  // The symbol of the bitasset that this object belongs to
-   account_name_type                                       issuer;                                  // The account name of the issuer 
-   asset_symbol_type                                       backing_asset;             // The collateral backing asset of the bitasset
-   map<account_name_type, pair<time_point,price_feed>>     feeds;                       // Feeds published for this asset. 
-   price_feed                                              current_feed;                            // Currently active price feed, median of values from the currently active feeds.
-   time_point                                              current_feed_publication_time;           // Publication time of the oldest feed which was factored into current_feed.
-   price                                                   current_maintenance_collateralization;   // Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
-   int64_t                                                 force_settled_volume;                    // This is the volume of this asset which has been force-settled this 24h interval
-   price                                                   settlement_price;      // Price at which force settlements of a black swanned asset will occur
-   asset                                                   settlement_fund;       // Amount of collateral which is available for force settlement
-   fc::microseconds                                        feed_lifetime;                            // Time before a price feed expires
-   uint8_t                                                 minimum_feeds;                                              // Minimum number of unexpired feeds required to extract a median feed from
-   fc::microseconds                                        force_settlement_delay;                // This is the delay between the time a long requests settlement and the chain evaluates the settlement
-   uint16_t                                                force_settlement_offset_percent;      // The percentage to adjust the feed price in the short's favor in the event of a forced settlement
-   uint16_t                                                maximum_force_settlement_volume;  // the percentage of current supply which may be force settled within each 24h interval.
+   asset_symbol_type                                       symbol;                                  ///< The symbol of the bitasset that this object belongs to
+   account_name_type                                       issuer;                                  ///< The account name of the issuer 
+   asset_symbol_type                                       backing_asset;             ///< The collateral backing asset of the bitasset
+   map<account_name_type, pair<time_point,price_feed>>     feeds;                       ///< Feeds published for this asset. 
+   price_feed                                              current_feed;                            ///< Currently active price feed, median of values from the currently active feeds.
+   time_point                                              current_feed_publication_time;           ///< Publication time of the oldest feed which was factored into current_feed.
+   price                                                   current_maintenance_collateralization;   ///< Call orders with collateralization (aka collateral/debt) not greater than this value are in margin call territory.
+   int64_t                                                 force_settled_volume;                    ///< This is the volume of this asset which has been force-settled this 24h interval
+   price                                                   settlement_price;      ///< Price at which force settlements of a black swanned asset will occur
+   asset                                                   settlement_fund;       ///< Amount of collateral which is available for force settlement
+   fc::microseconds                                        feed_lifetime;                            ///< Time before a price feed expires
+   uint8_t                                                 minimum_feeds;                                              ///< Minimum number of unexpired feeds required to extract a median feed from
+   fc::microseconds                                        force_settlement_delay;                ///< This is the delay between the time a long requests settlement and the chain evaluates the settlement
+   uint16_t                                                force_settlement_offset_percent;      ///< The percentage to adjust the feed price in the short's favor in the event of a forced settlement
+   uint16_t                                                maximum_force_settlement_volume;  ///< the percentage of current supply which may be force settled within each 24h interval.
 };
 
 
@@ -1186,16 +1188,16 @@ struct equity_data_api_obj
    equity_data_api_obj(){}
 
    asset_equity_data_id_type                    id;
-   asset_symbol_type                            dividend_asset;                // The asset used to distribute dividends to asset holders
-   asset                                        dividend_pool;                 // Amount of assets pooled for distribution at the next interval
-   time_point                                   last_dividend;                 // Time that the asset last distributed a dividend.
-   uint16_t                                     dividend_share_percent;        // Percentage of incoming assets added to the dividends pool
-   uint16_t                                     liquid_dividend_percent;       // percentage of equity dividends distributed to liquid balances
-   uint16_t                                     staked_dividend_percent;       // percentage of equity dividends distributed to staked balances
-   uint16_t                                     savings_dividend_percent;      // percentage of equity dividends distributed to savings balances
-   uint16_t                                     liquid_voting_rights;          // Amount of votes per asset conveyed to liquid holders of the asset
-   uint16_t                                     staked_voting_rights;          // Amount of votes per asset conveyed to staked holders of the asset
-   uint16_t                                     savings_voting_rights;         // Amount of votes per asset conveyed to savings holders of the asset
+   asset_symbol_type                            dividend_asset;                ///< The asset used to distribute dividends to asset holders
+   asset                                        dividend_pool;                 ///< Amount of assets pooled for distribution at the next interval
+   time_point                                   last_dividend;                 ///< Time that the asset last distributed a dividend.
+   uint16_t                                     dividend_share_percent;        ///< Percentage of incoming assets added to the dividends pool
+   uint16_t                                     liquid_dividend_percent;       ///< percentage of equity dividends distributed to liquid balances
+   uint16_t                                     staked_dividend_percent;       ///< percentage of equity dividends distributed to staked balances
+   uint16_t                                     savings_dividend_percent;      ///< percentage of equity dividends distributed to savings balances
+   uint16_t                                     liquid_voting_rights;          ///< Amount of votes per asset conveyed to liquid holders of the asset
+   uint16_t                                     staked_voting_rights;          ///< Amount of votes per asset conveyed to staked holders of the asset
+   uint16_t                                     savings_voting_rights;         ///< Amount of votes per asset conveyed to savings holders of the asset
    fc::microseconds                             min_active_time;
    int64_t                                      min_balance;
    uint16_t                                     min_producers;
@@ -1226,18 +1228,18 @@ struct credit_data_api_obj
    credit_data_api_obj(){}
 
    asset_credit_data_id_type  id;
-   asset_symbol_type          buyback_asset;                             // Symbol used to buyback credit assets
-   asset                      buyback_pool;                              // Amount of assets pooled to buyback the asset at next interval
-   price                      buyback_price;                             // Price at which the credit asset is bought back
-   time_point                 last_buyback;                              // Time that the asset was last updated
-   uint32_t                   buyback_share_percent;                     // Percentage of incoming assets added to the buyback pool
-   uint32_t                   liquid_fixed_interest_rate;                // Fixed component of Interest rate of the asset for liquid balances.
-   uint32_t                   liquid_variable_interest_rate;             // Variable component of Interest rate of the asset for liquid balances.
-   uint32_t                   staked_fixed_interest_rate;                // Fixed component of Interest rate of the asset for staked balances.
-   uint32_t                   staked_variable_interest_rate;             // Variable component of Interest rate of the asset for staked balances.
-   uint32_t                   savings_fixed_interest_rate;               // Fixed component of Interest rate of the asset for savings balances.
-   uint32_t                   savings_variable_interest_rate;            // Variable component of Interest rate of the asset for savings balances.
-   uint32_t                   var_interest_range;                        // The percentage range from the buyback price over which to apply the variable interest rate.
+   asset_symbol_type          buyback_asset;                             ///< Symbol used to buyback credit assets
+   asset                      buyback_pool;                              ///< Amount of assets pooled to buyback the asset at next interval
+   price                      buyback_price;                             ///< Price at which the credit asset is bought back
+   time_point                 last_buyback;                              ///< Time that the asset was last updated
+   uint32_t                   buyback_share_percent;                     ///< Percentage of incoming assets added to the buyback pool
+   uint32_t                   liquid_fixed_interest_rate;                ///< Fixed component of Interest rate of the asset for liquid balances.
+   uint32_t                   liquid_variable_interest_rate;             ///< Variable component of Interest rate of the asset for liquid balances.
+   uint32_t                   staked_fixed_interest_rate;                ///< Fixed component of Interest rate of the asset for staked balances.
+   uint32_t                   staked_variable_interest_rate;             ///< Variable component of Interest rate of the asset for staked balances.
+   uint32_t                   savings_fixed_interest_rate;               ///< Fixed component of Interest rate of the asset for savings balances.
+   uint32_t                   savings_variable_interest_rate;            ///< Variable component of Interest rate of the asset for savings balances.
+   uint32_t                   var_interest_range;                        ///< The percentage range from the buyback price over which to apply the variable interest rate.
 };
 
 struct liquidity_pool_api_obj
@@ -1264,16 +1266,16 @@ struct liquidity_pool_api_obj
    liquidity_pool_api_obj(){}
 
    asset_liquidity_pool_id_type           id; 
-   account_name_type                      issuer;                        // Name of the account which created the liquidity pool.
-   asset_symbol_type                      symbol_a;                      // Ticker symbol string of the asset with the lower ID. Must be core asset if one asset is core.
-   asset_symbol_type                      symbol_b;                      // Ticker symbol string of the asset with the higher ID.
-   asset_symbol_type                      symbol_liquid;                 // Ticker symbol of the pool's liquidity pool asset. 
-   asset                                  balance_a;                     // Balance of Asset A. Must be core asset if one asset is core.
-   asset                                  balance_b;                     // Balance of Asset B.
-   asset                                  balance_liquid;                // Outstanding supply of the liquidity asset for the asset pair.
-   price                                  hour_median_price;             // The median price over the past hour, at 10 minute intervals. Used for collateral calculations. 
-   price                                  day_median_price;              // The median price over the last day, at 10 minute intervals.
-   vector< price >                        price_history;                 // Tracks the last 24 hours of median price, one per 10 minutes.
+   account_name_type                      issuer;                        ///< Name of the account which created the liquidity pool.
+   asset_symbol_type                      symbol_a;                      ///< Ticker symbol string of the asset with the lower ID. Must be core asset if one asset is core.
+   asset_symbol_type                      symbol_b;                      ///< Ticker symbol string of the asset with the higher ID.
+   asset_symbol_type                      symbol_liquid;                 ///< Ticker symbol of the pool's liquidity pool asset. 
+   asset                                  balance_a;                     ///< Balance of Asset A. Must be core asset if one asset is core.
+   asset                                  balance_b;                     ///< Balance of Asset B.
+   asset                                  balance_liquid;                ///< Outstanding supply of the liquidity asset for the asset pair.
+   price                                  hour_median_price;             ///< The median price over the past hour, at 10 minute intervals. Used for collateral calculations. 
+   price                                  day_median_price;              ///< The median price over the last day, at 10 minute intervals.
+   vector< price >                        price_history;                 ///< Tracks the last 24 hours of median price, one per 10 minutes.
 };
 
 
@@ -1294,14 +1296,14 @@ struct credit_pool_api_obj
    credit_pool_api_obj(){}
 
    asset_credit_pool_id_type         id; 
-   account_name_type                 issuer;                 // Name of the account which created the credit pool.
-   asset_symbol_type                 base_symbol;            // Ticker symbol string of the base asset being lent and borrowed.
-   asset_symbol_type                 credit_symbol;          // Ticker symbol string of the credit asset for use as collateral to borrow the base asset.
-   asset                             base_balance;           // Balance of the base asset that is available for loans and redemptions. 
-   asset                             borrowed_balance;       // Total amount of base asset currently lent to borrowers, accumulates compounding interest payments. 
-   asset                             credit_balance;         // Balance of the credit asset redeemable for an increasing amount of base asset.
-   int64_t                           last_interest_rate;     // The most recently calculated interest rate when last compounded. 
-   price                             last_price;             // The last price that assets were lent or withdrawn at. 
+   account_name_type                 issuer;                 ///< Name of the account which created the credit pool.
+   asset_symbol_type                 base_symbol;            ///< Ticker symbol string of the base asset being lent and borrowed.
+   asset_symbol_type                 credit_symbol;          ///< Ticker symbol string of the credit asset for use as collateral to borrow the base asset.
+   asset                             base_balance;           ///< Balance of the base asset that is available for loans and redemptions. 
+   asset                             borrowed_balance;       ///< Total amount of base asset currently lent to borrowers, accumulates compounding interest payments. 
+   asset                             credit_balance;         ///< Balance of the credit asset redeemable for an increasing amount of base asset.
+   int64_t                           last_interest_rate;     ///< The most recently calculated interest rate when last compounded. 
+   price                             last_price;             ///< The last price that assets were lent or withdrawn at. 
 };
 
 struct limit_order_api_obj
@@ -1320,13 +1322,13 @@ struct limit_order_api_obj
    limit_order_api_obj(){}
 
    limit_order_id_type    id;
-   time_point             created;           // Time that the order was created.
-   time_point             expiration;        // Expiration time of the order.
-   account_name_type      seller;            // Selling account name of the trading order.
-   string                 order_id;          // UUIDv4 of the order for each account.
-   int64_t                for_sale;          // asset symbol is sell_price.base.symbol
-   price                  sell_price;        // Base price is the asset being sold.
-   account_name_type      interface;         // The interface account that created the order
+   time_point             created;           ///< Time that the order was created.
+   time_point             expiration;        ///< Expiration time of the order.
+   account_name_type      seller;            ///< Selling account name of the trading order.
+   string                 order_id;          ///< UUIDv4 of the order for each account.
+   int64_t                for_sale;          ///< asset symbol is sell_price.base.symbol
+   price                  sell_price;        ///< Base price is the asset being sold.
+   account_name_type      interface;         ///< The interface account that created the order
    double                 real_price;
 };
 
@@ -1360,27 +1362,27 @@ struct margin_order_api_obj
    margin_order_api_obj(){}
 
    margin_order_id_type       id;
-   account_name_type          owner;                       // Margin order owners account name
-   string                     order_id;                    // UUIDv4 Unique Identifier of the order for each account.
-   price                      sell_price;                  // limit exchange price of the borrowed asset being sold for the position asset.
-   asset                      collateral;                  // Collateral asset used to back the loan value; Returned to credit collateral object when position is closed. 
-   asset                      debt;                        // Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed. 
-   asset                      debt_balance;                // Debt asset that is held by the order when selling debt, or liquidating position.
-   asset                      interest;                    // Amount of interest accrued on the borrowed asset into the debt value.
-   asset                      position;                    // Minimum amount of asset to receive as margin position.
-   asset                      position_balance;             // Amount of asset currently held within the order that has filled.                     
-   int64_t                    collateralization;           // Percentage ratio of ( Collateral + position_balance + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
-   account_name_type          interface;                   // The interface account that created the order.
-   time_point                 created;                     // Time that the order was created.
-   time_point                 last_updated;                // Time that interest was last compounded on the margin order, and collateralization was last updated. 
-   time_point                 expiration;                  // Expiration time of the order.
-   asset                      unrealized_value;            // Current profit or loss that the position is holding.
-   int64_t                    last_interest_rate;          // The interest rate that was last applied to the order.
-   bool                       liquidating;                 // Set to true to place the margin order back into the orderbook and liquidate the position at sell price.
-   price                      stop_loss_price;             // Price at which the position will be force liquidated if it falls into a net loss.
-   price                      take_profit_price;           // Price at which the position will be force liquidated if it rises into a net profit.
-   price                      limit_stop_loss_price;       // Price at which the position will be limit liquidated if it falls into a net loss.
-   price                      limit_take_profit_price;     // Price at which the position will be limit liquidated if it rises into a net profit.
+   account_name_type          owner;                       ///< Margin order owners account name
+   string                     order_id;                    ///< UUIDv4 Unique Identifier of the order for each account.
+   price                      sell_price;                  ///< limit exchange price of the borrowed asset being sold for the position asset.
+   asset                      collateral;                  ///< Collateral asset used to back the loan value; Returned to credit collateral object when position is closed. 
+   asset                      debt;                        ///< Amount of asset borrowed to purchase the position asset. Repaid when the margin order is closed. 
+   asset                      debt_balance;                ///< Debt asset that is held by the order when selling debt, or liquidating position.
+   asset                      interest;                    ///< Amount of interest accrued on the borrowed asset into the debt value.
+   asset                      position;                    ///< Minimum amount of asset to receive as margin position.
+   asset                      position_balance;             ///< Amount of asset currently held within the order that has filled.                     
+   int64_t                    collateralization;           ///< Percentage ratio of ( Collateral + position_balance + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
+   account_name_type          interface;                   ///< The interface account that created the order.
+   time_point                 created;                     ///< Time that the order was created.
+   time_point                 last_updated;                ///< Time that interest was last compounded on the margin order, and collateralization was last updated. 
+   time_point                 expiration;                  ///< Expiration time of the order.
+   asset                      unrealized_value;            ///< Current profit or loss that the position is holding.
+   int64_t                    last_interest_rate;          ///< The interest rate that was last applied to the order.
+   bool                       liquidating;                 ///< Set to true to place the margin order back into the orderbook and liquidate the position at sell price.
+   price                      stop_loss_price;             ///< Price at which the position will be force liquidated if it falls into a net loss.
+   price                      take_profit_price;           ///< Price at which the position will be force liquidated if it rises into a net profit.
+   price                      limit_stop_loss_price;       ///< Price at which the position will be limit liquidated if it falls into a net loss.
+   price                      limit_take_profit_price;     ///< Price at which the position will be limit liquidated if it rises into a net profit.
    double                     real_price;
 };
 
@@ -1400,11 +1402,11 @@ struct call_order_api_obj
 
    call_order_id_type      id;
    account_name_type       borrower;
-   asset                   collateral;                  // call_price.base.symbol, access via get_collateral
-   asset                   debt;                        // call_price.quote.symbol, access via get_debt
-   price                   call_price;                  // Collateral / Debt
-   uint16_t                target_collateral_ratio;     // maximum CR to maintain when selling collateral on margin call
-   account_name_type       interface;                   // The interface account that created the order
+   asset                   collateral;                  ///< call_price.base.symbol, access via get_collateral
+   asset                   debt;                        ///< call_price.quote.symbol, access via get_debt
+   price                   call_price;                  ///< Collateral / Debt
+   uint16_t                target_collateral_ratio;     ///< maximum CR to maintain when selling collateral on margin call
+   account_name_type       interface;                   ///< The interface account that created the order
    double                  real_price;
 };
 
@@ -1428,18 +1430,18 @@ struct credit_loan_api_obj
    credit_loan_api_obj(){}
 
    credit_loan_id_type        id;
-   account_name_type          owner;                   // Collateral owner's account name
-   string                     loan_id;                 // UUIDV4 for the loan to uniquely identify it for reference. 
-   asset                      debt;                    // Amount of an asset borrowed. Limit of 75% of collateral value. Increases with interest charged.
-   asset                      interest;                // Total Amount of interest accrued on the loan. 
-   asset                      collateral;              // Amount of an asset to use as collateral for the loan. 
-   price                      loan_price;              // Collateral / Debt. Must be higher than liquidation price to remain solvent. 
-   price                      liquidation_price;       // Collateral / max_debt value. Rises when collateral/debt market price falls.
-   asset_symbol_type          symbol_a;                // The symbol of asset A in the debt / collateral exchange pair.
-   asset_symbol_type          symbol_b;                // The symbol of asset B in the debt / collateral exchange pair.
-   int64_t                    last_interest_rate;      // Updates the interest rate of the loan hourly. 
-   time_point                 created;                 // Time that the loan was taken out.
-   time_point                 last_updated;            // Time that the loan was last updated, and interest was accrued.
+   account_name_type          owner;                   ///< Collateral owner's account name
+   string                     loan_id;                 ///< UUIDV4 for the loan to uniquely identify it for reference. 
+   asset                      debt;                    ///< Amount of an asset borrowed. Limit of 75% of collateral value. Increases with interest charged.
+   asset                      interest;                ///< Total Amount of interest accrued on the loan. 
+   asset                      collateral;              ///< Amount of an asset to use as collateral for the loan. 
+   price                      loan_price;              ///< Collateral / Debt. Must be higher than liquidation price to remain solvent. 
+   price                      liquidation_price;       ///< Collateral / max_debt value. Rises when collateral/debt market price falls.
+   asset_symbol_type          symbol_a;                ///< The symbol of asset A in the debt / collateral exchange pair.
+   asset_symbol_type          symbol_b;                ///< The symbol of asset B in the debt / collateral exchange pair.
+   int64_t                    last_interest_rate;      ///< Updates the interest rate of the loan hourly. 
+   time_point                 created;                 ///< Time that the loan was taken out.
+   time_point                 last_updated;            ///< Time that the loan was last updated, and interest was accrued.
 };
 
 struct credit_collateral_api_obj
@@ -1453,9 +1455,9 @@ struct credit_collateral_api_obj
    credit_collateral_api_obj(){}
 
    credit_collateral_id_type                    id;
-   account_name_type                            owner;         // Collateral owners account name.
-   asset_symbol_type                            symbol;        // Asset symbol being collateralized. 
-   asset                                        collateral;    // Asset balance that is being locked in for loan backing for loan or margin orders.  
+   account_name_type                            owner;         ///< Collateral owners account name.
+   asset_symbol_type                            symbol;        ///< Asset symbol being collateralized. 
+   asset                                        collateral;    ///< Asset balance that is being locked in for loan backing for loan or margin orders.  
 };
 
 struct owner_authority_history_api_obj
@@ -1558,39 +1560,39 @@ struct producer_api_obj
    producer_api_obj(){}
 
    producer_id_type              id;
-   account_name_type            owner;                            // The name of the account that has authority over this producer.
-   bool                         active;                           // True if the producer is actively seeking to produce blocks, set false to deactivate the producer and remove from production.
-   producer_object::producer_schedule_type        schedule;       // How the producer was scheduled the last time it was scheduled.
-   uint64_t                     last_confirmed_block_num;         // Number of the last block that was successfully produced by this producer. 
-   string                       details;                          // Producer's details, explaining who they are, machine specs, capabilties.
-   string                       url;                              // The producer's URL explaining their details.
-   string                       json;                             // The producer's json metadata.
-   double                       latitude;                         // Latitude Co-ordinates of the producer's approximate geo-location.
-   double                       longitude;                        // Longitude Co-ordinates of the producer's approximate geo-location.
-   public_key_type              signing_key;                      // The key used to sign blocks on behalf of this producer.
-   time_point                   created;                          // The time the producer was created.
-   uint32_t                     last_commit_height;               // Block height that has been most recently committed by the producer
-   block_id_type                last_commit_id;                   // Block ID of the height that was most recently committed by the producer. 
-   uint32_t                     total_blocks;                     // Accumulated number of blocks produced.
-   int64_t                      voting_power;                     // The total weighted voting power that supports the producer. 
-   uint32_t                     vote_count;                       // The number of accounts that have voted for the producer.
-   int64_t                      mining_power;                     // The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
-   uint32_t                     mining_count;                     // Accumulated number of proofs of work published.
-   time_point                   last_mining_update;               // Time that the account last updated its mining power.
-   time_point                   last_pow_time;                    // Time that the miner last created a proof of work.
-   int64_t                      recent_txn_stake_weight;          // Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
-   time_point                   last_txn_stake_weight_update;     // Time that the recent bandwith and txn stake were last updated.
-   uint128_t                    accumulated_activity_stake;       // Recent amount of activity reward stake for the prime producer. 
-   uint32_t                     total_missed;                     // Number of blocks missed recently.
-   uint64_t                     last_aslot;                       // Last absolute slot that the producer was assigned to produce a block.
-   chain_properties             props;                            // The chain properties object that the producer currently proposes for global network variables
+   account_name_type            owner;                            ///< The name of the account that has authority over this producer.
+   bool                         active;                           ///< True if the producer is actively seeking to produce blocks, set false to deactivate the producer and remove from production.
+   producer_object::producer_schedule_type        schedule;       ///< How the producer was scheduled the last time it was scheduled.
+   uint64_t                     last_confirmed_block_num;         ///< Number of the last block that was successfully produced by this producer. 
+   string                       details;                          ///< Producer's details, explaining who they are, machine specs, capabilties.
+   string                       url;                              ///< The producer's URL explaining their details.
+   string                       json;                             ///< The producer's json metadata.
+   double                       latitude;                         ///< Latitude Co-ordinates of the producer's approximate geo-location.
+   double                       longitude;                        ///< Longitude Co-ordinates of the producer's approximate geo-location.
+   public_key_type              signing_key;                      ///< The key used to sign blocks on behalf of this producer.
+   time_point                   created;                          ///< The time the producer was created.
+   uint32_t                     last_commit_height;               ///< Block height that has been most recently committed by the producer
+   block_id_type                last_commit_id;                   ///< Block ID of the height that was most recently committed by the producer. 
+   uint32_t                     total_blocks;                     ///< Accumulated number of blocks produced.
+   int64_t                      voting_power;                     ///< The total weighted voting power that supports the producer. 
+   uint32_t                     vote_count;                       ///< The number of accounts that have voted for the producer.
+   int64_t                      mining_power;                     ///< The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
+   uint32_t                     mining_count;                     ///< Accumulated number of proofs of work published.
+   time_point                   last_mining_update;               ///< Time that the account last updated its mining power.
+   time_point                   last_pow_time;                    ///< Time that the miner last created a proof of work.
+   int64_t                      recent_txn_stake_weight;          ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+   time_point                   last_txn_stake_weight_update;     ///< Time that the recent bandwith and txn stake were last updated.
+   uint128_t                    accumulated_activity_stake;       ///< Recent amount of activity reward stake for the prime producer. 
+   uint32_t                     total_missed;                     ///< Number of blocks missed recently.
+   uint64_t                     last_aslot;                       ///< Last absolute slot that the producer was assigned to produce a block.
+   chain_properties             props;                            ///< The chain properties object that the producer currently proposes for global network variables
    uint128_t                    voting_virtual_last_update;
    uint128_t                    voting_virtual_position;
    uint128_t                    voting_virtual_scheduled_time;
    uint128_t                    mining_virtual_last_update;
    uint128_t                    mining_virtual_position;
    uint128_t                    mining_virtual_scheduled_time;
-   version                      running_version;                  // The blockchain version the producer is running.
+   version                      running_version;                  ///< The blockchain version the producer is running.
    hardfork_version             hardfork_version_vote;
    time_point                   hardfork_time_vote;
 };
@@ -1616,18 +1618,18 @@ struct network_officer_api_obj
    network_officer_api_obj(){}
 
    network_officer_id_type        id;
-   account_name_type              account;                 // The name of the account that owns the network officer.
-   bool                           active;                  // True if the officer is active, set false to deactivate.
-   bool                           officer_approved;        // True when the network officer has received sufficient voting approval to earn funds.
-   string                         officer_type;            // The type of network officer that the account serves as. 
-   string                         details;                 // The officer's details description. 
-   string                         url;                     // The officer's reference URL. 
-   string                         json;                    // Json metadata of the officer. 
-   time_point                     created;                 // The time the officer was created.
-   uint32_t                       vote_count;              // The number of accounts that support the officer.
-   int64_t                        voting_power;            // The amount of voting power that votes for the officer.
-   uint32_t                       producer_vote_count;      // The number of accounts that support the officer.
-   int64_t                        producer_voting_power;    // The amount of voting power that votes for the officer.
+   account_name_type              account;                 ///< The name of the account that owns the network officer.
+   bool                           active;                  ///< True if the officer is active, set false to deactivate.
+   bool                           officer_approved;        ///< True when the network officer has received sufficient voting approval to earn funds.
+   string                         officer_type;            ///< The type of network officer that the account serves as. 
+   string                         details;                 ///< The officer's details description. 
+   string                         url;                     ///< The officer's reference URL. 
+   string                         json;                    ///< Json metadata of the officer. 
+   time_point                     created;                 ///< The time the officer was created.
+   uint32_t                       vote_count;              ///< The number of accounts that support the officer.
+   int64_t                        voting_power;            ///< The amount of voting power that votes for the officer.
+   uint32_t                       producer_vote_count;      ///< The number of accounts that support the officer.
+   int64_t                        producer_voting_power;    ///< The amount of voting power that votes for the officer.
 };
 
 
@@ -1651,18 +1653,18 @@ struct executive_board_api_obj
    executive_board_api_obj(){}
 
    executive_board_id_type        id;
-   account_name_type              account;                    // The name of the governance account that created the executive team.
-   bool                           active;                     // True if the executive team is active, set false to deactivate.
-   bool                           board_approved;             // True when the board has reach sufficient voting support to receive budget.
-   asset                          budget;                     // Total amount of Credit asset requested for team compensation and funding.
-   string                         details;                    // The executive team's details description. 
-   string                         url;                        // The executive team's reference URL. 
-   string                         json;                       // Json metadata of the executive team. 
-   time_point                     created;                    // The time the executive team was created.
-   uint32_t                       vote_count;                 // The number of accounts that support the executive team.
-   int64_t                        voting_power;               // The amount of voting power that votes for the executive team. 
-   uint32_t                       producer_vote_count;         // The number of accounts that support the executive team.
-   int64_t                        producer_voting_power;       // The amount of voting power that votes for the executive team.
+   account_name_type              account;                    ///< The name of the governance account that created the executive team.
+   bool                           active;                     ///< True if the executive team is active, set false to deactivate.
+   bool                           board_approved;             ///< True when the board has reach sufficient voting support to receive budget.
+   asset                          budget;                     ///< Total amount of Credit asset requested for team compensation and funding.
+   string                         details;                    ///< The executive team's details description. 
+   string                         url;                        ///< The executive team's reference URL. 
+   string                         json;                       ///< Json metadata of the executive team. 
+   time_point                     created;                    ///< The time the executive team was created.
+   uint32_t                       vote_count;                 ///< The number of accounts that support the executive team.
+   int64_t                        voting_power;               ///< The amount of voting power that votes for the executive team. 
+   uint32_t                       producer_vote_count;         ///< The number of accounts that support the executive team.
+   int64_t                        producer_voting_power;       ///< The amount of voting power that votes for the executive team.
 };
 
 
@@ -1685,17 +1687,17 @@ struct governance_account_api_obj
    governance_account_api_obj(){}
 
    governance_account_id_type     id;
-   account_name_type              account;                    // The name of the governance account that created the governance account.
-   bool                           active;                     // True if the governance account is active, set false to deactivate.
-   bool                           account_approved;           // True when the board has reach sufficient voting support to receive budget.
-   string                         details;                    // The governance account's details description. 
-   string                         url;                        // The governance account's reference URL. 
-   string                         json;                       // Json metadata of the governance account. 
-   time_point                     created;                    // The time the governance account was created.
-   uint32_t                       subscriber_count;           // The number of accounts that support the governance account.
-   int64_t                        subscriber_power;           // The amount of voting power that votes for the governance account. 
-   uint32_t                       producer_subscriber_count;   // The number of accounts that support the governance account.
-   int64_t                        producer_subscriber_power;   // The amount of voting power that votes for the governance account.
+   account_name_type              account;                    ///< The name of the governance account that created the governance account.
+   bool                           active;                     ///< True if the governance account is active, set false to deactivate.
+   bool                           account_approved;           ///< True when the board has reach sufficient voting support to receive budget.
+   string                         details;                    ///< The governance account's details description. 
+   string                         url;                        ///< The governance account's reference URL. 
+   string                         json;                       ///< Json metadata of the governance account. 
+   time_point                     created;                    ///< The time the governance account was created.
+   uint32_t                       subscriber_count;           ///< The number of accounts that support the governance account.
+   int64_t                        subscriber_power;           ///< The amount of voting power that votes for the governance account. 
+   uint32_t                       producer_subscriber_count;   ///< The number of accounts that support the governance account.
+   int64_t                        producer_subscriber_power;   ///< The amount of voting power that votes for the governance account.
 };
 
 
@@ -1724,23 +1726,23 @@ struct supernode_api_obj
    supernode_api_obj(){}
 
    supernode_id_type       id;
-   account_name_type       account;                     // The name of the account that owns the supernode.
-   bool                    active;                      // True if the supernode is active, set false to deactivate.
-   string                  details;                     // The supernode's details description. 
-   string                  url;                         // The supernode's reference URL. 
-   string                  node_api_endpoint;           // The Full Archive node public API endpoint of the supernode.
-   string                  notification_api_endpoint;   // The Notification API endpoint of the Supernode. 
-   string                  auth_api_endpoint;           // The Transaction signing authentication API endpoint of the supernode.
-   string                  ipfs_endpoint;               // The IPFS file storage API endpoint of the supernode.
-   string                  bittorrent_endpoint;         // The Bittorrent Seed Box endpoint URL of the Supernode. 
-   string                  json;                        // Json metadata of the supernode, including additonal outside of consensus APIs and services. 
-   time_point              created;                     // The time the supernode was created.
-   asset                   storage_rewards;             // Amount of core asset earned from storage.
-   uint64_t                daily_active_users;          // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
-   uint64_t                monthly_active_users;        // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
-   int64_t                 recent_view_weight;          // The rolling 7 day average of daily accumulated voting power of viewers. 
-   time_point              last_updated;            // The time the file weight and active users was last decayed.
-   time_point              last_activation_time;        // The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
+   account_name_type       account;                     ///< The name of the account that owns the supernode.
+   bool                    active;                      ///< True if the supernode is active, set false to deactivate.
+   string                  details;                     ///< The supernode's details description. 
+   string                  url;                         ///< The supernode's reference URL. 
+   string                  node_api_endpoint;           ///< The Full Archive node public API endpoint of the supernode.
+   string                  notification_api_endpoint;   ///< The Notification API endpoint of the Supernode. 
+   string                  auth_api_endpoint;           ///< The Transaction signing authentication API endpoint of the supernode.
+   string                  ipfs_endpoint;               ///< The IPFS file storage API endpoint of the supernode.
+   string                  bittorrent_endpoint;         ///< The Bittorrent Seed Box endpoint URL of the Supernode. 
+   string                  json;                        ///< Json metadata of the supernode, including additonal outside of consensus APIs and services. 
+   time_point              created;                     ///< The time the supernode was created.
+   asset                   storage_rewards;             ///< Amount of core asset earned from storage.
+   uint64_t                daily_active_users;          ///< The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
+   uint64_t                monthly_active_users;        ///< The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
+   int64_t                 recent_view_weight;          ///< The rolling 7 day average of daily accumulated voting power of viewers. 
+   time_point              last_updated;            ///< The time the file weight and active users was last decayed.
+   time_point              last_activation_time;        ///< The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
 };
 
 
@@ -1761,15 +1763,15 @@ struct interface_api_obj
    interface_api_obj(){}
 
    interface_id_type       id;
-   account_name_type       account;                     // The name of the account that owns the interface.
-   bool                    active;                      // True if the interface is active, set false to deactivate.
-   string                  details;                     // The interface's details description. 
-   string                  url;                         // The interface's reference URL. 
-   string                  json;                        // Json metadata of the interface, including additonal outside of consensus APIs and services. 
-   time_point              created;                     // The time the interface was created.
-   uint64_t                daily_active_users;          // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
-   uint64_t                monthly_active_users;        // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
-   time_point              last_updated;            // The time the file weight and active users was last decayed.
+   account_name_type       account;                     ///< The name of the account that owns the interface.
+   bool                    active;                      ///< True if the interface is active, set false to deactivate.
+   string                  details;                     ///< The interface's details description. 
+   string                  url;                         ///< The interface's reference URL. 
+   string                  json;                        ///< Json metadata of the interface, including additonal outside of consensus APIs and services. 
+   time_point              created;                     ///< The time the interface was created.
+   uint64_t                daily_active_users;          ///< The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
+   uint64_t                monthly_active_users;        ///< The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
+   time_point              last_updated;            ///< The time the file weight and active users was last decayed.
 };
 
 
@@ -1822,36 +1824,36 @@ struct community_enterprise_api_obj
    community_enterprise_api_obj(){}
 
    community_enterprise_id_type       id;
-   account_name_type                  creator;                                    // The name of the governance account that created the community enterprise proposal.
-   string                             enterprise_id;                              // UUIDv4 for referring to the proposal.
-   bool                               active;                                     // True if the project is active, set false to deactivate.
-   string                             proposal_type;                              // The type of proposal, determines release schedule.
-   map< account_name_type, uint16_t > beneficiaries;                              // Map of account names and percentages of budget value.
-   vector< pair < string, uint16_t > > milestones;                                // Ordered vector of milestone descriptions and percentages of budget value.
-   vector< string >                   milestone_history;                          // Ordered vector of the details of every claimed milestone.
-   int16_t                            approved_milestones;                        // Number of the last approved milestone by the community.
-   int16_t                            claimed_milestones;                         // Number of milestones claimed for release.  
-   asset_symbol_type                  investment;                                 // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
-   string                             details;                                    // The proposals's details description. 
-   string                             url;                                        // The proposals's reference URL. 
-   string                             json;                                       // Json metadata of the proposal. 
-   time_point                         begin;                                      // Enterprise proposal start time. If the proposal is not approved by the start time, it is rejected. 
-   time_point                         end;                                        // Enterprise proposal end time. Determined by start plus remaining interval number of days.
-   time_point                         expiration;                                 // Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
-   asset                              daily_budget;                               // Daily amount of Core asset requested for project compensation and funding.
-   uint16_t                           duration;                                   // Number of days that the proposal lasts for. 
-   asset                              pending_budget;                             // Funds held in the proposal for release. 
-   asset                              total_distributed;                          // Total amount of funds distributed for the proposal. 
-   uint16_t                           days_paid;                                  // Number of days that the proposal has been paid for. 
-   uint32_t                           total_approvals;                            // The overall number of accounts that support the enterprise proposal.
-   int64_t                            total_voting_power;                         // The oveall amount of voting power that supports the enterprise proposal.
-   uint32_t                           total_producer_approvals;                   // The overall number of top 50 producers that support the enterprise proposal.
-   int64_t                            total_producer_voting_power;                // The overall amount of producer voting power that supports the enterprise proposal.
-   uint32_t                           current_approvals;                          // The number of accounts that support the latest claimed milestone.
-   int64_t                            current_voting_power;                       // The amount of voting power that supports the latest claimed milestone.
-   uint32_t                           current_producer_approvals;                 // The number of top 50 producers that support the latest claimed milestone.
-   int64_t                            current_producer_voting_power;              // The amount of producer voting power that supports the latest claimed milestone.
-   time_point                         created;                                    // The time the proposal was created.
+   account_name_type                  creator;                                    ///< The name of the governance account that created the community enterprise proposal.
+   string                             enterprise_id;                              ///< UUIDv4 for referring to the proposal.
+   bool                               active;                                     ///< True if the project is active, set false to deactivate.
+   string                             proposal_type;                              ///< The type of proposal, determines release schedule.
+   map< account_name_type, uint16_t > beneficiaries;                              ///< Map of account names and percentages of budget value.
+   vector< pair < string, uint16_t > > milestones;                                ///< Ordered vector of milestone descriptions and percentages of budget value.
+   vector< string >                   milestone_history;                          ///< Ordered vector of the details of every claimed milestone.
+   int16_t                            approved_milestones;                        ///< Number of the last approved milestone by the community.
+   int16_t                            claimed_milestones;                         ///< Number of milestones claimed for release.  
+   asset_symbol_type                  investment;                                 ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+   string                             details;                                    ///< The proposals's details description. 
+   string                             url;                                        ///< The proposals's reference URL. 
+   string                             json;                                       ///< Json metadata of the proposal. 
+   time_point                         begin;                                      ///< Enterprise proposal start time. If the proposal is not approved by the start time, it is rejected. 
+   time_point                         end;                                        ///< Enterprise proposal end time. Determined by start plus remaining interval number of days.
+   time_point                         expiration;                                 ///< Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
+   asset                              daily_budget;                               ///< Daily amount of Core asset requested for project compensation and funding.
+   uint16_t                           duration;                                   ///< Number of days that the proposal lasts for. 
+   asset                              pending_budget;                             ///< Funds held in the proposal for release. 
+   asset                              total_distributed;                          ///< Total amount of funds distributed for the proposal. 
+   uint16_t                           days_paid;                                  ///< Number of days that the proposal has been paid for. 
+   uint32_t                           total_approvals;                            ///< The overall number of accounts that support the enterprise proposal.
+   int64_t                            total_voting_power;                         ///< The oveall amount of voting power that supports the enterprise proposal.
+   uint32_t                           total_producer_approvals;                   ///< The overall number of top 50 producers that support the enterprise proposal.
+   int64_t                            total_producer_voting_power;                ///< The overall amount of producer voting power that supports the enterprise proposal.
+   uint32_t                           current_approvals;                          ///< The number of accounts that support the latest claimed milestone.
+   int64_t                            current_voting_power;                       ///< The amount of voting power that supports the latest claimed milestone.
+   uint32_t                           current_producer_approvals;                 ///< The number of top 50 producers that support the latest claimed milestone.
+   int64_t                            current_producer_voting_power;              ///< The amount of producer voting power that supports the latest claimed milestone.
+   time_point                         created;                                    ///< The time the proposal was created.
 };
 
 
@@ -1873,16 +1875,16 @@ struct ad_creative_api_obj
    ad_creative_api_obj(){}
 
    ad_creative_id_type         id;
-   account_name_type           account;           // Name of the account creating the creative.
-   string                      creative_id;       // The uuidv4 of the creative for reference
-   string                      format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
-   account_name_type           author;            // Name of the account that created the objective.
-   string                      objective;         // The name of the object being advertised, the link and CTA destination of the creative.
-   string                      creative;          // IPFS link to the Media to be displayed, image or video.
-   string                      json;              // Public plaintext json information about the board, its topic and rules.
-   time_point                  created;           // Time creative was made.
-   time_point                  last_updated;      // Time creative's details were last updated.
-   bool                        active;            // True when the creative is active for use in campaigns, false to deactivate.
+   account_name_type           account;           ///< Name of the account creating the creative.
+   string                      creative_id;       ///< The uuidv4 of the creative for reference
+   string                      format_type;       ///< The type of formatting used for the ad, determines the interpretation of the creative and objective.
+   account_name_type           author;            ///< Name of the account that created the objective.
+   string                      objective;         ///< The name of the object being advertised, the link and CTA destination of the creative.
+   string                      creative;          ///< IPFS link to the Media to be displayed, image or video.
+   string                      json;              ///< Public plaintext json information about the board, its topic and rules.
+   time_point                  created;           ///< Time creative was made.
+   time_point                  last_updated;      ///< Time creative's details were last updated.
+   bool                        active;            ///< True when the creative is active for use in campaigns, false to deactivate.
 };
 
 
@@ -1911,18 +1913,18 @@ struct ad_campaign_api_obj
    ad_campaign_api_obj(){}
 
    ad_campaign_id_type              id;
-   account_name_type                account;           // Account creating the ad campaign.
-   string                           campaign_id;       // uuidv4 to refer to the campaign.
-   asset                            budget;            // Total expenditure of the campaign.
-   asset                            total_bids;        // Total amount of expenditure in active bids. Cannot exceed AD_RESERVE_RATIO times the campaign budget.
-   time_point                       begin;             // Beginning time of the campaign. Bids cannot be created before this time.
-   time_point                       end;               // Ending time of the campaign. Remaining campaign budget will be refunded after this time.
-   string                           json;              // json metadata for the campaign.
-   vector<account_name_type>        agents;            // Set of Accounts authorized to create bids for the campaign.
-   account_name_type                interface;         // Interface that facilitated the purchase of the advertising campaign.
-   time_point                       created;           // Time campaign was created.
-   time_point                       last_updated;      // Time campaigns's details were last updated or inventory was delivered.
-   bool                             active;            // True when active for bidding and delivery, false to deactivate.
+   account_name_type                account;           ///< Account creating the ad campaign.
+   string                           campaign_id;       ///< uuidv4 to refer to the campaign.
+   asset                            budget;            ///< Total expenditure of the campaign.
+   asset                            total_bids;        ///< Total amount of expenditure in active bids. Cannot exceed AD_RESERVE_RATIO times the campaign budget.
+   time_point                       begin;             ///< Beginning time of the campaign. Bids cannot be created before this time.
+   time_point                       end;               ///< Ending time of the campaign. Remaining campaign budget will be refunded after this time.
+   string                           json;              ///< json metadata for the campaign.
+   vector<account_name_type>        agents;            ///< Set of Accounts authorized to create bids for the campaign.
+   account_name_type                interface;         ///< Interface that facilitated the purchase of the advertising campaign.
+   time_point                       created;           ///< Time campaign was created.
+   time_point                       last_updated;      ///< Time campaigns's details were last updated or inventory was delivered.
+   bool                             active;            ///< True when active for bidding and delivery, false to deactivate.
 };
 
 
@@ -1952,19 +1954,19 @@ struct ad_inventory_api_obj
    ad_inventory_api_obj(){}
 
    ad_inventory_id_type             id;
-   account_name_type                provider;          // Account creating the ad inventory.
-   string                           inventory_id;      // uuidv4 to refer to the inventory.
-   string                           metric;            // Type of expense metric used.
-   string                           audience_id;       // ad audience_id, containing a set of usernames of viewing accounts in their userbase.
-   asset                            min_price;         // Minimum bidding price per metric.
-   uint32_t                         inventory;         // Total metrics available.
-   uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
-   string                           json;              // json metadata for the inventory.
-   vector<account_name_type>        agents;            // Set of Accounts authorized to create delivery transactions for the inventory.
-   time_point                       created;           // Time inventory was created.
-   time_point                       last_updated;      // Time inventorys's details were last updated or inventory was delivered.
-   time_point                       expiration;        // Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
-   bool                             active;            // True when active for bidding and delivery, false to deactivate.
+   account_name_type                provider;          ///< Account creating the ad inventory.
+   string                           inventory_id;      ///< uuidv4 to refer to the inventory.
+   string                           metric;            ///< Type of expense metric used.
+   string                           audience_id;       ///< ad audience_id, containing a set of usernames of viewing accounts in their userbase.
+   asset                            min_price;         ///< Minimum bidding price per metric.
+   uint32_t                         inventory;         ///< Total metrics available.
+   uint32_t                         remaining;         ///< Current amount of inventory remaining. Decrements when delivered.
+   string                           json;              ///< json metadata for the inventory.
+   vector<account_name_type>        agents;            ///< Set of Accounts authorized to create delivery transactions for the inventory.
+   time_point                       created;           ///< Time inventory was created.
+   time_point                       last_updated;      ///< Time inventorys's details were last updated or inventory was delivered.
+   time_point                       expiration;        ///< Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
+   bool                             active;            ///< True when active for bidding and delivery, false to deactivate.
 };
 
 
@@ -1988,13 +1990,13 @@ struct ad_audience_api_obj
    ad_audience_api_obj(){}
 
    ad_audience_id_type              id;
-   account_name_type                account;           // Account creating the ad audience.
-   string                           audience_id;       // uuidv4 to refer to the audience.
-   string                           json;              // json metadata for the audience.
-   vector< account_name_type >      audience;          // List of usernames within the audience for campaigns and inventory.
-   time_point                       created;           // Time audience was created.
-   time_point                       last_updated;      // Time audiences's details were last updated.
-   bool                             active;            // True when active for bidding and delivery, false to deactivate.
+   account_name_type                account;           ///< Account creating the ad audience.
+   string                           audience_id;       ///< uuidv4 to refer to the audience.
+   string                           json;              ///< json metadata for the audience.
+   vector< account_name_type >      audience;          ///< List of usernames within the audience for campaigns and inventory.
+   time_point                       created;           ///< Time audience was created.
+   time_point                       last_updated;      ///< Time audiences's details were last updated.
+   bool                             active;            ///< True when active for bidding and delivery, false to deactivate.
 };
 
 
@@ -2020,20 +2022,20 @@ struct ad_bid_api_obj
    ad_bid_api_obj(){}
 
    ad_bid_id_type                   id;
-   account_name_type                bidder;            // Account that created the ad budget, or an agent of the campaign.
-   string                           bid_id;            // Bid uuidv4 for referring to the bid and updating it or cancelling it.
-   account_name_type                account;           // Account that created the campaign that this bid is directed towards.  
-   string                           creative_id;       // Desired creative for display. 
-   string                           campaign_id;       // Ad campaign uuidv4 to utilise for the bid.
-   account_name_type                provider;          // Account offering inventory supply.
-   string                           inventory_id;      // Inventory uuidv4 offering to bid on.
-   string                           audience_id;       // Desired audience for display acceptance. Audience must include only members of the inventory audience.
-   asset                            bid_price;         // Price offered per metric. Asset symbol must be the same as the inventory price.
-   uint32_t                         requested;         // Maximum total metrics requested.
-   uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
-   time_point                       created;           // Time audience was created.
-   time_point                       last_updated;      // Time audiences's details were last updated or inventory was delivered.
-   time_point                       expiration;        // Time audience was created.
+   account_name_type                bidder;            ///< Account that created the ad budget, or an agent of the campaign.
+   string                           bid_id;            ///< Bid uuidv4 for referring to the bid and updating it or cancelling it.
+   account_name_type                account;           ///< Account that created the campaign that this bid is directed towards.  
+   string                           creative_id;       ///< Desired creative for display. 
+   string                           campaign_id;       ///< Ad campaign uuidv4 to utilise for the bid.
+   account_name_type                provider;          ///< Account offering inventory supply.
+   string                           inventory_id;      ///< Inventory uuidv4 offering to bid on.
+   string                           audience_id;       ///< Desired audience for display acceptance. Audience must include only members of the inventory audience.
+   asset                            bid_price;         ///< Price offered per metric. Asset symbol must be the same as the inventory price.
+   uint32_t                         requested;         ///< Maximum total metrics requested.
+   uint32_t                         remaining;         ///< Current amount of inventory remaining. Decrements when delivered.
+   time_point                       created;           ///< Time audience was created.
+   time_point                       last_updated;      ///< Time audiences's details were last updated or inventory was delivered.
+   time_point                       expiration;        ///< Time audience was created.
 };
 
 
@@ -2057,18 +2059,18 @@ struct tag_api_obj
    tag_api_obj() {}
 
    tags::tag_stats_id_type    id;
-   tag_name_type              tag;             // Name of the tag being measured.
-   asset                      total_payout;    // USD value of all earned content rewards for all posts using the tag.
-   uint32_t                   post_count;      // Number of posts using the tag.
-   uint32_t                   children;        // The amount of comments on root posts for all posts using the tag.
-   int32_t                    net_votes;       // The amount of upvotes, minus downvotes for all posts using the tag.
-   int32_t                    view_count;      // The amount of views for all posts using the tag.
-   int32_t                    share_count;     // The amount of shares for all posts using the tag.
-   int128_t                   net_reward;      // Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
-   int128_t                   vote_power;      // Sum of weighted voting power for all posts using the tag.
-   int128_t                   view_power;      // Sum of weighted view power for all posts using the tag.
-   int128_t                   share_power;     // Sum of weighted share power for all posts using the tag.
-   int128_t                   comment_power;   // Sum of weighted comment power for all posts using the tag.
+   tag_name_type              tag;             ///< Name of the tag being measured.
+   asset                      total_payout;    ///< USD value of all earned content rewards for all posts using the tag.
+   uint32_t                   post_count;      ///< Number of posts using the tag.
+   uint32_t                   children;        ///< The amount of comments on root posts for all posts using the tag.
+   int32_t                    net_votes;       ///< The amount of upvotes, minus downvotes for all posts using the tag.
+   int32_t                    view_count;      ///< The amount of views for all posts using the tag.
+   int32_t                    share_count;     ///< The amount of shares for all posts using the tag.
+   int128_t                   net_reward;      ///< Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
+   int128_t                   vote_power;      ///< Sum of weighted voting power for all posts using the tag.
+   int128_t                   view_power;      ///< Sum of weighted view power for all posts using the tag.
+   int128_t                   share_power;     ///< Sum of weighted share power for all posts using the tag.
+   int128_t                   comment_power;   ///< Sum of weighted comment power for all posts using the tag.
 };
 
 
@@ -2122,7 +2124,7 @@ struct dynamic_global_property_api_obj : public dynamic_global_property_object
 };
 
 
-} } // node::app
+} } ///< node::app
 
 FC_REFLECT( node::app::comment_api_obj,
          (id)

@@ -22,31 +22,44 @@ using namespace node::private_message;
 
 typedef uint16_t transaction_handle_type;
 
-struct memo_data 
+
+
+/**
+ * Contains a pair of public keys, checksum and encrypted data from a message.
+ * Adds a # onto strings
+ */
+struct encrypted_message_data 
 {
-   static optional<memo_data> from_string( string str ) 
+   static optional< encrypted_message_data > from_string( string str ) 
    {
       try 
       {
-         if( str.size() > sizeof(memo_data) && str[0] == '#') 
+         if( str.size() > sizeof( encrypted_message_data ) && str[0] == '#') 
          {
             auto data = fc::from_base58( str.substr(1) );
-            auto m  = fc::raw::unpack<memo_data>( data );
-            FC_ASSERT( string(m) == str );
+            auto m  = fc::raw::unpack< encrypted_message_data >( data );
+            FC_ASSERT( string( m ) == str );
             return m;
          }
-      } catch ( .. ) {}
-      return optional<memo_data>();
+      } 
+      catch ( .. ) {}
+
+      return optional< encrypted_message_data >();
    }
 
-   public_key_type from;
-   public_key_type to;
-   uint64_t        nonce = 0;
-   uint32_t        check = 0;
-   vector<char>    encrypted;
+   public_key_type          from;          ///< Public key of sending account.
 
-   operator string()const {
-      auto data = fc::raw::pack(*this);
+   public_key_type          to;            ///< Public key of the receiving account.
+
+   uint64_t                 nonce = 0;     ///< Iterated value derived from the time of encryption.
+
+   uint32_t                 check = 0;     ///< Hash checksum of the plaintext.
+
+   vector< char >           encrypted;     ///< Raw encrypted data of the message.
+
+   operator string()const                  ///< Returns the base58 Hash-prefixed compressed object.
+   {
+      auto data = fc::raw::pack( *this );
       auto base58 = fc::to_base58( data );
       return '#'+base58;
    }
@@ -133,9 +146,14 @@ class wallet_api
       variant_object                         about() const;
 
       /**
-       * Gets the account information for all accounts for which this wallet has a private key.
+       * Lists the names all accounts for which this wallet has a private key.
        */
-      vector< account_api_obj >              list_my_accounts();
+      vector< string >                       list_my_accounts();
+
+      /**
+       * Gets the full extended account information for all accounts for which this wallet has a private key.
+       */
+      vector< extended_account >             get_my_accounts();
 
       /** 
        * Returns the current wallet filename.
@@ -251,7 +269,6 @@ class wallet_api
        */
       string                                 serialize_transaction( signed_transaction tx ) const;
 
-
       /**
        * Copies the wallet file to a specified file pathway.
        * 
@@ -267,21 +284,20 @@ class wallet_api
        */
       void                                   set_transaction_expiration( uint32_t seconds );
 
-
       /**
        * Checks memos against private keys on account and imported in wallet.
        */
       void                                   check_memo( const string& memo, const account_api_obj& account )const;
 
       /**
-       *  Returns the encrypted memo if memo starts with '#' otherwise returns memo.
+       *  Returns the encrypted message if message starts with '#' otherwise returns message.
        */
-      string                                 get_encrypted_memo( string from, string to, string memo );
+      string                                 get_encrypted_message( string from_public_key, string to_public_key, string message );
 
       /**
-       * Returns the decrypted memo if possible given wallet's known private keys.
+       * Returns the decrypted plaintext message if possible given wallet's known private keys.
        */
-      string                                 decrypt_memo( string memo );
+      string                                 get_decrypted_message( string message );
 
       /**
        * Returns the private key derived from the prefix and sequence number. 
@@ -323,7 +339,7 @@ class wallet_api
        * 
        * @returns A suggested seed_phrase.
        */
-      seed_phrase_info                         suggest_seed_phrase()const;
+      seed_phrase_info                       suggest_seed_phrase()const;
 
       /** 
        * Transforms a seed phrase to reduce the chance of errors when re-entering the key from memory.
@@ -347,7 +363,7 @@ class wallet_api
        * 
        * @returns map containing the wallet's private keys, indexed by their public key.
        */
-      map<public_key_type, string>           list_keys();
+      map< public_key_type, string >         list_keys();
 
       /** 
        * Imports a WIF Private Key into the wallet to be used to sign transactions by an account.
@@ -357,6 +373,7 @@ class wallet_api
        * @param wif_key the WIF Private Key to import
        */
       bool                                   import_key( string wif_key );
+
 
       void                                   encrypt_keys();
 
@@ -374,6 +391,7 @@ class wallet_api
        * @returns All values of config.hpp preprocessor directive variables. 
        */
       fc::variant_object                              get_config()const;
+
 
       /** 
        * Returns the blockchain's rapidly-changing properties.
@@ -1565,7 +1583,8 @@ class wallet_api
        * @param business_public_key The public key used for encrypted business content.
        * @param fee Account creation fee for stake on the new account.
        * @param delegation Initial amount delegated to the new account.
-       * @param use_wallet_keys Set True to use keys generated locally by this wallet. 
+       * @param generate_keys Set True to use keys generated locally by this wallet.
+       * @param password Password to use for generating new keys.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_create(
@@ -1594,7 +1613,8 @@ class wallet_api
          string business_public_key,
          asset fee,
          asset delegation,
-         bool use_wallet_keys,
+         bool generate_keys,
+         string password,
          bool broadcast );
      
 
@@ -3770,7 +3790,7 @@ class wallet_api
       annotated_signed_transaction             asset_global_settle(
          string signatory,
          string issuer,
-         string asset_to_settle
+         string asset_to_settle,
          price settle_price,
          bool broadcast );
 
@@ -3796,7 +3816,7 @@ class wallet_api
        * @param active Set active to true to activate producer, false to deactivate
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction              producer_update(
+      annotated_signed_transaction             producer_update(
          string signatory,
          string owner,
          string details,
@@ -3818,7 +3838,7 @@ class wallet_api
        * @param props Chain properties values for selection of adjustable network parameters. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction              proof_of_work(
+      annotated_signed_transaction             proof_of_work(
          proof_of_work_type work,
          string new_owner_key,
          chain_properties props,
@@ -3834,7 +3854,7 @@ class wallet_api
        * @param block_height The height of the block being verified.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction              verify_block(
+      annotated_signed_transaction             verify_block(
          string signatory,
          string producer,
          string block_id,
@@ -3853,7 +3873,7 @@ class wallet_api
        * @param commitment_stake The value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction              commit_block(
+      annotated_signed_transaction             commit_block(
          string signatory,
          string producer,
          string block_id,
@@ -3872,7 +3892,7 @@ class wallet_api
        * @param second_trx The second transaction that is in contravention of the first commitment transaction. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction              producer_violation(
+      annotated_signed_transaction             producer_violation(
          string signatory,
          string reporter,
          signed_transaction first_trx,
@@ -3894,7 +3914,7 @@ class wallet_api
        * @param data Char vector of data contained within the operation.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction              custom_operation(
+      annotated_signed_transaction             custom(
          flat_set< account_name_type > required_auths,
          uint16_t id,
          vector< char > data,
@@ -3910,13 +3930,14 @@ class wallet_api
        * @param json Valid UTF8 / JSON string of operation data.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction              custom_json_operation(
+      annotated_signed_transaction             custom_json(
          flat_set< account_name_type > required_auths,
-         uint16_t id,
-         vector< char > data,
+         flat_set< account_name_type > required_posting_auths,
+         string id,
+         string json,
          bool broadcast = false );
 
-       /**
+      /**
        * @}
        */
 
@@ -4049,4 +4070,4 @@ FC_API( node::wallet::wallet_api,
         (get_transaction)
       )
 
-FC_REFLECT( node::wallet::memo_data, (from)(to)(nonce)(check)(encrypted) )
+FC_REFLECT( node::wallet::encrypted_message_data, (from)(to)(nonce)(check)(encrypted) )

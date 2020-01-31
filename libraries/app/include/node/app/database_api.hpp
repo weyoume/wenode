@@ -69,53 +69,53 @@ struct discussion_query
       FC_ASSERT( limit <= 100 );
    }
 
-   string                  account = INIT_ACCOUNT;       // Name of the account being fetched for feed or blog queries.
+   string                  account = INIT_ACCOUNT;       ///< Name of the account being fetched for feed or blog queries.
 
-   string                  board = string();             // Name of the board being queried.
+   string                  board = string();             ///< Name of the board being queried.
 
-   string                  tag = string();               // Name of the tag being querired.
+   string                  tag = string();               ///< Name of the tag being querired.
 
-   string                  sort_type = "quality";        // Sorting index type.
+   string                  sort_type = "quality";        ///< Sorting index type.
 
-   string                  sort_time = "standard";       // Time preference of the sorting type.
+   string                  sort_time = "standard";       ///< Time preference of the sorting type.
    
-   string                  feed_type = "follow";         // Type of feed being queried.
+   string                  feed_type = "follow";         ///< Type of feed being queried.
 
-   string                  blog_type = "account";        // Type of blog being queried.
+   string                  blog_type = "account";        ///< Type of blog being queried.
 
-   string                  post_include_time = "all";    // Time limit for including posts.
+   string                  post_include_time = "all";    ///< Time limit for including posts.
 
-   bool                    include_private = false;      // True to include private encrypted posts.
+   bool                    include_private = false;      ///< True to include private encrypted posts.
 
-   string                  max_rating = "general";       // Highest content rating to include in posts queried.
+   string                  max_rating = "general";       ///< Highest content rating to include in posts queried.
    
-   uint32_t                limit = 20;                   // Amount of discussions to return.
+   uint32_t                limit = 20;                   ///< Amount of discussions to return.
 
-   set<string>             select_boards;                // list of boards to include.
+   set<string>             select_boards;                ///< list of boards to include.
 
-   set<string>             filter_boards;                // list of boards to filter, posts made in these boards are filtered.
+   set<string>             filter_boards;                ///< list of boards to filter, posts made in these boards are filtered.
    
-   set<string>             select_tags;                  // list of tags to include.
+   set<string>             select_tags;                  ///< list of tags to include.
 
-   set<string>             filter_tags;                  // list of tags to filter, posts with these tags are filtered.
+   set<string>             filter_tags;                  ///< list of tags to filter, posts with these tags are filtered.
 
-   set<string>             select_authors;               // list of authors to include.
+   set<string>             select_authors;               ///< list of authors to include.
 
-   set<string>             filter_authors;               // list of authors to filter, posts by these authors are filtered.
+   set<string>             filter_authors;               ///< list of authors to filter, posts by these authors are filtered.
 
-   set<string>             select_languages;             // list of languages to include.
+   set<string>             select_languages;             ///< list of languages to include.
 
-   set<string>             filter_languages;             // list of languages to filter, posts made in these boards are filtered.
+   set<string>             filter_languages;             ///< list of languages to filter, posts made in these boards are filtered.
 
-   optional<string>        start_author;                 // The Author of the first post to include in the ranking.
+   optional<string>        start_author;                 ///< The Author of the first post to include in the ranking.
 
-   optional<string>        start_permlink;               // The Permlink of the first post to include in the ranking.
+   optional<string>        start_permlink;               ///< The Permlink of the first post to include in the ranking.
 
-   optional<string>        parent_author;                // The Author of the parent post to to query comments from.
+   optional<string>        parent_author;                ///< The Author of the parent post to to query comments from.
 
-   optional<string>        parent_permlink;              // The Permlink of the parent post to to query comments from.
+   optional<string>        parent_permlink;              ///< The Permlink of the parent post to to query comments from.
 
-   uint32_t                truncate_body = 0;            // the number of bytes of the post body to return, 0 for all.
+   uint32_t                truncate_body = 0;            ///< the number of bytes of the post body to return, 0 for all.
 };
 
 
@@ -130,23 +130,23 @@ struct search_query
       FC_ASSERT( margin_percent <= PERCENT_100 );
    }
 
-   string                            account;                            // Name of the account creating the search.
+   string                            account;                            ///< Name of the account creating the search.
 
-   string                            query;                              // Search String being queried.
+   string                            query;                              ///< Search String being queried.
 
-   uint32_t                          limit = 20;                         // The amount of results to include in the results.
+   uint32_t                          limit = 20;                         ///< The amount of results to include in the results.
 
-   uint16_t                          margin_percent = 25 * PERCENT_100;  // Search result must match within this percentage to be included.
+   uint16_t                          margin_percent = 25 * PERCENT_100;  ///< Search result must match within this percentage to be included.
 
-   bool                              include_accounts = true;            // Set True to include account results.
+   bool                              include_accounts = true;            ///< Set True to include account results.
 
-   bool                              include_boards = true;              // Set True to include board results.
+   bool                              include_boards = true;              ///< Set True to include board results.
 
-   bool                              include_tags = true;                // Set True to include tag results.
+   bool                              include_tags = true;                ///< Set True to include tag results.
 
-   bool                              include_assets = true;              // Set True to include asset results.
+   bool                              include_assets = true;              ///< Set True to include asset results.
 
-   bool                              include_posts = true;               // Set True to include post results by title.
+   bool                              include_posts = true;               ///< Set True to include post results by title.
 
 
 };
@@ -162,15 +162,15 @@ struct ad_query
       FC_ASSERT( limit <= 100 );
    }
 
-   string                  interface;             // Name of the interface account of the ad inventory provider.
+   string                  interface;             ///< Name of the interface account of the ad inventory provider.
 
-   string                  viewer;                // Name of the audience member account receiving the ad.
+   string                  viewer;                ///< Name of the audience member account receiving the ad.
 
-   string                  format_type;           // Type of ad inventory format being queried.
+   string                  format_type;           ///< Type of ad inventory format being queried.
 
-   discussion_query        discussion_query;      // The Discussion feed display query of the ad context.
+   discussion_query        discussion_query;      ///< The Discussion feed display query of the ad context.
 
-   search_query            search_query;          // The Search display query of the ad context.
+   search_query            search_query;          ///< The Search display query of the ad context.
    
    uint32_t                limit = 0;
 };
@@ -191,9 +191,9 @@ class database_api
       ~database_api();
 
 
-      //=================//
-      // === Globals === //
-      //=================//
+      ///<=================///<
+      ///< === Globals === ///<
+      ///<=================///<
 
 
       fc::variant_object                  get_config()const;
@@ -211,9 +211,9 @@ class database_api
       reward_fund_api_obj                 get_reward_fund()const;
 
 
-      //===================//
-      // === Accounts ==== //
-      //===================//
+      ///<===================///<
+      ///< === Accounts ==== ///<
+      ///<===================///<
 
 
       vector< account_api_obj >                       get_accounts( vector< string > names ) const;
@@ -243,9 +243,9 @@ class database_api
       optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
 
 
-      //================//
-      // === Assets === //
-      //================//
+      ///<================///<
+      ///< === Assets === ///<
+      ///<================///<
 
 
       vector< extended_asset >                        get_assets( vector< string > assets )const;
@@ -265,9 +265,9 @@ class database_api
       vector< asset_delegation_expiration_api_obj >   get_expiring_asset_delegations( string account, time_point from, uint32_t limit = 100 )const;
 
 
-      //================//
-      // === Boards === //
-      //================//
+      ///<================///<
+      ///< === Boards === ///<
+      ///<================///<
 
 
       vector< extended_board >                        get_boards( vector< string > boards )const;
@@ -277,9 +277,9 @@ class database_api
       uint64_t                                        get_board_count()const;
 
 
-      //=================//
-      // === Network === //
-      //=================//
+      ///<=================///<
+      ///< === Network === ///<
+      ///<=================///<
 
 
       vector< producer_api_obj >                      get_producers_by_account( vector< string > names )const;
@@ -321,9 +321,9 @@ class database_api
       vector< community_enterprise_api_obj >          get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
 
-      //================//
-      // === Market === //
-      //================//
+      ///<================///<
+      ///< === Market === ///<
+      ///<================///<
 
 
       vector< order_state >                get_open_orders( vector< string > names )const;
@@ -343,9 +343,9 @@ class database_api
       market_state                         get_market_state( string buy_symbol, string sell_symbol )const;
 
 
-      //=============//
-      // === Ads === //
-      //=============//
+      ///<=============///<
+      ///< === Ads === ///<
+      ///<=============///<
 
 
       vector< account_ad_state >           get_account_ads( vector< string > names )const;
@@ -353,17 +353,17 @@ class database_api
       vector< ad_bid_state >               get_interface_audience_bids( const ad_query& query )const;
 
 
-      //================//
-      // === Search === //
-      //================//
+      ///<================///<
+      ///< === Search === ///<
+      ///<================///<
 
 
       search_result_state                  get_search_query( const search_query& query )const;  
 
 
-      //=================================//
-      // === Blocks and Transactions === //
-      //=================================//
+      ///<=================================///<
+      ///< === Blocks and Transactions === ///<
+      ///<=================================///<
 
 
       optional< block_header >             get_block_header( uint64_t block_num )const;
@@ -385,9 +385,9 @@ class database_api
       bool                                 verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
 
 
-      //======================//
-      // === Posts + Tags === //
-      //======================//
+      ///<======================///<
+      ///< === Posts + Tags === ///<
+      ///<======================///<
 
 
       vector< vote_state >                 get_active_votes( string author, string permlink )const;
@@ -413,9 +413,9 @@ class database_api
       vector< pair< tag_name_type, uint32_t > >   get_tags_used_by_author( string author )const;
 
 
-      //=====================//
-      // === Discussions === //
-      //=====================//
+      ///<=====================///<
+      ///< === Discussions === ///<
+      ///<=====================///<
 
 
       discussion                           get_content( string author, string permlink )const;
@@ -465,25 +465,25 @@ class database_api
       
 
 
-      //===============//
-      // === State === //
-      //===============//
+      ///<===============///<
+      ///< === State === ///<
+      ///<===============///<
 
 
       state                                get_state( string path )const;
 
 
-      //=======================//
-      // === Subscriptions === //
-      //=======================//
+      ///<=======================///<
+      ///< === Subscriptions === ///<
+      ///<=======================///<
    
 
       void                                set_block_applied_callback( std::function< void(const variant& block_header ) > cb );
 
 
-      //=========================//
-      // === Signal Handlers === //
-      //=========================//
+      ///<=========================///<
+      ///< === Signal Handlers === ///<
+      ///<=========================///<
 
 
       void on_api_startup();
@@ -582,17 +582,17 @@ FC_REFLECT( node::app::ad_query,
 
 FC_API( node::app::database_api,
 
-         // Subscriptions
+         ///< Subscriptions
 
          (set_block_applied_callback)
 
-         // Blocks and transactions
+         ///< Blocks and transactions
 
          (get_block_header)
          (get_block)
          (get_ops_in_block)
          
-         // Globals
+         ///< Globals
 
          (get_config)
          (get_dynamic_global_properties)
@@ -603,7 +603,7 @@ FC_API( node::app::database_api,
          (get_reward_fund)
          (get_state)
 
-         // Accounts
+         ///< Accounts
 
          (get_accounts)
          (get_concise_accounts)
@@ -617,7 +617,7 @@ FC_API( node::app::database_api,
          (get_owner_history)
          (get_recovery_request)
 
-         // Assets
+         ///< Assets
 
          (get_assets)
          (get_escrow)
@@ -628,12 +628,12 @@ FC_API( node::app::database_api,
          (get_asset_delegations)
          (get_expiring_asset_delegations)
 
-         // Boards
+         ///< Boards
 
          (get_boards)
          (get_board_count)
 
-         // Network
+         ///< Network
 
          (get_active_producers)
          (get_producers_by_account)
@@ -650,7 +650,7 @@ FC_API( node::app::database_api,
          (lookup_producer_accounts)
          (get_producer_count)
 
-         // Market
+         ///< Market
 
          (get_open_orders)
          (get_limit_orders)
@@ -660,16 +660,16 @@ FC_API( node::app::database_api,
          (get_credit_pools)
          (get_liquidity_pools)
 
-         // Ads
+         ///< Ads
 
          (get_account_ads)
          (get_interface_audience_bids)
 
-         // Search 
+         ///< Search 
 
          (get_search_query)
 
-         // Authority / validation
+         ///< Authority / validation
 
          (get_transaction_hex)
          (get_transaction)
@@ -678,7 +678,7 @@ FC_API( node::app::database_api,
          (verify_authority)
          (verify_account_authority)
 
-         // Posts + Tags
+         ///< Posts + Tags
 
          (get_active_votes)
          (get_active_views)
@@ -688,7 +688,7 @@ FC_API( node::app::database_api,
          (get_top_tags)
          (get_tags_used_by_author)
 
-         // Discussions
+         ///< Discussions
 
          (get_content)
          (get_content_replies)
