@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no signatures" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       ACTORS( (alice)(bob)(candice) );
 
@@ -168,13 +168,13 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( alice_comment.weight == 0 );
       BOOST_REQUIRE( alice_comment.max_weight == 0 );
 
-      BOOST_REQUIRE( alice_comment.author_reward_percent == props.median_props.author_reward_percent );
-      BOOST_REQUIRE( alice_comment.vote_reward_percent == props.median_props.vote_reward_percent );
-      BOOST_REQUIRE( alice_comment.view_reward_percent == props.median_props.view_reward_percent );
-      BOOST_REQUIRE( alice_comment.share_reward_percent == props.median_props.share_reward_percent );
-      BOOST_REQUIRE( alice_comment.comment_reward_percent == props.median_props.comment_reward_percent );
-      BOOST_REQUIRE( alice_comment.storage_reward_percent == props.median_props.storage_reward_percent );
-      BOOST_REQUIRE( alice_comment.moderator_reward_percent == props.median_props.moderator_reward_percent );
+      BOOST_REQUIRE( alice_comment.author_reward_percent == median_props.author_reward_percent );
+      BOOST_REQUIRE( alice_comment.vote_reward_percent == median_props.vote_reward_percent );
+      BOOST_REQUIRE( alice_comment.view_reward_percent == median_props.view_reward_percent );
+      BOOST_REQUIRE( alice_comment.share_reward_percent == median_props.share_reward_percent );
+      BOOST_REQUIRE( alice_comment.comment_reward_percent == median_props.comment_reward_percent );
+      BOOST_REQUIRE( alice_comment.storage_reward_percent == median_props.storage_reward_percent );
+      BOOST_REQUIRE( alice_comment.moderator_reward_percent == median_props.moderator_reward_percent );
 
       BOOST_REQUIRE( alice_comment.allow_replies == true );
       BOOST_REQUIRE( alice_comment.allow_votes == true );
@@ -261,13 +261,13 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( bob_comment.content_rewards.amount.value == 0 );
       BOOST_REQUIRE( bob_comment.percent_liquid == PERCENT_100 );
 
-      BOOST_REQUIRE( bob_comment.author_reward_percent == props.median_props.author_reward_percent );
-      BOOST_REQUIRE( bob_comment.vote_reward_percent == props.median_props.vote_reward_percent );
-      BOOST_REQUIRE( bob_comment.view_reward_percent == props.median_props.view_reward_percent );
-      BOOST_REQUIRE( bob_comment.share_reward_percent == props.median_props.share_reward_percent );
-      BOOST_REQUIRE( bob_comment.comment_reward_percent == props.median_props.comment_reward_percent );
-      BOOST_REQUIRE( bob_comment.storage_reward_percent == props.median_props.storage_reward_percent );
-      BOOST_REQUIRE( bob_comment.moderator_reward_percent == props.median_props.moderator_reward_percent );
+      BOOST_REQUIRE( bob_comment.author_reward_percent == median_props.author_reward_percent );
+      BOOST_REQUIRE( bob_comment.vote_reward_percent == median_props.vote_reward_percent );
+      BOOST_REQUIRE( bob_comment.view_reward_percent == median_props.view_reward_percent );
+      BOOST_REQUIRE( bob_comment.share_reward_percent == median_props.share_reward_percent );
+      BOOST_REQUIRE( bob_comment.comment_reward_percent == median_props.comment_reward_percent );
+      BOOST_REQUIRE( bob_comment.storage_reward_percent == median_props.storage_reward_percent );
+      BOOST_REQUIRE( bob_comment.moderator_reward_percent == median_props.moderator_reward_percent );
 
       BOOST_REQUIRE( bob_comment.allow_replies == true );
       BOOST_REQUIRE( bob_comment.allow_votes == true );
@@ -345,13 +345,13 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( candice_comment.content_rewards.amount.value == 0 );
       BOOST_REQUIRE( candice_comment.percent_liquid == PERCENT_100 );
 
-      BOOST_REQUIRE( candice_comment.author_reward_percent == props.median_props.author_reward_percent );
-      BOOST_REQUIRE( candice_comment.vote_reward_percent == props.median_props.vote_reward_percent );
-      BOOST_REQUIRE( candice_comment.view_reward_percent == props.median_props.view_reward_percent );
-      BOOST_REQUIRE( candice_comment.share_reward_percent == props.median_props.share_reward_percent );
-      BOOST_REQUIRE( candice_comment.comment_reward_percent == props.median_props.comment_reward_percent );
-      BOOST_REQUIRE( candice_comment.storage_reward_percent == props.median_props.storage_reward_percent );
-      BOOST_REQUIRE( candice_comment.moderator_reward_percent == props.median_props.moderator_reward_percent );
+      BOOST_REQUIRE( candice_comment.author_reward_percent == median_props.author_reward_percent );
+      BOOST_REQUIRE( candice_comment.vote_reward_percent == median_props.vote_reward_percent );
+      BOOST_REQUIRE( candice_comment.view_reward_percent == median_props.view_reward_percent );
+      BOOST_REQUIRE( candice_comment.share_reward_percent == median_props.share_reward_percent );
+      BOOST_REQUIRE( candice_comment.comment_reward_percent == median_props.comment_reward_percent );
+      BOOST_REQUIRE( candice_comment.storage_reward_percent == median_props.storage_reward_percent );
+      BOOST_REQUIRE( candice_comment.moderator_reward_percent == median_props.moderator_reward_percent );
 
       BOOST_REQUIRE( candice_comment.allow_replies == true );
       BOOST_REQUIRE( candice_comment.allow_votes == true );
@@ -647,7 +647,7 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no connection" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       ACTORS( (alice)(bob)(candice)(dan) );
 
@@ -759,7 +759,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when voting on a non-existent comment" );
       
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       ACTORS( (alice)(bob)(candice)(dan) );
 
@@ -867,7 +867,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
 
       auto bob_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
-      int64_t max_vote_denom = props.median_props.vote_reserve_rate * ( props.median_props.vote_recharge_time.count() / fc::days(1).count() );
+      int64_t max_vote_denom = median_props.vote_reserve_rate * ( median_props.vote_recharge_time.count() / fc::days(1).count() );
 
       BOOST_REQUIRE( bob.voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) / max_vote_denom ) );
       BOOST_REQUIRE( bob.last_vote_time == now() );
@@ -966,7 +966,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when viewing a non-existent comment" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       ACTORS( (alice)(bob)(candice)(dan) );
 
@@ -1057,7 +1057,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
 
       auto bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
-      int64_t max_view_denom = props.median_props.view_reserve_rate * ( props.median_props.view_recharge_time.count() / fc::days(1).count() );
+      int64_t max_view_denom = median_props.view_reserve_rate * ( median_props.view_recharge_time.count() / fc::days(1).count() );
 
       BOOST_REQUIRE( bob.viewing_power == old_viewing_power - ( ( old_viewing_power + max_view_denom - 1 ) / max_view_denom ) );
       BOOST_REQUIRE( bob.last_view_time == now() );
@@ -1105,7 +1105,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when sharing a non-existent comment" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       ACTORS( (alice)(bob)(candice)(dan) );
 
@@ -1195,7 +1195,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
 
       auto bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
-      int64_t max_share_denom = props.median_props.share_reserve_rate * ( props.median_props.share_recharge_time.count() / fc::days(1).count() );
+      int64_t max_share_denom = median_props.share_reserve_rate * ( median_props.share_recharge_time.count() / fc::days(1).count() );
 
       BOOST_REQUIRE( bob.sharing_power == old_sharing_power - ( ( old_sharing_power + max_share_denom - 1 ) / max_share_denom ) );
       BOOST_REQUIRE( bob.last_share_time == now() );
@@ -1243,7 +1243,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when moderating a non-existent comment" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       ACTORS( (alice)(bob)(candice)(dan) );
 

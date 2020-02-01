@@ -88,8 +88,9 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    FC_ASSERT( account_ptr == nullptr,
       "Account with the name: ${n} already exists.", ("n", o.new_account_name) );
    
-   const producer_schedule_object& pso = _db.get_producer_schedule();
-   asset acc_fee = pso.median_props.account_creation_fee;
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   time_point now = _db.head_block_time();
+   asset acc_fee = median_props.account_creation_fee;
    
    FC_ASSERT( o.fee >= asset( acc_fee.amount, SYMBOL_COIN ), 
       "Insufficient Fee: ${f} required, ${p} provided.", ("f", acc_fee )("p", o.fee) );
@@ -97,9 +98,10 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    FC_ASSERT( registrar_balance.get_liquid_balance() >= o.fee, 
       "Insufficient balance to create account.", ( "registrar balance", registrar_balance.liquid_balance )( "required", o.fee ) );
 
-   FC_ASSERT( registrar_balance.staked_balance - registrar_balance.delegated_balance - registrar_balance.to_unstake + registrar_balance.total_unstaked >= o.delegation.amount, "Insufficient Stake to delegate to new account.",
-               ( "registrar_balance.staked_balance", registrar_balance.staked_balance )
-               ( "registrar_balance.delegated_balance", registrar_balance.delegated_balance )( "required", o.delegation ) );
+   FC_ASSERT( registrar_balance.staked_balance - registrar_balance.delegated_balance - registrar_balance.to_unstake + registrar_balance.total_unstaked >= o.delegation.amount, 
+      "Insufficient Stake to delegate to new account.",
+      ( "registrar_balance.staked_balance", registrar_balance.staked_balance )
+      ( "registrar_balance.delegated_balance", registrar_balance.delegated_balance )( "required", o.delegation ) );
 
    auto target_delegation = asset( acc_fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN );
    auto current_delegation = asset( o.fee.amount * CREATE_ACCOUNT_DELEGATION_RATIO, SYMBOL_COIN ) + o.delegation;
@@ -143,14 +145,14 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       FC_ASSERT( governance_account.active,
          "Governance account is not active, plase select a different governance account." );
    }
-   if( o.account_type == PROFILE )    // Profile account validation
+   if( o.account_type == PROFILE )         // Profile account validation
    {
       FC_ASSERT( o.governance_account.size() && o.governance_account == registrar.name,
          "Profile accounts must be registered by its nominated governance account." );
       FC_ASSERT( governance_approved,
          "Governance Accounts must be approved by a threshold of subscriptions before creating profile accounts." );
    }
-   else if( o.account_type == BUSINESS )    // Business account validation
+   else if( o.account_type == BUSINESS )       // Business account validation
    {
       FC_ASSERT( o.governance_account.size(),
          "Business accounts must have an initial governance account.");
@@ -163,9 +165,6 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       FC_ASSERT( *o.officer_vote_threshold >= 0,
          "Business account requires an officer threshold greater than or equal to 0.");
    }
-
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   time_point now = _db.head_block_time();
    
    for( auto& a : o.owner.account_auths )
    {
@@ -286,7 +285,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          aevo.account = o.registrar;
          aevo.business_account = o.new_account_name;
          aevo.executive_account = o.registrar;
-         aevo.role = CHIEF_EXECUTIVE_OFFICER;
+         aevo.role = CHIEF_EXECUTIVE_OFFICER;          // Create CEO vote in business account for the registrar account.
       });
    }
 
@@ -360,8 +359,8 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       FC_ASSERT( b.is_chief( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   time_point now = _db.head_block_time();
 
+   time_point now = _db.head_block_time();
    const account_object& account = _db.get_account( o.account );
    const account_authority_object& account_auth = _db.get< account_authority_object, by_account >( o.account );
    
@@ -467,8 +466,8 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
       interface_ptr = _db.find_interface( o.interface );
    }
    
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   time_point now = _db.head_block_time();
    asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
    asset monthly_fee = asset( 0, SYMBOL_USD );
 
@@ -481,17 +480,17 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
       break; 
       case STANDARD_MEMBERSHIP:
       {
-         monthly_fee = props.median_props.membership_base_price;
+         monthly_fee = median_props.membership_base_price;
       }
       break;
       case MID_MEMBERSHIP:
       {
-         monthly_fee = props.median_props.membership_mid_price;
+         monthly_fee = median_props.membership_mid_price;
       }
       break; 
       case TOP_MEMBERSHIP:
       {
-         monthly_fee = props.median_props.membership_top_price;
+         monthly_fee = median_props.membership_top_price;
       }
       break;
       default:
@@ -514,17 +513,17 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
       break;
       case STANDARD_MEMBERSHIP:
       {
-         carried_fees = asset( ( props.median_props.membership_base_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         carried_fees = asset( ( median_props.membership_base_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
       }
       break;
       case MID_MEMBERSHIP:
       {
-         carried_fees = asset( ( props.median_props.membership_mid_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         carried_fees = asset( ( median_props.membership_mid_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
       }
       break;
       case TOP_MEMBERSHIP:
       {
-         carried_fees = asset( ( props.median_props.membership_top_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         carried_fees = asset( ( median_props.membership_top_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
       }
       break;
       default:
@@ -651,7 +650,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
       _db.update_account_executive_votes( voter, o.business_account );
    }
 
-   _db.update_business_account( bus_acc, props );   // updates the voting status of the business account to reflect all voting changes.
+   _db.update_business_account( bus_acc );   // updates the voting status of the business account to reflect all voting changes.
 
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -672,7 +671,6 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
    const account_object& business = _db.get_account( o.business_account );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
    FC_ASSERT( voting_power > 0,
       "Account must hold a balance of voting power in the equity assets of the business account in order to vote for officers." );
@@ -734,7 +732,7 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
       _db.update_account_officer_votes( voter, o.business_account );
    }
 
-   _db.update_business_account( bus_acc, props );   // updates the voting status of the business account to reflect all voting changes.
+   _db.update_business_account( bus_acc );   // updates the voting status of the business account to reflect all voting changes.
 
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -1097,8 +1095,6 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
    }
 
    const producer_schedule_object& pso = _db.get_producer_schedule();
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   
    const auto& account_rank_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
    const auto& account_producer_idx = _db.get_index< producer_vote_index >().indices().get< by_account_producer >();
    auto rank_itr = account_rank_idx.find( boost::make_tuple( voter.name, o.vote_rank ) );   // vote at rank number
@@ -2283,12 +2279,13 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
    const interface_object& interface = _db.get_interface( o.executive );
    const supernode_object& supernode = _db.get_supernode( o.executive );
    asset stake = _db.get_staked_balance( account.name, SYMBOL_COIN );
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
 
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   FC_ASSERT( o.budget <= props.median_props.max_exec_budget, 
+   FC_ASSERT( o.budget <= median_props.max_exec_budget, 
       "Executive board Budget is too high. Please reduce budget." );
+
    const producer_schedule_object& pso = _db.get_producer_schedule();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
      
    const executive_board_object* exec_ptr = _db.find_executive_board( o.executive );
 
@@ -2678,7 +2675,7 @@ void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
    const account_object& account = _db.get_account( o.account );
    const supernode_object* sup_ptr = _db.find_supernode( o.account );
 
@@ -2782,9 +2779,10 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+
    const account_object& account = _db.get_account( o.account );
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
+
    FC_ASSERT( account.membership != NONE,
       "Account must be a member to create an Interface.");
 
@@ -2807,7 +2805,7 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
             from_string( i.json, o.json );
          }
          i.active = o.active;
-         i.decay_weights( props );
+         i.decay_weights( now );
       });
    }
    else  // create new interface
@@ -2847,7 +2845,7 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
    }
    const account_object& account = _db.get_account( o.account );
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
    asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
 
    FC_ASSERT( account.membership != NONE, 
@@ -2926,6 +2924,8 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+
+   time_point now = _db.head_block_time();
    share_type daily_budget_total = ( BLOCK_REWARD.amount * BLOCKS_PER_DAY * COMMUNITY_FUND_PERCENT) / PERCENT_100 ;
    FC_ASSERT( o.daily_budget.amount < daily_budget_total, 
       "Daily Budget must specify a budget less than the total amount of funds available per day." );
@@ -2953,9 +2953,6 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
       asset_symbol_type inv_asset = *o.investment;
       const asset_object& asset = _db.get_asset( inv_asset );
    }
-
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
 
    shared_string enterprise_id;
    from_string( enterprise_id, o.enterprise_id );
@@ -3103,7 +3100,7 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
 
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
    const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
    shared_string new_history;
    from_string( new_history, o.details );
 
@@ -3139,9 +3136,10 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
    const community_enterprise_object& enterprise = _db.get_community_enterprise( o.creator, enterprise_id );
    FC_ASSERT( o.milestone <= enterprise.claimed_milestones,
       "Cannot approve milestone that has not yet been claimed by the enterprise creator." );
+      
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
    const enterprise_approval_object* approval_ptr = _db.find_enterprise_approval( creator.name, enterprise_id, account.name );
 
    if( approval_ptr != nullptr )      // Updating or removing existing approval
@@ -3201,8 +3199,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   time_point now = _db.head_block_time();
    const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
    auto itr = by_permlink_idx.find( boost::make_tuple( o.author, o.permlink ) );
    const account_object& auth = _db.get_account( o.author );
@@ -3378,12 +3377,12 @@ void comment_evaluator::do_apply( const comment_operation& o )
          const reward_fund_object& reward_fund = _db.get_reward_fund();
          auto curve = reward_fund.curation_reward_curve;
          int64_t elapsed_seconds = ( now - auth.last_post ).to_seconds();
-         int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.median_props.comment_recharge_time.to_seconds();
+         int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.comment_recharge_time.to_seconds();
          int16_t current_power = std::min( int64_t( auth.commenting_power + regenerated_power), int64_t(PERCENT_100) );
          FC_ASSERT( current_power > 0, 
             "Account currently does not have any commenting power." );
          share_type voting_power = _db.get_voting_power( auth.name );
-         int16_t max_comment_denom = props.median_props.comment_reserve_rate * ( props.median_props.comment_recharge_time.count() / fc::days(1).count );  // Weights the viewing power with the network reserve ratio and recharge time
+         int16_t max_comment_denom = median_props.comment_reserve_rate * ( median_props.comment_recharge_time.count() / fc::days(1).count );  // Weights the viewing power with the network reserve ratio and recharge time
          FC_ASSERT( max_comment_denom > 0 );
          int16_t used_power = (current_power + max_comment_denom - 1) / max_comment_denom;
          new_commenting_power = current_power - used_power;
@@ -3409,14 +3408,14 @@ void comment_evaluator::do_apply( const comment_operation& o )
                old_power, 
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
             uint128_t new_weight = util::evaluate_reward_curve(
                new_power,
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate,
+               median_props.content_reward_decay_rate,
                reward_fund.content_constant
                );       
             uint128_t max_comment_weight = new_weight - old_weight;   // Gets the difference in content reward weight before and after the comment occurs.
@@ -3426,14 +3425,14 @@ void comment_evaluator::do_apply( const comment_operation& o )
                c.total_comment_weight += max_comment_weight;
             });
 
-            uint128_t curation_auction_decay_time = props.median_props.curation_auction_decay_time.to_seconds();
+            uint128_t curation_auction_decay_time = median_props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_comment_weight;
             uint128_t delta_t = std::min( uint128_t( ( now - root.created ).to_seconds()), curation_auction_decay_time );
 
             w *= delta_t;
             w /= curation_auction_decay_time;                     // Discount weight linearly by time for early comments in the first 10 minutes.
 
-            double curation_decay = props.median_props.comment_curation_decay;      // Number of comments for half life of curation reward decay.
+            double curation_decay = median_props.comment_curation_decay;      // Number of comments for half life of curation reward decay.
             double comment_discount_rate = std::max(( double( root.children ) / curation_decay), double(0));
             double comment_discount = std::pow(0.5, comment_discount_rate );     // Raises 0.5 to a fractional power for each 100 comments added
             double comment_discount_percent = comment_discount * double(PERCENT_100);
@@ -3514,14 +3513,14 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.active = now;
          com.last_payout = fc::time_point::min();
 
-         com.cashout_time = com.created + props.median_props.content_reward_interval;
-         com.author_reward_percent = props.median_props.author_reward_percent;
-         com.vote_reward_percent = props.median_props.vote_reward_percent;
-         com.view_reward_percent = props.median_props.view_reward_percent;
-         com.share_reward_percent = props.median_props.share_reward_percent;
-         com.comment_reward_percent = props.median_props.comment_reward_percent;
-         com.storage_reward_percent = props.median_props.storage_reward_percent;
-         com.moderator_reward_percent = props.median_props.moderator_reward_percent;
+         com.cashout_time = com.created + median_props.content_reward_interval;
+         com.author_reward_percent = median_props.author_reward_percent;
+         com.vote_reward_percent = median_props.vote_reward_percent;
+         com.view_reward_percent = median_props.view_reward_percent;
+         com.share_reward_percent = median_props.share_reward_percent;
+         com.comment_reward_percent = median_props.comment_reward_percent;
+         com.storage_reward_percent = median_props.storage_reward_percent;
+         com.moderator_reward_percent = median_props.moderator_reward_percent;
 
          if ( o.parent_author == ROOT_POST_PARENT )     // New Root post
          {
@@ -3816,7 +3815,8 @@ void vote_evaluator::do_apply( const vote_operation& o )
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    const account_object& voter = _db.get_account( o.voter );
    time_point now = _db.head_block_time();
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+
    FC_ASSERT( voter.can_vote, 
       "Voter has declined their voting rights." );
    FC_ASSERT( comment.allow_votes, 
@@ -3840,14 +3840,14 @@ void vote_evaluator::do_apply( const vote_operation& o )
    int64_t elapsed_seconds = (now - voter.last_vote_time).to_seconds();
    FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL_SEC, 
       "Can only vote once every ${s} seconds.", ("s", MIN_VOTE_INTERVAL_SEC) );
-   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.median_props.vote_recharge_time.to_seconds();
+   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.vote_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(voter.voting_power + regenerated_power), int64_t(PERCENT_100) );
    
    FC_ASSERT( current_power > 0,
       "Account currently does not have voting power." );
    int16_t abs_weight = abs(o.weight);
    int16_t used_power = (current_power * abs_weight) / PERCENT_100;
-   int16_t max_vote_denom = props.median_props.vote_reserve_rate * ( props.median_props.vote_recharge_time.count() / fc::days(1).count() );
+   int16_t max_vote_denom = median_props.vote_reserve_rate * ( median_props.vote_recharge_time.count() / fc::days(1).count() );
    
    FC_ASSERT( max_vote_denom > 0 );
    used_power = ( used_power + max_vote_denom - 1 ) / max_vote_denom;
@@ -3928,14 +3928,14 @@ void vote_evaluator::do_apply( const vote_operation& o )
                old_power, 
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
             uint128_t new_weight = util::evaluate_reward_curve(
                new_power,
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
 
@@ -3946,14 +3946,14 @@ void vote_evaluator::do_apply( const vote_operation& o )
                c.total_vote_weight += max_vote_weight;       // Increase reward weight for curation rewards by maximum
             });
 
-            uint128_t curation_auction_decay_time = props.median_props.curation_auction_decay_time.to_seconds();
+            uint128_t curation_auction_decay_time = median_props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_vote_weight;
             uint128_t delta_t = std::min( uint128_t(( now - comment.created ).to_seconds()), curation_auction_decay_time ); 
 
             w *= delta_t;
             w /= curation_auction_decay_time;       // Discount weight linearly by time for early votes in the first 10 minutes
 
-            double curation_decay = props.median_props.vote_curation_decay;
+            double curation_decay = median_props.vote_curation_decay;
             double vote_discount_rate = std::max(( double(comment.net_votes) / curation_decay), double(0));
             double vote_discount = std::pow(0.5, vote_discount_rate );     // Raises 0.5 to a fractional power for each 100 net_votes added
             double vote_discount_percent = double(vote_discount) * double(PERCENT_100);
@@ -4063,14 +4063,14 @@ void vote_evaluator::do_apply( const vote_operation& o )
                old_power, 
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
             uint128_t new_weight = util::evaluate_reward_curve(
                new_power,
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
 
@@ -4081,14 +4081,14 @@ void vote_evaluator::do_apply( const vote_operation& o )
                c.total_vote_weight += max_vote_weight;    // Increase reward weight for curation rewards by maximum
             });
 
-            uint128_t curation_auction_decay_time = props.median_props.curation_auction_decay_time.to_seconds();
+            uint128_t curation_auction_decay_time = median_props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_vote_weight;
             uint128_t delta_t = std::min( uint128_t(( now - comment.created ).to_seconds()), curation_auction_decay_time ); 
 
             w *= delta_t;
             w /= curation_auction_decay_time;     // Discount weight linearly by time for early votes in the first 10 minutes
 
-            double curation_decay = props.median_props.vote_curation_decay;
+            double curation_decay = median_props.vote_curation_decay;
             double vote_discount_rate = std::max(( double(comment.net_votes) / curation_decay), double(0));
             double vote_discount = std::pow(0.5, vote_discount_rate );     // Raises 0.5 to a fractional power for each 100 net_votes added
             uint64_t vote_discount_percent = double(vote_discount) * double(PERCENT_100);
@@ -4134,7 +4134,8 @@ void view_evaluator::do_apply( const view_operation& o )
       FC_ASSERT( board_member.is_authorized_interact( viewer.name ), 
          "User ${u} is not authorized to interact with posts in the board ${b}.",("b", comment.board)("u", viewer.name));
    }
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
 
@@ -4158,13 +4159,13 @@ void view_evaluator::do_apply( const view_operation& o )
 
    FC_ASSERT( elapsed_seconds >= MIN_VIEW_INTERVAL_SEC, 
       "Can only view once every ${s} seconds.", ("s", MIN_VIEW_INTERVAL_SEC) );
-   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.median_props.view_recharge_time.to_seconds();
+   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.view_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t( viewer.viewing_power + regenerated_power ), int64_t(PERCENT_100) );
 
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any viewing power." );
 
-   int16_t max_view_denom = props.median_props.view_reserve_rate * (props.median_props.view_recharge_time.count() / fc::days(1).count);    // Weights the viewing power with the network reserve ratio and recharge time
+   int16_t max_view_denom = median_props.view_reserve_rate * ( median_props.view_recharge_time.count() / fc::days(1).count );    // Weights the viewing power with the network reserve ratio and recharge time
    FC_ASSERT( max_view_denom > 0, 
       "View denominiator must be greater than zero.");
    int16_t used_power = (current_power + max_view_denom - 1) / max_view_denom;
@@ -4260,14 +4261,14 @@ void view_evaluator::do_apply( const view_operation& o )
                old_power, 
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
             uint128_t new_weight = util::evaluate_reward_curve(
                new_power,
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
             uint128_t max_view_weight = new_weight - old_weight;  // Gets the difference in content reward weight before and after the view occurs.
@@ -4277,14 +4278,14 @@ void view_evaluator::do_apply( const view_operation& o )
                c.total_view_weight += max_view_weight;
             });
 
-            uint128_t curation_auction_decay_time = props.median_props.curation_auction_decay_time.to_seconds();
+            uint128_t curation_auction_decay_time = median_props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_view_weight;
             uint128_t delta_t = std::min( uint128_t(( now - comment.created).to_seconds()), curation_auction_decay_time );
 
             w *= delta_t;
             w /= curation_auction_decay_time;                     // Discount weight linearly by time for early views in the first 10 minutes.
 
-            double curation_decay = props.median_props.view_curation_decay;      // Number of views for half life of curation reward decay.
+            double curation_decay = median_props.view_curation_decay;      // Number of views for half life of curation reward decay.
             double view_discount_rate = std::max(( double(comment.view_count) / curation_decay), double(0));
             double view_discount = std::pow(0.5, view_discount_rate );     // Raises 0.5 to a fractional power for each 1000 views added
             uint64_t view_discount_percent = double(view_discount)*double(PERCENT_100);
@@ -4378,10 +4379,11 @@ void share_evaluator::do_apply( const share_operation& o )
       FC_ASSERT( board_member.is_authorized_interact( sharer.name ), 
          "User ${u} is not authorized to interact with posts in the board ${b}.",("b", comment.board)("u", sharer.name));
    }
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund();
    auto curve = reward_fund.curation_reward_curve;
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
    
    const auto& comment_share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
    auto itr = comment_share_idx.find( std::make_tuple( comment.id, sharer.name ) );
@@ -4392,12 +4394,12 @@ void share_evaluator::do_apply( const share_operation& o )
    int64_t elapsed_seconds = ( now - sharer.last_share_time ).to_seconds();
    FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL_SEC, 
       "Can only share once every ${s} seconds.", ("s", MIN_SHARE_INTERVAL_SEC) );
-   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / props.median_props.share_recharge_time.to_seconds();
+   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.share_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(sharer.sharing_power + regenerated_power), int64_t(PERCENT_100) );
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any sharing power." );
 
-   int16_t max_share_denom = props.median_props.share_reserve_rate * (props.median_props.share_recharge_time.count() / fc::days(1).count);    // Weights the sharing power with the network reserve ratio and recharge time
+   int16_t max_share_denom = median_props.share_reserve_rate * (median_props.share_recharge_time.count() / fc::days(1).count);    // Weights the sharing power with the network reserve ratio and recharge time
    FC_ASSERT( max_share_denom > 0 );
    int16_t used_power = (current_power + max_share_denom - 1) / max_share_denom;
    FC_ASSERT( used_power <= current_power,   
@@ -4454,14 +4456,14 @@ void share_evaluator::do_apply( const share_operation& o )
                old_power, 
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
             uint128_t new_weight = util::evaluate_reward_curve(
                new_power,
                root.cashouts_received, 
                curve, 
-               props.median_props.content_reward_decay_rate, 
+               median_props.content_reward_decay_rate, 
                reward_fund.content_constant
             );
 
@@ -4472,14 +4474,14 @@ void share_evaluator::do_apply( const share_operation& o )
                c.total_share_weight += max_share_weight;
             });
 
-            uint128_t curation_auction_decay_time = props.median_props.curation_auction_decay_time.to_seconds();
+            uint128_t curation_auction_decay_time = median_props.curation_auction_decay_time.to_seconds();
             uint128_t w = max_share_weight;
             uint128_t delta_t = std::min( uint128_t(( now - comment.created).to_seconds()), curation_auction_decay_time ); 
 
             w *= delta_t;
             w /= curation_auction_decay_time;   // Discount weight linearly by time for early shares in the first 10 minutes.
 
-            double curation_decay = props.median_props.share_curation_decay;      // Number of shares for half life of curation reward decay.
+            double curation_decay = median_props.share_curation_decay;      // Number of shares for half life of curation reward decay.
             double share_discount_rate = std::max(( double(comment.share_count) / curation_decay), double(0));
             double share_discount = std::pow(0.5, share_discount_rate );     // Raises 0.5 to a fractional power for each 1000 shares added
             uint64_t share_discount_percent = double(share_discount) * double(PERCENT_100);
@@ -4828,8 +4830,6 @@ void board_vote_mod_evaluator::do_apply( const board_vote_mod_operation& o )
    const account_object& moderator_account = _db.get_account( o.moderator );
    const board_object& board = _db.get_board( o.board );
    const board_member_object& board_member = _db.get_board_member( o.board );
-   const producer_schedule_object& pso = _db.get_producer_schedule();
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
    if( o.approved )
    {
@@ -6636,7 +6636,8 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
    const account_object& to_account = o.to.size() ? _db.get_account( o.to ) : from_account;
    const account_balance_object& account_balance = _db.get_account_balance( from_account.name, o.amount.symbol );
    const asset_object& asset_object = _db.get_asset( o.amount.symbol );
-   asset stake = _db.get_staked_balance( o.from, o.amount.symbol);
+   asset stake = _db.get_staked_balance( o.from, o.amount.symbol );
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
 
    FC_ASSERT( stake >= o.amount, 
@@ -6644,9 +6645,7 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 
    if( !from_account.mined && o.amount.symbol == SYMBOL_COIN )
    {
-      const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-      const producer_schedule_object& pso = _db.get_producer_schedule();
-      asset min_stake = asset( pso.median_props.account_creation_fee * 10, SYMBOL_COIN );
+      asset min_stake = asset( median_props.account_creation_fee * 10, SYMBOL_COIN );
       FC_ASSERT( stake >= min_stake,
          "Account registered by another account requires 10x account creation before it can be powered down." );
    }
@@ -6886,12 +6885,9 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 
    asset available_stake = delegator_balance.get_staked_balance() - delegator_balance.get_delegated_balance() - asset( delegator_balance.to_unstake - delegator_balance.total_unstaked, o.amount.symbol );
 
-   const producer_schedule_object& pso = _db.get_producer_schedule();
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-
    if( delegation_ptr == nullptr )          // If delegation doesn't exist, create it.
    {
-      FC_ASSERT( available_stake >= o.amount, 
+      FC_ASSERT( available_stake >= o.amount,
          "Account does not have enough stake to delegate." );
 
       _db.create< asset_delegation_object >( [&]( asset_delegation_object& ado ) 
@@ -7040,7 +7036,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
    from_string( escrow_id, o.escrow_id );
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
 
    const account_object& to_account = _db.get_account( escrow.to );
    const account_object& from_account = _db.get_account( escrow.from );
@@ -7049,7 +7045,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 
    asset liquid = _db.get_liquid_balance( o.account, escrow.payment.symbol );
    // Escrow bond is a percentage paid as security in the event of dispute, and can be forfeited.
-   asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+   asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
 
    flat_map< account_name_type, bool > approvals = escrow.approvals;
 
@@ -7135,8 +7131,6 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
    from_string( escrow_id, o.escrow_id );
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-
    const account_object& to_account = _db.get_account( escrow.to );
    const account_object& from_account = _db.get_account( escrow.from );
 
@@ -7171,8 +7165,6 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
    from_string( escrow_id, o.escrow_id );
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-
    const account_object& to_account = _db.get_account( escrow.to );
    const account_object& from_account = _db.get_account( escrow.from );
    const account_object& to_mediator_account = _db.get_account( escrow.to_mediator );
@@ -7335,8 +7327,8 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
    }
 
    const account_object& owner = _db.get_account( o.owner );
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   time_point now = _db.head_block_time();
    FC_ASSERT( o.expiration > now,
       "Margin order has to expire after head block time." );
    FC_ASSERT( o.exchange_rate.base == o.amount_to_borrow.symbol,
@@ -7366,7 +7358,7 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
    from_string( order_id, o.order_id );
 
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount_to_borrow.symbol, false );
-   asset min_collateral = ( o.amount_to_borrow * props.median_props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 20% of debt value.
+   asset min_collateral = ( o.amount_to_borrow * median_props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 20% of debt value.
    share_type collateralization;
    asset_symbol_type symbol_a;
    asset_symbol_type symbol_b;
@@ -7582,14 +7574,11 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
+   time_point now = _db.head_block_time();
    const account_object& paying_account = _db.get_account( o.owner );
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
    const asset_dynamic_data_object& debt_dynamic_data = _db.get_dynamic_data( o.debt.symbol );
    const asset_bitasset_data_object& debt_bitasset_data = _db.get_bitasset_data( o.debt.symbol );
-
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
 
    FC_ASSERT( debt_asset.is_market_issued(),
       "Asset ${sym} is not a collateralized asset.", ("sym", debt_asset.symbol) );
@@ -7707,7 +7696,7 @@ void bid_collateral_evaluator::do_apply( const bid_collateral_operation& o )
    const asset& liquid = _db.get_liquid_balance( o.bidder, bitasset_data.backing_asset );
 
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
 
    FC_ASSERT( debt_asset.is_market_issued(),
       "Unable to cover ${sym} as it is not a collateralized asset.", ("sym", debt_asset.symbol) );
@@ -8020,7 +8009,7 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
    asset loan_default_balance = account.loan_default_balance;
 
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
 
    const auto& col_idx = _db.get_index< credit_collateral_index >().indices().get< by_owner_symbol >();
    auto col_itr = col_idx.find( boost::make_tuple( account.name, o.amount.symbol ) );
@@ -8113,9 +8102,9 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
    const credit_collateral_object& collateral = _db.get_collateral( o.account, o.collateral.symbol );
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount.symbol, false );
    const asset& liquid = _db.get_liquid_balance( o.account, o.amount.symbol );
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   asset min_collateral = ( o.amount * props.median_props.credit_open_ratio ) / PERCENT_100;        // Min collateral equal to 125% of debt value
-   asset max_debt = ( o.collateral * PERCENT_100 ) / props.median_props.credit_liquidation_ratio;   // Max debt before liquidation equal to aprox 90% of collateral value. 
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   asset min_collateral = ( o.amount * median_props.credit_open_ratio ) / PERCENT_100;        // Min collateral equal to 125% of debt value
+   asset max_debt = ( o.collateral * PERCENT_100 ) / median_props.credit_liquidation_ratio;   // Max debt before liquidation equal to aprox 90% of collateral value. 
    time_point now = _db.head_block_time();
    asset_symbol_type symbol_a;
    asset_symbol_type symbol_b;
@@ -8208,7 +8197,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       FC_ASSERT( liquid.amount >= -delta_debt.amount,
          "Insufficient liquid balance in this asset to repay the amount requested." );
 
-      share_type interest_rate = pool.interest_rate( props.median_props.credit_min_interest, props.median_props.credit_variable_interest );     // Calulate pool's interest rate
+      share_type interest_rate = pool.interest_rate( median_props.credit_min_interest, median_props.credit_variable_interest );     // Calulate pool's interest rate
       share_type interest_accrued = ( loan.debt.amount * interest_rate * ( now - loan.last_interest_time ).count() ) / ( PERCENT_100 * fc::days(365).count() );
       asset interest_asset = asset( interest_accrued, loan.debt.symbol );      // Accrue interest on debt balance
 
@@ -8372,7 +8361,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    }
 
    const dynamic_global_property_object& props =_db.get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   time_point now = _db.head_block_time();
 
    const account_object& issuer = _db.get_account( o.issuer );
 
@@ -8392,13 +8382,13 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
    FC_ASSERT( liquid_coin >= o.coin_liquidity, 
       "Issuer has insufficient coin balance to provide specified initial liquidity." );
-   FC_ASSERT( o.options.whitelist_authorities.size() <= props.median_props.maximum_asset_whitelist_authorities,
+   FC_ASSERT( o.options.whitelist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
       "Too many Whitelist authorities." );
-   FC_ASSERT( o.options.blacklist_authorities.size() <= props.median_props.maximum_asset_whitelist_authorities,
+   FC_ASSERT( o.options.blacklist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
       "Too many Blacklist authorities." );
-   FC_ASSERT( o.options.stake_intervals <= props.median_props.max_stake_intervals && o.options.stake_intervals >= 0, 
+   FC_ASSERT( o.options.stake_intervals <= median_props.max_stake_intervals && o.options.stake_intervals >= 0, 
       "Asset stake intervals outside of acceptable limits." );
-   FC_ASSERT( o.options.unstake_intervals <= props.median_props.max_unstake_intervals && o.options.unstake_intervals >= 0, 
+   FC_ASSERT( o.options.unstake_intervals <= median_props.max_unstake_intervals && o.options.unstake_intervals >= 0, 
       "Asset unstake intervals outside of acceptable limits." );
 
    for( auto account : o.options.whitelist_authorities )
@@ -8798,7 +8788,8 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
    }
 
    const dynamic_global_property_object& props =_db.get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   time_point now = _db.head_block_time();
 
    const account_object& issuer = _db.get_account( o.issuer );
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
@@ -8817,14 +8808,14 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
    FC_ASSERT( o.issuer == asset_obj.issuer,
       "Incorrect issuer for asset! (${o.issuer} != ${a.issuer})",
       ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
-   FC_ASSERT( o.new_options.whitelist_authorities.size() <= props.median_props.maximum_asset_whitelist_authorities,
+   FC_ASSERT( o.new_options.whitelist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
       "Too many Whitelist authorities." );
 
    for( auto account : o.new_options.whitelist_authorities )
    {
       _db.get_account( account );
    }
-   FC_ASSERT( o.new_options.blacklist_authorities.size() <= props.median_props.maximum_asset_whitelist_authorities,
+   FC_ASSERT( o.new_options.blacklist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
       "Too many Blacklist authorities." );
    for( auto account : o.new_options.blacklist_authorities )
    {
@@ -9195,7 +9186,7 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
    asset_bitasset_data_object& bdo, const asset_object& asset_to_update )
 {
    const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = db.head_block_time();
 
    // If the minimum number of feeds to calculate a median has changed, recalculate the median
    bool should_update_feeds = false;
@@ -9266,12 +9257,12 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
    const asset_bitasset_data_object& bitasset_to_update = _db.get_bitasset_data( o.asset_to_update );
    
-   FC_ASSERT( o.new_feed_producers.size() <= props.median_props.maximum_asset_feed_publishers,
+   FC_ASSERT( o.new_feed_producers.size() <= median_props.maximum_asset_feed_publishers,
       "Cannot specify more feed producers than maximum allowed." );
    FC_ASSERT( asset_obj.asset_type == BITASSET_ASSET,
       "Cannot update feed producers on a non-BitAsset." );
@@ -9618,7 +9609,8 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
    uint32_t recent_block_num = protocol::block_header::num_from_id( work.input.prev_block );
 
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   time_point now = _db.head_block_time();
 
    FC_ASSERT( work.input.prev_block == _db.head_block_id(),
       "Proof of Work op not for last block." );
@@ -9628,7 +9620,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       "Insufficient work difficulty. Work: ${w}, Target: ${t} .", ("w",work.pow_summary)("t", target_pow) );
 
    const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-   fc::microseconds decay_rate = producer_schedule.median_props.pow_decay_time;  // Averaging window of the targetting adjustment
+   fc::microseconds decay_rate = median_props.pow_decay_time;  // Averaging window of the targetting adjustment
    account_name_type miner_account = work.input.miner_account;
 
    uint128_t work_difficulty = ( 1 << 30 ) / work.pow_summary;
@@ -9641,7 +9633,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       FC_ASSERT( o.new_owner_key.valid(),
          "New owner key is not valid." );
 
-      public_key_type ok = *o.new_owner_key;
+      public_key_type ok = public_key_type( *o.new_owner_key );
 
       _db.create< account_object >( [&]( account_object& acc )
       {
@@ -9694,7 +9686,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       {
          p.mining_count++;
          p.props = o.props;
-         p.decay_weights( now, producer_schedule );    // Decay and increment mining power for the miner. 
+         p.decay_weights( now, median_props );    // Decay and increment mining power for the miner. 
          p.mining_power += BLOCKCHAIN_PRECISION;
       });
    }
@@ -9718,8 +9710,9 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+   
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
    const account_object& producer_acc = _db.get_account( o.producer ); 
    const producer_object& producer = _db.get_producer( o.producer );
    uint32_t recent_block_num = protocol::block_header::num_from_id( o.block_id );
@@ -9782,7 +9775,7 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
    uint32_t recent_block_num = protocol::block_header::num_from_id( o.block_id );
    const account_object& producer_acc = _db.get_account( o.producer );
    const producer_object& producer = _db.get_producer( o.producer );
@@ -9878,7 +9871,7 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
 
    const account_object& reporter = _db.get_account( o.reporter );
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = _db.head_block_time();
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const chain_id_type& chain_id = CHAIN_ID;
 

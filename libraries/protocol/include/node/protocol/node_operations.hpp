@@ -3435,6 +3435,7 @@ namespace node { namespace protocol {
 
    typedef fc::static_variant< proof_of_work, equihash_proof_of_work > proof_of_work_type;
 
+
    /**
     * Enables mining producers to publish cryptographic proofs of work.
     * 
@@ -3453,7 +3454,7 @@ namespace node { namespace protocol {
    {
       proof_of_work_type            work;              ///< Proof of work, containing a reference to a prior block, and a nonce resulting in a low hash value.
 
-      optional< string >            new_owner_key;     ///< If creating a new account with a proof of work, the owner key of the new account.
+      fc::optional< string >        new_owner_key;     ///< If creating a new account with a proof of work, the owner key of the new account.
 
       chain_properties              props;             ///< Chain properties values for selection of adjustable network parameters. 
 
@@ -3471,6 +3472,7 @@ namespace node { namespace protocol {
          }
       };
    };
+
 
    /**
     * Enables block producers to verify that a valid block exists at a given height.
@@ -3492,6 +3494,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return producer; }
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+
 
    /**
     * Stakes COIN on the validity and acceptance of a block.

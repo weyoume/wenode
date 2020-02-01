@@ -54,7 +54,7 @@ struct debug_mine_state
 
    std::string                    miner_account;
    chain::block_id_type           prev_block;
-   uint32_t                       summary_target = 0;
+   uint128_t                      summary_target = 0;
    fc::promise< chain::proof_of_work >::ptr work;
    fc::mutex                      set_work_mutex;
 };
@@ -64,7 +64,7 @@ debug_mine_state::~debug_mine_state() {}
 
 void debug_node_plugin::debug_mine_work(
    chain::proof_of_work& work,
-   uint32_t summary_target
+   uint128_t summary_target
    )
 {
    std::shared_ptr< debug_mine_state > mine_state = std::make_shared< debug_mine_state >();
@@ -91,7 +91,7 @@ void debug_node_plugin::debug_mine_work(
          chain::proof_of_work work;
          std::string miner_account = mine_state->miner_account;
          chain::block_id_type prev_block = mine_state->prev_block;
-         uint32_t summary_target = mine_state->summary_target;
+         uint128_t summary_target = mine_state->summary_target;
          wlog( "Starting thread mining at offset ${o}", ("o", nonce_offset) );
          work.input.prev_block = prev_block;
          work.input.miner_account = miner_account;

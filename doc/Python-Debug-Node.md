@@ -62,7 +62,7 @@ specify the node binary location and a populated data directory. For most config
 this will be `programs/node/node` and `node_data_dir` respectively, from the
 git root directory for WeYouMe.
 
-TODO/ Long Term Goals
+Long Term Goals
 ---------------------
 
 While this is a great start to a Python testing framework, there are a lot of areas in

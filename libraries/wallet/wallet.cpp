@@ -294,7 +294,7 @@ public:
       result["participation"] = (100*dynamic_props.recent_slots_filled.popcount()) / 128.0;
       result["usd_price"] = dynamic_props.current_median_usd_price;
       result["equity_price"] = dynamic_props.current_median_equity_price;
-      result["account_creation_fee"] = _remote_db->get_chain_properties().account_creation_fee;
+      result["account_creation_fee"] = _remote_db->get_median_chain_properties().account_creation_fee;
       result["reward_fund"] = fc::variant( _remote_db->get_reward_fund() ).get_object();
       return result;
    }
@@ -673,130 +673,6 @@ public:
          return result.get_string();
       };
 
-      m["list_my_accounts"] = [](variant result, const fc::variants& a ) 
-      {
-         std::stringstream out;
-
-         auto account_balances = result.as<vector<account_balance_api_obj>>();
-         for( const auto& a : account_balances ) 
-         {
-            out << std::left << std::setw( 17 ) << std::string(a.owner)
-                << std::right << std::setw(18) << fc::variant(a.liquid_balance).as_string() <<" "
-                << std::right << std::setw(26) << fc::variant(a.staked_balance).as_string() <<" "
-                << std::right << std::setw(16) << fc::variant(a.reward_balance).as_string() <<"\n";
-         }
-         out << "-------------------------------------------------------------------------\n";
-         return out.str();
-      };
-
-      m["get_account_history"] = []( variant result, const fc::variants& a ) 
-      {
-         std::stringstream ss;
-         ss << std::left << std::setw( 5 )  << "#" << " ";
-         ss << std::left << std::setw( 10 ) << "BLOCK #" << " ";
-         ss << std::left << std::setw( 15 ) << "TRX ID" << " ";
-         ss << std::left << std::setw( 20 ) << "OPERATION" << " ";
-         ss << std::left << std::setw( 50 ) << "DETAILS" << "\n";
-         ss << "-------------------------------------------------------------------------------\n";
-         const auto& results = result.get_array();
-         for( const auto& item : results ) 
-         {
-            ss << std::left << std::setw(5) << item.get_array()[0].as_string() << " ";
-            const auto& op = item.get_array()[1].get_object();
-            ss << std::left << std::setw(10) << op["block"].as_string() << " ";
-            ss << std::left << std::setw(15) << op["trx_id"].as_string() << " ";
-            const auto& opop = op["op"].get_array();
-            ss << std::left << std::setw(20) << opop[0].as_string() << " ";
-            ss << std::left << std::setw(50) << fc::json::to_string(opop[1]) << "\n ";
-         }
-         return ss.str();
-      };
-
-      m["get_open_orders"] = []( variant result, const fc::variants& a ) 
-      {
-         auto orders = result.as<vector<extended_limit_order>>();
-
-         std::stringstream ss;
-
-         ss << setiosflags( ios::fixed ) << setiosflags( ios::left ) ;
-         ss << ' ' << setw( 10 ) << "Order #";
-         ss << ' ' << setw( 10 ) << "Price";
-         ss << ' ' << setw( 10 ) << "Quantity";
-         ss << ' ' << setw( 10 ) << "Type";
-         ss << "\n=====================================================================================================\n";
-         for( const auto& o : orders ) 
-         {
-            ss << ' ' << setw( 10 ) << o.orderid;
-            ss << ' ' << setw( 10 ) << o.real_price;
-            ss << ' ' << setw( 10 ) << fc::variant( asset( o.for_sale, o.sell_price.base.symbol ) ).as_string();
-            ss << ' ' << setw( 10 ) << (o.sell_price.base.symbol == SYMBOL_COIN ? "SELL" : "BUY");
-            ss << "\n";
-         }
-         return ss.str();
-      };
-
-      m["get_order_book"] = []( variant result, const fc::variants& a ) 
-      {
-         auto orders = result.as< order_book >();
-         std::stringstream ss;
-         asset bid_sum = asset( 0, SYMBOL_USD );
-         asset ask_sum = asset( 0, SYMBOL_USD );
-         int spacing = 24;
-
-         ss << setiosflags( ios::fixed ) << setiosflags( ios::left ) ;
-
-         ss << ' ' << setw( ( spacing * 4 ) + 6 ) << "Bids" << "Asks\n"
-            << ' '
-            << setw( spacing + 3 ) << "Sum(USD)"
-            << setw( spacing + 1) << "USD"
-            << setw( spacing + 1 ) << "TME"
-            << setw( spacing + 1 ) << "Price"
-            << setw( spacing + 1 ) << "Price"
-            << setw( spacing + 1 ) << "TME "
-            << setw( spacing + 1 ) << "USD " << "SumUSD)"
-            << "\n====================================================================================================="
-            << "|=====================================================================================================\n";
-
-         for( size_t i = 0; i < orders.bids.size() || i < orders.asks.size(); i++ )
-         {
-            if ( i < orders.bids.size() )
-            {
-               bid_sum += asset( orders.bids[i].USD, SYMBOL_USD );
-               ss
-                  << ' ' << setw( spacing ) << bid_sum.to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].USD, SYMBOL_USD ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.bids[i].TME, SYMBOL_COIN ).to_string()
-                  << ' ' << setw( spacing ) << orders.bids[i].real_price; //(~orders.bids[i].order_price).to_real();
-            }
-            else
-            {
-               ss << setw( (spacing * 4 ) + 5 ) << ' ';
-            }
-
-            ss << " |";
-
-            if ( i < orders.asks.size() )
-            {
-               ask_sum += asset( orders.asks[i].USD, SYMBOL_USD );
-               //ss << ' ' << setw( spacing ) << (~orders.asks[i].order_price).to_real()
-               ss << ' ' << setw( spacing ) << orders.asks[i].real_price
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].TME, SYMBOL_COIN ).to_string()
-                  << ' ' << setw( spacing ) << asset( orders.asks[i].USD, SYMBOL_USD ).to_string()
-                  << ' ' << setw( spacing ) << ask_sum.to_string();
-            }
-
-            ss << endl;
-         }
-
-         ss << endl
-            << "Bid Total: " << bid_sum.to_string() << endl
-            << "Ask Total: " << ask_sum.to_string() << endl;
-
-         return ss.str();
-      };
-
-      
-
       return m;
    }
 
@@ -982,14 +858,14 @@ vector< string >                  wallet_api::list_my_accounts()
       }   
    }
 
-   result.reserve( names.size() );
+   results.reserve( names.size() );
 
    for( const auto& name : names )
    {
-      result.emplace_back( name );
+      results.emplace_back( name );
    } 
 
-   return result;
+   return results;
 }
 
 
@@ -1005,7 +881,6 @@ vector< extended_account >        wallet_api::get_my_accounts()
    catch( fc::exception& e )
    {
       elog( "Connected node needs to enable account_by_key_api" );
-      return results;
    }
 
    return get_full_accounts( list_my_accounts() );
@@ -1245,15 +1120,15 @@ void                              wallet_api::check_memo( const string& memo, co
 string                            wallet_api::get_encrypted_message(
    string from_public_key,
    string to_public_key,
-   string message )
+   string message ) const
 {
    if( message.size() > 0 && message[0] == '#' )
    {
       encrypted_message_data m;
 
-      m.from = from_public_key;
+      m.from = public_key_type( from_public_key );
 
-      m.to = to_public_key;
+      m.to = public_key_type( to_public_key );
 
       m.nonce = fc::time_point::now().time_since_epoch().count();
 
@@ -1278,7 +1153,7 @@ string                            wallet_api::get_encrypted_message(
 }
 
 
-string                            wallet_api::get_decrypted_message( string encrypted_message )
+string                            wallet_api::get_decrypted_message( string encrypted_message ) const
 {
    if( is_locked() )
    {
@@ -1446,43 +1321,43 @@ void                              wallet_api::encrypt_keys()
 
 
 
-fc::variant_object                wallet_api::get_config()const;
+fc::variant_object                wallet_api::get_config()const
 {
    return my->_remote_db->get_config();
 }
 
 
-dynamic_global_property_api_obj   wallet_api::get_dynamic_global_properties() const;
+dynamic_global_property_api_obj   wallet_api::get_dynamic_global_properties() const
 {
    return my->_remote_db->get_dynamic_global_properties();
 }
 
 
-chain_properties                  wallet_api::get_chain_properties() const;
+chain_properties                  wallet_api::get_median_chain_properties() const
 {
-   return my->_remote_db->get_chain_properties();
+   return my->_remote_db->get_median_chain_properties();
 }
 
 
-producer_schedule_api_obj         wallet_api::get_producer_schedule() const;
+producer_schedule_api_obj         wallet_api::get_producer_schedule() const
 {
    return my->_remote_db->get_producer_schedule();
 }
 
 
-hardfork_version                  wallet_api::get_hardfork_version() const;
+hardfork_version                  wallet_api::get_hardfork_version() const
 {
    return my->_remote_db->get_hardfork_version();
 }
 
 
-scheduled_hardfork                wallet_api::get_next_scheduled_hardfork() const;
+scheduled_hardfork                wallet_api::get_next_scheduled_hardfork() const
 {
    return my->_remote_db->get_next_scheduled_hardfork();
 }
 
 
-reward_fund_api_obj               wallet_api::get_reward_fund() const;
+reward_fund_api_obj               wallet_api::get_reward_fund() const
 {
    return my->_remote_db->get_reward_fund();
 }
@@ -1629,7 +1504,7 @@ vector< balance_state >           wallet_api::get_balances( vector< string > nam
 
 vector< key_state >               wallet_api::get_keychains( vector< string > names ) const
 {
-   vector< message_state > results = my->_remote_db->get_keychains( names );
+   vector< key_state > results = my->_remote_db->get_keychains( names );
 
    for( auto& item : results )
    {
@@ -1658,7 +1533,7 @@ vector< key_state >               wallet_api::get_keychains( vector< string > na
 }
 
 
-set< string >                     wallet_api::lookup_accounts( const string& lower_bound_name, uint32_t limit )
+set< string >                     wallet_api::lookup_accounts( const string& lower_bound_name, uint32_t limit )const
 {
    return my->_remote_db->lookup_accounts( lower_bound_name, limit );
 }
@@ -1813,7 +1688,7 @@ vector< account_name_type >       wallet_api::get_active_producers()const
 
 set< account_name_type >          wallet_api::lookup_producer_accounts( string from, uint32_t limit )const
 {
-   return my->_remote_db->lookup_accounts( from, limit );
+   return my->_remote_db->lookup_producer_accounts( from, limit );
 }
 
 
@@ -4028,7 +3903,19 @@ annotated_signed_transaction      wallet_api::moderation_tag(
    op.author = author;
    op.permlink = permlink;
    op.tags = tags;
-   op.rating = rating;
+
+   post_rating_type rating_type = GENERAL;
+
+   for( auto i = 0; i < post_rating_values.size(); i++ )
+   {
+      if( rating == post_rating_values[ i ] )
+      {
+         rating = post_rating_type( i );
+         break;
+      }
+   }
+
+   op.rating = rating_type;
    op.details = details;
    op.interface = interface;
    op.filter = filter;
@@ -4070,13 +3957,13 @@ annotated_signed_transaction      wallet_api::board_create(
    op.founder = founder;
    op.name = name;
 
-   board_structure_type struture_type = BOARD;
+   board_structure_type structure_type = BOARD;
 
    for( auto i = 0; i < board_structure_values.size(); i++ )
    {
       if( board_type == board_structure_values[ i ] )
       {
-         struture_type = board_structure_type( i );
+         structure_type = board_structure_type( i );
          break;
       }
    }
@@ -4095,7 +3982,6 @@ annotated_signed_transaction      wallet_api::board_create(
    }
 
    op.board_privacy = privacy_type;
-
    op.board_public_key = board_public_key;
    op.json = json;
    op.json_private = json_private;
@@ -4128,7 +4014,7 @@ annotated_signed_transaction      wallet_api::board_update(
    board_update_operation op;
 
    op.signatory = signatory;
-   op.founder = founder;
+   op.account = account;
    op.board = board;
    op.board_public_key = board_public_key;
    op.json = json;
@@ -4534,7 +4420,6 @@ annotated_signed_transaction      wallet_api::ad_inventory(
    uint32_t inventory,
    string json,
    vector< string > agents,
-   string interface,
    bool active,
    bool broadcast )
 { try {
@@ -4559,12 +4444,8 @@ annotated_signed_transaction      wallet_api::ad_inventory(
    }
 
    op.metric = ad_metric;
-   op.budget = budget;
-   op.begin = begin;
-   op.end = end;
    op.json = json;
    op.agents = agents;
-   op.interface = interface;
    op.active = active;
 
    signed_transaction tx;
@@ -4736,14 +4617,11 @@ annotated_signed_transaction      wallet_api::transfer_accept(
 { try {
    FC_ASSERT( !is_locked() );
 
-   check_memo( memo, get_account( from ) );
-
    transfer_accept_operation op;
 
    op.signatory = signatory;
    op.from = from;
    op.to = to;
-   op.amount = amount;
    op.request_id = request_id;
    op.accepted = accepted;
 
@@ -4990,8 +4868,8 @@ annotated_signed_transaction      wallet_api::transfer_to_savings(
 
    transfer_to_savings_operation op;
 
-   string from_public_key = get_account( from ).secure_public_key;
-   string to_public_key = get_account( to ).secure_public_key;
+   string from_public_key = string( get_account( from ).secure_public_key );
+   string to_public_key = string( get_account( to ).secure_public_key );
 
    op.signatory = signatory;
    op.from = from;
@@ -5023,8 +4901,8 @@ annotated_signed_transaction      wallet_api::transfer_from_savings(
 
    transfer_from_savings_operation op;
 
-   string from_public_key = get_account( from ).secure_public_key;
-   string to_public_key = get_account( to ).secure_public_key;
+   string from_public_key = string( get_account( from ).secure_public_key );
+   string to_public_key = string( get_account( to ).secure_public_key );
 
    op.signatory = signatory;
    op.from = from;
@@ -5097,13 +4975,13 @@ annotated_signed_transaction      wallet_api::escrow_transfer(
 
    if( account == from )
    {
-      from_public_key = get_account( from ).secure_public_key;
-      to_public_key = get_account( to ).secure_public_key;
+      from_public_key = string( get_account( from ).secure_public_key );
+      to_public_key = string( get_account( to ).secure_public_key );
    }
    else if( account == to )
    {
-      from_public_key = get_account( to ).secure_public_key;
-      to_public_key = get_account( from ).secure_public_key;
+      from_public_key = string( get_account( to ).secure_public_key );
+      to_public_key = string( get_account( from ).secure_public_key );
    }
 
    op.signatory = signatory;
@@ -5253,7 +5131,7 @@ annotated_signed_transaction      wallet_api::margin_order(
    asset amount_to_borrow,
    price stop_loss_price,
    price take_profit_price,
-   price limit_top_loss_price,
+   price limit_stop_loss_price,
    price limit_take_profit_price,
    string interface,
    time_point expiration,
@@ -5274,7 +5152,7 @@ annotated_signed_transaction      wallet_api::margin_order(
    op.amount_to_borrow = amount_to_borrow;
    op.stop_loss_price = stop_loss_price;
    op.take_profit_price = take_profit_price;
-   op.limit_top_loss_price = limit_top_loss_price;
+   op.limit_stop_loss_price = limit_stop_loss_price;
    op.limit_take_profit_price = limit_take_profit_price;
    op.interface = interface;
    op.expiration = expiration;

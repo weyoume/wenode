@@ -42,7 +42,7 @@ struct encrypted_message_data
             return m;
          }
       } 
-      catch ( .. ) {}
+      catch ( ... ) {}
 
       return optional< encrypted_message_data >();
    }
@@ -292,12 +292,12 @@ class wallet_api
       /**
        *  Returns the encrypted message if message starts with '#' otherwise returns message.
        */
-      string                                 get_encrypted_message( string from_public_key, string to_public_key, string message );
+      string                                 get_encrypted_message( string from_public_key, string to_public_key, string message )const;
 
       /**
        * Returns the decrypted plaintext message if possible given wallet's known private keys.
        */
-      string                                 get_decrypted_message( string message );
+      string                                 get_decrypted_message( string message )const;
 
       /**
        * Returns the private key derived from the prefix and sequence number. 
@@ -410,7 +410,7 @@ class wallet_api
        * 
        * @returns All values of network selected chain properties.
        */
-      chain_properties                                get_chain_properties()const;
+      chain_properties                                get_median_chain_properties()const;
 
 
       /** 
@@ -1012,6 +1012,7 @@ class wallet_api
        * @returns Orders in a specified price pair.
        */
       market_margin_orders                            get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+
 
       /** 
        * Returns a list of open call orders on a market price pair.
@@ -2155,11 +2156,11 @@ class wallet_api
          string signatory,
          string account,
          string executive,
-         asset budget
+         asset budget,
          string details,
          string url,
          string json,
-         bool active
+         bool active,
          bool broadcast );
 
 

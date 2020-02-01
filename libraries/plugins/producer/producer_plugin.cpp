@@ -311,7 +311,8 @@ namespace detail
    {
       auto& db = _self.database();
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-      int64_t max_block_size = props.median_props.maximum_block_size;
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
+      int64_t max_block_size = median_props.maximum_block_size;
 
       auto reserve_ratio_ptr = db.find( reserve_ratio_id_type() );
 

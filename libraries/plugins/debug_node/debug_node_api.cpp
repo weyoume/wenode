@@ -128,10 +128,14 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
    op.work = work;
 
    if( args.props.valid() )
+   {
       op.props = *(args.props);
+   }
    else
-      op.props = db->get_producer_schedule().median_props;
-
+   {
+      op.props = db->get_median_chain_properties();
+   }
+      
    const auto& acct_idx  = db->get_index< chain::account_index >().indices().get< chain::by_name >();
    auto acct_it = acct_idx.find( args.miner_account );
    auto acct_auth = db->find< chain::account_authority_object, chain::by_account >( args.miner_account );

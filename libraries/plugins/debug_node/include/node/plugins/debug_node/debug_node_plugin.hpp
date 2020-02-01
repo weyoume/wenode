@@ -93,7 +93,7 @@ class debug_node_plugin : public node::app::plugin
 
       void debug_mine_work(
          chain::proof_of_work& work,
-         uint32_t summary_target
+         uint128_t summary_target
          );
 
       bool logging = true;

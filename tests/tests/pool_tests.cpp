@@ -75,10 +75,10 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       asset_create.coin_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
-      asset_create.common_options.display_symbol = "Alice Coin";
-      asset_create.common_options.details = "Details";
-      asset_create.common_options.json = "{\"json\":\"valid\"}";
-      asset_create.common_options.url = "www.url.com";
+      asset_create.options.display_symbol = "Alice Coin";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -96,10 +96,10 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       asset_create.coin_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
-      asset_create.common_options.display_symbol = "Bob Coin";
-      asset_create.common_options.details = "Details";
-      asset_create.common_options.json = "{\"json\":\"valid\"}";
-      asset_create.common_options.url = "www.url.com";
+      asset_create.options.display_symbol = "Bob Coin";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );

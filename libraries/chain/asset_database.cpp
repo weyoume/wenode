@@ -1498,8 +1498,8 @@ void database::dispute_escrow( const escrow_object& escrow )
  */
 void database::release_escrow( const escrow_object& escrow )
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+   const median_chain_property_object& median_props = get_median_chain_properties();
+   asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
 
    if( escrow.is_approved() )
    {

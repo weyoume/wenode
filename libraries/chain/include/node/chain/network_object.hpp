@@ -29,29 +29,29 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                     // The name of the account that owns the network officer.
+         account_name_type              account;                          ///< The name of the account that owns the network officer.
 
-         bool                           active = true;               // True if the officer is active, set false to deactivate.
+         bool                           active = true;                    ///< True if the officer is active, set false to deactivate.
 
-         bool                           officer_approved = false;    // True when the network officer has received sufficient voting approval to earn funds.
+         bool                           officer_approved = false;         ///< True when the network officer has received sufficient voting approval to earn funds.
 
-         network_officer_role_type          officer_type;                // The type of network officer that the account serves as. 
+         network_officer_role_type      officer_type;                     ///< The type of network officer that the account serves as. 
 
-         shared_string                  details;                     // The officer's details description. 
+         shared_string                  details;                          ///< The officer's details description. 
 
-         shared_string                  url;                         // The officer's reference URL. 
+         shared_string                  url;                              ///< The officer's reference URL. 
 
-         shared_string                  json;                        // Json metadata of the officer. 
+         shared_string                  json;                             ///< Json metadata of the officer. 
          
-         time_point                     created;                     // The time the officer was created.
+         time_point                     created;                          ///< The time the officer was created.
 
-         uint32_t                       vote_count = 0;              // The number of accounts that support the officer.
+         uint32_t                       vote_count = 0;                   ///< The number of accounts that support the officer.
 
-         share_type                     voting_power = 0;            // The amount of voting power that votes for the officer.
+         share_type                     voting_power = 0;                 ///< The amount of voting power that votes for the officer.
 
-         uint32_t                       producer_vote_count = 0;      // The number of accounts that support the officer.
+         uint32_t                       producer_vote_count = 0;          ///< The number of accounts that support the officer.
 
-         share_type                     producer_voting_power = 0;    // The amount of voting power that votes for the officer.
+         share_type                     producer_voting_power = 0;        ///< The amount of voting power that votes for the officer.
    };
 
 
@@ -66,13 +66,13 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;               // The name of the account voting for the officer.
+         account_name_type              account;                    ///< The name of the account voting for the officer.
 
-         account_name_type              network_officer;       // The name of the network officer being voted for.
+         account_name_type              network_officer;            ///< The name of the network officer being voted for.
 
-         network_officer_role_type      officer_type;          // the type of network officer that is being voted for.
+         network_officer_role_type      officer_type;               ///< the type of network officer that is being voted for.
 
-         uint16_t                       vote_rank;             // the ranking of the vote for the officer.
+         uint16_t                       vote_rank;                  ///< the ranking of the vote for the officer.
    };
 
 
@@ -87,29 +87,29 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                              // The name of the governance account that created the executive team.
+         account_name_type              account;                                   ///< The name of the governance account that created the executive team.
 
-         bool                           active = true;                        // True if the executive team is active, set false to deactivate.
+         bool                           active = true;                             ///< True if the executive team is active, set false to deactivate.
 
-         bool                           board_approved = false;               // True when the board has reach sufficient voting support to receive budget.
+         bool                           board_approved = false;                    ///< True when the board has reach sufficient voting support to receive budget.
 
-         asset                          budget;                               // Total amount of Credit asset requested for team compensation and funding.
+         asset                          budget;                                    ///< Total amount of Credit asset requested for team compensation and funding.
          
-         shared_string                  details;                              // The executive team's details description. 
+         shared_string                  details;                                   ///< The executive team's details description. 
 
-         shared_string                  url;                                  // The executive team's reference URL. 
+         shared_string                  url;                                       ///< The executive team's reference URL. 
 
-         shared_string                  json;                                 // Json metadata of the executive team. 
+         shared_string                  json;                                      ///< Json metadata of the executive team. 
          
-         time_point                     created;                              // The time the executive team was created.
+         time_point                     created;                                   ///< The time the executive team was created.
 
-         uint32_t                       vote_count = 0;                       // The number of accounts that support the executive team.
+         uint32_t                       vote_count = 0;                            ///< The number of accounts that support the executive team.
 
-         share_type                     voting_power = 0;                     // The amount of voting power that votes for the executive team. 
+         share_type                     voting_power = 0;                          ///< The amount of voting power that votes for the executive team. 
 
-         uint32_t                       producer_vote_count = 0;               // The number of accounts that support the executive team.
+         uint32_t                       producer_vote_count = 0;                   ///< The number of accounts that support the executive team.
 
-         share_type                     producer_voting_power = 0;             // The amount of voting power that votes for the executive team.
+         share_type                     producer_voting_power = 0;                 ///< The amount of voting power that votes for the executive team.
    };
 
 
@@ -124,11 +124,11 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;               // The name of the account that voting for the executive board.
+         account_name_type              account;                    ///< The name of the account that voting for the executive board.
 
-         account_name_type              executive_board;       // The name of the executive board being voted for.
+         account_name_type              executive_board;            ///< The name of the executive board being voted for.
 
-         uint16_t                       vote_rank;             // The rank the rank of the vote for the executive board. 
+         uint16_t                       vote_rank;                  ///< The rank the rank of the vote for the executive board. 
    };
 
 
@@ -143,27 +143,27 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                        // The name of the account that owns the governance account.
+         account_name_type              account;                             ///< The name of the account that owns the governance account.
 
-         bool                           active = true;                  // True if the governance account is active, set false to deactivate.
+         bool                           active = true;                       ///< True if the governance account is active, set false to deactivate.
 
-         bool                           account_approved = false;       // True if the governance account is approved by the network.
+         bool                           account_approved = false;            ///< True if the governance account is approved by the network.
 
-         shared_string                  details;                        // The governance account's details description. 
+         shared_string                  details;                             ///< The governance account's details description. 
 
-         shared_string                  url;                            // The governance account's reference URL. 
+         shared_string                  url;                                 ///< The governance account's reference URL. 
 
-         shared_string                  json;                           // Json metadata of the governance account. 
+         shared_string                  json;                                ///< Json metadata of the governance account. 
          
-         time_point                     created;                        // The time the governance account was created.
+         time_point                     created;                             ///< The time the governance account was created.
 
-         uint32_t                       subscriber_count = 0;           // The number of accounts that subscribe to the governance account.
+         uint32_t                       subscriber_count = 0;                ///< The number of accounts that subscribe to the governance account.
 
-         share_type                     subscriber_power = 0;           // The amount of voting power the subscribes to the governance account.
+         share_type                     subscriber_power = 0;                ///< The amount of voting power the subscribes to the governance account.
 
-         uint32_t                       producer_subscriber_count = 0;   // The number of accounts that subscribe to the governance account.
+         uint32_t                       producer_subscriber_count = 0;       ///< The number of accounts that subscribe to the governance account.
 
-         share_type                     producer_subscriber_power = 0;   // The amount of voting power the subscribes to the governance account.
+         share_type                     producer_subscriber_power = 0;       ///< The amount of voting power the subscribes to the governance account.
    };
 
 
@@ -178,11 +178,11 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;               // The name of the account that subscribes to the governance account.
+         account_name_type              account;                    ///< The name of the account that subscribes to the governance account.
 
-         account_name_type              governance_account;    // The name of the governance account being subscribed to.
+         account_name_type              governance_account;         ///< The name of the governance account being subscribed to.
 
-         uint16_t                       vote_rank;             // The preference rank of subscription for fee splitting. 
+         uint16_t                       vote_rank;                  ///< The preference rank of subscription for fee splitting. 
    };
 
 
@@ -197,46 +197,46 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                     // The name of the account that owns the supernode.
+         account_name_type              account;                          ///< The name of the account that owns the supernode.
 
-         bool                           active = true;               // True if the supernode is active, set false to deactivate.
+         bool                           active = true;                    ///< True if the supernode is active, set false to deactivate.
 
-         shared_string                  details;                     // The supernode's details description. 
+         shared_string                  details;                          ///< The supernode's details description. 
 
-         shared_string                  url;                         // The supernode's reference URL. 
+         shared_string                  url;                              ///< The supernode's reference URL. 
 
-         shared_string                  node_api_endpoint;           // The Full Archive node public API endpoint of the supernode.
+         shared_string                  node_api_endpoint;                ///< The Full Archive node public API endpoint of the supernode.
 
-         shared_string                  notification_api_endpoint;   // The Notification API endpoint of the Supernode. 
+         shared_string                  notification_api_endpoint;        ///< The Notification API endpoint of the Supernode. 
 
-         shared_string                  auth_api_endpoint;           // The Transaction signing authentication API endpoint of the supernode.
+         shared_string                  auth_api_endpoint;                ///< The Transaction signing authentication API endpoint of the supernode.
 
-         shared_string                  ipfs_endpoint;               // The IPFS file storage API endpoint of the supernode.
+         shared_string                  ipfs_endpoint;                    ///< The IPFS file storage API endpoint of the supernode.
 
-         shared_string                  bittorrent_endpoint;         // The Bittorrent Seed Box endpoint URL of the Supernode. 
+         shared_string                  bittorrent_endpoint;              ///< The Bittorrent Seed Box endpoint URL of the Supernode. 
 
-         shared_string                  json;                        // Json metadata of the supernode, including additonal outside of consensus APIs and services. 
+         shared_string                  json;                             ///< Json metadata of the supernode, including additonal outside of consensus APIs and services. 
          
-         time_point                     created;                     // The time the supernode was created.
+         time_point                     created;                          ///< The time the supernode was created.
          
-         asset                          storage_rewards;             // Amount of core asset earned from storage.
+         asset                          storage_rewards;                  ///< Amount of core asset earned from storage.
 
-         uint64_t                       daily_active_users = 0;      // The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
+         uint64_t                       daily_active_users = 0;           ///< The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
 
-         uint64_t                       monthly_active_users = 0;    // The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
+         uint64_t                       monthly_active_users = 0;         ///< The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
 
-         share_type                     recent_view_weight = 0;      // The rolling 7 day average of daily accumulated voting power of viewers. 
+         share_type                     recent_view_weight = 0;           ///< The rolling 7 day average of daily accumulated voting power of viewers. 
 
-         time_point                     last_updated;            // The time the file weight and active users was last decayed.
+         time_point                     last_updated;                     ///< The time the file weight and active users was last decayed.
 
-         time_point                     last_activation_time;        // The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
+         time_point                     last_activation_time;             ///< The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
 
-         void                           decay_weights( const dynamic_global_property_object& props )
+         void                           decay_weights( const median_chain_property_object& props, time_point now )
          {
-            recent_view_weight -= ( ( recent_view_weight * ( props.time - last_updated ).to_seconds() ) / props.median_props.supernode_decay_time.to_seconds() );
-            daily_active_users -= ( ( daily_active_users * ( props.time - last_updated ).to_seconds() ) / fc::days(1).to_seconds() );
-            monthly_active_users -= ( ( monthly_active_users * ( props.time - last_updated ).to_seconds() ) / fc::days(30).to_seconds() );
-            last_updated = props.time;
+            recent_view_weight -= ( ( recent_view_weight * ( now - last_updated ).to_seconds() ) / props.supernode_decay_time.to_seconds() );
+            daily_active_users -= ( ( daily_active_users * ( now - last_updated ).to_seconds() ) / fc::days(1).to_seconds() );
+            monthly_active_users -= ( ( monthly_active_users * ( now - last_updated ).to_seconds() ) / fc::days(30).to_seconds() );
+            last_updated = now;
          }
    };
 
@@ -252,29 +252,29 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                      // The name of the account that owns the interface.
+         account_name_type              account;                           ///< The name of the account that owns the interface.
 
-         bool                           active = true;                // True if the interface is active, set false to deactivate.
+         bool                           active = true;                     ///< True if the interface is active, set false to deactivate.
 
-         shared_string                  details;                      // The interface's details description. 
+         shared_string                  details;                           ///< The interface's details description. 
 
-         shared_string                  url;                          // The interface's reference URL. 
+         shared_string                  url;                               ///< The interface's reference URL. 
 
-         shared_string                  json;                         // Json metadata of the interface. 
+         shared_string                  json;                              ///< Json metadata of the interface. 
          
-         time_point                     created;                      // The time the interface was created.
+         time_point                     created;                           ///< The time the interface was created.
 
-         uint64_t                       daily_active_users = 0;       // The average number of accounts (X percent 100) that have signed a transaction from the interface in the prior 24h.
+         uint64_t                       daily_active_users = 0;            ///< The average number of accounts (X percent 100) that have signed a transaction from the interface in the prior 24h.
 
-         uint64_t                       monthly_active_users = 0;     // The average number of accounts (X percent 100) that have signed a transaction from the interface in the prior 30 days.
+         uint64_t                       monthly_active_users = 0;          ///< The average number of accounts (X percent 100) that have signed a transaction from the interface in the prior 30 days.
 
-         time_point                     last_updated;             // The time the user counts were last updated.
+         time_point                     last_updated;                      ///< The time the user counts were last updated.
 
-         void                           decay_weights( const dynamic_global_property_object& props )
+         void                           decay_weights( time_point now )
          {
-            daily_active_users -= ( ( daily_active_users * ( props.time - last_updated ).to_seconds() ) / fc::days(1).to_seconds() );
-            monthly_active_users -= ( ( monthly_active_users * ( props.time - last_updated ).to_seconds() ) / fc::days(30).to_seconds() );
-            last_updated = props.time;
+            daily_active_users -= ( ( daily_active_users * ( now - last_updated ).to_seconds() ) / fc::days(1).to_seconds() );
+            monthly_active_users -= ( ( monthly_active_users * ( now - last_updated ).to_seconds() ) / fc::days(30).to_seconds() );
+            last_updated = now;
          }
    };
 
@@ -289,27 +289,27 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                         // The name of the account that owns the mediator.
+         account_name_type              account;                              ///< The name of the account that owns the mediator.
 
-         bool                           active = true;                   // True if the mediator is active, set false to deactivate.
+         bool                           active = true;                        ///< True if the mediator is active, set false to deactivate.
 
-         shared_string                  details;                         // The mediator's details description.
+         shared_string                  details;                              ///< The mediator's details description.
 
-         shared_string                  url;                             // The mediator's reference URL.
+         shared_string                  url;                                  ///< The mediator's reference URL.
 
-         shared_string                  json;                            // Json metadata of the mediator.
+         shared_string                  json;                                 ///< Json metadata of the mediator.
 
-         asset                          mediator_bond;                   // Core Asset staked in mediation bond for selection.
+         asset                          mediator_bond;                        ///< Core Asset staked in mediation bond for selection.
 
-         uint128_t                      mediation_virtual_position = 0;  // Quantitative ranking of selection for mediation.
+         uint128_t                      mediation_virtual_position = 0;       ///< Quantitative ranking of selection for mediation.
 
-         account_name_type              last_escrow_from;                // The sender of the most recently allocated escrow
+         account_name_type              last_escrow_from;                     ///< The sender of the most recently allocated escrow
 
-         shared_string                  last_escrow_id;                  // Escrow uuidv4 of the most recently allocated escrow.
+         shared_string                  last_escrow_id;                       ///< Escrow uuidv4 of the most recently allocated escrow.
 
-         time_point                     created;                         // The time the mediator was created.
+         time_point                     created;                              ///< The time the mediator was created.
 
-         time_point                     last_updated;                // The time the mediator was last updated.
+         time_point                     last_updated;                         ///< The time the mediator was last updated.
    };
 
 
@@ -324,77 +324,77 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              creator;                                    // The name of the governance account that created the community enterprise proposal.
+         account_name_type              creator;                                         ///< The name of the governance account that created the community enterprise proposal.
 
-         shared_string                  enterprise_id;                              // UUIDv4 for referring to the proposal.
+         shared_string                  enterprise_id;                                   ///< UUIDv4 for referring to the proposal.
 
-         bool                           active = true;                              // True if the project is active, set false to deactivate.
+         bool                           active = true;                                   ///< True if the project is active, set false to deactivate.
 
-         proposal_distribution_type     proposal_type;                              // The type of proposal, determines release schedule.
+         proposal_distribution_type     proposal_type;                                   ///< The type of proposal, determines release schedule.
 
-         flat_map< account_name_type, uint16_t > beneficiaries;                     // Map of account names and percentages of budget value.
+         flat_map< account_name_type, uint16_t > beneficiaries;                          ///< Map of account names and percentages of budget value.
 
-         vector< pair < shared_string, uint16_t > > milestones;                     // Ordered vector of milestone descriptions and percentages of budget value.
+         vector< pair < shared_string, uint16_t > > milestones;                          ///< Ordered vector of milestone descriptions and percentages of budget value.
 
-         vector< shared_string >        milestone_history;                          // Ordered vector of the details of every claimed milestone.
+         vector< shared_string >        milestone_history;                               ///< Ordered vector of the details of every claimed milestone.
 
-         int16_t                        approved_milestones = -1;                   // Number of the last approved milestone by the community.
+         int16_t                        approved_milestones = -1;                        ///< Number of the last approved milestone by the community.
 
-         int16_t                        claimed_milestones = 0;                     // Number of milestones claimed for release.  
+         int16_t                        claimed_milestones = 0;                          ///< Number of milestones claimed for release.  
 
-         fc::optional < asset_symbol_type > investment;                             // Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+         fc::optional < asset_symbol_type > investment;                                  ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
-         shared_string                  details;                                    // The proposals's details description.
+         shared_string                  details;                                         ///< The proposals's details description.
 
-         shared_string                  url;                                        // The proposals's reference URL.
+         shared_string                  url;                                             ///< The proposals's reference URL.
 
-         shared_string                  json;                                       // Json metadata of the proposal.
+         shared_string                  json;                                            ///< Json metadata of the proposal.
 
-         time_point                     begin;                                      // Enterprise proposal start time. Budget payments begin past this time.
+         time_point                     begin;                                           ///< Enterprise proposal start time. Budget payments begin past this time.
 
-         time_point                     end;                                        // Enterprise proposal end time. Determined by start plus remaining interval number of days.
+         time_point                     end;                                             ///< Enterprise proposal end time. Determined by start plus remaining interval number of days.
 
-         time_point                     expiration;                                 // Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
+         time_point                     expiration;                                      ///< Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
 
-         asset                          daily_budget;                               // Daily amount of Core asset requested for project compensation and funding.
+         asset                          daily_budget;                                    ///< Daily amount of Core asset requested for project compensation and funding.
 
-         uint16_t                       duration;                                   // Number of days that the proposal lasts for. 
+         uint16_t                       duration;                                        ///< Number of days that the proposal lasts for. 
 
-         asset                          pending_budget = asset( 0, SYMBOL_COIN );   // Funds held in the proposal for release. 
+         asset                          pending_budget = asset( 0, SYMBOL_COIN );        ///< Funds held in the proposal for release. 
 
-         asset                          total_distributed = asset( 0, SYMBOL_COIN );// Total amount of funds distributed for the proposal. 
+         asset                          total_distributed = asset( 0, SYMBOL_COIN );     ///< Total amount of funds distributed for the proposal. 
 
-         uint16_t                       days_paid = 0;                              // Number of days that the proposal has been paid for. 
+         uint16_t                       days_paid = 0;                                   ///< Number of days that the proposal has been paid for. 
 
-         uint32_t                       total_approvals = 0;                        // The overall number of accounts that support the enterprise proposal.
+         uint32_t                       total_approvals = 0;                             ///< The overall number of accounts that support the enterprise proposal.
 
-         share_type                     total_voting_power = 0;                     // The oveall amount of voting power that supports the enterprise proposal.
+         share_type                     total_voting_power = 0;                          ///< The oveall amount of voting power that supports the enterprise proposal.
 
-         uint32_t                       total_producer_approvals = 0;                // The overall number of top 50 producers that support the enterprise proposal.
+         uint32_t                       total_producer_approvals = 0;                    ///< The overall number of top 50 producers that support the enterprise proposal.
 
-         share_type                     total_producer_voting_power = 0;             // The overall amount of producer voting power that supports the enterprise proposal.
+         share_type                     total_producer_voting_power = 0;                 ///< The overall amount of producer voting power that supports the enterprise proposal.
 
-         uint32_t                       current_approvals = 0;                      // The number of accounts that support the latest claimed milestone.
+         uint32_t                       current_approvals = 0;                           ///< The number of accounts that support the latest claimed milestone.
 
-         share_type                     current_voting_power = 0;                   // The amount of voting power that supports the latest claimed milestone.
+         share_type                     current_voting_power = 0;                        ///< The amount of voting power that supports the latest claimed milestone.
 
-         uint32_t                       current_producer_approvals = 0;              // The number of top 50 producers that support the latest claimed milestone.
+         uint32_t                       current_producer_approvals = 0;                  ///< The number of top 50 producers that support the latest claimed milestone.
 
-         share_type                     current_producer_voting_power = 0;           // The amount of producer voting power that supports the latest claimed milestone.
+         share_type                     current_producer_voting_power = 0;               ///< The amount of producer voting power that supports the latest claimed milestone.
 
-         time_point                     created;                                    // The time the proposal was created.
+         time_point                     created;                                         ///< The time the proposal was created.
 
-         asset                          total_budget()const                         // Returns the total amount of funding requested by the proposal.
+         asset                          total_budget()const                              ///< Returns the total amount of funding requested by the proposal.
          {
             return duration * daily_budget;
          }
 
-         asset                          remaining_budget()const                     // Returns the total amount of funding remaining for payment.
+         asset                          remaining_budget()const                          ///< Returns the total amount of funding remaining for payment.
          {
             return ( duration - days_paid ) * daily_budget;
          }
 
-         bool                           is_beneficiary( const account_name_type& beneficiary )    // Finds if a given account name is in the beneficiarys set. 
+         bool                           is_beneficiary( const account_name_type& beneficiary )         ///< Finds if a given account name is in the beneficiarys set. 
          {
             if( beneficiaries[ beneficiary ] > 0 )
             {
@@ -424,19 +424,19 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;              // Account approving the enterprise Milestone. 
+         account_name_type              account;                   ///< Account approving the enterprise Milestone. 
 
-         account_name_type              creator;              // The name of the account that created the community enterprise proposal.
+         account_name_type              creator;                   ///< The name of the account that created the community enterprise proposal.
 
-         shared_string                  enterprise_id;        // UUIDv4 referring to the proposal being claimed.
+         shared_string                  enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
 
-         uint16_t                       vote_rank;            // The vote rank of the approval for enterprise
+         uint16_t                       vote_rank;                 ///< The vote rank of the approval for enterprise
 
-         int16_t                        milestone;            // Number of the milestone being approved for release.    
+         int16_t                        milestone;                 ///< Number of the milestone being approved for release.    
 
-         time_point                     last_updated;         // The time the approval was created.
+         time_point                     last_updated;              ///< The time the approval was created.
 
-         time_point                     created;              // The time the approval was created.
+         time_point                     created;                   ///< The time the approval was created.
    };
 
    struct by_type_voting_power;
@@ -816,7 +816,7 @@ namespace node { namespace chain {
       allocator< enterprise_approval_object >
    > enterprise_approval_index;
 
-} }    // node::chain
+} }         ///< node::chain
 
 FC_REFLECT( node::chain::network_officer_object,
          (id)

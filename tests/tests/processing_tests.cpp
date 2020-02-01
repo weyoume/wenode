@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
       db.push_transaction( tx, 0 );
 
       const reward_fund_object& rf = db.get_reward_fund();
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       const comment_object& alice_comment = db.get_comment( "alice", string( "test" ) );
 
@@ -286,7 +286,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
          uint128_t( alice_comment.net_reward ),
          alice_comment.cashouts_received,
          rf.author_reward_curve,
-         props.median_props.content_reward_decay_rate,
+         median_props.content_reward_decay_rate,
          rf.content_constant );
 
       generate_blocks( 5 );
@@ -313,7 +313,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
          uint128_t( bob_comment.net_reward ),
          bob_comment.cashouts_received,
          rf.author_reward_curve,
-         props.median_props.content_reward_decay_rate,
+         median_props.content_reward_decay_rate,
          rf.content_constant );
 
       generate_block();
@@ -439,7 +439,6 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       tx.signatures.clear();
 
       const reward_fund_object& rf = db.get_reward_fund();
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
       const comment_object& alice_comment = db.get_comment( "alice", string( "test" ) );
       const comment_object& bob_comment = db.get_comment( "bob", string( "test" ) );
 

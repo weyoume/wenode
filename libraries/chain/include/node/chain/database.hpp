@@ -174,8 +174,8 @@ namespace node { namespace chain {
          time_point                             head_block_time()const;
          uint64_t                               head_block_num()const;
          block_id_type                          head_block_id()const;
-         const producer_schedule_object&         get_producer_schedule()const;
-         const chain_properties&                get_chain_properties()const;
+         const producer_schedule_object&        get_producer_schedule()const;
+         const median_chain_property_object&    get_median_chain_properties()const;
          const price&                           get_usd_price()const;
          const reward_fund_object&              get_reward_fund() const;
          const comment_metrics_object&          get_comment_metrics() const;
@@ -536,7 +536,8 @@ namespace node { namespace chain {
           */
          uint64_t get_slot_at_time(fc::time_point when)const;
 
-         share_type update_producer( const producer_object& producer, const producer_schedule_object& pso, const dynamic_global_property_object& props );
+         share_type update_producer( const producer_object& producer, const producer_schedule_object& pso,
+            const dynamic_global_property_object& props, const median_chain_property_object& median_props );
 
          void update_producer_set();
 
@@ -546,14 +547,13 @@ namespace node { namespace chain {
 
          void update_board_moderator_set();
 
-         void update_business_account( const account_business_object& business, const dynamic_global_property_object& props );
+         void update_business_account( const account_business_object& business );
 
          void update_business_account_set();
 
          void adjust_interface_users( const interface_object& interface, bool adjust = true );
 
-         /** clears all vote records for a particular account */
-         void clear_network_votes( const account_object& a );   //
+         void clear_network_votes( const account_object& a );
 
          void process_funds();
          

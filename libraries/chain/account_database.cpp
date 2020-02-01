@@ -44,8 +44,8 @@ using boost::container::flat_set;
  */
 void database::process_membership_updates()
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = get_median_chain_properties();
+   time_point now = head_block_time();
    const auto& account_idx = get_index< account_index >().indices().get< by_membership_expiration >();
    auto account_itr = account_idx.begin();
    
@@ -69,17 +69,17 @@ void database::process_membership_updates()
             }
             case STANDARD_MEMBERSHIP:
             {
-               monthly_fee = props.median_props.membership_base_price;
+               monthly_fee = median_props.membership_base_price;
                break; 
             }
             case MID_MEMBERSHIP:
             {
-               monthly_fee = props.median_props.membership_mid_price;
+               monthly_fee = median_props.membership_mid_price;
                break; 
             }
             case TOP_MEMBERSHIP:
             {
-               monthly_fee = props.median_props.membership_top_price;
+               monthly_fee = median_props.membership_top_price;
                break; 
             }
             default:

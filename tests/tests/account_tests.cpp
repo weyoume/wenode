@@ -254,9 +254,9 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       db_plugin->debug_update( [=]( database& db )
       {
-         db.modify( db.get_producer_schedule(), [&]( producer_schedule_object& pso )
+         db.modify( db.get_median_chain_properties(), [&]( median_chain_property_object& mcpo )
          {
-            pso.median_props.account_creation_fee = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );    // Fee much too high.
+            mcpo.account_creation_fee = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );    // Fee much too high.
          });
       });
 
@@ -287,12 +287,13 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       ACTORS( (alice)(bob) );
 
       account_update_operation op;
+
       op.account = "alice";
-      op.details = "Shrek is love.";
-      op.json = "{\"Shrek\":\"life\"}";
+      op.details = "Details.";
+      op.json = "{\"json\":\"valid\"}";
       op.posting = authority();
-      op.posting->weight_threshold = 1;
-      op.posting->add_authorities( "abcdefghijklmnopq", 1 );
+      op.posting.weight_threshold = 1;
+      op.posting.add_authorities( "abcdefghijklmnopq", 1 );
       op.validate();
 
       signed_transaction tx;
@@ -475,8 +476,8 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
 
       op.account = "alice";
       op.posting = authority();
-      op.posting->weight_threshold = 1;
-      op.posting->add_authorities( "dan", 1 );
+      op.posting.weight_threshold = 1;
+      op.posting.add_authorities( "dan", 1 );
       tx.operations.push_back( op );
       tx.sign( new_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1584,7 +1585,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( bob_auth.owner == *acc_update.owner );
+      BOOST_REQUIRE( bob_auth.owner == acc_update.owner );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1599,7 +1600,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( bob_auth.owner == *acc_update.owner );
+      BOOST_REQUIRE( bob_auth.owner == acc_update.owner );
 
       generate_blocks( now() + OWNER_UPDATE_LIMIT );
 

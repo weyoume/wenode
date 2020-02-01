@@ -718,9 +718,9 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
    {
       db_plugin->debug_update( [=]( database& db )
       {
-         db.modify( db.get_dynamic_global_properties(), [&]( dynamic_global_property_object& gpo )
+         db.modify( db.get_median_chain_properties(), [&]( median_chain_property_object& mcpo )
          {
-            gpo.median_props.maximum_block_size = MIN_BLOCK_SIZE_LIMIT;
+            mcpo.maximum_block_size = MIN_BLOCK_SIZE_LIMIT;
          });
       });
 

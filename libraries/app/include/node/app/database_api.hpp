@@ -200,7 +200,7 @@ class database_api
 
       dynamic_global_property_api_obj     get_dynamic_global_properties()const;
 
-      chain_properties                    get_chain_properties()const;
+      chain_properties                    get_median_chain_properties()const;
 
       producer_schedule_api_obj           get_producer_schedule()const;
 
@@ -596,7 +596,7 @@ FC_API( node::app::database_api,
 
          (get_config)
          (get_dynamic_global_properties)
-         (get_chain_properties)
+         (get_median_chain_properties)
          (get_producer_schedule)
          (get_hardfork_version)
          (get_next_scheduled_hardfork)
@@ -606,6 +606,7 @@ FC_API( node::app::database_api,
          ///< Accounts
 
          (get_accounts)
+         (get_accounts_by_followers)
          (get_concise_accounts)
          (get_full_accounts)
          (get_account_history)
@@ -620,6 +621,7 @@ FC_API( node::app::database_api,
          ///< Assets
 
          (get_assets)
+         (get_asset_count)
          (get_escrow)
          (get_withdraw_routes)
          (get_account_bandwidth)
@@ -631,6 +633,7 @@ FC_API( node::app::database_api,
          ///< Boards
 
          (get_boards)
+         (get_boards_by_subscribers)
          (get_board_count)
 
          ///< Network
@@ -639,12 +642,17 @@ FC_API( node::app::database_api,
          (get_producers_by_account)
          (get_producers_by_voting_power)
          (get_producers_by_mining_power)
+         (get_network_officers_by_account)
          (get_development_officers_by_voting_power)
          (get_marketing_officers_by_voting_power)
          (get_advocacy_officers_by_voting_power)
+         (get_executive_boards_by_account)
          (get_executive_boards_by_voting_power)
+         (get_supernodes_by_account)
          (get_supernodes_by_view_weight)
+         (get_interfaces_by_account)
          (get_interfaces_by_users)
+         (get_governance_accounts_by_account)
          (get_governance_accounts_by_subscriber_power)
          (get_enterprise_by_voting_power)
          (lookup_producer_accounts)

@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: creation of escrow transfer proposal" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
 
       const escrow_object& escrow = db.get_escrow( "alice", "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" );
 
-      asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+      asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
 
       BOOST_REQUIRE( escrow.to == "bob" );
       BOOST_REQUIRE( escrow.from == "alice" );
@@ -714,7 +714,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
 
       const escrow_object& escrow = db.get_escrow( "alice", "98351a27-d0d7-456a-b732-4fb414a0e639" );
 
-      asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+      asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
 
       BOOST_REQUIRE( escrow.to == "bob" );
       BOOST_REQUIRE( escrow.from == "alice" );
@@ -928,7 +928,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
 
       const escrow_object& escrow = db.get_escrow( "alice", "efab7764-63af-4e6a-95e4-b4dd7c23e40b" );
 
-      asset escrow_bond = asset( ( escrow.payment.amount * props.median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+      asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
 
       BOOST_REQUIRE( escrow.to == "bob" );
       BOOST_REQUIRE( escrow.from == "alice" );

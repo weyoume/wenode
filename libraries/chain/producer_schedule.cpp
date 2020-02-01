@@ -1,4 +1,3 @@
-
 #include <node/chain/database.hpp>
 #include <node/chain/producer_objects.hpp>
 #include <node/chain/producer_schedule.hpp>
@@ -60,299 +59,294 @@ void update_median_producer_props( database& db )
    vector< const producer_object* > active; 
    active.reserve( pso.num_scheduled_producers );
    size_t offset = active.size()/2;
-   chain_properties new_props;
 
    for( int i = 0; i < pso.num_scheduled_producers; i++ )
    {
-      active.push_back( db.find_producer( pso.current_shuffled_producers[i] ) );  // fetch producer object pointers
+      active.push_back( db.find_producer( pso.current_shuffled_producers[i] ) );      // Fetch producer object pointers.
    }
 
-   // Sort all properties variables and find median items, placing them into new properties. 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+   const median_chain_property_object& median_props = db.get_median_chain_properties();
+
+   // Sort all properties variables and find median items, placing them into new properties.
+
+   db.modify( median_props, [&]( median_chain_property_object& mcpo )
    {
-      return a->props.account_creation_fee.amount < b->props.account_creation_fee.amount;
-   });
-   new_props.account_creation_fee = active[ offset ]->props.account_creation_fee;
-   
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.maximum_block_size < b->props.maximum_block_size;
-   });
-   new_props.maximum_block_size = active[ offset ]->props.maximum_block_size;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.account_creation_fee.amount < b->props.account_creation_fee.amount;
+      });
+      mcpo.account_creation_fee = active[ offset ]->props.account_creation_fee;
+      
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.maximum_block_size < b->props.maximum_block_size;
+      });
+      mcpo.maximum_block_size = active[ offset ]->props.maximum_block_size;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.pow_target_time < b->props.pow_target_time;
-   });
-   new_props.pow_target_time = active[ offset ]->props.pow_target_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.pow_target_time < b->props.pow_target_time;
+      });
+      mcpo.pow_target_time = active[ offset ]->props.pow_target_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.pow_decay_time < b->props.pow_decay_time;
-   });
-   new_props.pow_decay_time = active[ offset ]->props.pow_decay_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.pow_decay_time < b->props.pow_decay_time;
+      });
+      mcpo.pow_decay_time = active[ offset ]->props.pow_decay_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.txn_stake_decay_time < b->props.txn_stake_decay_time;
-   });
-   new_props.txn_stake_decay_time = active[ offset ]->props.txn_stake_decay_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.txn_stake_decay_time < b->props.txn_stake_decay_time;
+      });
+      mcpo.txn_stake_decay_time = active[ offset ]->props.txn_stake_decay_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.escrow_bond_percent < b->props.escrow_bond_percent;
-   });
-   new_props.escrow_bond_percent = active[ offset ]->props.escrow_bond_percent;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.escrow_bond_percent < b->props.escrow_bond_percent;
+      });
+      mcpo.escrow_bond_percent = active[ offset ]->props.escrow_bond_percent;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.credit_interest_rate < b->props.credit_interest_rate;
-   });
-   new_props.credit_interest_rate = active[ offset ]->props.credit_interest_rate;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.credit_interest_rate < b->props.credit_interest_rate;
+      });
+      mcpo.credit_interest_rate = active[ offset ]->props.credit_interest_rate;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.credit_open_ratio < b->props.credit_open_ratio;
-   });
-   new_props.credit_open_ratio = active[ offset ]->props.credit_open_ratio;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.credit_open_ratio < b->props.credit_open_ratio;
+      });
+      mcpo.credit_open_ratio = active[ offset ]->props.credit_open_ratio;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.credit_liquidation_ratio < b->props.credit_liquidation_ratio;
-   });
-   new_props.credit_liquidation_ratio = active[ offset ]->props.credit_liquidation_ratio;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.credit_liquidation_ratio < b->props.credit_liquidation_ratio;
+      });
+      mcpo.credit_liquidation_ratio = active[ offset ]->props.credit_liquidation_ratio;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.credit_min_interest < b->props.credit_min_interest;
-   });
-   new_props.credit_min_interest = active[ offset ]->props.credit_min_interest;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.credit_min_interest < b->props.credit_min_interest;
+      });
+      mcpo.credit_min_interest = active[ offset ]->props.credit_min_interest;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.credit_variable_interest < b->props.credit_variable_interest;
-   });
-   new_props.credit_variable_interest = active[ offset ]->props.credit_variable_interest;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.credit_variable_interest < b->props.credit_variable_interest;
+      });
+      mcpo.credit_variable_interest = active[ offset ]->props.credit_variable_interest;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.market_max_credit_ratio < b->props.market_max_credit_ratio;
-   });
-   new_props.market_max_credit_ratio = active[ offset ]->props.market_max_credit_ratio;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.market_max_credit_ratio < b->props.market_max_credit_ratio;
+      });
+      mcpo.market_max_credit_ratio = active[ offset ]->props.market_max_credit_ratio;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.margin_open_ratio < b->props.margin_open_ratio;
-   });
-   new_props.margin_open_ratio = active[ offset ]->props.margin_open_ratio;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.margin_open_ratio < b->props.margin_open_ratio;
+      });
+      mcpo.margin_open_ratio = active[ offset ]->props.margin_open_ratio;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.margin_liquidation_ratio < b->props.margin_liquidation_ratio;
-   });
-   new_props.margin_liquidation_ratio = active[ offset ]->props.margin_liquidation_ratio;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.margin_liquidation_ratio < b->props.margin_liquidation_ratio;
+      });
+      mcpo.margin_liquidation_ratio = active[ offset ]->props.margin_liquidation_ratio;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.maximum_asset_feed_publishers < b->props.maximum_asset_feed_publishers;
-   });
-   new_props.maximum_asset_feed_publishers = active[ offset ]->props.maximum_asset_feed_publishers;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.maximum_asset_feed_publishers < b->props.maximum_asset_feed_publishers;
+      });
+      mcpo.maximum_asset_feed_publishers = active[ offset ]->props.maximum_asset_feed_publishers;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.membership_base_price < b->props.membership_base_price;
-   });
-   new_props.membership_base_price = active[ offset ]->props.membership_base_price;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.membership_base_price < b->props.membership_base_price;
+      });
+      mcpo.membership_base_price = active[ offset ]->props.membership_base_price;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.membership_mid_price < b->props.membership_mid_price;
-   });
-   new_props.membership_mid_price = active[ offset ]->props.membership_mid_price;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.membership_mid_price < b->props.membership_mid_price;
+      });
+      mcpo.membership_mid_price = active[ offset ]->props.membership_mid_price;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.membership_top_price < b->props.membership_top_price;
-   });
-   new_props.membership_top_price = active[ offset ]->props.membership_top_price;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.membership_top_price < b->props.membership_top_price;
+      });
+      mcpo.membership_top_price = active[ offset ]->props.membership_top_price;
 
-   // Sort the content reward splits by median, and adjust author rewards to be the remainder of the percentages
+      // Sort the content reward splits by median, and adjust author rewards to be the remainder of the percentages
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.vote_reward_percent < b->props.vote_reward_percent;
-   });
-   new_props.vote_reward_percent = active[ offset ]->props.vote_reward_percent;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.vote_reward_percent < b->props.vote_reward_percent;
+      });
+      mcpo.vote_reward_percent = active[ offset ]->props.vote_reward_percent;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.view_reward_percent < b->props.view_reward_percent;
-   });
-   new_props.view_reward_percent = active[ offset ]->props.view_reward_percent;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.view_reward_percent < b->props.view_reward_percent;
+      });
+      mcpo.view_reward_percent = active[ offset ]->props.view_reward_percent;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.share_reward_percent < b->props.share_reward_percent;
-   });
-   new_props.share_reward_percent = active[ offset ]->props.share_reward_percent;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.share_reward_percent < b->props.share_reward_percent;
+      });
+      mcpo.share_reward_percent = active[ offset ]->props.share_reward_percent;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.comment_reward_percent < b->props.comment_reward_percent;
-   });
-   new_props.comment_reward_percent = active[ offset ]->props.comment_reward_percent;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.comment_reward_percent < b->props.comment_reward_percent;
+      });
+      mcpo.comment_reward_percent = active[ offset ]->props.comment_reward_percent;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.storage_reward_percent < b->props.storage_reward_percent;
-   });
-   new_props.storage_reward_percent = active[ offset ]->props.storage_reward_percent;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.storage_reward_percent < b->props.storage_reward_percent;
+      });
+      mcpo.storage_reward_percent = active[ offset ]->props.storage_reward_percent;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.moderator_reward_percent < b->props.moderator_reward_percent;
-   });
-   new_props.moderator_reward_percent = active[ offset ]->props.moderator_reward_percent;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.moderator_reward_percent < b->props.moderator_reward_percent;
+      });
+      mcpo.moderator_reward_percent = active[ offset ]->props.moderator_reward_percent;
 
-   uint32_t author_reward_percent = PERCENT_100 - ( new_props.vote_reward_percent + new_props.view_reward_percent +
-      new_props.share_reward_percent + new_props.comment_reward_percent + new_props.storage_reward_percent + new_props.moderator_reward_percent );
+      uint32_t author_reward_percent = PERCENT_100 - ( mcpo.vote_reward_percent + mcpo.view_reward_percent +
+         mcpo.share_reward_percent + mcpo.comment_reward_percent + mcpo.storage_reward_percent + mcpo.moderator_reward_percent );
 
-   new_props.author_reward_percent = author_reward_percent;
+      mcpo.author_reward_percent = author_reward_percent;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.content_reward_decay_rate < b->props.content_reward_decay_rate;
-   });
-   new_props.content_reward_decay_rate = active[ offset ]->props.content_reward_decay_rate;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.content_reward_decay_rate < b->props.content_reward_decay_rate;
+      });
+      mcpo.content_reward_decay_rate = active[ offset ]->props.content_reward_decay_rate;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.content_reward_interval < b->props.content_reward_interval;
-   });
-   new_props.content_reward_interval = active[ offset ]->props.content_reward_interval;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.content_reward_interval < b->props.content_reward_interval;
+      });
+      mcpo.content_reward_interval = active[ offset ]->props.content_reward_interval;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.vote_reserve_rate < b->props.vote_reserve_rate;
-   });
-   new_props.vote_reserve_rate = active[ offset ]->props.vote_reserve_rate;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.vote_reserve_rate < b->props.vote_reserve_rate;
+      });
+      mcpo.vote_reserve_rate = active[ offset ]->props.vote_reserve_rate;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.view_reserve_rate < b->props.view_reserve_rate;
-   });
-   new_props.view_reserve_rate = active[ offset ]->props.view_reserve_rate;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.view_reserve_rate < b->props.view_reserve_rate;
+      });
+      mcpo.view_reserve_rate = active[ offset ]->props.view_reserve_rate;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.share_reserve_rate < b->props.share_reserve_rate;
-   });
-   new_props.share_reserve_rate = active[ offset ]->props.share_reserve_rate;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.share_reserve_rate < b->props.share_reserve_rate;
+      });
+      mcpo.share_reserve_rate = active[ offset ]->props.share_reserve_rate;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.comment_reserve_rate < b->props.comment_reserve_rate;
-   });
-   new_props.comment_reserve_rate = active[ offset ]->props.comment_reserve_rate;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.comment_reserve_rate < b->props.comment_reserve_rate;
+      });
+      mcpo.comment_reserve_rate = active[ offset ]->props.comment_reserve_rate;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.vote_recharge_time < b->props.vote_recharge_time;
-   });
-   new_props.vote_recharge_time = active[ offset ]->props.vote_recharge_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.vote_recharge_time < b->props.vote_recharge_time;
+      });
+      mcpo.vote_recharge_time = active[ offset ]->props.vote_recharge_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.view_recharge_time < b->props.view_recharge_time;
-   });
-   new_props.view_recharge_time = active[ offset ]->props.view_recharge_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.view_recharge_time < b->props.view_recharge_time;
+      });
+      mcpo.view_recharge_time = active[ offset ]->props.view_recharge_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.share_recharge_time < b->props.share_recharge_time;
-   });
-   new_props.share_recharge_time = active[ offset ]->props.share_recharge_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.share_recharge_time < b->props.share_recharge_time;
+      });
+      mcpo.share_recharge_time = active[ offset ]->props.share_recharge_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.comment_recharge_time < b->props.comment_recharge_time;
-   });
-   new_props.comment_recharge_time = active[ offset ]->props.comment_recharge_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.comment_recharge_time < b->props.comment_recharge_time;
+      });
+      mcpo.comment_recharge_time = active[ offset ]->props.comment_recharge_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.curation_auction_decay_time < b->props.curation_auction_decay_time;
-   });
-   new_props.curation_auction_decay_time = active[ offset ]->props.curation_auction_decay_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.curation_auction_decay_time < b->props.curation_auction_decay_time;
+      });
+      mcpo.curation_auction_decay_time = active[ offset ]->props.curation_auction_decay_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.vote_curation_decay < b->props.vote_curation_decay;
-   });
-   new_props.vote_curation_decay = active[ offset ]->props.vote_curation_decay;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.vote_curation_decay < b->props.vote_curation_decay;
+      });
+      mcpo.vote_curation_decay = active[ offset ]->props.vote_curation_decay;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.view_curation_decay < b->props.view_curation_decay;
-   });
-   new_props.view_curation_decay = active[ offset ]->props.view_curation_decay;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.view_curation_decay < b->props.view_curation_decay;
+      });
+      mcpo.view_curation_decay = active[ offset ]->props.view_curation_decay;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.share_curation_decay < b->props.share_curation_decay;
-   });
-   new_props.share_curation_decay = active[ offset ]->props.share_curation_decay;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.share_curation_decay < b->props.share_curation_decay;
+      });
+      mcpo.share_curation_decay = active[ offset ]->props.share_curation_decay;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.comment_curation_decay < b->props.comment_curation_decay;
-   });
-   new_props.comment_curation_decay = active[ offset ]->props.comment_curation_decay;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.comment_curation_decay < b->props.comment_curation_decay;
+      });
+      mcpo.comment_curation_decay = active[ offset ]->props.comment_curation_decay;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.supernode_decay_time < b->props.supernode_decay_time;
-   });
-   new_props.supernode_decay_time = active[ offset ]->props.supernode_decay_time;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.supernode_decay_time < b->props.supernode_decay_time;
+      });
+      mcpo.supernode_decay_time = active[ offset ]->props.supernode_decay_time;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.enterprise_vote_percent_required < b->props.enterprise_vote_percent_required;
-   });
-   new_props.enterprise_vote_percent_required = active[ offset ]->props.enterprise_vote_percent_required;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.enterprise_vote_percent_required < b->props.enterprise_vote_percent_required;
+      });
+      mcpo.enterprise_vote_percent_required = active[ offset ]->props.enterprise_vote_percent_required;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.maximum_asset_whitelist_authorities < b->props.maximum_asset_whitelist_authorities;
-   });
-   new_props.maximum_asset_whitelist_authorities = active[ offset ]->props.maximum_asset_whitelist_authorities;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.maximum_asset_whitelist_authorities < b->props.maximum_asset_whitelist_authorities;
+      });
+      mcpo.maximum_asset_whitelist_authorities = active[ offset ]->props.maximum_asset_whitelist_authorities;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.max_stake_intervals < b->props.max_stake_intervals;
-   });
-   new_props.max_stake_intervals = active[ offset ]->props.max_stake_intervals;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.max_stake_intervals < b->props.max_stake_intervals;
+      });
+      mcpo.max_stake_intervals = active[ offset ]->props.max_stake_intervals;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.max_unstake_intervals < b->props.max_unstake_intervals;
-   });
-   new_props.max_unstake_intervals = active[ offset ]->props.max_unstake_intervals;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.max_unstake_intervals < b->props.max_unstake_intervals;
+      });
+      mcpo.max_unstake_intervals = active[ offset ]->props.max_unstake_intervals;
 
-   std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-   {
-      return a->props.max_exec_budget < b->props.max_exec_budget;
-   });
-   new_props.max_exec_budget = active[ offset ]->props.max_exec_budget;
-
-   db.modify( pso, [&]( producer_schedule_object& w )
-   {
-      w.median_props = new_props;
-   });
-
-   db.modify( props, [&]( dynamic_global_property_object& dgpo )
-   {
-      dgpo.median_props = new_props;
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.max_exec_budget < b->props.max_exec_budget;
+      });
+      mcpo.max_exec_budget = active[ offset ]->props.max_exec_budget;
    });
 }
 
@@ -361,7 +355,7 @@ void update_producer_schedule( database& db )
    if( (db.head_block_num() % TOTAL_PRODUCERS) == 0 ) //  pso.next_shuffle_block_num 
    {
       const producer_schedule_object& pso = db.get_producer_schedule();
-      const dynamic_global_property_object& gprops = db.get_dynamic_global_properties();
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
       fc::uint128 new_voting_virtual_time = pso.current_voting_virtual_time;
       fc::uint128 new_mining_virtual_time = pso.current_mining_virtual_time;
 
@@ -595,7 +589,7 @@ void update_producer_schedule( database& db )
       {
          voting_producers_on_version += ver_itr->second;
 
-         if( voting_producers_on_version >= pso.hardfork_required_voting_producers )
+         if( voting_producers_on_version >= pso.hardfork_required_producers )
          {
             majority_version = ver_itr->first;
             break;
@@ -608,7 +602,7 @@ void update_producer_schedule( database& db )
 
       while( hf_itr != hardfork_version_votes.end() )
       {
-         if( hf_itr->second >= pso.hardfork_required_voting_producers )
+         if( hf_itr->second >= pso.hardfork_required_producers )
          {
             const auto& hfp = db.get_hardfork_property_object();
             if( hfp.next_hardfork != std::get<0>( hf_itr->first ) ||

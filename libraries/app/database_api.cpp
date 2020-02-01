@@ -56,19 +56,19 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       //=================//
 
 
-      fc::variant_object                        get_config()const;
+      fc::variant_object                              get_config()const;
 
-      dynamic_global_property_api_obj           get_dynamic_global_properties()const;
+      dynamic_global_property_api_obj                 get_dynamic_global_properties()const;
 
-      chain_properties                          get_chain_properties()const;
+      chain_properties                                get_median_chain_properties()const;
 
-      producer_schedule_api_obj                 get_producer_schedule()const;
+      producer_schedule_api_obj                       get_producer_schedule()const;
 
-      hardfork_version                          get_hardfork_version()const;
+      hardfork_version                                get_hardfork_version()const;
 
-      scheduled_hardfork                        get_next_scheduled_hardfork()const;
+      scheduled_hardfork                              get_next_scheduled_hardfork()const;
 
-      reward_fund_api_obj                       get_reward_fund()const;
+      reward_fund_api_obj                             get_reward_fund()const;
 
 
       //===================//
@@ -464,17 +464,17 @@ dynamic_global_property_api_obj database_api_impl::get_dynamic_global_properties
    return dynamic_global_property_api_obj( _db.get( dynamic_global_property_id_type() ), _db );
 }
 
-chain_properties database_api::get_chain_properties()const
+chain_properties database_api::get_median_chain_properties()const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_chain_properties();
+      return my->get_median_chain_properties();
    });
 }
 
-chain_properties database_api_impl::get_chain_properties()const
+chain_properties database_api_impl::get_median_chain_properties()const
 {
-   return _db.get_chain_properties();
+   return _db.get_median_chain_properties();
 }
 
 producer_schedule_api_obj database_api::get_producer_schedule()const

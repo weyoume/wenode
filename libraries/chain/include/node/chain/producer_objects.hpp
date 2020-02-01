@@ -60,80 +60,80 @@ namespace node { namespace chain {
 
          id_type                      id;
 
-         account_name_type            owner;                            // The name of the account that has authority over this producer.
+         account_name_type            owner;                                 ///< The name of the account that has authority over this producer.
 
-         bool                         active;                           // True if the producer is actively seeking to produce blocks, set false to deactivate the producer and remove from production.
+         bool                         active;                                ///< True if the producer is actively seeking to produce blocks, set false to deactivate the producer and remove from production.
 
-         producer_schedule_type       schedule = none;                  // How the producer was scheduled the last time it was scheduled.
+         producer_schedule_type       schedule = none;                       ///< How the producer was scheduled the last time it was scheduled.
 
-         uint64_t                     last_confirmed_block_num = 0;     // Number of the last block that was successfully produced by this producer. 
+         uint64_t                     last_confirmed_block_num = 0;          ///< Number of the last block that was successfully produced by this producer. 
 
-         shared_string                details;                          // Producer's details, explaining who they are, machine specs, capabilties.
+         shared_string                details;                               ///< Producer's details, explaining who they are, machine specs, capabilties.
 
-         shared_string                url;                              // The producer's URL explaining their details.
+         shared_string                url;                                   ///< The producer's URL explaining their details.
 
-         shared_string                json;                             // The producer's json metadata.
+         shared_string                json;                                  ///< The producer's json metadata.
 
-         double                       latitude;                         // Latitude co-ordinates of the producer.
+         double                       latitude;                              ///< Latitude co-ordinates of the producer.
 
-         double                       longitude;                        // Longitude co-ordinates of the producer.
+         double                       longitude;                             ///< Longitude co-ordinates of the producer.
 
-         public_key_type              signing_key;                      // The key used to sign blocks on behalf of this producer.
+         public_key_type              signing_key;                           ///< The key used to sign blocks on behalf of this producer.
 
-         time_point                   created;                          // The time the producer was created.
+         time_point                   created;                               ///< The time the producer was created.
 
-         uint32_t                     last_commit_height = 0;           // Block height that has been most recently committed by the producer
+         uint32_t                     last_commit_height = 0;                ///< Block height that has been most recently committed by the producer
 
-         block_id_type                last_commit_id = block_id_type(); // Block ID of the height that was most recently committed by the producer. 
+         block_id_type                last_commit_id = block_id_type();      ///< Block ID of the height that was most recently committed by the producer. 
 
-         uint32_t                     total_blocks = 0;                 // Accumulated number of blocks produced.
+         uint32_t                     total_blocks = 0;                      ///< Accumulated number of blocks produced.
 
-         share_type                   voting_power = 0;                 // The total weighted voting power that supports the producer. 
+         share_type                   voting_power = 0;                      ///< The total weighted voting power that supports the producer. 
 
-         uint32_t                     vote_count = 0;                   // The number of accounts that have voted for the producer.
+         uint32_t                     vote_count = 0;                        ///< The number of accounts that have voted for the producer.
 
-         share_type                   mining_power = 0;                 // The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
+         share_type                   mining_power = 0;                      ///< The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
 
-         uint32_t                     mining_count = 0;                 // Accumulated number of proofs of work published.
+         uint32_t                     mining_count = 0;                      ///< Accumulated number of proofs of work published.
 
-         time_point                   last_mining_update;               // Time that the account last updated its mining power.
+         time_point                   last_mining_update;                    ///< Time that the account last updated its mining power.
 
-         time_point                   last_pow_time;                    // Time that the miner last created a proof of work.
+         time_point                   last_pow_time;                         ///< Time that the miner last created a proof of work.
 
-         share_type                   recent_txn_stake_weight = 0;      // Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+         share_type                   recent_txn_stake_weight = 0;           ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
 
-         time_point                   last_txn_stake_weight_update;     // Time that the recent bandwith and txn stake were last updated.
+         time_point                   last_txn_stake_weight_update;          ///< Time that the recent bandwith and txn stake were last updated.
 
-         uint128_t                    accumulated_activity_stake = 0;   // Recent amount of activity reward stake for the prime producer. 
+         uint128_t                    accumulated_activity_stake = 0;        ///< Recent amount of activity reward stake for the prime producer. 
 
-         uint32_t                     total_missed = 0;                 // Number of blocks missed recently.
+         uint32_t                     total_missed = 0;                      ///< Number of blocks missed recently.
 
-         uint64_t                     last_aslot = 0;                   // Last absolute slot that the producer was assigned to produce a block.
+         uint64_t                     last_aslot = 0;                        ///< Last absolute slot that the producer was assigned to produce a block.
 
-         chain_properties             props;                            // The chain properties object that the producer currently proposes for global network variables
+         chain_properties             props;                                 ///< The chain properties object that the producer currently proposes for global network variables
          
-         uint128_t                    voting_virtual_last_update;       // Virtual time of last producer update
+         uint128_t                    voting_virtual_last_update;            ///< Virtual time of last producer update.
 
-         uint128_t                    voting_virtual_position;          // Virtual position relative to other producers
+         uint128_t                    voting_virtual_position;               ///< Virtual position relative to other producers.
 
-         uint128_t                    voting_virtual_scheduled_time = fc::uint128::max_value();    // Expected virtual time of next scheduled block production
+         uint128_t                    voting_virtual_scheduled_time = fc::uint128::max_value();         ///< Expected virtual time of next scheduled block production.
 
-         uint128_t                    mining_virtual_last_update;        // Virtual time of last mining update
+         uint128_t                    mining_virtual_last_update;             ///< Virtual time of last mining update.
 
-         uint128_t                    mining_virtual_position;           // Virtual position relative to other miners
+         uint128_t                    mining_virtual_position;                ///< Virtual position relative to other miners.
 
-         uint128_t                    mining_virtual_scheduled_time = fc::uint128::max_value();     // Expected virtual time of next scheduled block production
+         uint128_t                    mining_virtual_scheduled_time = fc::uint128::max_value();          ///< Expected virtual time of next scheduled block production.
 
-         version                      running_version;                  // This field represents the WeYouMe blockchain version the producer is running.
+         version                      running_version;                       ///< This field represents the WeYouMe blockchain version the producer is running.
 
-         hardfork_version             hardfork_version_vote;
+         hardfork_version             hardfork_version_vote;                 ///< The vote for the next hardfork update version.
 
-         time_point                   hardfork_time_vote = GENESIS_TIME;
+         time_point                   hardfork_time_vote = GENESIS_TIME;     ///< The time to activate the next hardfork.
 
-         void                         producer_object::decay_weights( time_point now, const producer_schedule_object& pso )
+         void                         producer_object::decay_weights( time_point now, const median_chain_property_object& median_props )
          {
-            mining_power -= ( ( mining_power * ( now - last_mining_update ).to_seconds() ) / pso.median_props.pow_decay_time.to_seconds() );
-            recent_txn_stake_weight -= ( recent_txn_stake_weight * ( now - last_txn_stake_weight_update ).to_seconds() ) / pso.median_props.txn_stake_decay_time.to_seconds();
+            mining_power -= ( ( mining_power * ( now - last_mining_update ).to_seconds() ) / median_props.pow_decay_time.to_seconds() );
+            recent_txn_stake_weight -= ( recent_txn_stake_weight * ( now - last_txn_stake_weight_update ).to_seconds() ) / median_props.txn_stake_decay_time.to_seconds();
             last_mining_update = now;
             last_txn_stake_weight_update = now;
          }
@@ -157,7 +157,7 @@ namespace node { namespace chain {
 
          account_name_type      account;
 
-         uint16_t               vote_rank;   // the ordered rank to which the producer is supported, with 1 being the highest voted producer, and increasing for others.
+         uint16_t               vote_rank;        ///< the ordered rank to which the producer is supported, with 1 being the highest voted producer, and increasing for others.
    };
 
 
@@ -174,29 +174,27 @@ namespace node { namespace chain {
 
          id_type                                           id;
 
-         chain_properties                                  median_props;                    // Median of all producer selected blockchain properties.
+         uint128_t                                         current_voting_virtual_time;             ///< Tracks the time used for block producer additional selection.
 
-         uint128_t                                         current_voting_virtual_time;    // Tracks the time used for block producer additional selection
+         uint128_t                                         current_mining_virtual_time;             ///< Tracks the time used for block producer additional selection.
 
-         uint128_t                                         current_mining_virtual_time;      // Tracks the time used for block producer additional selection
+         uint32_t                                          next_shuffle_block_num = 1;              ///< The block of the next reshuffling of producers.
 
-         uint32_t                                          next_shuffle_block_num = 1;      //
+         fc::array< account_name_type, TOTAL_PRODUCERS >   current_shuffled_producers;              ///< Currently active block producers to be includes in the next production round.
 
-         fc::array< account_name_type, TOTAL_PRODUCERS >   current_shuffled_producers;
+         uint128_t                                         total_producer_voting_power;             ///< Total sum of all voting power that is voting for producers.
 
-         uint128_t                                         total_producer_voting_power;
+         vector< account_name_type >                       top_voting_producers;                    ///< Ordered list of the highest voted producers.
 
-         vector< account_name_type >                       top_voting_producers;
-
-         vector< account_name_type >                       top_mining_producers;
+         vector< account_name_type >                       top_mining_producers;                    ///< Ordered list of the highest mining producers.
 
          uint8_t                                           num_scheduled_producers = 1;
 
-         uint128_t                                         pow_target_difficulty = uint128_t::max_value();      // Proof of work summary value target, must be lower than this value.
+         uint128_t                                         pow_target_difficulty = uint128_t::max_value();           ///< Proof of work summary value target, must be lower than this value.
 
-         uint128_t                                         recent_pow;                      // Rolling average amount of blocks (x prec) mined in the last 7 days.
+         uint128_t                                         recent_pow;                              ///< Rolling average amount of blocks (x prec) mined in the last 7 days.
 
-         time_point                                        last_pow_update;                 // Time that the recent POW was last updated and decayed
+         time_point                                        last_pow_update;                         ///< Time that the recent POW was last updated and decayed
 
          version                                           majority_version;
 
@@ -210,22 +208,22 @@ namespace node { namespace chain {
          
          uint8_t                                           hardfork_required_producers = HARDFORK_REQUIRED_PRODUCERS;
 
-         bool     is_top_voting_producer( const account_name_type& producer )const    // finds if a given producer name is in the top voting producers set. 
+         bool     is_top_voting_producer( const account_name_type& producer )const            ///< finds if a given producer name is in the top voting producers set. 
          {
             return std::find( top_voting_producers.begin(), top_voting_producers.end(), producer) != top_voting_producers.end();
          }
 
-         bool     is_top_mining_producer( const account_name_type& producer )const    // finds if a given producer name is in the top mining producers set. 
+         bool     is_top_mining_producer( const account_name_type& producer )const         ///< finds if a given producer name is in the top mining producers set. 
          {
             return std::find( top_mining_producers.begin(), top_mining_producers.end(), producer) != top_mining_producers.end();
          }
 
-         bool     is_top_producer( const account_name_type& producer )const    // finds if a given producer name is in the top voting or mining producers set. 
+         bool     is_top_producer( const account_name_type& producer )const         ///< finds if a given producer name is in the top voting or mining producers set. 
          {
             return is_top_voting_producer( producer ) || is_top_mining_producer( producer );
          }
 
-         void       producer_schedule_object::decay_pow( time_point now )
+         void       producer_schedule_object::decay_pow( time_point now, const median_chain_property_object& median_props )
          {
             recent_pow -= ( ( recent_pow * ( now - last_pow_update ).to_seconds() ) / median_props.pow_decay_time.to_seconds() );
             last_pow_update = now;
@@ -597,7 +595,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::producer_vote_object, node::chain::produc
 
 FC_REFLECT( node::chain::producer_schedule_object,
          (id)
-         (median_props)
          (current_voting_virtual_time)
          (current_mining_virtual_time)
          (next_shuffle_block_num)

@@ -45,6 +45,7 @@ enum object_type
    // Global objects
 
    dynamic_global_property_object_type,
+   median_chain_property_object_type,
    transaction_object_type,
    operation_object_type,
    reward_fund_object_type,
@@ -172,6 +173,7 @@ enum object_type
 // Global objects
 
 class dynamic_global_property_object;
+class median_chain_property_object;
 class transaction_object;
 class operation_object;
 class reward_fund_object;
@@ -298,7 +300,8 @@ class commit_violation_object;
 // Global Objects
 
 typedef oid< dynamic_global_property_object         > dynamic_global_property_id_type;
-typedef oid< transaction_object                     > transaction_object_id_type;
+typedef oid< median_chain_property_object           > median_chain_property_id_type;
+typedef oid< transaction_object                     > transaction_object_id_type;        // Includes object to avoid collision with transaction_id_type
 typedef oid< operation_object                       > operation_id_type;
 typedef oid< reward_fund_object                     > reward_fund_id_type;
 typedef oid< block_summary_object                   > block_summary_id_type;
@@ -498,6 +501,7 @@ FC_REFLECT_ENUM( node::chain::object_type,
          // Global objects
          
          (dynamic_global_property_object_type)
+         (median_chain_property_object_type)
          (transaction_object_type)
          (operation_object_type)
          (reward_fund_object_type)

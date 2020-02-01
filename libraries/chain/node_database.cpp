@@ -1081,10 +1081,10 @@ const producer_schedule_object& database::get_producer_schedule()const
    return get< producer_schedule_object >();
 } FC_CAPTURE_AND_RETHROW() }
 
-const chain_properties& database::get_chain_properties()const
-{
-   return get_producer_schedule().median_props;      // Gets the median chain properties object from the Producer Schedule object.
-}
+const median_chain_property_object& database::get_median_chain_properties()const
+{ try {
+   return get< median_chain_property_object >();
+} FC_CAPTURE_AND_RETHROW() }
 
 uint128_t database::pow_difficulty()const
 {
@@ -1979,9 +1979,9 @@ bool database::_push_block(const signed_block& new_block)
  */
 void database::push_transaction( const signed_transaction& trx, uint32_t skip )
 { try { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
 
-   FC_ASSERT( fc::raw::pack_size( trx ) <= ( props.median_props.maximum_block_size - 256 ),
+   FC_ASSERT( fc::raw::pack_size( trx ) <= ( median_props.maximum_block_size - 256 ),
       "Transaction size must be less than maximum block size." );
 
    set_producing( true );
@@ -2054,7 +2054,7 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
 {
    uint32_t skip = get_node_properties().skip_flags;
    uint64_t slot_num = get_slot_at_time( when );
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
 
    FC_ASSERT( slot_num > 0,
       "Slot number must be greater than zero." );
@@ -2100,7 +2100,7 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
    }
    
    size_t total_block_size = fc::raw::pack_size( pending_block ) + 4;       // The 4 is for the max size of the transaction vector length
-   uint64_t maximum_block_size = props.median_props.maximum_block_size;     // MAX_BLOCK_SIZE;
+   uint64_t maximum_block_size = median_props.maximum_block_size;     // MAX_BLOCK_SIZE;
 
    with_write_lock( [&]()
    {
@@ -2274,7 +2274,7 @@ fc::time_point database::get_slot_time(uint64_t slot_num)const
    if( head_block_num() == 0 )
    {
       // n.b. first block is at genesis_time plus one block interval
-      fc::time_point genesis_time = props.time;
+      fc::time_point genesis_time = head_block_time();
       return genesis_time + fc::microseconds( slot_num * interval_micsec );
    }
 
@@ -2309,13 +2309,14 @@ void database::process_update_producer_set()
 { try {
    const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
    const auto& producer_idx = get_index< producer_index >().indices().get< by_voting_power >();
    auto producer_itr = producer_idx.begin();
    uint128_t total_producer_voting_power = 0;
    
    while( producer_itr != producer_idx.end() )
    {
-      total_producer_voting_power += update_producer( *producer_itr, pso, props).value;
+      total_producer_voting_power += update_producer( *producer_itr, pso, props, median_props ).value;
       ++producer_itr;
    }
 
@@ -2331,13 +2332,13 @@ void database::process_update_producer_set()
  * Updates the voting power and vote count of a producer
  * and returns the total voting power supporting the producer.
  */
-share_type database::update_producer( const producer_object& producer, const producer_schedule_object& pso, 
-   const dynamic_global_property_object& props )
+share_type database::update_producer( const producer_object& producer, const producer_schedule_object& pso,
+   const dynamic_global_property_object& props, const median_chain_property_object& median_props )
 { try {
    const auto& producer_vote_idx = get_index< producer_vote_index >().indices().get< by_producer_account >();
    auto producer_vote_itr = producer_vote_idx.lower_bound( producer.owner );
    price equity_price = props.current_median_equity_price;
-   time_point now = props.time;
+   time_point now = head_block_time();
    share_type voting_power = 0;
    uint32_t vote_count = 0;
 
@@ -2368,7 +2369,7 @@ share_type database::update_producer( const producer_object& producer, const pro
       {
          p.voting_virtual_scheduled_time = fc::uint128::max_value();
       }
-      p.decay_weights( now, pso );
+      p.decay_weights( now, median_props );
       p.voting_virtual_last_update = pso.current_voting_virtual_time;
    });
 
@@ -2438,7 +2439,7 @@ void database::update_board_moderator_set()
  * Updates the voting statistics, executive board, and officer set of a business
  * account.
  */
-void database::update_business_account( const account_business_object& business, const dynamic_global_property_object& props )
+void database::update_business_account( const account_business_object& business )
 { try {
    const auto& bus_officer_vote_idx = get_index< account_officer_vote_index >().indices().get< by_business_account_rank >();
    const auto& bus_executive_vote_idx = get_index< account_executive_vote_index >().indices().get< by_business_role_executive >();
@@ -2618,7 +2619,7 @@ void database::update_business_account_set()
 
    while( business_itr != business_idx.end() )
    {
-      update_business_account( *business_itr, props );
+      update_business_account( *business_itr );
       ++business_itr;
    }
    
@@ -2687,7 +2688,7 @@ void database::process_power_rewards()
       return;
 
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
    const reward_fund_object& rfo = get_reward_fund();
@@ -2773,7 +2774,7 @@ void database::process_equity_rewards()
    if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
       return;
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    const auto& equity_idx = get_index< asset_equity_data_index >().indices().get< by_symbol >();
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
    auto equity_itr = equity_idx.begin();
@@ -2833,17 +2834,17 @@ void database::update_proof_of_work_target()
    if( (head_block_num() % POW_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per week
       return;
 
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
    const producer_schedule_object& pso = get_producer_schedule();
    uint128_t recent_pow = pso.recent_pow;        // Amount of proofs of work, times block precision, decayed over 7 days
-   uint128_t target_pow = ( BLOCKCHAIN_PRECISION * pso.median_props.pow_decay_time.to_seconds() ) / pso.median_props.pow_target_time.to_seconds();
+   uint128_t target_pow = ( BLOCKCHAIN_PRECISION * median_props.pow_decay_time.to_seconds() ) / median_props.pow_target_time.to_seconds();
    uint128_t new_difficulty = ( pso.pow_target_difficulty * target_pow ) / recent_pow;
-   time_point now = props.time;
+   time_point now = head_block_time();
 
    modify( pso, [&]( producer_schedule_object& pso )
    {
       pso.pow_target_difficulty = new_difficulty;
-      pso.decay_pow( now );
+      pso.decay_pow( now, median_props );
    });
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -2852,8 +2853,9 @@ void database::update_proof_of_work_target()
 void database::claim_proof_of_work_reward( const account_name_type& miner )
 { try {
    const reward_fund_object& rfo = get_reward_fund();
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = get_median_chain_properties();
+   
+   time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
    asset pow_reward = rfo.work_reward_balance;
    const producer_object& producer = get_producer( miner );
@@ -2863,13 +2865,13 @@ void database::claim_proof_of_work_reward( const account_name_type& miner )
       p.mining_power += BLOCKCHAIN_PRECISION;
       p.mining_count ++;
       p.last_pow_time = now;
-      p.decay_weights( now, pso );
+      p.decay_weights( now, median_props );
    });
 
    modify( pso, [&]( producer_schedule_object& pso )
    {
       pso.recent_pow += BLOCKCHAIN_PRECISION;
-      pso.decay_pow( now );
+      pso.decay_pow( now, median_props );
    });
 
    modify( rfo, [&]( reward_fund_object& r )
@@ -2895,7 +2897,7 @@ void database::process_txn_stake_rewards()
 
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
    asset txn_stake_reward = rfo.txn_stake_reward_balance;     // Record the opening balance of the transaction stake reward fund
    const auto& producer_idx = get_index< producer_index >().indices().get< by_txn_stake_weight >();
@@ -2950,7 +2952,7 @@ void database::process_validation_rewards()
 { try {
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
    asset validation_reward = rfo.validation_reward_balance;     // Record the opening balance of the validation reward fund
    const auto& valid_idx = get_index< block_validation_index >().indices().get< by_height_stake >();
@@ -3006,7 +3008,7 @@ void database::process_producer_activity_rewards()
    
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
    asset poa_reward = rfo.producer_activity_reward_balance;          // Record the opening balance of the producer activity reward fund.
    const auto& producer_idx = get_index< producer_index >().indices().get< by_activity_stake >();
@@ -3041,7 +3043,7 @@ void database::process_supernode_rewards()
 
    const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    asset supernode_reward = rfo.supernode_reward_balance;     // Record the opening balance of the supernode reward fund
 
    const auto& supernode_idx = get_index< supernode_index >().indices().get< by_view_weight >();
@@ -3162,7 +3164,7 @@ void database::process_network_officer_rewards()
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const producer_schedule_object& pso = get_producer_schedule();
    const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
-   time_point now = props.time;
+   time_point now = head_block_time();
    auto officer_itr = officer_idx.begin();
 
    while( officer_itr != officer_idx.end() ) 
@@ -3554,7 +3556,7 @@ void database::process_community_enterprise_fund()
    const reward_fund_object& rfo = get_reward_fund();
    const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    const auto& enterprise_idx = get_index< community_enterprise_index >().indices().get< by_total_voting_power >();
    auto enterprise_itr = enterprise_idx.begin();
 
@@ -3632,7 +3634,8 @@ void database::process_community_enterprise_fund()
 void database::process_credit_updates()
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = get_median_chain_properties();
+   time_point now = head_block_time();
 
    const auto& loan_idx = get_index< credit_loan_index >().indices().get< by_liquidation_spread >();
    auto loan_itr = loan_idx.begin();
@@ -3641,8 +3644,8 @@ void database::process_credit_updates()
    {
       const asset_object& debt_asset = get_asset( loan_itr->debt_asset() );
       const asset_credit_pool_object& credit_pool = get_credit_pool( loan_itr->debt_asset(), false );
-      uint16_t fixed = props.median_props.credit_min_interest;
-      uint16_t variable = props.median_props.credit_variable_interest;
+      uint16_t fixed = median_props.credit_min_interest;
+      uint16_t variable = median_props.credit_variable_interest;
       share_type interest_rate = credit_pool.interest_rate( fixed, variable );
       asset total_interest = asset( 0, debt_asset.symbol );
 
@@ -3659,7 +3662,7 @@ void database::process_credit_updates()
          {
             const credit_loan_object& loan = *loan_itr;
 
-            asset max_debt = ( loan.collateral * col_debt_price * props.median_props.credit_liquidation_ratio ) / PERCENT_100;
+            asset max_debt = ( loan.collateral * col_debt_price * median_props.credit_liquidation_ratio ) / PERCENT_100;
             price liquidation_price = price( loan.collateral, max_debt );
             asset interest = ( loan.debt * interest_rate * ( now - loan.last_interest_time ).count() ) / ( fc::days(365).count() * PERCENT_100 );
 
@@ -3709,8 +3712,8 @@ void database::process_credit_updates()
  */
 void database::process_margin_updates()
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   const median_chain_property_object& median_props = get_median_chain_properties();
+   time_point now = head_block_time();
    const auto& margin_idx = get_index< margin_order_index >().indices().get< by_debt_collateral_position >();
    auto margin_itr = margin_idx.begin();
 
@@ -3718,8 +3721,8 @@ void database::process_margin_updates()
    {
       const asset_object& debt_asset = get_asset( margin_itr->debt_asset() );
       const asset_credit_pool_object& credit_pool = get_credit_pool( margin_itr->debt_asset(), false );
-      uint16_t fixed = props.median_props.credit_min_interest;
-      uint16_t variable = props.median_props.credit_variable_interest;
+      uint16_t fixed = median_props.credit_min_interest;
+      uint16_t variable = median_props.credit_variable_interest;
       share_type interest_rate = credit_pool.interest_rate( fixed, variable );
       asset total_interest = asset( 0, debt_asset.symbol );
 
@@ -3809,7 +3812,7 @@ void database::process_margin_updates()
                   m.unrealized_value = unrealized_value;
                });
 
-               if( margin.collateralization < props.median_props.margin_liquidation_ratio ||
+               if( margin.collateralization < median_props.margin_liquidation_ratio ||
                   pos_debt_price <= margin.stop_loss_price ||
                   pos_debt_price >= margin.take_profit_price )
                {
@@ -3854,11 +3857,12 @@ void database::process_margin_updates()
 
 void database::adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true )
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
+   time_point now = head_block_time();
 
    modify( supernode, [&]( supernode_object& s )
    {
-      s.decay_weights( props );
+      s.decay_weights( median_props, now );
       s.recent_view_weight += delta;
 
       if( adjust )
@@ -3874,11 +3878,11 @@ void database::adjust_view_weight( const supernode_object& supernode, share_type
 
 void database::adjust_interface_users( const interface_object& interface, bool adjust = true )
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   time_point now = head_block_time();
 
    modify( interface, [&]( interface_object& i )
    {
-      i.decay_weights( props );
+      i.decay_weights( now );
 
       if( adjust )
       {
@@ -4416,12 +4420,13 @@ void database::_apply_block( const signed_block& next_block )
    _current_trx_stake_weight = 0;
 
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
    
    size_t block_size = fc::raw::pack_size( next_block );
 
-   FC_ASSERT( block_size <= props.median_props.maximum_block_size, 
+   FC_ASSERT( block_size <= median_props.maximum_block_size, 
       "Block Size is too large.", 
-      ("next_block_num",next_block_num)("block_size", block_size)("max",props.median_props.maximum_block_size ) );
+      ("next_block_num",next_block_num)("block_size", block_size)("max",median_props.maximum_block_size ) );
    
    if( block_size < MIN_BLOCK_SIZE )
    {
@@ -4674,9 +4679,10 @@ void database::update_stake( const signed_transaction& trx)
  */
 void database::update_transaction_stake(const producer_object& signing_producer, const uint128_t& transaction_stake)
 {
-   const producer_schedule_object& pso = get_producer_schedule();
+   const median_chain_property_object& median_props = get_median_chain_properties();
    const time_point now = head_block_time();
-   fc::microseconds decay_time = pso.median_props.txn_stake_decay_time;
+   fc::microseconds decay_time = median_props.txn_stake_decay_time;
+
    modify( signing_producer, [&]( producer_object& p ) 
    {
       p.recent_txn_stake_weight -= ( p.recent_txn_stake_weight * ( now - p.last_txn_stake_weight_update).to_seconds() ) / decay_time.to_seconds();
@@ -5037,7 +5043,7 @@ asset database::pay_network_fees( const asset& amount )
    FC_ASSERT( amount.symbol == SYMBOL_COIN,
       "Amount must be core asset." );
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    asset total_fees = amount;
 
    price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
@@ -5084,7 +5090,7 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
 { try {
    FC_ASSERT(amount.symbol == SYMBOL_COIN);
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   time_point now = head_block_time();
    asset total_fees = amount;
 
    flat_set<const account_object*> governance_subscriptions;
@@ -5938,4 +5944,4 @@ void database::validate_invariants()const
 } FC_CAPTURE_LOG_AND_RETHROW( (head_block_num()) ) }
 
 
-} } //node::chain
+} } // node::chain

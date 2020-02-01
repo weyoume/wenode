@@ -2110,7 +2110,7 @@ void database::credit_withdraw( const asset& input, const account_object& accoun
  */
 bool database::credit_check( const asset& debt, const asset& collateral, const asset_credit_pool_object& credit_pool )
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
    const asset_liquidity_pool_object& credit_asset_pool = get_liquidity_pool( SYMBOL_COIN, SYMBOL_CREDIT );  //  Credit : Coin Liquidity pool
    asset collateral_coin = collateral;
    asset debt_coin = debt;
@@ -2142,7 +2142,7 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
          return false;
       }
       
-      if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * props.median_props.market_max_credit_ratio ) / PERCENT_100 )
+      if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * median_props.market_max_credit_ratio ) / PERCENT_100 )
       {
          // If too much debt is outstanding on the specified debt asset, compared with available liquidity to Coin
          // Prevent margin liquidations from running out of available debt asset liquidity
@@ -2199,10 +2199,15 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
  * lent to its pool, then borrowed and deliberately defaulted on by manipulating the
  * price of the debt or collateral asset, which purchases the issued asset with credit
  * and captures the network credit default acquisition privately.
+ * 
+ * @todo Dual credit pool system with a high risk pool, and a low risk pool.
+ * Losses from loan and margin defaults are covered by the high risk pool.
+ * Low risk pool is fully backed by credit asset issuance to cover defaults.
+ * The majority of incoming interest revenue is added to the high risk pool.
  */
 bool database::margin_check( const asset& debt, const asset& position, const asset& collateral, const asset_credit_pool_object& credit_pool )
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
    const asset_liquidity_pool_object& credit_asset_pool = get_liquidity_pool( SYMBOL_COIN, SYMBOL_CREDIT );    //  Credit : Coin Liquidity pool
    asset collateral_coin = collateral;
    asset position_coin = position;
@@ -2245,7 +2250,7 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
          return false;
       }
       
-      if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * props.median_props.market_max_credit_ratio ) / PERCENT_100 )
+      if( debt_outstanding > ( debt_pool.asset_balance( debt.symbol ) * median_props.market_max_credit_ratio ) / PERCENT_100 )
       {
          // If too much debt is outstanding on the specified debt asset, compared with available liquidity to Coin
          // Prevent margin liquidations from running out of available debt asset liquidity

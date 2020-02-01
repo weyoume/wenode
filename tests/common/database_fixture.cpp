@@ -252,8 +252,7 @@ const account_object& database_fixture::account_create(
 const account_object& database_fixture::account_create(
    const string& name,
    const public_key_type& owner_key,
-   const public_key_type& posting_key
-)
+   const public_key_type& posting_key )
 {
    try
    {
@@ -262,7 +261,7 @@ const account_object& database_fixture::account_create(
          INIT_ACCOUNT,
          INIT_ACCOUNT,
          init_account_priv_key,
-         std::max( db.get_producer_schedule().median_props.account_creation_fee.amount, share_type( 100 ) ),
+         std::max( db.get_median_chain_properties().account_creation_fee.amount, share_type( 100 ) ),
          owner_key,
          posting_key,
          "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.",
@@ -443,8 +442,7 @@ const asset_object& database_fixture::asset_create(
    const string& details,
    const string& url,
    const string& json,
-   const share_type& liquidity
-   )
+   const share_type& liquidity )
 {
    try
    {
@@ -457,10 +455,10 @@ const asset_object& database_fixture::asset_create(
       op.coin_liquidity = asset( liquidity, SYMBOL_COIN );
       op.usd_liquidity = asset( liquidity, SYMBOL_USD );
       op.credit_liquidity = asset( liquidity, SYMBOL_CREDIT );
-      op.common_options.display_symbol = symbol;
-      op.common_options.json = json;
-      op.common_options.details = details;
-      op.common_options.url = url;
+      op.options.display_symbol = symbol;
+      op.options.json = json;
+      op.options.details = details;
+      op.options.url = url;
       
       trx.operations.push_back( op );
       
