@@ -460,9 +460,6 @@ class database_api
 
       vector< discussion >                 get_discussions_by_comment_power( const discussion_query& query )const;
 
-      
-
-      
 
 
       ///<===============///<
@@ -582,16 +579,6 @@ FC_REFLECT( node::app::ad_query,
 
 FC_API( node::app::database_api,
 
-         ///< Subscriptions
-
-         (set_block_applied_callback)
-
-         ///< Blocks and transactions
-
-         (get_block_header)
-         (get_block)
-         (get_ops_in_block)
-         
          ///< Globals
 
          (get_config)
@@ -601,7 +588,6 @@ FC_API( node::app::database_api,
          (get_hardfork_version)
          (get_next_scheduled_hardfork)
          (get_reward_fund)
-         (get_state)
 
          ///< Accounts
 
@@ -617,6 +603,7 @@ FC_API( node::app::database_api,
          (get_account_count)
          (get_owner_history)
          (get_recovery_request)
+         (get_account_bandwidth)
 
          ///< Assets
 
@@ -624,7 +611,6 @@ FC_API( node::app::database_api,
          (get_asset_count)
          (get_escrow)
          (get_withdraw_routes)
-         (get_account_bandwidth)
          (get_savings_withdraw_from)
          (get_savings_withdraw_to)
          (get_asset_delegations)
@@ -638,8 +624,10 @@ FC_API( node::app::database_api,
 
          ///< Network
 
-         (get_active_producers)
          (get_producers_by_account)
+         (get_active_producers)
+         (lookup_producer_accounts)
+         (get_producer_count)
          (get_producers_by_voting_power)
          (get_producers_by_mining_power)
          (get_network_officers_by_account)
@@ -655,9 +643,7 @@ FC_API( node::app::database_api,
          (get_governance_accounts_by_account)
          (get_governance_accounts_by_subscriber_power)
          (get_enterprise_by_voting_power)
-         (lookup_producer_accounts)
-         (get_producer_count)
-
+         
          ///< Market
 
          (get_open_orders)
@@ -667,6 +653,7 @@ FC_API( node::app::database_api,
          (get_credit_loans)
          (get_credit_pools)
          (get_liquidity_pools)
+         (get_market_state)
 
          ///< Ads
 
@@ -677,8 +664,11 @@ FC_API( node::app::database_api,
 
          (get_search_query)
 
-         ///< Authority / validation
+         ///< Blocks and transactions
 
+         (get_block_header)
+         (get_block)
+         (get_ops_in_block)
          (get_transaction_hex)
          (get_transaction)
          (get_required_signatures)
@@ -693,6 +683,10 @@ FC_API( node::app::database_api,
          (get_active_shares)
          (get_active_mod_tags)
          (get_account_votes)
+         (get_account_views)
+         (get_account_shares)
+         (get_account_moderation)
+         (get_tag_followings)
          (get_top_tags)
          (get_tags_used_by_author)
 
@@ -700,19 +694,34 @@ FC_API( node::app::database_api,
 
          (get_content)
          (get_content_replies)
+         (get_replies_by_last_update)
+         (get_discussions_by_sort_rank)
+         (get_discussions_by_feed)
+         (get_discussions_by_blog)
+         (get_discussions_by_recommended)
+         (get_discussions_by_comments)
+
          (get_discussions_by_payout)
          (get_post_discussions_by_payout)
          (get_comment_discussions_by_payout)
-         (get_discussions_by_sort_rank)
+         
          (get_discussions_by_created)
          (get_discussions_by_active)
          (get_discussions_by_votes)
          (get_discussions_by_views)
          (get_discussions_by_shares)
          (get_discussions_by_children)
-         (get_discussions_by_feed)
-         (get_discussions_by_blog)
-         (get_discussions_by_recommended)
-         (get_discussions_by_comments)
-         (get_replies_by_last_update)
+         (get_discussions_by_vote_power)
+         (get_discussions_by_view_power)
+         (get_discussions_by_share_power)
+         (get_discussions_by_comment_power)
+         
+         ///< State 
+
+         (get_state)
+
+         ///< Subscriptions
+
+         (set_block_applied_callback)
+
          );

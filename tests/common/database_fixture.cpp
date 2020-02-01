@@ -4,6 +4,7 @@
 #include <graphene/utilities/tempdir.hpp>
 
 #include <node/chain/node_objects.hpp>
+#include <node/chain/node_objects.hpp>
 #include <node/chain/history_object.hpp>
 #include <node/account_history/account_history_plugin.hpp>
 #include <node/producer/producer_plugin.hpp>
@@ -150,14 +151,6 @@ live_database_fixture::~live_database_fixture()
       return;
    }
    FC_LOG_AND_RETHROW()
-}
-
-fc::ecc::private_key database_fixture::generate_private_key(string seed)
-{
-   static const fc::ecc::private_key committee = fc::ecc::private_key::regenerate( fc::sha256::hash( string( "init_key" ) ) );
-   if( seed == "init_key" )
-      return committee;
-   return fc::ecc::private_key::regenerate( fc::sha256::hash( seed ) );
 }
 
 string database_fixture::generate_anon_acct_name()

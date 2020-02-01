@@ -122,6 +122,14 @@ namespace node { namespace protocol {
       return result;
    };
 
+   /**
+    * Returns the Private key generated from a specified seed string.
+    */
+   inline fc::ecc::private_key generate_private_key( string seed )
+   {
+      return fc::ecc::private_key::regenerate( fc::sha256::hash( seed ) );
+   };
+
 
    //============================//
    //==== Account Operations ====//
@@ -2066,8 +2074,6 @@ namespace node { namespace protocol {
       uint32_t                           inventory;      ///< Total metrics available.
 
       string                             json;           ///< JSON metadata for the inventory.
-
-      vector< account_name_type >        agents;         ///< Set of Accounts authorized to create delivery transactions for the inventory.
 
       bool                               active = true;  ///< True if the inventory is enabled for display, false to deactivate.
 

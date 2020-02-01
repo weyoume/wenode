@@ -1661,7 +1661,7 @@ class wallet_api
          share_type officer_vote_threshold,
          string business_public_key,
          bool deleted,
-         bool broadcast )const;
+         bool broadcast );
 
 
       /**
@@ -1857,12 +1857,12 @@ class wallet_api
        * @param approved  True to create vote, false to remove vote.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           vote_producer(
+      annotated_signed_transaction           account_producer_vote(
          string signatory,
          string account,
          uint16_t vote_rank,
          string producer,
-         bool approve,
+         bool approved,
          bool broadcast );
 
 
@@ -2321,7 +2321,7 @@ class wallet_api
          string creator,
          string enterprise_id,
          string proposal_type,
-         flat_map< string, uint16_t > beneficiaries,
+         map< string, uint16_t > beneficiaries,
          vector< pair < string, uint16_t > > milestones,
          string investment,
          string details,
@@ -2928,8 +2928,6 @@ class wallet_api
          asset min_price,
          uint32_t inventory,
          string json,
-         vector< string > agents,
-         string interface,
          bool active,
          bool broadcast );
 

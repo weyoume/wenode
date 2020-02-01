@@ -2,6 +2,7 @@
 
 #include <node/app/application.hpp>
 #include <node/chain/database.hpp>
+#include <node/protocol/node_operations.hpp>
 #include <fc/io/json.hpp>
 #include <fc/smart_ref_impl.hpp>
 
