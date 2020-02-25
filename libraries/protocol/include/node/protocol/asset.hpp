@@ -27,14 +27,6 @@ namespace node { namespace protocol {
 
       int16_t              precision;      ///< The Asset precision being represented, defaults to BLOCKCHAIN_PRECISION_DIGITS.
 
-      string amount_to_string( share_type amount )const;     ///< Convert an asset to a textual representation
-
-      string amount_to_string( const asset& amount )const    ///< Convert an asset to a textual representation
-      { 
-         FC_ASSERT( amount.symbol == symbol ); 
-         return amount_to_string( amount.amount );
-      }
-
       static asset from_string( string from );
 
       string to_string()const;
@@ -164,6 +156,8 @@ namespace node { namespace protocol {
       void validate()const;
 
       double to_real()const { return double(base.amount.value)/double(quote.amount.value); }
+
+      string to_string()const;
    };
 
    price operator / ( const asset& base, const asset& quote );
@@ -209,11 +203,11 @@ namespace node { namespace protocol {
     */
    struct price_feed
    {
-      price settlement_price;           ///< Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL
+      price       settlement_price;                                              ///< Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL
 
-      uint16_t maintenance_collateral_ratio = MAINTENANCE_COLLATERAL_RATIO;   ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM
+      uint16_t    maintenance_collateral_ratio = MAINTENANCE_COLLATERAL_RATIO;   ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM
 
-      uint16_t maximum_short_squeeze_ratio = MAX_SHORT_SQUEEZE_RATIO;         ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM 
+      uint16_t    maximum_short_squeeze_ratio = MAX_SHORT_SQUEEZE_RATIO;         ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM 
 
       /** 
        * When selling collateral to pay off debt, the least amount of debt to receive should be
@@ -237,6 +231,58 @@ namespace node { namespace protocol {
       bool is_for( asset_symbol_type symbol ) const;
    };
 
+
+   /**
+    * Contains the strike price and expiration date of an option asset.
+    */
+   struct option_strike
+   {
+      option_strike( price strike_price = price(), date_type expiration_date = date_type() );
+
+      price         strike_price;         ///< Price that the option can be exercised at.
+
+      date_type     expiration_date;      ///< Date at which the option will expire.
+
+      bool is_null()const 
+      { 
+         return strike_price.is_null() || expiration_date.is_null();
+      };
+
+      void validate()const
+      { 
+         strike_price.validate();
+         expiration_date.validate();
+      };
+
+      double to_real()const
+      { 
+         return strike_price.to_real();
+      }
+
+      string to_string()const;
+   };
+
+   bool  operator <  ( const option_strike& a, const option_strike& b );
+   bool  operator <= ( const option_strike& a, const option_strike& b );
+   bool  operator >  ( const option_strike& a, const option_strike& b );
+   bool  operator >= ( const option_strike& a, const option_strike& b );
+   bool  operator == ( const option_strike& a, const option_strike& b );
+   bool  operator != ( const option_strike& a, const option_strike& b );
+
+   /**
+    * Dividing units in an asset distribution process.
+    * For every unit of asset contributed, the proceeds are divided
+    * according to the input fund units
+    */
+   struct asset_unit
+   {
+      asset_unit( account_name_type name, uint16_t units );
+
+      account_name_type      name;
+
+      uint16_t               units;
+   };
+   
 } } // node::protocol
 
 FC_REFLECT( node::protocol::asset,
@@ -254,4 +300,14 @@ FC_REFLECT( node::protocol::price_feed,
          (settlement_price)
          (maintenance_collateral_ratio)
          (maximum_short_squeeze_ratio)
+         );
+
+FC_REFLECT( node::protocol::option_strike,
+         (strike_price)
+         (expiration_date)
+         );
+
+FC_REFLECT( node::protocol::asset_unit,
+         (name)
+         (units)
          );

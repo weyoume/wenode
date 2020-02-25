@@ -207,7 +207,6 @@ const account_object& database_fixture::account_create(
       op.signatory = registrar;
       op.registrar = registrar;
       op.new_account_name = name;
-      op.account_type = PERSONA;
       op.referrer = registrar;
       op.proxy = governance_account;
       op.governance_account = governance_account;
@@ -216,9 +215,9 @@ const account_object& database_fixture::account_create(
       op.url = url;
       op.json = json;
       op.json_private = json;
-      op.owner = authority( 1, key, 1 );
-      op.active = authority( 1, key, 1 );
-      op.posting = authority( 1, post_key, 1 );
+      op.owner_auth = authority( 1, key, 1 );
+      op.active_auth = authority( 1, key, 1 );
+      op.posting_auth = authority( 1, post_key, 1 );
       op.secure_public_key = string( key );
       op.connection_public_key = string( key );
       op.friend_public_key = string( key );
@@ -292,7 +291,6 @@ const account_object& database_fixture::profile_create(
       op.signatory = registrar;
       op.registrar = registrar;
       op.new_account_name = name;
-      op.account_type = PROFILE;
       op.referrer = registrar;
       op.proxy = governance_account;
       op.governance_account = governance_account;
@@ -301,9 +299,9 @@ const account_object& database_fixture::profile_create(
       op.url = url;
       op.json = json;
       op.json_private = json;
-      op.owner = authority( 1, key, 1 );
-      op.active = authority( 1, key, 1 );
-      op.posting = authority( 1, post_key, 1 );
+      op.owner_auth = authority( 1, key, 1 );
+      op.active_auth = authority( 1, key, 1 );
+      op.posting_auth = authority( 1, post_key, 1 );
       op.secure_public_key = string( key );
       op.connection_public_key = string( key );
       op.friend_public_key = string( key );
@@ -347,7 +345,6 @@ const account_object& database_fixture::business_create(
       op.signatory = registrar;
       op.registrar = registrar;
       op.new_account_name = name;
-      op.account_type = BUSINESS;
       op.referrer = registrar;
       op.proxy = governance_account;
       op.governance_account = governance_account;
@@ -356,17 +353,17 @@ const account_object& database_fixture::business_create(
       op.url = url;
       op.json = json;
       op.json_private = json;
-      op.owner = authority( 1, key, 1 );
-      op.active = authority( 1, key, 1 );
-      op.posting = authority( 1, post_key, 1 );
+      op.owner_auth = authority( 1, key, 1 );
+      op.active_auth = authority( 1, key, 1 );
+      op.posting_auth = authority( 1, post_key, 1 );
       op.secure_public_key = string( key );
       op.connection_public_key = string( key );
       op.friend_public_key = string( key );
       op.companion_public_key = string( key );
       op.fee = asset( fee, SYMBOL_COIN );
       op.delegation = asset( 0, SYMBOL_COIN );
-      op.business_type = PUBLIC_BUSINESS;
-      op.officer_vote_threshold = 10 * BLOCKCHAIN_PRECISION;
+      //op.business_type = PUBLIC_BUSINESS;
+      //op.officer_vote_threshold = 10 * BLOCKCHAIN_PRECISION;
       
       trx.operations.push_back( op );
       
@@ -384,13 +381,12 @@ const account_object& database_fixture::business_create(
    FC_CAPTURE_AND_RETHROW( (name)(registrar) )
 }
 
-const board_object& database_fixture::board_create(
+const community_object& database_fixture::community_create(
    const string& name,
    const string& founder,
    const private_key_type& founder_key,
-   const public_key_type& board_key,
-   const string& board_type,
-   const string& board_privacy,
+   const public_key_type& community_key,
+   const string& community_privacy,
    const string& details,
    const string& url,
    const string& json
@@ -398,14 +394,13 @@ const board_object& database_fixture::board_create(
 {
    try
    {
-      board_create_operation op;
+      community_create_operation op;
 
       op.signatory = founder;
       op.founder = founder;
       op.name = name;
-      op.board_type = BOARD;
-      op.board_privacy = OPEN_BOARD;
-      op.board_public_key = string( board_key );
+      op.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      op.community_public_key = string( community_key );
       op.json = json;
       op.json_private = json;
       op.details = details;
@@ -420,9 +415,9 @@ const board_object& database_fixture::board_create(
       trx.operations.clear();
       trx.signatures.clear();
 
-      const board_object& board = db.get_board( name );
+      const community_object& community = db.get_community( name );
 
-      return board;
+      return community;
    }
    FC_CAPTURE_AND_RETHROW( (name)(founder) )
 }
@@ -513,7 +508,7 @@ const comment_object& database_fixture::comment_create(
       op.parent_permlink = permlink;
       op.title = "test";
       op.body = "test";
-      op.board = INIT_BOARD;
+      op.community = INIT_COMMUNITY;
       op.options.post_type = TEXT_POST;
       op.language = "en";
       op.options.reach = TAG_FEED;

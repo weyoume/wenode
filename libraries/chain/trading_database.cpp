@@ -1413,7 +1413,7 @@ void database::liquid_exchange( const asset& input, const account_object& accoun
 { try {
    asset total_fees;
    asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   uint128_t pr = BLOCKCHAIN_PRECISION;
+   uint128_t pr = uint128_t(BLOCKCHAIN_PRECISION.value);
    uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
    uint128_t rb = pool.asset_balance( rec ).amount.value;
    uint128_t in = input.amount.value;
@@ -1474,7 +1474,7 @@ void database::liquid_exchange( const asset& input, const account_object& accoun
 { try {
    asset total_fees;
    asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   uint128_t pr = BLOCKCHAIN_PRECISION;
+   uint128_t pr = uint128_t(BLOCKCHAIN_PRECISION.value);
    uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
    uint128_t rb = pool.asset_balance( rec ).amount.value;
    uint128_t in = input.amount.value;
@@ -1540,8 +1540,8 @@ asset database::liquid_acquire( const asset& receive, const asset_symbol_type& i
    {
       const asset_liquidity_pool_object& acquire_pool = get_liquidity_pool( SYMBOL_COIN, receive.symbol );
 
-      uint128_t pr = BLOCKCHAIN_PRECISION;
-      uint128_t pr_sq = BLOCKCHAIN_PRECISION * BLOCKCHAIN_PRECISION;
+      uint128_t pr = uint128_t(BLOCKCHAIN_PRECISION.value);
+      uint128_t pr_sq = pr * pr;
       uint128_t ib = acquire_pool.asset_balance( SYMBOL_COIN ).amount.value;
       uint128_t rb = acquire_pool.asset_balance( receive.symbol ).amount.value;
       uint128_t re = receive.amount.value;
@@ -2522,7 +2522,6 @@ void database::cancel_settle_order( const force_settlement_object& order, bool c
    if( create_virtual_op )
    {
       asset_settle_cancel_operation vop;
-      vop.settlement = order.id;
       vop.account = order.owner;
       vop.amount = order.balance;
       push_virtual_operation( vop );

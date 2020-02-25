@@ -56,7 +56,7 @@ namespace node { namespace chain {
 
          uint64_t               current_aslot = 0;                                        ///< The current absolute slot number. Equal to the total number of slots since genesis.
 
-         fc::uint128_t          recent_slots_filled;                                      ///< parameter used to compute producer participation.
+         uint128_t              recent_slots_filled;                                      ///< parameter used to compute producer participation.
 
          uint8_t                participation_count = 0;                                  ///< Divide by 128 to compute participation percentage
    };

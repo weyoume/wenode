@@ -21,27 +21,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( registrar );
       validate_account_name( referrer );
-
-      switch( account_type )
-      {
-         case PERSONA:
-         case PROFILE:
-         case BUSINESS:
-         case ANONYMOUS:
-         {
-            break;
-         }
-         case VERIFIED:
-         {
-            FC_ASSERT( false,
-               "Accounts cannot be initialized as verified." );
-         }
-         default:
-         {
-            FC_ASSERT( false, 
-               "Account type invalid." );
-         }
-      }
+      validate_account_name( new_account_name );
       
       if( proxy.size() )
       {
@@ -56,19 +36,6 @@ namespace node { namespace protocol {
          validate_account_name( recovery_account );
       }
 
-      if( account_type == PERSONA )
-      {
-         validate_persona_account_name( new_account_name );
-      }
-      else if( account_type == PROFILE )
-      {
-         validate_profile_account_name( new_account_name );
-      }
-      else if( account_type == BUSINESS )
-      {
-         validate_business_account_name( new_account_name );
-      }
-      
       FC_ASSERT( is_asset_type( fee, SYMBOL_COIN ), 
          "Account creation fee must be in core asset." );
       FC_ASSERT( is_asset_type( delegation, SYMBOL_COIN ), 
@@ -78,9 +45,9 @@ namespace node { namespace protocol {
       FC_ASSERT( delegation >= asset( 0, SYMBOL_COIN ),
          "Delegation cannot be negative" );
 
-      owner.validate();
-      active.validate();
-      posting.validate();
+      owner_auth.validate();
+      active_auth.validate();
+      posting_auth.validate();
 
       if( json.size() > 0 )
       {
@@ -110,28 +77,10 @@ namespace node { namespace protocol {
          validate_url( url );
       }
 
-      if( business_type.valid() )
-      {
-         switch( *business_type )
-         {
-            case OPEN_BUSINESS:
-            case PUBLIC_BUSINESS:
-            case PRIVATE_BUSINESS:
-            {
-               break;
-            }
-            default:
-            {
-               FC_ASSERT( false, "Business Type is invalid." );
-            }
-         }
-      }
-
-      if( officer_vote_threshold.valid() )
-      {
-         FC_ASSERT( *officer_vote_threshold > 0, 
-            "Officer vote threshold must be greater than 0.");
-      }
+      validate_public_key( secure_public_key );
+      validate_public_key( connection_public_key );
+      validate_public_key( friend_public_key );
+      validate_public_key( companion_public_key );
    }
 
    void account_update_operation::validate() const
@@ -142,9 +91,9 @@ namespace node { namespace protocol {
       FC_ASSERT( account != TEMP_ACCOUNT, 
          "Cannot update temp account." );
 
-      owner.validate();
-      active.validate();
-      posting.validate();
+      owner_auth.validate();
+      active_auth.validate();
+      posting_auth.validate();
       
       if( json.size() > 0 )
       {
@@ -174,28 +123,97 @@ namespace node { namespace protocol {
          validate_url( url );
       }
 
-      if( business_type.valid() )
+      validate_public_key( secure_public_key );
+      validate_public_key( connection_public_key );
+      validate_public_key( friend_public_key );
+      validate_public_key( companion_public_key );
+   }
+
+   void account_business_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+
+      switch( business_type )
       {
-         switch( *business_type )
+         case OPEN_BUSINESS:
+         case PUBLIC_BUSINESS:
+         case PRIVATE_BUSINESS:
          {
-            case OPEN_BUSINESS:
-            case PUBLIC_BUSINESS:
-            case PRIVATE_BUSINESS:
-            {
-               break;
-            }
-            default:
-            {
-               FC_ASSERT( false, "Business Type is invalid." );
-            }
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Business Type is invalid." );
          }
       }
+      
+      FC_ASSERT( officer_vote_threshold > 0, 
+         "Officer vote threshold must be greater than 0.");
 
-      if( officer_vote_threshold.valid() )
-      {
-         FC_ASSERT( *officer_vote_threshold > 0, 
-            "Officer vote threshold must be greater than 0.");
-      }
+      validate_public_key( business_public_key );
+   }
+
+   void account_profile_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( governance_account );
+      validate_public_key( profile_public_key );
+
+      FC_ASSERT( first_name.size() < MAX_STRING_LENGTH,
+         "First name is too long." );
+      FC_ASSERT( fc::is_utf8( first_name ), 
+         "First name is not formatted in UTF8." );
+
+      FC_ASSERT( last_name.size() < MAX_STRING_LENGTH,
+         "Last name is too long." );
+      FC_ASSERT( fc::is_utf8( last_name ), 
+         "Last name is not formatted in UTF8." );
+
+      FC_ASSERT( gender.size() < MAX_STRING_LENGTH,
+         "Gender is too long." );
+      FC_ASSERT( fc::is_utf8( gender ), 
+         "Gender is not formatted in UTF8." );
+
+      FC_ASSERT( date_of_birth.size() < MAX_STRING_LENGTH,
+         "Date of Birth is too long." );
+      FC_ASSERT( fc::is_utf8( date_of_birth ), 
+         "Date of Birth is not formatted in UTF8." );
+      
+      FC_ASSERT( email.size() < MAX_STRING_LENGTH,
+         "Email is too long." );
+      FC_ASSERT( fc::is_utf8( email ), 
+         "Email is not formatted in UTF8." );
+
+      FC_ASSERT( phone.size() < MAX_STRING_LENGTH,
+         "Phone is too long." );
+      FC_ASSERT( fc::is_utf8( phone ), 
+         "Phone is not formatted in UTF8." );
+      
+      FC_ASSERT( nationality.size() < MAX_STRING_LENGTH,
+         "Nationality is too long." );
+      FC_ASSERT( fc::is_utf8( nationality ), 
+         "Nationality is not formatted in UTF8." );
+
+      FC_ASSERT( address.size() < MAX_STRING_LENGTH,
+         "Address is too long." );
+      FC_ASSERT( fc::is_utf8( address ), 
+         "Address is not formatted in UTF8." );
+   }
+
+   void account_verification_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( verifier_account );
+      validate_account_name( verified_account );
+      
+      FC_ASSERT( shared_image.size() < MAX_STRING_LENGTH,
+         "First name is too long." );
+      FC_ASSERT( fc::is_utf8( shared_image ), 
+         "First name is not formatted in UTF8." );
+      FC_ASSERT( shared_image.size() == 46 && shared_image[0] == 'Q' && shared_image[1] == 'm',
+         "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
    }
 
    void account_membership_operation::validate() const
@@ -416,6 +434,21 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( requested_account );
+
+      switch( connection_type )
+      {
+         case CONNECTION:
+         case FRIEND:
+         case COMPANION:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Connection Type is invalid." );
+         }
+      }
+
       FC_ASSERT( account != requested_account, 
          "Account cannot connect with itself." );
       FC_ASSERT( message.size() <= MAX_STRING_LENGTH, 
@@ -432,6 +465,21 @@ namespace node { namespace protocol {
       FC_ASSERT( connection_id.size() <= MAX_STRING_LENGTH,
          "Connection ID is too long." );
       validate_uuidv4( connection_id );
+
+      switch( connection_type )
+      {
+         case CONNECTION:
+         case FRIEND:
+         case COMPANION:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Connection Type is invalid." );
+         }
+      }
+
       FC_ASSERT( encrypted_key.size() <= MAX_STRING_LENGTH,
          "Encrypted Key is too long." );
    }
@@ -524,7 +572,7 @@ namespace node { namespace protocol {
       validate_account_name( executive );
 
       FC_ASSERT( url.size() + details.size() + json.size(),
-         "Cannot update Executive Board because it does not contain content." );
+         "Cannot update Executive board because it does not contain content." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
          "Details are too long." );
       FC_ASSERT( fc::is_utf8( details ), 
@@ -882,10 +930,7 @@ namespace node { namespace protocol {
          case CONNECTION_FEED:
          case FRIEND_FEED:
          case COMPANION_FEED:
-         case BOARD_FEED:
-         case GROUP_FEED:
-         case EVENT_FEED:
-         case STORE_FEED:
+         case COMMUNITY_FEED:
          case TAG_FEED:
          {
             break;
@@ -900,8 +945,7 @@ namespace node { namespace protocol {
       {
          case FAMILY:
          case GENERAL:
-         case MATURE:
-         case EXPLICIT:
+         case ADULT:
          {
             break;
          }
@@ -940,9 +984,9 @@ namespace node { namespace protocol {
       validate_permlink( permlink );
       options.validate();
 
-      if( board.size() )
+      if( community.size() )
       {
-         validate_board_name( board );
+         validate_community_name( community );
       }
 
       FC_ASSERT( fc::is_utf8( body ),
@@ -1046,9 +1090,9 @@ namespace node { namespace protocol {
       validate_account_name( sharer );
       validate_account_name( author );
       validate_account_name( interface );
-      if( board.valid() )
+      if( community.valid() )
       {
-         validate_board_name( *board );
+         validate_community_name( *community );
       }
       if( tag.valid() )
       {
@@ -1072,8 +1116,7 @@ namespace node { namespace protocol {
       {
          case FAMILY:
          case GENERAL:
-         case MATURE:
-         case EXPLICIT:
+         case ADULT:
          {
             break;
          }
@@ -1091,43 +1134,32 @@ namespace node { namespace protocol {
 
 
    //==========================//
-   // === Board Operations === //
+   // === Community Operations === //
    //==========================//
 
 
-   void board_create_operation::validate() const
+   void community_create_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( founder );
-      validate_board_name( name );
+      validate_community_name( name );
 
-      switch( board_type )
+      switch( community_privacy )
       {
-         case BOARD:
-         case GROUP:
-         case EVENT:
-         case STORE:
+         case OPEN_PUBLIC_COMMUNITY:
+         case GENERAL_PUBLIC_COMMUNITY:
+         case EXCLUSIVE_PUBLIC_COMMUNITY:
+         case CLOSED_PUBLIC_COMMUNITY:
+         case OPEN_PRIVATE_COMMUNITY:
+         case GENERAL_PRIVATE_COMMUNITY:
+         case EXCLUSIVE_PRIVATE_COMMUNITY:
+         case CLOSED_PRIVATE_COMMUNITY:
          {
             break;
          }
          default:
          {
-            FC_ASSERT( false, "Invalid board type." );
-         }
-      }
-
-      switch( board_privacy )
-      {
-         case OPEN_BOARD:
-         case PUBLIC_BOARD:
-         case PRIVATE_BOARD:
-         case EXCLUSIVE_BOARD:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Invalid board privacy." );
+            FC_ASSERT( false, "Invalid community privacy." );
          }
       }
 
@@ -1159,15 +1191,15 @@ namespace node { namespace protocol {
       {
          validate_url( url );
       }
-      FC_ASSERT( board_public_key.size() < MAX_STRING_LENGTH,
-         "Board public key is too long." );
+      FC_ASSERT( community_public_key.size() < MAX_STRING_LENGTH,
+         "Community public key is too long." );
    }
 
-   void board_update_operation::validate() const
+   void community_update_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_board_name( board );
+      validate_community_name( community );
 
       if( json.size() > 0 )
       {
@@ -1197,115 +1229,166 @@ namespace node { namespace protocol {
       {
          validate_url( url );
       }
-      FC_ASSERT( board_public_key.size() < MAX_STRING_LENGTH,
-         "Board public key is too long" );
-      FC_ASSERT( fc::is_utf8( board_public_key ),
-         "Board public key is not formatted in UTF8." );
+      validate_public_key( community_public_key );
    }
 
-   void board_add_mod_operation::validate() const
+   void community_add_mod_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( moderator );
-      validate_board_name( board );
+      validate_community_name( community );
    }
 
-   void board_add_admin_operation::validate() const
+   void community_add_admin_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( admin );
-      validate_board_name( board );
+      validate_community_name( community );
    }
 
-   void board_vote_mod_operation::validate() const
+   void community_vote_mod_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( moderator );
-      validate_board_name( board );
+      validate_community_name( community );
       FC_ASSERT( vote_rank >= 1 && vote_rank <= 100,
          "Vote rank must be between zero and one hundred." );
    }
 
-   void board_transfer_ownership_operation::validate() const
+   void community_transfer_ownership_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( new_founder);
-      validate_board_name( board );
+      validate_community_name( community );
    }
 
-   void board_join_request_operation::validate() const
+   void community_join_request_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_board_name( board );
+      validate_community_name( community );
       FC_ASSERT( message.size() < MAX_STRING_LENGTH,
          "Message is too long." );
    }
 
-   void board_join_invite_operation::validate() const
+   void community_join_invite_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( member );
-      validate_board_name( board );
+      validate_community_name( community );
       FC_ASSERT( account != member,
-      "Account: ${a} cannot invite itself to join a board: ${b} .",
-       ("a", member)("b", board));
+      "Account: ${a} cannot invite itself to join a community: ${b} .",
+       ("a", member)("b", community));
       FC_ASSERT( message.size() < MAX_STRING_LENGTH,
          "Message is too long." );
-      FC_ASSERT( encrypted_board_key.size() < MAX_STRING_LENGTH,
+      FC_ASSERT( encrypted_community_key.size() < MAX_STRING_LENGTH,
          "Message is too long." );
    }
 
-   void board_join_accept_operation::validate() const
+   void community_join_accept_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( member );
-      validate_board_name( board );
-      FC_ASSERT( encrypted_board_key.size() < MAX_STRING_LENGTH,
+      validate_community_name( community );
+      FC_ASSERT( encrypted_community_key.size() < MAX_STRING_LENGTH,
          "Message is too long." );
       FC_ASSERT( account != member, 
-         "Account: ${a} cannot accept its own join request to a board: ${b}.", 
-      ("a", member)("b", board));
+         "Account: ${a} cannot accept its own join request to a community: ${b}.", 
+      ("a", member)("b", community));
    }
 
-   void board_invite_accept_operation::validate() const
+   void community_invite_accept_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_board_name( board );
+      validate_community_name( community );
    }
 
-   void board_remove_member_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( member );
-      validate_board_name( board );
-   }
-
-   void board_blacklist_operation::validate() const
+   void community_remove_member_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( member );
-      validate_board_name( board );
+      validate_community_name( community );
+   }
+
+   void community_blacklist_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( member );
+      validate_community_name( community );
       FC_ASSERT( account != member, 
-         "Account: ${a} cannot add or remove itself from the blacklist of board: ${b} .",
-         ("a", member)("b", board));
+         "Account: ${a} cannot add or remove itself from the blacklist of community: ${b} .",
+         ("a", member)("b", community));
    }
 
-   void board_subscribe_operation::validate() const
+   void community_subscribe_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( interface );
-      validate_board_name( board );
+      validate_community_name( community );
+   }
+
+   void community_event_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_community_name( community );
+
+      FC_ASSERT( event_name.size() < MAX_STRING_LENGTH,
+         "Event Name is too long." );
+      FC_ASSERT( fc::is_utf8( event_name ),
+         "Event Name is not formatted in UTF8." );
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ),
+         "Details is not formatted in UTF8." );
+
+      FC_ASSERT( location.size() < MAX_STRING_LENGTH,
+         "Location is too long." );
+      FC_ASSERT( fc::is_utf8( location ),
+         "Location is not formatted in UTF8." );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      for( auto a : invited )
+      {
+         validate_account_name( a );
+      }
+
+      FC_ASSERT( event_start_time > GENESIS_TIME,
+         "Begin time must be after genesis time." );
+      FC_ASSERT( event_end_time > GENESIS_TIME,
+         "Begin time must be after genesis time." );
+      FC_ASSERT( event_end_time > event_start_time,
+         "Begin time must be after genesis time." );
+   }
+
+   void community_event_attend_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_community_name( community );
+
+      FC_ASSERT( event_name.size() < MAX_STRING_LENGTH,
+         "Event Name is too long." );
+      FC_ASSERT( fc::is_utf8( event_name ),
+         "Event Name is not formatted in UTF8." );
    }
 
 
@@ -1327,11 +1410,8 @@ namespace node { namespace protocol {
          case PREMIUM_FORMAT:
          case PRODUCT_FORMAT:
          case LINK_FORMAT:
-         case BOARD_FORMAT:
-         case GROUP_FORMAT:
-         case EVENT_FORMAT:
+         case COMMUNITY_FORMAT:
          case ACCOUNT_FORMAT:
-         case STORE_FORMAT:
          case ASSET_FORMAT:
          {
             break;
@@ -1449,11 +1529,6 @@ namespace node { namespace protocol {
             FC_ASSERT( false, "Invalid metric type.");
          }
       }
-
-      for( auto name : agents )
-      {
-         validate_account_name( name );
-      }
       
       if( json.size() > 0 )
       {
@@ -1568,6 +1643,226 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( aud.size() < MAX_STRING_LENGTH,
             "Audience ID is too long." );
+      }
+   }
+
+
+
+   //==========================//
+   //==== Graph Operations ====//
+   //==========================//
+
+
+
+   void graph_node_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( interface );
+      validate_public_key( node_public_key );
+
+      for( auto n : node_types )
+      {
+         validate_account_name( n );
+      }
+      
+      FC_ASSERT( node_id.size(),
+         "Node has no Node ID." );
+      FC_ASSERT( node_id.size() <= MAX_STRING_LENGTH,
+         "Node ID is too long." );
+      FC_ASSERT( fc::is_utf8( node_id ),
+         "Node ID must be UTF-8" );
+      validate_uuidv4( node_id );
+
+      FC_ASSERT( name.size() < MAX_STRING_LENGTH,
+         "Name is too long." );
+      FC_ASSERT( fc::is_utf8( name ),
+         "Name is not formatted in UTF8." );
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ),
+         "Details are not formatted in UTF8." );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      if( json_private.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json_private ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json_private ),
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+
+   void graph_edge_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( from_node_account );
+      validate_account_name( to_node_account );
+      validate_account_name( interface );
+      validate_public_key( edge_public_key );
+
+      for( auto n : edge_types )
+      {
+         validate_account_name( n );
+      }
+      
+      FC_ASSERT( edge_id.size(),
+         "Edge has no Edge ID." );
+      FC_ASSERT( edge_id.size() <= MAX_STRING_LENGTH,
+         "Edge ID is too long." );
+      FC_ASSERT( fc::is_utf8( edge_id ),
+         "Edge ID must be UTF-8" );
+      validate_uuidv4( edge_id );
+
+      FC_ASSERT( from_node_id.size(),
+         "Edge has no Edge ID." );
+      FC_ASSERT( from_node_id.size() <= MAX_STRING_LENGTH,
+         "Edge ID is too long." );
+      FC_ASSERT( fc::is_utf8( from_node_id ),
+         "Edge ID must be UTF-8" );
+      validate_uuidv4( from_node_id );
+
+      FC_ASSERT( to_node_id.size(),
+         "Edge has no Edge ID." );
+      FC_ASSERT( to_node_id.size() <= MAX_STRING_LENGTH,
+         "Edge ID is too long." );
+      FC_ASSERT( fc::is_utf8( to_node_id ),
+         "Edge ID must be UTF-8" );
+      validate_uuidv4( to_node_id );
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ),
+         "Details are not formatted in UTF8." );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON." );
+      }
+
+      if( json_private.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json_private ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json_private ),
+            "JSON Metadata not valid JSON." );
+      }
+   }
+
+   void graph_node_property_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( interface );
+      validate_account_name( node_type );
+
+      switch( graph_privacy )
+      {
+         case CONNECTION:
+         case FRIEND:
+         case COMPANION:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Connection Type is invalid." );
+         }
+      }
+
+      switch( edge_permission )
+      {
+         case CONNECTION:
+         case FRIEND:
+         case COMPANION:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Connection Type is invalid." );
+         }
+      }
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ),
+         "Details are not formatted in UTF8." );
+
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+
+      for( auto a : attributes )
+      {
+         FC_ASSERT( a.size() < MAX_URL_LENGTH,
+            "Attribute is too long." );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Attribute is not formatted in UTF8." );
+      }
+   }
+
+   void graph_edge_property_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( interface );
+      validate_account_name( edge_type );
+
+      switch( graph_privacy )
+      {
+         case CONNECTION:
+         case FRIEND:
+         case COMPANION:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Connection Type is invalid." );
+         }
+      }
+
+      for( auto a : from_node_types )
+      {
+         validate_account_name( a );
+      }
+
+      for( auto a : to_node_types )
+      {
+         validate_account_name( a );
+      }
+
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ),
+         "Details are not formatted in UTF8." );
+
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+
+      for( auto a : attributes )
+      {
+         FC_ASSERT( a.size() < MAX_URL_LENGTH,
+            "Attribute is too long." );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Attribute is not formatted in UTF8." );
       }
    }
 
@@ -1802,9 +2097,191 @@ namespace node { namespace protocol {
    }
 
 
-   //===========================//
-   // === Escrow Operations === //
-   //===========================//
+   //================================//
+   // === Marketplace Operations === //
+   //================================//
+
+
+
+   void product_update_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      
+      FC_ASSERT( product_name.size() < MAX_STRING_LENGTH,
+         "Product name is too long" );
+      FC_ASSERT( fc::is_utf8( product_name ),
+         "Product Name is not UTF8" );
+
+      switch( sale_type )
+      {
+         case FIXED_PRICE_SALE:
+         case WHOLESALE_PRICE_SALE:
+         case OPEN_AUCTION_SALE:
+         case REVERSE_AUCTION_SALE:
+         case SECRET_AUCTION_SALE:
+         {
+            break;
+         }
+         default:
+         {
+            FC_ASSERT( false, "Connection Type is invalid." );
+         }
+      }
+
+      for( auto a : product_variants )
+      {
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
+            "Product variant is too long" );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Product variant is not UTF8" );
+      }
+
+      for( auto a : details )
+      {
+         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
+            "Product variant is too long" );
+         FC_ASSERT( fc::is_utf8( a.first ),
+            "Product variant is not UTF8" );
+         FC_ASSERT( a.second.size() < MAX_STRING_LENGTH,
+            "Product details is too long" );
+         FC_ASSERT( fc::is_utf8( a.second ),
+            "Product details is not UTF8" );
+      }
+
+      for( auto a : images )
+      {
+         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
+            "Product variant is too long" );
+         FC_ASSERT( fc::is_utf8( a.first ),
+            "Product variant is not UTF8" );
+         FC_ASSERT( a.second.size() < MAX_STRING_LENGTH,
+            "Image is too long" );
+         FC_ASSERT( fc::is_utf8( a.second ),
+            "Image is not UTF8" );
+         FC_ASSERT( a.second.size() == 46 && a.second[0] == 'Q' && a.second[1] == 'm',
+            "Image IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      for( auto a : product_prices )
+      {
+         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
+            "Product variant is too long" );
+         FC_ASSERT( fc::is_utf8( a.first ),
+            "Product variant is not UTF8" );
+         FC_ASSERT( is_valid_symbol( a.second.symbol ),
+            "Product Price symbol is not valid symbol" );
+         FC_ASSERT( a.second.amount >= 0,
+            "Product Price must be positive amount" );
+      }
+
+      for( auto a : stock_available )
+      {
+         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
+            "Product variant is too long" );
+         FC_ASSERT( fc::is_utf8( a.first ),
+            "Product variant is not UTF8" );
+         FC_ASSERT( a.second >= 0,
+            "Stock available must be positive amount" );
+      }
+
+      for( auto a : json )
+      {
+         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
+            "Product variant is too long" );
+         FC_ASSERT( fc::is_utf8( a.first ),
+            "Product variant is not UTF8" );
+         FC_ASSERT( fc::is_utf8( a.second ),
+            "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid( a.second ),
+            "JSON Metadata not valid JSON" );
+      }
+
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long" );
+      FC_ASSERT( fc::is_utf8( product_name ),
+         "URL is not UTF8" );
+
+      for( auto a : delivery_variants )
+      {
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
+            "Delivery variant is too long" );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Delivery variant is not UTF8" );
+      }
+
+      for( auto a : delivery_prices )
+      {
+         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
+            "Product variant is too long" );
+         FC_ASSERT( fc::is_utf8( a.first ),
+            "Product variant is not UTF8" );
+         FC_ASSERT( is_valid_symbol( a.second.symbol ),
+            "Delivery Price symbol is not valid symbol" );
+         FC_ASSERT( a.second.amount >= 0,
+            "Delivery Price must be positive amount" );
+      }
+   }
+
+
+   void product_purchase_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      
+      FC_ASSERT( product_name.size() < MAX_STRING_LENGTH,
+         "Product name is too long" );
+      FC_ASSERT( fc::is_utf8( product_name ),
+         "Product Name is not UTF8" );
+
+      for( auto a : order_size )
+      {
+         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
+            "Product variant is too long" );
+         FC_ASSERT( fc::is_utf8( a.first ),
+            "Product variant is not UTF8" );
+         FC_ASSERT( a.second >= 0,
+            "Order Size must be positive amount" );
+      }
+
+      FC_ASSERT( is_valid_symbol( total_payable.symbol ),
+         "Product Price symbol is not valid symbol" );
+      FC_ASSERT( total_payable.amount >= 0,
+         "Product Price must be positive amount" );
+
+      FC_ASSERT( shipping_address.size() < MAX_STRING_LENGTH,
+         "Shipping Address is too long" );
+      FC_ASSERT( fc::is_utf8( shipping_address ),
+         "Shipping Address is not UTF8" );
+
+      FC_ASSERT( escrow_id.size() < MAX_STRING_LENGTH,
+         "Escrow ID is too long." );
+      FC_ASSERT( escrow_id.size() > 0,
+         "Escrow ID is required." );
+      FC_ASSERT( fc::is_utf8( escrow_id ), 
+         "Escrow ID is not UTF8" );
+      validate_uuidv4( escrow_id );
+
+      FC_ASSERT( acceptance_time > GENESIS_TIME,
+         "Acceptance time must be after genesis time." );
+      FC_ASSERT( escrow_expiration > GENESIS_TIME,
+         "Escrow expiration must be after genesis time." );
+      FC_ASSERT( acceptance_time < escrow_expiration,
+         "Acceptance time must be before escrow expiration" );
+
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ),
+         "Memo is not UTF8" );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8(json),
+            "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid(json),
+            "JSON Metadata not valid JSON" );
+      }
+   }
 
 
    void escrow_transfer_operation::validate()const
@@ -1986,6 +2463,29 @@ namespace node { namespace protocol {
             "Target price must be greater than the specified exchange rate, or the order will be immediately take profit liquidated." );
       }
    }
+
+
+   void auction_order_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( owner );
+      validate_account_name( interface );
+
+      FC_ASSERT( amount_to_sell.symbol == min_exchange_rate.base.symbol,
+         "Sell asset must be the base of the price" );
+      min_exchange_rate.validate();
+      FC_ASSERT( ( amount_to_sell * min_exchange_rate ).amount > 0,
+         "Amount to sell cannot round to 0 when traded" );
+      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
+         "Order ID is too long." );
+      FC_ASSERT( order_id.size(),
+         "Order ID is required." );
+      FC_ASSERT( fc::is_utf8( order_id ),
+         "Order ID is not UTF8" );
+      validate_uuidv4( order_id );
+      FC_ASSERT( expiration > GENESIS_TIME,
+         "Expiration time must be greater than genesis time." );
+   }
    
 
    void call_order_operation::validate()const
@@ -2004,6 +2504,28 @@ namespace node { namespace protocol {
       FC_ASSERT( debt.amount >= 0,
          "Debt amount of new debt position should be positive." );
    }
+
+
+   void option_order_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( owner );
+      validate_account_name( interface );
+
+      FC_ASSERT( amount_to_issue.symbol == strike_price.strike_price.base.symbol,
+         "Sell asset must be the base of the strike price" );
+      strike_price.validate();
+      FC_ASSERT( ( amount_to_issue * strike_price.strike_price ).amount > 0,
+         "Amount to issue cannot round to 0 when traded" );
+      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
+         "Order ID is too long." );
+      FC_ASSERT( order_id.size(),
+         "Order ID is required." );
+      FC_ASSERT( fc::is_utf8( order_id ),
+         "Order ID is not UTF8" );
+      validate_uuidv4( order_id );
+   }
+
 
    void bid_collateral_operation::validate()const
    {
@@ -2588,12 +3110,6 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( reporter );
-      first_trx.validate();
-      second_trx.validate();
-      FC_ASSERT( first_trx.operations.size(), 
-         "Transaction ID ${t} has no operations.", ("t", first_trx.id() ) );
-      FC_ASSERT( second_trx.operations.size(), 
-         "Transaction ID ${t} has no operations.", ("t", second_trx.id() ) );
    }
 
 

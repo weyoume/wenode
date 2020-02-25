@@ -16,9 +16,9 @@
 - Psudonymous Persona Accounts and Full Identity Profile accounts.
   - Persona Accounts enhance privacy and do not contain personal information.
   - Profile Accounts enable real identities, with selective profile information sharing.
-- Boards for sharing content to selected sets of people.
+- Communities for sharing content to selected sets of people.
   - Mulitple levels of privacy to encrypt content and manage account access.
-  - Rewards for moderators based on the success of their boards. 
+  - Rewards for moderators based on the success of their communities. 
 - Custom Assets that can be transferred between accounts, and exchanged in trading orders.
   - Your username is your wallet address.
   - Integrated decentralized exchange.

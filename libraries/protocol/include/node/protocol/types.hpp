@@ -26,6 +26,7 @@
 #include <vector>
 #include <deque>
 #include <cstdint>
+#include <ctime>
 
 namespace node {
 
@@ -45,9 +46,10 @@ namespace node {
    using                               std::set;
    using                               std::pair;
    using                               std::enable_shared_from_this;
+   using                               std::time_t;
    using                               std::tie;
    using                               std::make_pair;
-
+   
    using                               fc::smart_ref;
    using                               fc::variant_object;
    using                               fc::variant;
@@ -70,79 +72,58 @@ namespace node {
 
       typedef fc::ecc::private_key        private_key_type;
       typedef fc::sha256                  chain_id_type;
-      typedef fixed_string_16             account_name_type;
-      typedef fixed_string_16             board_name_type;
+      typedef fixed_string_32             account_name_type;
+      typedef fixed_string_32             community_name_type;
       typedef fixed_string_32             tag_name_type;
-      typedef fixed_string_16             asset_symbol_type;
+      typedef fixed_string_32             asset_symbol_type;
+      typedef fixed_string_32             graph_node_name_type;
+      typedef fixed_string_32             graph_edge_name_type;
       typedef fc::ripemd160               block_id_type;
       typedef fc::ripemd160               checksum_type;
       typedef fc::ripemd160               transaction_id_type;
       typedef fc::sha256                  digest_type;
       typedef fc::ecc::compact_signature  signature_type;
       typedef safe<int64_t>               share_type;
+      typedef safe<int128_t>              share_128_type;
       typedef uint16_t                    weight_type;
       typedef boost::rational<int32_t>    ratio_type;
 
 
-      // Types of accounts available, each offering different functionality.
-      enum account_identity_type
+      /**
+       * Privacy levels of communities, used for determining encryption levels, and access controls for community administration.
+       */
+      enum community_privacy_type
       {
-         PERSONA,   // Standard account type, pseudonymous, creates posts and transactions
-         PROFILE,   // Full identity account type, requires a valid governance address signature and naming convention [firstname.lastname.00000000]
-         VERIFIED,  // Profile account that has been upgraded to verifed status 
-         BUSINESS,  // Corporate account type, issues a cryptoequity asset to owners for approving txns, owned by other accounts
-         ANONYMOUS  // No identity account type, creates new stealth accounts by delegation for every txn
+         OPEN_PUBLIC_COMMUNITY,         ///< All Users can read, interact, post, and request to join. Accounts cannot be blacklisted.
+         GENERAL_PUBLIC_COMMUNITY,      ///< All Users can read, interact, post, and request to join.
+         EXCLUSIVE_PUBLIC_COMMUNITY,    ///< All users can read, interact, and request to join. Members can post and invite.
+         CLOSED_PUBLIC_COMMUNITY,       ///< All users can read, and request to join. Members can interact, post, and invite.
+         OPEN_PRIVATE_COMMUNITY,        ///< Members can read and interact, and create posts. Moderators can invite and accept.
+         GENERAL_PRIVATE_COMMUNITY,     ///< Members can read and interact, and create posts. Moderators can invite and accept. Cannot share posts.
+         EXCLUSIVE_PRIVATE_COMMUNITY,   ///< Members can read and interact, and post. Cannot share posts or request to join. Admins can invite and accept.
+         CLOSED_PRIVATE_COMMUNITY       ///< Members can read and interact. Moderators can post. Cannot share posts or request to join. Admins can invite and accept.
       };
 
-      vector< string > account_identity_values =
+      vector< string > community_privacy_values = 
       {
-         "persona",
-         "profile",
-         "verified",
-         "business",
-         "anonymous"
+         "open_public",
+         "general_public",
+         "exclusive_public",
+         "closed_public",
+         "open_private",
+         "general_private",
+         "exclusive_private",
+         "closed_private"
       };
 
-      // Types of boards, groups and events that can be used for holding posts, topic moderation, and community management.
-      enum board_structure_type
-      {
-         BOARD,   // General purpose board, all types of content can be posted by all types of accounts. Sorted with low equalization by default, emphasis on content before author.
-         GROUP,   // Curated content board, able to limit account types, content types, post rate. Sorted with high equalization by default, emphasis on author before content. 
-         EVENT,   // Events contain a location and event time. All members can select either attending or not attending.
-         STORE    // Stores contain product posts, All users can browse and purchase, members can create product posts.
-      };
-
-      vector< string > board_structure_values =
-      {
-         "board",
-         "group",
-         "event",
-         "store"
-      };
-
-      // Privacy levels of boards, used for determining encryption levels, and access controls for board administration.
-      enum board_privacy_type
-      {
-         OPEN_BOARD,      // Default board type, all users can read, interact, and post.
-         PUBLIC_BOARD,    // All users can read, interact, and request to join. Members can post and invite.
-         PRIVATE_BOARD,   // Members can read and interact, and create posts. Moderators can invite and accept.
-         EXCLUSIVE_BOARD  // All board details are encrypted, cannot request to join. Admins can invite and accept.
-      };
-
-      vector< string > board_privacy_values = 
-      {
-         "open",
-         "public",
-         "private",
-         "exclusive"
-      };
-
-      // Business account types, used for determining access controls for signatories of business account transactions and equity assets.
+      /**
+       * Business account types, used for determining access controls for signatories of business account transactions and equity assets.
+       */
       enum business_structure_type
       {
-         OPEN_BUSINESS,     // All equity holders can become members and vote for officers and executives, all officers can sign transactions.
-         PUBLIC_BUSINESS,   // Executives select officers, officers can invite and accept members. All Equity holders can request membership. Members vote for executives.
-         PRIVATE_BUSINESS   // CEO selects Executives, Executives can sign transactions, and invite members. Only members may hold equity assets.
+         OPEN_BUSINESS,     ///< All equity holders can become members and vote for officers and executives, all officers can sign transactions.
+         PUBLIC_BUSINESS,   ///< Executives select officers, officers can invite and accept members. All Equity holders can request membership. Members vote for executives.
+         PRIVATE_BUSINESS   ///< CEO selects Executives, Executives can sign transactions, and invite members. Only members may hold equity assets.
       };
 
       vector< string > business_structure_values = 
@@ -152,13 +133,15 @@ namespace node {
          "private"
       };
 
-      // Types of membership available, each offers additional features, and improves the user experience for more advanced users.
+      /** 
+       * Types of membership available, each offers additional features, and improves the user experience for more advanced users.
+       */
       enum membership_tier_type 
       {
-         NONE,                 // Account does not have membership, free user
-         STANDARD_MEMBERSHIP,  // Regular membership, removes advertising and offers voting benefits.
-         MID_MEMBERSHIP,       // Mid level membership, featured page eligibility.
-         TOP_MEMBERSHIP        // Enterprise membership, enables governance account and interface account and pro application suite.
+         NONE,                 ///< Account does not have membership, free user
+         STANDARD_MEMBERSHIP,  ///< Regular membership, removes advertising and offers voting benefits.
+         MID_MEMBERSHIP,       ///< Mid level membership, featured page eligibility.
+         TOP_MEMBERSHIP        ///< Enterprise membership, enables governance account and interface account and pro application suite.
       };
 
       vector< string > membership_tier_values =
@@ -169,12 +152,14 @@ namespace node {
          "top"
       };
 
-      // Types of network officers, each receive reward distributions from the network upon voter approval.
+      /**
+       * Types of network officers, each receive reward distributions from the network upon voter approval.
+       */
       enum network_officer_role_type 
       {
-         DEVELOPMENT,  // Creates and maintains core network software and applications.
-         MARKETING,    // Markets the network to the public, creates awareness and adoption campaigns.
-         ADVOCACY      // Advocates the network to business partners, investors, and supports businesses using the protocol.  
+         DEVELOPMENT,  ///< Creates and maintains core network software and applications.
+         MARKETING,    ///< Markets the network to the public, creates awareness and adoption campaigns.
+         ADVOCACY      ///< Advocates the network to business partners, investors, and supports businesses using the protocol.  
       };
 
       vector< string > network_officer_role_values =
@@ -184,19 +169,21 @@ namespace node {
          "advocacy"
       };
 
-      // Types of network officers, each receive reward distributions from the network upon voter approval.
+      /** 
+       * Types of network officers, each receive reward distributions from the network upon voter approval.
+       */
       enum executive_role_type
       {
-         CHIEF_EXECUTIVE_OFFICER,    // Overall leader of Executive team.
-         CHIEF_OPERATING_OFFICER,    // Manages communications and coordination of team.
-         CHIEF_FINANCIAL_OFFICER,    // Oversees Credit issuance and salaries.
-         CHIEF_DEVELOPMENT_OFFICER,  // Oversees protocol development and upgrades.
-         CHIEF_TECHNOLOGY_OFFICER,   // Manages front end interface stability and network infrastructure.
-         CHIEF_SECURITY_OFFICER,     // Manages security of servers, funds, wallets, keys, and cold storage.
-         CHIEF_GOVERNANCE_OFFICER,   // Manages Governance account moderation teams.
-         CHIEF_MARKETING_OFFICER,    // Manages public facing communication and campaigns.
-         CHIEF_DESIGN_OFFICER,       // Oversees graphical design and User interface design.
-         CHIEF_ADVOCACY_OFFICER      // Coordinates advocacy efforts and teams.
+         CHIEF_EXECUTIVE_OFFICER,    ///< Overall leader of Executive team.
+         CHIEF_OPERATING_OFFICER,    ///< Manages communications and coordination of team.
+         CHIEF_FINANCIAL_OFFICER,    ///< Oversees Credit issuance and salaries.
+         CHIEF_DEVELOPMENT_OFFICER,  ///< Oversees protocol development and upgrades.
+         CHIEF_TECHNOLOGY_OFFICER,   ///< Manages front end interface stability and network infrastructure.
+         CHIEF_SECURITY_OFFICER,     ///< Manages security of servers, funds, wallets, keys, and cold storage.
+         CHIEF_GOVERNANCE_OFFICER,   ///< Manages Governance account moderation teams.
+         CHIEF_MARKETING_OFFICER,    ///< Manages public facing communication and campaigns.
+         CHIEF_DESIGN_OFFICER,       ///< Oversees graphical design and User interface design.
+         CHIEF_ADVOCACY_OFFICER      ///< Coordinates advocacy efforts and teams.
       };
 
       vector< string > executive_role_values =
@@ -213,12 +200,14 @@ namespace node {
          "advocacy"
       };
 
-      // Types of network officers, each receive reward distributions from the network upon voter approval.
-      enum proposal_distribution_type 
+      /**
+       * Types of network officers, each receive reward distributions from the network upon voter approval.
+       */
+      enum proposal_distribution_type
       {
-         FUNDING,      // Funds are distributed to beneficiarires based on milestone based projects completed.
-         COMPETITION,  // Funds are distributed to the winners of a competitons with predefined terms and objectives. 
-         INVESTMENT    // Funds are used to purchase a business account"s equity or credit asset, to be held by the community account.
+         FUNDING,      ///< Funds are distributed to beneficiarires based on milestone based projects completed.
+         COMPETITION,  ///< Funds are distributed to the winners of a competitons with predefined terms and objectives. 
+         INVESTMENT    ///< Funds are used to purchase a business account"s equity or credit asset, to be held by the community account.
       };
 
       vector< string > proposal_distribution_values =
@@ -228,20 +217,43 @@ namespace node {
          "investment"
       };
 
-      // Types of Asset, each is used for specific functions and operation types, and has different properties.
-      enum asset_property_type 
+      /**
+       * Types of network officers, each receive reward distributions from the network upon voter approval.
+       */
+      enum product_sale_type
       {
-         CURRENCY_ASSET,         // Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
-         STANDARD_ASSET,         // Regular asset, can be transferred and staked, saved, and delegated.
-         EQUITY_ASSET,           // Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions. 
-         CREDIT_ASSET,           // Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
-         BITASSET_ASSET,         // Asset based by collateral and track the value of an external asset.
-         LIQUIDITY_POOL_ASSET,   // Liquidity pool asset that is backed by the deposits of an asset pair"s liquidity pool and earns trading fees. 
-         CREDIT_POOL_ASSET,      // Credit pool asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
-         OPTION_ASSET,           // Asset that enables the execution of a trade at a specific price until an expiration date. 
-         PREDICTION_ASSET,       // Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
-         GATEWAY_ASSET,          // Asset backed by deposits with an exchange counterparty of another asset or currency. 
-         UNIQUE_ASSET            // Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset. 
+         FIXED_PRICE_SALE,         ///< Product is for sale at a fixed price.
+         WHOLESALE_PRICE_SALE,     ///< Product is for sale at decreasing prices when bulk quantity thesholds are purchased.
+         OPEN_AUCTION_SALE,        ///< Product is for sale to the highest bidder. Bids are open.
+         REVERSE_AUCTION_SALE,     ///< Product is for sale at a linearly decreasing price to the first purchaser. 
+         SECRET_AUCTION_SALE       ///< Product is for sale at the price of the second highest bidder to the highest bidder. Bids are secret using commit and reveal process. 
+      };
+
+      vector< string > product_sale_values =
+      {
+         "fixed_price",
+         "wholesale_price",
+         "open_auction",
+         "reverse_auction",
+         "secret_auction"
+      };
+
+      /**
+       * Types of Asset, each is used for specific functions and operation types, and has different properties.
+       */
+      enum asset_property_type
+      {
+         CURRENCY_ASSET,         ///< Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
+         STANDARD_ASSET,         ///< Regular asset, can be transferred and staked, saved, and delegated.
+         EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions. 
+         CREDIT_ASSET,           ///< Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
+         BITASSET_ASSET,         ///< Asset based by collateral and track the value of an external asset.
+         LIQUIDITY_POOL_ASSET,   ///< Liquidity pool asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
+         CREDIT_POOL_ASSET,      ///< Credit pool asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
+         OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
+         PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
+         GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency. 
+         UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset. 
       };
 
       vector< string > asset_property_values =
@@ -259,19 +271,18 @@ namespace node {
          "unique"
       };
 
-      // Type of advertising format, determines how creative is formatted in interfaces.
+      /**
+       * Type of advertising format, determines how creative is formatted in interfaces.
+       */
       enum ad_format_type
       {
-         STANDARD_FORMAT,  // A regular post, objective is permlink.
-         PREMIUM_FORMAT,   // A premium post, objective is permlink.
-         PRODUCT_FORMAT,   // A product post, objective is permlink.
-         LINK_FORMAT,      // A link to an external webpage, objective is URL.
-         ACCOUNT_FORMAT,   // An account, objective is account name.
-         BOARD_FORMAT,     // A board, objective is board name.
-         GROUP_FORMAT,     // A group, objective is group board name.
-         EVENT_FORMAT,     // An event, objective is board name.
-         STORE_FORMAT,     // A store, objective is store name.
-         ASSET_FORMAT      // An asset, objective is asset symbol.
+         STANDARD_FORMAT,      ///< A regular post, objective is permlink.
+         PREMIUM_FORMAT,       ///< A premium post, objective is permlink.
+         PRODUCT_FORMAT,       ///< A product post, objective is permlink.
+         LINK_FORMAT,          ///< A link to an external webpage, objective is URL.
+         ACCOUNT_FORMAT,       ///< An account, objective is account name.
+         COMMUNITY_FORMAT,     ///< A community, objective is community name.
+         ASSET_FORMAT          ///< An asset, objective is asset symbol.
       };
 
       vector< string > ad_format_values =
@@ -281,27 +292,26 @@ namespace node {
          "product",
          "link",
          "account",
-         "board",
-         "group",
-         "event",
-         "store",
+         "community",
          "asset"
       };
 
-      // Type of Post, each loaded and displayed accordingly on interfaces.
+      /**
+       * Type of Post, each loaded and displayed accordingly on interfaces.
+       */
       enum post_format_type 
       {
-         TEXT_POST,        // A post containing a maxmium of 300 characters of text.
-         IMAGE_POST,       // A post containing an IPFS media file of an image, and up to 1000 characters of description text
-         VIDEO_POST,       // A post containing a title, an IPFS media file or bittorrent magent link of a video, and up to 1000 characters of description text
-         LINK_POST,        // A post containing a URL link, link title, and up to 1000 characters of description text
-         ARTICLE_POST,     // A post containing a title, a header image, and an unlimited amount of body text with embedded images
-         AUDIO_POST,       // A post containing a title, an IPFS link to an audio file, and up to 1000 characters of description text
-         FILE_POST,        // A post containing a title, either an IPFS link to a file, or a magnet link to a bittorrent swarm for a file, and up to 1000 characters of description text
-         POLL_POST,        // A post containing a title, at least 2 voting options, and up to 1000 characters of description text
-         LIVESTREAM_POST,  // A post containing a title, a link to a livestreaming video, and up to 1000 characters of description text
-         PRODUCT_POST,     // A post containing a product title, at least 1 IPFS image of the product, and purchase details to create an escrow order
-         LIST_POST         // A post containing a list of at least 2 other posts, a title, and up to 1000 characters of description text
+         TEXT_POST,        ///< A post containing a maxmium of 300 characters of text.
+         IMAGE_POST,       ///< A post containing an IPFS media file of an image, and up to 1000 characters of description text
+         VIDEO_POST,       ///< A post containing a title, an IPFS media file or bittorrent magent link of a video, and up to 1000 characters of description text
+         LINK_POST,        ///< A post containing a URL link, link title, and up to 1000 characters of description text
+         ARTICLE_POST,     ///< A post containing a title, a header image, and an unlimited amount of body text with embedded images
+         AUDIO_POST,       ///< A post containing a title, an IPFS link to an audio file, and up to 1000 characters of description text
+         FILE_POST,        ///< A post containing a title, either an IPFS link to a file, or a magnet link to a bittorrent swarm for a file, and up to 1000 characters of description text
+         POLL_POST,        ///< A post containing a title, at least 2 voting options, and up to 1000 characters of description text
+         LIVESTREAM_POST,  ///< A post containing a title, a link to a livestreaming video, and up to 1000 characters of description text
+         PRODUCT_POST,     ///< A post containing a product title, at least 1 IPFS image of the product, and purchase details to create an escrow order
+         LIST_POST         ///< A post containing a list of at least 2 other posts, a title, and up to 1000 characters of description text
       };
 
       vector< string > post_format_values =
@@ -319,15 +329,17 @@ namespace node {
          "list"
       };
 
-      // Types of expense metrics for advertising transactions.
+      /**
+       * Types of expense metrics for advertising transactions.
+       */
       enum ad_metric_type 
       {
-         VIEW_METRIC,      // View transaction required for delivery.
-         VOTE_METRIC,      // vote transaction required for delivery.
-         SHARE_METRIC,     // share transaction required for delivery.
-         FOLLOW_METRIC,    // follow or board join transaction required for delivery.
-         PURCHASE_METRIC,  // product marketplace purchase orders required for delivery. 
-         PREMIUM_METRIC    // premium content purchases transaction ids required for delivery.
+         VIEW_METRIC,      ///< View transaction required for delivery.
+         VOTE_METRIC,      ///< vote transaction required for delivery.
+         SHARE_METRIC,     ///< share transaction required for delivery.
+         FOLLOW_METRIC,    ///< follow or community join transaction required for delivery.
+         PURCHASE_METRIC,  ///< product marketplace purchase orders required for delivery. 
+         PREMIUM_METRIC    ///< premium content purchases transaction ids required for delivery.
       };
 
       vector< string > ad_metric_values =
@@ -340,13 +352,16 @@ namespace node {
          "premium"
       };
 
-      // Types of connections between accounts, each offers a higher level of security for private information exchanges. 
+      /**
+       * Types of connections between accounts, each offers a higher level of security for private information exchanges.
+       */ 
       enum connection_tier_type
       {
-         PUBLIC,       // No privacy setting, post is public.
-         CONNECTION,   // Standard connection level, enables private messaging and viewing private posts.
-         FRIEND,       // Elevated connection level, activates notifications when posts are made by friends.
-         COMPANION     // Highest connection level, maximum privacy for close friends or partners.
+         PUBLIC,       ///< No privacy setting, post is public.
+         CONNECTION,   ///< Standard connection level, enables private messaging and viewing private posts.
+         FRIEND,       ///< Elevated connection level, activates notifications when posts are made by friends.
+         COMPANION,    ///< Highest connection level, maximum privacy for close friends or partners.
+         SECURE        ///< Fully Private setting, only the author can read.
       };
 
       vector< string > connection_tier_values =
@@ -357,20 +372,19 @@ namespace node {
          "companion"
       };
 
-      // Types of feeds for subscribing to the posts of different sets of users.
+      /**
+       * Types of feeds for subscribing to the posts of different sets of users.
+       */
       enum feed_reach_type 
       { 
-         NO_FEED,           // Posts that should not be distributed to any feeds.
-         FOLLOW_FEED,       // Feed from accounts that are followed.
-         MUTUAL_FEED,       // Feed from accounts that are mutually followed.
-         CONNECTION_FEED,   // Feed from accounts that are connected.
-         FRIEND_FEED,       // Feed from accounts that are friends.
-         COMPANION_FEED,    // Feed from accounts that are companions.
-         BOARD_FEED,        // Feed from subscribed boards.
-         GROUP_FEED,        // Feed from subscribed groups.
-         EVENT_FEED,        // Feed from subscribed events.
-         STORE_FEED,        // Feed from subscribed stores.
-         TAG_FEED           // Feed from followed tags.
+         NO_FEED,           ///< Posts that should not be distributed to any feeds.
+         FOLLOW_FEED,       ///< Feed from accounts that are followed.
+         MUTUAL_FEED,       ///< Feed from accounts that are mutually followed.
+         CONNECTION_FEED,   ///< Feed from accounts that are connected.
+         FRIEND_FEED,       ///< Feed from accounts that are friends.
+         COMPANION_FEED,    ///< Feed from accounts that are companions.
+         COMMUNITY_FEED,    ///< Feed from subscribed communities.
+         TAG_FEED           ///< Feed from followed tags.
       };
 
       vector< string > feed_reach_values =
@@ -381,45 +395,47 @@ namespace node {
          "connection",
          "friend",
          "companion",
-         "board",
-         "group",
-         "event",
-         "store",
+         "community",
          "tag"
       };
 
-      // Types of blogs for tracking what has been created or shared with an account, board, or tag. 
+      /**
+       * Types of blogs for tracking what has been created or shared with an account, community, or tag. 
+       */
       enum blog_reach_type 
       { 
-         ACCOUNT_BLOG,  // Blog within an account, includes authored posts and shared posts
-         BOARD_BLOG,    // Blog within a board, includes all posts within the board, plus shared with the board.
-         TAG_BLOG       // Blog within a tag, includes all posts that use the tag, plus shared with the tag.
+         ACCOUNT_BLOG,      ///< Blog within an account, includes authored posts and shared posts
+         COMMUNITY_BLOG,    ///< Blog within a community, includes all posts within the community, plus shared with the community.
+         TAG_BLOG           ///< Blog within a tag, includes all posts that use the tag, plus shared with the tag.
       };
 
       vector< string > blog_reach_values =
       { 
          "account",
-         "board",
+         "community",
          "tag"
       };
 
-      // Types of post ratings, indicating the maturity level of the content. 
+      /**
+       * Types of post ratings, indicating the maturity level of the content. 
+       */
       enum post_rating_type
       {
-         FAMILY,    // Posts that are SFW and do not contain images of people. Displays in family mode and higher. [All ages]
-         GENERAL,   // Posts that are SFW and do contain images of people. Displays in safe mode and higher. [Ages 12+]
-         MATURE,    // Posts that are NSFW and but are not explicit. Displays in standard mode and higher. [Ages 16+]
-         EXPLICIT   // Posts that are NSFW and are explicit. Displays in autonomous mode only. [Ages 18+]
+         FAMILY,    ///< Posts that are suitable for younger users.
+         GENERAL,   ///< Posts that are suitable for regular users.
+         ADULT      ///< Posts that are Not Safe for Work, and may be explicit.
       };
 
       vector< string > post_rating_values =
       {
          "family",
          "general",
-         "mature",
-         "explicit"
+         "adult"
       };
 
+      /**
+       * Time weighting options for sorting discusions by index.
+       */
       enum sort_time_type
       {
          ACTIVE_TIME,
@@ -438,6 +454,9 @@ namespace node {
          "elite"
       };
 
+      /**
+       * Variety of options for sorting discussions by index according to Votes, Views, Shares, and Comments.
+       */
       enum sort_option_type
       {
          VOTES_SORT,
@@ -468,6 +487,9 @@ namespace node {
          "discourse"
       };
 
+      /**
+       * Time lengths that can be used for filtering posts in discussion API calls.
+       */
       enum post_time_type
       {
          ALL_TIME,
@@ -490,45 +512,81 @@ namespace node {
 
       enum asset_issuer_permission_flags 
       {
-         balance_whitelist           = 1,       // Accounts must be whitelisted in order to send, receive or hold the asset.
-         trade_whitelist             = 2,       // Accounts must be whitelisted to trade the asset.
-         maker_restricted            = 4,       // Only issuer may create new trading orders onto the orderbook, others must fill them.
-         issuer_accept_requests      = 8,       // Issuer may approve transfer requests, enabling them to retrieve funds from any account.
-         transfer_restricted         = 16,      // Transfers may only be to or from the issuer.
-         disable_requests            = 32,      // Payment requests are disabled.
-         disable_recurring           = 64,      // Recurring payments are disabled.
-         disable_credit              = 128,     // The asset cannot be lent into a credit pool, Disabling margin and credit loan orders.
-         disable_liquid              = 256,     // The asset cannot be used to create a liquidity pool.
-         disable_options             = 512,     // The asset cannot be used to issue options assets.
-         disable_escrow              = 1024,    // Disable escrow transfers and marketplace trades using the asset.
-         disable_force_settle        = 2048,    // Disable force settling of bitassets, only global settle may return collateral.
-         disable_confidential        = 4096,    // Asset cannot be used with confidential transactions.
-         disable_auction             = 8192,    // Disable creation of auction orders for the asset.
-         producer_fed_asset          = 16384,   // Allow the asset to be price food to be published by top voting producers.
-         global_settle               = 32768,   // Allow the bitasset issuer to force a global settlement: Set in permissions, but not flags.
-         governance_oversight        = 65536,   // Asset update, issuer transfer and issuance require the account's governance address to approve
-         immutable_properties        = 131072,  // Disable any future asset options updates or changes to flags
+         balance_whitelist           = 1,       ///< Accounts must be whitelisted in order to send, receive or hold the asset.
+         trade_whitelist             = 2,       ///< Accounts must be whitelisted to trade the asset.
+         maker_restricted            = 4,       ///< Only issuer may create new trading orders onto the orderbook, others must fill them.
+         issuer_accept_requests      = 8,       ///< Issuer may approve transfer requests, enabling them to retrieve funds from any account.
+         transfer_restricted         = 16,      ///< Transfers may only be to or from the issuer.
+         disable_requests            = 32,      ///< Payment requests are disabled.
+         disable_recurring           = 64,      ///< Recurring payments are disabled.
+         disable_credit              = 128,     ///< The asset cannot be lent into a credit pool, Disabling margin and credit loan orders.
+         disable_liquid              = 256,     ///< The asset cannot be used to create a liquidity pool.
+         disable_options             = 512,     ///< The asset cannot be used to issue options assets.
+         disable_escrow              = 1024,    ///< Disable escrow transfers and marketplace trades using the asset.
+         disable_force_settle        = 2048,    ///< Disable force settling of bitassets, only global settle may return collateral.
+         disable_confidential        = 4096,    ///< Asset cannot be used with confidential transactions.
+         disable_auction             = 8192,    ///< Disable creation of auction orders for the asset.
+         producer_fed_asset          = 16384,   ///< Allow the asset to be price food to be published by top voting producers.
+         global_settle               = 32768,   ///< Allow the bitasset issuer to force a global settlement: Set in permissions, but not flags.
+         governance_oversight        = 65536,   ///< Asset update, issuer transfer and issuance require the account's governance address to approve.
+         immutable_properties        = 131072   ///< Disable any future asset options updates or changes to flags.
       };
 
       const static uint32_t ASSET_ISSUER_PERMISSION_MASK =
-            balance_whitelist
-            | trade_whitelist
-            | maker_restricted
-            | issuer_accept_requests
-            | transfer_restricted
-            | disable_requests
-            | disable_recurring
-            | disable_credit
-            | disable_liquid
-            | disable_options
-            | disable_escrow
-            | disable_force_settle
-            | disable_confidential
-            | disable_auction
-            | producer_fed_asset
-            | global_settle
-            | governance_oversight
-            | immutable_properties;
+         balance_whitelist
+         | trade_whitelist
+         | maker_restricted
+         | issuer_accept_requests
+         | transfer_restricted
+         | disable_requests
+         | disable_recurring
+         | disable_credit
+         | disable_liquid
+         | disable_options
+         | disable_escrow
+         | disable_force_settle
+         | disable_confidential
+         | disable_auction
+         | producer_fed_asset
+         | global_settle
+         | governance_oversight
+         | immutable_properties;
+
+      enum community_permission_flags 
+      {
+         member_whitelist            = 1,       ///< Accounts must be whitelisted by the founder to request membership or be invited.
+         require_profile             = 2,       ///< Accounts must have a valid profile data to request membership or be invited. 
+         require_verified            = 4,       ///< Accounts must have a valid verification from an existing member to request membership or be invited.
+         disable_messages            = 8,       ///< Accounts cannot send community messages.
+         disable_text_posts          = 16,      ///< Community does not allow text type posts.
+         disable_image_posts         = 32,      ///< Community does not allow image type posts.
+         disable_video_posts         = 64,      ///< Community does not allow video type posts.
+         disable_link_posts          = 128,     ///< Community does not allow link type posts.
+         disable_article_posts       = 256,     ///< Community does not allow article type posts.
+         disable_audio_posts         = 512,     ///< Community does not allow audio type posts.
+         disable_file_posts          = 1024,    ///< Community does not allow file type posts.
+         disable_poll_posts          = 2048,    ///< Community does not allow poll type posts.
+         disable_livestream_posts    = 4096,    ///< Community does not allow livestream type posts.
+         disable_product_posts       = 8192,    ///< Community does not allow product type posts.
+         disable_list_posts          = 16384    ///< Community does not allow list type posts.
+      };
+
+      const static uint32_t COMMUNITY_PERMISSION_MASK =
+         member_whitelist
+         | require_profile
+         | require_verified
+         | disable_messages
+         | disable_text_posts
+         | disable_image_posts
+         | disable_video_posts
+         | disable_link_posts
+         | disable_article_posts
+         | disable_audio_posts
+         | disable_file_posts
+         | disable_poll_posts
+         | disable_livestream_posts
+         | disable_product_posts
+         | disable_list_posts;
 
       struct public_key_type
       {
@@ -611,9 +669,9 @@ namespace node {
          encrypted_keypair_type();
          encrypted_keypair_type( const public_key_type& secure_key, const public_key_type& public_key, const std::string& encrypted_private_key );
 
-         public_key_type   secure_key;                 // The public key used to encrypt the encrypted key.
-         public_key_type   public_key;                 // The public key of the private encrypted key.
-         string            encrypted_private_key;      // The encrypted private key of the public key.
+         public_key_type   secure_key;                 ///< The public key used to encrypt the encrypted key.
+         public_key_type   public_key;                 ///< The public key of the private encrypted key.
+         string            encrypted_private_key;      ///< The encrypted private key of the public key.
          
          friend bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
          friend bool operator < ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
@@ -621,6 +679,37 @@ namespace node {
          friend bool operator != ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
          friend bool operator <= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
          friend bool operator >= ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
+      };
+
+      /**
+       * Structure for holding the value of the current date.
+       */
+      struct date_type
+      {
+         date_type();
+         date_type( uint16_t day, uint16_t month, uint16_t year );
+         date_type( time_point time );
+
+         uint16_t      day;         ///< Day of the month [1-31]
+
+         uint16_t      month;       ///< Month of the year [1-12]
+
+         uint16_t      year;        ///< Year [1970+]
+
+         bool is_null()const;
+
+         void validate()const;
+
+         string to_string()const;
+
+         void next();
+
+         friend bool operator == ( const date_type& date1, const date_type& date2 );
+         friend bool operator < ( const date_type& date1, const date_type& date2 );
+         friend bool operator > ( const date_type& date1, const date_type& date2 );
+         friend bool operator != ( const date_type& date1, const date_type& date2 );
+         friend bool operator <= ( const date_type& date1, const date_type& date2 );
+         friend bool operator >= ( const date_type& date1, const date_type& date2 );
       };
 
 } };  // node::protocol
@@ -635,32 +724,28 @@ namespace fc
    void from_variant( const fc::variant& var, node::protocol::extended_private_key_type& vo );
 };
 
-FC_REFLECT_ENUM( node::protocol::account_identity_type,
-         (PERSONA)
-         (PROFILE)
-         (VERIFIED)
-         (BUSINESS)
-         (ANONYMOUS)
-         );
-
-FC_REFLECT_ENUM( node::protocol::board_structure_type,
-         (BOARD)
-         (GROUP)
-         (EVENT)
-         (STORE)
-         );
-
-FC_REFLECT_ENUM( node::protocol::board_privacy_type,
-         (OPEN_BOARD)
-         (PUBLIC_BOARD)
-         (PRIVATE_BOARD)
-         (EXCLUSIVE_BOARD)
+FC_REFLECT_ENUM( node::protocol::community_privacy_type,
+         (OPEN_PUBLIC_COMMUNITY)
+         (GENERAL_PUBLIC_COMMUNITY)
+         (EXCLUSIVE_PUBLIC_COMMUNITY)
+         (CLOSED_PUBLIC_COMMUNITY)
+         (OPEN_PRIVATE_COMMUNITY)
+         (GENERAL_PRIVATE_COMMUNITY)
+         (EXCLUSIVE_PRIVATE_COMMUNITY)
+         (CLOSED_PRIVATE_COMMUNITY)
          );
 
 FC_REFLECT_ENUM( node::protocol::business_structure_type,
          (OPEN_BUSINESS)
          (PUBLIC_BUSINESS)
          (PRIVATE_BUSINESS)
+         );
+
+FC_REFLECT_ENUM( node::protocol::membership_tier_type,
+         (NONE)
+         (STANDARD_MEMBERSHIP)
+         (MID_MEMBERSHIP)
+         (TOP_MEMBERSHIP)
          );
 
 FC_REFLECT_ENUM( node::protocol::network_officer_role_type,
@@ -688,6 +773,14 @@ FC_REFLECT_ENUM( node::protocol::proposal_distribution_type,
          (INVESTMENT)
          );
 
+FC_REFLECT_ENUM( node::protocol::product_sale_type,
+         (FIXED_PRICE_SALE)
+         (WHOLESALE_PRICE_SALE)
+         (OPEN_AUCTION_SALE)
+         (REVERSE_AUCTION_SALE)
+         (SECRET_AUCTION_SALE)
+         );
+
 FC_REFLECT_ENUM( node::protocol::asset_property_type,
          (CURRENCY_ASSET)
          (STANDARD_ASSET)
@@ -700,6 +793,16 @@ FC_REFLECT_ENUM( node::protocol::asset_property_type,
          (PREDICTION_ASSET)
          (GATEWAY_ASSET)
          (UNIQUE_ASSET)
+         );
+
+FC_REFLECT_ENUM( node::protocol::ad_format_type,
+         (STANDARD_FORMAT)
+         (PREMIUM_FORMAT)
+         (PRODUCT_FORMAT)
+         (LINK_FORMAT)
+         (ACCOUNT_FORMAT)
+         (COMMUNITY_FORMAT)
+         (ASSET_FORMAT)
          );
 
 FC_REFLECT_ENUM( node::protocol::post_format_type,
@@ -730,6 +833,7 @@ FC_REFLECT_ENUM( node::protocol::connection_tier_type,
          (CONNECTION)
          (FRIEND)
          (COMPANION)
+         (SECURE)
          );
 
 FC_REFLECT_ENUM( node::protocol::feed_reach_type,
@@ -739,24 +843,20 @@ FC_REFLECT_ENUM( node::protocol::feed_reach_type,
          (CONNECTION_FEED)
          (FRIEND_FEED)
          (COMPANION_FEED)
-         (BOARD_FEED)
-         (GROUP_FEED)
-         (EVENT_FEED)
-         (STORE_FEED)
+         (COMMUNITY_FEED)
          (TAG_FEED)
          );
 
 FC_REFLECT_ENUM( node::protocol::blog_reach_type,
          (ACCOUNT_BLOG)
-         (BOARD_BLOG)
+         (COMMUNITY_BLOG)
          (TAG_BLOG)
          );
 
 FC_REFLECT_ENUM( node::protocol::post_rating_type,
          (FAMILY)
          (GENERAL)
-         (MATURE)
-         (EXPLICIT)
+         (ADULT)
          );
 
 FC_REFLECT_ENUM( node::protocol::sort_time_type,
@@ -790,6 +890,46 @@ FC_REFLECT_ENUM( node::protocol::post_time_type,
          (LAST_YEAR)
          );
 
+
+FC_REFLECT_ENUM( node::protocol::asset_issuer_permission_flags,
+         (balance_whitelist)
+         (trade_whitelist)
+         (maker_restricted)
+         (issuer_accept_requests)
+         (transfer_restricted)
+         (disable_requests)
+         (disable_recurring)
+         (disable_credit)
+         (disable_liquid)
+         (disable_options)
+         (disable_escrow)
+         (disable_force_settle)
+         (disable_confidential)
+         (disable_auction)
+         (producer_fed_asset)
+         (global_settle)
+         (governance_oversight)
+         (immutable_properties)
+         );
+
+FC_REFLECT_ENUM( node::protocol::community_permission_flags,
+         (member_whitelist)
+         (require_profile)
+         (require_verified)
+         (disable_messages)
+         (disable_text_posts)
+         (disable_image_posts)
+         (disable_video_posts)
+         (disable_link_posts)
+         (disable_article_posts)
+         (disable_audio_posts)
+         (disable_file_posts)
+         (disable_poll_posts)
+         (disable_livestream_posts)
+         (disable_product_posts)
+         (disable_list_posts)
+         );
+
 FC_REFLECT( node::protocol::public_key_type, 
          (key_data)
          );
@@ -821,6 +961,12 @@ FC_REFLECT( node::protocol::encrypted_keypair_type,
          (secure_key)
          (public_key)
          (encrypted_private_key)
+         );
+
+FC_REFLECT( node::protocol::date_type,
+         (day)
+         (month)
+         (year)
          );
 
 FC_REFLECT_TYPENAME( node::protocol::share_type );

@@ -121,7 +121,7 @@ struct operation_visitor
    {
       comment_metadata meta;
       set< string > lower_tags;
-      set< string > lower_boards; 
+      set< string > lower_communities; 
       uint8_t tag_limit = 10;
       uint8_t count = 0;
 
@@ -143,19 +143,19 @@ struct operation_visitor
          }
       }
 
-      if( c.board.size() )
+      if( c.community.size() )
       {    
-         if( string( c.board ) != "" )
+         if( string( c.community ) != "" )
          {
-            lower_tags.insert( fc::to_lower( string( c.board ) ) );
+            lower_tags.insert( fc::to_lower( string( c.community ) ) );
          }
       }
       
       lower_tags.insert( string() );      // Add the universal null string tag.
-      lower_boards.insert( string() );    // Add the universal null string board.
+      lower_communities.insert( string() );    // Add the universal null string community.
       
       meta.tags = lower_tags;
-      meta.boards = lower_boards;
+      meta.communities = lower_communities;
 
       return meta;
    }
@@ -195,9 +195,9 @@ struct operation_visitor
    }
 
    /**
-    * Creates a new tag object for a comment, with a specified pair of board, and tag.
+    * Creates a new tag object for a comment, with a specified pair of community, and tag.
     */
-   void create_tag( const string& board, const string& tag, const comment_object& comment, const sort_options& sort )const
+   void create_tag( const string& community, const string& tag, const comment_object& comment, const sort_options& sort )const
    {
       comment_id_type parent;
       account_id_type author = _db.get_account( comment.author ).id;
@@ -210,7 +210,7 @@ struct operation_visitor
       const auto& tag_obj = _db.create< tag_object >( [&]( tag_object& obj )
       {
          obj.tag               = tag;
-         obj.board             = board;
+         obj.community         = community;
          obj.comment           = comment.id;
          obj.encrypted         = comment.is_encrypted();
          obj.rating            = comment.rating;
@@ -281,11 +281,11 @@ struct operation_visitor
       double weighted_comment_power = double(c.comment_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.comment_count) * double(m.average_comment_power) * ( double(EF) / 100 );
 
       int vote_sign = 0;
-      if( weighted_vote_power > 0 ) 
+      if( weighted_vote_power > 0 )
       {
          vote_sign = 1;
       } 
-      else if( weighted_vote_power < 0 ) 
+      else if( weighted_vote_power < 0 )
       {
          vote_sign = -1;
       }
@@ -1133,7 +1133,7 @@ struct operation_visitor
          auto citr = comment_idx.lower_bound( c.id );
 
          map< string, const tag_object* > existing_tags;
-         map< string, const tag_object* > existing_boards;
+         map< string, const tag_object* > existing_communities;
          vector< const tag_object* > remove_queue;
 
          while( citr != comment_idx.end() && citr->comment == c.id )
@@ -1150,26 +1150,26 @@ struct operation_visitor
                existing_tags[tag->tag] = tag;
             }
 
-            if( meta.boards.find( tag->board ) == meta.boards.end()  )
+            if( meta.communities.find( tag->community ) == meta.communities.end()  )
             {
                remove_queue.push_back(tag);
             }
             else
             {
-               existing_boards[ tag->board ] = tag;
+               existing_communities[ tag->community ] = tag;
             }
          }
 
-         for( const auto& board : meta.boards )
+         for( const auto& community : meta.communities )
          {
-            for( const auto& tag : meta.tags )   // Add tag for each combination of board and tag, including universal tag and universal board.
+            for( const auto& tag : meta.tags )   // Add tag for each combination of community and tag, including universal tag and universal community.
             {
                auto existing_tag = existing_tags.find( tag );
-               auto existing_board = existing_boards.find( board );
+               auto existing_community = existing_communities.find( community );
 
-               if( existing_tag == existing_tags.end() || existing_board == existing_boards.end() )
+               if( existing_tag == existing_tags.end() || existing_community == existing_communities.end() )
                {
-                  create_tag( board, tag, c, sort );
+                  create_tag( community, tag, c, sort );
                }
                else
                {
@@ -1215,11 +1215,11 @@ struct operation_visitor
          {
             a.author_votes[ c.author ]++;
 
-            for( board_name_type board : meta.boards )
+            for( community_name_type community : meta.communities )
             {
-               if( board != board_name_type() )
+               if( community != community_name_type() )
                {
-                  a.board_votes[ board ]++;
+                  a.community_votes[ community ]++;
                }
             }
 
@@ -1239,11 +1239,11 @@ struct operation_visitor
             obj.account = op.voter;
             obj.author_votes[ c.author ]++;
 
-            for( board_name_type board : meta.boards )
+            for( community_name_type community : meta.communities )
             {
-               if( board != board_name_type() )
+               if( community != community_name_type() )
                {
-                  obj.board_votes[ board ]++;
+                  obj.community_votes[ community ]++;
                }
             }
 
@@ -1272,11 +1272,11 @@ struct operation_visitor
          {
             a.author_views[ c.author ]++;
 
-            for( board_name_type board : meta.boards )
+            for( community_name_type community : meta.communities )
             {
-               if( board != board_name_type() )
+               if( community != community_name_type() )
                {
-                  a.board_views[ board ]++;
+                  a.community_views[ community ]++;
                }
             }
 
@@ -1296,11 +1296,11 @@ struct operation_visitor
             obj.account = op.viewer;
             obj.author_views[ c.author ]++;
 
-            for( board_name_type board : meta.boards )
+            for( community_name_type community : meta.communities )
             {
-               if( board != board_name_type() )
+               if( community != community_name_type() )
                {
-                  obj.board_views[ board ]++;
+                  obj.community_views[ community ]++;
                }
             }
 
@@ -1330,11 +1330,11 @@ struct operation_visitor
          {
             a.author_shares[ c.author ]++;
 
-            for( board_name_type board : meta.boards )
+            for( community_name_type community : meta.communities )
             {
-               if( board != board_name_type() )
+               if( community != community_name_type() )
                {
-                  a.board_shares[ board ]++;
+                  a.community_shares[ community ]++;
                }
             }
 
@@ -1354,11 +1354,11 @@ struct operation_visitor
             obj.account = op.sharer;
             obj.author_shares[ c.author ]++;
 
-            for( board_name_type board : meta.boards )
+            for( community_name_type community : meta.communities )
             {
-               if( board != board_name_type() )
+               if( community != community_name_type() )
                {
-                  obj.board_shares[ board ]++;
+                  obj.community_shares[ community ]++;
                }
             }
 
@@ -1551,56 +1551,56 @@ struct operation_visitor
    }
 
 
-   void update_board_adjacency( const board_member_object& m )const
+   void update_community_adjacency( const community_member_object& m )const
    {
       time_point now = _db.head_block_time();
       const auto& following_idx = _db.get_index< chain::account_following_index >().indices().get< chain::by_account >();
-      const auto& member_idx = _db.get_index< board_member_index >().indices().get< by_name >();
-      const auto& adjacency_idx = _db.get_index< board_adjacency_index >().indices().get< by_board_pair >();
+      const auto& member_idx = _db.get_index< community_member_index >().indices().get< by_name >();
+      const auto& adjacency_idx = _db.get_index< community_adjacency_index >().indices().get< by_community_pair >();
 
       for( account_name_type name : m.subscribers )
       {
          auto follow_itr = following_idx.find( name );
          const account_following_object& acc_following = *follow_itr;
 
-         for( auto board_name : acc_following.followed_boards )
+         for( auto community_name : acc_following.followed_communities )
          {
-            board_name_type board_a;
-            board_name_type board_b;
-            auto member_itr = member_idx.find( board_name );
+            community_name_type community_a;
+            community_name_type community_b;
+            auto member_itr = member_idx.find( community_name );
 
-            const board_member_object& board_member = *member_itr;
+            const community_member_object& community_member = *member_itr;
 
-            if( board_member.id < m.id )
+            if( community_member.id < m.id )
             {
-               board_a = board_member.name;
-               board_b = m.name;
+               community_a = community_member.name;
+               community_b = m.name;
             }
             else
             {
-               board_b = board_member.name;
-               board_a = m.name;
+               community_b = community_member.name;
+               community_a = m.name;
             }
             
-            auto adjacency_itr = adjacency_idx.find( boost::make_tuple( board_a, board_b ) );
+            auto adjacency_itr = adjacency_idx.find( boost::make_tuple( community_a, community_b ) );
             if( adjacency_itr != adjacency_idx.end() )
             {
                if( ( now - adjacency_itr->last_updated ) >= fc::days(1) )
                {
-                  _db.modify( *adjacency_itr, [&]( board_adjacency_object& o )
+                  _db.modify( *adjacency_itr, [&]( community_adjacency_object& o )
                   {
-                     o.adjacency = m.adjacency_value( board_member );
+                     o.adjacency = m.adjacency_value( community_member );
                      o.last_updated = now;
                   });
                }
             }
             else
             {
-               _db.create< board_adjacency_object >( [&]( board_adjacency_object& o )
+               _db.create< community_adjacency_object >( [&]( community_adjacency_object& o )
                {
-                  o.board_a = board_a;
-                  o.board_b = board_b;
-                  o.adjacency = m.adjacency_value( board_member );
+                  o.community_a = community_a;
+                  o.community_b = community_b;
+                  o.adjacency = m.adjacency_value( community_member );
                   o.last_updated = now;
                });
             }
@@ -1748,11 +1748,11 @@ struct operation_visitor
       const auto& curation_idx = _db.get_index< account_curation_metrics_index >().indices().get< by_account >();
       auto curation_itr = curation_idx.find( account );
 
-      if( curation_itr != curation_idx.end() )    // finds the top 10 authors, boards, and tags that the user has interacted with
+      if( curation_itr != curation_idx.end() )    // finds the top 10 authors, communities, and tags that the user has interacted with
       {
          const account_curation_metrics_object& metrics = *curation_itr;
          flat_map< account_name_type, share_type > authors;
-         flat_map< board_name_type, share_type > boards;
+         flat_map< community_name_type, share_type > communities;
          flat_map< tag_name_type, share_type > tags;
 
          for( auto author : metrics.author_votes )
@@ -1767,17 +1767,17 @@ struct operation_visitor
          {
             authors[ author.first ] += author.second * 10;
          }
-         for( auto board : metrics.board_votes )
+         for( auto community : metrics.community_votes )
          {
-            boards[ board.first ] += board.second * 5;
+            communities[ community.first ] += community.second * 5;
          }
-         for( auto board : metrics.board_views )
+         for( auto community : metrics.community_views )
          {
-            boards[ board.first ] += board.second;
+            communities[ community.first ] += community.second;
          }
-         for( auto board : metrics.board_shares )
+         for( auto community : metrics.community_shares )
          {
-            boards[ board.first ] += board.second * 10;
+            communities[ community.first ] += community.second * 10;
          }
          for( auto tag : metrics.tag_votes )
          {
@@ -1793,27 +1793,27 @@ struct operation_visitor
          }
 
          vector< pair < account_name_type, share_type > > ranked_authors;
-         vector< pair < board_name_type, share_type > > ranked_boards;
+         vector< pair < community_name_type, share_type > > ranked_communities;
          vector< pair < tag_name_type, share_type > > ranked_tags;
 
          ranked_authors.reserve( authors.size() );
-         ranked_boards.reserve( boards.size() );
+         ranked_communities.reserve( communities.size() );
          ranked_tags.reserve( tags.size() );
 
          for( auto author : authors )
          {
             ranked_authors.push_back( std::make_pair( author.first, author.second ) );
          }
-         for( auto board : boards )
+         for( auto community : communities )
          {
-            ranked_boards.push_back( std::make_pair( board.first, board.second ) );
+            ranked_communities.push_back( std::make_pair( community.first, community.second ) );
          }
          for( auto tag : tags )
          {
             ranked_tags.push_back( std::make_pair( tag.first, tag.second ) );
          }
 
-         std::sort( ranked_boards.begin(), ranked_boards.end(), [&]( auto a, auto b )
+         std::sort( ranked_communities.begin(), ranked_communities.end(), [&]( auto a, auto b )
          {
             return a.second < b.second;
          });
@@ -1829,11 +1829,11 @@ struct operation_visitor
          });
 
          vector< account_name_type > top_authors;
-         vector< board_name_type > top_boards;
+         vector< community_name_type > top_communities;
          vector< tag_name_type > top_tags;
 
          top_authors.reserve( 10 );
-         top_boards.reserve( 10 );
+         top_communities.reserve( 10 );
          ranked_tags.reserve( 10 );
 
          for( auto i = 0; i < 10; i++ )
@@ -1842,14 +1842,14 @@ struct operation_visitor
          }
          for( auto i = 0; i < 10; i++ )
          {
-            top_boards.push_back( ranked_boards[ i ].first );
+            top_communities.push_back( ranked_communities[ i ].first );
          }
          for( auto i = 0; i < 10; i++ )
          {
             top_tags.push_back( ranked_tags[ i ].first );
          }
 
-         // Retrieves all hybrid tag indexes for getting posts from each tag and board.
+         // Retrieves all hybrid tag indexes for getting posts from each tag and community.
 
          const auto& view_idx = _db.get_index< comment_view_index >().indices().get< by_viewer_comment >();
          const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
@@ -1873,17 +1873,17 @@ struct operation_visitor
 
          const auto& account_a_adjacency_idx = _db.get_index< account_adjacency_index >().indices().get< by_account_a_adjacent >();
          const auto& account_b_adjacency_idx = _db.get_index< account_adjacency_index >().indices().get< by_account_b_adjacent >();
-         const auto& board_a_adjacency_idx = _db.get_index< board_adjacency_index >().indices().get< by_board_a_adjacent >();
-         const auto& board_b_adjacency_idx = _db.get_index< board_adjacency_index >().indices().get< by_board_b_adjacent >();
+         const auto& community_a_adjacency_idx = _db.get_index< community_adjacency_index >().indices().get< by_community_a_adjacent >();
+         const auto& community_b_adjacency_idx = _db.get_index< community_adjacency_index >().indices().get< by_community_b_adjacent >();
          const auto& tag_a_adjacency_idx = _db.get_index< tag_adjacency_index >().indices().get< by_tag_a_adjacent >();
          const auto& tag_b_adjacency_idx = _db.get_index< tag_adjacency_index >().indices().get< by_tag_b_adjacent >();
 
          vector< account_name_type > related_authors;
-         vector< board_name_type > related_boards;
+         vector< community_name_type > related_communities;
          vector< tag_name_type > related_tags;
 
          related_authors.reserve( top_authors.size() );
-         related_boards.reserve( top_boards.size() );
+         related_communities.reserve( top_communities.size() );
          related_tags.reserve( top_tags.size() );
 
          // Add related unfollowed authors for each of the top authors, according to how many followers and connections in common they have.
@@ -1941,58 +1941,58 @@ struct operation_visitor
             }
          }
 
-         // Add related unfollowed boards for each of the top boards, according to how many followers and connections in common they have.
-         for( auto board : top_boards )
+         // Add related unfollowed communities for each of the top communities, according to how many followers and connections in common they have.
+         for( auto community : top_communities )
          {
-            auto board_a_adjacency_itr = board_a_adjacency_idx.lower_bound( board );
-            auto board_b_adjacency_itr = board_b_adjacency_idx.lower_bound( board );
+            auto community_a_adjacency_itr = community_a_adjacency_idx.lower_bound( community );
+            auto community_b_adjacency_itr = community_b_adjacency_idx.lower_bound( community );
 
-            while( ( board_a_adjacency_itr->board_a == board && 
-               board_a_adjacency_itr != board_a_adjacency_idx.end() ) || 
-               ( board_b_adjacency_itr->board_b == board &&
-               board_b_adjacency_itr != board_b_adjacency_idx.end() ) )
+            while( ( community_a_adjacency_itr->community_a == community && 
+               community_a_adjacency_itr != community_a_adjacency_idx.end() ) || 
+               ( community_b_adjacency_itr->community_b == community &&
+               community_b_adjacency_itr != community_b_adjacency_idx.end() ) )
             {
                share_type adj_a = 0;
-               board_name_type related_board_a;
+               community_name_type related_community_a;
                share_type adj_b = 0;
-               board_name_type related_board_b;
-               while( board_a_adjacency_itr->board_a == board && 
-                  board_a_adjacency_itr != board_a_adjacency_idx.end() && 
-                  related_board_a == board_name_type() )
+               community_name_type related_community_b;
+               while( community_a_adjacency_itr->community_a == community && 
+                  community_a_adjacency_itr != community_a_adjacency_idx.end() && 
+                  related_community_a == community_name_type() )
                {
-                  if( following_obj.is_following( board_a_adjacency_itr->board_b ) )  // skip if already following
+                  if( following_obj.is_following( community_a_adjacency_itr->community_b ) )  // skip if already following
                   {
-                     ++board_a_adjacency_itr;
+                     ++community_a_adjacency_itr;
                   }
                   else
                   {
-                     adj_a = board_a_adjacency_itr->adjacency;
-                     related_board_a = board_a_adjacency_itr->board_b;
+                     adj_a = community_a_adjacency_itr->adjacency;
+                     related_community_a = community_a_adjacency_itr->community_b;
                   }
                }
-               while( board_b_adjacency_itr->board_b == board && 
-                  board_b_adjacency_itr != board_b_adjacency_idx.end() && 
-                  related_board_b == board_name_type() )
+               while( community_b_adjacency_itr->community_b == community && 
+                  community_b_adjacency_itr != community_b_adjacency_idx.end() && 
+                  related_community_b == community_name_type() )
                {
-                  if( following_obj.is_following( board_b_adjacency_itr->board_a ) )    // skip if already following
+                  if( following_obj.is_following( community_b_adjacency_itr->community_a ) )    // skip if already following
                   {
-                     ++board_b_adjacency_itr;
+                     ++community_b_adjacency_itr;
                   }
                   else
                   {
-                     adj_b = board_b_adjacency_itr->adjacency;
-                     related_board_b = board_b_adjacency_itr->board_a;
+                     adj_b = community_b_adjacency_itr->adjacency;
+                     related_community_b = community_b_adjacency_itr->community_a;
                   }
                }
-               if( adj_a > adj_b )    // Add the most highly adjacent board to the related boards vector
+               if( adj_a > adj_b )    // Add the most highly adjacent community to the related communities vector
                {
-                  related_boards.push_back( related_board_a );
-                  ++board_a_adjacency_itr;
+                  related_communities.push_back( related_community_a );
+                  ++community_a_adjacency_itr;
                }
                else
                {
-                  related_boards.push_back( related_board_b );
-                  ++board_b_adjacency_itr;
+                  related_communities.push_back( related_community_b );
+                  ++community_b_adjacency_itr;
                }
             }
          }
@@ -2057,20 +2057,20 @@ struct operation_visitor
          }
 
          vector< account_name_type> total_authors;
-         vector< board_name_type> total_boards;
+         vector< community_name_type> total_communities;
          vector< tag_name_type> total_tags;
 
          total_authors.reserve( top_authors.size() + related_authors.size());
-         total_boards.reserve( top_boards.size() + related_boards.size() );
+         total_communities.reserve( top_communities.size() + related_communities.size() );
          total_tags.reserve( top_tags.size() + related_tags.size() );
 
          for( auto author : top_authors )
          {
             total_authors.push_back( author );
          }
-         for( auto board : top_boards )
+         for( auto community : top_communities )
          {
-            total_boards.push_back( board );
+            total_communities.push_back( community );
          }
          for( auto tag : top_tags )
          {
@@ -2080,9 +2080,9 @@ struct operation_visitor
          {
             total_authors.push_back( author );
          }
-         for( auto board : related_boards )
+         for( auto community : related_communities )
          {
-            total_boards.push_back( board );
+            total_communities.push_back( community );
          }
          for( auto tag : related_tags )
          {
@@ -2091,7 +2091,7 @@ struct operation_visitor
 
          for( auto author : total_authors )   // Get the top 6 unviewed most recent, most voted, most viewed, most shared and most commented posts per author
          {
-            auto blog_itr = blog_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
+            auto blog_itr = blog_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
             while( blog_itr != blog_idx.end() && blog_itr->account == author && count < 4 )
             {
@@ -2103,7 +2103,7 @@ struct operation_visitor
                blog_itr++;
             }
 
-            auto author_vote_itr = author_vote_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
+            auto author_vote_itr = author_vote_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
             while( author_vote_itr != author_vote_idx.end() && author_vote_itr->author == author && count < 2 )
             {
@@ -2115,7 +2115,7 @@ struct operation_visitor
                author_vote_itr++;
             }
 
-            auto author_view_itr = author_view_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
+            auto author_view_itr = author_view_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
             while( author_view_itr != author_view_idx.end() && author_view_itr->author == author && count < 2 )
             {
@@ -2127,7 +2127,7 @@ struct operation_visitor
                author_view_itr++;
             }
 
-            auto author_share_itr = author_share_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
+            auto author_share_itr = author_share_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
             while( author_share_itr != author_share_idx.end() && author_share_itr->author == author && count < 2 )
             {
@@ -2139,7 +2139,7 @@ struct operation_visitor
                author_share_itr++;
             }
 
-            auto author_comment_itr = author_comment_idx.lower_bound( boost::make_tuple( board_name_type(), tag_name_type(), author ) );
+            auto author_comment_itr = author_comment_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
             uint32_t count = 0;
             while( author_comment_itr != author_comment_idx.end() && author_comment_itr->author == author && count < 2 )
             {
@@ -2152,10 +2152,10 @@ struct operation_visitor
             }
          }
 
-         for( auto board : total_boards )
+         for( auto community : total_communities )
          {
-            auto popular_rapid_itr = popular_rapid_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( popular_rapid_itr != popular_rapid_idx.end() && popular_rapid_itr->board == board )
+            auto popular_rapid_itr = popular_rapid_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( popular_rapid_itr != popular_rapid_idx.end() && popular_rapid_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, popular_rapid_itr->comment ) ) == view_idx.end() )     
                {
@@ -2164,8 +2164,8 @@ struct operation_visitor
                }
                popular_rapid_itr++;
             }
-            auto popular_top_itr = popular_top_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( popular_top_itr != popular_top_idx.end() && popular_top_itr->board == board )
+            auto popular_top_itr = popular_top_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( popular_top_itr != popular_top_idx.end() && popular_top_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, popular_top_itr->comment ) ) == view_idx.end() )     
                {
@@ -2174,8 +2174,8 @@ struct operation_visitor
                }
                popular_top_itr++;
             }
-            auto viral_rapid_itr = viral_rapid_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( viral_rapid_itr != viral_rapid_idx.end() && viral_rapid_itr->board == board )
+            auto viral_rapid_itr = viral_rapid_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( viral_rapid_itr != viral_rapid_idx.end() && viral_rapid_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, viral_rapid_itr->comment ) ) == view_idx.end() )     
                {
@@ -2184,8 +2184,8 @@ struct operation_visitor
                }
                viral_rapid_itr++;
             }
-            auto viral_top_itr = viral_top_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( viral_top_itr != viral_top_idx.end() && viral_top_itr->board == board )
+            auto viral_top_itr = viral_top_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( viral_top_itr != viral_top_idx.end() && viral_top_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, viral_top_itr->comment ) ) == view_idx.end() )     
                {
@@ -2194,8 +2194,8 @@ struct operation_visitor
                }
                viral_top_itr++;
             }
-            auto discussion_rapid_itr = discussion_rapid_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( discussion_rapid_itr != discussion_rapid_idx.end() && discussion_rapid_itr->board == board )
+            auto discussion_rapid_itr = discussion_rapid_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( discussion_rapid_itr != discussion_rapid_idx.end() && discussion_rapid_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, discussion_rapid_itr->comment ) ) == view_idx.end() )     
                {
@@ -2204,8 +2204,8 @@ struct operation_visitor
                }
                discussion_rapid_itr++;
             }
-            auto discussion_top_itr = discussion_top_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( discussion_top_itr != discussion_top_idx.end() && discussion_top_itr->board == board )
+            auto discussion_top_itr = discussion_top_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( discussion_top_itr != discussion_top_idx.end() && discussion_top_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, discussion_top_itr->comment ) ) == view_idx.end() )     
                {
@@ -2214,8 +2214,8 @@ struct operation_visitor
                }
                discussion_top_itr++;
             }
-            auto prominent_rapid_itr = prominent_rapid_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( prominent_rapid_itr != prominent_rapid_idx.end() && prominent_rapid_itr->board == board )
+            auto prominent_rapid_itr = prominent_rapid_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( prominent_rapid_itr != prominent_rapid_idx.end() && prominent_rapid_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, prominent_rapid_itr->comment ) ) == view_idx.end() )     
                {
@@ -2224,8 +2224,8 @@ struct operation_visitor
                }
                prominent_rapid_itr++;
             }
-            auto prominent_top_itr = prominent_top_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( prominent_top_itr != prominent_top_idx.end() && prominent_top_itr->board == board )
+            auto prominent_top_itr = prominent_top_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( prominent_top_itr != prominent_top_idx.end() && prominent_top_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, prominent_top_itr->comment ) ) == view_idx.end() )     
                {
@@ -2234,8 +2234,8 @@ struct operation_visitor
                }
                prominent_top_itr++;
             }
-            auto conversation_rapid_itr = conversation_rapid_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( conversation_rapid_itr != conversation_rapid_idx.end() && conversation_rapid_itr->board == board )
+            auto conversation_rapid_itr = conversation_rapid_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( conversation_rapid_itr != conversation_rapid_idx.end() && conversation_rapid_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, conversation_rapid_itr->comment ) ) == view_idx.end() )     
                {
@@ -2244,8 +2244,8 @@ struct operation_visitor
                }
                conversation_rapid_itr++;
             }
-            auto conversation_top_itr = conversation_top_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( conversation_top_itr != conversation_top_idx.end() && conversation_top_itr->board == board )
+            auto conversation_top_itr = conversation_top_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( conversation_top_itr != conversation_top_idx.end() && conversation_top_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, conversation_top_itr->comment ) ) == view_idx.end() )     
                {
@@ -2254,8 +2254,8 @@ struct operation_visitor
                }
                conversation_top_itr++;
             }
-            auto discourse_rapid_itr = discourse_rapid_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( discourse_rapid_itr != discourse_rapid_idx.end() && discourse_rapid_itr->board == board )
+            auto discourse_rapid_itr = discourse_rapid_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( discourse_rapid_itr != discourse_rapid_idx.end() && discourse_rapid_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, discourse_rapid_itr->comment ) ) == view_idx.end() )     
                {
@@ -2264,8 +2264,8 @@ struct operation_visitor
                }
                discourse_rapid_itr++;
             }
-            auto discourse_top_itr = discourse_top_idx.lower_bound( boost::make_tuple( board, tag_name_type() ) );
-            while( discourse_top_itr != discourse_top_idx.end() && discourse_top_itr->board == board )
+            auto discourse_top_itr = discourse_top_idx.lower_bound( boost::make_tuple( community, tag_name_type() ) );
+            while( discourse_top_itr != discourse_top_idx.end() && discourse_top_itr->community == community )
             {
                if( view_idx.find( boost::make_tuple( account, discourse_top_itr->comment ) ) == view_idx.end() )     
                {
@@ -2278,7 +2278,7 @@ struct operation_visitor
 
          for( auto tag : total_tags )
          {
-            auto popular_rapid_itr = popular_rapid_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto popular_rapid_itr = popular_rapid_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( popular_rapid_itr != popular_rapid_idx.end() && popular_rapid_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, popular_rapid_itr->comment ) ) == view_idx.end() )     
@@ -2288,7 +2288,7 @@ struct operation_visitor
                }
                popular_rapid_itr++;
             }
-            auto popular_top_itr = popular_top_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto popular_top_itr = popular_top_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( popular_top_itr != popular_top_idx.end() && popular_top_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, popular_top_itr->comment ) ) == view_idx.end() )     
@@ -2298,7 +2298,7 @@ struct operation_visitor
                }
                popular_top_itr++;
             }
-            auto viral_rapid_itr = viral_rapid_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto viral_rapid_itr = viral_rapid_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( viral_rapid_itr != viral_rapid_idx.end() && viral_rapid_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, viral_rapid_itr->comment ) ) == view_idx.end() )     
@@ -2308,7 +2308,7 @@ struct operation_visitor
                }
                viral_rapid_itr++;
             }
-            auto viral_top_itr = viral_top_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto viral_top_itr = viral_top_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( viral_top_itr != viral_top_idx.end() && viral_top_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, viral_top_itr->comment ) ) == view_idx.end() )     
@@ -2318,7 +2318,7 @@ struct operation_visitor
                }
                viral_top_itr++;
             }
-            auto discussion_rapid_itr = discussion_rapid_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto discussion_rapid_itr = discussion_rapid_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( discussion_rapid_itr != discussion_rapid_idx.end() && discussion_rapid_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, discussion_rapid_itr->comment ) ) == view_idx.end() )     
@@ -2328,7 +2328,7 @@ struct operation_visitor
                }
                discussion_rapid_itr++;
             }
-            auto discussion_top_itr = discussion_top_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto discussion_top_itr = discussion_top_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( discussion_top_itr != discussion_top_idx.end() && discussion_top_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, discussion_top_itr->comment ) ) == view_idx.end() )     
@@ -2338,7 +2338,7 @@ struct operation_visitor
                }
                discussion_top_itr++;
             }
-            auto prominent_rapid_itr = prominent_rapid_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto prominent_rapid_itr = prominent_rapid_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( prominent_rapid_itr != prominent_rapid_idx.end() && prominent_rapid_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, prominent_rapid_itr->comment ) ) == view_idx.end() )     
@@ -2348,7 +2348,7 @@ struct operation_visitor
                }
                prominent_rapid_itr++;
             }
-            auto prominent_top_itr = prominent_top_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto prominent_top_itr = prominent_top_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( prominent_top_itr != prominent_top_idx.end() && prominent_top_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, prominent_top_itr->comment ) ) == view_idx.end() )     
@@ -2358,7 +2358,7 @@ struct operation_visitor
                }
                prominent_top_itr++;
             }
-            auto conversation_rapid_itr = conversation_rapid_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto conversation_rapid_itr = conversation_rapid_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( conversation_rapid_itr != conversation_rapid_idx.end() && conversation_rapid_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, conversation_rapid_itr->comment ) ) == view_idx.end() )     
@@ -2368,7 +2368,7 @@ struct operation_visitor
                }
                conversation_rapid_itr++;
             }
-            auto conversation_top_itr = conversation_top_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto conversation_top_itr = conversation_top_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( conversation_top_itr != conversation_top_idx.end() && conversation_top_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, conversation_top_itr->comment ) ) == view_idx.end() )     
@@ -2378,7 +2378,7 @@ struct operation_visitor
                }
                conversation_top_itr++;
             }
-            auto discourse_rapid_itr = discourse_rapid_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto discourse_rapid_itr = discourse_rapid_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( discourse_rapid_itr != discourse_rapid_idx.end() && discourse_rapid_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, discourse_rapid_itr->comment ) ) == view_idx.end() )     
@@ -2388,7 +2388,7 @@ struct operation_visitor
                }
                discourse_rapid_itr++;
             }
-            auto discourse_top_itr = discourse_top_idx.lower_bound( boost::make_tuple( board_name_type(), tag ) );
+            auto discourse_top_itr = discourse_top_idx.lower_bound( boost::make_tuple( community_name_type(), tag ) );
             while( discourse_top_itr != discourse_top_idx.end() && discourse_top_itr->tag == tag )
             {
                if( view_idx.find( boost::make_tuple( account, discourse_top_itr->comment ) ) == view_idx.end() )     
@@ -2516,9 +2516,9 @@ struct operation_visitor
       update_account_adjacency( _db.get_account_following( op.follower ) );
    }
 
-   void operator()( const board_subscribe_operation& op )const
+   void operator()( const community_subscribe_operation& op )const
    {
-      update_board_adjacency( _db.get_board_member( op.board ) );
+      update_community_adjacency( _db.get_community_member( op.community ) );
    }
 
    void operator()( const tag_follow_operation& op )const
@@ -2592,7 +2592,7 @@ tags_plugin::tags_plugin( application* app )
    add_plugin_index< peer_stats_index                 >(db);
    add_plugin_index< account_curation_metrics_index   >(db);
    add_plugin_index< account_adjacency_index          >(db);
-   add_plugin_index< board_adjacency_index            >(db);
+   add_plugin_index< community_adjacency_index            >(db);
    add_plugin_index< tag_adjacency_index              >(db);
    add_plugin_index< account_recommendations_index    >(db);
    add_plugin_index< author_tag_stats_index           >(db);

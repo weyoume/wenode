@@ -60,9 +60,9 @@ namespace node { namespace chain {
 
          shared_string                   json;                      ///< Additional JSON metadata of this asset.
 
-         shared_string                   url;                       ///< Reference URL for the asset. 
+         shared_string                   url;                       ///< Reference URL for the asset.
          
-         share_type                      max_supply;                ///< The maximum supply of this asset which may exist at any given time. 
+         share_type                      max_supply;                ///< The maximum supply of this asset which may exist at any given time.
 
          uint8_t                         stake_intervals;           ///< Weeks required to stake the asset.
 
@@ -92,7 +92,7 @@ namespace node { namespace chain {
 
          static bool is_valid_symbol( const string& symbol );       ///< True if symbol is a valid ticker symbol; false otherwise.
 
-         bool is_market_issued()const                               ///< True if this is a market-issued asset; false otherwise. Market issued assets cannot be issued by the asset issuer. 
+         bool is_market_issued()const                               ///< True if this is a market-issued asset; false otherwise. Market issued assets cannot be issued by the asset issuer.
          { 
             switch( asset_type )
             {
@@ -128,7 +128,7 @@ namespace node { namespace chain {
 
          bool issuer_accept_requests()const      ///< true if the asset issuer can accept transfer requests from any holders
          { 
-            return ( flags & asset_issuer_permission_flags::maker_restricted );
+            return ( flags & asset_issuer_permission_flags::issuer_accept_requests );
          }
 
          bool is_transfer_restricted()const     ///< true if this asset may only be transferred to/from the issuer or market orders
@@ -277,52 +277,137 @@ namespace node { namespace chain {
          asset get_total_supply()const { return asset( total_supply, symbol ); }
 
          void asset_dynamic_data_object::adjust_liquid_supply(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             liquid_supply += delta.amount;
             total_supply += delta.amount;
-         }
+            FC_ASSERT( liquid_supply >= 0 );
+            FC_ASSERT( total_supply >= 0 );
+
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void asset_dynamic_data_object::adjust_staked_supply(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             staked_supply += delta.amount;
             total_supply += delta.amount;
-         }
+            FC_ASSERT( staked_supply >= 0 );
+            FC_ASSERT( total_supply >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void asset_dynamic_data_object::adjust_reward_supply(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             reward_supply += delta.amount;
             total_supply += delta.amount;
-         }
+            FC_ASSERT( reward_supply >= 0 );
+            FC_ASSERT( total_supply >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void asset_dynamic_data_object::adjust_savings_supply(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             savings_supply += delta.amount;
             total_supply += delta.amount;
-         }
+            FC_ASSERT( savings_supply >= 0 );
+            FC_ASSERT( total_supply >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void asset_dynamic_data_object::adjust_delegated_supply(const asset& delta)    ///< Not included in total supply
-         {
-            assert(delta.symbol == symbol);
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             delegated_supply += delta.amount;
-         }
+            FC_ASSERT( delegated_supply >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void asset_dynamic_data_object::adjust_receiving_supply(const asset& delta)    ///< Not included in total supply
-         {
-            assert(delta.symbol == symbol);
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             receiving_supply += delta.amount;
-         }
+            FC_ASSERT( receiving_supply >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void asset_dynamic_data_object::adjust_pending_supply(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             pending_supply += delta.amount;
             total_supply += delta.amount;
-         }
+            FC_ASSERT( pending_supply >= 0 );
+            FC_ASSERT( total_supply >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
    };
+
+
+   /**
+    * Manages the details of a currency asset.
+    * 
+    * Enables currency asset issuers to specify the
+    * characteristics of the distribution of the cryptocurrency 
+    * at creation, which cannot be altered afterwards. 
+    * 
+    * Currency assets are distributed to network contributors,
+    * and each have thier own reward fund objects.
+    */
+   class asset_currency_data_object : public object < asset_currency_data_object_type, asset_currency_data_object>
+   {
+      asset_currency_data_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         asset_currency_data_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                   id;
+
+         asset_symbol_type         symbol;                             ///< The symbol of the currency asset.
+
+         asset                     block_reward;                       ///< The value of the initial reward paid into the reward fund every block.
+
+         uint16_t                  block_reward_reduction_percent;     ///< The percentage by which the block reward is reduced each period. 0 for no reduction.
+
+         uint16_t                  block_reward_reduction_days;        ///< Number of days between reduction events. 0 for no reduction.
+
+         uint16_t                  content_reward_percent;             ///< Percentage of reward paid to content creators.
+
+         asset_symbol_type         equity_asset;                       ///< Asset that will receive equity rewards.
+
+         uint16_t                  equity_reward_percent;              ///< Percentage of reward paid to staked equity asset holders.
+
+         uint16_t                  producer_reward_percent;            ///< Percentage of reward paid to block producers.
+
+         uint16_t                  supernode_reward_percent;           ///< Percentage of reward paid to supernode operators.
+
+         uint16_t                  power_reward_percent;               ///< Percentage of reward paid to staked currency asset holders.
+
+         uint16_t                  community_fund_reward_percent;      ///< Percentage of reward paid to community fund proposals.
+
+         uint16_t                  development_reward_percent;         ///< Percentage of reward paid to elected developers.
+
+         uint16_t                  marketing_reward_percent;           ///< Percentage of reward paid to elected marketers.
+
+         uint16_t                  advocacy_reward_percent;            ///< Percentage of reward paid to elected advocates.
+
+         uint16_t                  activity_reward_percent;            ///< Percentage of reward paid to active accounts each day.
+
+         uint16_t                  producer_block_reward_percent;      ///< Percentage of producer reward paid to the producer of each individual block.
+
+         uint16_t                  validation_reward_percent;          ///< Percentage of producer reward paid to validators of blocks.
+
+         uint16_t                  txn_stake_reward_percent;           ///< Percentage of producer reward paid to producers according to transaction stake weight of blocks.
+
+         uint16_t                  work_reward_percent;                ///< Percentage of producer reward paid to proof of work mining producers for each proof.
+
+         uint16_t                  producer_activity_reward_percent;   ///< Percentage of producer reward paid to the highest voted producer in activity rewards.
+   };
+
 
    /**
     * Manages the details of a market issued bitasset.
@@ -398,7 +483,7 @@ namespace node { namespace chain {
             fc::uint128 volume = total_supply.value + force_settled_volume.value;
             volume *= maximum_force_settlement_volume;
             volume /= PERCENT_100;
-            return volume.to_uint64();
+            return share_type( volume.to_uint64());
          }
 
          bool                                          has_settlement()const    ///< True if there has been a black swan
@@ -444,9 +529,7 @@ namespace node { namespace chain {
 
          asset_symbol_type          symbol;                      ///< The symbol of the equity asset of the business.
 
-         asset_symbol_type          dividend_asset;              ///< The asset used to distribute dividends to asset holders.
-
-         asset                      dividend_pool;               ///< Amount of assets pooled for distribution at the next interval.
+         flat_map< asset_symbol_type, asset >   dividend_pool;   ///< Assets pooled for distribution at the next interval.
          
          time_point                 last_dividend;               ///< Time that the asset last distributed a dividend.
 
@@ -470,19 +553,28 @@ namespace node { namespace chain {
 
          uint16_t                   min_producers;               ///< Minimum amount of producer votes required to earn dividends.
 
-         uint16_t                   boost_balance;               ///< Amount of equity balance to earn double dividends.
+         share_type                 boost_balance;               ///< Amount of equity balance to earn double dividends.
 
-         uint16_t                   boost_activity;              ///< Amount of recent activity rewards required to earn double dividends.
+         share_type                 boost_activity;              ///< Amount of recent activity rewards required to earn double dividends.
 
-         uint16_t                   boost_producers;             ///< Amount of producer votes required to earn double dividends.
+         share_type                 boost_producers;             ///< Amount of producer votes required to earn double dividends.
 
          uint16_t                   boost_top;                   ///< Percent bonus earned by Top membership accounts.
 
          void adjust_pool( const asset& delta )
-         {
-            assert( delta.symbol == dividend_asset );
-            dividend_pool += delta;
-         };
+         { try {
+            if( dividend_pool[ delta.symbol ].amount >= 0 && dividend_pool[ delta.symbol ].symbol == delta.symbol )
+            {
+               dividend_pool[ delta.symbol ] += delta;
+            }
+            else
+            {
+               FC_ASSERT( delta.amount >= 0 );
+               dividend_pool[ delta.symbol ] = delta; 
+            }
+            FC_ASSERT( dividend_pool[ delta.symbol ].amount >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) };
    };
 
 
@@ -527,9 +619,9 @@ namespace node { namespace chain {
 
          asset                  buyback_pool;                    ///< Amount of assets pooled to buyback the asset at next interval.
 
-         price                  buyback_price;                   ///< Price at which the credit asset is bought back.
+         price                  buyback_price;                   ///< Price at which the credit asset is bought back. Buyback asset is base.
          
-         time_point             last_buyback;                    ///< Time that the asset was last updated.
+         time_point             last_buyback;                    ///< Time that the last credit buyback occurred.
 
          uint32_t               buyback_share_percent;           ///< Percentage of incoming assets added to the buyback pool
 
@@ -549,10 +641,71 @@ namespace node { namespace chain {
 
          void adjust_pool( const asset& delta )
          {
-            assert( delta.symbol == buyback_asset );
+            FC_ASSERT( delta.symbol == buyback_asset );
             buyback_pool += delta;
          }
    };
+
+
+   /**
+    * Unique assets enable a single unit of an asset
+    * to be transferred between accounts to represent 
+    * a non-fungible asset.
+    * 
+    * Unique Assets can be used to represent a physical item
+    * of property, and contain the metadata of the object
+    * and an access list for who can access the item.
+    * 
+    * Unique assets can be transferred by the holder
+    * of a majority of a nominated ownership asset.
+    */
+   class asset_unique_data_object : public object < asset_unique_data_object_type, asset_unique_data_object>
+   {
+      asset_unique_data_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         asset_unique_data_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                                id;
+
+         asset_symbol_type                      symbol;                 ///< The symbol of the unique asset.
+
+         account_name_type                      issuer;                 ///< The account name of the issuer.
+
+         account_name_type                      controlling_owner;      ///< Account that currently owns the asset. Controls the control list.
+
+         asset_symbol_type                      ownership_asset;        ///< Asset that represents controlling ownership of the unique asset. Same as symbol for no liquid ownership asset.
+
+         flat_set< account_name_type >          control_list;           ///< List of accounts that have control over access to the unique asset.
+
+         flat_set< account_name_type >          access_list;            ///< List of accounts that have access to the unique asset. 
+
+         flat_map< asset_symbol_type, asset >   revenue_pool;           ///< Assets pooled for distribution to the ownership asset holders. 
+
+         asset                                  access_price;           ///< Price per day for all accounts in the access list.
+         
+         time_point                             last_distribution;      ///< Time that the revenue pool was distributed to ownership asset holders.
+
+         void adjust_pool( const asset& delta )
+         { try {
+            if( revenue_pool[ delta.symbol ].amount >= 0 && revenue_pool[ delta.symbol ].symbol == delta.symbol )
+            {
+               revenue_pool[ delta.symbol ] += delta;
+            }
+            else
+            {
+               FC_ASSERT( delta.amount >= 0 );
+               revenue_pool[ delta.symbol ] = delta; 
+            }
+            FC_ASSERT( revenue_pool[ delta.symbol ].amount >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) };
+   };
+
 
    /**
     * Asset liquidity pools contain an open market making balance of two assets.
@@ -736,9 +889,159 @@ namespace node { namespace chain {
          share_type                 interest_rate( uint16_t min, uint16_t var )const  ///< Current annualized interest rate of borrowing and lending. Updates whenever a loan is taken or repaid.  
          {
             return share_type( std::min( uint64_t( 
-               min + var * ( ( borrowed_balance.amount.value + BLOCKCHAIN_PRECISION ) / 
-               ( base_balance.amount.value + BLOCKCHAIN_PRECISION ) ) ), uint64_t( 50 * PERCENT_1 ) ) );
+               min + var * ( ( borrowed_balance.amount.value + BLOCKCHAIN_PRECISION.value ) / 
+               ( base_balance.amount.value + BLOCKCHAIN_PRECISION.value ) ) ), uint64_t( 50 * PERCENT_1 ) ) );
          }
+   };
+
+
+   /**
+    * Manages the option chain sheet of an asset trading pair.
+    * 
+    * Each asset pair creates 21 option strike prices each month
+    * that can be used to issue option assets. Option assets are opened
+    * for 12 months in advance of the current month, 
+    * and each expiration adds a new month in the year ahead.
+    * Strike prices are determined by rounding to the nearest significant figure
+    * and incrementing by 5% intervals up and down the price book.
+    */
+   class asset_option_pool_object : public object< asset_option_pool_object_type, asset_option_pool_object >
+   {
+      asset_option_pool_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         asset_option_pool_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                            id; 
+
+         account_name_type                  issuer;            ///< Name of the account which created the option pool.
+
+         asset_symbol_type                  base_symbol;       ///< Ticker symbol of the base asset of the trading pair.
+
+         asset_symbol_type                  quote_symbol;      ///< Ticker symbol of the quote asset of the trading pair.
+
+         vector< option_strike >            call_strikes;      ///< Available strike price and expirations of call options to buy the quote asset.
+
+         vector< option_strike >            put_strikes;       ///< Available strike price and expirations of put options to sell the quote asset.
+
+         flat_map< option_strike, asset >   open_interest;     ///< Outstanding supply of options at each strike price and expiration.
+   };
+
+
+   /**
+    * Manages a prediction market.
+    * 
+    * Enables a trading market on the likelyhood of
+    * a set of public events occuring on or before a specified time
+    * period in the future.
+    * 
+    * Each prediction market has multiple outcome assets,
+    * each representing a full unit of the underlying asset 
+    * in the event that an outcome occurs.
+    * 
+    * Funding the prediction pool returns one unit of each outcome
+    * asset to the owner, which can be sold.
+    * 
+    * All funds in the pool are able to be withdrawn after the event
+    * has concluded by the holders of the realized outcome asset.
+    * 
+    * One unit of all outcome assets can be combined and returned to
+    * withdraw one unit of the underlying asset. Under normal market conditions, 
+    * all asset prices should sum to the value of one unit of the 
+    * underlying funding asset.
+    * 
+    * Prediction markets must include to be valid:
+    * - A Public event.
+    * - With a series of at least 2 possible outcomes.
+    * - That can be reasonably determined on or before a fixed time period.
+    * - Where only one outcome can possibly occur.
+    * - A public source of information that can be used to verify the outcome.
+    * 
+    * Each prediction market contains an additional outcome 
+    * for invalid or none of the above, in the case that
+    * there is a resolution error.
+    * 
+    * The Security bond is placed by the issuer as a
+    * demonstration of confidence in the market, and is lost if the 
+    * market is not resolved by the completion time.
+    */
+   class asset_prediction_pool_object : public object< asset_prediction_pool_object_type, asset_prediction_pool_object >
+   {
+      asset_prediction_pool_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         asset_prediction_pool_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                            id;
+
+         account_name_type                  issuer;              ///< Name of the account which created the prediction market pool.
+
+         shared_string                      details;             ///< Description of the market, how it will be resolved using known public data sources.
+
+         asset_symbol_type                  collateral_symbol;   ///< Ticker symbol of the collateral asset backing the prediction market.
+
+         vector< asset_symbol_type >        outcome_assets;      ///< Available strike price and expirations of call options to buy the quote asset.
+
+         flat_map< asset_symbol_type, shared_string >   outcome_details;       ///< Description of each outcome and the resolution conditions for each asset. 
+
+         asset                              prediction_pool;     ///< Funds collected for all outcome asset collateral.
+
+         time_point                         min_closing_time;    ///< Time after which the market can be closed.
+
+         time_point                         max_closing_time;    ///< Time by which the market must be closed with a selected outcome.
+
+         asset                              prediction_bond;     ///< Security deposit placed by the issuer on the market.
+   };
+
+
+   class asset_distribution_object : public object< asset_distribution_object_type, asset_distribution_object >
+   {
+      asset_distribution_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         asset_distribution_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                                id;
+
+         account_name_type                      issuer;                       ///< Name of the account which created the distribution market pool.
+
+         shared_string                          details;                      ///< Description of the distribution process.
+
+         asset_symbol_type                      fund_asset;                   ///< Ticker symbol of the asset being accepted for distribution assets.
+
+         asset                                  fund_pool;                    ///< Pool of funds received.
+
+         asset_symbol_type                      distribution_asset;           ///< Asset that is generated by the distribution.
+
+         uint32_t                               min_input_fund_units;         ///< Minimum funds required for each round of the distribution process.
+
+         uint32_t                               max_input_fund_units;         ///< Maximum funds to be accepted before closing each distribution round.
+
+         uint32_t                               distribution_rounds;          ///< Number of distribution rounds, total distribution amount is divided between all rounds.
+
+         uint32_t                               distribution_interval_days;   ///< Duration of each distribution round, in days.
+
+         vector< asset_unit >                   input_fund_unit;              ///< The integer unit ratio for distribution of incoming funds.
+
+         vector< asset_unit >                   output_distribution_unit;     ///< The integer unit ratio for distribution of released funds.
+
+         uint16_t                               min_unit_ratio;               ///< The lowest value of unit ratio between input and output units.
+
+         uint16_t                               max_unit_ratio;               ///< The highest possible initial value of unit ratio between input and output units. 
+         
+         time_point                             begin_time;                   ///< Time to begin the first distribution.
    };
    
    struct by_symbol;
@@ -778,6 +1081,15 @@ namespace node { namespace chain {
       allocator< asset_dynamic_data_object >
    > asset_dynamic_data_index;
 
+   typedef multi_index_container<
+      asset_currency_data_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< asset_currency_data_object, asset_currency_data_id_type, &asset_currency_data_object::id > >,
+         ordered_unique< tag<by_symbol>, member<asset_currency_data_object, asset_symbol_type, &asset_currency_data_object::symbol> >
+      >, 
+      allocator< asset_currency_data_object >
+   > asset_currency_data_index;
+
    struct by_backing_asset;
    struct by_feed_expiration;
 
@@ -799,36 +1111,20 @@ namespace node { namespace chain {
       allocator< asset_bitasset_data_object >
    > asset_bitasset_data_index;
 
-   struct by_dividend_asset;
-
    typedef multi_index_container<
       asset_equity_data_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< asset_equity_data_object, asset_equity_data_id_type, &asset_equity_data_object::id > >,
-         ordered_unique< tag<by_symbol>, member<asset_equity_data_object, asset_symbol_type, &asset_equity_data_object::symbol> >,
-         ordered_unique< tag<by_dividend_asset>, 
-            composite_key< asset_equity_data_object,
-               member< asset_equity_data_object, asset_symbol_type, &asset_equity_data_object::dividend_asset >,
-               member< asset_equity_data_object, asset_equity_data_id_type, &asset_equity_data_object::id >
-            >
-         >  
+         ordered_unique< tag<by_symbol>, member<asset_equity_data_object, asset_symbol_type, &asset_equity_data_object::symbol> >
       >,
       allocator< asset_equity_data_object >
    > asset_equity_data_index;
-
-   struct by_buyback_asset;
 
    typedef multi_index_container<
       asset_credit_data_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< asset_credit_data_object, asset_credit_data_id_type, &asset_credit_data_object::id > >,
-         ordered_unique< tag<by_symbol>, member<asset_credit_data_object, asset_symbol_type, &asset_credit_data_object::symbol> >,
-         ordered_unique< tag<by_buyback_asset>, 
-            composite_key< asset_credit_data_object,
-               member< asset_credit_data_object, asset_symbol_type, &asset_credit_data_object::buyback_asset >,
-               member< asset_credit_data_object, asset_credit_data_id_type, &asset_credit_data_object::id >
-            >
-         >  
+         ordered_unique< tag<by_symbol>, member<asset_credit_data_object, asset_symbol_type, &asset_credit_data_object::symbol> >
       >,
       allocator< asset_credit_data_object >
    > asset_credit_data_index;
@@ -906,6 +1202,32 @@ FC_REFLECT( node::chain::asset_dynamic_data_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_dynamic_data_object, node::chain::asset_dynamic_data_index );
 
+FC_REFLECT( node::chain::asset_currency_data_object,
+         (id)
+         (symbol)
+         (block_reward)
+         (block_reward_reduction_percent)
+         (block_reward_reduction_days)
+         (content_reward_percent)
+         (equity_asset)
+         (equity_reward_percent)
+         (producer_reward_percent)
+         (supernode_reward_percent)
+         (power_reward_percent)
+         (community_fund_reward_percent)
+         (development_reward_percent)
+         (marketing_reward_percent)
+         (advocacy_reward_percent)
+         (activity_reward_percent)
+         (producer_block_reward_percent)
+         (validation_reward_percent)
+         (txn_stake_reward_percent)
+         (work_reward_percent)
+         (producer_activity_reward_percent)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_currency_data_object, node::chain::asset_currency_data_index );
+
 FC_REFLECT( node::chain::asset_bitasset_data_object,
          (id)
          (symbol)
@@ -928,7 +1250,6 @@ FC_REFLECT( node::chain::asset_equity_data_object,
          (business_account)
          (symbol)
          (options)
-         (dividend_asset)
          (dividend_pool)
          (last_dividend)
          );

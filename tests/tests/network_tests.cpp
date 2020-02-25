@@ -572,7 +572,6 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       create.signatory = "alice";
       create.registrar = "alice";
       create.new_account_name = "execboard";
-      create.account_type = BUSINESS;
       create.governance_account = INIT_ACCOUNT;
       create.business_type = PUBLIC_BUSINESS;
       create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
@@ -833,7 +832,6 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       create.signatory = "alice";
       create.registrar = "execboard";
       create.new_account_name = "newuser";
-      create.account_type = PERSONA;
       create.governance_account = "execboard";
       create.owner = authority( 1, alice_public_owner_key, 1 );
       create.active = authority( 2, alice_public_active_key, 2 );
@@ -1422,7 +1420,6 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       create.signatory = "alice";
       create.registrar = "alice";
       create.new_account_name = "govaccount";
-      create.account_type = BUSINESS;
       create.governance_account = INIT_ACCOUNT;
       create.business_type = PUBLIC_BUSINESS;
       create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
@@ -2118,7 +2115,6 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       approve.creator = "alice";
       approve.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
       approve.milestone = 0;
-      approve.details = "details";
       approve.vote_rank = 1;
       approve.approved = true;
       approve.validate();

@@ -42,21 +42,19 @@ void authority::validate()const
    }
 }
 
+
 bool is_valid_account_name( const string& name )
-{
-   return is_valid_persona_account_name( name ) || is_valid_profile_account_name( name );
-}
-
-
-bool is_valid_persona_account_name( const string& name )
 {
    const size_t len = name.size();
    if( len < MIN_ACCOUNT_NAME_LENGTH )
+   {
       return false;
-
+   }
    if( len > MAX_ACCOUNT_NAME_LENGTH )
+   {
       return false;
-
+   }
+      
    size_t begin = 0;
    while( true )
    {
@@ -64,7 +62,10 @@ bool is_valid_persona_account_name( const string& name )
       if( end == std::string::npos )
          end = len;
       if( end - begin < MIN_ACCOUNT_NAME_LENGTH )
+      {
          return false;
+      }
+         
       switch( name[begin] )
       {
          case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h':
@@ -107,126 +108,11 @@ bool is_valid_persona_account_name( const string& name )
          }
       }
       if( end == len )
+      {
          break;
+      }
+         
       begin = end+1;
-   }
-   return true;
-}
-
-
-bool is_valid_profile_account_name( const string& name )
-{
-   const size_t len = name.size();
-   if( len < MIN_ACCOUNT_NAME_LENGTH )
-   {
-      return false;
-   }
-
-   if( len > MAX_PROFILE_NAME_LENGTH )
-   {
-     return false; 
-   }
-
-   size_t begin = 0;
-   size_t first_point = 0;
-   size_t second_point = 0;
-   while( true )
-   {
-      size_t end = name.find_first_of( '.', begin );
-      if( end == std::string::npos )
-      {
-         if( first_point != 0 && second_point != 0 )
-         {
-            end = len;
-         }
-         else
-         {
-            return false;
-         }
-      }
-      if( first_point == 0 )
-      {
-         first_point = end;
-      }
-      if( first_point != 0 && second_point == 0 )
-      {
-         second_point = end;
-      }
-      if( end - begin < MIN_ACCOUNT_NAME_LENGTH )
-      {
-         return false;
-      }  
-      if( second_point != 0 )
-      {
-         if( end - begin != 8 )
-         {
-            return false;
-         }
-         for( size_t i=begin; i<end; i++ )
-         {
-            switch( name[i] )
-            {
-               case '0': case '1': case '2': case '3': case '4': 
-               case '5': case '6': case '7': case '8': case '9':
-                  break;
-               default:
-                  return false;
-            }
-         }
-      }
-      else
-      {
-         for( size_t i=begin; i<end; i++ )
-         {
-            switch( name[i] )
-            {
-               case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h':
-               case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p':
-               case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x':
-               case 'y': case 'z':
-                  break;
-               default:
-                  return false;
-            }
-         }
-      }
-      
-      if( end == len )
-         break;
-      begin = end+1;
-   }
-   return true;
-}
-
-bool is_valid_business_account_name( const string& name )
-{
-   const size_t len = name.size();
-   if( len < MIN_ACCOUNT_NAME_LENGTH )
-   {
-      return false;
-   }
-
-   if( len > MAX_ACCOUNT_NAME_LENGTH )
-   {
-     return false; 
-   }
-
-   size_t begin = 0;
-   while( true )
-   { 
-      for( size_t i=begin; i<len; i++ )
-      {
-         switch( name[i] )
-         {
-            case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h':
-            case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p':
-            case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x':
-            case 'y': case 'z':
-               break;
-            default:
-               return false;
-         }
-      }
    }
    return true;
 }

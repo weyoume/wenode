@@ -1,0 +1,25 @@
+# WeYouMe Protocol Development TODO list
+
+- Community Object Type System
+- Graph Node Object
+- Graph Edge Object
+- Create Node Type
+- Create Edge Type
+- Option Asset Object
+- Prediction Assets
+- Property Asset
+- Asset Distribution Object
+- Asset Generation Object
+- Profile Account Object
+- Auction Orders
+- Product Object
+- Marketplace
+- Event Object
+- Account and Asset Creation Fee scaling
+- Comment Reply Permissioning based on connection level
+- Message Streaks
+- X11 Mining Algorithm
+- Credit Pool Dual Risk system
+- Anonymous Accounts
+- Verified Accounts
+- 

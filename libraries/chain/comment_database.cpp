@@ -290,13 +290,13 @@ share_type database::pay_storage( const comment_object& c, const share_type& max
 
 
 /**
- * Distributes rewards from a comment to the moderators of the board it was
+ * Distributes rewards from a comment to the moderators of the community it was
  * posted to, according to their voting power.
  */
 share_type database::pay_moderators( const comment_object& c, const share_type& max_rewards )
 { try {
-   const board_member_object& board_member = get_board_member( c.board );
-   uint128_t total_weight( board_member.total_mod_weight.value );
+   const community_member_object& community_member = get_community_member( c.community );
+   uint128_t total_weight( community_member.total_mod_weight.value );
    share_type unclaimed_rewards = max_rewards;
 
    if( !c.allow_curation_rewards )
@@ -305,7 +305,7 @@ share_type database::pay_moderators( const comment_object& c, const share_type& 
    }
    else if( c.total_view_weight > 0 )
    {
-      for( auto mod : board_member.mod_weight )
+      for( auto mod : community_member.mod_weight )
       {
          uint128_t weight( mod.second.value );
          auto claim = ( ( max_rewards.value * weight ) / total_weight ).to_uint64();
@@ -416,11 +416,11 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
             a.posting_rewards += author_tokens;
          });
 
-         const board_object* board_ptr = find_board( comment.board );
+         const community_object* community_ptr = find_community( comment.community );
 
-         if( board_ptr != nullptr )
+         if( community_ptr != nullptr )
          {
-            modify( *board_ptr, [&]( board_object& b )
+            modify( *community_ptr, [&]( community_object& b )
             {
                b.total_content_rewards += asset( claimed_reward, SYMBOL_COIN );
             });
@@ -494,59 +494,68 @@ void database::process_comment_cashout()
 
    vector< share_type > reward_distributed;
 
-   const reward_fund_object& reward_fund = get_reward_fund();
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
 
-   util::comment_reward_context ctx = get_comment_reward_context( reward_fund );
-
-   // Decay recent reward of post reward fund
-
-   modify( reward_fund, [&]( reward_fund_object& rfo )
+   while( fund_itr != fund_idx.end() )
    {
-      rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_update ).to_seconds() ) / ctx.decay_rate.to_seconds();
-      rfo.last_update = now;
-   });
+      const reward_fund_object& reward_fund = *fund_itr;
+      util::comment_reward_context ctx = get_comment_reward_context( reward_fund );
 
-   // Snapshots the reward fund into a seperate object reward fund context to ensure equal execution conditions.
+      // Decay recent reward of post reward fund
 
-   reward_fund_context rf_ctx;
-   rf_ctx.recent_content_claims = reward_fund.recent_content_claims;
-   rf_ctx.content_reward_balance = reward_fund.content_reward_balance;
-
-   const auto& cidx = get_index< comment_index >().indices().get< by_cashout_time >();
-   const auto& com_by_root = get_index< comment_index >().indices().get< by_root >();
-   auto current = cidx.begin();
-   
-   while( current != cidx.end() && current->cashout_time <= now )
-   {
-      if( current->net_reward > 0 )
+      modify( reward_fund, [&]( reward_fund_object& rfo )
       {
-         rf_ctx.recent_content_claims += util::evaluate_reward_curve(
-            uint128_t( current->net_reward ),
-            current->cashouts_received,
-            ctx.reward_curve,
-            ctx.decay_rate,
-            ctx.content_constant 
-         );
+         rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_update ).to_seconds() ) / ctx.decay_rate.to_seconds();
+         rfo.last_update = now;
+      });
+
+      // Snapshots the reward fund into a seperate object reward fund context to ensure equal execution conditions.
+
+      reward_fund_context rf_ctx;
+      rf_ctx.recent_content_claims = reward_fund.recent_content_claims;
+      rf_ctx.content_reward_balance = reward_fund.content_reward_balance;
+
+      const auto& comment_idx = get_index< comment_index >().indices().get< by_cashout_time >();
+      const auto& com_by_root = get_index< comment_index >().indices().get< by_root >();
+      auto comment_itr = comment_idx.begin();
+      
+      while( comment_itr != comment_idx.end() && 
+         comment_itr->cashout_time <= now && 
+         comment_itr->reward_currency == reward_fund.symbol )
+      {
+         if( comment_itr->net_reward > 0 )
+         {
+            rf_ctx.recent_content_claims += util::evaluate_reward_curve(
+               uint128_t( comment_itr->net_reward ),
+               comment_itr->cashouts_received,
+               ctx.reward_curve,
+               ctx.decay_rate,
+               ctx.content_constant 
+            );
+         }
+         ++comment_itr;
       }
-      ++current;
+
+      comment_itr = comment_idx.begin();
+
+      ctx.recent_content_claims = rf_ctx.recent_content_claims;
+      ctx.total_reward_fund = rf_ctx.content_reward_balance;
+
+      while( comment_itr != comment_idx.end() && comment_itr->cashout_time <= now )
+      {
+         rf_ctx.reward_distributed += distribute_comment_reward( ctx, *comment_itr );    // Allocates reward balances to accounts from the comment reward context
+         ++comment_itr;
+      }
+
+      modify( reward_fund, [&]( reward_fund_object& rfo )
+      {
+         rfo.recent_content_claims = rf_ctx.recent_content_claims;
+         rfo.content_reward_balance -= rf_ctx.reward_distributed;
+      });
+
+      ++fund_itr;
    }
-
-   current = cidx.begin();
-
-   ctx.recent_content_claims = rf_ctx.recent_content_claims;
-   ctx.total_reward_fund = rf_ctx.content_reward_balance;
-
-   while( current != cidx.end() && current->cashout_time <= now )
-   {
-      rf_ctx.reward_distributed += distribute_comment_reward( ctx, *current );    // Allocates reward balances to accounts from the comment reward context
-      ++current;
-   }
-
-   modify( reward_fund, [&]( reward_fund_object& rfo )
-   {
-      rfo.recent_content_claims = rf_ctx.recent_content_claims;
-      rfo.content_reward_balance -= rf_ctx.reward_distributed;
-   });
 }
 
 
@@ -599,23 +608,23 @@ void database::update_comment_metrics()
    vector< const comment_object* > comments; 
    comments.reserve( comment_metrics.recent_post_count * 2 );
 
-   const auto& cidx = get_index< comment_index >().indices().get< by_time >();
-   auto current = cidx.lower_bound( true );                                   // Finds first root post in time index
+   const auto& comment_idx = get_index< comment_index >().indices().get< by_time >();
+   auto comment_itr = comment_idx.lower_bound( true );                                   // Finds first root post in time index
    
-   while( current != cidx.end() && (now < (current->created + METRIC_CALC_TIME) ) ) // Iterates over all root posts in last 30 days
+   while( comment_itr != comment_idx.end() && (now < (comment_itr->created + METRIC_CALC_TIME) ) ) // Iterates over all root posts in last 30 days
    {
-      const comment_object& comment = *current;
+      const comment_object& comment = *comment_itr;
       comments.push_back( &comment );                          // Add comment pointer to vector
       recent_post_count++;
-      recent_vote_power += current->vote_power;
-      recent_view_power += current->view_power;
-      recent_share_power += current->share_power;
-      recent_comment_power += current->comment_power;
-      recent_vote_count += current->net_votes;
-      recent_view_count += current->view_count;
-      recent_share_count += current->share_count;
-      recent_comment_count += current->children;
-      ++current;
+      recent_vote_power += comment_itr->vote_power;
+      recent_view_power += comment_itr->view_power;
+      recent_share_power += comment_itr->share_power;
+      recent_comment_power += comment_itr->comment_power;
+      recent_vote_count += comment_itr->net_votes;
+      recent_view_count += comment_itr->view_count;
+      recent_share_count += comment_itr->share_count;
+      recent_comment_count += comment_itr->children;
+      ++comment_itr;
    }
 
    if( comments.size() )
@@ -723,7 +732,7 @@ void database::update_comment_metrics()
 /** 
  * Adds a newly created post to the authors following, mutual, connection,
  * friend, and companion feeds according to the post's specified reach.
- * Additionally adds the new post to the board feed for the board it is created in
+ * Additionally adds the new post to the community feed for the community it is created in
  * and the tag feeds for all the tags it contains. 
  */
 void database::add_comment_to_feeds( const comment_object& comment )
@@ -732,14 +741,14 @@ void database::add_comment_to_feeds( const comment_object& comment )
    const comment_id_type& comment_id = comment.id;
    const auto& feed_idx = get_index< feed_index >().indices().get< by_account_comment_type >();
    const account_following_object& acc_following = get_account_following( comment.author );
-   const board_member_object* board_member_ptr = nullptr;
-   if( comment.board.size )
+   const community_member_object* community_member_ptr = nullptr;
+   if( comment.community.size )
    {
-      board_member_ptr = find_board_member( comment.board );
+      community_member_ptr = find_community_member( comment.community );
    }
 
-   const auto& account_blog_idx = get_index< blog_index >().indices().get< by_comment_board >();
-   auto account_blog_itr = account_blog_idx.find( boost::make_tuple( comment_id, comment.board ) );
+   const auto& account_blog_idx = get_index< blog_index >().indices().get< by_comment_community >();
+   auto account_blog_itr = account_blog_idx.find( boost::make_tuple( comment_id, comment.community ) );
    if( account_blog_itr == account_blog_idx.end() )       // Comment is not already in the account's blog
    {
       create< blog_object >( [&]( blog_object& b )
@@ -760,10 +769,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
       {
          return;               // Do not share to any feeds. Shows only on account blog. 
       }
-      case BOARD_FEED:         // Encrypted Board feed variants are only shared to board subscribers, and not account followers or connections. 
-      case GROUP_FEED:
-      case EVENT_FEED:
-      case STORE_FEED:
+      case COMMUNITY_FEED:     // Encrypted Community feed variants are only shared to community subscribers, and not account followers or connections. 
       case COMPANION_FEED:     // Encrypted posts are only shared to connected accounts of the specified level.
       case FRIEND_FEED:
       case CONNECTION_FEED:
@@ -784,44 +790,17 @@ void database::add_comment_to_feeds( const comment_object& comment )
       }
    }
 
-   if( board_member_ptr != nullptr )
+   if( community_member_ptr != nullptr )
    {
-      feed_reach_type feed_type = BOARD_FEED;
-
-      switch( board_member_ptr->board_type )
-      {
-         case BOARD: 
-            break;
-         case GROUP:
-         {
-            feed_type = GROUP_FEED;
-         }
-         break;
-         case EVENT:
-         {
-            feed_type = EVENT_FEED;
-         }
-         break;
-         case STORE:
-         {
-            feed_type = STORE_FEED;
-         }
-         break;
-         default:
-         {
-            FC_ASSERT( false, "Invalid board type.");
-         }
-      }
-
-      const auto& board_blog_idx = get_index< blog_index >().indices().get< by_comment_board >();
-      auto board_blog_itr = board_blog_idx.find( boost::make_tuple( comment_id, comment.board ) );
-      if( board_blog_itr == board_blog_idx.end() )       // Comment is not already in the board's blog
+      const auto& community_blog_idx = get_index< blog_index >().indices().get< by_comment_community >();
+      auto community_blog_itr = community_blog_idx.find( boost::make_tuple( comment_id, comment.community ) );
+      if( community_blog_itr == community_blog_idx.end() )       // Comment is not already in the community's blog
       {
          create< blog_object >( [&]( blog_object& b )
          {
-            b.board = comment.board;
+            b.community = comment.community;
             b.comment = comment_id;
-            b.blog_type = BOARD_BLOG;
+            b.blog_type = COMMUNITY_BLOG;
             b.blog_time = now; 
             b.shared_by[ comment.author ] = now;
             b.first_shared_by = comment.author;
@@ -829,18 +808,18 @@ void database::add_comment_to_feeds( const comment_object& comment )
          });
       }
 
-      for( const account_name_type& account : board_member_ptr->subscribers )    // Add post to board feeds. 
+      for( const account_name_type& account : community_member_ptr->subscribers )    // Add post to community feeds. 
       {
-         auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_type ) );
-         if( feed_itr == feed_idx.end() )         // Comment is not already in account's boards feed for the type of board. 
+         auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, COMMUNITY_FEED ) );
+         if( feed_itr == feed_idx.end() )         // Comment is not already in account's communities feed for the type of community. 
          {
             create< feed_object >( [&]( feed_object& f )
             {
                f.account = account;
                f.comment = comment_id;
-               f.feed_type = feed_type;
+               f.feed_type = COMMUNITY_FEED;
                f.feed_time = now;
-               f.boards[ comment.board ][ comment.author ] = now;
+               f.communities[ comment.community ][ comment.author ] = now;
                f.shared_by[ comment.author ] = now;
                f.first_shared_by = comment.author;
                f.shares = 1;
@@ -848,7 +827,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
          } 
       }
 
-      if( comment.reach == feed_type )
+      if( comment.reach == COMMUNITY_FEED )
       { 
          return;
       }
@@ -1227,55 +1206,34 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
 
 /** 
  * Adds a post to the feeds of each of the accounts in
- * the board's subscriber list. Accounts can share posts 
- * with new boards to increase thier reach. 
+ * the community's subscriber list. Accounts can share posts 
+ * with new communities to increase thier reach. 
  */
-void database::share_comment_to_board( const account_name_type& sharer, 
-   const board_name_type& board, const comment_object& comment )
+void database::share_comment_to_community( const account_name_type& sharer, 
+   const community_name_type& community, const comment_object& comment )
 { try {
    time_point now = head_block_time();
    const comment_id_type& comment_id = comment.id;
-   const board_member_object& board_member = get_board_member( board );
+   const community_member_object& community_member = get_community_member( community );
    const auto& feed_idx = get_index< feed_index >().indices().get< by_account_comment_type >();
-   feed_reach_type feed_type = BOARD_FEED;
+   feed_reach_type feed_type = COMMUNITY_FEED;
 
-   switch( board_member.board_type )
-   {
-      case BOARD: 
-         break;
-      case GROUP:
-      {
-         feed_type = GROUP_FEED;
-      }
-      break;
-      case EVENT:
-      {
-         feed_type = EVENT_FEED;
-      }
-      break;
-      case STORE:
-      {
-         feed_type = STORE_FEED;
-      }
-      break;
-   }
-
-   const auto& blog_idx = get_index< blog_index >().indices().get< by_comment_board >();
-   auto blog_itr = blog_idx.find( boost::make_tuple( comment_id, board ) );
-   if( blog_itr == blog_idx.end() )       // Comment is not already in the boards's blog
+   const auto& blog_idx = get_index< blog_index >().indices().get< by_comment_community >();
+   auto blog_itr = blog_idx.find( boost::make_tuple( comment_id, community ) );
+   if( blog_itr == blog_idx.end() )       // Comment is not already in the communities's blog
    {
       create< blog_object >( [&]( blog_object& b )
       {
-         b.board = board;
+         b.community = community;
          b.comment = comment_id;
-         b.blog_type = BOARD_BLOG;
+         b.blog_type = COMMUNITY_BLOG;
          b.blog_time = now; 
          b.shared_by[ sharer ] = now;
          b.first_shared_by = sharer;
          b.shares = 1;
       });
    }
-   else      // Comment has already been shared with board, bump time and increment shares
+   else      // Comment has already been shared with community, bump time and increment shares
    {
       modify( *blog_itr, [&]( blog_object& b )
       {
@@ -1285,10 +1243,10 @@ void database::share_comment_to_board( const account_name_type& sharer,
       });
    }
 
-   for( const account_name_type& account : board_member.subscribers )
+   for( const account_name_type& account : community_member.subscribers )
    {
       auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_type ) );
-      if( feed_itr == feed_idx.end() )         // Comment is not already in account's boards feed for the type of board. 
+      if( feed_itr == feed_idx.end() )         // Comment is not already in account's communities feed for the type of community. 
       {
          create< feed_object >( [&]( feed_object& f )
          {
@@ -1296,7 +1254,7 @@ void database::share_comment_to_board( const account_name_type& sharer,
             f.comment = comment_id;
             f.feed_type = feed_type;
             f.feed_time = now; 
-            f.boards[ board ][ sharer ] = now;
+            f.communities[ community ][ sharer ] = now;
             f.shared_by[ sharer ] = now;
             f.first_shared_by = sharer;
             f.shares = 1;
@@ -1308,7 +1266,7 @@ void database::share_comment_to_board( const account_name_type& sharer,
          {
             f.feed_time = now;                        // Bump share time to now when shared again
             f.shared_by[ sharer ] = now;
-            f.boards[ board ][ sharer ] = now;
+            f.communities[ community ][ sharer ] = now;
             f.shares++;
          });
       } 
@@ -1387,7 +1345,7 @@ void database::share_comment_to_tag( const account_name_type& sharer,
 } FC_CAPTURE_AND_RETHROW() }
 
 /**
- * Removes a comment from all feeds and blogs for all accounts, tags, and boards. 
+ * Removes a comment from all feeds and blogs for all accounts, tags, and communities. 
  */
 void database::clear_comment_feeds( const comment_object& comment )
 { try {
@@ -1420,7 +1378,7 @@ void database::clear_comment_feeds( const comment_object& comment )
 
 
 /**
- * Removes a comment from all account, tag, and board feeds, and blogs that an account shared it to.
+ * Removes a comment from all account, tag, and community feeds, and blogs that an account shared it to.
  */
 void database::remove_shared_comment( const account_name_type& sharer, const comment_object& comment )
 { try {
@@ -1450,9 +1408,9 @@ void database::remove_shared_comment( const account_name_type& sharer, const com
                {
                   f.tags[ tag.first ].erase( sharer );
                }
-               for( auto board : f.boards )
+               for( auto community : f.communities )
                {
-                  f.boards[ board.first ].erase( sharer );
+                  f.communities[ community.first ].erase( sharer );
                }
                f.shared_by.erase( sharer );
                vector< pair< account_name_type, time_point > > shared_by_copy;
@@ -1845,39 +1803,18 @@ void database::update_account_in_feed( const account_name_type& account, const a
 
 
 /**
- * Adds or removes Feeds within an account's Board Feed variants for a 
- * specified board. 
+ * Adds or removes Feeds within an account's Community Feed variants for a 
+ * specified community. 
  */
-void database::update_board_in_feed( const account_name_type& account, const board_name_type& board )
+void database::update_community_in_feed( const account_name_type& account, const community_name_type& community )
 { try {
    const auto& feed_idx = get_index< feed_index >().indices().get< by_account_comment_type >();
-   const auto& blog_idx = get_index< blog_index >().indices().get< by_new_board_blog >();
+   const auto& blog_idx = get_index< blog_index >().indices().get< by_new_community_blog >();
    const account_following_object& acc_following = get_account_following( account );
-   auto blog_itr = blog_idx.lower_bound( board );
-   auto blog_end = blog_idx.upper_bound( board );
-   const board_member_object& board_member = get_board_member( board );
-   feed_reach_type feed_type = BOARD_FEED;
-
-   switch( board_member.board_type )
-   {
-      case BOARD: 
-         break;
-      case GROUP:
-      {
-         feed_type = GROUP_FEED;
-      }
-      break;
-      case EVENT:
-      {
-         feed_type = EVENT_FEED;
-      }
-      break;
-      case STORE:
-      {
-         feed_type = STORE_FEED;
-      }
-      break;
-   }
+   auto blog_itr = blog_idx.lower_bound( community );
+   auto blog_end = blog_idx.upper_bound( community );
+   const community_member_object& community_member = get_community_member( community );
+   feed_reach_type feed_type = COMMUNITY_FEED;
 
    while( blog_itr != blog_end )
    {
@@ -1885,9 +1822,9 @@ void database::update_board_in_feed( const account_name_type& account, const boa
       const comment_object& comment = get( comment_id );
       
       auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_type ) );
-      if( acc_following.is_following( board ) )
+      if( acc_following.is_following( community ) )
       {
-         if( feed_itr == feed_idx.end() )      // Comment is not already in account's board feed 
+         if( feed_itr == feed_idx.end() )      // Comment is not already in account's community feed 
          {
             create< feed_object >( [&]( feed_object& f )
             {
@@ -1912,24 +1849,24 @@ void database::update_board_in_feed( const account_name_type& account, const boa
                f.shares = f.shared_by.size();
             });
          }
-      } // Account is no longer following board, Comment is in account's board feed
+      } // Account is no longer following community, Comment is in account's community feed
       else if( feed_itr != feed_idx.end() ) 
       {
          const feed_object& feed = *feed_itr;
-         flat_map< board_name_type, flat_map< account_name_type, time_point > > boards = feed.boards;
-         if( feed_itr->boards.size() == 1 )      // This board was the only board it was shared with.
+         flat_map< community_name_type, flat_map< account_name_type, time_point > > communities = feed.communities;
+         if( feed_itr->communities.size() == 1 )      // This community was the only community it was shared with.
          {
             remove( feed );        // Remove the entire feed
          }
-         else if( boards[ board ].size() != 0 )    // remove board from sharing metrics
+         else if( communities[ community ].size() != 0 )    // remove community from sharing metrics
          {
             modify( feed, [&]( feed_object& f )
             {
-               for( auto board_value : f.boards[ board ] )
+               for( auto community_value : f.communities[ community ] )
                {
-                  f.shared_by.erase( board_value.first );   // Remove all shares from this board
+                  f.shared_by.erase( community_value.first );   // Remove all shares from this community
                }
-               f.boards.erase( board );
+               f.communities.erase( community );
                vector< pair < account_name_type, time_point > > shared_by_copy;
                for( auto time : f.shared_by )
                {
@@ -2035,23 +1972,6 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
       ++blog_itr;
    }
 } FC_CAPTURE_AND_RETHROW() }
-
-
-
-/**
- * This method updates total_reward_shares on reward fund object, 
- * when a comment's reward_squared changes from old_reward_shares 
- * to new_reward_shares.
- */
-void database::adjust_reward_shares( const comment_object& c, uint128_t old_reward_shares, uint128_t new_reward_shares )
-{
-   const auto& reward_fund = get_reward_fund();
-   modify( reward_fund, [&]( reward_fund_object& rfo )
-   {
-      rfo.total_reward_shares -= old_reward_shares;
-      rfo.total_reward_shares += new_reward_shares;
-   });
-}
 
 
 void database::adjust_total_payout( const comment_object& cur, const asset& reward_created, const asset& curator_reward_value, const asset& beneficiary_reward_value )

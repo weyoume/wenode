@@ -37,7 +37,7 @@ namespace node { namespace chain {
 
          shared_string               creative;          // IPFS link to the Media to be displayed, image or video.
 
-         shared_string               json;              // JSON metadata information about the board, its topic and rules.
+         shared_string               json;              // JSON metadata information about the community, its topic and rules.
 
          ad_format_type              format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
 
@@ -128,8 +128,6 @@ namespace node { namespace chain {
          uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
 
          shared_string                    json;              // JSON metadata for the inventory.
-
-         flat_set< account_name_type >    agents;            // Set of Accounts authorized to create delivery transactions for the inventory.
          
          time_point                       created;           // Time inventory was created.
 
@@ -138,18 +136,6 @@ namespace node { namespace chain {
          time_point                       expiration;        // Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
 
          bool                             active = true;     // True when active for bidding and delivery, false to deactivate.
-
-         bool is_agent( const account_name_type& account )const  
-         {
-            if( agents.find( account ) != agents.end() )
-            {
-               return true; // The account is in the agents list.
-            }
-            else 
-            {
-               return false; // The account is not in the agents list.
-            }
-         };
    };
 
    class ad_audience_object : public object< ad_audience_object_type, ad_audience_object >

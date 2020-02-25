@@ -91,7 +91,7 @@ namespace node { namespace chain {
 
          bool                           active = true;                             ///< True if the executive team is active, set false to deactivate.
 
-         bool                           board_approved = false;                    ///< True when the board has reach sufficient voting support to receive budget.
+         bool                           board_approved = false;                    ///< True when the community has reach sufficient voting support to receive budget.
 
          asset                          budget;                                    ///< Total amount of Credit asset requested for team compensation and funding.
          

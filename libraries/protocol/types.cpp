@@ -21,8 +21,10 @@ namespace node { namespace protocol {
       std::string prefix( ADDRESS_PREFIX );
 
       const size_t prefix_len = prefix.size();
-      FC_ASSERT( base58str.size() > prefix_len );
-      FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );
+      FC_ASSERT( base58str.size() > prefix_len,
+         "Public Key string is too short." );
+      FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix ,
+         "Public Key string does not have correct prefix", ("base58str", base58str) );
       auto bin = fc::from_base58( base58str.substr( prefix_len ) );
       auto bin_key = fc::raw::unpack<binary_key>(bin);
       key_data = bin_key.data;
@@ -204,6 +206,262 @@ namespace node { namespace protocol {
       return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) >= std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
    }
 
+   // Date Type
+
+   /**
+    * time_point constructor of date_type
+    */
+   date_type::date_type( time_point time )
+   {
+      time_t unix_time = time.sec_since_epoch();
+      struct tm * ptm;
+      ptm = gmtime( &unix_time );
+
+      day = ptm->tm_mday;
+      month = ptm->tm_mon + 1;
+      year = ptm->tm_year + 1900;
+      validate();
+   };
+
+   bool operator == ( const date_type& date1, const date_type& date2 )
+   {
+      return std::tie( date1.year, date1.month, date1.day ) == std::tie( date2.year, date2.month, date2.day );
+   }
+
+   bool operator < ( const date_type& date1, const date_type& date2 )
+   {
+      return std::tie( date1.year, date1.month, date1.day ) < std::tie( date2.year, date2.month, date2.day );
+   }
+
+   bool operator > ( const date_type& date1, const date_type& date2 )
+   {
+      return std::tie( date1.year, date1.month, date1.day ) > std::tie( date2.year, date2.month, date2.day );
+   }
+
+   bool operator != ( const date_type& date1, const date_type& date2 )
+   {
+      return std::tie( date1.year, date1.month, date1.day ) != std::tie( date2.year, date2.month, date2.day );
+   }
+
+   bool operator <= ( const date_type& date1, const date_type& date2 )
+   {
+      return std::tie( date1.year, date1.month, date1.day ) <= std::tie( date2.year, date2.month, date2.day );
+   }
+   
+   bool operator >= ( const date_type& date1, const date_type& date2 )
+   {
+      return std::tie( date1.year, date1.month, date1.day ) >= std::tie( date2.year, date2.month, date2.day );
+   }
+
+   string date_type::to_string()const
+   {
+      validate();
+      string sday = fc::to_string( day );
+      string smonth = fc::to_string( month );
+      string syear = fc::to_string( year );
+
+      return sday + "-" + smonth + "-" + syear;
+   }
+
+   bool date_type::is_null()const
+   { 
+      return *this == date_type();
+   }
+
+   /**
+    * Ensures the date type matches a valid calander day after 1st Jan 1970.
+    */
+   void date_type::validate()const
+   { try {
+      uint16_t month_days;
+
+      switch( month )
+      {
+         case 1:   // January
+         {
+            month_days = 31;
+         }
+         break;
+         case 2:   // February
+         {
+            if( year % 4 == 0 && year % 100 != 0 )
+            {
+               month_days = 29;  // Leap Year
+            }
+            else
+            {
+               month_days = 28;
+            }
+         }
+         break;
+         case 3:   // March
+         {
+            month_days = 31;
+         }
+         break;
+         case 4:  // April
+         {
+            month_days = 30;
+         }
+         break;
+         case 5:  // May
+         {
+            month_days = 31;
+         }
+         break;
+         case 6:  // June
+         {
+            month_days = 30;
+         }
+         break;
+         case 7:  // July
+         {
+            month_days = 31;
+         }
+         break;
+         case 8:  // August
+         {
+            month_days = 31;
+         }
+         break;
+         case 9:  // September
+         {
+            month_days = 30;
+         }
+         break;
+         case 10:  // October
+         {
+            month_days = 31;
+         }
+         break;
+         case 11:  // November
+         {
+            month_days = 30;
+         }
+         break;
+         case 12:  // December
+         {
+            month_days = 31;
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, "Invalid Month value.");
+         }
+      }
+      FC_ASSERT( day <= month_days, "Invalid Day value.");
+      FC_ASSERT( year >= 1970, "Invalid Day value.");
+      
+   } FC_CAPTURE_AND_RETHROW( (day)(month)(year) ) }
+
+   /**
+    * Advance the date type to the next calander day.
+    */
+   void date_type::next()
+   { try {
+      uint16_t month_days;
+
+      switch( month )
+      {
+         case 1:   // January
+         {
+            month_days = 31;
+         }
+         break;
+         case 2:  // February
+         {
+            if( year % 4 == 0 && year % 100 != 0 )
+            {
+               month_days = 29;  // Leap Year
+            }
+            else
+            {
+               month_days = 28;
+            }
+         }
+         break;
+         case 3:  // March
+         {
+            month_days = 31;
+         }
+         break;
+         case 4:  // April
+         {
+            month_days = 30;
+         }
+         break;
+         case 5:  // May
+         {
+            month_days = 31;
+         }
+         break;
+         case 6:  // June
+         {
+            month_days = 30;
+         }
+         break;
+         case 7:  // July
+         {
+            month_days = 31;
+         }
+         break;
+         case 8:  // August
+         {
+            month_days = 31;
+         }
+         break;
+         case 9:  // September
+         {
+            month_days = 30;
+         }
+         break;
+         case 10:  // October
+         {
+            month_days = 31;
+         }
+         break;
+         case 11:  // November
+         {
+            month_days = 30;
+         }
+         break;
+         case 12:  // December
+         {
+            month_days = 31;
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, "Invalid Month value.");
+         }
+      }
+      
+      if( day < month_days )
+      {
+         day++;
+      }
+      else
+      {
+         day = 1;
+
+         if( month < 12 )
+         {
+            month++;
+         }
+         else
+         {
+            month = 1;
+            year++;
+         }
+      }
+
+      FC_ASSERT( day <= month_days, "Invalid Day value.");
+      FC_ASSERT( year >= 1970, "Invalid Day value.");
+
+   } FC_CAPTURE_AND_RETHROW( (day)(month)(year) ) }
+
+
+   
 } } // node::protocol
 
 namespace fc

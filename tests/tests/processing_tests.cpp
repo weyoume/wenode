@@ -204,7 +204,6 @@ BOOST_AUTO_TEST_CASE( comment_payout_dust_test )
       vote.permlink = "test";
       vote.weight = 81 * PERCENT_1;
 
-      
       tx.operations.push_back( comment );
       tx.operations.push_back( vote );
 
@@ -228,7 +227,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_dust_test )
       generate_blocks( db.get_comment( "alice", string( "test" ) ).cashout_time );
 
       // If comments are paid out independent of order, then the last satoshi of TME cannot be divided among them
-      const reward_fund_object rf = db.get_reward_fund();
+      const reward_fund_object rf = db.get_reward_fund( SYMBOL_COIN );
 
       BOOST_REQUIRE( rf.content_reward_balance.amount == 1 );
 
@@ -277,7 +276,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const reward_fund_object& rf = db.get_reward_fund();
+      const reward_fund_object& rf = db.get_reward_fund( SYMBOL_COIN );
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       const comment_object& alice_comment = db.get_comment( "alice", string( "test" ) );
@@ -321,7 +320,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
       while( db.head_block_time() < bob_cashout_time )
       {
          alice_reward_curve -= ( alice_reward_curve * BLOCK_INTERVAL.to_seconds() ) / RECENT_REWARD_DECAY_RATE.to_seconds();
-         const auto& post_rf = db.get_reward_fund();
+         const auto& post_rf = db.get_reward_fund( SYMBOL_COIN );
 
          BOOST_REQUIRE( post_rf.recent_content_claims == alice_reward_curve );
 
@@ -329,7 +328,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
       }
 
       alice_reward_curve -= ( alice_reward_curve * BLOCK_INTERVAL.to_seconds() ) / RECENT_REWARD_DECAY_RATE.to_seconds();
-      const auto& post_rf = db.get_reward_fund();
+      const auto& post_rf = db.get_reward_fund( SYMBOL_COIN );
 
       BOOST_REQUIRE( post_rf.recent_content_claims == alice_reward_curve + bob_reward_curve );
       validate_database();
@@ -438,7 +437,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const reward_fund_object& rf = db.get_reward_fund();
+      const reward_fund_object& rf = db.get_reward_fund( SYMBOL_COIN );
       const comment_object& alice_comment = db.get_comment( "alice", string( "test" ) );
       const comment_object& bob_comment = db.get_comment( "bob", string( "test" ) );
 

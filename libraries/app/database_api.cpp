@@ -60,15 +60,13 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       dynamic_global_property_api_obj                 get_dynamic_global_properties()const;
 
-      chain_properties                                get_median_chain_properties()const;
+      median_chain_property_api_obj                   get_median_chain_properties()const;
 
       producer_schedule_api_obj                       get_producer_schedule()const;
 
       hardfork_version                                get_hardfork_version()const;
 
       scheduled_hardfork                              get_next_scheduled_hardfork()const;
-
-      reward_fund_api_obj                             get_reward_fund()const;
 
 
       //===================//
@@ -124,17 +122,19 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector< asset_delegation_expiration_api_obj >   get_expiring_asset_delegations( string account, time_point from, uint32_t limit = 100 )const;
 
-
-      //================//
-      // === Boards === //
-      //================//
+      vector< reward_fund_api_obj >                   get_reward_funds( vector< string > assets )const;
 
 
-      vector< extended_board >                        get_boards( vector< string > boards )const;
+      //=====================//
+      // === Communities === //
+      //=====================//
 
-      vector< extended_board >                        get_boards_by_subscribers( string from, uint32_t limit )const;
 
-      uint64_t                                        get_board_count()const;
+      vector< extended_community >                    get_communities( vector< string > communities )const;
+
+      vector< extended_community >                    get_communities_by_subscribers( string from, uint32_t limit )const;
+
+      uint64_t                                        get_community_count()const;
       
 
       //=================//
@@ -365,7 +365,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       template< typename Index, typename StartItr >
       vector< discussion > get_discussions( 
          const discussion_query& q,
-         const string& board,
+         const string& community,
          const string& tag,
          comment_id_type parent,
          const Index& idx, 
@@ -464,7 +464,7 @@ dynamic_global_property_api_obj database_api_impl::get_dynamic_global_properties
    return dynamic_global_property_api_obj( _db.get( dynamic_global_property_id_type() ), _db );
 }
 
-chain_properties database_api::get_median_chain_properties()const
+median_chain_property_api_obj database_api::get_median_chain_properties()const
 {
    return my->_db.with_read_lock( [&]()
    {
@@ -472,9 +472,9 @@ chain_properties database_api::get_median_chain_properties()const
    });
 }
 
-chain_properties database_api_impl::get_median_chain_properties()const
+median_chain_property_api_obj database_api_impl::get_median_chain_properties()const
 {
-   return _db.get_median_chain_properties();
+   return median_chain_property_api_obj( _db.get_median_chain_properties() );
 }
 
 producer_schedule_api_obj database_api::get_producer_schedule()const
@@ -519,19 +519,6 @@ scheduled_hardfork database_api_impl::get_next_scheduled_hardfork() const
    shf.hf_version = hpo.next_hardfork;
    shf.live_time = hpo.next_hardfork_time;
    return shf;
-}
-
-reward_fund_api_obj database_api::get_reward_fund()const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_reward_fund();
-   });
-}
-
-reward_fund_api_obj database_api_impl::get_reward_fund()const
-{
-   return reward_fund_api_obj( _db.get( reward_fund_id_type() ) );
 }
 
 
@@ -590,7 +577,7 @@ vector< account_api_obj > database_api_impl::get_accounts_by_followers( string f
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
-         "Invalid Board name ${n}", ("n",from) );
+         "Invalid Community name ${n}", ("n",from) );
       account_itr = account_idx.iterator_to( *name_itr );
    }
 
@@ -642,7 +629,7 @@ vector< extended_account > database_api::get_full_accounts( vector< string > nam
  * - Business Account details, invites and requests.
  * - Connection Details and requests.
  * - Incoming and Outgoing messages, and conversations with accounts.
- * - Board Moderation and ownership details, and invites and requests.
+ * - Community Moderation and ownership details, and invites and requests.
  * - Producer, network officer, and executive board details and votes.
  * - Interface and Supernode details.
  * - Advertising Campaigns, inventory, creative, bids, and audiences.
@@ -653,7 +640,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& balance_idx = _db.get_index< account_balance_index >().indices().get< by_owner >();
    const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
    const auto& bus_key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
-   const auto& board_key_idx = _db.get_index< board_member_key_index >().indices().get< by_member_board >();
+   const auto& community_key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
    const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
    const auto& connection_a_idx = _db.get_index< connection_index >().indices().get< by_account_a >();
    const auto& connection_b_idx = _db.get_index< connection_index >().indices().get< by_account_b >();
@@ -670,7 +657,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& executive_vote_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_rank >();
    const auto& officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    const auto& enterprise_vote_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
-   const auto& moderator_idx = _db.get_index< board_moderator_vote_index >().indices().get< by_account_board_rank >();
+   const auto& moderator_idx = _db.get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
    const auto& account_officer_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
    const auto& account_exec_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
 
@@ -683,10 +670,10 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& member_inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_member >();
    const auto& bus_inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_business >();
 
-   const auto& board_req_idx = _db.get_index< board_join_request_index >().indices().get< by_account_board >();
-   const auto& board_acc_inv_idx = _db.get_index< board_join_invite_index >().indices().get< by_account >();
-   const auto& board_member_inv_idx = _db.get_index< board_join_invite_index >().indices().get< by_member >();
-   const auto& board_member_idx = _db.get_index< board_member_index >().indices().get< by_name >();
+   const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
+   const auto& community_acc_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_account >();
+   const auto& community_member_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_member >();
+   const auto& community_member_idx = _db.get_index< community_member_index >().indices().get< by_name >();
 
    const auto& transfer_req_idx = _db.get_index< transfer_request_index >().indices().get< by_request_id >();
    const auto& transfer_from_req_idx = _db.get_index< transfer_request_index >().indices().get< by_from_account >();
@@ -982,57 +969,57 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++connection_acc_itr;
          }
 
-         auto board_itr = board_member_idx.begin();
+         auto community_itr = community_member_idx.begin();
 
-         while( board_itr != board_member_idx.end() )
+         while( community_itr != community_member_idx.end() )
          {
-            if( board_itr->founder == name )
+            if( community_itr->founder == name )
             {
-               results.back().boards.founded_boards.push_back( board_itr->name );
+               results.back().communities.founded_communities.push_back( community_itr->name );
             }
-            else if( board_itr->is_administrator( name ) )
+            else if( community_itr->is_administrator( name ) )
             {
-               results.back().boards.admin_boards.push_back( board_itr->name );
+               results.back().communities.admin_communities.push_back( community_itr->name );
             }
-            else if( board_itr->is_moderator( name ) )
+            else if( community_itr->is_moderator( name ) )
             {
-               results.back().boards.moderator_boards.push_back( board_itr->name );
+               results.back().communities.moderator_communities.push_back( community_itr->name );
             }
-            else if( board_itr->is_member( name ) )
+            else if( community_itr->is_member( name ) )
             {
-               results.back().boards.member_boards.push_back( board_itr->name );
+               results.back().communities.member_communities.push_back( community_itr->name );
             }
             
-            ++board_itr;
+            ++community_itr;
          }
 
-         auto board_req_itr = board_req_idx.lower_bound( name );
-         auto board_acc_inv_itr = board_acc_inv_idx.lower_bound( name );
-         auto board_member_inv_itr = board_member_inv_idx.lower_bound( name );
+         auto community_req_itr = community_req_idx.lower_bound( name );
+         auto community_acc_inv_itr = community_acc_inv_idx.lower_bound( name );
+         auto community_member_inv_itr = community_member_inv_idx.lower_bound( name );
 
-         while( board_req_itr != board_req_idx.end() && board_req_itr->account == name )
+         while( community_req_itr != community_req_idx.end() && community_req_itr->account == name )
          {
-            results.back().boards.pending_requests[ board_req_itr->account ] = board_request_api_obj( *board_req_itr );
-            ++board_req_itr;
+            results.back().communities.pending_requests[ community_req_itr->account ] = community_request_api_obj( *community_req_itr );
+            ++community_req_itr;
          }
 
-         while( board_acc_inv_itr != board_acc_inv_idx.end() && board_acc_inv_itr->account == name )
+         while( community_acc_inv_itr != community_acc_inv_idx.end() && community_acc_inv_itr->account == name )
          {
-            results.back().boards.outgoing_invites[ board_acc_inv_itr->member ] = board_invite_api_obj( *board_acc_inv_itr );
-            ++board_acc_inv_itr;
+            results.back().communities.outgoing_invites[ community_acc_inv_itr->member ] = community_invite_api_obj( *community_acc_inv_itr );
+            ++community_acc_inv_itr;
          }
 
-         while( board_member_inv_itr != board_member_inv_idx.end() && board_member_inv_itr->member == name )
+         while( community_member_inv_itr != community_member_inv_idx.end() && community_member_inv_itr->member == name )
          {
-            results.back().boards.incoming_invites[ board_member_inv_itr->board ] = board_invite_api_obj( *board_member_inv_itr );
-            ++board_member_inv_itr;
+            results.back().communities.incoming_invites[ community_member_inv_itr->community ] = community_invite_api_obj( *community_member_inv_itr );
+            ++community_member_inv_itr;
          }
 
-         auto board_key_itr = board_key_idx.lower_bound( name );
-         while( board_key_itr != board_key_idx.end() && board_key_itr->member == name )
+         auto community_key_itr = community_key_idx.lower_bound( name );
+         while( community_key_itr != community_key_idx.end() && community_key_itr->member == name )
          {
-            results.back().keychain.board_keys[ board_key_itr->board ] = board_key_itr->encrypted_board_key;
-            ++board_key_itr;
+            results.back().keychain.community_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+            ++community_key_itr;
          }
 
          auto bus_key_itr = bus_key_idx.lower_bound( name );
@@ -1130,7 +1117,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          auto moderator_itr = moderator_idx.lower_bound( name );
          while( moderator_itr != moderator_idx.end() && moderator_itr->account == name )
          {
-            results.back().boards.outgoing_moderator_votes[ moderator_itr->board ][ moderator_itr->moderator ] = moderator_itr->vote_rank;
+            results.back().communities.outgoing_moderator_votes[ moderator_itr->community ][ moderator_itr->moderator ] = moderator_itr->vote_rank;
             ++moderator_itr;
          }
 
@@ -1222,21 +1209,21 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                   results.back().operations.moderation_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<board_create_operation>::value:
-               case operation::tag<board_update_operation>::value:
-               case operation::tag<board_add_mod_operation>::value:
-               case operation::tag<board_add_admin_operation>::value:
-               case operation::tag<board_vote_mod_operation>::value:
-               case operation::tag<board_transfer_ownership_operation>::value:
-               case operation::tag<board_join_request_operation>::value:
-               case operation::tag<board_join_accept_operation>::value:
-               case operation::tag<board_join_invite_operation>::value:
-               case operation::tag<board_invite_accept_operation>::value:
-               case operation::tag<board_remove_member_operation>::value:
-               case operation::tag<board_blacklist_operation>::value:
-               case operation::tag<board_subscribe_operation>::value:
+               case operation::tag<community_create_operation>::value:
+               case operation::tag<community_update_operation>::value:
+               case operation::tag<community_add_mod_operation>::value:
+               case operation::tag<community_add_admin_operation>::value:
+               case operation::tag<community_vote_mod_operation>::value:
+               case operation::tag<community_transfer_ownership_operation>::value:
+               case operation::tag<community_join_request_operation>::value:
+               case operation::tag<community_join_accept_operation>::value:
+               case operation::tag<community_join_invite_operation>::value:
+               case operation::tag<community_invite_accept_operation>::value:
+               case operation::tag<community_remove_member_operation>::value:
+               case operation::tag<community_blacklist_operation>::value:
+               case operation::tag<community_subscribe_operation>::value:
                {
-                  results.back().operations.board_history[ item.first ] = item.second;
+                  results.back().operations.community_history[ item.first ] = item.second;
                }
                break;
                case operation::tag<ad_creative_operation>::value:
@@ -1489,7 +1476,7 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
 {
    const auto& connection_a_idx = _db.get_index< connection_index >().indices().get< by_account_a >();
    const auto& connection_b_idx = _db.get_index< connection_index >().indices().get< by_account_b >();
-   const auto& board_idx = _db.get_index< board_member_key_index >().indices().get< by_member_board >();
+   const auto& community_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
    const auto& business_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
 
    vector< key_state > results;
@@ -1549,12 +1536,12 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
          ++connection_b_itr;
       }
 
-      auto board_itr = board_idx.lower_bound( name );
-      while( board_itr != board_idx.end() && 
-         board_itr->member == name )
+      auto community_itr = community_idx.lower_bound( name );
+      while( community_itr != community_idx.end() && 
+         community_itr->member == name )
       {
-         kstate.board_keys[ board_itr->board ] = board_itr->encrypted_board_key;
-         ++board_itr;
+         kstate.community_keys[ community_itr->community ] = community_itr->encrypted_community_key;
+         ++community_itr;
       }
 
       auto business_itr = business_idx.lower_bound( name );
@@ -1950,174 +1937,202 @@ vector< asset_delegation_expiration_api_obj > database_api_impl::get_expiring_as
 }
 
 
-
-   //================//
-   // === Boards === //
-   //================//
-
-
-vector< extended_board > database_api::get_boards( vector< string > boards )const
+vector< reward_fund_api_obj > database_api::get_reward_funds( vector< string > assets )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_boards( boards );
+      return my->get_reward_funds( assets );
    });
 }
 
-vector< extended_board > database_api_impl::get_boards( vector< string > boards )const
+vector< reward_fund_api_obj > database_api_impl::get_reward_funds( vector< string > assets )const
 {
-   vector< extended_board > results;
-   const auto& board_idx = _db.get_index< board_index >().indices().get< by_name >();
-   const auto& board_mem_idx = _db.get_index< board_member_index >().indices().get< by_name >();
-   const auto& board_inv_idx = _db.get_index< board_join_invite_index >().indices().get< by_board >();
-   const auto& board_req_idx = _db.get_index< board_join_request_index >().indices().get< by_board_account >();
+   vector< reward_fund_api_obj > results;
 
-   for( auto board : boards )
+   const auto& fund_idx = _db.get_index< reward_fund_index >().indices().get< by_symbol >();
+
+   for( auto asset: assets )
    {
-      auto board_itr = board_idx.find( board );
-      if( board_itr != board_idx.end() )
-      results.push_back( extended_board( *board_itr ) );
-      auto board_mem_itr = board_mem_idx.find( board );
-      if( board_mem_itr != board_mem_idx.end() )
+      auto fund_itr = fund_idx.find( asset );
+      if( fund_itr != fund_idx.end() )
       {
-         for( auto sub : board_mem_itr->subscribers )
+         results.push_back( reward_fund_api_obj( *fund_itr ) );
+      }  
+   }
+
+   return results;
+}
+
+
+
+   //=====================//
+   // === Communities === //
+   //=====================//
+
+
+
+vector< extended_community > database_api::get_communities( vector< string > communities )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_communities( communities );
+   });
+}
+
+vector< extended_community > database_api_impl::get_communities( vector< string > communities )const
+{
+   vector< extended_community > results;
+   const auto& community_idx = _db.get_index< community_index >().indices().get< by_name >();
+   const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
+   const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
+   const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
+
+   for( auto community : communities )
+   {
+      auto community_itr = community_idx.find( community );
+      if( community_itr != community_idx.end() )
+      results.push_back( extended_community( *community_itr ) );
+      auto community_mem_itr = community_mem_idx.find( community );
+      if( community_mem_itr != community_mem_idx.end() )
+      {
+         for( auto sub : community_mem_itr->subscribers )
          {
             results.back().subscribers.push_back( sub );
          }
-         for( auto mem : board_mem_itr->members )
+         for( auto mem : community_mem_itr->members )
          {
             results.back().members.push_back( mem );
          }
-         for( auto mod : board_mem_itr->moderators )
+         for( auto mod : community_mem_itr->moderators )
          {
             results.back().moderators.push_back( mod );
          }
-         for( auto admin : board_mem_itr->administrators )
+         for( auto admin : community_mem_itr->administrators )
          {
             results.back().administrators.push_back( admin );
          }
-         for( auto bl : board_mem_itr->blacklist )
+         for( auto bl : community_mem_itr->blacklist )
          {
             results.back().blacklist.push_back( bl );
          }
-         for( auto weight : board_mem_itr->mod_weight )
+         for( auto weight : community_mem_itr->mod_weight )
          {
             results.back().mod_weight[ weight.first ] = weight.second.value;
          }
-         results.back().total_mod_weight = board_mem_itr->total_mod_weight.value;
+         results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
       }
 
-      auto board_inv_itr = board_inv_idx.lower_bound( board );
-      auto board_req_itr = board_req_idx.lower_bound( board );
+      auto community_inv_itr = community_inv_idx.lower_bound( community );
+      auto community_req_itr = community_req_idx.lower_bound( community );
 
-      while( board_inv_itr != board_inv_idx.end() && board_inv_itr->board == board )
+      while( community_inv_itr != community_inv_idx.end() && community_inv_itr->community == community )
       {
-         results.back().invites[ board_inv_itr->member ] = board_invite_api_obj( *board_inv_itr );
-         ++board_inv_itr;
+         results.back().invites[ community_inv_itr->member ] = community_invite_api_obj( *community_inv_itr );
+         ++community_inv_itr;
       }
 
-      while( board_req_itr != board_req_idx.end() && board_req_itr->board == board )
+      while( community_req_itr != community_req_idx.end() && community_req_itr->community == community )
       {
-         results.back().requests[ board_inv_itr->account ] = board_request_api_obj( *board_req_itr );
-         ++board_req_itr;
+         results.back().requests[ community_inv_itr->account ] = community_request_api_obj( *community_req_itr );
+         ++community_req_itr;
       }
    }
    return results;
 }
 
-vector< extended_board > database_api::get_boards_by_subscribers( string from, uint32_t limit )const
+vector< extended_community > database_api::get_communities_by_subscribers( string from, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_boards_by_subscribers( from, limit );
+      return my->get_communities_by_subscribers( from, limit );
    });
 }
 
-vector< extended_board > database_api_impl::get_boards_by_subscribers( string from, uint32_t limit )const
+vector< extended_community > database_api_impl::get_communities_by_subscribers( string from, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
-   vector< extended_board > results;
+   vector< extended_community > results;
    results.reserve( limit );
 
-   const auto& board_idx = _db.get_index< board_index >().indices().get< by_subscriber_count >();
-   const auto& name_idx = _db.get_index< board_index >().indices().get< by_name >();
-   const auto& board_mem_idx = _db.get_index< board_member_index >().indices().get< by_name >();
-   const auto& board_inv_idx = _db.get_index< board_join_invite_index >().indices().get< by_board >();
-   const auto& board_req_idx = _db.get_index< board_join_request_index >().indices().get< by_board_account >();
+   const auto& community_idx = _db.get_index< community_index >().indices().get< by_subscriber_count >();
+   const auto& name_idx = _db.get_index< community_index >().indices().get< by_name >();
+   const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
+   const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
+   const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
 
-   auto board_itr = board_idx.begin();
+   auto community_itr = community_idx.begin();
   
    if( from.size() )
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
-         "Invalid Board name ${n}", ("n",from) );
-      board_itr = board_idx.iterator_to( *name_itr );
+         "Invalid Community name ${n}", ("n",from) );
+      community_itr = community_idx.iterator_to( *name_itr );
    }
 
-   while( board_itr != board_idx.end() && results.size() < limit )
+   while( community_itr != community_idx.end() && results.size() < limit )
    {
-      results.push_back( extended_board( *board_itr ) );
-      board_name_type board = board_itr->name;
-      auto board_mem_itr = board_mem_idx.find( board );
-      if( board_mem_itr != board_mem_idx.end() )
+      results.push_back( extended_community( *community_itr ) );
+      community_name_type community = community_itr->name;
+      auto community_mem_itr = community_mem_idx.find( community );
+      if( community_mem_itr != community_mem_idx.end() )
       {
-         for( auto sub : board_mem_itr->subscribers )
+         for( auto sub : community_mem_itr->subscribers )
          {
             results.back().subscribers.push_back( sub );
          }
-         for( auto mem : board_mem_itr->members )
+         for( auto mem : community_mem_itr->members )
          {
             results.back().members.push_back( mem );
          }
-         for( auto mod : board_mem_itr->moderators )
+         for( auto mod : community_mem_itr->moderators )
          {
             results.back().moderators.push_back( mod );
          }
-         for( auto admin : board_mem_itr->administrators )
+         for( auto admin : community_mem_itr->administrators )
          {
             results.back().administrators.push_back( admin );
          }
-         for( auto bl : board_mem_itr->blacklist )
+         for( auto bl : community_mem_itr->blacklist )
          {
             results.back().blacklist.push_back( bl );
          }
-         for( auto weight : board_mem_itr->mod_weight )
+         for( auto weight : community_mem_itr->mod_weight )
          {
             results.back().mod_weight[ weight.first ] = weight.second.value;
          }
-         results.back().total_mod_weight = board_mem_itr->total_mod_weight.value;
+         results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
       }
 
-      auto board_inv_itr = board_inv_idx.lower_bound( board );
-      auto board_req_itr = board_req_idx.lower_bound( board );
+      auto community_inv_itr = community_inv_idx.lower_bound( community );
+      auto community_req_itr = community_req_idx.lower_bound( community );
 
-      while( board_inv_itr != board_inv_idx.end() && board_inv_itr->board == board )
+      while( community_inv_itr != community_inv_idx.end() && community_inv_itr->community == community )
       {
-         results.back().invites[ board_inv_itr->member ] = board_invite_api_obj( *board_inv_itr );
-         ++board_inv_itr;
+         results.back().invites[ community_inv_itr->member ] = community_invite_api_obj( *community_inv_itr );
+         ++community_inv_itr;
       }
 
-      while( board_req_itr != board_req_idx.end() && board_req_itr->board == board )
+      while( community_req_itr != community_req_idx.end() && community_req_itr->community == community )
       {
-         results.back().requests[ board_inv_itr->account ] = board_request_api_obj( *board_req_itr );
-         ++board_req_itr;
+         results.back().requests[ community_inv_itr->account ] = community_request_api_obj( *community_req_itr );
+         ++community_req_itr;
       }
    }
    return results;
 }
 
-uint64_t database_api::get_board_count()const
+uint64_t database_api::get_community_count()const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_board_count();
+      return my->get_community_count();
    });
 }
 
-uint64_t database_api_impl::get_board_count()const
+uint64_t database_api_impl::get_community_count()const
 {
-   return _db.get_index< board_index >().indices().size();
+   return _db.get_index< community_index >().indices().size();
 }
 
 
@@ -3304,7 +3319,7 @@ search_result_state database_api::get_search_query( const search_query& query )c
 }
 
 /**
- * Retreives a series of accounts, boards, tags, assets and posts according to the 
+ * Retreives a series of accounts, communities, tags, assets and posts according to the 
  * lowest edit distance between the search query and the names of the objects.
  */
 search_result_state database_api_impl::get_search_query( const search_query& query )const
@@ -3315,31 +3330,31 @@ search_result_state database_api_impl::get_search_query( const search_query& que
    size_t margin = ( ( q.size() * query.margin_percent ) / PERCENT_100 ) + 1;
 
    const auto& account_idx = _db.get_index< account_index >().indices().get< by_name >();
-   const auto& board_idx = _db.get_index< board_index >().indices().get< by_name >();
+   const auto& community_idx = _db.get_index< community_index >().indices().get< by_name >();
    const auto& tag_idx = _db.get_index< tag_following_index >().indices().get< by_tag >();
    const auto& asset_idx = _db.get_index< asset_index >().indices().get< by_symbol >();
    const auto& post_idx = _db.get_index< comment_index >().indices().get< by_title >();
 
    auto account_itr = account_idx.begin();
-   auto board_itr = board_idx.begin();
+   auto community_itr = community_idx.begin();
    auto tag_itr = tag_idx.begin();
    auto asset_itr = asset_idx.begin();
    auto post_itr = post_idx.upper_bound( shared_string() );    // Skip index posts with no title
 
    vector< pair< account_name_type, size_t > > accounts;
-   vector< pair< board_name_type, size_t > > boards;
+   vector< pair< community_name_type, size_t > > communities;
    vector< pair< tag_name_type, size_t > > tags;
    vector< pair< asset_symbol_type, size_t > > assets;
    vector< pair< shared_string, size_t > > posts;
 
    accounts.reserve( account_idx.size() );
-   boards.reserve( board_idx.size() );
+   communities.reserve( community_idx.size() );
    tags.reserve( tag_idx.size() );
    assets.reserve( asset_idx.size() );
    posts.reserve( post_idx.size() );
 
    results.accounts.reserve( query.limit );
-   results.boards.reserve( query.limit );
+   results.communities.reserve( query.limit );
    results.tags.reserve( query.limit );
    results.assets.reserve( query.limit );
    results.posts.reserve( query.limit );
@@ -3378,29 +3393,29 @@ search_result_state database_api_impl::get_search_query( const search_query& que
       }
    }
 
-   if( query.include_boards )
+   if( query.include_communities )
    {
-      while( board_itr != board_idx.end() )
+      while( community_itr != community_idx.end() )
       {
-         size_t edit_dist = edit_distance( string( board_itr->name ), q );
+         size_t edit_dist = edit_distance( string( community_itr->name ), q );
          if( edit_dist <= margin )
          {
-            boards.push_back( std::make_pair( board_itr->name, edit_dist ) );
+            communities.push_back( std::make_pair( community_itr->name, edit_dist ) );
          }
-         ++board_itr;
+         ++community_itr;
       }
 
-      std::sort( boards.begin(), boards.end(), [&]( auto a, auto b )
+      std::sort( communities.begin(), communities.end(), [&]( auto a, auto b )
       {
          return a.second > b.second;
       });
 
-      for( auto item : boards )
+      for( auto item : communities )
       {
-         if( results.boards.size() < query.limit )
+         if( results.communities.size() < query.limit )
          {
-            board_itr = board_idx.find( item.first );
-            results.boards.push_back( board_api_obj( *board_itr ) );
+            community_itr = community_idx.find( item.first );
+            results.communities.push_back( community_api_obj( *community_itr ) );
          }
          else
          {
@@ -4271,7 +4286,7 @@ discussion database_api::get_discussion( comment_id_type id, uint32_t truncate_b
 template< typename Index, typename StartItr >
 vector< discussion > database_api::get_discussions( 
    const discussion_query& query,
-   const string& board,
+   const string& community,
    const string& tag,
    comment_id_type parent,
    const Index& tidx, 
@@ -4299,7 +4314,7 @@ vector< discussion > database_api::get_discussions(
       auto itr = cidx.find( start );
       while( itr != cidx.end() && itr->comment == start )
       {
-         if( itr->tag == tag && itr->board == board ) 
+         if( itr->tag == tag && itr->community == community ) 
          {
             tidx_itr = tidx.iterator_to( *itr );
             break;
@@ -4323,7 +4338,7 @@ vector< discussion > database_api::get_discussions(
                ("count", count)("itr_count", itr_count)("filter_count", filter_count)("exc_count", exc_count) );
          break;
       }
-      if( tidx_itr->tag != tag || tidx_itr->board != board || ( !ignore_parent && tidx_itr->parent != parent ) )
+      if( tidx_itr->tag != tag || tidx_itr->community != community || ( !ignore_parent && tidx_itr->parent != parent ) )
       {
          break;
       } 
@@ -4397,21 +4412,14 @@ vector< discussion > database_api::get_discussions(
 
             if( query.max_rating == post_rating_values[ FAMILY ] )
             {
-               if( tidx_itr->rating == EXPLICIT || tidx_itr->rating == MATURE || tidx_itr->rating == GENERAL )
+               if( tidx_itr->rating == ADULT || tidx_itr->rating == GENERAL )
                {
                   over_rating = true;
                }
             }
             else if( query.max_rating == post_rating_values[ GENERAL ] )
             {
-               if( tidx_itr->rating == EXPLICIT || tidx_itr->rating == MATURE )
-               {
-                  over_rating = true;
-               }
-            }
-            else if( query.max_rating == post_rating_values[ MATURE ] )
-            {
-               if( tidx_itr->rating == EXPLICIT )
+               if( tidx_itr->rating == ADULT || )
                {
                   over_rating = true;
                }
@@ -4436,14 +4444,14 @@ vector< discussion > database_api::get_discussions(
             continue;
          }
 
-         if( query.select_boards.size() )
+         if( query.select_communities.size() )
          {
             auto tag_itr = tidx.lower_bound( tidx_itr->comment );
 
             bool found = false;
             while( tag_itr != tidx.end() && tag_itr->comment == tidx_itr->comment )
             {
-               if( query.select_boards.find( tag_itr->board ) != query.select_boards.end() )
+               if( query.select_communities.find( tag_itr->community ) != query.select_communities.end() )
                {
                   found = true; 
                   break;
@@ -4490,14 +4498,14 @@ vector< discussion > database_api::get_discussions(
             continue;
          }
 
-         if( query.filter_boards.size() )
+         if( query.filter_communities.size() )
          {
             auto tag_itr = tidx_idx.lower_bound( tidx_itr->comment );
 
             bool found = false;
             while( tag_itr != tidx_idx.end() && tag_itr->comment == tidx_itr->comment )
             {
-               if( query.filter_boards.find( tag_itr->board ) != query.filter_boards.end() )
+               if( query.filter_communities.find( tag_itr->community ) != query.filter_communities.end() )
                {
                   found = true; 
                   break;
@@ -4588,7 +4596,7 @@ vector< discussion > database_api_impl::get_discussions_by_sort_rank( const disc
    }
 
    query.validate();
-   auto board = fc::to_lower( query.board );
+   auto community = fc::to_lower( query.community );
    auto tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
@@ -4857,8 +4865,8 @@ vector< discussion > database_api_impl::get_discussions_by_sort_rank( const disc
       }
    }
 
-   auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<double>::max() ) );
-   return get_discussions( query, board, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_reward <= 0; } );
+   auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+   return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_reward <= 0; } );
 }
 
 
@@ -4964,7 +4972,7 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
    auto start_permlink = query.start_permlink ? *( query.start_permlink ) : "";
 
    string account;
-   string board;
+   string community;
    string tag;
    if( query.account.size() )
    {
@@ -4972,10 +4980,10 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
       const account_object& acc_obj = _db.get_account( account );
    }
 
-   if( query.board.size() )
+   if( query.community.size() )
    {
-      board = query.board;
-      const board_object& board_obj = _db.get_board( board );
+      community = query.community;
+      const community_object& community_obj = _db.get_community( community );
    }
 
    if( query.tag.size() )
@@ -4996,10 +5004,10 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
       {
          const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
       }
-      else if( query.blog_type == blog_reach_values[ BOARD_BLOG ] )
+      else if( query.blog_type == blog_reach_values[ COMMUNITY_BLOG ] )
       {
-         const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_board_blog >();
-         subject = board;
+         const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_community_blog >();
+         subject = community;
       }
       else if( query.blog_type == blog_reach_values[ TAG_BLOG ] )
       {
@@ -5029,7 +5037,7 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          {
             break;
          }
-         if( board.size() && blog_itr->board != board && query.blog_type == blog_reach_values[ BOARD_BLOG ] )
+         if( community.size() && blog_itr->community != community && query.blog_type == blog_reach_values[ COMMUNITY_BLOG ] )
          {
             break;
          }
@@ -5055,21 +5063,14 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
 
             if( query.max_rating == post_rating_values[ FAMILY ] )
             {
-               if( tag_itr->rating == EXPLICIT || tag_itr->rating == MATURE || tag_itr->rating == GENERAL )
+               if( tag_itr->rating == ADULT || tag_itr->rating == GENERAL )
                {
                   over_rating = true;
                }
             }
             else if( query.max_rating == post_rating_values[ GENERAL ] )
             {
-               if( tag_itr->rating == EXPLICIT || tag_itr->rating == MATURE )
-               {
-                  over_rating = true;
-               }
-            }
-            else if( query.max_rating == post_rating_values[ MATURE ] )
-            {
-               if( tag_itr->rating == EXPLICIT )
+               if( tag_itr->rating == ADULT )
                {
                   over_rating = true;
                }
@@ -5109,14 +5110,14 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
             }
          }
 
-         if( query.select_boards.size() ) 
+         if( query.select_communities.size() ) 
          {
             auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
 
             bool found = false;
             while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
             {
-               if( query.select_boards.find( tag_itr->board ) != query.select_boards.end() )
+               if( query.select_communities.find( tag_itr->community ) != query.select_communities.end() )
                {
                   found = true; 
                   break;
@@ -5178,14 +5179,14 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
             }
          }
 
-         if( query.filter_boards.size() ) 
+         if( query.filter_communities.size() ) 
          {
             auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
 
             bool found = false;
             while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
             {
-               if( query.filter_boards.find( tag_itr->board ) != query.filter_boards.end() )
+               if( query.filter_communities.find( tag_itr->community ) != query.filter_communities.end() )
                {
                   found = true; 
                   break;
@@ -5245,13 +5246,13 @@ vector< discussion > database_api::get_discussions_by_recommended( const discuss
 /**
  * Recommended Feed is generated with a psudeorandom 
  * ordering of posts from the authors, 
- * boards, and tags that the account has previously 
+ * communities, and tags that the account has previously 
  * interacted with.
  * Pulls the top posts from each sorting index
- * of each author blog, board, and tag that the
+ * of each author blog, community, and tag that the
  * account has previously interacted with.
  * Adds the top posts by each index from the highest adjacency 
- * authors, boards and tags that are currently not followed by the account.
+ * authors, communities and tags that are currently not followed by the account.
  * Randomly pulls the limit amount of posts from
  * this set of posts.
  */
@@ -5403,14 +5404,14 @@ vector< discussion > database_api_impl::get_discussions_by_payout( const discuss
    }
 
    query.validate();
-   string board = fc::to_lower( query.board );
+   string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index< tags::tag_index >().indices().get< tags::by_net_reward >();
-   auto tidx_itr = tidx.lower_bound( board, tag );
+   auto tidx_itr = tidx.lower_bound( community, tag );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
 }
 
 vector< discussion > database_api::get_post_discussions_by_payout( const discussion_query& query )const
@@ -5429,14 +5430,14 @@ vector< discussion > database_api_impl::get_post_discussions_by_payout( const di
    }
 
    query.validate();
-   string board = fc::to_lower( query.board );
+   string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
    auto parent = comment_id_type();    // Root posts
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_reward>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, true ) );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, true ) );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
 }
 
 vector< discussion > database_api::get_comment_discussions_by_payout( const discussion_query& query )const
@@ -5455,14 +5456,14 @@ vector< discussion > database_api_impl::get_comment_discussions_by_payout( const
    }
 
    query.validate();
-   auto board = fc::to_lower( query.board );
+   auto community = fc::to_lower( query.community );
    auto tag = fc::to_lower( query.tag );
    auto parent = comment_id_type(1);
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_reward>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, false ) );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, false ) );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
 }
 
 
@@ -5483,14 +5484,14 @@ vector< discussion > database_api_impl::get_discussions_by_created( const discus
    }
 
    query.validate();
-   auto board = fc::to_lower( query.board );
+   auto community = fc::to_lower( query.community );
    auto tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_created>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, fc::time_point::maximum() )  );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, fc::time_point::maximum() )  );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 vector< discussion > database_api::get_discussions_by_active( const discussion_query& query )const
@@ -5509,14 +5510,14 @@ vector< discussion > database_api_impl::get_discussions_by_active( const discuss
    }
 
    query.validate();
-   auto board = fc::to_lower( query.board );
+   auto community = fc::to_lower( query.community );
    auto tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_active>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, fc::time_point::maximum() )  );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, fc::time_point::maximum() )  );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 vector< discussion > database_api::get_discussions_by_votes( const discussion_query& query )const
@@ -5535,14 +5536,14 @@ vector< discussion > database_api_impl::get_discussions_by_votes( const discussi
    }
 
    query.validate();
-   auto board = fc::to_lower( query.board );
+   auto community = fc::to_lower( query.community );
    auto tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_net_votes>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<int32_t>::max() ) );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 vector< discussion > database_api::get_discussions_by_views( const discussion_query& query )const
@@ -5561,14 +5562,14 @@ vector< discussion > database_api_impl::get_discussions_by_views( const discussi
    }
 
    query.validate();
-   auto board = fc::to_lower( query.board );
+   auto community = fc::to_lower( query.community );
    auto tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_view_count>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<int32_t>::max() )  );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() )  );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 vector< discussion > database_api::get_discussions_by_shares( const discussion_query& query )const
@@ -5587,14 +5588,14 @@ vector< discussion > database_api_impl::get_discussions_by_shares( const discuss
    }
 
    query.validate();
-   auto board = fc::to_lower( query.board );
+   auto community = fc::to_lower( query.community );
    auto tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_share_count>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<int32_t>::max() )  );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() )  );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 vector< discussion > database_api::get_discussions_by_children( const discussion_query& query )const
@@ -5613,14 +5614,14 @@ vector< discussion > database_api_impl::get_discussions_by_children( const discu
    }
 
    query.validate();
-   auto board = fc::to_lower( query.board );
+   auto community = fc::to_lower( query.community );
    auto tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_children>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<int32_t>::max() )  );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() )  );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 vector< discussion > database_api::get_discussions_by_vote_power( const discussion_query& query )const
@@ -5639,14 +5640,14 @@ vector< discussion > database_api_impl::get_discussions_by_vote_power( const dis
    }
 
    query.validate();
-   string board = fc::to_lower( query.board );
+   string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_vote_power>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<int32_t>::max() ) );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 vector< discussion > database_api::get_discussions_by_view_power( const discussion_query& query )const
@@ -5665,14 +5666,14 @@ vector< discussion > database_api_impl::get_discussions_by_view_power( const dis
    }
 
    query.validate();
-   string board = fc::to_lower( query.board );
+   string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_view_power>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<int32_t>::max() ) );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 
@@ -5692,14 +5693,14 @@ vector< discussion > database_api_impl::get_discussions_by_share_power( const di
    }
 
    query.validate();
-   string board = fc::to_lower( query.board );
+   string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_share_power>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<int32_t>::max() ) );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 vector< discussion > database_api::get_discussions_by_comment_power( const discussion_query& query )const
@@ -5718,14 +5719,14 @@ vector< discussion > database_api_impl::get_discussions_by_comment_power( const 
    }
 
    query.validate();
-   string board = fc::to_lower( query.board );
+   string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
    auto parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_comment_power>();
-   auto tidx_itr = tidx.lower_bound( boost::make_tuple( board, tag, parent, std::numeric_limits<int32_t>::max() ) );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, board, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
 }
 
 /**
@@ -5803,7 +5804,7 @@ state database_api_impl::get_state( string path )const
       boost::split( part, path, boost::is_any_of("/") );
       part.resize( std::max( part.size(), size_t(4) ) );
       string acnt;
-      string board;
+      string community;
       string tag;
       string section;
 
@@ -5818,10 +5819,10 @@ state database_api_impl::get_state( string path )const
          }
          else if( item[0] == '&' )
          {
-            string board = fc::to_lower( item.substr(1) );
-            vector< string > boardvec;
-            boardvec.push_back( board );
-            _state.boards[ board ] = get_boards( boardvec )[0];
+            string community = fc::to_lower( item.substr(1) );
+            vector< string > communityvec;
+            communityvec.push_back( community );
+            _state.communities[ community ] = get_communities( communityvec )[0];
          }
          else if( item[0] == '#' )
          {
@@ -5915,18 +5916,18 @@ state database_api_impl::get_state( string path )const
             _state.mining_producers[ p.owner ] = p;
          }
       }
-      else if( section == "boards" || section == "~boards")
+      else if( section == "communities" || section == "~communities")
       {
-         vector< extended_board > boards = get_boards_by_subscribers( "", 50 );
-         for( const auto& b : boards )
+         vector< extended_community > communities = get_communities_by_subscribers( "", 50 );
+         for( const auto& b : communities )
          {
-            _state.boards[ b.name ] = b;
+            _state.communities[ b.name ] = b;
          }
       }
       else if( section == "payout" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -5947,7 +5948,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "payout_comments" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -5968,7 +5969,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "responses" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -5989,7 +5990,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "net_votes" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6010,7 +6011,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "view_count" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6031,7 +6032,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "share_count" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6052,7 +6053,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "comment_count" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6073,7 +6074,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "vote_power" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6094,7 +6095,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "view_power" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6115,7 +6116,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "share_power" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6136,7 +6137,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "comment_power" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6157,7 +6158,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "active" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;
@@ -6178,7 +6179,7 @@ state database_api_impl::get_state( string path )const
       else if( section == "created" )
       {
          discussion_query q;
-         q.board = board;
+         q.community = community;
          q.tag = tag;
          q.limit = 20;
          q.truncate_body = 1024;

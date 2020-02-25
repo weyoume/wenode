@@ -16,6 +16,8 @@ namespace node { namespace protocol {
 
             account_create_operation,
             account_update_operation,
+            account_profile_operation,
+            account_verification_operation,
             account_membership_operation,
             account_vote_executive_operation,
             account_vote_officer_operation,
@@ -63,21 +65,23 @@ namespace node { namespace protocol {
             share_operation,
             moderation_tag_operation,
 
-            // Board Operations
+            // Community Operations
 
-            board_create_operation,
-            board_update_operation,
-            board_add_mod_operation,
-            board_add_admin_operation,
-            board_vote_mod_operation,
-            board_transfer_ownership_operation,
-            board_join_request_operation,
-            board_join_accept_operation,
-            board_join_invite_operation,
-            board_invite_accept_operation,
-            board_remove_member_operation,
-            board_blacklist_operation,
-            board_subscribe_operation,
+            community_create_operation,
+            community_update_operation,
+            community_add_mod_operation,
+            community_add_admin_operation,
+            community_vote_mod_operation,
+            community_transfer_ownership_operation,
+            community_join_request_operation,
+            community_join_accept_operation,
+            community_join_invite_operation,
+            community_invite_accept_operation,
+            community_remove_member_operation,
+            community_blacklist_operation,
+            community_subscribe_operation,
+            community_event_operation,
+            community_event_attend_operation,
 
             // Advertising Operations
 
@@ -86,6 +90,13 @@ namespace node { namespace protocol {
             ad_inventory_operation,
             ad_audience_operation,
             ad_bid_operation,
+
+            // Graph Data Operations
+
+            graph_node_operation,
+            graph_edge_operation,
+            graph_node_property_operation,
+            graph_edge_property_operation,
             
             // Transfer Operations
 
@@ -106,8 +117,10 @@ namespace node { namespace protocol {
             transfer_from_savings_operation,
             delegate_asset_operation,
 
-            // Escrow Operations
+            // Marketplace Operations
 
+            product_update_operation,
+            product_purchase_operation,
             escrow_transfer_operation,
             escrow_approve_operation,
             escrow_dispute_operation,
@@ -117,7 +130,9 @@ namespace node { namespace protocol {
 
             limit_order_operation,
             margin_order_operation,
+            auction_order_operation,
             call_order_operation,
+            option_order_operation,
             bid_collateral_operation,
 
             // Pool Operations
@@ -133,14 +148,14 @@ namespace node { namespace protocol {
 
             // Asset Operations
 
-            asset_create_operation,          
+            asset_create_operation,
             asset_update_operation,
-            asset_issue_operation, 
-            asset_reserve_operation, 
-            asset_update_issuer_operation,         
-            asset_update_feed_producers_operation,         
-            asset_publish_feed_operation, 
-            asset_settle_operation,  
+            asset_issue_operation,
+            asset_reserve_operation,
+            asset_update_issuer_operation,
+            asset_update_feed_producers_operation,
+            asset_publish_feed_operation,
+            asset_settle_operation,
             asset_global_settle_operation,
             
             // Block producer operations

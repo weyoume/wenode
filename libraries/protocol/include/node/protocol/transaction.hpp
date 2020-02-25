@@ -9,18 +9,20 @@ namespace node { namespace protocol {
 
    struct transaction
    {
-      uint16_t           ref_block_num    = 0;
-      uint32_t           ref_block_prefix = 0;
+      uint16_t             ref_block_num    = 0;
 
-      fc::time_point     expiration;
+      uint32_t             ref_block_prefix = 0;
 
-      vector<operation>  operations;
-      extensions_type    extensions;
+      fc::time_point       expiration;
 
-      digest_type         digest()const;
-      transaction_id_type id()const;
-      void                validate() const;
-      digest_type         sig_digest( const chain_id_type& chain_id )const;
+      vector< operation >  operations;
+
+      extensions_type      extensions;
+
+      digest_type          digest()const;
+      transaction_id_type  id()const;
+      void                 validate() const;
+      digest_type          sig_digest( const chain_id_type& chain_id )const;
 
       void set_expiration( fc::time_point expiration_time );
       void set_reference_block( const block_id_type& reference_block );
@@ -117,6 +119,22 @@ namespace node { namespace protocol {
 
 } } // node::protocol
 
-FC_REFLECT( node::protocol::transaction, (ref_block_num)(ref_block_prefix)(expiration)(operations)(extensions) )
-FC_REFLECT_DERIVED( node::protocol::signed_transaction, (node::protocol::transaction), (signatures) )
-FC_REFLECT_DERIVED( node::protocol::annotated_signed_transaction, (node::protocol::signed_transaction), (transaction_id)(block_num)(transaction_num) );
+FC_REFLECT( node::protocol::transaction, 
+         (ref_block_num)
+         (ref_block_prefix)
+         (expiration)
+         (operations)
+         (extensions) 
+         );
+
+FC_REFLECT_DERIVED( node::protocol::signed_transaction, 
+         (node::protocol::transaction),
+         (signatures) 
+         );
+
+FC_REFLECT_DERIVED( node::protocol::annotated_signed_transaction, 
+         (node::protocol::signed_transaction), 
+         (transaction_id)
+         (block_num)
+         (transaction_num) 
+         );

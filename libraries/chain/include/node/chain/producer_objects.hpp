@@ -17,6 +17,7 @@ namespace node { namespace chain {
    using node::protocol::price;
    using node::protocol::asset;
    using node::protocol::asset_symbol_type;
+   using node::protocol::share_type;
 
    /**
     * All producers with at least 1% net positive approval and
@@ -100,7 +101,7 @@ namespace node { namespace chain {
 
          time_point                   last_pow_time;                         ///< Time that the miner last created a proof of work.
 
-         share_type                   recent_txn_stake_weight = 0;           ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+         uint128_t                    recent_txn_stake_weight = 0;           ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
 
          time_point                   last_txn_stake_weight_update;          ///< Time that the recent bandwith and txn stake were last updated.
 
@@ -358,7 +359,7 @@ namespace node { namespace chain {
 
          ordered_unique< tag< by_txn_stake_weight >,
             composite_key< producer_object,
-               member< producer_object, share_type, &producer_object::recent_txn_stake_weight >,
+               member< producer_object, uint128_t, &producer_object::recent_txn_stake_weight >,
                member< producer_object, producer_id_type, &producer_object::id >
             >,
             composite_key_compare< std::greater< uint128_t >, std::less< producer_id_type > >

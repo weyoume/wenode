@@ -22,23 +22,23 @@ using namespace node::chain;
 using namespace node::protocol;
 using std::string;
 
-BOOST_FIXTURE_TEST_SUITE( board_operation_tests, clean_database_fixture );
+BOOST_FIXTURE_TEST_SUITE( community_operation_tests, clean_database_fixture );
 
 
 
-   //=====================//
-   // === Board Tests === //
-   //=====================//
+   //=========================//
+   // === Community Tests === //
+   //=========================//
 
 
    
-BOOST_AUTO_TEST_CASE( board_create_operation_test )
+BOOST_AUTO_TEST_CASE( community_create_operation_test )
 { 
    try 
    {
-      BOOST_TEST_MESSAGE( "├── Passed: BOARD CREATE OPERATION" );
+      BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY CREATE OPERATION" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: successful board creation" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: successful community creation" );
 
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
@@ -59,18 +59,17 @@ BOOST_AUTO_TEST_CASE( board_create_operation_test )
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      const auto& board_idx = db.get_index< board_index >().indices().get< by_name >();
+      const auto& community_idx = db.get_index< community_index >().indices().get< by_name >();
 
       signed_transaction tx;
 
-      board_create_operation create;
+      community_create_operation create;
 
       create.signatory = "alice";
       create.founder = "alice";
-      create.name = "aliceopenboard";
-      create.board_type = BOARD;
-      create.board_privacy = OPEN_BOARD;
-      create.board_public_key = string( alice_public_posting_key );
+      create.name = "aliceopencommunity";
+      create.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      create.community_public_key = string( alice_public_posting_key );
       create.json = "{\"json\":\"valid\"}";
       create.json_private = "{\"json\":\"valid\"}";
       create.details = "details";
@@ -82,20 +81,20 @@ BOOST_AUTO_TEST_CASE( board_create_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "aliceopenboard" );
-      BOOST_REQUIRE( board_itr->founder == create.founder );
-      BOOST_REQUIRE( board_itr->name == create.name );
-      BOOST_REQUIRE( board_itr->board_privacy == create.board_privacy );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "aliceopencommunity" );
+      BOOST_REQUIRE( community_itr->founder == create.founder );
+      BOOST_REQUIRE( community_itr->name == create.name );
+      BOOST_REQUIRE( community_itr->community_privacy == create.community_privacy );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       create.signatory = "bob";
       create.founder = "bob";
-      create.name = "bobpublicboard";
-      create.board_privacy = PUBLIC_BOARD;
-      create.board_public_key = string( bob_public_posting_key );
+      create.name = "bobpubliccommunity";
+      create.community_privacy = EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_public_key = string( bob_public_posting_key );
       
       create.validate();
 
@@ -103,20 +102,20 @@ BOOST_AUTO_TEST_CASE( board_create_operation_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "bobpublicboard" );
-      BOOST_REQUIRE( board_itr->founder == create.founder );
-      BOOST_REQUIRE( board_itr->name == create.name );
-      BOOST_REQUIRE( board_itr->board_privacy == create.board_privacy );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_itr->founder == create.founder );
+      BOOST_REQUIRE( community_itr->name == create.name );
+      BOOST_REQUIRE( community_itr->community_privacy == create.community_privacy );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       create.signatory = "candice";
       create.founder = "candice";
-      create.name = "candiceprivateboard";
-      create.board_privacy = PRIVATE_BOARD;
-      create.board_public_key = string( candice_public_posting_key );
+      create.name = "candiceprivatecommunity";
+      create.community_privacy = OPEN_PRIVATE_COMMUNITY;
+      create.community_public_key = string( candice_public_posting_key );
       
       create.validate();
 
@@ -124,20 +123,20 @@ BOOST_AUTO_TEST_CASE( board_create_operation_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "candiceprivateboard" );
-      BOOST_REQUIRE( board_itr->founder == create.founder );
-      BOOST_REQUIRE( board_itr->name == create.name );
-      BOOST_REQUIRE( board_itr->board_privacy == create.board_privacy );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_itr->founder == create.founder );
+      BOOST_REQUIRE( community_itr->name == create.name );
+      BOOST_REQUIRE( community_itr->community_privacy == create.community_privacy );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       create.signatory = "dan";
       create.founder = "dan";
-      create.name = "danexclusiveboard";
-      create.board_privacy = EXCLUSIVE_BOARD;
-      create.board_public_key = string( dan_public_posting_key );
+      create.name = "danexclusivecommunity";
+      create.community_privacy = EXCLUSIVE_PRIVATE_COMMUNITY;
+      create.community_public_key = string( dan_public_posting_key );
       
       create.validate();
 
@@ -145,27 +144,27 @@ BOOST_AUTO_TEST_CASE( board_create_operation_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "danexclusiveboard" );
-      BOOST_REQUIRE( board_itr->founder == create.founder );
-      BOOST_REQUIRE( board_itr->name == create.name );
-      BOOST_REQUIRE( board_itr->board_privacy == create.board_privacy );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_itr->founder == create.founder );
+      BOOST_REQUIRE( community_itr->name == create.name );
+      BOOST_REQUIRE( community_itr->community_privacy == create.community_privacy );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: successful board creation" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: successful community creation" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when board created before MIN_BOARD_CREATE_INTERVAL has passed" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when community created before MIN_COMMUNITY_CREATE_INTERVAL has passed" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now() + MIN_BOARD_CREATE_INTERVAL - BLOCK_INTERVAL );
+      generate_blocks( now() + MIN_COMMUNITY_CREATE_INTERVAL - BLOCK_INTERVAL );
 
       create.signatory = "alice";
       create.founder = "alice";
-      create.name = "mysecondboard";
-      create.board_public_key = string( alice_public_posting_key );
+      create.name = "mysecondcommunity";
+      create.community_public_key = string( alice_public_posting_key );
 
       tx.operations.push_back( create );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
@@ -174,9 +173,9 @@ BOOST_AUTO_TEST_CASE( board_create_operation_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board created before MIN_BOARD_CREATE_INTERVAL has passed" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when community created before MIN_COMMUNITY_CREATE_INTERVAL has passed" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: success after MIN_BOARD_CREATE_INTERVAL has passed" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: success after MIN_COMMUNITY_CREATE_INTERVAL has passed" );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -190,16 +189,16 @@ BOOST_AUTO_TEST_CASE( board_create_operation_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board created before MIN_BOARD_CREATE_INTERVAL has passed" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when community created before MIN_COMMUNITY_CREATE_INTERVAL has passed" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when board name already exists" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when community name already exists" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       create.signatory = "elon";
       create.founder = "elon";
-      create.name = "aliceopenboard";
+      create.name = "aliceopencommunity";
 
       tx.operations.push_back( create );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -208,21 +207,21 @@ BOOST_AUTO_TEST_CASE( board_create_operation_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board name already exists" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when community name already exists" );
 
-      BOOST_TEST_MESSAGE( "├── Passed: BOARD CREATE OPERATION" );
+      BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY CREATE OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
 
 
-BOOST_AUTO_TEST_CASE( board_update_operation_test )
+BOOST_AUTO_TEST_CASE( community_update_operation_test )
 { 
    try 
    {
-      BOOST_TEST_MESSAGE( "├── Passed: BOARD UPDATE OPERATION" );
+      BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY UPDATE OPERATION" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: founder board update sequence" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: founder community update sequence" );
 
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
@@ -243,18 +242,17 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      const auto& board_idx = db.get_index< board_index >().indices().get< by_name >();
+      const auto& community_idx = db.get_index< community_index >().indices().get< by_name >();
 
       signed_transaction tx;
 
-      board_create_operation create;
+      community_create_operation create;
 
       create.signatory = "alice";
       create.founder = "alice";
-      create.name = "aliceopenboard";
-      create.board_type = BOARD;
-      create.board_privacy = OPEN_BOARD;
-      create.board_public_key = string( alice_public_posting_key );
+      create.name = "aliceopencommunity";
+      create.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      create.community_public_key = string( alice_public_posting_key );
       create.json = "{\"json\":\"valid\"}";
       create.json_private = "{\"json\":\"valid\"}";
       create.details = "details";
@@ -271,9 +269,9 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       create.signatory = "bob";
       create.founder = "bob";
-      create.name = "bobpublicboard";
-      create.board_privacy = PUBLIC_BOARD;
-      create.board_public_key = string( bob_public_posting_key );
+      create.name = "bobpubliccommunity";
+      create.community_privacy = EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_public_key = string( bob_public_posting_key );
       
       create.validate();
 
@@ -286,9 +284,9 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       create.signatory = "candice";
       create.founder = "candice";
-      create.name = "candiceprivateboard";
-      create.board_privacy = PRIVATE_BOARD;
-      create.board_public_key = string( candice_public_posting_key );
+      create.name = "candiceprivatecommunity";
+      create.community_privacy = OPEN_PRIVATE_COMMUNITY;
+      create.community_public_key = string( candice_public_posting_key );
       
       create.validate();
 
@@ -301,9 +299,9 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       create.signatory = "dan";
       create.founder = "dan";
-      create.name = "danexclusiveboard";
-      create.board_privacy = EXCLUSIVE_BOARD;
-      create.board_public_key = string( dan_public_posting_key );
+      create.name = "danexclusivecommunity";
+      create.community_privacy = EXCLUSIVE_PRIVATE_COMMUNITY;
+      create.community_public_key = string( dan_public_posting_key );
       
       create.validate();
 
@@ -323,7 +321,7 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      comment.board = "aliceopenboard";
+      comment.community = "aliceopencommunity";
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -350,7 +348,7 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       comment.signatory = "bob";
       comment.author = "bob";
-      comment.board = "bobpublicboard";
+      comment.community = "bobpubliccommunity";
 
       tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -361,7 +359,7 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       comment.signatory = "candice";
       comment.author = "candice";
-      comment.board = "candiceprivateboard";
+      comment.community = "candiceprivatecommunity";
 
       tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
@@ -372,7 +370,7 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       comment.signatory = "dan";
       comment.author = "dan";
-      comment.board = "danexclusiveboard";
+      comment.community = "danexclusivecommunity";
 
       tx.operations.push_back( comment );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
@@ -381,16 +379,14 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now() + MIN_BOARD_UPDATE_INTERVAL );
+      generate_blocks( now() + MIN_COMMUNITY_UPDATE_INTERVAL );
 
-      board_update_operation update;
+      community_update_operation update;
 
       update.signatory = "alice";
       update.account = "alice";
-      update.board = "aliceopenboard";
-      update.board_type = BOARD;
-      update.board_privacy = OPEN_BOARD;
-      update.board_public_key = string( alice_public_posting_key );
+      update.community = "aliceopencommunity";
+      update.community_public_key = string( alice_public_posting_key );
       update.json = "{\"json\":\"valid\"}";
       update.json_private = "{\"json\":\"valid\"}";
       update.details = "updated details";
@@ -403,13 +399,12 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "aliceopenboard" );
-      BOOST_REQUIRE( board_itr->founder == update.account );
-      BOOST_REQUIRE( board_itr->name == update.board );
-      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
-      BOOST_REQUIRE( board_itr->details == update.details );
-      BOOST_REQUIRE( board_itr->url == update.url );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "aliceopencommunity" );
+      BOOST_REQUIRE( community_itr->founder == update.account );
+      BOOST_REQUIRE( community_itr->name == update.community );
+      BOOST_REQUIRE( community_itr->details == update.details );
+      BOOST_REQUIRE( community_itr->url == update.url );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -417,22 +412,20 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
       update.signatory = "bob";
       update.account = "bob";
       update.pinned_author = "bob";
-      update.board = "bobpublicboard";
-      update.board_privacy = PUBLIC_BOARD;
-      update.board_public_key = string( bob_public_posting_key );
+      update.community = "bobpubliccommunity";
+      update.community_public_key = string( bob_public_posting_key );
       update.validate();
 
       tx.operations.push_back( update );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "bobpublicboard" );
-      BOOST_REQUIRE( board_itr->founder == update.account );
-      BOOST_REQUIRE( board_itr->name == update.board );
-      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
-      BOOST_REQUIRE( board_itr->details == update.details );
-      BOOST_REQUIRE( board_itr->url == update.url );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_itr->founder == update.account );
+      BOOST_REQUIRE( community_itr->name == update.community );
+      BOOST_REQUIRE( community_itr->details == update.details );
+      BOOST_REQUIRE( community_itr->url == update.url );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -440,22 +433,20 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
       update.signatory = "candice";
       update.account = "candice";
       update.pinned_author = "candice";
-      update.board = "candiceprivateboard";
-      update.board_privacy = PRIVATE_BOARD;
-      update.board_public_key = string( candice_public_posting_key );
+      update.community = "candiceprivatecommunity";
+      update.community_public_key = string( candice_public_posting_key );
       update.validate();
 
       tx.operations.push_back( update );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "candiceprivateboard" );
-      BOOST_REQUIRE( board_itr->founder == update.account );
-      BOOST_REQUIRE( board_itr->name == update.board );
-      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
-      BOOST_REQUIRE( board_itr->details == update.details );
-      BOOST_REQUIRE( board_itr->url == update.url );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_itr->founder == update.account );
+      BOOST_REQUIRE( community_itr->name == update.community );
+      BOOST_REQUIRE( community_itr->details == update.details );
+      BOOST_REQUIRE( community_itr->url == update.url );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -463,36 +454,34 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
       update.signatory = "dan";
       update.account = "dan";
       update.pinned_author = "dan";
-      update.board = "danexclusiveboard";
-      update.board_privacy = EXCLUSIVE_BOARD;
-      update.board_public_key = string( dan_public_posting_key );
+      update.community = "danexclusivecommunity";
+      update.community_public_key = string( dan_public_posting_key );
       update.validate();
 
       tx.operations.push_back( update );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "danexclusiveboard" );
-      BOOST_REQUIRE( board_itr->founder == update.account );
-      BOOST_REQUIRE( board_itr->name == update.board );
-      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
-      BOOST_REQUIRE( board_itr->details == update.details );
-      BOOST_REQUIRE( board_itr->url == update.url );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_itr->founder == update.account );
+      BOOST_REQUIRE( community_itr->name == update.community );
+      BOOST_REQUIRE( community_itr->details == update.details );
+      BOOST_REQUIRE( community_itr->url == update.url );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: founder board update sequence" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder community update sequence" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when board update before MIN_BOARD_UPDATE_INTERVAL has passed" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when community update before MIN_COMMUNITY_UPDATE_INTERVAL has passed" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now() + MIN_BOARD_UPDATE_INTERVAL - BLOCK_INTERVAL );
+      generate_blocks( now() + MIN_COMMUNITY_UPDATE_INTERVAL - BLOCK_INTERVAL );
 
       update.details = "even more updated details";
 
@@ -503,9 +492,9 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board update before MIN_BOARD_UPDATE_INTERVAL has passed" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when community update before MIN_COMMUNITY_UPDATE_INTERVAL has passed" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: success after MIN_BOARD_UPDATE_INTERVAL has passed" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: success after MIN_COMMUNITY_UPDATE_INTERVAL has passed" );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -517,26 +506,25 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       db.push_transaction( tx, 0 );
 
-      auto board_itr = board_idx.find( "danexclusiveboard" );
-      BOOST_REQUIRE( board_itr->founder == update.account );
-      BOOST_REQUIRE( board_itr->name == update.board );
-      BOOST_REQUIRE( board_itr->board_privacy == update.board_privacy );
-      BOOST_REQUIRE( board_itr->details == update.details );
-      BOOST_REQUIRE( board_itr->url == update.url );
-      BOOST_REQUIRE( board_itr->created == now() );
+      auto community_itr = community_idx.find( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_itr->founder == update.account );
+      BOOST_REQUIRE( community_itr->name == update.community );
+      BOOST_REQUIRE( community_itr->details == update.details );
+      BOOST_REQUIRE( community_itr->url == update.url );
+      BOOST_REQUIRE( community_itr->created == now() );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: success after MIN_BOARD_UPDATE_INTERVAL has passed" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: success after MIN_COMMUNITY_UPDATE_INTERVAL has passed" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when board name already exists" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when community name already exists" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       create.signatory = "elon";
       create.founder = "elon";
-      create.name = "aliceopenboard";
+      create.name = "aliceopencommunity";
 
       tx.operations.push_back( create );
       tx.sign( elon_private_active_key, db.get_chain_id() );
@@ -545,19 +533,19 @@ BOOST_AUTO_TEST_CASE( board_update_operation_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when board name already exists" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when community name already exists" );
 
-      BOOST_TEST_MESSAGE( "├── Passed: BOARD UPDATE OPERATION" );
+      BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY UPDATE OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
 
 
-BOOST_AUTO_TEST_CASE( board_management_sequence_test )
+BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 { 
    try 
    {
-      BOOST_TEST_MESSAGE( "├── Passed: BOARD MANAGEMENT OPERATION SEQUENCE" );
+      BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY MANAGEMENT OPERATION SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder invite members" );
 
@@ -609,14 +597,13 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       signed_transaction tx;
 
-      board_create_operation create;
+      community_create_operation create;
 
       create.signatory = "alice";
       create.founder = "alice";
-      create.name = "aliceopenboard";
-      create.board_type = BOARD;
-      create.board_privacy = OPEN_BOARD;
-      create.board_public_key = string( alice_public_posting_key );
+      create.name = "aliceopencommunity";
+      create.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      create.community_public_key = string( alice_public_posting_key );
       create.json = "{\"json\":\"valid\"}";
       create.json_private = "{\"json\":\"valid\"}";
       create.details = "details";
@@ -628,96 +615,92 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_object& alice_board = db.get_board( "aliceopenboard" );
-      const board_member_object& alice_board_member = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( alice_board.founder == create.founder );
-      BOOST_REQUIRE( alice_board.board_type == create.board_type );
-      BOOST_REQUIRE( alice_board.board_privacy == create.board_privacy );
-      BOOST_REQUIRE( alice_board.board_public_key == create.board_public_key );
+      const community_object& alice_community = db.get_community( "aliceopencommunity" );
+      const community_member_object& alice_community_member = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( alice_community.founder == create.founder );
+      BOOST_REQUIRE( alice_community.community_privacy == create.community_privacy );
+      BOOST_REQUIRE( alice_community.community_public_key == create.community_public_key );
 
-      BOOST_REQUIRE( alice_board_member.founder == create.founder );
-      BOOST_REQUIRE( alice_board_member.is_administrator( create.founder ) );
-      BOOST_REQUIRE( alice_board_member.is_moderator( create.founder ) );
-      BOOST_REQUIRE( alice_board_member.is_member( create.founder ) );
-      BOOST_REQUIRE( alice_board_member.is_subscriber( create.founder ) );
+      BOOST_REQUIRE( alice_community_member.founder == create.founder );
+      BOOST_REQUIRE( alice_community_member.is_administrator( create.founder ) );
+      BOOST_REQUIRE( alice_community_member.is_moderator( create.founder ) );
+      BOOST_REQUIRE( alice_community_member.is_member( create.founder ) );
+      BOOST_REQUIRE( alice_community_member.is_subscriber( create.founder ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       create.signatory = "bob";
       create.founder = "bob";
-      create.name = "bobpublicboard";
-      create.board_privacy = PUBLIC_BOARD;
-      create.board_public_key = string( bob_public_posting_key );
+      create.name = "bobpubliccommunity";
+      create.community_privacy = EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_public_key = string( bob_public_posting_key );
 
       tx.operations.push_back( create );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_object& bob_board = db.get_board( "bobpublicboard" );
-      const board_member_object& bob_board_member = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( bob_board.founder == create.founder );
-      BOOST_REQUIRE( bob_board.board_type == create.board_type );
-      BOOST_REQUIRE( bob_board.board_privacy == create.board_privacy );
-      BOOST_REQUIRE( bob_board.board_public_key == create.board_public_key );
+      const community_object& bob_community = db.get_community( "bobpubliccommunity" );
+      const community_member_object& bob_community_member = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( bob_community.founder == create.founder );
+      BOOST_REQUIRE( bob_community.community_privacy == create.community_privacy );
+      BOOST_REQUIRE( bob_community.community_public_key == create.community_public_key );
 
-      BOOST_REQUIRE( bob_board_member.founder == create.founder );
-      BOOST_REQUIRE( bob_board_member.is_administrator( create.founder ) );
-      BOOST_REQUIRE( bob_board_member.is_moderator( create.founder ) );
-      BOOST_REQUIRE( bob_board_member.is_member( create.founder ) );
-      BOOST_REQUIRE( bob_board_member.is_subscriber( create.founder ) );
+      BOOST_REQUIRE( bob_community_member.founder == create.founder );
+      BOOST_REQUIRE( bob_community_member.is_administrator( create.founder ) );
+      BOOST_REQUIRE( bob_community_member.is_moderator( create.founder ) );
+      BOOST_REQUIRE( bob_community_member.is_member( create.founder ) );
+      BOOST_REQUIRE( bob_community_member.is_subscriber( create.founder ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       create.signatory = "candice";
       create.founder = "candice";
-      create.name = "candiceprivateboard";
-      create.board_privacy = PRIVATE_BOARD;
-      create.board_public_key = string( candice_public_posting_key );
+      create.name = "candiceprivatecommunity";
+      create.community_privacy = OPEN_PRIVATE_COMMUNITY;
+      create.community_public_key = string( candice_public_posting_key );
 
       tx.operations.push_back( create );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_object& candice_board = db.get_board( "candiceprivateboard" );
-      const board_member_object& candice_board_member = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( candice_board.founder == create.founder );
-      BOOST_REQUIRE( candice_board.board_type == create.board_type );
-      BOOST_REQUIRE( candice_board.board_privacy == create.board_privacy );
-      BOOST_REQUIRE( candice_board.board_public_key == create.board_public_key );
+      const community_object& candice_community = db.get_community( "candiceprivatecommunity" );
+      const community_member_object& candice_community_member = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( candice_community.founder == create.founder );
+      BOOST_REQUIRE( candice_community.community_privacy == create.community_privacy );
+      BOOST_REQUIRE( candice_community.community_public_key == create.community_public_key );
 
-      BOOST_REQUIRE( candice_board_member.founder == create.founder );
-      BOOST_REQUIRE( candice_board_member.is_administrator( create.founder ) );
-      BOOST_REQUIRE( candice_board_member.is_moderator( create.founder ) );
-      BOOST_REQUIRE( candice_board_member.is_member( create.founder ) );
-      BOOST_REQUIRE( candice_board_member.is_subscriber( create.founder ) );
+      BOOST_REQUIRE( candice_community_member.founder == create.founder );
+      BOOST_REQUIRE( candice_community_member.is_administrator( create.founder ) );
+      BOOST_REQUIRE( candice_community_member.is_moderator( create.founder ) );
+      BOOST_REQUIRE( candice_community_member.is_member( create.founder ) );
+      BOOST_REQUIRE( candice_community_member.is_subscriber( create.founder ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       create.signatory = "dan";
       create.founder = "dan";
-      create.name = "danexclusiveboard";
-      create.board_privacy = EXCLUSIVE_BOARD;
-      create.board_public_key = string( dan_public_posting_key );
+      create.name = "danexclusivecommunity";
+      create.community_privacy = EXCLUSIVE_PRIVATE_COMMUNITY;
+      create.community_public_key = string( dan_public_posting_key );
 
       tx.operations.push_back( create );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_object& dan_board = db.get_board( "danexclusiveboard" );
-      const board_member_object& dan_board_member = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( dan_board.founder == create.founder );
-      BOOST_REQUIRE( dan_board.board_type == create.board_type );
-      BOOST_REQUIRE( dan_board.board_privacy == create.board_privacy );
-      BOOST_REQUIRE( dan_board.board_public_key == create.board_public_key );
+      const community_object& dan_community = db.get_community( "danexclusivecommunity" );
+      const community_member_object& dan_community_member = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( dan_community.founder == create.founder );
+      BOOST_REQUIRE( dan_community.community_privacy == create.community_privacy );
+      BOOST_REQUIRE( dan_community.community_public_key == create.community_public_key );
 
-      BOOST_REQUIRE( dan_board_member.founder == create.founder );
-      BOOST_REQUIRE( dan_board_member.is_administrator( create.founder ) );
-      BOOST_REQUIRE( dan_board_member.is_moderator( create.founder ) );
-      BOOST_REQUIRE( dan_board_member.is_member( create.founder ) );
-      BOOST_REQUIRE( dan_board_member.is_subscriber( create.founder ) );
+      BOOST_REQUIRE( dan_community_member.founder == create.founder );
+      BOOST_REQUIRE( dan_community_member.is_administrator( create.founder ) );
+      BOOST_REQUIRE( dan_community_member.is_moderator( create.founder ) );
+      BOOST_REQUIRE( dan_community_member.is_member( create.founder ) );
+      BOOST_REQUIRE( dan_community_member.is_subscriber( create.founder ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -729,14 +712,14 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      board_join_invite_operation invite;
+      community_join_invite_operation invite;
 
       invite.signatory = "alice";
       invite.account = "alice";
       invite.member = "elon";
-      invite.board = "aliceopenboard";
+      invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.encrypted_community_key = string( alice_public_posting_key );
       invite.invited = true;
       invite.validate();
 
@@ -744,13 +727,13 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& invite_idx = db.get_index< board_join_invite_index >().indices().get< by_member_board >();
+      const auto& invite_idx = db.get_index< community_join_invite_index >().indices().get< by_member_community >();
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopenboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopencommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
@@ -758,18 +741,18 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       invite.signatory = "bob";
       invite.account = "bob";
-      invite.board = "bobpublicboard";
-      invite.encrypted_board_key = string( bob_public_posting_key );
+      invite.community = "bobpubliccommunity";
+      invite.encrypted_community_key = string( bob_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpublicboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpubliccommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
@@ -777,18 +760,18 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       invite.signatory = "candice";
       invite.account = "candice";
-      invite.board = "candiceprivateboard";
-      invite.encrypted_board_key = string( candice_public_posting_key );
+      invite.community = "candiceprivatecommunity";
+      invite.encrypted_community_key = string( candice_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivateboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivatecommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
@@ -796,18 +779,18 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       invite.signatory = "dan";
       invite.account = "dan";
-      invite.board = "danexclusiveboard";
-      invite.encrypted_board_key = string( dan_public_posting_key );
+      invite.community = "danexclusivecommunity";
+      invite.encrypted_community_key = string( dan_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusiveboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
@@ -816,18 +799,18 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       invite.signatory = "dan";
       invite.account = "dan";
       invite.member = "fred";
-      invite.board = "danexclusiveboard";
-      invite.encrypted_board_key = string( dan_public_posting_key );
+      invite.community = "danexclusivecommunity";
+      invite.encrypted_community_key = string( dan_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusiveboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
@@ -842,9 +825,9 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       invite.signatory = "elon";
       invite.account = "elon";
       invite.member = "george";
-      invite.board = "aliceopenboard";
+      invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.encrypted_community_key = string( alice_public_posting_key );
       invite.invited = true;
 
       tx.operations.push_back( invite );
@@ -855,8 +838,8 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "haz";
-      invite.board = "bobpublicboard";
-      invite.encrypted_board_key = string( bob_public_posting_key );
+      invite.community = "bobpubliccommunity";
+      invite.encrypted_community_key = string( bob_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -866,8 +849,8 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "isabelle";
-      invite.board = "candiceprivateboard";
-      invite.encrypted_board_key = string( candice_public_posting_key );
+      invite.community = "candiceprivatecommunity";
+      invite.encrypted_community_key = string( candice_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_active_key, db.get_chain_id() );
@@ -877,8 +860,8 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "jayme";
-      invite.board = "danexclusiveboard";
-      invite.encrypted_board_key = string( dan_public_posting_key );
+      invite.community = "danexclusivecommunity";
+      invite.encrypted_community_key = string( dan_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -891,13 +874,13 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when non-member sends invites" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: board join request" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: community join request" );
 
-      board_join_request_operation request;
+      community_join_request_operation request;
 
       request.signatory = "fred";
       request.account = "fred";
-      request.board = "aliceopenboard";
+      request.community = "aliceopencommunity";
       request.message = "Hello";
       request.requested = true;
       request.validate();
@@ -906,54 +889,54 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( fred_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& request_idx = db.get_index< board_join_request_index >().indices().get< by_account_board >();
+      const auto& request_idx = db.get_index< community_join_request_index >().indices().get< by_account_community >();
 
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopenboard" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopencommunity" ) );
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
-      BOOST_REQUIRE( request_itr->board == request.board );
+      BOOST_REQUIRE( request_itr->community == request.community );
       BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      request.board = "bobpublicboard";
+      request.community = "bobpubliccommunity";
    
       tx.operations.push_back( request );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "bobpublicboard" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "bobpubliccommunity" ) );
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
-      BOOST_REQUIRE( request_itr->board == request.board );
+      BOOST_REQUIRE( request_itr->community == request.community );
       BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      request.board = "candiceprivateboard";
+      request.community = "candiceprivatecommunity";
    
       tx.operations.push_back( request );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivateboard" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivatecommunity" ) );
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
-      BOOST_REQUIRE( request_itr->board == request.board );
+      BOOST_REQUIRE( request_itr->community == request.community );
       BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      request.board = "danexclusiveboard";
+      request.community = "danexclusivecommunity";
    
       tx.operations.push_back( request );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // No join requests for exclusive board
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // No join requests for exclusive community
 
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "danexclusiveboard" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
@@ -961,15 +944,15 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: board join request" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: community join request" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: accept invite by incoming member" );
 
-      board_invite_accept_operation invite_accept;
+      community_invite_accept_operation invite_accept;
 
       invite_accept.signatory = "elon";
       invite_accept.account = "elon";
-      invite_accept.board = "aliceopenboard";
+      invite_accept.community = "aliceopencommunity";
       invite_accept.accepted = true;
       invite_accept.validate();
 
@@ -977,51 +960,51 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.is_member( "elon" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopenboard" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.is_member( "elon" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopencommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      invite_accept.board = "bobpublicboard";
+      invite_accept.community = "bobpubliccommunity";
 
       tx.operations.push_back( invite_accept );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_b.is_member( "elon" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpublicboard" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_b.is_member( "elon" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpubliccommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      invite_accept.board = "candiceprivateboard";
+      invite_accept.community = "candiceprivatecommunity";
 
       tx.operations.push_back( invite_accept );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_c.is_member( "elon" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivateboard" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_c.is_member( "elon" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivatecommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      invite_accept.board = "danexclusiveboard";
+      invite_accept.community = "danexclusivecommunity";
 
       tx.operations.push_back( invite_accept );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_d.is_member( "elon" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusiveboard" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_d.is_member( "elon" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
@@ -1034,9 +1017,9 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_d.is_member( "fred" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusiveboard" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_d.is_member( "fred" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
@@ -1048,13 +1031,13 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder accept join request" );
 
-      board_join_accept_operation join_accept;
+      community_join_accept_operation join_accept;
 
       join_accept.signatory = "alice";
       join_accept.account = "alice";
       join_accept.member = "fred";
-      join_accept.board = "aliceopenboard";
-      join_accept.encrypted_board_key = string( alice_public_posting_key );
+      join_accept.community = "aliceopencommunity";
+      join_accept.encrypted_community_key = string( alice_public_posting_key );
       join_accept.accepted = true;
       join_accept.validate();
 
@@ -1062,9 +1045,9 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopenboard" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopencommunity" ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
@@ -1072,16 +1055,16 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       join_accept.signatory = "bob";
       join_accept.account = "bob";
-      join_accept.board = "bobpublicboard";
-      join_accept.encrypted_board_key = string( bob_public_posting_key );
+      join_accept.community = "bobpubliccommunity";
+      join_accept.encrypted_community_key = string( bob_public_posting_key );
 
       tx.operations.push_back( join_accept );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_b.is_member( "fred" ) );
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "bobpublicboard" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_b.is_member( "fred" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "bobpubliccommunity" ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
@@ -1089,16 +1072,16 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       join_accept.signatory = "candice";
       join_accept.account = "candice";
-      join_accept.board = "candiceprivateboard";
-      join_accept.encrypted_board_key = string( candice_public_posting_key );
+      join_accept.community = "candiceprivatecommunity";
+      join_accept.encrypted_community_key = string( candice_public_posting_key );
       
       tx.operations.push_back( join_accept );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_c.is_member( "fred" ) );
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivateboard" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_c.is_member( "fred" ) );
+      auto request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivatecommunity" ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
@@ -1113,46 +1096,46 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       invite.signatory = "elon";
       invite.account = "elon";
       invite.member = "george";
-      invite.board = "aliceopenboard";
+      invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.encrypted_community_key = string( alice_public_posting_key );
       invite.invited = true;
 
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "george", "aliceopenboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "george", "aliceopencommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       invite.member = "haz";
-      invite.board = "bobpublicboard";
-      invite.encrypted_board_key = string( bob_public_posting_key );
+      invite.community = "bobpubliccommunity";
+      invite.encrypted_community_key = string( bob_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "haz", "bobpublicboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "haz", "bobpubliccommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       invite.member = "isabelle";
-      invite.board = "candiceprivateboard";
-      invite.encrypted_board_key = string( candice_public_posting_key );
+      invite.community = "candiceprivatecommunity";
+      invite.encrypted_community_key = string( candice_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -1162,8 +1145,8 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "jayme";
-      invite.board = "danexclusiveboard";
-      invite.encrypted_board_key = string( dan_public_posting_key );
+      invite.community = "danexclusivecommunity";
+      invite.encrypted_community_key = string( dan_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -1178,11 +1161,11 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder add moderator" );
 
-      board_add_mod_operation mod;
+      community_add_mod_operation mod;
 
       mod.signatory = "alice";
       mod.account = "alice";
-      mod.board = "aliceopenboard";
+      mod.community = "aliceopencommunity";
       mod.moderator = "elon";
       mod.added = true;
       mod.validate();
@@ -1191,50 +1174,50 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.is_moderator( "elon" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.is_moderator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       mod.signatory = "bob";
       mod.account = "bob";
-      mod.board = "bobpublicboard";
+      mod.community = "bobpubliccommunity";
 
       tx.operations.push_back( mod );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_b.is_moderator( "elon" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_b.is_moderator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       mod.signatory = "candice";
       mod.account = "candice";
-      mod.board = "candiceprivateboard";
+      mod.community = "candiceprivatecommunity";
 
       tx.operations.push_back( mod );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_c.is_moderator( "elon" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_c.is_moderator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       mod.signatory = "dan";
       mod.account = "dan";
-      mod.board = "danexclusiveboard";
+      mod.community = "danexclusivecommunity";
 
       tx.operations.push_back( mod );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_d.is_moderator( "elon" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_d.is_moderator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1245,11 +1228,11 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder vote moderator" );
 
-      board_vote_mod_operation vote_mod;
+      community_vote_mod_operation vote_mod;
 
       vote_mod.signatory = "alice";
       vote_mod.account = "alice";
-      vote_mod.board = "aliceopenboard";
+      vote_mod.community = "aliceopencommunity";
       vote_mod.moderator = "elon";
       vote_mod.vote_rank = 1;
       vote_mod.approved = true;
@@ -1259,8 +1242,8 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      flat_map< account_name_type, share_type > m = board_member_a.mod_weight;
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      flat_map< account_name_type, share_type > m = community_member_a.mod_weight;
       BOOST_REQUIRE( m[ elon.name ] > 0 );
 
       tx.operations.clear();
@@ -1268,14 +1251,14 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       vote_mod.signatory = "bob";
       vote_mod.account = "bob";
-      vote_mod.board = "bobpublicboard";
+      vote_mod.community = "bobpubliccommunity";
 
       tx.operations.push_back( vote_mod );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      m = board_member_b.mod_weight;
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      m = community_member_b.mod_weight;
       BOOST_REQUIRE( m[ elon.name ] > 0 );
 
       tx.operations.clear();
@@ -1283,14 +1266,14 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       vote_mod.signatory = "candice";
       vote_mod.account = "candice";
-      vote_mod.board = "candiceprivateboard";
+      vote_mod.community = "candiceprivatecommunity";
 
       tx.operations.push_back( vote_mod );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      m = board_member_c.mod_weight;
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      m = community_member_c.mod_weight;
       BOOST_REQUIRE( m[ elon.name ] > 0 );
 
       tx.operations.clear();
@@ -1298,14 +1281,14 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       vote_mod.signatory = "dan";
       vote_mod.account = "dan";
-      vote_mod.board = "danexclusiveboard";
+      vote_mod.community = "danexclusivecommunity";
 
       tx.operations.push_back( vote_mod );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      m = board_member_d.mod_weight;
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      m = community_member_d.mod_weight;
       BOOST_REQUIRE( m[ elon.name ] > 0 );
 
       tx.operations.clear();
@@ -1320,9 +1303,9 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       invite.signatory = "elon";
       invite.account = "elon";
       invite.member = "george";
-      invite.board = "aliceopenboard";
+      invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.encrypted_community_key = string( alice_public_posting_key );
       invite.invited = true;
 
       tx.operations.push_back( invite );
@@ -1333,8 +1316,8 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "haz";
-      invite.board = "bobpublicboard";
-      invite.encrypted_board_key = string( bob_public_posting_key );
+      invite.community = "bobpubliccommunity";
+      invite.encrypted_community_key = string( bob_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -1344,26 +1327,26 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "isabelle";
-      invite.board = "candiceprivateboard";
-      invite.encrypted_board_key = string( candice_public_posting_key );
+      invite.community = "candiceprivatecommunity";
+      invite.encrypted_community_key = string( candice_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "isabelle", "candiceprivateboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "isabelle", "candiceprivatecommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       invite.member = "jayme";
-      invite.board = "danexclusiveboard";
-      invite.encrypted_board_key = string( dan_public_posting_key );
+      invite.community = "danexclusivecommunity";
+      invite.encrypted_community_key = string( dan_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -1378,11 +1361,11 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder add administrator" );
 
-      board_add_admin_operation admin;
+      community_add_admin_operation admin;
 
       admin.signatory = "alice";
       admin.account = "alice";
-      admin.board = "aliceopenboard";
+      admin.community = "aliceopencommunity";
       admin.admin = "elon";
       admin.added = true;
       admin.validate();
@@ -1391,50 +1374,50 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.is_administrator( "elon" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.is_administrator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       admin.signatory = "bob";
       admin.account = "bob";
-      admin.board = "bobpublicboard";
+      admin.community = "bobpubliccommunity";
 
       tx.operations.push_back( admin );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_b.is_administrator( "elon" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_b.is_administrator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       admin.signatory = "candice";
       admin.account = "candice";
-      admin.board = "candiceprivateboard";
+      admin.community = "candiceprivatecommunity";
 
       tx.operations.push_back( admin );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_c.is_administrator( "elon" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_c.is_administrator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       admin.signatory = "dan";
       admin.account = "dan";
-      admin.board = "danexclusiveboard";
+      admin.community = "danexclusivecommunity";
 
       tx.operations.push_back( admin );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_d.is_administrator( "elon" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_d.is_administrator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1448,9 +1431,9 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       invite.signatory = "elon";
       invite.account = "elon";
       invite.member = "george";
-      invite.board = "aliceopenboard";
+      invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_board_key = string( alice_public_posting_key );
+      invite.encrypted_community_key = string( alice_public_posting_key );
       invite.invited = true;
 
       tx.operations.push_back( invite );
@@ -1461,8 +1444,8 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "haz";
-      invite.board = "bobpublicboard";
-      invite.encrypted_board_key = string( bob_public_posting_key );
+      invite.community = "bobpubliccommunity";
+      invite.encrypted_community_key = string( bob_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -1472,8 +1455,8 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "isabelle";
-      invite.board = "candiceprivateboard";
-      invite.encrypted_board_key = string( candice_public_posting_key );
+      invite.community = "candiceprivatecommunity";
+      invite.encrypted_community_key = string( candice_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -1483,18 +1466,18 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.signatures.clear();
 
       invite.member = "jayme";
-      invite.board = "danexclusiveboard";
-      invite.encrypted_board_key = string( dan_public_posting_key );
+      invite.community = "danexclusivecommunity";
+      invite.encrypted_community_key = string( dan_public_posting_key );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "jayme", "danexclusiveboard" ) );
+      auto invite_itr = invite_idx.find( boost::make_tuple( "jayme", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->board == invite.board );
+      BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
@@ -1515,7 +1498,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      comment.board = "aliceopenboard";
+      comment.community = "aliceopencommunity";
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -1534,19 +1517,19 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       comment.validate();
 
       tx.operations.push_back( comment );
-      tx.sign( george_private_posting_key, db.get_chain_id() );       // Non-members can create posts in open board
+      tx.sign( george_private_posting_key, db.get_chain_id() );       // Non-members can create posts in open community
       db.push_transaction( tx, 0 );
 
       const comment_object& com = db.get_comment( "george", string( "lorem" ) );
       BOOST_REQUIRE( com.author == "george" );
-      BOOST_REQUIRE( com.board == "aliceopenboard" );
+      BOOST_REQUIRE( com.community == "aliceopencommunity" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       comment.signatory = "haz";
       comment.author = "haz";
-      comment.board = "bobpublicboard";
+      comment.community = "bobpubliccommunity";
 
       tx.operations.push_back( comment );
       tx.sign( haz_private_posting_key, db.get_chain_id() );
@@ -1557,7 +1540,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       comment.signatory = "isabelle";
       comment.author = "isabelle";
-      comment.board = "candiceprivateboard";
+      comment.community = "candiceprivatecommunity";
 
       tx.operations.push_back( comment );
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
@@ -1568,7 +1551,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       comment.signatory = "jayme";
       comment.author = "jayme";
-      comment.board = "danexclusiveboard";
+      comment.community = "danexclusivecommunity";
 
       tx.operations.push_back( comment );
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
@@ -1579,7 +1562,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       comment.signatory = "alice";
       comment.author = "alice";
-      comment.board = "aliceopenboard";
+      comment.community = "aliceopencommunity";
 
       tx.operations.push_back( comment );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
@@ -1592,7 +1575,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       comment.signatory = "bob";
       comment.author = "bob";
-      comment.board = "bobpublicboard";
+      comment.community = "bobpubliccommunity";
 
       tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -1605,7 +1588,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       comment.signatory = "candice";
       comment.author = "candice";
-      comment.board = "candiceprivateboard";
+      comment.community = "candiceprivatecommunity";
 
       tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
@@ -1618,7 +1601,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       comment.signatory = "dan";
       comment.author = "dan";
-      comment.board = "danexclusiveboard";
+      comment.community = "danexclusivecommunity";
 
       tx.operations.push_back( comment );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
@@ -1839,11 +1822,11 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment creation handling by members" );
 
-      board_invite_accept_operation accept;
+      community_invite_accept_operation accept;
 
       accept.signatory = "george";
       accept.account = "george";
-      accept.board = "aliceopenboard";
+      accept.community = "aliceopencommunity";
       accept.accepted = true;
       accept.validate();
 
@@ -1856,7 +1839,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       accept.signatory = "haz";
       accept.account = "haz";
-      accept.board = "bobpublicboard";
+      accept.community = "bobpubliccommunity";
 
       tx.operations.push_back( accept );
       tx.sign( haz_private_posting_key, db.get_chain_id() );
@@ -1867,7 +1850,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       accept.signatory = "isabelle";
       accept.account = "isabelle";
-      accept.board = "candiceprivateboard";
+      accept.community = "candiceprivatecommunity";
 
       tx.operations.push_back( accept );
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
@@ -1878,7 +1861,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       accept.signatory = "jayme";
       accept.account = "jayme";
-      accept.board = "danexclusiveboard";
+      accept.community = "danexclusivecommunity";
 
       tx.operations.push_back( accept );
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
@@ -1893,7 +1876,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       comment.signatory = "george";
       comment.author = "george";
-      comment.board = "aliceopenboard";
+      comment.community = "aliceopencommunity";
       comment.permlink = "ipsum";
 
       tx.operations.push_back( comment );
@@ -1902,14 +1885,14 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       const comment_object& george_comment = db.get_comment( "george", string( "ipsum" ) );
       BOOST_REQUIRE( george_comment.author == "george" );
-      BOOST_REQUIRE( george_comment.board == "aliceopenboard" );
+      BOOST_REQUIRE( george_comment.community == "aliceopencommunity" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       comment.signatory = "haz";
       comment.author = "haz";
-      comment.board = "bobpublicboard";
+      comment.community = "bobpubliccommunity";
 
       tx.operations.push_back( comment );
       tx.sign( haz_private_posting_key, db.get_chain_id() );
@@ -1917,14 +1900,14 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       const comment_object& haz_comment = db.get_comment( "haz", string( "ipsum" ) );
       BOOST_REQUIRE( haz_comment.author == "haz" );
-      BOOST_REQUIRE( haz_comment.board == "bobpublicboard" );
+      BOOST_REQUIRE( haz_comment.community == "bobpubliccommunity" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       comment.signatory = "isabelle";
       comment.author = "isabelle";
-      comment.board = "candiceprivateboard";
+      comment.community = "candiceprivatecommunity";
 
       tx.operations.push_back( comment );
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
@@ -1932,14 +1915,14 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       const comment_object& isabelle_comment = db.get_comment( "isabelle", string( "ipsum" ) );
       BOOST_REQUIRE( isabelle_comment.author == "isabelle" );
-      BOOST_REQUIRE( isabelle_comment.board == "candiceprivateboard" );
+      BOOST_REQUIRE( isabelle_comment.community == "candiceprivatecommunity" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       comment.signatory = "jayme";
       comment.author = "jayme";
-      comment.board = "danexclusiveboard";
+      comment.community = "danexclusivecommunity";
 
       tx.operations.push_back( comment );
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
@@ -1947,7 +1930,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       const comment_object& jayme_comment = db.get_comment( "jayme", string( "ipsum" ) );
       BOOST_REQUIRE( jayme_comment.author == "jayme" );
-      BOOST_REQUIRE( jayme_comment.board == "danexclusiveboard" );
+      BOOST_REQUIRE( jayme_comment.community == "danexclusivecommunity" );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2179,7 +2162,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment share handling by members" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: moderator tag by board moderator" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: moderator tag by community moderator" );
 
       moderation_tag_operation tag;
 
@@ -2188,7 +2171,7 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tag.author = "george";
       tag.permlink = "ipsum";
       tag.tags.push_back( "nsfw" );
-      tag.rating = MATURE;
+      tag.rating = ADULT;
       tag.details = "Post is NSFW";
       tag.interface = INIT_ACCOUNT;
       tag.filter = false;
@@ -2261,15 +2244,15 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: moderator tag by board moderator" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: moderator tag by community moderator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: administrator add moderator" );
 
-      board_add_mod_operation mod;
+      community_add_mod_operation mod;
 
       mod.signatory = "elon";
       mod.account = "elon";
-      mod.board = "aliceopenboard";
+      mod.community = "aliceopencommunity";
       mod.moderator = "fred";
       mod.added = true;
       mod.validate();
@@ -2278,44 +2261,44 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.is_moderator( "fred" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.board = "bobpublicboard";
+      mod.community = "bobpubliccommunity";
 
       tx.operations.push_back( mod );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_b.is_moderator( "fred" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_b.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.board = "candiceprivateboard";
+      mod.community = "candiceprivatecommunity";
 
       tx.operations.push_back( mod );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_c.is_moderator( "fred" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_c.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.board = "danexclusiveboard";
+      mod.community = "danexclusivecommunity";
 
       tx.operations.push_back( mod );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_d.is_moderator( "elon" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_d.is_moderator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2324,16 +2307,14 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: administrator add moderator" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: administrator update board" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: administrator update community" );
 
-      board_update_operation update;
+      community_update_operation update;
 
       update.signatory = "elon";
       update.account = "elon";
-      update.board = "aliceopenboard";
-      update.board_type = BOARD;
-      update.board_privacy = OPEN_BOARD;
-      update.board_public_key = string( alice_public_posting_key );
+      update.community = "aliceopencommunity";
+      update.community_public_key = string( alice_public_posting_key );
       update.json = "{\"json\":\"valid\"}";
       update.json_private = "{\"json\":\"valid\"}";
       update.details = "updated details";
@@ -2346,91 +2327,84 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_object& alice_board = db.get_board( "aliceopenboard" );
-      BOOST_REQUIRE( alice_board.founder == update.account );
-      BOOST_REQUIRE( alice_board.name == update.board );
-      BOOST_REQUIRE( alice_board.board_privacy == update.board_privacy );
-      BOOST_REQUIRE( alice_board.details == update.details );
-      BOOST_REQUIRE( alice_board.url == update.url );
-      BOOST_REQUIRE( alice_board.created == now() );
+      const community_object& alice_community = db.get_community( "aliceopencommunity" );
+      BOOST_REQUIRE( alice_community.founder == update.account );
+      BOOST_REQUIRE( alice_community.name == update.community );
+      BOOST_REQUIRE( alice_community.details == update.details );
+      BOOST_REQUIRE( alice_community.url == update.url );
+      BOOST_REQUIRE( alice_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       update.pinned_author = "bob";
-      update.board = "bobpublicboard";
-      update.board_privacy = PUBLIC_BOARD;
-      update.board_public_key = string( bob_public_posting_key );
+      update.community = "bobpubliccommunity";
+      update.community_public_key = string( bob_public_posting_key );
       update.validate();
 
       tx.operations.push_back( update );
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_object& bob_board = db.get_board( "bobpublicboard" );
-      BOOST_REQUIRE( bob_board.founder == update.account );
-      BOOST_REQUIRE( bob_board.name == update.board );
-      BOOST_REQUIRE( bob_board.board_privacy == update.board_privacy );
-      BOOST_REQUIRE( bob_board.details == update.details );
-      BOOST_REQUIRE( bob_board.url == update.url );
-      BOOST_REQUIRE( bob_board.created == now() );
+      const community_object& bob_community = db.get_community( "bobpubliccommunity" );
+      BOOST_REQUIRE( bob_community.founder == update.account );
+      BOOST_REQUIRE( bob_community.name == update.community );
+      BOOST_REQUIRE( bob_community.details == update.details );
+      BOOST_REQUIRE( bob_community.url == update.url );
+      BOOST_REQUIRE( bob_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       update.pinned_author = "candice";
-      update.board = "candiceprivateboard";
-      update.board_privacy = PRIVATE_BOARD;
-      update.board_public_key = string( candice_public_posting_key );
+      update.community = "candiceprivatecommunity";
+      update.community_public_key = string( candice_public_posting_key );
       update.validate();
 
       tx.operations.push_back( update );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_object& candice_board = db.get_board( "candiceprivateboard" );
-      BOOST_REQUIRE( candice_board.founder == update.account );
-      BOOST_REQUIRE( candice_board.name == update.board );
-      BOOST_REQUIRE( candice_board.board_privacy == update.board_privacy );
-      BOOST_REQUIRE( candice_board.details == update.details );
-      BOOST_REQUIRE( candice_board.url == update.url );
-      BOOST_REQUIRE( candice_board.created == now() );
+      const community_object& candice_community = db.get_community( "candiceprivatecommunity" );
+      BOOST_REQUIRE( candice_community.founder == update.account );
+      BOOST_REQUIRE( candice_community.name == update.community );
+      BOOST_REQUIRE( candice_community.details == update.details );
+      BOOST_REQUIRE( candice_community.url == update.url );
+      BOOST_REQUIRE( candice_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       update.pinned_author = "dan";
-      update.board = "danexclusiveboard";
-      update.board_privacy = EXCLUSIVE_BOARD;
-      update.board_public_key = string( dan_public_posting_key );
+      update.community = "danexclusivecommunity";
+      update.community_public_key = string( dan_public_posting_key );
       update.validate();
 
       tx.operations.push_back( update );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_object& dan_board = db.get_board( "danexclusiveboard" );
-      BOOST_REQUIRE( dan_board.founder == update.account );
-      BOOST_REQUIRE( dan_board.name == update.board );
-      BOOST_REQUIRE( dan_board.board_privacy == update.board_privacy );
-      BOOST_REQUIRE( dan_board.details == update.details );
-      BOOST_REQUIRE( dan_board.url == update.url );
-      BOOST_REQUIRE( dan_board.created == now() );
+      const community_object& dan_community = db.get_community( "danexclusivecommunity" );
+      BOOST_REQUIRE( dan_community.founder == update.account );
+      BOOST_REQUIRE( dan_community.name == update.community );
+      BOOST_REQUIRE( dan_community.details == update.details );
+      BOOST_REQUIRE( dan_community.url == update.url );
+      BOOST_REQUIRE( dan_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: administrator update board" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: administrator update community" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove moderator" );
 
-      board_add_mod_operation mod;
+      community_add_mod_operation mod;
 
       mod.signatory = "alice";
       mod.account = "alice";
-      mod.board = "aliceopenboard";
+      mod.community = "aliceopencommunity";
       mod.moderator = "fred";
       mod.added = false;
       mod.validate();
@@ -2439,54 +2413,54 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
-      BOOST_REQUIRE( !board_member_a.is_moderator( "fred" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
+      BOOST_REQUIRE( !community_member_a.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       mod.signatory = "bob";
       mod.account = "bob";
-      mod.board = "bobpublicboard";
+      mod.community = "bobpubliccommunity";
 
       tx.operations.push_back( mod );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
-      BOOST_REQUIRE( !board_member_a.is_moderator( "fred" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
+      BOOST_REQUIRE( !community_member_a.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       mod.signatory = "candice";
       mod.account = "candice";
-      mod.board = "candiceprivateboard";
+      mod.community = "candiceprivatecommunity";
 
       tx.operations.push_back( mod );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
-      BOOST_REQUIRE( !board_member_a.is_moderator( "fred" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
+      BOOST_REQUIRE( !community_member_a.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       mod.signatory = "dan";
       mod.account = "dan";
-      mod.board = "danexclusiveboard";
+      mod.community = "danexclusivecommunity";
 
       tx.operations.push_back( mod );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_a.is_member( "fred" ) );
-      BOOST_REQUIRE( !board_member_a.is_moderator( "fred" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
+      BOOST_REQUIRE( !community_member_a.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2497,11 +2471,11 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove member" );
 
-      board_remove_member_operation remove;
+      community_remove_member_operation remove;
 
       remove.signatory = "alice";
       remove.account = "alice";
-      remove.board = "aliceopenboard";
+      remove.community = "aliceopencommunity";
       remove.member = "fred";
       remove.validate();
 
@@ -2509,50 +2483,50 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( !board_member_a.is_member( "fred" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( !community_member_a.is_member( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       remove.signatory = "bob";
       remove.account = "bob";
-      remove.board = "bobpublicboard";
+      remove.community = "bobpubliccommunity";
 
       tx.operations.push_back( remove );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( !board_member_b.is_member( "fred" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( !community_member_b.is_member( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       remove.signatory = "candice";
       remove.account = "candice";
-      remove.board = "candiceprivateboard";
+      remove.community = "candiceprivatecommunity";
 
       tx.operations.push_back( remove );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( !board_member_c.is_member( "fred" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( !community_member_c.is_member( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       remove.signatory = "dan";
       remove.account = "dan";
-      remove.board = "danexclusiveboard";
+      remove.community = "danexclusivecommunity";
 
       tx.operations.push_back( remove );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( !board_member_d.is_member( "fred" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( !community_member_d.is_member( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2561,13 +2535,13 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder remove moderator" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: board subscription" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: community subscription" );
 
-      board_subscribe_operation subscribe;
+      community_subscribe_operation subscribe;
 
       subscribe.signatory = "elon";
       subscribe.account = "elon";
-      subscribe.board = "aliceopenboard";
+      subscribe.community = "aliceopencommunity";
       subscribe.interface = INIT_ACCOUNT;
       subscribe.added = true;
       subscribe.subscribed = true;
@@ -2577,110 +2551,110 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.is_subscriber( "elon" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.is_subscriber( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      subscribe.board = "bobpublicboard";
+      subscribe.community = "bobpubliccommunity";
 
       tx.operations.push_back( subscribe );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_b.is_subscriber( "elon" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_b.is_subscriber( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      subscribe.board = "candiceprivateboard";
+      subscribe.community = "candiceprivatecommunity";
 
       tx.operations.push_back( subscribe );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_c.is_subscriber( "elon" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_c.is_subscriber( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      subscribe.board = "danexclusiveboard";
+      subscribe.community = "danexclusivecommunity";
 
       tx.operations.push_back( subscribe );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_d.is_subscriber( "elon" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_d.is_subscriber( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: board subscription" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: community subscription" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder blacklist account" );
 
-      board_blacklist_operation blacklist;
+      community_blacklist_operation blacklist;
 
       blacklist.signatory = "alice";
       blacklist.account = "alice";
       blacklist.member = "fred";
-      blacklist.board = "aliceopenboard";
+      blacklist.community = "aliceopencommunity";
       blacklist.validate();
 
       tx.operations.push_back( blacklist );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.is_blacklisted( "fred" ) );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.is_blacklisted( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       blacklist.signatory = "bob";
       blacklist.account = "bob";
-      blacklist.board = "bobpublicboard";
+      blacklist.community = "bobpubliccommunity";
 
       tx.operations.push_back( blacklist );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_b.is_blacklisted( "fred" ) );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_b.is_blacklisted( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       blacklist.signatory = "candice";
       blacklist.account = "candice";
-      blacklist.board = "candiceprivateboard";
+      blacklist.community = "candiceprivatecommunity";
 
       tx.operations.push_back( blacklist );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_c.is_blacklisted( "fred" ) );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_c.is_blacklisted( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       blacklist.signatory = "dan";
       blacklist.account = "dan";
-      blacklist.board = "danexclusiveboard";
+      blacklist.community = "danexclusivecommunity";
 
       tx.operations.push_back( blacklist );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_d.is_blacklisted( "fred" ) );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_d.is_blacklisted( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2689,13 +2663,13 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder blacklist account" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: transfer board ownership" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: transfer community ownership" );
 
-      board_transfer_ownership_operation transfer;
+      community_transfer_ownership_operation transfer;
 
       transfer.signatory = "alice";
       transfer.account = "alice";
-      transfer.board = "aliceopenboard";
+      transfer.community = "aliceopencommunity";
       transfer.new_founder = "elon";
       transfer.validate();
 
@@ -2703,59 +2677,59 @@ BOOST_AUTO_TEST_CASE( board_management_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_a = db.get_board_member( "aliceopenboard" );
-      BOOST_REQUIRE( board_member_a.founder == "elon" );
+      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+      BOOST_REQUIRE( community_member_a.founder == "elon" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       transfer.signatory = "bob";
       transfer.account = "bob";
-      transfer.board = "bobpublicboard";
+      transfer.community = "bobpubliccommunity";
 
       tx.operations.push_back( transfer );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_b = db.get_board_member( "bobpublicboard" );
-      BOOST_REQUIRE( board_member_b.founder == "elon" );
+      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+      BOOST_REQUIRE( community_member_b.founder == "elon" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       transfer.signatory = "candice";
       transfer.account = "candice";
-      transfer.board = "candiceprivateboard";
+      transfer.community = "candiceprivatecommunity";
 
       tx.operations.push_back( transfer );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_c = db.get_board_member( "candiceprivateboard" );
-      BOOST_REQUIRE( board_member_c.founder == "elon" );
+      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+      BOOST_REQUIRE( community_member_c.founder == "elon" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       transfer.signatory = "dan";
       transfer.account = "dan";
-      transfer.board = "danexclusiveboard";
+      transfer.community = "danexclusivecommunity";
 
       tx.operations.push_back( transfer );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const board_member_object& board_member_d = db.get_board_member( "danexclusiveboard" );
-      BOOST_REQUIRE( board_member_d.founder == "elon" );
+      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+      BOOST_REQUIRE( community_member_d.founder == "elon" );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: transfer board ownership" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: transfer community ownership" );
 
-      BOOST_TEST_MESSAGE( "├── Passed: BOARD MANAGEMENT OPERATION SEQUENCE" );
+      BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY MANAGEMENT OPERATION SEQUENCE" );
    }
    FC_LOG_AND_RETHROW()
 }

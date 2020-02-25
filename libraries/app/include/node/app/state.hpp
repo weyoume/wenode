@@ -68,7 +68,7 @@ namespace node { namespace app {
       vector< tag_name_type >    tags;             // Set of additional string tags for sorting the post by
       string                     rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
       string                     details;          // Explanation as to what rule the post is in contravention of and why it was tagged.
-      bool                       filter;           // True if the post should be filtered by the board or governance address subscribers.
+      bool                       filter;           // True if the post should be filtered by the community or governance address subscribers.
       time_point                 time;
    };
 
@@ -107,7 +107,7 @@ namespace node { namespace app {
       vector< tag_name_type >    tags;             // Set of additional string tags for sorting the post by
       string                     rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
       string                     details;          // Explanation as to what rule the post is in contravention of and why it was tagged.
-      bool                       filter;           // True if the post should be filtered by the board or governance address subscribers.
+      bool                       filter;           // True if the post should be filtered by the community or governance address subscribers.
       time_point                 time;
    };
 
@@ -132,7 +132,7 @@ namespace node { namespace app {
       map< uint64_t, applied_operation >    view_history;
       map< uint64_t, applied_operation >    share_history;
       map< uint64_t, applied_operation >    moderation_history;
-      map< uint64_t, applied_operation >    board_history;
+      map< uint64_t, applied_operation >    community_history;
       map< uint64_t, applied_operation >    ad_history;
       map< uint64_t, applied_operation >    transfer_history;
       map< uint64_t, applied_operation >    balance_history;
@@ -155,17 +155,17 @@ namespace node { namespace app {
       map< account_name_type, transfer_recurring_request_api_obj >         outgoing_recurring_transfer_requests;
    };
 
-   struct board_state
+   struct community_state
    {
-      map< board_name_type, board_request_api_obj >                        pending_requests;
-      map< board_name_type, board_invite_api_obj >                         incoming_invites;
-      map< board_name_type, board_invite_api_obj >                         outgoing_invites;
-      map< board_name_type, int64_t >                                      incoming_moderator_votes;
-      map< board_name_type, map<account_name_type, uint16_t > >            outgoing_moderator_votes;
-      vector< board_name_type >                                            founded_boards;
-      vector< board_name_type >                                            admin_boards;
-      vector< board_name_type >                                            moderator_boards;
-      vector< board_name_type >                                            member_boards;
+      map< community_name_type, community_request_api_obj >                        pending_requests;
+      map< community_name_type, community_invite_api_obj >                         incoming_invites;
+      map< community_name_type, community_invite_api_obj >                         outgoing_invites;
+      map< community_name_type, int64_t >                                      incoming_moderator_votes;
+      map< community_name_type, map<account_name_type, uint16_t > >            outgoing_moderator_votes;
+      vector< community_name_type >                                            founded_communities;
+      vector< community_name_type >                                            admin_communities;
+      vector< community_name_type >                                            moderator_communities;
+      vector< community_name_type >                                            member_communities;
    };
 
    struct connection_state
@@ -237,7 +237,7 @@ namespace node { namespace app {
       key_state                                         keychain;
       message_state                                     messages;
       transfer_state                                    transfers;
-      board_state                                       boards;
+      community_state                                       communities;
       network_state                                     network;
       account_ad_state                                  active_ads; 
       vector< pair< account_name_type, uint32_t > >     top_shared;
@@ -246,20 +246,20 @@ namespace node { namespace app {
       operation_state                                   operations;
    };
 
-   struct extended_board : public board_api_obj
+   struct extended_community : public community_api_obj
    {
-      extended_board(){}
-      extended_board( const board_object& b ):board_api_obj( b ){}
+      extended_community(){}
+      extended_community( const community_object& b ):community_api_obj( b ){}
 
-      vector< account_name_type >                       subscribers;                 // List of accounts that subscribe to the posts made in the board.
-      vector< account_name_type >                       members;                     // List of accounts that are permitted to post in the board. Can invite and accept on public boards
-      vector< account_name_type >                       moderators;                  // Accounts able to filter posts. Can invite and accept on private boards.
-      vector< account_name_type >                       administrators;              // Accounts able to add and remove moderators and update board details. Can invite and accept on Exclusive boards. 
-      vector< account_name_type >                       blacklist;                   // Accounts that are not able to post in this board, or request to join.
+      vector< account_name_type >                       subscribers;                 // List of accounts that subscribe to the posts made in the community.
+      vector< account_name_type >                       members;                     // List of accounts that are permitted to post in the community. Can invite and accept on public communities
+      vector< account_name_type >                       moderators;                  // Accounts able to filter posts. Can invite and accept on private communities.
+      vector< account_name_type >                       administrators;              // Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities. 
+      vector< account_name_type >                       blacklist;                   // Accounts that are not able to post in this community, or request to join.
       map< account_name_type, int64_t >                 mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
       int64_t                                           total_mod_weight = 0;        // Total of all moderator weights. 
-      map< account_name_type, board_request_api_obj >   requests;
-      map< account_name_type, board_invite_api_obj >    invites;
+      map< account_name_type, community_request_api_obj >   requests;
+      map< account_name_type, community_invite_api_obj >    invites;
    };
 
    struct extended_asset : public asset_api_obj
@@ -300,7 +300,7 @@ namespace node { namespace app {
       map< account_name_type, encrypted_keypair_type >       connection_keys;
       map< account_name_type, encrypted_keypair_type >       friend_keys;
       map< account_name_type, encrypted_keypair_type >       companion_keys;
-      map< board_name_type, encrypted_keypair_type >         board_keys;
+      map< community_name_type, encrypted_keypair_type >         community_keys;
       map< account_name_type, encrypted_keypair_type >       business_keys;
    };
 
@@ -353,7 +353,7 @@ namespace node { namespace app {
    struct search_result_state
    {
       vector< account_api_obj >               accounts;
-      vector< board_api_obj >                 boards;
+      vector< community_api_obj >                 communities;
       vector< tag_following_api_obj >         tags;
       vector< asset_api_obj >                 assets;
       vector< discussion >                    posts;
@@ -376,7 +376,7 @@ namespace node { namespace app {
       dynamic_global_property_api_obj         props;
       app::tag_index                          tag_idx;
       map< string, extended_account >         accounts;
-      map< string, extended_board >           boards;
+      map< string, extended_community >           communities;
       map< string, tag_following_api_obj >    tags;
       map< string, discussion_index >         discussion_idx;
       map< string, tag_api_obj >              tag_stats;
@@ -502,7 +502,7 @@ FC_REFLECT( node::app::operation_state,
          (view_history)
          (share_history)
          (moderation_history)
-         (board_history)
+         (community_history)
          (ad_history)
          (transfer_history)
          (balance_history)
@@ -524,16 +524,16 @@ FC_REFLECT( node::app::transfer_state,
          (outgoing_recurring_transfer_requests)
          );
 
-FC_REFLECT( node::app::board_state,
+FC_REFLECT( node::app::community_state,
          (pending_requests)
          (incoming_invites)
          (outgoing_invites)
          (incoming_moderator_votes)
          (outgoing_moderator_votes)
-         (founded_boards)
-         (admin_boards)
-         (moderator_boards)
-         (member_boards)
+         (founded_communities)
+         (admin_communities)
+         (moderator_communities)
+         (member_communities)
          );
 
 FC_REFLECT( node::app::connection_state,
@@ -593,7 +593,7 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          (keychain)
          (messages)
          (transfers)
-         (boards)
+         (communities)
          (network)
          (active_ads)
          (top_shared)
@@ -602,7 +602,7 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          (operations)
          );
 
-FC_REFLECT_DERIVED( node::app::extended_board, ( node::app::board_api_obj ),
+FC_REFLECT_DERIVED( node::app::extended_community, ( node::app::community_api_obj ),
          (subscribers)
          (members)
          (moderators)
@@ -641,7 +641,7 @@ FC_REFLECT( node::app::key_state,
          (connection_keys)
          (friend_keys)
          (companion_keys)
-         (board_keys)
+         (community_keys)
          (business_keys)
          );
 
@@ -687,7 +687,7 @@ FC_REFLECT( node::app::account_ad_state,
 
 FC_REFLECT( node::app::search_result_state,
          (accounts)
-         (boards)
+         (communities)
          (tags)
          (assets)
          (posts)
@@ -705,7 +705,7 @@ FC_REFLECT( node::app::state,
          (props)
          (tag_idx)
          (accounts)
-         (boards)
+         (communities)
          (tags)
          (discussion_idx)
          (tag_stats)

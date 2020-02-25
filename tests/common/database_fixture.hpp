@@ -229,13 +229,12 @@ struct database_fixture {
       const string& json
    );
 
-   const board_object& board_create(
+   const community_object& community_create(
       const string& name,
       const string& founder,
       const private_key_type& founder_key,
-      const public_key_type& board_key,
-      const string& board_type,
-      const string& board_privacy,
+      const public_key_type& community_key,
+      const string& community_privacy,
       const string& details,
       const string& url,
       const string& json

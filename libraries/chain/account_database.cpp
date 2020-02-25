@@ -136,7 +136,7 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
    FC_ASSERT( payment.symbol == SYMBOL_USD, 
       "Payment asset must be denominated in USD asset.");
 
-   const reward_fund_object& reward_fund = get_reward_fund();
+   const reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
    asset membership_fee = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price * payment;
 
    asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
@@ -167,7 +167,7 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
    FC_ASSERT( payment.symbol == SYMBOL_USD, 
       "Payment asset must be denominated in USD asset.");
 
-   const reward_fund_object& reward_fund = get_reward_fund();
+   const reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
    asset membership_fee = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price * payment;
 
    asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
@@ -247,14 +247,17 @@ void database::update_account_reputations()
 /**
  * Pays an account its activity reward shares from the reward pool.
  */
-asset database::claim_activity_reward( const account_object& account, const producer_object& producer)
+asset database::claim_activity_reward( const account_object& account, 
+   const producer_object& producer, asset_symbol_type currency_symbol )
 { try {
-   const account_balance_object& abo = get_account_balance(account.name, SYMBOL_EQUITY);
+   const asset_currency_data_object& currency = get_currency_data( currency_symbol );
+   const reward_fund_object& reward_fund = get_reward_fund( currency_symbol );
+   const account_balance_object& abo = get_account_balance( account.name, currency.equity_asset );
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const producer_schedule_object& pso = get_producer_schedule();
+   const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = props.time;
    auto decay_rate = RECENT_REWARD_DECAY_RATE;
-   const reward_fund_object& reward_fund = get_reward_fund();
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    share_type activity_shares = BLOCKCHAIN_PRECISION;
 
@@ -307,7 +310,7 @@ asset database::claim_activity_reward( const account_object& account, const prod
    modify( producer, [&]( producer_object& p )
    {
       p.accumulated_activity_stake += voting_power;
-      p.decay_weights( now, pso );
+      p.decay_weights( now, median_props );
    });
 
    return activity_reward;
@@ -565,24 +568,24 @@ void database::update_executive_board_votes( const account_object& account, cons
 
 
 /**
- * Aligns board moderator votes in order of highest to lowest,
+ * Aligns community moderator votes in order of highest to lowest,
  * with continual ordering.
  */
-void database::update_board_moderator_votes( const account_object& account, const board_name_type& board )
+void database::update_community_moderator_votes( const account_object& account, const community_name_type& community )
 {
-   const auto& vote_idx = get_index< board_moderator_vote_index >().indices().get< by_account_board_rank >();
-   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, board ) );
+   const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, community ) );
 
    uint16_t new_vote_rank = 1;
 
    while( vote_itr != vote_idx.end() && 
       vote_itr->account == account.name &&
-      vote_itr->board == board )
+      vote_itr->community == community )
    {
-      const board_moderator_vote_object& vote = *vote_itr;
+      const community_moderator_vote_object& vote = *vote_itr;
       if( vote.vote_rank != new_vote_rank )
       {
-         modify( vote, [&]( board_moderator_vote_object& v )
+         modify( vote, [&]( community_moderator_vote_object& v )
          {
             v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
          });
@@ -593,29 +596,29 @@ void database::update_board_moderator_votes( const account_object& account, cons
 }
 
 /**
- * Aligns board moderator votes in a continuous order, and inputs a new vote
+ * Aligns community moderator votes in a continuous order, and inputs a new vote
  * at a specified vote number.
  */
-void database::update_board_moderator_votes( const account_object& account, const board_name_type& board, 
+void database::update_community_moderator_votes( const account_object& account, const community_name_type& community, 
    const account_name_type& moderator, uint16_t input_vote_rank )
 {
-   const auto& vote_idx = get_index< board_moderator_vote_index >().indices().get< by_account_board_rank >();
-   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, board ) );
+   const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, community ) );
 
    uint16_t new_vote_rank = 1;
 
    while( vote_itr != vote_idx.end() && 
       vote_itr->account == account.name &&
-      vote_itr->board == board )
+      vote_itr->community == community )
    {
-      const board_moderator_vote_object& vote = *vote_itr;
+      const community_moderator_vote_object& vote = *vote_itr;
       if( vote.vote_rank == input_vote_rank )
       {
          new_vote_rank++;
       }
       if( vote.vote_rank != new_vote_rank )
       {
-         modify( vote, [&]( board_moderator_vote_object& v )
+         modify( vote, [&]( community_moderator_vote_object& v )
          {
             v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
          });
@@ -624,11 +627,11 @@ void database::update_board_moderator_votes( const account_object& account, cons
       ++vote_itr;
    }
 
-   create< board_moderator_vote_object >([&]( board_moderator_vote_object& v )
+   create< community_moderator_vote_object >([&]( community_moderator_vote_object& v )
    {
       v.account = account.name;
       v.moderator = moderator;
-      v.board = board;
+      v.community = community;
       v.vote_rank = input_vote_rank;
    });
 }

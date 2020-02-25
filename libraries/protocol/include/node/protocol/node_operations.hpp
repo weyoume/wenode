@@ -2,7 +2,7 @@
 #include <node/protocol/base.hpp>
 #include <node/protocol/block_header.hpp>
 #include <node/protocol/asset.hpp>
-#include <node/protocol/chain_properties.hpp>
+
 
 #include <fc/utf8.hpp>
 #include <fc/crypto/equihash.hpp>
@@ -18,34 +18,16 @@ namespace node { namespace protocol {
          "Account name ${n} is invalid", ("n", name) );
    };
 
-   inline void validate_persona_account_name( const string& name )
+   inline void validate_community_name( const string& name )
    {
-      FC_ASSERT( is_valid_persona_account_name( name ),
-         "Persona Account name ${n} is invalid", ("n", name) );
-   };
-
-   inline void validate_profile_account_name( const string& name )
-   {
-      FC_ASSERT( is_valid_profile_account_name( name ),
-         "Profile Account name ${n} is invalid", ("n", name) );
-   };
-
-   inline void validate_business_account_name( const string& name )
-   {
-      FC_ASSERT( is_valid_business_account_name( name ),
-         "Business Account name ${n} is invalid", ("n", name) );
-   };
-
-   inline void validate_board_name( const string& name )
-   {
-      FC_ASSERT( is_valid_business_account_name( name ),
-         "Board name ${n} is invalid", ("n", name) );
+      FC_ASSERT( is_valid_account_name( name ),
+         "Community name ${n} is invalid", ("n", name) );
    };
 
    inline void validate_tag_name( const string& name )
    {
-      FC_ASSERT( is_valid_persona_account_name( name ),
-         "Board name ${n} is invalid", ("n", name) );
+      FC_ASSERT( is_valid_account_name( name ),
+         "Tag name ${n} is invalid", ("n", name) );
    };
 
    inline void validate_permlink( const string& permlink )
@@ -71,6 +53,17 @@ namespace node { namespace protocol {
 
       FC_ASSERT( std::regex_match( uuidv4, uuidv4_regex ),
          "UUIDV4 is invalid.");
+   };
+
+   inline void validate_public_key( const string& key )
+   {
+      FC_ASSERT( key.size() < MAX_MEMO_SIZE,
+         "Public Key is too long" );
+      FC_ASSERT( fc::is_utf8( key ),
+         "Public key is not formatted in UTF8." );
+      public_key_type pkt = public_key_type( key );
+      string result = string( pkt );
+      FC_ASSERT( key == result, "Invalid Public Key" );
    };
 
    /**
@@ -144,30 +137,7 @@ namespace node { namespace protocol {
    /**
     * Creates a brand new WeYouMe account for signing transactions and creating posts.
     * 
-    * Accounts can be created with multiple different types for
-    * varying feature sets and capabilities
-    * 
-    * PERSONA: Referenced only by username, contains basic account information.
-    * Does not require a governance address, typically not linked with a 
-    * personal identity.
-    * 
-    * PROFILE: Contains a range of hashed and salted information for 
-    * searching and discovering the account, and linking it to
-    * a specific personal identity. Contains encrypted profile 
-    * information available to specific levels of connections.
-    * Requires a governance account, hashed email address, hashed phone number,
-    * encrypted email address and encrypted phone number.
-    * The Governance address has access to 
-    * plaintext information by way of connection key decryption.
-    * Account typically contains first name and last name of the person.
-    * 
-    * BUSINESS: Contains a heirarchial structure of members, officers, and 
-    * executives that can be used for managing an enterprise of multiple
-    * accounts, and giving individuals delegated control over account
-    * transaction signatory authority. Able to issue additonal assets
-    * that distribute portions of incoming revenue.
-    * Options for control structures that offer different 
-    * authority dynamics, from most permissive to most restrictive. 
+    * Referenced by username, contains account information.
     */
    struct account_create_operation : public base_operation
    {
@@ -176,8 +146,6 @@ namespace node { namespace protocol {
       account_name_type                      registrar;                     ///< Account registering the new account, usually an interface.
 
       account_name_type                      new_account_name;              ///< The name of the new account.
-
-      account_identity_type                  account_type;                  ///< the type of account being created, persona, profile, business, anonymous.
 
       account_name_type                      referrer;                      ///< the account that lead to the creation of the new account, by way of referral link.
 
@@ -197,11 +165,11 @@ namespace node { namespace protocol {
 
       string                                 json_private;                  ///< The JSON string of encrypted profile information.
 
-      authority                              owner;                         ///< The account authority required for changing the active and posting authorities.
+      authority                              owner_auth;                    ///< The account authority required for changing the active and posting authorities.
 
-      authority                              active;                        ///< The account authority required for sending payments and trading.
+      authority                              active_auth;                   ///< The account authority required for sending payments and trading.
 
-      authority                              posting;                       ///< The account authority required for posting content and voting.
+      authority                              posting_auth;                  ///< The account authority required for posting content and voting.
 
       string                                 secure_public_key;             ///< The secure encryption key for content only visible to this account.
 
@@ -210,12 +178,6 @@ namespace node { namespace protocol {
       string                                 friend_public_key;             ///< The connection public key used for encrypting Friend level content.
 
       string                                 companion_public_key;          ///< The connection public key used for encrypting Companion level content.
-
-      optional< business_structure_type >    business_type;                 ///< The type of business account being created.
-
-      optional< share_type >                 officer_vote_threshold;        ///< The voting power required to be an active officer.
-
-      optional< string >                     business_public_key;           ///< The public key used for encrypted business content.
 
       asset                                  fee;                           ///< Account creation fee for stake on the new account.
 
@@ -229,15 +191,6 @@ namespace node { namespace protocol {
 
    /**
     * Updates the details and authorities of an account.
-    * 
-    * @todo Account deletion process:
-    * Remove all outstanding orders / requests
-    * Wipe all comments
-    * Wipe all account data
-    * All APIs will skip account when retrieving data
-    * Account name is released, allowing a new account to be created with same name.
-    * Sells all assets to COIN and burns funds
-    * Wipes all messages, votes, views, shares
     */
    struct account_update_operation : public base_operation
    {
@@ -245,11 +198,11 @@ namespace node { namespace protocol {
 
       account_name_type                      account;                       ///< Name of the account to update.
 
-      authority                              owner;                         ///< Creates a new owner authority for the account, changing the key and account auths required to sign transactions.
+      authority                              owner_auth;                    ///< Creates a new owner authority for the account, changing the key and account auths required to sign transactions.
 
-      authority                              active;                        ///< Creates a new active authority for the account, changing the key and account auths required to sign transactions.
+      authority                              active_auth;                   ///< Creates a new active authority for the account, changing the key and account auths required to sign transactions.
 
-      authority                              posting;                       ///< Creates a new posting authority for the account, changing the key and account auths required to sign transactions.                                                    
+      authority                              posting_auth;                  ///< Creates a new posting authority for the account, changing the key and account auths required to sign transactions.
 
       string                                 secure_public_key;             ///< The secure encryption key for content only visible to this account.
 
@@ -261,7 +214,7 @@ namespace node { namespace protocol {
 
       string                                 details;                       ///< The account's details string.
 
-      string                                 url;                           ///< The account's selected personal URL. 
+      string                                 url;                           ///< The account's selected personal URL.
 
       string                                 json;                          ///< The JSON string of public profile information.
 
@@ -269,17 +222,117 @@ namespace node { namespace protocol {
 
       string                                 pinned_permlink;               ///< Permlink of the users pinned post.
 
-      optional< business_structure_type >    business_type;                 ///< Structure of the business to use for permissions and member selection mechanisms. 
-
-      optional< share_type >                 officer_vote_threshold;        ///< Amount of voting power required for a member to become an officer. 
-
-      optional< string >                     business_public_key;           ///< The public key used for encrypted business content.
-
-      bool                                   deleted = false;               ///< Set to True to Delete Account. Takes effect after 7 days, can be cancelled in this time. 
+      bool                                   active = true;                 ///< True when account is active. False to set account as inactive.
 
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return account; }
+   };
+
+
+   /**
+    * Creates or Updates the business structure of an account.
+    * 
+    * Contains a heirarchial structure of members, officers, and 
+    * executives that can be used for managing an enterprise of multiple
+    * accounts, and giving individuals delegated control over account
+    * transaction signatory authority. Able to issue additonal assets
+    * that distribute portions of incoming revenue.
+    * Options for control structures that offer different 
+    * authority dynamics, from most permissive to most restrictive.
+    */
+   struct account_business_operation : public base_operation
+   {
+      account_name_type           signatory;
+
+      account_name_type           account;                  ///< Name of the account to update.
+
+      business_structure_type     business_type;            ///< The type of business account being created.
+
+      share_type                  officer_vote_threshold;   ///< The voting power required to be an active officer.
+
+      string                      business_public_key;      ///< The public key used for encrypted business content.
+
+      void validate()const;
+      void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+   };
+
+
+   /**
+    * Creates or updates an Account's Profile Identity Data.
+    * 
+    * The operation is completed by a governance account 
+    * on behalf of an account and is subject to the validation
+    * policies of each governance account. 
+    * 
+    * Contains a range of encrypted information for 
+    * searching and discovering the account, and linking it to
+    * a specific personal identity. Contains encrypted profile 
+    * information available to connections.
+    * 
+    * The Governance address has access to 
+    * plaintext information by way of profile key decryption.
+    */
+   struct account_profile_operation : public base_operation
+   {
+      account_name_type       signatory;
+
+      account_name_type       governance_account;     ///< Governance account administrating and attesting to the accuracy the profile data.
+
+      account_name_type       account;                ///< Name of the Account with the profile.
+
+      string                  profile_public_key;     ///< Public key of the profile data for encryption and decryption.
+
+      string                  first_name;             ///< First name of the user.
+
+      string                  last_name;              ///< Last name of the user.
+
+      string                  gender;                 ///< Gender of the user.
+
+      string                  date_of_birth;          ///< Date of birth of the user. Format: DD-MM-YYYY.
+
+      string                  email;                  ///< Email address of the user.
+
+      string                  phone;                  ///< Phone Number of the user.
+
+      string                  nationality;            ///< Country of user's residence.
+
+      string                  address;                ///< Place of residence of the user. Format: 123 Main Street, Suburb, 1234, STATE.
+
+      void validate()const;
+      void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return governance_account; }
+   };
+
+
+   /**
+    * Enables the verification of an account by another account.
+    * 
+    * Accounts must have a profile object before they can begin the verification process.
+    * 
+    * The verifier account proves that they have 
+    * access to the profile data of the verified account
+    * by signing an image of both people in the same picture, 
+    * holding a hand writen note containing both account names
+    * and a recent head_block_id of the blockchain using the private key
+    * corresponding to the verified account's profile public key.
+    */
+   struct account_verification_operation : public base_operation
+   {
+      account_name_type         signatory;
+
+      account_name_type         verifier_account;      ///< Name of the Account with the profile.
+
+      account_name_type         verified_account;      ///< Name of the account being verifed.
+
+      string                    shared_image;          ///< IPFS reference to an image containing both people and the current.
+
+      signature_type            image_signature;       ///< Signature of shared_image, that validates to verified_profile_public_key.
+
+      void validate()const;
+      void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return verifier_account; }
    };
 
 
@@ -1070,7 +1123,7 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;               ///< The name of the account voting for the board.
+      account_name_type              account;               ///< The name of the account voting for the community.
 
       account_name_type              executive_board;       ///< The name of the executive board being voted for.
 
@@ -1119,7 +1172,7 @@ namespace node { namespace protocol {
     * This allows an account to opt in to the moderation and enforcement 
     * policies provided by the governance account, and to 
     * its default settings for whitelisting and blacklisting mediators, assets,
-    * boards, authors, and interfaces.
+    * communities, authors, and interfaces.
     */
    struct subscribe_governance_operation : public base_operation
    {
@@ -1282,9 +1335,9 @@ namespace node { namespace protocol {
 
       uint16_t                                          duration;            ///< Number of days that the proposal will be paid for.
 
-      asset                                             daily_budget;        ///< Daily amount of Core asset requested for project compensation and funding.
+      asset                                             daily_budget;        ///< Daily amount requested for project compensation and funding.
 
-      asset                                             fee = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ); ///< Amount of Core asset paid to community fund to apply.
+      asset                                             fee;                 ///< Amount of Asset paid to community fund to apply.
 
       bool                                              active = true;       ///< True to set the proposal to activate, false to deactivate an existing proposal and delay funding. 
          
@@ -1324,9 +1377,9 @@ namespace node { namespace protocol {
     * This releases the funds that are in the pending budget to the proposal's beneficaries.
     * Community Enterprise proposals need to be approved by:
     * 
-    * - Approvals from at least 5 of the Top 50 producers, with a combined voting power of at least 10% of the total producer voting power.
+    * - Approvals from at least 5 of the Top 50 producers, with a combined voting power of at least 1% of the total producer voting power.
     * AND
-    * - At least 20 total approvals, from accounts with a total combined voting power of at least 10% of total voting power. 
+    * - At least 20 total approvals, from accounts with a total combined voting power of at least 1% of total voting power. 
     */
    struct approve_enterprise_milestone_operation : public base_operation
    {
@@ -1354,6 +1407,26 @@ namespace node { namespace protocol {
    //==== Post and Comment Operations ====//
    //=====================================//
 
+   struct beneficiary_route_type
+   {
+      beneficiary_route_type() {}
+      beneficiary_route_type( const account_name_type& a, const uint16_t& w ) : account( a ), weight( w ){}
+
+      account_name_type           account;
+
+      uint16_t                    weight;
+
+      ///< For use by std::sort such that the route is sorted first by name (ascending)
+      bool operator < ( const beneficiary_route_type& o )const { return account < o.account; }
+   };
+
+
+   struct comment_payout_beneficiaries
+   {
+      vector< beneficiary_route_type >            beneficiaries;
+
+      void validate()const;
+   };
 
    /**
     * Allows authors to update properties associated with their post.
@@ -1368,6 +1441,8 @@ namespace node { namespace protocol {
       feed_reach_type                       reach = TAG_FEED;               ///< The extent to which the post will be distributed to account's followers and connections feeds.
 
       post_rating_type                      rating = GENERAL;               ///< User nominated rating as to the maturity of the content, and display sensitivity.
+
+      asset_symbol_type                     reward_currency = SYMBOL_COIN;  ///< The reward currency that the post will earn. 
 
       asset                                 max_accepted_payout = asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );   ///< USD value of the maximum payout this post will receive.
       
@@ -1393,7 +1468,7 @@ namespace node { namespace protocol {
     * Creates a new comment from an author.
     * 
     * Comments are the primary unit of content on the network, 
-    * and allow for users to share posts with their followers and boards.
+    * and allow for users to share posts with their followers and communities.
     * 
     * Users can create multiple types of posts including:
     * 
@@ -1406,8 +1481,8 @@ namespace node { namespace protocol {
     * Posts can be public, and unencrypted, or private and encrypted with a @ref public_key
     * that a desired audience has been given access to prior to publication.
     * 
-    * Posts can be made to boards, which collect posts under a common topic 
-    * for a community, and are moderated by a group specified by the founder of the board.
+    * Posts can be made to communities, which collect posts under a common topic 
+    * for a community, and are moderated by a group specified by the founder of the community.
     * 
     * Posts earn an allocation of Content rewards from coin issuance, depnding on the amount
     * of Votes, Views, Shares, and Comments that it receives, and the voting power that each 
@@ -1431,7 +1506,7 @@ namespace node { namespace protocol {
 
       string                      language;        ///< String containing the two letter ISO language code of the native language of the author.
 
-      board_name_type             board;           ///< The name of the board to which the post is uploaded to.
+      community_name_type         community;       ///< The name of the community to which the post is uploaded to.
 
       string                      public_key;      ///< The public key used to encrypt the post, holders of the private key may decrypt.
 
@@ -1456,28 +1531,6 @@ namespace node { namespace protocol {
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       const account_name_type& get_creator_name() const { return author; }
-   };
-
-
-   struct beneficiary_route_type
-   {
-      beneficiary_route_type() {}
-      beneficiary_route_type( const account_name_type& a, const uint16_t& w ) : account( a ), weight( w ){}
-
-      account_name_type           account;
-
-      uint16_t                    weight;
-
-      ///< For use by std::sort such that the route is sorted first by name (ascending)
-      bool operator < ( const beneficiary_route_type& o )const { return account < o.account; }
-   };
-
-
-   struct comment_payout_beneficiaries
-   {
-      vector< beneficiary_route_type >            beneficiaries;
-
-      void validate()const;
    };
 
 
@@ -1578,7 +1631,7 @@ namespace node { namespace protocol {
 
       account_name_type            interface;        ///< Name of the interface account that was used to broadcast the transaction and share the post.
 
-      optional< board_name_type >  board;            ///< Optionally share the post with a new board.
+      optional< community_name_type >  community;            ///< Optionally share the post with a new community.
 
       optional< tag_name_type >    tag;              ///< Optionally share the post with a new tag.
 
@@ -1594,7 +1647,7 @@ namespace node { namespace protocol {
     * Applies a set of tags to a post for filtering from interfaces.
     * 
     * Tags should be based on the content included in the post. 
-    * Accounts that list the moderator account as a board moderator or
+    * Accounts that list the moderator account as a community moderator or
     * governance account apply the tag to the post for content management.
     * They additionally can suggest a higher rating level if the rating selected
     * by the author was inaccurate. 
@@ -1603,7 +1656,7 @@ namespace node { namespace protocol {
    {
       account_name_type           signatory;
 
-      account_name_type           moderator;          ///< Account creating the tag: can be a governance address or a board moderator. 
+      account_name_type           moderator;          ///< Account creating the tag: can be a governance address or a community moderator. 
 
       account_name_type           author;             ///< Author of the post being tagged.
 
@@ -1617,7 +1670,7 @@ namespace node { namespace protocol {
 
       account_name_type           interface;          ///< Interface account used for the transaction.
 
-      bool                        filter = false;     ///< True if the post should be filtered from the board and governance account subscribers.
+      bool                        filter = false;     ///< True if the post should be filtered from the community and governance account subscribers.
 
       bool                        applied = true;     ///< True if applying the tag, false if removing the tag.
 
@@ -1627,56 +1680,47 @@ namespace node { namespace protocol {
    };
 
 
-   //==========================//
-   //==== Board Operations ====//
-   //==========================//
+   //==============================//
+   //==== Community Operations ====//
+   //==============================//
 
 
    /**
-    * Creates a new board for collecting posts about a specific topic.
+    * Creates a new community for collecting posts about a specific topic.
     * 
-    * Boards have 4 Types: 
+    * Communities have 8 Privacy and permission options: 
     * 
-    * - Board: Used for gathering all types of posts about a specified topic of discussion.
-    *    - Displayed with a focus on the content being created over the creator of the content.
-    * - Group: Used for gathering specific types of posts from people with an external network relationship.
-    *    - Displayed with a focus on the people creating the content over the content itself.
-    * - Event: Used for gathering posts about a specific event or series of events.
-    *    - Displayed with a focus on the people attending, and the time and location of the event.
-    * - Store: Used for gathering product posts from a specified brand, type of product, or trading location.
-    *    - Displayed with a focus on the products being sold, and thier prices.
+    * OPEN_PUBLIC_COMMUNITY:       All Users can read, interact, post, and request to join. Accounts cannot be blacklisted.
+    * GENERAL_PUBLIC_COMMUNITY:    All Users can read, interact, post, and request to join.
+    * EXCLUSIVE_PUBLIC_COMMUNITY:  All users can read, interact, and request to join. Members can post and invite.
+    * CLOSED_PUBLIC_COMMUNITY:     All users can read, and request to join. Members can interact, post, and invite.
+    * OPEN_PRIVATE_COMMUNITY:      Members can read and interact, and create posts. Moderators can invite and accept.
+    * GENERAL_PRIVATE_COMMUNITY:   Members can read and interact, and create posts. Moderators can invite and accept. Cannot share posts.
+    * EXCLUSIVE_PRIVATE_COMMUNITY: Members can read and interact, and post. Cannot share posts or request to join. Admins can invite and accept.
+    * CLOSED_PRIVATE_COMMUNITY:    Members can read and interact. Moderators can post. Cannot share posts or request to join. Admins can invite and accept.
     * 
-    * Boards have 4 Privacy options: 
-    * 
-    * - Open: Enables all accounts to create and read posts, and interact.
-    * - Public: Enables all accounts to read posts, and accepted members to create new posts and interact.
-    * - Private: Enables accepted members to read and create posts, allows membership join requests and search discoverabiity.
-    * - Exclusive: Enables accepted members to read and create posts, does not allow membership join requests or search discoverabiity.
-    * 
-    * Boards contain a collective public key for encrypting private posts with
+    * Communities contain a collective public key for encrypting private posts with
     * and the private key is shared with newly added members when they join.
     */
-   struct board_create_operation : public base_operation
+   struct community_create_operation : public base_operation
    {
       account_name_type           signatory;
 
-      account_name_type           founder;           ///< The account that created the board, able to add and remove administrators.
+      account_name_type           founder;               ///< The account that created the community, able to add and remove administrators.
 
-      board_name_type             name;              ///< Name of the board.
+      community_name_type         name;                  ///< Name of the community.
 
-      board_structure_type        board_type;        ///< Type of board Structure to use, determines content types.
+      community_privacy_type      community_privacy;     ///< Type of community Privacy to us, determines access permissions and encryption
 
-      board_privacy_type          board_privacy;     ///< Type of board Privacy to us, determines access permissions and encryption
+      string                      community_public_key;  ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
-      string                      board_public_key;  ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
+      string                      json;                  ///< Public plaintext json information about the community, its topic and rules.
 
-      string                      json;              ///< Public plaintext json information about the board, its topic and rules.
+      string                      json_private;          ///< Private ciphertext json information about the community.
 
-      string                      json_private;      ///< Private ciphertext json information about the board.
+      string                      details;               ///< Details of the community, describing what it is for.
 
-      string                      details;           ///< Details of the board, describing what it is for.
-
-      string                      url;               ///< External reference URL.
+      string                      url;                   ///< External reference URL.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1684,33 +1728,33 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Updates the details of an existing board.
+    * Updates the details of an existing community.
     * 
-    * If the board public key is changed, all existing members must be reinitiated
-    * by creating a new @ref board_member_key_object containing an encrypted copy of the new 
-    * @ref board_public_key
+    * If the community public key is changed, all existing members must be reinitiated
+    * by creating a new @ref community_member_key_object containing an encrypted copy of the new 
+    * @ref community_public_key
     */
-   struct board_update_operation : public base_operation
+   struct community_update_operation : public base_operation
    {
       account_name_type           signatory;
 
-      account_name_type           account;           ///< Account updating the board. Administrator of the board.
+      account_name_type           account;               ///< Account updating the community. Administrator of the community.
 
-      board_name_type             board;             ///< Name of the board.
+      community_name_type         community;             ///< Name of the community.
 
-      string                      board_public_key;  ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
+      string                      community_public_key;  ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
-      string                      json;              ///< Public plaintext json information about the board, its topic and rules.
+      string                      json;                  ///< Public plaintext json information about the community, its topic and rules.
 
-      string                      json_private;      ///< Private ciphertext json information about the board. Encrypted with board public key.
+      string                      json_private;          ///< Private ciphertext json information about the community. Encrypted with community public key.
 
-      string                      details;           ///< Details of the board, describing what it is for.
+      string                      details;               ///< Details of the community, describing what it is for.
 
-      string                      url;               ///< External reference URL.
+      string                      url;                   ///< External reference URL.
 
-      account_name_type           pinned_author;     ///< Author of the pinned post.
+      account_name_type           pinned_author;         ///< Author of the pinned post.
 
-      string                      pinned_permlink;   ///< Permlink of the pinned post.
+      string                      pinned_permlink;       ///< Permlink of the pinned post.
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1718,19 +1762,19 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Adds a new moderator to a board.
+    * Adds a new moderator to a community.
     * 
     * Moderators have a heightened authority delegated to them
-    * to enable the to enforce a board's rules and topic suitability.
-    * Moderators all earn a share of the board's posts content rewards.
+    * to enable the to enforce a community's rules and topic suitability.
+    * Moderators all earn a share of the community's posts content rewards.
     */
-   struct board_add_mod_operation : public base_operation
+   struct community_add_mod_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;           ///< Account of an administrator of the board.
+      account_name_type              account;           ///< Account of an administrator of the community.
 
-      board_name_type                board;             ///< Board that the moderator is being added to.
+      community_name_type            community;         ///< Community that the moderator is being added to.
 
       account_name_type              moderator;         ///< New moderator account.
 
@@ -1742,19 +1786,19 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Adds a new administrator to a board.
+    * Adds a new administrator to a community.
     * 
     * Admins have a very high authority delegated to them
     * to enable management and appointment of moderators.
-    * Admins can update the details of a board. 
+    * Admins can update the details of a community. 
     */
-   struct board_add_admin_operation : public base_operation
+   struct community_add_admin_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;          ///< Account of the founder of the board.
+      account_name_type              account;          ///< Account of the founder of the community.
 
-      board_name_type                board;            ///< Board that the admin is being added to.
+      community_name_type            community;        ///< Community that the admin is being added to.
 
       account_name_type              admin;            ///< New administrator account.
 
@@ -1769,19 +1813,19 @@ namespace node { namespace protocol {
     * Votes for a moderator to increase their mod weight.
     * 
     * Moderators with a higher mod weight receive a higher 
-    * proportion of incoming moderator rewards in a board.
+    * proportion of incoming moderator rewards in a community.
     */
-   struct board_vote_mod_operation : public base_operation
+   struct community_vote_mod_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;          ///< Account of a member of the board.
+      account_name_type              account;          ///< Account of a member of the community.
 
-      board_name_type                board;            ///< Board that the moderator is being voted into.
+      community_name_type            community;        ///< Community that the moderator is being voted into.
 
       account_name_type              moderator;        ///< Moderator account.
 
-      uint16_t                       vote_rank;        ///< Voting rank for the specified board moderator
+      uint16_t                       vote_rank;        ///< Voting rank for the specified community moderator
 
       bool                           approved = true;  ///< True when voting for the moderator, false when removing.
 
@@ -1791,19 +1835,19 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Transfers a board to a new account as the founder.
+    * Transfers a community to a new account as the founder.
     * 
-    * Can be used to pass boards from one account to another
+    * Can be used to pass communities from one account to another
     * in the case of restructuring a moderation team
     * or a founder changing to a new account.
     */
-   struct board_transfer_ownership_operation : public base_operation
+   struct community_transfer_ownership_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;        ///< Account that created the board.
+      account_name_type              account;        ///< Account that created the community.
 
-      board_name_type                board;          ///< Board that is being transferred.
+      community_name_type            community;      ///< Community that is being transferred.
 
       account_name_type              new_founder;    ///< Account of the new founder.
 
@@ -1813,22 +1857,22 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Requests that an account be added as a new member of a board.
+    * Requests that an account be added as a new member of a community.
     * 
-    * Must be accepted using @ref board_join_accept_operation
-    * by a member of the board.
+    * Must be accepted using @ref community_join_accept_operation
+    * by a member of the community.
     * 
-    * Cannot be used to join an exclusive board.
+    * Cannot be used to join an exclusive community.
     */
-   struct board_join_request_operation : public base_operation
+   struct community_join_request_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;            ///< Account that wants to join the board.
+      account_name_type              account;            ///< Account that wants to join the community.
 
-      board_name_type                board;              ///< Board that is being requested to join.
+      community_name_type            community;          ///< Community that is being requested to join.
 
-      string                         message;            ///< Message attatched to the request, encrypted with the boards public key. 
+      string                         message;            ///< Message attatched to the request, encrypted with the communities public key. 
 
       bool                           requested = true;   ///< Set true to request, false to cancel request.
 
@@ -1838,27 +1882,27 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Invite a new member to a board.
+    * Invite a new member to a community.
     * 
     * The account must then accept the invitation to be added.
-    * Invitation includes the @ref encrypted_board_key for
-    * accessing private content within the board. 
+    * Invitation includes the @ref encrypted_community_key for
+    * accessing private content within the community. 
     */
-   struct board_join_invite_operation : public base_operation
+   struct community_join_invite_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;               ///< Account sending the invitation.
+      account_name_type              account;                   ///< Account sending the invitation.
 
-      account_name_type              member;                ///< New board member account being invited.
+      account_name_type              member;                    ///< New community member account being invited.
 
-      board_name_type                board;                 ///< Board that is the member is being invited to.
+      community_name_type            community;                 ///< Community that is the member is being invited to.
 
-      string                         message;               ///< Message attatched to the invite, encrypted with the member's secure public key.
+      string                         message;                   ///< Message attatched to the invite, encrypted with the member's secure public key.
 
-      string                         encrypted_board_key;   ///< The Board Private Key, encrypted with the member's secure public key.
+      string                         encrypted_community_key;   ///< The Community Private Key, encrypted with the member's secure public key.
 
-      bool                           invited = true;        ///< Set true to invite, false to cancel invite.
+      bool                           invited = true;            ///< Set true to invite, false to cancel invite.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1868,21 +1912,21 @@ namespace node { namespace protocol {
    /**
     * Used to accept to a request and admit a new member.
     * 
-    * This operation discloses the @ref encrypted_board_key
+    * This operation discloses the @ref encrypted_community_key
     * for decrypting posts, from an existing 
-    * member of the board that has access to it. 
+    * member of the community that has access to it. 
     */
-   struct board_join_accept_operation : public base_operation
+   struct community_join_accept_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;                    ///< Account within the board accepting the request.
+      account_name_type              account;                    ///< Account within the community accepting the request.
 
-      account_name_type              member;                     ///< Account to accept into the board.
+      account_name_type              member;                     ///< Account to accept into the community.
 
-      board_name_type                board;                      ///< Board that is being joined.
+      community_name_type            community;                  ///< Community that is being joined.
 
-      string                         encrypted_board_key;        ///< The Board Private Key, encrypted with the member's secure public key.
+      string                         encrypted_community_key;    ///< The Community Private Key, encrypted with the member's secure public key.
 
       bool                           accepted = true;            ///< True to accept request, false to reject request.
 
@@ -1892,18 +1936,18 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Accepts a board invitation.
+    * Accepts a community invitation.
     * 
     * Adds the invited account to become a new member of the
-    * specifed board.
+    * specifed community.
     */
-   struct board_invite_accept_operation : public base_operation
+   struct community_invite_accept_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;             ///< A new member of the board.
+      account_name_type              account;             ///< A new member of the community.
 
-      board_name_type                board;               ///< Board that the account was invited to.
+      community_name_type            community;           ///< Community that the account was invited to.
 
       bool                           accepted = true;     ///< True to accept invite, false to reject invite.
 
@@ -1913,21 +1957,21 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Removes a specifed member of a board.
+    * Removes a specifed member of a community.
     * 
-    * Enables the moderation team of a board to remove
-    * members that become problematic and fail to follow a boards rules,
+    * Enables the moderation team of a community to remove
+    * members that become problematic and fail to follow a communities rules,
     * or are added by mistake.
     */
-   struct board_remove_member_operation : public base_operation
+   struct community_remove_member_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;        ///< Either the member of the board leaving OR a moderator of the board removing the member.
+      account_name_type              account;        ///< Either the member of the community leaving OR a moderator of the community removing the member.
 
-      account_name_type              member;         ///< Account to be removed from the board membership.
+      account_name_type              member;         ///< Account to be removed from the community membership.
 
-      board_name_type                board;          ///< Board that member is being removed from.
+      community_name_type            community;      ///< Community that member is being removed from.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1935,20 +1979,20 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Adds a specifed account to the board's blacklist.
+    * Adds a specifed account to the community's blacklist.
     * 
-    * Blacklisted accounts cannot execute any operations related to the board,
+    * Blacklisted accounts cannot execute any operations related to the community,
     * such as requesting to join it, subscribe to it, or interact with any posts contained within it. 
     */
-   struct board_blacklist_operation : public base_operation
+   struct community_blacklist_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;               ///< Moderator or admin of the board.
+      account_name_type              account;               ///< Moderator or admin of the community.
 
-      account_name_type              member;                ///< Account to be blacklisted from interacting with the board.
+      account_name_type              member;                ///< Account to be blacklisted from interacting with the community.
 
-      board_name_type                board;                 ///< Board that member is being blacklisted from.
+      community_name_type            community;             ///< Community that member is being blacklisted from.
 
       bool                           blacklisted = true;    ///< Set to true to add account to blacklist, set to false to remove from blacklist. 
 
@@ -1958,24 +2002,76 @@ namespace node { namespace protocol {
    };
 
    /**
-    * Adds a board to an account's subscriptions.
+    * Adds a community to an account's subscriptions.
     * 
-    * Subscribed boards are included in an account's boards
+    * Subscribed communities are included in an account's communities
     * feed, and can be browsed in feeds.
     */
-   struct board_subscribe_operation : public base_operation
+   struct community_subscribe_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;             ///< Account that wants to subscribe to the board.
+      account_name_type              account;             ///< Account that wants to subscribe to the community.
 
-      board_name_type                board;               ///< Board to suscribe to.
+      community_name_type            community;           ///< Community to suscribe to.
 
-      account_name_type              interface;           ///< Name of the interface account that was used to broadcast the transaction and subscribe to the board.
+      account_name_type              interface;           ///< Name of the interface account that was used to broadcast the transaction and subscribe to the community.
 
       bool                           added = true;        ///< True to add to lists, false to remove.
       
       bool                           subscribed = true;   ///< true if subscribing, false if filtering. 
+
+      void validate()const;
+      void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+   };
+
+
+   /**
+    * Creates or updates an event within a community.
+    */
+   struct community_event_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              account;                ///< Account that created the event.
+
+      community_name_type            community;              ///< Community being invited to join.
+
+      string                         event_name;             ///< The Name of the event. Unique within each community. 
+
+      string                         details;                ///< Event details describing the purpose of the event.
+
+      string                         location;               ///< Address location of the event.
+
+      string                         json;                   ///< Additional Event JSON data.
+
+      vector< account_name_type >    invited;                ///< Members that are invited to the event, all community members if empty.
+
+      time_point                     event_start_time;       ///< Time that the Event will begin.
+
+      time_point                     event_end_time;         ///< Time that the event will end.
+
+      void validate()const;
+      void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+   };
+
+
+   /**
+    * Creates or updates an event within a community.
+    */
+   struct community_event_attend_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              account;                ///< Account that is attending the event.
+
+      community_name_type            community;              ///< Community that the event is within.
+
+      string                         event_name;             ///< The Name of the event.
+
+      bool                           attending = true;       ///< True toattend the event, false for not attending.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2159,6 +2255,148 @@ namespace node { namespace protocol {
    };
 
 
+
+   //==========================//
+   //==== Graph Operations ====//
+   //==========================//
+
+
+
+   /**
+    * Creates a new node in the Network's Graph Database.
+    */
+   struct graph_node_operation : public base_operation
+   {
+      account_name_type                  signatory;
+
+      account_name_type                  account;                ///< Name of the account that created the node.
+
+      vector< graph_node_name_type >     node_types;             ///< Set of Types of node being created, determines the required attributes.
+
+      string                             node_id;                ///< uuidv4 identifying the node. Unique for each account.
+
+      string                             name;                   ///< Name of the node.
+
+      string                             details;                ///< Describes the additional details of the node.
+
+      string                             json;                   ///< Public plaintext JSON node attribute information.
+
+      string                             json_private;           ///< Private encrypted ciphertext JSON node attribute information.
+
+      string                             node_public_key;        ///< Key used for encrypting and decrypting private node JSON data
+
+      account_name_type                  interface;              ///< Name of the application that facilitated the creation of the node.
+
+      void              validate()const;
+      void get_required_posting_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+   };
+
+
+   /**
+    * Creates a new edge in the Network's Graph Database.
+    */
+   struct graph_edge_operation : public base_operation
+   {
+      account_name_type                  signatory;
+
+      account_name_type                  account;              ///< Name of the account that created the edge.
+
+      vector< graph_edge_name_type >     edge_types;           ///< Types of the edge being created.
+
+      string                             edge_id;              ///< uuidv4 identifying the edge.
+
+      account_name_type                  from_node_account;    ///< The account that is the creator of the Base connecting node.
+
+      string                             from_node_id;         ///< The uuidv4 of the base connecting node.
+
+      account_name_type                  to_node_account;      ///< The account that is the creator of the Node being connected to.
+
+      string                             to_node_id;           ///< The uuidv4 of the Node being connected to.
+
+      string                             name;                 ///< Name of the edge.
+
+      string                             details;              ///< Describes the edge.
+
+      string                             json;                 ///< Public plaintext JSON edge attribute information.
+
+      string                             json_private;         ///< Private encrypted ciphertext JSON edge attribute information.
+
+      string                             edge_public_key;      ///< Key used for encrypting and decrypting private edge JSON data.
+
+      account_name_type                  interface;            ///< Name of the application that facilitated the creation of the edge.
+
+      void              validate()const;
+      void get_required_posting_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+   };
+
+
+   /**
+    * Creates a new type of node for instantiation in the Network's Graph Database.
+    */
+   struct graph_node_property_operation : public base_operation
+   {
+      account_name_type                  signatory;
+
+      account_name_type                  account;                     ///< Name of the account that created the node type.
+
+      graph_node_name_type               node_type;                   ///< Name of the type of node being specified.
+
+      connection_tier_type               graph_privacy;               ///< Encryption level of the node attribute data.
+
+      connection_tier_type               edge_permission;             ///< The Level of connection required to create an edge to or from this node type. 
+
+      string                             details;                     ///< Describes the additional details of the node.
+
+      string                             url;                         ///< Reference URL link for more details.
+
+      string                             json;                        ///< JSON Metadata for the node type.
+
+      vector< string >                   attributes;                  ///< List of attributes that each node is required to have.
+
+      account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the node type.
+
+      void              validate()const;
+      void get_required_posting_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+   };
+
+
+   /**
+    * Creates a new type of edge for instantiation in the Network's Graph Database.
+    */
+   struct graph_edge_property_operation : public base_operation
+   {
+      account_name_type                  signatory;
+
+      account_name_type                  account;                     ///< Name of the account that created the edge type.
+
+      graph_edge_name_type               edge_type;                   ///< Name of the type of edge being specified.
+
+      connection_tier_type               graph_privacy;               ///< Encryption level of the edge attribute data.
+
+      vector< graph_node_name_type >     from_node_types;             ///< Types of node that the edge can connect from. Empty for all types. 
+
+      vector< graph_node_name_type >     to_node_types;               ///< Types of node that the edge can connect to. Empty for all types.
+
+      string                             details;                     ///< Describes the additional details of the node.
+
+      string                             url;                         ///< Reference URL link for more details.
+
+      string                             json;                        ///< JSON Metadata for the edge type.
+
+      vector< string >                   attributes;                  ///< List of attributes that each edge is required to have.
+
+      account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the edge type.
+
+      void              validate()const;
+      void get_required_posting_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+   };
+
+
+
    //=============================//
    //==== Transfer Operations ====//
    //=============================//
@@ -2332,9 +2570,11 @@ namespace node { namespace protocol {
    };
 
 
+
    //============================//
    //==== Balance Operations ====//
    //============================//
+
 
 
    /**
@@ -2416,6 +2656,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return from; }
    };
 
+
    /**
     * Transfer liquid funds balance into savings for security.
     * 
@@ -2439,6 +2680,7 @@ namespace node { namespace protocol {
       const account_name_type& get_creator_name() const { return from; }
       void validate() const;
    };
+
 
    /**
     * Withdraws a specified balance from savings after a time duration.
@@ -2488,9 +2730,86 @@ namespace node { namespace protocol {
    };
 
 
-   //===========================//
-   //==== Escrow Operations ====//
-   //===========================//
+
+   //================================//
+   //==== Marketplace Operations ====//
+   //================================//
+
+
+
+   /**
+    * Creates or updates a product item for marketplace purchasing with escrow transfers.
+    */
+   struct product_update_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              account;             ///< The Seller of the product.
+
+      string                         product_name;        ///< The name of the product. Unique for each account.
+
+      flat_set< string >             product_variants;    ///< The collection of product variants. Each map must have a key for each variant.
+
+      product_sale_type              sale_type;           ///< The type of sale to be used for the product.
+
+      flat_map< string, string >     details;             ///< The Description details of each variant of the product.
+
+      flat_map< string, string >     images;              ///< IPFS references to images of each product variant.
+
+      flat_map< string, asset >      product_prices;      ///< The price (or min auction price) for each variant of the product.
+
+      flat_map< string, uint32_t >   stock_available;     ///< The available stock of each variant of the product.
+
+      flat_map< string, string >     json;                ///< JSON metadata attributes of each product variant.
+
+      string                         url;                 ///< Reference URL of the product or seller.
+
+      flat_set< string >             delivery_variants;   ///< The types of product delivery available to purchasers.
+
+      flat_map< string, asset >      delivery_prices;     ///< The price for each variant of delivery.
+
+      void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+      void validate() const;
+   };
+
+
+   /**
+    * Requests a purchase of a specifed quantity of a product.
+    * 
+    * Creates a new escrow object for the purchase, 
+    * which must be approved by the seller within acceptance_time.
+    */
+   struct product_purchase_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              account;             ///< The Buyer of the product.
+
+      account_name_type              seller;              ///< The Seller of the product.
+
+      string                         product_name;        ///< The name of the product. Unique for each account.
+
+      flat_map< string, uint32_t >   order_size;          ///< The number of each product variant ordered.
+
+      asset                          total_payable;       ///< The total amount to be paid for the purchase.
+
+      string                         shipping_address;    ///< The shipping address requested, encrypted with the secure key of the seller.
+
+      string                         escrow_id;           ///< uuidv4 referring to the underlying escrow transaction.
+
+      time_point                     acceptance_time;     ///< Time that the escrow proposal must be approved before.
+
+      time_point                     escrow_expiration;   ///< Time after which balance can be claimed by FROM or TO freely.
+
+      string                         memo;                ///< The memo for the transaction, encryption on the memo is advised.
+
+      string                         json;                ///< Additonal JSON object attribute details.
+
+      void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
+      const account_name_type& get_creator_name() const { return account; }
+      void validate() const;
+   };
 
 
    /**
@@ -2659,9 +2978,11 @@ namespace node { namespace protocol {
    };
 
 
+
    //============================//
    //==== Trading Operations ====//
    //============================//
+
 
 
    /**
@@ -2701,7 +3022,7 @@ namespace node { namespace protocol {
     * Creates a new margin order for trading assets.
     * 
     * Margin order first borrows a specified asset,
-    * using a given collateral asset and sells it for a position asset amount. 
+    * using a given collateral asset and sells it for a position asset amount.
     * The margin order pays interest on the 
     * loan until it is closed, at which time the position is liquidated
     * and the loan is repaid with interest.
@@ -2745,6 +3066,38 @@ namespace node { namespace protocol {
 
 
    /**
+    * Creates a new auction order that sells at the daily auction clearing price.
+    * 
+    * Each day, the network selects an auction price for clearing the trades to maximise 
+    * the amount of exchanged volume. 
+    * Auction orders only match against other auction orders once per day, at a single
+    * auction clearing price. 
+    */
+   struct auction_order_operation : public base_operation
+   {
+      account_name_type        signatory;
+
+      account_name_type        owner;                 ///< Owner of the Auction order.
+
+      string                   order_id;              ///< uuidv4 of the order for reference.
+
+      asset                    amount_to_sell;        ///< Amount of asset to sell at auction clearing price.
+
+      price                    min_exchange_rate;     ///< The asset pair price to sell the amount at the auction clearing price.
+
+      account_name_type        interface;             ///< Name of the interface that created the transaction.
+
+      time_point               expiration;            ///< Time that the order expires.
+
+      bool                     opened = true;         ///< True to open new order, false to cancel existing order.
+
+      void                     validate()const;
+      const account_name_type& get_creator_name() const { return owner; }
+      void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+   };
+
+
+   /**
     * Creates a new collateralized debt position in a market issued asset.
     * 
     * Market issued assets are used to create a digital representation of
@@ -2764,9 +3117,74 @@ namespace node { namespace protocol {
 
       account_name_type        interface;                  ///< Name of the interface that created the transaction.
 
-      void                validate()const;
+      void                     validate()const;
       const account_name_type& get_creator_name() const { return owner; }
-      void                get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+   };
+
+
+   /**
+    * Creates a new option order that issues new option assets that can be sold for premium.
+    * 
+    * Option orders create covered option contract assets.
+    * Option contract assets cover 100 units of the underlying asset, 
+    * and allow the holder to exercise the option to execute a trade 
+    * at a specified strike price and expire at a specified time period.
+    * 
+    * If exercised, the options orders that were first issued are 
+    * assigned to purchase the exchanged asset for the covered asset.
+    * Balances of options are cleared upon expiry, and option orders that
+    * are not exercised are closed, with funds returned to the owner.
+    * 
+    * The asset in the price pair with the lower ID is considered
+    * the base asset, therefore the unit of account.
+    * If MEUSD is one asset in the pair, MEUSD always the base asset. 
+    * Options with a strike price to buy the base asset are put options,
+    * and options to buy the quote asset are call options.
+    * 
+    * The Option Chain sheet creates 21 option strike price positions for each month.
+    * The strike prices are determined by rounding the price of the 
+    * quote asset in the base asset to the nearest significant figure, 
+    * and places strike prices in 5% intervals above and below the the rounded mid price.
+    * 
+    * Example: price of WYM is currently 3.257 MEUSD
+    * Rounds down to 3.00 MEUSD.
+    * 
+    * Prices up the book would be:
+    * 3.00, 3.15, 3.30, 3.45, 3.60, 3.75, 3.90, 4.05, 4.2, 4.35, 4.50.
+    * 
+    * Prices down the book would be:
+    * 3.00, 2.85, 2.70, 2.55, 2.40, 2.25, 2.10, 1.95, 1.80, 1.65, 1.50.
+    * 
+    * Options are available for 12 months ahead of the current month, 
+    * and are newly opened at each expiry.
+    * 
+    * Option assets are named as:
+    * OPT.TYPE.QUOTE_SYMBOL.STRIKE_PRICE.BASE_SYMBOL.EXP_DAY_EXP_MONTH.EXP_YEAR
+    * 
+    * Example:
+    * OPT.CALL.WYM.3.5.MEUSD.1.1.2021  == WYM call option at a strike price of 3.50 MEUSD expiring on 1st January 2021.
+    * OPT.PUT.WYM.2.0.MEUSD.1.2.2021  == WYM put option at a strike price of 2.00 MEUSD expiring on 1st February 2021.
+    */
+   struct option_order_operation : public base_operation
+   {
+      account_name_type        signatory;
+
+      account_name_type        owner;                 ///< Owner of the Option order.
+
+      string                   order_id;              ///< uuidv4 of the order for reference.
+
+      asset                    amount_to_issue;       ///< Amount of assets to issue covered options contract assets against. Must be a multiple of 100 units.
+
+      option_strike            strike_price;          ///< The asset pair strike price at which the options can be exercised at any time before expiration.
+
+      account_name_type        interface;             ///< Name of the interface that created the transaction.
+
+      bool                     opened = true;         ///< True to open new order, false to close existing order by repaying options assets.
+
+      void                     validate()const;
+      const account_name_type& get_creator_name() const { return owner; }
+      void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
 
@@ -2779,23 +3197,25 @@ namespace node { namespace protocol {
     */
    struct bid_collateral_operation : public base_operation
    {
-      account_name_type     signatory;
+      account_name_type        signatory;
 
-      account_name_type     bidder;           ///< Adds additional collateral to the market issued asset.
+      account_name_type        bidder;        ///< Adds additional collateral to the market issued asset.
 
-      asset                 collateral;       ///< The amount of collateral to bid for the debt.
+      asset                    collateral;    ///< The amount of collateral to bid for the debt.
 
-      asset                 debt;             ///< The amount of debt to take over.
+      asset                    debt;          ///< The amount of debt to take over.
 
-      void                  validate()const;
+      void                     validate()const;
       const account_name_type& get_creator_name() const { return bidder; }
-      void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
+
 
 
    //=========================//
    //==== Pool Operations ====//
    //=========================//
+
 
 
    /**
@@ -3028,6 +3448,46 @@ namespace node { namespace protocol {
 
       flat_set< asset_symbol_type >   blacklist_markets;                     ///< The assets that this asset may not be traded against in the market.
 
+      // === Currency Asset Options === //
+
+      asset                           block_reward = asset();                                         ///< The value of the initial reward paid into the reward fund every block.
+
+      uint16_t                        block_reward_reduction_percent = 0;                             ///< The percentage by which the block reward is reduced each period. 0 for no reduction.
+
+      uint16_t                        block_reward_reduction_days = 0;                                ///< Number of days between reduction events. 0 for no reduction.
+
+      uint16_t                        content_reward_percent = CONTENT_REWARD_PERCENT;                ///< Percentage of reward paid to content creators.
+
+      asset_symbol_type               equity_asset = SYMBOL_EQUITY;                                   ///< Asset that will receive equity rewards.
+
+      uint16_t                        equity_reward_percent = EQUITY_REWARD_PERCENT;                  ///< Percentage of reward paid to staked equity asset holders.
+
+      uint16_t                        producer_reward_percent = PRODUCER_REWARD_PERCENT;              ///< Percentage of reward paid to block producers.
+
+      uint16_t                        supernode_reward_percent = SUPERNODE_REWARD_PERCENT;            ///< Percentage of reward paid to supernode operators.
+
+      uint16_t                        power_reward_percent = POWER_REWARD_PERCENT;                    ///< Percentage of reward paid to staked currency asset holders.
+
+      uint16_t                        community_fund_reward_percent = COMMUNITY_FUND_REWARD_PERCENT;  ///< Percentage of reward paid to community fund proposals.
+
+      uint16_t                        development_reward_percent = DEVELOPMENT_REWARD_PERCENT;        ///< Percentage of reward paid to elected developers.
+
+      uint16_t                        marketing_reward_percent = MARKETING_REWARD_PERCENT;            ///< Percentage of reward paid to elected marketers.
+
+      uint16_t                        advocacy_reward_percent = ADVOCACY_REWARD_PERCENT;              ///< Percentage of reward paid to elected advocates.
+
+      uint16_t                        activity_reward_percent = ACTIVITY_REWARD_PERCENT;              ///< Percentage of reward paid to active accounts each day.
+
+      uint16_t                        producer_block_reward_percent = PRODUCER_BLOCK_PERCENT;         ///< Percentage of producer reward paid to the producer of each individual block.
+
+      uint16_t                        validation_reward_percent = PRODUCER_VALIDATOR_PERCENT;         ///< Percentage of producer reward paid to validators of blocks.
+
+      uint16_t                        txn_stake_reward_percent = PRODUCER_TXN_STAKE_PERCENT;          ///< Percentage of producer reward paid to producers according to transaction stake weight of blocks.
+
+      uint16_t                        work_reward_percent = PRODUCER_WORK_PERCENT;                    ///< Percentage of producer reward paid to proof of work mining producers for each proof.
+
+      uint16_t                        producer_activity_reward_percent = PRODUCER_ACTIVITY_PERCENT;   ///< Percentage of producer reward paid to the highest voted producer in activity rewards.
+
       // === Bitasset Options === //
 
       fc::microseconds                feed_lifetime = PRICE_FEED_LIFETIME;                            ///< Time before a price feed expires.
@@ -3043,8 +3503,6 @@ namespace node { namespace protocol {
       asset_symbol_type               backing_asset = SYMBOL_COIN;                                    ///< The symbol of the asset that the bitasset is collateralized by.
 
       // === Equity Asset Options === //
-      
-      asset_symbol_type               dividend_asset = SYMBOL_USD;                            ///< Asset that is distributed to equity stakeholders.
 
       uint16_t                        dividend_share_percent = DIVIDEND_SHARE_PERCENT;        ///< Percentage of incoming assets added to the dividends pool.
 
@@ -3066,9 +3524,9 @@ namespace node { namespace protocol {
 
       uint16_t                        min_producers = EQUITY_MIN_PRODUCERS;                   ///< Minimum amount of producer votes required to earn dividends.
 
-      uint16_t                        boost_balance = EQUITY_BOOST_BALANCE;                   ///< Amount of equity balance to earn double dividends.
+      share_type                      boost_balance = EQUITY_BOOST_BALANCE;                   ///< Amount of equity balance to earn double dividends.
 
-      uint16_t                        boost_activity = EQUITY_BOOST_ACTIVITY;                 ///< Amount of recent activity rewards required to earn double dividends.
+      share_type                      boost_activity = EQUITY_BOOST_ACTIVITY;                 ///< Amount of recent activity rewards required to earn double dividends.
 
       uint16_t                        boost_producers = EQUITY_BOOST_PRODUCERS;               ///< Amount of producer votes required to earn double dividends.
 
@@ -3123,7 +3581,7 @@ namespace node { namespace protocol {
 
       asset                           credit_liquidity;        ///< Amount of the new asset to issue and inject into the credit pool.
 
-      asset_options                   options;                 ///< Series of options paramters that apply to all asset types.
+      asset_options                   options;                 ///< Series of options parameters that apply to each asset type.
 
       void                            validate()const;
       const account_name_type&        get_creator_name() const { return issuer; }
@@ -3348,6 +3806,213 @@ namespace node { namespace protocol {
    //=====================================//
 
 
+   struct chain_properties
+   {
+      asset                  account_creation_fee = MIN_ACCOUNT_CREATION_FEE;               ///< Minimum fee required to create a new account by staking.
+
+      uint64_t               maximum_block_size = MAX_BLOCK_SIZE;                           ///< The maximum block size of the network in bytes. No Upper bound on block size limit.
+
+      fc::microseconds       pow_target_time = POW_TARGET_TIME;                             ///< The targeted time for each proof of work
+
+      fc::microseconds       pow_decay_time = POW_DECAY_TIME;                               ///< Time over which proof of work output is averaged over
+
+      fc::microseconds       txn_stake_decay_time = TXN_STAKE_DECAY_TIME;                   ///< Time over which transaction stake is averaged over
+
+      uint16_t               escrow_bond_percent = ESCROW_BOND_PERCENT;                     ///< Percentage of an escrow transfer that is deposited for dispute resolution
+
+      uint16_t               credit_interest_rate = CREDIT_INTEREST_RATE;                   ///< The credit interest rate paid to holders of network credit assets.
+
+      uint16_t               credit_open_ratio = CREDIT_OPEN_RATIO;                         ///< The minimum required collateralization ratio for a credit loan to be opened. 
+
+      uint16_t               credit_liquidation_ratio = CREDIT_LIQUIDATION_RATIO;           ///< The minimum permissible collateralization ratio before a loan is liquidated. 
+
+      uint16_t               credit_min_interest = CREDIT_MIN_INTEREST;                     ///< The minimum component of credit pool interest rates. 
+
+      uint16_t               credit_variable_interest = CREDIT_VARIABLE_INTEREST;           ///< The variable component of credit pool interest rates, applied at equal base and borrowed balances.
+
+      uint16_t               market_max_credit_ratio = MARKET_MAX_CREDIT_RATIO;             ///< The maximum percentage of core asset liquidity balances that can be loaned.
+
+      uint16_t               margin_open_ratio = MARGIN_OPEN_RATIO;                         ///< The minimum required collateralization ratio for a credit loan to be opened. 
+
+      uint16_t               margin_liquidation_ratio = MARGIN_LIQUIDATION_RATIO;           ///< The minimum permissible collateralization ratio before a loan is liquidated. 
+
+      uint16_t               maximum_asset_feed_publishers = MAX_ASSET_FEED_PUBLISHERS;     ///< The maximum number of accounts that can publish price feeds for a bitasset.
+
+      asset                  membership_base_price = MEMBERSHIP_FEE_BASE;                   ///< The price for standard membership per month.
+
+      asset                  membership_mid_price = MEMBERSHIP_FEE_MID;                     ///< The price for Mezzanine membership per month.
+
+      asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                     ///< The price for top level membership per month.
+
+      uint32_t               author_reward_percent = AUTHOR_REWARD_PERCENT;                 ///< The percentage of content rewards distributed to post authors.
+
+      uint32_t               vote_reward_percent = VOTE_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post voters.
+
+      uint32_t               view_reward_percent = VIEW_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post viewers.
+
+      uint32_t               share_reward_percent = SHARE_REWARD_PERCENT;                   ///< The percentage of content rewards distributed to post sharers.
+
+      uint32_t               comment_reward_percent = COMMENT_REWARD_PERCENT;               ///< The percentage of content rewards distributed to post commenters.
+
+      uint32_t               storage_reward_percent = STORAGE_REWARD_PERCENT;               ///< The percentage of content rewards distributed to viewing supernodes.
+
+      uint32_t               moderator_reward_percent = MODERATOR_REWARD_PERCENT;           ///< The percentage of content rewards distributed to community moderators.
+
+      fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;         ///< The time over which content rewards are distributed
+
+      fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;             ///< Time taken per distribution of content rewards.
+
+      uint32_t               vote_reserve_rate = VOTE_RESERVE_RATE;                         ///< The number of votes regenerated per day.
+
+      uint32_t               view_reserve_rate = VIEW_RESERVE_RATE;                         ///< The number of views regenerated per day.
+
+      uint32_t               share_reserve_rate = SHARE_RESERVE_RATE;                       ///< The number of shares regenerated per day.
+
+      uint32_t               comment_reserve_rate = COMMENT_RESERVE_RATE;                   ///< The number of comments regenerated per day.
+
+      fc::microseconds       vote_recharge_time = VOTE_RECHARGE_TIME;                       ///< Time taken to fully recharge voting power.
+
+      fc::microseconds       view_recharge_time = VIEW_RECHARGE_TIME;                       ///< Time taken to fully recharge viewing power.
+
+      fc::microseconds       share_recharge_time = SHARE_RECHARGE_TIME;                     ///< Time taken to fully recharge sharing power.
+
+      fc::microseconds       comment_recharge_time = COMMENT_RECHARGE_TIME;                 ///< Time taken to fully recharge commenting power.
+
+      fc::microseconds       curation_auction_decay_time = CURATION_AUCTION_DECAY_TIME;     ///< time of curation reward decay after a post is created. 
+
+      double                 vote_curation_decay = VOTE_CURATION_DECAY;                     ///< Number of votes for the half life of voting curation reward decay.
+
+      double                 view_curation_decay = VIEW_CURATION_DECAY;                     ///< Number of views for the half life of viewer curation reward decay.
+
+      double                 share_curation_decay = SHARE_CURATION_DECAY;                   ///< Number of shares for the half life of sharing curation reward decay.
+
+      double                 comment_curation_decay = COMMENT_CURATION_DECAY;               ///< Number of comments for the half life of comment curation reward decay.
+
+      fc::microseconds       supernode_decay_time = SUPERNODE_DECAY_TIME;                   ///< Amount of time to average the supernode file weight over. 
+
+      uint16_t               enterprise_vote_percent_required = ENTERPRISE_VOTE_THRESHOLD_PERCENT;     ///< Percentage of total voting power required to approve enterprise milestones. 
+
+      uint64_t               maximum_asset_whitelist_authorities = MAX_ASSET_WHITELIST_AUTHORITIES;  ///< The maximum amount of whitelisted or blacklisted authorities for user issued assets 
+
+      uint8_t                max_stake_intervals = MAX_ASSET_STAKE_INTERVALS;               ///< Maximum weeks that an asset can stake over.
+
+      uint8_t                max_unstake_intervals = MAX_ASSET_UNSTAKE_INTERVALS;           ///< Maximum weeks that an asset can unstake over.
+
+      asset                  max_exec_budget = MAX_EXEC_BUDGET;                             ///< Maximum budget that an executive board can claim.
+
+      void validate()const
+      {
+         FC_ASSERT( account_creation_fee.symbol == SYMBOL_COIN,
+            "Acccount creation fee must be in the core asset." );
+         FC_ASSERT( account_creation_fee >= MIN_ACCOUNT_CREATION_FEE,
+            "Account creation fee must be at least 1 Unit of core asset." );
+         FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT,
+            "Maximum blocksize must be greater than minimum limit requirement." );
+         FC_ASSERT( pow_target_time >= fc::minutes(1) && pow_target_time <= fc::hours(1),
+            "POW target time must be between 1 minute and 1 hour." );
+         FC_ASSERT( pow_decay_time >= fc::days(1) && pow_decay_time <= fc::days(30),
+            "POW Decay time must be between 1 and 30 days." );
+         FC_ASSERT( txn_stake_decay_time >= fc::days(1) && txn_stake_decay_time <= fc::days(30),
+            "Transaction Stake Decay time must be between 1 and 30 days." );
+         FC_ASSERT( escrow_bond_percent >= 0 && escrow_bond_percent <= PERCENT_100,
+            "Credit interest rate must be between 0 and PERCENT_100." );
+         FC_ASSERT( credit_interest_rate >= 0 && credit_interest_rate <= PERCENT_100,
+            "Credit interest rate must be between 0 and PERCENT_100." );
+         FC_ASSERT( credit_open_ratio >= PERCENT_100 && credit_open_ratio <= PERCENT_100 * 2,
+            "Credit interest rate must be PERCENT_100 and 2 * PERCENT_100." );
+         FC_ASSERT( credit_liquidation_ratio >= PERCENT_100 && credit_liquidation_ratio <= PERCENT_100 * 2,
+            "Credit interest rate must be PERCENT_100 and 2 * PERCENT_100." );
+         FC_ASSERT( credit_min_interest >= 0 && credit_min_interest <= PERCENT_100,
+            "Credit min interest rate must be between 0 and PERCENT_100." );
+         FC_ASSERT( credit_variable_interest >= 0 && credit_variable_interest <= PERCENT_100,
+            "Credit variable interest rate must be between 0 and PERCENT_100." );
+         FC_ASSERT( market_max_credit_ratio >= 0 && market_max_credit_ratio <= PERCENT_100,
+            "Market max credit ratio must be between 0 and PERCENT_100." );
+         FC_ASSERT( margin_open_ratio >= PERCENT_1 && margin_open_ratio <= PERCENT_100,
+            "Margin Open Ratio must be between PERCENT_1 and PERCENT_100." );
+         FC_ASSERT( margin_liquidation_ratio >= PERCENT_1 && margin_liquidation_ratio <= PERCENT_100,
+            "Margin Liquidation Ratio must be between PERCENT_1 and PERCENT_100." );
+         FC_ASSERT( maximum_asset_feed_publishers >= MAX_ASSET_FEED_PUBLISHERS / 10 &&
+            maximum_asset_feed_publishers <= MAX_ASSET_FEED_PUBLISHERS * 10,
+            "Maximum asset feed publishers must be between 10 and 1000." );
+         FC_ASSERT( membership_base_price >= MEMBERSHIP_FEE_BASE / 25 && membership_base_price <= MEMBERSHIP_FEE_BASE * 100,
+            "Membership base price must be between $0.10 and $250.00." );
+         FC_ASSERT( membership_base_price.symbol == SYMBOL_USD,
+            "Membership base price must be in the USD asset." );
+         FC_ASSERT( membership_mid_price >= MEMBERSHIP_FEE_MID / 25 && membership_mid_price <= MEMBERSHIP_FEE_MID * 100,
+            "Membership mid price must be between $1.00 and $2500.00." );
+         FC_ASSERT( membership_mid_price.symbol == SYMBOL_USD,
+            "Membership mid price must be in the USD asset." );
+         FC_ASSERT( membership_top_price >= MEMBERSHIP_FEE_TOP / 25 && membership_top_price <= MEMBERSHIP_FEE_TOP * 100,
+            "Membership top price must be between $10.00 and $25000.00." );
+         FC_ASSERT( membership_top_price.symbol == SYMBOL_USD,
+            "Membership top price must be in the USD asset." );
+
+         FC_ASSERT( vote_reward_percent >= PERCENT_10_OF_PERCENT_1 && vote_reward_percent <= 20 * PERCENT_1,
+            "Vote reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+         FC_ASSERT( view_reward_percent >= PERCENT_10_OF_PERCENT_1 && view_reward_percent <= 20 * PERCENT_1,
+            "View reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+         FC_ASSERT( share_reward_percent >= PERCENT_10_OF_PERCENT_1 && share_reward_percent <= 20 * PERCENT_1,
+            "Share reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+         FC_ASSERT( comment_reward_percent >= PERCENT_10_OF_PERCENT_1 && comment_reward_percent <= 20 * PERCENT_1,
+            "Comment reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+         FC_ASSERT( storage_reward_percent >= PERCENT_10_OF_PERCENT_1 && storage_reward_percent <= 10 * PERCENT_1,
+            "Storage reward percent must be between PERCENT_10_OF_PERCENT_1 and 10 * PERCENT_1." );
+         FC_ASSERT( moderator_reward_percent >= PERCENT_10_OF_PERCENT_1 && moderator_reward_percent <= 10 * PERCENT_1,
+            "Moderator reward percent must be between PERCENT_10_OF_PERCENT_1 and 10 * PERCENT_1." );
+
+         FC_ASSERT( content_reward_decay_rate >= fc::days(1) && content_reward_decay_rate <= fc::days(365),
+            "Content reward decay rate must be between 1 and 365 days." );
+         FC_ASSERT( content_reward_interval >= fc::hours(1) && content_reward_interval <= fc::days(7),
+            "Content reward interval must be between 1 hour and 7 days." );
+
+         FC_ASSERT( vote_reserve_rate >= 1 && vote_reserve_rate <= 10000,
+            "Vote reserve rate must be between 1 and 10000." );
+         FC_ASSERT( view_reserve_rate >= 1 && view_reserve_rate <= 10000,
+            "View reserve rate must be between 1 and 10000." );
+         FC_ASSERT( share_reserve_rate >= 1 && share_reserve_rate <= 10000,
+            "Share reserve rate must be between 1 and 10000." );
+         FC_ASSERT( comment_reserve_rate >= 1 && comment_reserve_rate <= 10000,
+            "Comment reserve rate must be between 1 and 10000." );
+
+         FC_ASSERT( vote_recharge_time >= fc::days(1) && vote_recharge_time <= fc::days(365),
+            "Vote Recharge time must be between 1 and 365 days." );
+         FC_ASSERT( view_recharge_time >= fc::days(1) && view_recharge_time <= fc::days(365),
+            "View Recharge time must be between 1 and 365 days." );
+         FC_ASSERT( share_recharge_time >= fc::days(1) && share_recharge_time <= fc::days(365),
+            "Share Recharge time must be between 1 and 365 days." );
+         FC_ASSERT( comment_recharge_time >= fc::days(1) && comment_recharge_time <= fc::days(365),
+            "Comment Recharge time must be between 1 and 365 days." );
+         FC_ASSERT( curation_auction_decay_time >= fc::minutes(1) && curation_auction_decay_time <= fc::days(1),
+            "Curation auction decay time must be between 1 minute and 1 day." );
+
+         FC_ASSERT( vote_curation_decay >= 1 && vote_curation_decay <= 100000,
+            "Vote curation decay must be between 1 and 100,000." );
+         FC_ASSERT( view_curation_decay >= 1 && view_curation_decay <= 100000,
+            "View curation decay must be between 1 and 100,000." );
+         FC_ASSERT( share_curation_decay >= 1 && share_curation_decay <= 100000,
+            "Share curation decay must be between 1 and 100,000." );
+         FC_ASSERT( comment_curation_decay >= 1 && comment_curation_decay <= 100000,
+            "Comment curation decay must be between 1 and 100,000." );
+
+         FC_ASSERT( supernode_decay_time >= fc::days(1) && supernode_decay_time <= fc::days(365),
+            "Supernode Decay time must be between 1 and 365 days." );
+         FC_ASSERT( enterprise_vote_percent_required >= 0 && enterprise_vote_percent_required <= PERCENT_100,
+            "Enterprise vote percent required must be between 0 and PERCENT_100." );
+         FC_ASSERT( maximum_asset_whitelist_authorities >= MAX_ASSET_WHITELIST_AUTHORITIES && 
+            maximum_asset_whitelist_authorities <= 10 * MAX_ASSET_WHITELIST_AUTHORITIES,
+            "Executive types amount must be between 1000 and 10,000." );
+         FC_ASSERT( max_stake_intervals >= MAX_ASSET_STAKE_INTERVALS && max_stake_intervals <= 100 * MAX_ASSET_STAKE_INTERVALS,
+            "Max stake intervals must be between 104 and 10400." );
+         FC_ASSERT( max_unstake_intervals >= MAX_ASSET_UNSTAKE_INTERVALS && max_unstake_intervals <= 100 * MAX_ASSET_UNSTAKE_INTERVALS,
+            "Max unstake intervals must be between 104 and 10400." );
+         FC_ASSERT( max_exec_budget.symbol == SYMBOL_CREDIT,
+            "Max Excutive Budget must be in the CREDIT asset." );
+         FC_ASSERT( max_exec_budget >= MAX_EXEC_BUDGET,
+            "Max Excutive Budget must be less than or equal to 1,000,000 MCR." );
+      };
+   };
+
    /**
     * Creates or updates a producer for a specified account, enabling block production.
     * 
@@ -3556,9 +4221,9 @@ namespace node { namespace protocol {
 
       account_name_type             reporter;      ///< The account detecting and reporting the violation.
 
-      signed_transaction            first_trx;     ///< The first transaction signed by the producer.
+      vector<char>                  first_trx;     ///< The first transaction signed by the producer.
 
-      signed_transaction            second_trx;    ///< The second transaction that is in contravention of the first commitment transaction. 
+      vector<char>                  second_trx;    ///< The second transaction that is in contravention of the first commitment transaction. 
 
       void validate()const;
       const account_name_type& get_creator_name() const { return reporter; }
@@ -3610,7 +4275,7 @@ namespace node { namespace protocol {
       string                        json;                     ///< Valid UTF8 / JSON string of operation data. Max size 8 KB
 
       void validate()const;
-      const account_name_type& get_creator_name() const 
+      const account_name_type& get_creator_name()const 
       { 
          if( required_auths.begin() != required_auths.end() )
          {
@@ -3620,7 +4285,11 @@ namespace node { namespace protocol {
          {
             return *required_posting_auths.begin();
          }
-         else return NULL_ACCOUNT;
+         else
+         {
+            const account_name_type& n = account_name_type( NULL_ACCOUNT );
+            return n;
+         }
       }
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ for( const auto& i : required_auths ) a.insert(i); }
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ for( const auto& i : required_posting_auths ) a.insert(i); }
@@ -3640,7 +4309,6 @@ FC_REFLECT( node::protocol::account_create_operation,
          (signatory)
          (registrar)
          (new_account_name)
-         (account_type)
          (referrer)
          (proxy)
          (governance_account)
@@ -3649,15 +4317,13 @@ FC_REFLECT( node::protocol::account_create_operation,
          (url)
          (json)
          (json_private)
-         (owner)
-         (active)
-         (posting)
+         (owner_auth)
+         (active_auth)
+         (posting_auth)
          (secure_public_key)
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
-         (business_type)
-         (officer_vote_threshold)
          (fee)
          (delegation)
          );
@@ -3665,27 +4331,56 @@ FC_REFLECT( node::protocol::account_create_operation,
 FC_REFLECT( node::protocol::account_update_operation,
          (signatory)
          (account)
-         (owner)
-         (active)
-         (posting)
+         (owner_auth)
+         (active_auth)
+         (posting_auth)
          (secure_public_key)
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
-         (json)
-         (json_private)
          (details)
          (url)
-         (deleted)
+         (json)
+         (json_private)
+         (pinned_permlink)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::account_business_operation,
+         (signatory)
+         (account)
          (business_type)
          (officer_vote_threshold)
+         (business_public_key)
+         );
+
+FC_REFLECT( node::protocol::account_profile_operation,
+         (signatory)
+         (governance_account)
+         (account)
+         (profile_public_key)
+         (first_name)
+         (last_name)
+         (gender)
+         (date_of_birth)
+         (email)
+         (phone)
+         (nationality)
+         (address)
+         );
+
+FC_REFLECT( node::protocol::account_verification_operation,
+         (signatory)
+         (verifier_account)
+         (verified_account)
+         (shared_image)
+         (image_signature)
          );
 
 FC_REFLECT( node::protocol::account_membership_operation,
          (signatory)
          (account)
          (membership_type)
-         (fee)
          (months)
          (interface)
          (recurring)
@@ -3695,8 +4390,9 @@ FC_REFLECT( node::protocol::account_vote_executive_operation,
          (signatory)
          (account)
          (business_account)
-         (executive)
+         (executive_account)
          (role)
+         (vote_rank)
          (approved)
          );
 
@@ -3704,7 +4400,8 @@ FC_REFLECT( node::protocol::account_vote_officer_operation,
          (signatory)
          (account)
          (business_account)
-         (officer)
+         (officer_account)
+         (vote_rank)
          (approved)
          );
 
@@ -3761,8 +4458,9 @@ FC_REFLECT( node::protocol::account_update_list_operation,
 FC_REFLECT( node::protocol::account_producer_vote_operation,
          (signatory)
          (account)
+         (vote_rank)
          (producer)
-         (approve) 
+         (approved)
          );
 
 FC_REFLECT( node::protocol::account_update_proxy_operation, 
@@ -3795,8 +4493,7 @@ FC_REFLECT( node::protocol::reset_account_operation,
 FC_REFLECT( node::protocol::set_reset_account_operation, 
          (signatory)
          (account)
-         (current_reset_account)
-         (reset_account)
+         (new_reset_account)
          (days)
          );
 
@@ -3808,7 +4505,8 @@ FC_REFLECT( node::protocol::change_recovery_account_operation,
 
 FC_REFLECT( node::protocol::decline_voting_rights_operation, 
          (signatory)
-         (account) 
+         (account)
+         (declined)
          );
 
 FC_REFLECT( node::protocol::connection_request_operation, 
@@ -3823,7 +4521,7 @@ FC_REFLECT( node::protocol::connection_request_operation,
 FC_REFLECT( node::protocol::connection_accept_operation, 
          (signatory)
          (account)
-         (requested_account)
+         (requesting_account)
          (connection_id)
          (connection_type)
          (encrypted_key)
@@ -3834,7 +4532,6 @@ FC_REFLECT( node::protocol::account_follow_operation,
          (signatory)
          (follower)
          (following)
-         (details)
          (interface)
          (added)
          (followed)
@@ -3858,9 +4555,12 @@ FC_REFLECT( node::protocol::activity_reward_operation,
          (interface)
          );
 
+
    //===========================//
    //==== Network Operations ===//
    //===========================//
+
+
 
 FC_REFLECT( node::protocol::update_network_officer_operation, 
          (signatory)
@@ -3928,15 +4628,6 @@ FC_REFLECT( node::protocol::subscribe_governance_operation,
          (subscribe)
          );
 
-FC_REFLECT( node::protocol::update_interface_operation, 
-         (signatory)
-         (account)
-         (details)
-         (url)
-         (json)
-         (active)
-         );
-
 FC_REFLECT( node::protocol::update_supernode_operation, 
          (signatory)
          (account)
@@ -3948,6 +4639,25 @@ FC_REFLECT( node::protocol::update_supernode_operation,
          (ipfs_endpoint)
          (bittorrent_endpoint)
          (json)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::update_interface_operation, 
+         (signatory)
+         (account)
+         (details)
+         (url)
+         (json)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::update_mediator_operation, 
+         (signatory)
+         (account)
+         (details)
+         (url)
+         (json)
+         (mediator_bond)
          (active)
          );
 
@@ -3991,27 +4701,42 @@ FC_REFLECT( node::protocol::approve_enterprise_milestone_operation,
    //==== Post and Comment Operations ====//
    //=====================================//
 
+
+FC_REFLECT( node::protocol::comment_options, 
+         (post_type)
+         (reach)
+         (rating)
+         (reward_currency)
+         (max_accepted_payout)
+         (percent_liquid)
+         (allow_replies)
+         (allow_votes)
+         (allow_views)
+         (allow_shares)
+         (allow_curation_rewards)
+         (beneficiaries)
+         );
+
 FC_REFLECT( node::protocol::comment_operation,
          (signatory)
          (author)
          (permlink)
          (title)
-         (post_type)
          (body)
          (ipfs)
          (magnet)
          (language)
-         (board)
+         (community)
          (public_key)
-         (reach)
          (interface)
-         (rating)
          (comment_price)
          (premium_price)
          (parent_author)
          (parent_permlink)
          (tags)
          (json)
+         (options)
+         (deleted)
          );
 
 FC_REFLECT( node::protocol::beneficiary_route_type, 
@@ -4023,22 +4748,12 @@ FC_REFLECT( node::protocol::comment_payout_beneficiaries,
          (beneficiaries) 
          );
 
-FC_REFLECT( node::protocol::comment_options, 
-         (author)
-         (permlink)
-         (max_accepted_payout)
-         (percent_liquid)
-         (allow_votes)
-         (allow_curation_rewards)
-         );
-
 FC_REFLECT( node::protocol::message_operation,
          (signatory)
          (sender)
          (recipient)
          (message)
          (uuid)
-         (time)
          );
 
 FC_REFLECT( node::protocol::vote_operation,
@@ -4065,8 +4780,9 @@ FC_REFLECT( node::protocol::share_operation,
          (sharer)
          (author)
          (permlink)
+         (reach)
          (interface)
-         (board)
+         (community)
          (tag)
          (shared)
          );
@@ -4084,138 +4800,163 @@ FC_REFLECT( node::protocol::moderation_tag_operation,
          (applied)
          );
 
-   //==========================//
-   //==== Board Operations ====//
-   //==========================//
+   //==============================//
+   //==== Community Operations ====//
+   //==============================//
 
-FC_REFLECT( node::protocol::board_create_operation,
+FC_REFLECT( node::protocol::community_create_operation,
          (signatory)
          (founder)
          (name)
-         (board_type)
-         (board_privacy)
-         (board_public_key)
+         (community_privacy)
+         (community_public_key)
          (json)
          (json_private)
          (details)
          (url)
          );
 
-FC_REFLECT( node::protocol::board_update_operation,
+FC_REFLECT( node::protocol::community_update_operation,
          (signatory)
          (account)
-         (board)
-         (board_type)
-         (board_privacy)
-         (board_public_key)
+         (community)
+         (community_public_key)
          (json)
          (json_private)
          (details)
          (url)
+         (pinned_author)
+         (pinned_permlink)
          );
 
-FC_REFLECT( node::protocol::board_add_mod_operation,
+FC_REFLECT( node::protocol::community_add_mod_operation,
          (signatory)
          (account)
-         (board)
+         (community)
          (moderator)
          (added)
          );
 
-FC_REFLECT( node::protocol::board_add_admin_operation,
+FC_REFLECT( node::protocol::community_add_admin_operation,
          (signatory)
          (account)
-         (board)
+         (community)
          (admin)
          (added)
          );
 
-FC_REFLECT( node::protocol::board_vote_mod_operation,
+FC_REFLECT( node::protocol::community_vote_mod_operation,
          (signatory)
          (account)
-         (board)
+         (community)
          (moderator)
          (vote_rank)
          (approved)
          );
 
-FC_REFLECT( node::protocol::board_transfer_ownership_operation,
+FC_REFLECT( node::protocol::community_transfer_ownership_operation,
          (signatory)
          (account)
-         (board)
+         (community)
          (new_founder)
          );
 
-FC_REFLECT( node::protocol::board_join_request_operation,
+FC_REFLECT( node::protocol::community_join_request_operation,
          (signatory)
          (account)
-         (board)
+         (community)
          (message)
          (requested)
          );
 
-FC_REFLECT( node::protocol::board_join_invite_operation,
+FC_REFLECT( node::protocol::community_join_invite_operation,
          (signatory)
          (account)
          (member)
-         (board)
+         (community)
          (message)
-         (encrypted_board_key)
+         (encrypted_community_key)
          (invited)
          );
 
-FC_REFLECT( node::protocol::board_join_accept_operation,
+FC_REFLECT( node::protocol::community_join_accept_operation,
          (signatory)
          (account)
          (member)
-         (board)
-         (encrypted_board_key)
+         (community)
+         (encrypted_community_key)
          (accepted)
          );
 
-FC_REFLECT( node::protocol::board_invite_accept_operation,
+FC_REFLECT( node::protocol::community_invite_accept_operation,
          (signatory)
          (account)
-         (board)
+         (community)
          (accepted)
          );
 
-FC_REFLECT( node::protocol::board_remove_member_operation,
+FC_REFLECT( node::protocol::community_remove_member_operation,
          (signatory)
          (account)
          (member)
-         (board)
+         (community)
          );
 
-FC_REFLECT( node::protocol::board_blacklist_operation,
+FC_REFLECT( node::protocol::community_blacklist_operation,
          (signatory)
          (account)
          (member)
-         (board)
+         (community)
          (blacklisted)
          );
 
-FC_REFLECT( node::protocol::board_blacklist_operation,
+FC_REFLECT( node::protocol::community_subscribe_operation,
          (signatory)
          (account)
-         (board)
+         (community)
          (interface)
+         (added)
          (subscribed)
-         (filtered)
          );
+
+FC_REFLECT( node::protocol::community_event_operation,
+         (signatory)
+         (account)
+         (community)
+         (event_name)
+         (details)
+         (location)
+         (json)
+         (invited)
+         (event_start_time)
+         (event_end_time)
+         );
+
+FC_REFLECT( node::protocol::community_event_attend_operation,
+         (signatory)
+         (account)
+         (community)
+         (event_name)
+         (attending)
+         );
+
+
 
    //================================//
    //==== Advertising Operations ====//
    //================================//
 
+
+
 FC_REFLECT( node::protocol::ad_creative_operation,
          (signatory)
+         (account)
          (author)
-         (format_type)
-         (creative_id)
          (objective)
+         (creative_id)
          (creative)
          (json)
+         (format_type)
          (active)
          );
 
@@ -4236,12 +4977,11 @@ FC_REFLECT( node::protocol::ad_inventory_operation,
          (signatory)
          (provider)
          (inventory_id)
+         (audience_id)
          (metric)
          (min_price)
          (inventory)
          (json)
-         (audience)
-         (agents)
          (active)
          );
 
@@ -4260,6 +5000,7 @@ FC_REFLECT( node::protocol::ad_bid_operation,
          (bid_id)
          (account)
          (campaign_id)
+         (author)
          (creative_id)
          (provider)
          (inventory_id)
@@ -4272,19 +5013,74 @@ FC_REFLECT( node::protocol::ad_bid_operation,
          (active)
          );
 
-FC_REFLECT( node::protocol::ad_bid_operation,
+
+   //==========================//
+   //==== Graph Operations ====//
+   //==========================//
+
+
+FC_REFLECT( node::protocol::graph_node_operation,
          (signatory)
          (account)
-         (bidder)
-         (bid_id)
-         (delivery_price)
-         (delivered)
-         (transactions)
+         (node_types)
+         (node_id)
+         (name)
+         (details)
+         (json)
+         (json_private)
+         (node_public_key)
+         (interface)
          );
+
+FC_REFLECT( node::protocol::graph_edge_operation,
+         (signatory)
+         (account)
+         (edge_types)
+         (edge_id)
+         (from_node_account)
+         (from_node_id)
+         (to_node_account)
+         (to_node_id)
+         (name)
+         (details)
+         (json)
+         (json_private)
+         (edge_public_key)
+         (interface)
+         );
+
+FC_REFLECT( node::protocol::graph_node_property_operation,
+         (signatory)
+         (account)
+         (node_type)
+         (graph_privacy)
+         (edge_permission)
+         (details)
+         (url)
+         (json)
+         (attributes)
+         (interface)
+         );
+
+FC_REFLECT( node::protocol::graph_edge_property_operation,
+         (signatory)
+         (account)
+         (edge_type)
+         (graph_privacy)
+         (from_node_types)
+         (to_node_types)
+         (details)
+         (url)
+         (json)
+         (attributes)
+         (interface)
+         );
+
 
    //=============================//
    //==== Transfer Operations ====//
    //=============================//
+
 
 FC_REFLECT( node::protocol::transfer_operation,
          (signatory)
@@ -4320,9 +5116,11 @@ FC_REFLECT( node::protocol::transfer_recurring_operation,
          (amount)
          (transfer_id)
          (begin)
-         (end)
+         (payments)
          (interval)
          (memo)
+         (extensible)
+         (fill_or_kill)
          (active)
          );
 
@@ -4333,10 +5131,12 @@ FC_REFLECT( node::protocol::transfer_recurring_request_operation,
          (amount)
          (request_id)
          (begin)
-         (end)
+         (payments)
          (interval)
          (memo)
          (expiration)
+         (extensible)
+         (fill_or_kill)
          (requested)
          );
 
@@ -4348,9 +5148,13 @@ FC_REFLECT( node::protocol::transfer_recurring_accept_operation,
          (accepted)
          );
 
+
+
    //============================//
    //==== Balance Operations ====//
    //============================//
+
+
 
 FC_REFLECT( node::protocol::claim_reward_balance_operation,
          (signatory)
@@ -4374,8 +5178,8 @@ FC_REFLECT( node::protocol::unstake_asset_operation,
 
 FC_REFLECT( node::protocol::unstake_asset_route_operation, 
          (signatory)
-         (from_account)
-         (to_account)
+         (from)
+         (to)
          (percent)
          (auto_stake)
          );
@@ -4391,69 +5195,102 @@ FC_REFLECT( node::protocol::transfer_to_savings_operation,
 FC_REFLECT( node::protocol::transfer_from_savings_operation, 
          (signatory)
          (from)
-         (request_id)
          (to)
          (amount)
-         (memo) 
+         (request_id)
+         (memo)
+         (transferred)
          );
 
 FC_REFLECT( node::protocol::delegate_asset_operation, 
          (signatory)
          (delegator)
          (delegatee)
-         (asset) 
+         (amount)
          );
 
-   //===========================//
-   //==== Escrow Operations ====//
-   //===========================//
+
+
+   //================================//
+   //==== Marketplace Operations ====//
+   //================================//
+
+
+FC_REFLECT( node::protocol::product_update_operation, 
+         (signatory)
+         (account)
+         (product_name)
+         (product_variants)
+         (sale_type)
+         (details)
+         (images)
+         (product_prices)
+         (stock_available)
+         (json)
+         (url)
+         (delivery_variants)
+         (delivery_prices)
+         );
+
+FC_REFLECT( node::protocol::product_purchase_operation, 
+         (signatory)
+         (account)
+         (seller)
+         (product_name)
+         (order_size)
+         (total_payable)
+         (shipping_address)
+         (escrow_id)
+         (acceptance_time)
+         (escrow_expiration)
+         (memo)
+         (json)
+         );
 
 FC_REFLECT( node::protocol::escrow_transfer_operation, 
          (signatory)
+         (account)
          (from)
          (to)
-         (agent)
          (escrow_id)
          (amount)
-         (fee)
-         (ratification_deadline)
-         (escrow_expiration) 
+         (acceptance_time)
+         (escrow_expiration)
+         (memo)
          (json)
          );
 
 FC_REFLECT( node::protocol::escrow_approve_operation, 
          (signatory)
-         (who)
-         (from)
-         (to)
-         (agent)
+         (account)
+         (mediator)
+         (escrow_from)
          (escrow_id)
-         (approve) 
+         (approved)
          );
 
 FC_REFLECT( node::protocol::escrow_dispute_operation, 
          (signatory)
-         (who)
-         (from)
-         (to)
-         (agent)
+         (account)
+         (escrow_from)
          (escrow_id) 
          );
 
 FC_REFLECT( node::protocol::escrow_release_operation, 
          (signatory)
-         (who)
-         (from)
-         (to)
-         (agent)
-         (receiver)
+         (account)
+         (escrow_from)
          (escrow_id)
-         (amount) 
+         (release_percent)
          );
+
+
 
    //============================//
    //==== Trading Operations ====//
    //============================//
+
+
 
 FC_REFLECT( node::protocol::limit_order_operation, 
          (signatory)
@@ -4463,6 +5300,7 @@ FC_REFLECT( node::protocol::limit_order_operation,
          (exchange_rate)
          (interface)
          (expiration)
+         (opened)
          (fill_or_kill)
          );
 
@@ -4479,16 +5317,39 @@ FC_REFLECT( node::protocol::margin_order_operation,
          (limit_take_profit_price)
          (interface)
          (expiration)
+         (opened)
          (fill_or_kill)
+         (force_close)
+         );
+
+FC_REFLECT( node::protocol::auction_order_operation, 
+         (signatory)
+         (owner)
+         (order_id)
+         (amount_to_sell)
+         (min_exchange_rate)
+         (interface)
+         (expiration)
+         (opened)
          );
 
 FC_REFLECT( node::protocol::call_order_operation, 
          (signatory)
          (owner)
-         (delta_collateral)
-         (delta_debt)
+         (collateral)
+         (debt)
          (target_collateral_ratio)
          (interface)
+         );
+
+FC_REFLECT( node::protocol::option_order_operation, 
+         (signatory)
+         (owner)
+         (order_id)
+         (amount_to_issue)
+         (strike_price)
+         (interface)
+         (opened)
          );
 
 FC_REFLECT( node::protocol::bid_collateral_operation, 
@@ -4559,9 +5420,13 @@ FC_REFLECT( node::protocol::credit_pool_withdraw_operation,
          (amount)
          );
 
+
+
    //==========================//
    //==== Asset Operations ====//
    //==========================//
+
+
 
 FC_REFLECT( node::protocol::asset_options,
          (display_symbol)
@@ -4580,6 +5445,55 @@ FC_REFLECT( node::protocol::asset_options,
          (blacklist_authorities)
          (whitelist_markets)
          (blacklist_markets)
+         (block_reward)
+         (block_reward_reduction_percent)
+         (block_reward_reduction_days)
+         (content_reward_percent)
+         (equity_asset)
+         (equity_reward_percent)
+         (producer_reward_percent)
+         (supernode_reward_percent)
+         (power_reward_percent)
+         (community_fund_reward_percent)
+         (development_reward_percent)
+         (marketing_reward_percent)
+         (advocacy_reward_percent)
+         (activity_reward_percent)
+         (producer_block_reward_percent)
+         (validation_reward_percent)
+         (txn_stake_reward_percent)
+         (work_reward_percent)
+         (producer_activity_reward_percent)
+         (feed_lifetime)
+         (minimum_feeds)
+         (force_settlement_delay)
+         (force_settlement_offset_percent)
+         (maximum_force_settlement_volume)
+         (backing_asset)
+         (dividend_share_percent)
+         (liquid_dividend_percent)
+         (staked_dividend_percent)
+         (savings_dividend_percent)
+         (liquid_voting_rights)
+         (staked_voting_rights)
+         (savings_voting_rights)
+         (min_active_time)
+         (min_balance)
+         (min_producers)
+         (boost_balance)
+         (boost_activity)
+         (boost_producers)
+         (boost_top)
+         (buyback_asset)
+         (buyback_price)
+         (buyback_share_percent)
+         (liquid_fixed_interest_rate)
+         (liquid_variable_interest_rate)
+         (staked_fixed_interest_rate)
+         (staked_variable_interest_rate)
+         (savings_fixed_interest_rate)
+         (savings_variable_interest_rate)
+         (var_interest_range)
          );
 
 FC_REFLECT( node::protocol::asset_create_operation,
@@ -4597,7 +5511,6 @@ FC_REFLECT( node::protocol::asset_update_operation,
          (signatory)
          (issuer)
          (asset_to_update)
-         (new_issuer)
          (new_options)
          );
 
@@ -4640,6 +5553,7 @@ FC_REFLECT( node::protocol::asset_settle_operation,
          (signatory)
          (account)
          (amount)
+         (interface)
          );
 
 FC_REFLECT( node::protocol::asset_global_settle_operation, 
@@ -4649,9 +5563,62 @@ FC_REFLECT( node::protocol::asset_global_settle_operation,
          (settle_price)
          );
 
+
+
    //=====================================//
    //==== Block Production Operations ====//
    //=====================================//
+
+
+
+FC_REFLECT( node::protocol::chain_properties,
+         (account_creation_fee)
+         (maximum_block_size)
+         (pow_target_time)
+         (pow_decay_time)
+         (txn_stake_decay_time)
+         (escrow_bond_percent)
+         (credit_interest_rate)
+         (credit_open_ratio)
+         (credit_liquidation_ratio)
+         (credit_min_interest)
+         (credit_variable_interest)
+         (market_max_credit_ratio)
+         (margin_open_ratio)
+         (margin_liquidation_ratio)
+         (maximum_asset_feed_publishers)
+         (membership_base_price)
+         (membership_mid_price)
+         (membership_top_price)
+         (author_reward_percent)
+         (vote_reward_percent)
+         (view_reward_percent)
+         (share_reward_percent)
+         (comment_reward_percent)
+         (storage_reward_percent)
+         (moderator_reward_percent)
+         (content_reward_decay_rate)
+         (content_reward_interval)
+         (vote_reserve_rate)
+         (view_reserve_rate)
+         (share_reserve_rate)
+         (comment_reserve_rate)
+         (vote_recharge_time)
+         (view_recharge_time)
+         (share_recharge_time)
+         (comment_recharge_time)
+         (curation_auction_decay_time)
+         (vote_curation_decay)
+         (view_curation_decay)
+         (share_curation_decay)
+         (comment_curation_decay)
+         (supernode_decay_time)
+         (enterprise_vote_percent_required)
+         (maximum_asset_whitelist_authorities)
+         (max_stake_intervals)
+         (max_unstake_intervals)
+         (max_exec_budget)
+         );
 
 FC_REFLECT( node::protocol::producer_update_operation, 
          (signatory)
@@ -4660,11 +5627,10 @@ FC_REFLECT( node::protocol::producer_update_operation,
          (url)
          (json)
          (latitude)
-         (longtiude)
+         (longitude)
          (block_signing_key)
          (props)
          (active)
-         (fee) 
          );
 
 FC_REFLECT( node::protocol::proof_of_work,
@@ -4716,11 +5682,13 @@ FC_REFLECT( node::protocol::producer_violation_operation,
          (second_trx)
          );
 
+
    //===========================//
    //==== Custom Operations ====//
    //===========================//
 
-FC_REFLECT( node::protocol::custom_operation, 
+
+FC_REFLECT( node::protocol::custom_operation,
          (required_auths)
          (id)
          (data) 

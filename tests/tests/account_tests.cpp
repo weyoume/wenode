@@ -80,7 +80,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       op.signatory = INIT_ACCOUNT;
       op.registrar = INIT_ACCOUNT;
       op.new_account_name = "alice";
-      op.account_type = PERSONA;
       op.referrer = INIT_ACCOUNT;
       op.proxy = INIT_ACCOUNT;
       op.governance_account = INIT_ACCOUNT;
@@ -112,7 +111,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.registrar == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.name == "alice" );
       BOOST_REQUIRE( acct_follow.account == "alice" );
-      BOOST_REQUIRE( acct.account_type = PERSONA );
       BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
@@ -143,7 +141,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      op.account_type = PROFILE;
       op.new_account_name = "bob";
       tx.operations.push_back( op );
       tx.sign( init_account_priv_key, db.get_chain_id() );
@@ -156,7 +153,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.registrar == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.name == "bob" );
       BOOST_REQUIRE( acct_follow.account == "bob" );
-      BOOST_REQUIRE( acct.account_type = PERSONA );
       BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
@@ -182,7 +178,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       tx.signatures.clear();
       tx.operations.clear();
-      op.account_type = BUSINESS;
       op.officer_vote_threshold = BLOCKCHAIN_PRECISION * 1000;
       op.business_type = PUBLIC_BUSINESS;
       op.business_public_key = priv_key.get_public_key();
@@ -201,7 +196,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct_follow.account == "ionstudios" );
       BOOST_REQUIRE( acct_bus.account == "ionstudios" );
       BOOST_REQUIRE( acct_bus.executive_board.CHIEF_EXECUTIVE_OFFICER == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.account_type = BUSINESS );
       BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
@@ -1538,7 +1532,6 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       acc_create.registrar = "alice";
       acc_create.recovery_account = "alice";
       acc_create.reset_account = "alice";
-      acc_create.account_type = PERSONA;
       acc_create.new_account_name = "bob";
       acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
       acc_create.active = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
@@ -1902,7 +1895,6 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       acc_create.registrar = "alice";
       acc_create.recovery_account = "alice";
       acc_create.reset_account = "alice";
-      acc_create.account_type = PERSONA;
       acc_create.new_account_name = "bob";
       acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
       acc_create.active = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
@@ -2952,7 +2944,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const reward_fund_object& rfo = db.get_reward_fund();
+      const reward_fund_object& rfo = db.get_reward_fund( SYMBOL_COIN );
       
       BOOST_REQUIRE( alice.last_activity_reward == now() );
       BOOST_REQUIRE( rfo.recent_activity_claims == BLOCKCHAIN_PRECISION );

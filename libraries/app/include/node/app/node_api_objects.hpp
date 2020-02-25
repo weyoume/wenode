@@ -28,6 +28,7 @@ typedef chain::producer_schedule_object                producer_schedule_api_obj
 typedef chain::asset_delegation_object                 asset_delegation_api_obj;
 typedef chain::asset_delegation_expiration_object      asset_delegation_expiration_api_obj;
 typedef chain::reward_fund_object                      reward_fund_api_obj;
+typedef chain::median_chain_property_object            median_chain_property_api_obj;
 typedef producer::account_bandwidth_object             account_bandwidth_api_obj;
 
 struct comment_api_obj
@@ -41,7 +42,7 @@ struct comment_api_obj
       public_key( o.public_key ),
       encrypted( o.is_encrypted() ),
       reach( feed_reach_values[ o.reach ] ),
-      board( o.board ),
+      community( o.community ),
       body( to_string( o.body ) ),
       interface( o.interface ),
       rating( post_rating_values[ o.rating ] ),
@@ -131,7 +132,7 @@ struct comment_api_obj
    public_key_type                public_key;                   ///< The public key used to encrypt the post, holders of the private key may decrypt.
    bool                           encrypted;                    ///< True if the post is encrypted for a specific audience. 
    string                         reach;                        ///< The reach of the post across followers, connections, friends and companions
-   board_name_type                board;                        ///< The name of the board to which the post is uploaded to. Null string if no board. 
+   community_name_type            community;                    ///< The name of the community to which the post is uploaded to. Null string if no community. 
    vector< tag_name_type >        tags;                         ///< Set of string tags for sorting the post by.
    string                         body;                         ///< String containing text for display when the post is opened.
    vector< string >               ipfs;                         ///< String containing a display image or video file as an IPFS file hash.
@@ -199,7 +200,7 @@ struct blog_api_obj
    blog_api_obj( const chain::blog_object& o ):
       id( o.id ),
       account( o.account ),
-      board( o.board ),
+      community( o.community ),
       tag( o.tag ),
       comment( o.comment ),
       blog_type( blog_reach_values[ o.blog_type ] ),
@@ -217,14 +218,14 @@ struct blog_api_obj
 
    blog_id_type                            id;
    account_name_type                       account;               ///< Blog or sharing account for account type blogs, null for other types.
-   board_name_type                         board;                 ///< Board posted or shared to for board type blogs.
+   community_name_type                     community;             ///< Community posted or shared to for community type blogs.
    tag_name_type                           tag;                   ///< Tag posted or shared to for tag type blogs.          
    comment_id_type                         comment;               ///< Comment ID.
    map< account_name_type, time_point >    shared_by;             ///< Map of the times that accounts that have shared the comment in the blog.
-   string                                  blog_type;             ///< Account, Board, or Tag blog.
-   account_name_type                       first_shared_by;       ///< First account that shared the comment with the account, board or tag.
-   uint32_t                                shares;                ///< Number of accounts that have shared the comment with account, board or tag.
-   time_point                              blog_time;             ///< Latest time that the comment was shared on the account, board or tag.
+   string                                  blog_type;             ///< Account, Community, or Tag blog.
+   account_name_type                       first_shared_by;       ///< First account that shared the comment with the account, community or tag.
+   uint32_t                                shares;                ///< Number of accounts that have shared the comment with account, community or tag.
+   time_point                              blog_time;             ///< Latest time that the comment was shared on the account, community or tag.
 };
 
 
@@ -243,11 +244,11 @@ struct feed_api_obj
          {
             shared_by[ s.first ] = s.second;
          }
-         for( auto b : o.boards )
+         for( auto b : o.communities )
          {
             for( auto s : b.second )
             {
-               boards[ b.first ][ s.first ] = s.second;
+               communities[ b.first ][ s.first ] = s.second;
             }
          }
          for( auto t : o.tags )
@@ -264,9 +265,9 @@ struct feed_api_obj
    feed_id_type                                id;
    account_name_type                           account;               ///< Account that should see comment in their feed.
    comment_id_type                             comment;               ///< ID of comment being shared
-   string                                      feed_type;             ///< Type of feed, follow, connection, board, tag etc. 
+   string                                      feed_type;             ///< Type of feed, follow, connection, community, tag etc. 
    map< account_name_type, time_point >        shared_by;             ///< Map of the times that accounts that have shared the comment.
-   map< board_name_type, map< account_name_type, time_point > >   boards;  ///< Map of all boards that the comment has been shared with
+   map< community_name_type, map< account_name_type, time_point > >   communities;  ///< Map of all communities that the comment has been shared with
    map< tag_name_type, map< account_name_type, time_point > >     tags;    ///< Map of all tags that the comment has been shared with.
    account_name_type                           first_shared_by;       ///< First account that shared the comment with account. 
    uint32_t                                    shares;                ///< Number of accounts that have shared the comment with account.
@@ -283,7 +284,6 @@ struct account_api_obj
       json( to_string( a.json ) ),
       json_private( to_string( a.json_private ) ),
       url( to_string( a.url ) ),
-      account_type( account_identity_values[ a.account_type ] ),
       membership( membership_tier_values[ a.membership ] ),
       secure_public_key( a.secure_public_key ),
       connection_public_key( a.connection_public_key ),
@@ -332,12 +332,12 @@ struct account_api_obj
       last_transfer_time( a.last_transfer_time ),
       last_activity_reward( a.last_activity_reward ),
       last_account_recovery( a.last_account_recovery ),
-      last_board_created( a.last_board_created ),
+      last_community_created( a.last_community_created ),
       last_asset_created( a.last_asset_created ),
       mined( a.mined ),
       revenue_share( a.revenue_share ),
       can_vote( a.can_vote ),
-      deleted( a.deleted )
+      active( a.active )
       {
          const auto& auth = db.get< account_authority_object, by_account >( name );
          owner = authority( auth.owner );
@@ -379,7 +379,6 @@ struct account_api_obj
    string                           json;                                  ///< Public plaintext json information.
    string                           json_private;                          ///< Private ciphertext json information.
    string                           url;                                   ///< Account's external reference URL.
-   string                           account_type;                          ///< Type of account, persona, profile or business.
    string                           membership;                            ///< Level of account membership.
    public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
    public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
@@ -432,7 +431,7 @@ struct account_api_obj
    time_point                       last_transfer_time;                        ///< Time that the account last sent a transfer or created a trading txn. 
    time_point                       last_activity_reward;
    time_point                       last_account_recovery;
-   time_point                       last_board_created;
+   time_point                       last_community_created;
    time_point                       last_asset_created;
    time_point                       last_owner_update;
    int64_t                          average_bandwidth;
@@ -444,7 +443,7 @@ struct account_api_obj
    bool                             mined;
    bool                             revenue_share;
    bool                             can_vote;
-   bool                             deleted;
+   bool                             active;
 };
 
 
@@ -457,7 +456,6 @@ struct account_concise_api_obj
       json( to_string( a.json ) ),
       json_private( to_string( a.json_private ) ),
       url( to_string( a.url ) ),
-      account_type( account_identity_values[ a.account_type ] ),
       membership( membership_tier_values[ a.membership ] ),
       secure_public_key( a.secure_public_key ),
       connection_public_key( a.connection_public_key ),
@@ -478,7 +476,6 @@ struct account_concise_api_obj
    string                           json;                                  ///< Public plaintext json information.
    string                           json_private;                          ///< Private ciphertext json information.
    string                           url;                                   ///< Account's external reference URL.
-   string                           account_type;                          ///< Type of account, persona, profile or business.
    string                           membership;                            ///< Level of account membership.
    public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
    public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
@@ -627,9 +624,9 @@ struct account_following_api_obj
          {
             companions.push_back( name );
          }
-         for( auto board : a.followed_boards )
+         for( auto community : a.followed_communities )
          {
-            followed_boards.push_back( board );
+            followed_communities.push_back( community );
          }
          for( auto tag : a.followed_tags )
          {
@@ -639,9 +636,9 @@ struct account_following_api_obj
          {
             filtered.push_back( name );
          }
-         for( auto name : a.filtered_boards )
+         for( auto name : a.filtered_communities )
          {
-            filtered_boards.push_back( name );
+            filtered_communities.push_back( name );
          }
          for( auto name : a.filtered_tags )
          {
@@ -659,10 +656,10 @@ struct account_following_api_obj
    vector< account_name_type >     connections;          ///< Accounts that are connections of this account.
    vector< account_name_type >     friends;              ///< Accounts that are friends of this account.
    vector< account_name_type >     companions;           ///< Accounts that are companions of this account.
-   vector< board_name_type >       followed_boards;      ///< Boards that the account subscribes to.
+   vector< community_name_type >       followed_communities;      ///< Communities that the account subscribes to.
    vector< tag_name_type >         followed_tags;        ///< Tags that the account follows.
    vector< account_name_type >     filtered;             ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
-   vector< board_name_type >       filtered_boards;      ///< Boards that this account has filtered. Posts will not display if they are in these boards.
+   vector< community_name_type >       filtered_communities;      ///< Communities that this account has filtered. Posts will not display if they are in these communities.
    vector< tag_name_type >         filtered_tags;        ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
    time_point                      last_update;          ///< Last time that the account changed its following sets.
 };
@@ -828,40 +825,40 @@ struct account_invite_api_obj
 };
 
 
-struct board_request_api_obj
+struct community_request_api_obj
 {
-   board_request_api_obj( const chain::board_join_request_object& o ):
+   community_request_api_obj( const chain::community_join_request_object& o ):
       id( o.id ),
       account( o.account ),
-      board( o.board),
+      community( o.community),
       message( to_string( o.message ) ),
       expiration( o.expiration ){}
 
-   board_request_api_obj(){}
+   community_request_api_obj(){}
 
-   board_join_request_id_type              id;                 
+   community_join_request_id_type              id;                 
    account_name_type                       account;        
-   board_name_type                         board;  
+   community_name_type                         community;  
    string                                  message;
    time_point                              expiration;   
 };
 
 
-struct board_invite_api_obj
+struct community_invite_api_obj
 {
-   board_invite_api_obj( const chain::board_join_invite_object& o ):
+   community_invite_api_obj( const chain::community_join_invite_object& o ):
       id( o.id ),
       account( o.account ),
-      board( o.board ),
+      community( o.community ),
       member( o.member ),
       message( to_string( o.message ) ),
       expiration( o.expiration ){}
 
-   board_invite_api_obj(){}
+   community_invite_api_obj(){}
 
-   board_join_invite_id_type               id;                 
+   community_join_invite_id_type               id;                 
    account_name_type                       account;             
-   board_name_type                         board; 
+   community_name_type                         community; 
    account_name_type                       member;      
    string                                  message;
    time_point                              expiration;   
@@ -949,15 +946,14 @@ struct transfer_recurring_request_api_obj
 };
 
 
-struct board_api_obj
+struct community_api_obj
 {
-   board_api_obj( const chain::board_object& b ):
+   community_api_obj( const chain::community_object& b ):
       id( b.id ),
       name( b.name ),
       founder( b.founder ),
-      board_type( board_structure_values[ b.board_type ] ),
-      board_privacy( board_privacy_values[ b.board_privacy ] ),
-      board_public_key( b.board_public_key ),
+      community_privacy( community_privacy_values[ b.community_privacy ] ),
+      community_public_key( b.community_public_key ),
       json( to_string( b.json ) ),
       json_private( to_string( b.json_private ) ),
       pinned_post( b.pinned_post ),
@@ -969,32 +965,31 @@ struct board_api_obj
       share_count( b.share_count ),
       total_content_rewards( b.total_content_rewards ),
       created( b.created ),
-      last_board_update( b.last_board_update ),
+      last_community_update( b.last_community_update ),
       last_post( b.last_post ),
       last_root_post( b.last_root_post ){}
 
-   board_api_obj(){}
+   community_api_obj(){}
 
-   board_id_type                      id;
-   board_name_type                    name;                               ///< Name of the board, lowercase letters, numbers and hyphens only.
-   account_name_type                  founder;                            ///< The account that created the board, able to add and remove administrators.
-   string                             board_type;                         ///< Type of board, persona, profile or business.
-   string                             board_privacy;                      ///< Board privacy level, open, public, private, or exclusive
-   public_key_type                    board_public_key;                   ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
-   string                             json;                               ///< Public plaintext json information about the board, its topic and rules.
-   string                             json_private;                       ///< Private ciphertext json information about the board.
-   comment_id_type                    pinned_post;                     ///< Post pinned to the top of the board's page. 
-   uint32_t                           subscriber_count;               ///< number of accounts that are subscribed to the board
-   uint32_t                           post_count;                     ///< number of posts created in the board
-   uint32_t                           comment_count;                  ///< number of comments on posts in the board
-   uint32_t                           vote_count;                     ///< accumulated number of votes received by all posts in the board
-   uint32_t                           view_count;                     ///< accumulated number of views on posts in the board 
-   uint32_t                           share_count;                    ///< accumulated number of shares on posts in the board 
-   asset                              total_content_rewards = asset(0, SYMBOL_COIN);   ///< total amount of rewards earned by posts in the board
-   time_point                         created;                            ///< Time that the board was created.
-   time_point                         last_board_update;                  ///< Time that the board's details were last updated.
+   community_id_type                      id;
+   community_name_type                    name;                               ///< Name of the community, lowercase letters, numbers and hyphens only.
+   account_name_type                  founder;                            ///< The account that created the community, able to add and remove administrators.
+   string                             community_privacy;                      ///< Community privacy level, open, public, private, or exclusive
+   public_key_type                    community_public_key;                   ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
+   string                             json;                               ///< Public plaintext json information about the community, its topic and rules.
+   string                             json_private;                       ///< Private ciphertext json information about the community.
+   comment_id_type                    pinned_post;                     ///< Post pinned to the top of the community's page. 
+   uint32_t                           subscriber_count;               ///< number of accounts that are subscribed to the community
+   uint32_t                           post_count;                     ///< number of posts created in the community
+   uint32_t                           comment_count;                  ///< number of comments on posts in the community
+   uint32_t                           vote_count;                     ///< accumulated number of votes received by all posts in the community
+   uint32_t                           view_count;                     ///< accumulated number of views on posts in the community 
+   uint32_t                           share_count;                    ///< accumulated number of shares on posts in the community 
+   asset                              total_content_rewards = asset(0, SYMBOL_COIN);   ///< total amount of rewards earned by posts in the community
+   time_point                         created;                            ///< Time that the community was created.
+   time_point                         last_community_update;                  ///< Time that the community's details were last updated.
    time_point                         last_post;                          ///< Time that the user most recently created a comment.
-   time_point                         last_root_post;                     ///< Time that the board last created a post. 
+   time_point                         last_root_post;                     ///< Time that the community last created a post. 
 };
 
 
@@ -1027,7 +1022,7 @@ struct moderation_tag_api_obj
       id( m.id ),
       moderator( m.moderator ),
       comment( m.comment ),
-      board( m.board ),
+      community( m.community ),
       rating( post_rating_values[ m.rating ] ),
       details( to_string( m.details ) ),
       filter( m.filter ),
@@ -1045,11 +1040,11 @@ struct moderation_tag_api_obj
    moderation_tag_id_type         id;
    account_name_type              moderator;        ///< Name of the moderator or goverance account that created the comment tag.
    comment_id_type                comment;          ///< ID of the comment.
-   board_name_type                board;            ///< The name of the board to which the post is uploaded to.
+   community_name_type                community;            ///< The name of the community to which the post is uploaded to.
    vector< tag_name_type >        tags;             ///< Set of string tags for sorting the post by
    string                         rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
    string                         details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
-   bool                           filter;           ///< True if the post should be filtered by the board or governance address subscribers. 
+   bool                           filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
    time_point                     last_update;      ///< Time the comment tag was last edited by the author.
    time_point                     created;          ///< Time that the comment tag was created.
 };
@@ -1167,8 +1162,6 @@ struct equity_data_api_obj
 {
    equity_data_api_obj( const chain::asset_equity_data_object& e ):
       id( e.id ),
-      dividend_asset( e.dividend_asset ),
-      dividend_pool( e.dividend_pool ),
       last_dividend( e.last_dividend ),
       dividend_share_percent( e.dividend_share_percent ),
       liquid_dividend_percent( e.liquid_dividend_percent ),
@@ -1183,13 +1176,18 @@ struct equity_data_api_obj
       boost_balance( e.boost_balance ),
       boost_activity( e.boost_activity ),
       boost_producers( e.boost_producers ),
-      boost_top( e.boost_top ){}
+      boost_top( e.boost_top )
+      {
+         for( auto a: e.dividend_pool )
+         {
+            dividend_pool[ a.first ] = a.second;
+         }
+      }
 
    equity_data_api_obj(){}
 
    asset_equity_data_id_type                    id;
-   asset_symbol_type                            dividend_asset;                ///< The asset used to distribute dividends to asset holders
-   asset                                        dividend_pool;                 ///< Amount of assets pooled for distribution at the next interval
+   map< asset_symbol_type, asset >              dividend_pool;                 ///< Amount of assets pooled for distribution at the next interval
    time_point                                   last_dividend;                 ///< Time that the asset last distributed a dividend.
    uint16_t                                     dividend_share_percent;        ///< Percentage of incoming assets added to the dividends pool
    uint16_t                                     liquid_dividend_percent;       ///< percentage of equity dividends distributed to liquid balances
@@ -1689,7 +1687,7 @@ struct governance_account_api_obj
    governance_account_id_type     id;
    account_name_type              account;                    ///< The name of the governance account that created the governance account.
    bool                           active;                     ///< True if the governance account is active, set false to deactivate.
-   bool                           account_approved;           ///< True when the board has reach sufficient voting support to receive budget.
+   bool                           account_approved;           ///< True when the governance account has reach sufficient voting support to receive budget.
    string                         details;                    ///< The governance account's details description. 
    string                         url;                        ///< The governance account's reference URL. 
    string                         json;                       ///< Json metadata of the governance account. 
@@ -1881,7 +1879,7 @@ struct ad_creative_api_obj
    account_name_type           author;            ///< Name of the account that created the objective.
    string                      objective;         ///< The name of the object being advertised, the link and CTA destination of the creative.
    string                      creative;          ///< IPFS link to the Media to be displayed, image or video.
-   string                      json;              ///< Public plaintext json information about the board, its topic and rules.
+   string                      json;              ///< Public plaintext json information about the creative, its topic and rules.
    time_point                  created;           ///< Time creative was made.
    time_point                  last_updated;      ///< Time creative's details were last updated.
    bool                        active;            ///< True when the creative is active for use in campaigns, false to deactivate.
@@ -1943,13 +1941,7 @@ struct ad_inventory_api_obj
       created( o.created ),
       last_updated( o.last_updated ),
       expiration( o.expiration ),
-      active( o.active )
-      {
-         for( auto agent : o.agents )
-         {
-            agents.push_back( agent );
-         }
-      }
+      active( o.active ){}
    
    ad_inventory_api_obj(){}
 
@@ -1962,7 +1954,6 @@ struct ad_inventory_api_obj
    uint32_t                         inventory;         ///< Total metrics available.
    uint32_t                         remaining;         ///< Current amount of inventory remaining. Decrements when delivered.
    string                           json;              ///< json metadata for the inventory.
-   vector<account_name_type>        agents;            ///< Set of Accounts authorized to create delivery transactions for the inventory.
    time_point                       created;           ///< Time inventory was created.
    time_point                       last_updated;      ///< Time inventorys's details were last updated or inventory was delivered.
    time_point                       expiration;        ///< Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
@@ -2134,7 +2125,7 @@ FC_REFLECT( node::app::comment_api_obj,
          (post_type)
          (public_key)
          (reach)
-         (board)
+         (community)
          (tags)
          (body)
          (ipfs)
@@ -2196,7 +2187,7 @@ FC_REFLECT( node::app::comment_api_obj,
 FC_REFLECT( node::app::blog_api_obj,
          (id)
          (account)
-         (board)
+         (community)
          (tag)
          (comment)
          (shared_by)
@@ -2212,7 +2203,7 @@ FC_REFLECT( node::app::feed_api_obj,
          (comment)
          (feed_type)
          (shared_by)
-         (boards)
+         (communities)
          (tags)
          (first_shared_by)
          (shares)
@@ -2226,7 +2217,6 @@ FC_REFLECT( node::app::account_api_obj,
          (json)
          (json_private)
          (url)
-         (account_type)
          (membership)
          (secure_public_key)
          (connection_public_key)
@@ -2276,12 +2266,12 @@ FC_REFLECT( node::app::account_api_obj,
          (last_transfer_time)
          (last_activity_reward)
          (last_account_recovery)
-         (last_board_created)
+         (last_community_created)
          (last_asset_created)
          (mined)
          (revenue_share)
          (can_vote)
-         (deleted)
+         (active)
          );
 
 FC_REFLECT( node::app::account_concise_api_obj,
@@ -2291,7 +2281,6 @@ FC_REFLECT( node::app::account_concise_api_obj,
          (json)
          (json_private)
          (url)
-         (account_type)
          (membership)
          (secure_public_key)
          (connection_public_key)
@@ -2352,10 +2341,10 @@ FC_REFLECT( node::app::account_following_api_obj,
          (connections)
          (friends)
          (companions)
-         (followed_boards)
+         (followed_communities)
          (followed_tags)
          (filtered)
-         (filtered_boards)
+         (filtered_communities)
          (filtered_tags)
          (last_update)
          );
@@ -2424,18 +2413,18 @@ FC_REFLECT( node::app::account_invite_api_obj,
          (expiration)
          );
 
-FC_REFLECT( node::app::board_request_api_obj,
+FC_REFLECT( node::app::community_request_api_obj,
          (id)
          (account)
-         (board)
+         (community)
          (message)
          (expiration)
          );
 
-FC_REFLECT( node::app::board_invite_api_obj,
+FC_REFLECT( node::app::community_invite_api_obj,
          (id)
          (account)
-         (board)
+         (community)
          (member)
          (message)
          (expiration)
@@ -2477,12 +2466,12 @@ FC_REFLECT( node::app::transfer_recurring_request_api_obj,
          (expiration)
          );
 
-FC_REFLECT( node::app::board_api_obj,
+FC_REFLECT( node::app::community_api_obj,
          (id)
          (name)
          (founder)
-         (board_type)
-         (board_public_key)
+         (community_privacy)
+         (community_public_key)
          (json)
          (json_private)
          (pinned_post)
@@ -2494,7 +2483,7 @@ FC_REFLECT( node::app::board_api_obj,
          (share_count)
          (total_content_rewards)
          (created)
-         (last_board_update)
+         (last_community_update)
          (last_post)
          (last_root_post)
          );
@@ -2510,7 +2499,7 @@ FC_REFLECT( node::app::moderation_tag_api_obj,
          (id)
          (moderator)
          (comment)
-         (board)
+         (community)
          (tags)
          (rating)
          (details)
@@ -2565,10 +2554,8 @@ FC_REFLECT( node::app::bitasset_data_api_obj,
 
 FC_REFLECT( node::app::equity_data_api_obj,
          (id)
-         (dividend_asset)
          (dividend_pool)
          (last_dividend)
-         (dividend_asset)
          (dividend_share_percent)
          (liquid_dividend_percent)
          (staked_dividend_percent)

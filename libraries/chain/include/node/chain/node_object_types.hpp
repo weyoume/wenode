@@ -28,7 +28,9 @@ using node::protocol::transaction_id_type;
 using node::protocol::chain_id_type;
 using node::protocol::account_name_type;
 using node::protocol::asset_symbol_type;
-using node::protocol::board_name_type;
+using node::protocol::community_name_type;
+using node::protocol::graph_node_name_type;
+using node::protocol::graph_edge_name_type;
 using node::protocol::tag_name_type;
 using node::protocol::share_type;
 
@@ -55,6 +57,8 @@ enum object_type
    // Account Objects
 
    account_object_type,
+   account_profile_object_type,
+   account_verification_object_type,
    account_business_object_type,
    account_executive_vote_object_type,
    account_officer_vote_object_type,
@@ -100,14 +104,15 @@ enum object_type
    blog_object_type,
    feed_object_type,
 
-   // Board Objects
+   // Community Objects
 
-   board_object_type,
-   board_member_object_type,
-   board_member_key_object_type,
-   board_moderator_vote_object_type,
-   board_join_request_object_type,
-   board_join_invite_object_type,
+   community_object_type,
+   community_member_object_type,
+   community_member_key_object_type,
+   community_moderator_vote_object_type,
+   community_join_request_object_type,
+   community_join_invite_object_type,
+   community_event_object_type,
 
    // Advertising Objects
 
@@ -116,6 +121,13 @@ enum object_type
    ad_inventory_object_type,
    ad_audience_object_type,
    ad_bid_object_type,
+
+   // Graph Data Objects
+
+   graph_node_object_type,
+   graph_edge_object_type,
+   graph_node_property_object_type,
+   graph_edge_property_object_type,
 
    // Transfer Objects
 
@@ -130,15 +142,18 @@ enum object_type
    asset_delegation_object_type,
    asset_delegation_expiration_object_type,
    
-   // Escrow Objects
+   // Marketplace Objects
 
+   product_object_type,
    escrow_object_type,
 
    // Trading Objects
    
    limit_order_object_type,
    margin_order_object_type,
+   auction_order_object_type,
    call_order_object_type,
+   option_order_object_type,
    force_settlement_object_type,
    collateral_bid_object_type,
    
@@ -146,11 +161,16 @@ enum object_type
 
    asset_object_type,
    asset_dynamic_data_object_type,
+   asset_currency_data_object_type,
    asset_bitasset_data_object_type,
    asset_equity_data_object_type,
    asset_credit_data_object_type,
+   asset_unique_data_object_type,
    asset_liquidity_pool_object_type,
    asset_credit_pool_object_type,
+   asset_option_pool_object_type,
+   asset_prediction_pool_object_type,
+   asset_distribution_object_type,
 
    // Credit Objects
 
@@ -183,6 +203,8 @@ class hardfork_property_object;
 // Account Objects
 
 class account_object;
+class account_profile_object;
+class account_verification_object;
 class account_business_object;
 class account_executive_vote_object;
 class account_officer_vote_object;
@@ -228,14 +250,15 @@ class message_object;
 class blog_object;
 class feed_object;
 
-// Board Objects
+// Community Objects
 
-class board_object;
-class board_member_object;
-class board_member_key_object;
-class board_moderator_vote_object;
-class board_join_request_object;
-class board_join_invite_object;
+class community_object;
+class community_member_object;
+class community_member_key_object;
+class community_moderator_vote_object;
+class community_join_request_object;
+class community_join_invite_object;
+class community_event_object;
 
 // Advertising Objects
 
@@ -244,6 +267,13 @@ class ad_campaign_object;
 class ad_inventory_object;
 class ad_audience_object;
 class ad_bid_object;
+
+// Graph Data Objects
+
+class graph_node_object;
+class graph_edge_object;
+class graph_node_property_object;
+class graph_edge_property_object;
 
 // Transfer Objects
 
@@ -258,15 +288,18 @@ class savings_withdraw_object;
 class asset_delegation_object;
 class asset_delegation_expiration_object;
 
-// Escrow Objects
+// Marketplace Objects
 
+class product_object;
 class escrow_object;
 
 // Trading Objects
 
 class limit_order_object;
 class margin_order_object;
+class auction_order_object;
 class call_order_object;
+class option_order_object;
 class force_settlement_object;
 class collateral_bid_object;
 
@@ -274,11 +307,16 @@ class collateral_bid_object;
 
 class asset_object;
 class asset_dynamic_data_object;
+class asset_currency_data_object;
 class asset_bitasset_data_object;
 class asset_equity_data_object;
 class asset_credit_data_object;
+class asset_unique_data_object;
 class asset_liquidity_pool_object;
 class asset_credit_pool_object;
+class asset_option_pool_object;
+class asset_prediction_pool_object;
+class asset_distribution_object;
 
 // Credit objects
 
@@ -310,6 +348,8 @@ typedef oid< hardfork_property_object               > hardfork_property_id_type;
 // Account Objects
 
 typedef oid< account_object                         > account_id_type;
+typedef oid< account_profile_object                 > account_profile_id_type;
+typedef oid< account_verification_object            > account_verification_id_type;
 typedef oid< account_business_object                > account_business_id_type;
 typedef oid< account_executive_vote_object          > account_executive_vote_id_type;
 typedef oid< account_officer_vote_object            > account_officer_vote_id_type;
@@ -355,14 +395,15 @@ typedef oid< message_object                         > message_id_type;
 typedef oid< blog_object                            > blog_id_type;
 typedef oid< feed_object                            > feed_id_type;
 
-// Board Objects
+// Community Objects
 
-typedef oid< board_object                           > board_id_type;
-typedef oid< board_member_object                    > board_member_id_type;
-typedef oid< board_member_key_object                > board_member_key_id_type;
-typedef oid< board_moderator_vote_object            > board_moderator_vote_id_type;
-typedef oid< board_join_request_object              > board_join_request_id_type;
-typedef oid< board_join_invite_object               > board_join_invite_id_type;
+typedef oid< community_object                       > community_id_type;
+typedef oid< community_member_object                > community_member_id_type;
+typedef oid< community_member_key_object            > community_member_key_id_type;
+typedef oid< community_moderator_vote_object        > community_moderator_vote_id_type;
+typedef oid< community_join_request_object          > community_join_request_id_type;
+typedef oid< community_join_invite_object           > community_join_invite_id_type;
+typedef oid< community_event_object                 > community_event_id_type;
 
 // Advertising Objects
 
@@ -371,6 +412,13 @@ typedef oid< ad_campaign_object                     > ad_campaign_id_type;
 typedef oid< ad_inventory_object                    > ad_inventory_id_type;
 typedef oid< ad_audience_object                     > ad_audience_id_type;
 typedef oid< ad_bid_object                          > ad_bid_id_type;
+
+// Graph Data Objects
+
+typedef oid< graph_node_object                      > graph_node_id_type;
+typedef oid< graph_edge_object                      > graph_edge_id_type;
+typedef oid< graph_node_property_object             > graph_node_property_id_type;
+typedef oid< graph_edge_property_object             > graph_edge_property_id_type;
 
 // Transfer Objects
 
@@ -385,15 +433,18 @@ typedef oid< savings_withdraw_object                > savings_withdraw_id_type;
 typedef oid< asset_delegation_object                > asset_delegation_id_type;
 typedef oid< asset_delegation_expiration_object     > asset_delegation_expiration_id_type;
 
-// Escrow Objects
+// Marketplace Objects
 
+typedef oid< product_object                         > product_id_type;
 typedef oid< escrow_object                          > escrow_id_type;
 
 // Trading Objects
 
 typedef oid< limit_order_object                     > limit_order_id_type;
 typedef oid< margin_order_object                    > margin_order_id_type;
+typedef oid< auction_order_object                   > auction_order_id_type;
 typedef oid< call_order_object                      > call_order_id_type;
+typedef oid< option_order_object                    > option_order_id_type;
 typedef oid< force_settlement_object                > force_settlement_id_type;
 typedef oid< collateral_bid_object                  > collateral_bid_id_type;
 
@@ -401,11 +452,16 @@ typedef oid< collateral_bid_object                  > collateral_bid_id_type;
 
 typedef oid< asset_object                           > asset_id_type;
 typedef oid< asset_dynamic_data_object              > asset_dynamic_data_id_type;
+typedef oid< asset_currency_data_object             > asset_currency_data_id_type;
 typedef oid< asset_bitasset_data_object             > asset_bitasset_data_id_type;
 typedef oid< asset_equity_data_object               > asset_equity_data_id_type;
 typedef oid< asset_credit_data_object               > asset_credit_data_id_type;
+typedef oid< asset_unique_data_object               > asset_unique_data_id_type;
 typedef oid< asset_liquidity_pool_object            > asset_liquidity_pool_id_type;
 typedef oid< asset_credit_pool_object               > asset_credit_pool_id_type;
+typedef oid< asset_option_pool_object               > asset_option_pool_id_type;
+typedef oid< asset_prediction_pool_object           > asset_prediction_pool_id_type;
+typedef oid< asset_distribution_object              > asset_distribution_id_type;
 
 // Credit objects
 
@@ -511,6 +567,8 @@ FC_REFLECT_ENUM( node::chain::object_type,
          // Account Objects
 
          (account_object_type)
+         (account_profile_object_type)
+         (account_verification_object_type)
          (account_business_object_type)
          (account_executive_vote_object_type)
          (account_officer_vote_object_type)
@@ -556,14 +614,15 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (blog_object_type)
          (feed_object_type)
 
-         // Board Objects
+         // Community Objects
 
-         (board_object_type)
-         (board_member_object_type)
-         (board_member_key_object_type)
-         (board_moderator_vote_object_type)
-         (board_join_request_object_type)
-         (board_join_invite_object_type)
+         (community_object_type)
+         (community_member_object_type)
+         (community_member_key_object_type)
+         (community_moderator_vote_object_type)
+         (community_join_request_object_type)
+         (community_join_invite_object_type)
+         (community_event_object_type)
 
          // Advertising Objects
 
@@ -572,6 +631,13 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (ad_inventory_object_type)
          (ad_audience_object_type)
          (ad_bid_object_type)
+
+         // Graph Data Objects
+
+         (graph_node_object_type)
+         (graph_edge_object_type)
+         (graph_node_property_object_type)
+         (graph_edge_property_object_type)
 
          // Balance and Transfer Objects
 
@@ -583,15 +649,18 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (asset_delegation_object_type)
          (asset_delegation_expiration_object_type)
 
-         // Escrow Objects
+         // Marketplace Objects
 
+         (product_object_type)
          (escrow_object_type)
 
          // Trading Objects
 
          (limit_order_object_type)
          (margin_order_object_type)
+         (auction_order_object_type)
          (call_order_object_type)
+         (option_order_object_type)
          (force_settlement_object_type)
          (collateral_bid_object_type)
          
@@ -599,11 +668,16 @@ FC_REFLECT_ENUM( node::chain::object_type,
 
          (asset_object_type)
          (asset_dynamic_data_object_type)
+         (asset_currency_data_object_type)
          (asset_bitasset_data_object_type)
          (asset_equity_data_object_type)
          (asset_credit_data_object_type)
+         (asset_unique_data_object_type)
          (asset_liquidity_pool_object_type)
          (asset_credit_pool_object_type)
+         (asset_option_pool_object_type)
+         (asset_prediction_pool_object_type)
+         (asset_distribution_object_type)
 
          // Credit objects
 

@@ -22,12 +22,12 @@ using namespace node::chain;
 using namespace node::protocol;
 using std::string;
 
-BOOST_FIXTURE_TEST_SUITE( escrow_operation_tests, clean_database_fixture );
+BOOST_FIXTURE_TEST_SUITE( marketplace_operation_tests, clean_database_fixture );
 
 
-   //======================//
-   // === Escrow Tests === //
-   //======================//
+   //===========================//
+   // === Marketplace Tests === //
+   //===========================//
 
 
 
@@ -651,11 +651,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
       create.signatory = "alice";
       create.registrar = "alice";
       create.new_account_name = "newuser";
-      create.account_type = PERSONA;
       create.governance_account = INIT_ACCOUNT;
-      create.owner = authority( 1, alice_public_owner_key, 1 );
-      create.active = authority( 1, alice_public_active_key, 1 );
-      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.owner_auth = authority( 1, alice_public_owner_key, 1 );
+      create.active_auth = authority( 1, alice_public_active_key, 1 );
+      create.posting_auth = authority( 1, alice_public_posting_key, 1 );
       create.secure_public_key = string( alice_public_posting_key );
       create.connection_public_key = string( alice_public_posting_key );
       create.friend_public_key = string( alice_public_posting_key );

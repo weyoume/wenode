@@ -1,7 +1,13 @@
+#include <node/protocol/types.hpp>
+#include <node/protocol/authority.hpp>
+#include <node/protocol/transaction.hpp>
+#include <node/chain/database.hpp>
+
+#include <node/chain/node_object_types.hpp>
 #include <node/protocol/node_operations.hpp>
 #include <node/chain/block_summary_object.hpp>
 #include <node/chain/custom_operation_interpreter.hpp>
-#include <node/chain/database.hpp>
+
 #include <node/chain/database_exceptions.hpp>
 #include <node/chain/db_with.hpp>
 #include <node/chain/evaluator_registry.hpp>
@@ -66,6 +72,7 @@ FC_REFLECT( node::chain::db_schema, (types)(object_types)(operation_type)(custom
 namespace node { namespace chain {
 
 using boost::container::flat_set;
+using node::protocol::share_type;
 
 class database_impl
 {
@@ -139,7 +146,7 @@ void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, u
 /**
  * Creates a new blockchain from the genesis block, 
  * creates all necessary network objects.
- * Generates initial assets, accounts, producers, boards
+ * Generates initial assets, accounts, producers, communities
  * and sets initial global dynamic properties. 
  */
 void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLIC_KEY )
@@ -162,7 +169,6 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_object >( [&]( account_object& a )
    {
       a.name = INIT_ACCOUNT;
-      a.account_type = BUSINESS;
       a.registrar = INIT_ACCOUNT;
       a.secure_public_key = get_key( INIT_ACCOUNT, "secure", INIT_ACCOUNT_PASSWORD );
       a.connection_public_key = get_key( INIT_ACCOUNT, "connection", INIT_ACCOUNT_PASSWORD );
@@ -203,7 +209,6 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_object >( [&]( account_object& a )
    {
       a.name = INIT_CEO;
-      a.account_type = PROFILE;
       a.registrar = INIT_ACCOUNT;
       a.secure_public_key = get_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
       a.connection_public_key = get_key( INIT_CEO, "connection", INIT_ACCOUNT_PASSWORD );
@@ -217,7 +222,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.last_transfer_time = now;
       a.last_activity_reward = now;
       a.last_account_recovery = now;
-      a.last_board_created = now;
+      a.last_community_created = now;
       a.last_asset_created = now;
       a.details = INIT_CEO_DETAILS;
       a.url = INIT_CEO_URL;
@@ -317,22 +322,21 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       i.last_updated = now;
    });
 
-   create< board_object >( [&]( board_object& bo )
+   create< community_object >( [&]( community_object& bo )
    {
-      bo.name = INIT_BOARD;
+      bo.name = INIT_COMMUNITY;
       bo.founder = INIT_ACCOUNT;
-      bo.board_type = BOARD;
-      bo.board_privacy = OPEN_BOARD;
-      bo.board_public_key = get_key( INIT_BOARD, "board", "board" );
+      bo.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      bo.community_public_key = get_key( INIT_COMMUNITY, "community", "communitypassword" );
       bo.created = now;
-      bo.last_board_update = now;
+      bo.last_community_update = now;
       bo.last_post = now;
       bo.last_root_post = now;
    });
 
-   const board_member_object& new_board_member = create< board_member_object >( [&]( board_member_object& bmo )
+   const community_member_object& new_community_member = create< community_member_object >( [&]( community_member_object& bmo )
    {
-      bmo.name = INIT_BOARD;
+      bmo.name = INIT_COMMUNITY;
       bmo.founder = INIT_ACCOUNT;
       bmo.subscribers.insert( INIT_ACCOUNT );
       bmo.members.insert( INIT_ACCOUNT );
@@ -340,15 +344,15 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       bmo.administrators.insert( INIT_ACCOUNT );
    });
 
-   create< board_moderator_vote_object >( [&]( board_moderator_vote_object& v )
+   create< community_moderator_vote_object >( [&]( community_moderator_vote_object& v )
    {
       v.moderator = INIT_ACCOUNT;
       v.account = INIT_ACCOUNT;
-      v.board = INIT_BOARD;
+      v.community = INIT_COMMUNITY;
       v.vote_rank = 1;
    });
 
-   update_board_moderators( new_board_member );
+   update_community_moderators( new_community_member );
 
 
    create< account_object >( [&]( account_object& a )
@@ -407,6 +411,29 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.total_supply = INIT_COIN_SUPPLY;
    });
 
+   create< asset_currency_data_object >( [&]( asset_currency_data_object& a )
+   {
+      a.symbol = SYMBOL_COIN;
+      a.block_reward = BLOCK_REWARD;
+      a.block_reward_reduction_percent = 0;
+      a.block_reward_reduction_days = 0;
+      a.equity_asset = SYMBOL_EQUITY;
+      a.equity_reward_percent = EQUITY_REWARD_PERCENT;
+      a.producer_reward_percent = PRODUCER_REWARD_PERCENT;
+      a.supernode_reward_percent = SUPERNODE_REWARD_PERCENT;
+      a.power_reward_percent = POWER_REWARD_PERCENT;
+      a.community_fund_reward_percent = COMMUNITY_FUND_REWARD_PERCENT;
+      a.development_reward_percent = DEVELOPMENT_REWARD_PERCENT;
+      a.marketing_reward_percent = MARKETING_REWARD_PERCENT;
+      a.advocacy_reward_percent = ADVOCACY_REWARD_PERCENT;
+      a.activity_reward_percent = ACTIVITY_REWARD_PERCENT;
+      a.producer_block_reward_percent = PRODUCER_BLOCK_PERCENT;
+      a.validation_reward_percent = PRODUCER_VALIDATOR_PERCENT;
+      a.txn_stake_reward_percent = PRODUCER_TXN_STAKE_PERCENT;
+      a.work_reward_percent = PRODUCER_WORK_PERCENT;
+      a.producer_activity_reward_percent = PRODUCER_ACTIVITY_PERCENT;
+   });
+
    // Create Equity asset
 
    create< asset_object >( [&]( asset_object& a )
@@ -426,6 +453,26 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.symbol = SYMBOL_EQUITY;
       a.staked_supply = INIT_EQUITY_SUPPLY;
       a.total_supply = INIT_EQUITY_SUPPLY;
+   });
+
+   create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
+   {
+      a.business_account = INIT_ACCOUNT;
+      a.symbol = SYMBOL_EQUITY;
+      a.dividend_share_percent = DIVIDEND_SHARE_PERCENT;
+      a.liquid_dividend_percent = LIQUID_DIVIDEND_PERCENT;
+      a.staked_dividend_percent = STAKED_DIVIDEND_PERCENT;
+      a.savings_dividend_percent = SAVINGS_DIVIDEND_PERCENT;
+      a.liquid_voting_rights = PERCENT_100;
+      a.staked_voting_rights = PERCENT_100;
+      a.savings_voting_rights = PERCENT_100;
+      a.min_active_time = EQUITY_ACTIVITY_TIME;
+      a.min_balance = BLOCKCHAIN_PRECISION;
+      a.min_producers = EQUITY_MIN_PRODUCERS;
+      a.boost_balance = EQUITY_BOOST_BALANCE;
+      a.boost_activity = EQUITY_BOOST_ACTIVITY;
+      a.boost_producers = EQUITY_BOOST_PRODUCERS;
+      a.boost_top = EQUITY_BOOST_TOP_PERCENT;
    });
 
    // Create USD asset
@@ -464,6 +511,23 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< asset_dynamic_data_object >([&](asset_dynamic_data_object& a) 
    {
       a.symbol = SYMBOL_CREDIT;
+   });
+
+   
+   create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
+   {
+      a.business_account = INIT_ACCOUNT;
+      a.symbol = SYMBOL_CREDIT;
+      a.buyback_asset = SYMBOL_USD;
+      a.buyback_price = price( asset( 1, SYMBOL_USD ), asset( 1, SYMBOL_CREDIT ) );
+      a.buyback_share_percent = BUYBACK_SHARE_PERCENT;
+      a.liquid_fixed_interest_rate = LIQUID_FIXED_INTEREST_RATE;
+      a.liquid_variable_interest_rate = LIQUID_VARIABLE_INTEREST_RATE;
+      a.staked_fixed_interest_rate = STAKED_FIXED_INTEREST_RATE;
+      a.staked_variable_interest_rate = STAKED_VARIABLE_INTEREST_RATE;
+      a.savings_fixed_interest_rate = SAVINGS_FIXED_INTEREST_RATE;
+      a.savings_variable_interest_rate = SAVINGS_VARIABLE_INTEREST_RATE;
+      a.var_interest_range = VAR_INTEREST_RANGE;
    });
 
    // Create Primary Liquidity Pools [coin/equity, coin/usd, coin/credit, equity/usd, equity/credit, usd/credit ]
@@ -794,6 +858,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< reward_fund_object >( [&]( reward_fund_object& rfo )
    {
       rfo.last_update = now;
+      rfo.symbol = SYMBOL_COIN;
       rfo.content_constant = CONTENT_CONSTANT;
       rfo.content_reward_balance = asset(0, SYMBOL_COIN);
       rfo.validation_reward_balance = asset(0, SYMBOL_COIN);
@@ -832,7 +897,6 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< hardfork_property_object >( [&]( hardfork_property_object& hpo )
    {
       hpo.processed_hardforks.push_back( GENESIS_TIME );
-
    });
    
    create< producer_schedule_object >( [&]( producer_schedule_object& pso )
@@ -1151,6 +1215,16 @@ const asset_dynamic_data_object* database::find_dynamic_data( const asset_symbol
    return find< asset_dynamic_data_object, by_symbol >( (symbol) );
 }
 
+const asset_currency_data_object& database::get_currency_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_currency_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_currency_data_object* database::find_currency_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_currency_data_object, by_symbol >( (symbol) );
+}
+
 const asset_bitasset_data_object& database::get_bitasset_data( const asset_symbol_type& symbol ) const
 { try {
    return get< asset_bitasset_data_object, by_symbol >( (symbol) );
@@ -1441,34 +1515,34 @@ const enterprise_approval_object* database::find_enterprise_approval( const acco
    return find< enterprise_approval_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id, account ) );
 }
 
-const board_object& database::get_board( const board_name_type& board )const
+const community_object& database::get_community( const community_name_type& community )const
 { try {
-	return get< board_object, by_name >( board );
-} FC_CAPTURE_AND_RETHROW( (board) ) }
+	return get< community_object, by_name >( community );
+} FC_CAPTURE_AND_RETHROW( (community) ) }
 
-const board_object* database::find_board( const board_name_type& board )const
+const community_object* database::find_community( const community_name_type& community )const
 {
-   return find< board_object, by_name >( board );
+   return find< community_object, by_name >( community );
 }
 
-const board_member_object& database::get_board_member( const board_name_type& board )const
+const community_member_object& database::get_community_member( const community_name_type& community )const
 { try {
-	return get< board_member_object, by_name >( board );
-} FC_CAPTURE_AND_RETHROW( (board) ) }
+	return get< community_member_object, by_name >( community );
+} FC_CAPTURE_AND_RETHROW( (community) ) }
 
-const board_member_object* database::find_board_member( const board_name_type& board )const
+const community_member_object* database::find_community_member( const community_name_type& community )const
 {
-   return find< board_member_object, by_name >( board );
+   return find< community_member_object, by_name >( community );
 }
 
-const board_member_key_object& database::get_board_member_key( const account_name_type& member, const board_name_type& board )const
+const community_member_key_object& database::get_community_member_key( const account_name_type& member, const community_name_type& community )const
 { try {
-	return get< board_member_key_object, by_member_board >( boost::make_tuple( member, board) );
-} FC_CAPTURE_AND_RETHROW( (board) ) }
+	return get< community_member_key_object, by_member_community >( boost::make_tuple( member, community) );
+} FC_CAPTURE_AND_RETHROW( (community) ) }
 
-const board_member_key_object* database::find_board_member_key( const account_name_type& member, const board_name_type& board )const
+const community_member_key_object* database::find_community_member_key( const account_name_type& member, const community_name_type& community )const
 {
-   return find< board_member_key_object, by_member_board >( boost::make_tuple( member, board) );
+   return find< community_member_key_object, by_member_community >( boost::make_tuple( member, community) );
 }
 
 const comment_object& database::get_comment( const account_name_type& author, const shared_string& permlink )const
@@ -1735,10 +1809,25 @@ const savings_withdraw_object* database::find_savings_withdraw( const account_na
    return find< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
 }
 
-const reward_fund_object& database::get_reward_fund() const
+const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
 { try {
-   return get< reward_fund_object>();
-} FC_CAPTURE_AND_RETHROW() }
+   return get< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
+} FC_CAPTURE_AND_RETHROW( (owner)(request_id) ) }
+
+const savings_withdraw_object* database::find_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
+{
+   return find< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
+}
+
+const reward_fund_object& database::get_reward_fund( const asset_symbol_type& symbol ) const
+{ try {
+   return get< reward_fund_object, by_symbol >( symbol );
+} FC_CAPTURE_AND_RETHROW( (symbol)) }
+
+const reward_fund_object* database::find_reward_fund( const asset_symbol_type& symbol ) const
+{ try {
+   return find< reward_fund_object, by_symbol >( symbol );
+} FC_CAPTURE_AND_RETHROW( (symbol)) }
 
 const comment_metrics_object& database::get_comment_metrics() const
 { try {
@@ -2050,7 +2139,8 @@ signed_block database::generate_block(
    return result;
 }
 
-signed_block database::_generate_block( fc::time_point when, const account_name_type& producer_owner, const fc::ecc::private_key& block_signing_private_key )
+signed_block database::_generate_block( fc::time_point when, const account_name_type& producer_owner, 
+   const fc::ecc::private_key& block_signing_private_key )
 {
    uint32_t skip = get_node_properties().skip_flags;
    uint64_t slot_num = get_slot_at_time( when );
@@ -2380,20 +2470,20 @@ share_type database::update_producer( const producer_object& producer, const pro
 
 /**
  * Updates the voting power map of the moderators
- * in a board, which determines the distribution of the
- * moderation rewards for the board.
+ * in a community, which determines the distribution of the
+ * moderation rewards for the community.
  */
-void database::update_board_moderators( const board_member_object& board )
+void database::update_community_moderators( const community_member_object& community )
 { try {
    price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
-   const auto& vote_idx = get_index< board_moderator_vote_index >().indices().get< by_board_moderator >();
+   const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_community_moderator >();
    flat_map<account_name_type, share_type> mod_weight;
 
-   auto vote_itr = vote_idx.lower_bound( board.name );
+   auto vote_itr = vote_idx.lower_bound( community.name );
 
-   while( vote_itr != vote_idx.end() && vote_itr->board == board.name )
+   while( vote_itr != vote_idx.end() && vote_itr->community == community.name )
    {
-      const board_moderator_vote_object& vote = *vote_itr;
+      const community_moderator_vote_object& vote = *vote_itr;
       const account_object& voter = get_account( vote.account );
       share_type weight = get_voting_power( vote_itr->account );
       if( voter.proxied.size() )
@@ -2405,7 +2495,7 @@ void database::update_board_moderators( const board_member_object& board )
       ++vote_itr;
    }
    
-   modify( board, [&]( board_member_object& b )
+   modify( community, [&]( community_member_object& b )
    {
       b.mod_weight = mod_weight;
    });
@@ -2415,22 +2505,22 @@ void database::update_board_moderators( const board_member_object& board )
 
 /**
  * Updates the voting power map of the moderators
- * in a board, which determines the distribution of t
- * moderation rewards for the board.
+ * in a community, which determines the distribution of
+ * moderation rewards for the community.
  */
-void database::update_board_moderator_set()
+void database::update_community_moderator_set()
 { try {
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
    
    price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
-   const auto& board_idx = get_index< board_member_index >().indices().get< by_name >();
-   auto board_itr = board_idx.begin();
+   const auto& community_idx = get_index< community_member_index >().indices().get< by_name >();
+   auto community_itr = community_idx.begin();
 
-   while( board_itr != board_idx.end() )
+   while( community_itr != community_idx.end() )
    {
-      update_board_moderators( *board_itr );
-      ++board_itr;
+      update_community_moderators( *community_itr );
+      ++community_itr;
    }
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -2672,7 +2762,6 @@ void database::process_bitassets()
                }
             }
          }
-         
       });
    }
 } FC_CAPTURE_AND_RETHROW() }
@@ -2689,49 +2778,56 @@ void database::process_power_rewards()
 
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
-   
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
-   const reward_fund_object& rfo = get_reward_fund();
-   asset power_reward_balance = rfo.power_reward_balance;       // Record the opening balance of the power reward fund
-   auto balance_itr = balance_idx.lower_bound( SYMBOL_COIN );
-   flat_map < account_name_type, share_type > power_map;
-   share_type total_power_shares = 0;
-   asset distributed = asset( 0, SYMBOL_COIN );
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
 
-   while( balance_itr != balance_idx.end() && 
-      balance_itr->symbol == SYMBOL_COIN && 
-      balance_itr->staked_balance >= BLOCKCHAIN_PRECISION )
+   while( fund_itr != fund_idx.end() )
    {
-      share_type power_shares = balance_itr->staked_balance;  // Get the staked balance for each stakeholder
+      const reward_fund_object& reward_fund = *fund_itr;
 
-      if( power_shares > 0 )
+      asset power_reward_balance = reward_fund.power_reward_balance;       // Record the opening balance of the power reward fund
+      auto balance_itr = balance_idx.lower_bound( SYMBOL_COIN );
+      flat_map < account_name_type, share_type > power_map;
+      share_type total_power_shares = 0;
+      asset distributed = asset( 0, SYMBOL_COIN );
+
+      while( balance_itr != balance_idx.end() && 
+         balance_itr->symbol == SYMBOL_COIN && 
+         balance_itr->staked_balance >= BLOCKCHAIN_PRECISION )
       {
-         total_power_shares += power_shares;
-         power_map[ balance_itr->owner] = power_shares;
+         share_type power_shares = balance_itr->staked_balance;  // Get the staked balance for each stakeholder
+
+         if( power_shares > 0 )
+         {
+            total_power_shares += power_shares;
+            power_map[ balance_itr->owner] = power_shares;
+         }
+         ++balance_itr;
       }
-      ++balance_itr;
-   }
 
-   for( auto b : power_map )
-   {
-      asset power_reward = ( power_reward_balance * b.second ) / total_power_shares; 
-      adjust_staked_balance( b.first, power_reward );       // Pay equity dividend to each stakeholder account proportionally.
-      distributed += power_reward;
-   }
+      for( auto b : power_map )
+      {
+         asset power_reward = ( power_reward_balance * b.second ) / total_power_shares;
+         adjust_staked_balance( b.first, power_reward );       // Pay equity dividend to each stakeholder account proportionally.
+         distributed += power_reward;
+      }
 
-   modify( rfo, [&]( reward_fund_object& r )
-   {
-      r.adjust_power_reward_balance( -distributed ); 
-      
-   });
+      modify( reward_fund, [&]( reward_fund_object& r )
+      {
+         r.adjust_power_reward_balance( -distributed ); 
+      });
 
-   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
-      
+      adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+      ++fund_itr;
+   }  
 } FC_CAPTURE_AND_RETHROW() }
 
 
 /**
- * Calaulates the relative share of equity reward dividend distribution that an account should receive
+ * Calaulates the relative share of equity reward dividend 
+ * distribution that an account should receive
  * based on its balances, and account activity.
  */
 share_type database::get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity )
@@ -2782,43 +2878,47 @@ void database::process_equity_rewards()
    while( equity_itr != equity_idx.end() )
    {
       const asset_equity_data_object& equity = *equity_itr;
-      
-      if( equity.dividend_pool.amount > 0 )
+
+      for( auto a : equity.dividend_pool )     // Distribute every asset in the dividend pool
       {
-         asset equity_reward_balance = equity.dividend_pool;  // Record the opening balance of the equity reward fund
-         auto balance_itr = balance_idx.lower_bound( equity.symbol );
-         flat_map < account_name_type, share_type > equity_map;
-         share_type total_equity_shares = 0;
-         asset distributed = asset( 0, equity.dividend_asset );
-
-         while( balance_itr != balance_idx.end() &&
-            balance_itr->symbol == equity.symbol ) 
+         if( a.second.amount > 0 )
          {
-            share_type equity_shares = get_equity_shares( *balance_itr , equity );  // Get the equity shares for each stakeholder
+            asset equity_reward_balance = a.second;  // Record the opening balance of the equity reward fund
+            auto balance_itr = balance_idx.lower_bound( equity.symbol );
+            flat_map < account_name_type, share_type > equity_map;
+            share_type total_equity_shares = 0;
+            asset distributed = asset( 0, a.first );
 
-            if( equity_shares > 0 )
+            while( balance_itr != balance_idx.end() &&
+               balance_itr->symbol == equity.symbol ) 
             {
-               total_equity_shares += equity_shares;
-               equity_map[ balance_itr->owner] = equity_shares;
+               share_type equity_shares = get_equity_shares( *balance_itr, equity );  // Get the equity shares for each stakeholder
+
+               if( equity_shares > 0 )
+               {
+                  total_equity_shares += equity_shares;
+                  equity_map[ balance_itr->owner] = equity_shares;
+               }
+               ++balance_itr;
             }
-            ++balance_itr;
+
+            for( auto b : equity_map )
+            {
+               asset equity_reward = ( equity_reward_balance * b.second ) / total_equity_shares; 
+               adjust_reward_balance( b.first, equity_reward );       // Pay equity dividend to each stakeholder account proportionally.
+               distributed += equity_reward;
+            }
+
+            modify( equity, [&]( asset_equity_data_object& e )
+            {
+               e.adjust_pool( -distributed ); 
+               e.last_dividend = now;        // Remove the distributed amount from the dividend pool.
+            });
+
+            adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
          }
-
-         for( auto b : equity_map )
-         {
-            asset equity_reward = ( equity_reward_balance * b.second ) / total_equity_shares; 
-            adjust_reward_balance( b.first, equity_reward );       // Pay equity dividend to each stakeholder account proportionally.
-            distributed += equity_reward;
-         }
-
-         modify( equity, [&]( asset_equity_data_object& e )
-         {
-            e.adjust_pool( -distributed ); 
-            e.last_dividend = now;        // Remove the distributed amount from the dividend pool.
-         });
-
-         adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
       }
+      
       ++equity_itr;
    }
 } FC_CAPTURE_AND_RETHROW() }
@@ -2837,7 +2937,7 @@ void database::update_proof_of_work_target()
    const median_chain_property_object& median_props = get_median_chain_properties();
    const producer_schedule_object& pso = get_producer_schedule();
    uint128_t recent_pow = pso.recent_pow;        // Amount of proofs of work, times block precision, decayed over 7 days
-   uint128_t target_pow = ( BLOCKCHAIN_PRECISION * median_props.pow_decay_time.to_seconds() ) / median_props.pow_target_time.to_seconds();
+   uint128_t target_pow = ( BLOCKCHAIN_PRECISION.value * median_props.pow_decay_time.to_seconds() ) / median_props.pow_target_time.to_seconds();
    uint128_t new_difficulty = ( pso.pow_target_difficulty * target_pow ) / recent_pow;
    time_point now = head_block_time();
 
@@ -2852,12 +2952,10 @@ void database::update_proof_of_work_target()
 
 void database::claim_proof_of_work_reward( const account_name_type& miner )
 { try {
-   const reward_fund_object& rfo = get_reward_fund();
-   const median_chain_property_object& median_props = get_median_chain_properties();
    
+   const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
-   asset pow_reward = rfo.work_reward_balance;
    const producer_object& producer = get_producer( miner );
 
    modify( producer, [&]( producer_object& p )
@@ -2870,45 +2968,53 @@ void database::claim_proof_of_work_reward( const account_name_type& miner )
 
    modify( pso, [&]( producer_schedule_object& pso )
    {
-      pso.recent_pow += BLOCKCHAIN_PRECISION;
+      pso.recent_pow += BLOCKCHAIN_PRECISION.value;
       pso.decay_pow( now, median_props );
    });
 
-   modify( rfo, [&]( reward_fund_object& r )
-   {
-      r.adjust_work_reward_balance( -pow_reward );
-   });
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
 
-   adjust_reward_balance( miner, pow_reward );
-   adjust_pending_supply( -pow_reward );
+   while( fund_itr != fund_idx.end() )
+   {
+      const reward_fund_object& reward_fund = *fund_itr;
+      asset pow_reward = reward_fund.work_reward_balance;
+
+      modify( reward_fund, [&]( reward_fund_object& r )
+      {
+         r.adjust_work_reward_balance( -pow_reward );
+      });
+
+      adjust_reward_balance( miner, pow_reward );
+      adjust_pending_supply( -pow_reward );
+
+      ++fund_itr;
+   }
 
 } FC_CAPTURE_AND_RETHROW() }
 
 /**
- * Distributes the transaction stake reward to all block producers
- * according to the amount of stake weighted transactions included in 
- * blocks. Each transaction included in a block adds the size of the transaction
- * multipled 
+ * Distributes the transaction stake reward to all block producers according 
+ * to the amount of stake weighted transactions included in blocks. 
+ * Each transaction included in a block adds the size of the transaction 
+ * multipled by the stake weight of its creator.
  */
 void database::process_txn_stake_rewards()
 { try {
    if( (head_block_num() % TXN_STAKE_BLOCK_INTERVAL) != 0 )    // Runs once per week
       return;
 
-   const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
-   asset txn_stake_reward = rfo.txn_stake_reward_balance;     // Record the opening balance of the transaction stake reward fund
    const auto& producer_idx = get_index< producer_index >().indices().get< by_txn_stake_weight >();
    auto producer_itr = producer_idx.begin();
     
    flat_map < account_name_type, share_type > stake_map;
    share_type total_stake_shares = 0;
-   asset distributed = asset( 0, SYMBOL_COIN );
-
+   
    while( producer_itr != producer_idx.end() &&
-      producer_itr->recent_txn_stake_weight > BLOCKCHAIN_PRECISION ) 
+      producer_itr->recent_txn_stake_weight > BLOCKCHAIN_PRECISION )
    {
       share_type stake_shares = producer_itr->recent_txn_stake_weight;  // Get the recent txn stake for each producer
 
@@ -2920,20 +3026,31 @@ void database::process_txn_stake_rewards()
       ++producer_itr;
    }
 
-   for( auto b : stake_map )
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
+
+   while( fund_itr != fund_idx.end() )
    {
-      asset stake_reward = ( txn_stake_reward * b.second ) / total_stake_shares; 
-      adjust_reward_balance( b.first, stake_reward );       // Pay transaction stake reward to each block producer proportionally.
-      distributed += stake_reward;
+      const reward_fund_object& reward_fund = *fund_itr;
+      asset txn_stake_reward = reward_fund.txn_stake_reward_balance;     // Record the opening balance of the transaction stake reward fund
+      asset distributed = asset( 0, reward_fund.symbol );
+
+      for( auto b : stake_map )
+      {
+         asset stake_reward = ( txn_stake_reward * b.second ) / total_stake_shares; 
+         adjust_reward_balance( b.first, stake_reward );       // Pay transaction stake reward to each block producer proportionally.
+         distributed += stake_reward;
+      }
+
+      modify( reward_fund, [&]( reward_fund_object& r )
+      {
+         r.adjust_txn_stake_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+      });
+
+      adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+      ++fund_itr;
    }
-
-   modify( rfo, [&]( reward_fund_object& r )
-   {
-      r.adjust_txn_stake_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
-   });
-
-   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
-
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -2942,6 +3059,7 @@ void database::process_txn_stake_rewards()
  * and miners according to the stake weight of their commitment transactions
  * upon the block becoming irreversible after majority of producers have created
  * a block on top of it.
+ * 
  * This enables nodes to have a lower finality time in
  * cases where producers a majority of producers commit to a newly 
  * created block before it becomes irreversible.
@@ -2950,23 +3068,21 @@ void database::process_txn_stake_rewards()
  */
 void database::process_validation_rewards()
 { try {
-   const reward_fund_object& rfo = get_reward_fund();
+   
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
-   asset validation_reward = rfo.validation_reward_balance;     // Record the opening balance of the validation reward fund
    const auto& valid_idx = get_index< block_validation_index >().indices().get< by_height_stake >();
    auto valid_itr = valid_idx.lower_bound( props.last_irreversible_block_num );
     
    flat_map < account_name_type, share_type > validation_map;
    share_type total_validation_shares = 0;
-   asset distributed = asset( 0, SYMBOL_COIN );
 
    while( valid_itr != valid_idx.end() &&
       valid_itr->block_height == props.last_irreversible_block_num &&
       valid_itr->commitment_stake.amount >= BLOCKCHAIN_PRECISION ) 
    {
-      share_type validation_shares = valid_itr->commitment_stake;  // Get the commitment stake for each producer
+      share_type validation_shares = valid_itr->commitment_stake;       // Get the commitment stake for each producer
 
       if( validation_shares > 0 )
       {
@@ -2976,20 +3092,31 @@ void database::process_validation_rewards()
       ++valid_itr;
    }
 
-   for( auto b : validation_map )
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
+
+   while( fund_itr != fund_idx.end() )
    {
-      asset validation_reward = ( validation_reward * b.second ) / total_validation_shares; 
-      adjust_reward_balance( b.first, validation_reward );       // Pay transaction validation reward to each block producer proportionally.
-      distributed += validation_reward;
+      const reward_fund_object& reward_fund = *fund_itr;
+      asset validation_reward = reward_fund.validation_reward_balance;     // Record the opening balance of the validation reward fund
+      asset distributed = asset( 0, reward_fund.symbol );
+
+      for( auto b : validation_map )
+      {
+         asset validation_reward = ( validation_reward * b.second ) / total_validation_shares; 
+         adjust_reward_balance( b.first, validation_reward );       // Pay transaction validation reward to each block producer proportionally.
+         distributed += validation_reward;
+      }
+
+      modify( reward_fund, [&]( reward_fund_object& r )
+      {
+         r.adjust_validation_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+      });
+
+      adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+      ++fund_itr;
    }
-
-   modify( rfo, [&]( reward_fund_object& r )
-   {
-      r.adjust_validation_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
-   });
-
-   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
-
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -3006,15 +3133,16 @@ void database::process_producer_activity_rewards()
    if( (head_block_num() % POA_BLOCK_INTERVAL ) != 0 )    // Runs once per 8 hours.
       return;
    
-   const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
-   asset poa_reward = rfo.producer_activity_reward_balance;          // Record the opening balance of the producer activity reward fund.
    const auto& producer_idx = get_index< producer_index >().indices().get< by_activity_stake >();
    auto producer_itr = producer_idx.begin();
 
-   if( producer_itr != producer_idx.end() )
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
+
+   if( producer_itr != producer_idx.end() )    // Get Top producer by activity stake
    {
       const producer_object& prime_producer = *producer_itr;
 
@@ -3023,37 +3151,42 @@ void database::process_producer_activity_rewards()
          p.accumulated_activity_stake = 0;     // Reset activity stake for top producer.
       });
 
-      modify( rfo, [&]( reward_fund_object& r )
+      while( fund_itr != fund_idx.end() )
       {
-         r.adjust_producer_activity_reward_balance( -poa_reward );     // Remove the distributed amount from the reward pool.
-      });
+         const reward_fund_object& reward_fund = *fund_itr;
+         asset poa_reward = reward_fund.producer_activity_reward_balance;    // Record the opening balance of the producer activity reward fund.
 
-      adjust_reward_balance( prime_producer.owner, poa_reward );   // Pay producer activity reward to the producer with the highest accumulated activity stake.
-      adjust_pending_supply( -poa_reward );        // Deduct distributed amount from pending supply.
+         modify( reward_fund, [&]( reward_fund_object& r )
+         {
+            r.adjust_producer_activity_reward_balance( -poa_reward );     // Remove the distributed amount from the reward pool.
+         });
+
+         adjust_reward_balance( prime_producer.owner, poa_reward );   // Pay producer activity reward to the producer with the highest accumulated activity stake.
+         adjust_pending_supply( -poa_reward );        // Deduct distributed amount from pending supply.
+
+         ++fund_itr;
+      }
    }
-
 } FC_CAPTURE_AND_RETHROW() }
 
 
-
+/**
+ * Distributes Supernode rewards between all supernodes according to
+ * stake weighted views on posts.
+ */
 void database::process_supernode_rewards()
 { try {
    if( (head_block_num() % SUPERNODE_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
       return;
 
-   const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
-   asset supernode_reward = rfo.supernode_reward_balance;     // Record the opening balance of the supernode reward fund
-
    const auto& supernode_idx = get_index< supernode_index >().indices().get< by_view_weight >();
    const auto& sn_acc_idx = get_index< supernode_index >().indices().get< by_account >();
    auto supernode_itr = supernode_idx.begin();
-    
    flat_map < account_name_type, share_type > supernode_map;
    share_type total_supernode_shares = 0;
-   asset distributed = asset( 0, SYMBOL_COIN );
-
+   
    while( supernode_itr != supernode_idx.end() ) 
    {
       share_type supernode_shares = supernode_itr->recent_view_weight;  // Get the supernode view weight for rewards
@@ -3066,30 +3199,40 @@ void database::process_supernode_rewards()
       ++supernode_itr;
    }
 
-   for( auto b : supernode_map )
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
+
+   while( fund_itr != fund_idx.end() )
    {
-      asset supernode_reward_split = ( supernode_reward * b.second ) / total_supernode_shares; 
-      adjust_reward_balance( b.first, supernode_reward_split );       // Pay supernode reward proportionally with view weight.
-      auto sn_ptr = sn_acc_idx.find( b.first );
-      if( sn_ptr != sn_acc_idx.end() )
+      const reward_fund_object& reward_fund = *fund_itr;
+      asset supernode_reward = reward_fund.supernode_reward_balance;     // Record the opening balance of the supernode reward fund
+      asset distributed = asset( 0, reward_fund.symbol );
+
+      for( auto b : supernode_map )
       {
-         modify( *sn_ptr, [&]( supernode_object& s )
+         asset supernode_reward_split = ( supernode_reward * b.second ) / total_supernode_shares; 
+         adjust_reward_balance( b.first, supernode_reward_split );       // Pay supernode reward proportionally with view weight.
+         auto sn_ptr = sn_acc_idx.find( b.first );
+         if( sn_ptr != sn_acc_idx.end() )
          {
-            s.storage_rewards += supernode_reward_split;     // Increment the lifetime storage earnings of the supernode
-         }); 
+            modify( *sn_ptr, [&]( supernode_object& s )
+            {
+               s.storage_rewards += supernode_reward_split;     // Increment the lifetime storage earnings of the supernode
+            }); 
+         }
+         distributed += supernode_reward_split;
       }
-      distributed += supernode_reward_split;
+
+      modify( reward_fund, [&]( reward_fund_object& r )
+      {
+         r.adjust_supernode_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
+      });
+
+      adjust_pending_supply( -distributed );               // Deduct distributed amount from pending supply.
+
+      ++fund_itr;
    }
-
-   modify( rfo, [&]( reward_fund_object& r )
-   {
-      r.adjust_supernode_reward_balance( -distributed );     // Remove the distributed amount from the reward pool.
-   });
-
-   adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
-
 } FC_CAPTURE_AND_RETHROW() }
-
 
 
 /**
@@ -3134,10 +3277,10 @@ void database::update_network_officer( const network_officer_object& network_off
    }
 
    // Approve the network officer when a threshold of voting power and vote amount supports it.
-   bool approve_officer = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
-      ( producer_vote_count >= VOTE_THRESHOLD_AMOUNT ) &&
-      ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power >= ( pso.total_producer_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+   bool approve_officer = ( vote_count >= OFFICER_VOTE_THRESHOLD_AMOUNT ) &&
+      ( producer_vote_count >= OFFICER_VOTE_THRESHOLD_PRODUCERS ) &&
+      ( voting_power >= ( props.total_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( producer_voting_power >= ( pso.total_producer_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( network_officer, [&]( network_officer_object& n )
    {
@@ -3153,14 +3296,13 @@ void database::update_network_officer( const network_officer_object& network_off
 /**
  * Pays the network officer rewards to the 50 highest voted
  * developers, marketers and advocates on the network from
- * the reward fund, once per day.
+ * all currency asset reward funds once per day.
  */
 void database::process_network_officer_rewards()
 { try {
    if( (head_block_num() % NETWORK_OFFICER_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
       return;
 
-   const reward_fund_object& rfo = get_reward_fund();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const producer_schedule_object& pso = get_producer_schedule();
    const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
@@ -3175,12 +3317,10 @@ void database::process_network_officer_rewards()
 
    // ========== Development Officers ========== //
 
-   asset development_reward = rfo.development_reward_balance;     // Record the opening balance of the development reward fund
    auto development_itr = officer_idx.lower_bound( DEVELOPMENT );
    auto development_end = officer_idx.upper_bound( DEVELOPMENT );
    flat_map < account_name_type, share_type > development_map;
    share_type total_development_shares = 0;
-   asset development_distributed = asset( 0, SYMBOL_COIN );
 
    while( development_itr != development_end && development_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
    {
@@ -3194,22 +3334,13 @@ void database::process_network_officer_rewards()
       ++development_itr;
    }
 
-   for( auto b : development_map )
-   {
-      asset development_reward_split = ( development_reward * b.second ) / total_development_shares; 
-      adjust_reward_balance( b.first, development_reward_split );       // Pay development reward proportionally with voting power.
-      development_distributed += development_reward_split;
-   }
-
    // ========== Marketing Officers ========== //
 
-   asset marketing_reward = rfo.marketing_reward_balance;     // Record the opening balance of the marketing reward fund
    auto marketing_itr = officer_idx.lower_bound( MARKETING );
    auto marketing_end = officer_idx.upper_bound( MARKETING );
    flat_map < account_name_type, share_type > marketing_map;
    share_type total_marketing_shares = 0;
-   asset marketing_distributed = asset( 0, SYMBOL_COIN );
-
+   
    while( marketing_itr != marketing_end && marketing_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
    {
       share_type marketing_shares = marketing_itr->voting_power;  // Get the marketing officer voting power
@@ -3222,22 +3353,13 @@ void database::process_network_officer_rewards()
       ++marketing_itr;
    }
 
-   for( auto b : marketing_map )
-   {
-      asset marketing_reward_split = ( marketing_reward * b.second ) / total_marketing_shares; 
-      adjust_reward_balance( b.first, marketing_reward_split );       // Pay marketing reward proportionally with voting power.
-      marketing_distributed += marketing_reward_split;
-   }
-
    // ========== Advocacy Officers ========== //
 
-   asset advocacy_reward = rfo.advocacy_reward_balance;     // Record the opening balance of the advocacy reward fund
    auto advocacy_itr = officer_idx.lower_bound( ADVOCACY );
    auto advocacy_end = officer_idx.upper_bound( ADVOCACY );
    flat_map < account_name_type, share_type > advocacy_map;
    share_type total_advocacy_shares = 0;
-   asset advocacy_distributed = asset( 0, SYMBOL_COIN );
-
+   
    while( advocacy_itr != advocacy_end && advocacy_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
    {
       share_type advocacy_shares = advocacy_itr->voting_power;  // Get the advocacy officer voting power
@@ -3250,22 +3372,52 @@ void database::process_network_officer_rewards()
       ++advocacy_itr;
    }
 
-   for( auto b : advocacy_map )
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
+
+   while( fund_itr != fund_idx.end() )
    {
-      asset advocacy_reward_split = ( advocacy_reward * b.second ) / total_advocacy_shares; 
-      adjust_reward_balance( b.first, advocacy_reward_split );       // Pay advocacy reward proportionally with voting power.
-      advocacy_distributed += advocacy_reward_split;
+      const reward_fund_object& reward_fund = *fund_itr;
+      asset development_reward = reward_fund.development_reward_balance;
+      asset development_distributed = asset( 0, reward_fund.symbol );
+      asset marketing_reward = reward_fund.marketing_reward_balance;
+      asset marketing_distributed = asset( 0, reward_fund.symbol );
+      asset advocacy_reward = reward_fund.advocacy_reward_balance;
+      asset advocacy_distributed = asset( 0, reward_fund.symbol );
+
+      for( auto b : development_map )
+      {
+         asset development_reward_split = ( development_reward * b.second ) / total_development_shares;
+         adjust_reward_balance( b.first, development_reward_split );
+         development_distributed += development_reward_split;
+      }
+
+      for( auto b : marketing_map )
+      {
+         asset marketing_reward_split = ( marketing_reward * b.second ) / total_marketing_shares;
+         adjust_reward_balance( b.first, marketing_reward_split );
+         marketing_distributed += marketing_reward_split;
+      }
+
+      for( auto b : advocacy_map )
+      {
+         asset advocacy_reward_split = ( advocacy_reward * b.second ) / total_advocacy_shares;
+         adjust_reward_balance( b.first, advocacy_reward_split );
+         advocacy_distributed += advocacy_reward_split;
+      }
+
+      modify( reward_fund, [&]( reward_fund_object& r )
+      {
+         r.adjust_development_reward_balance( -development_distributed );   
+         r.adjust_marketing_reward_balance( -marketing_distributed );   
+         r.adjust_advocacy_reward_balance( -advocacy_distributed );  
+      });
+
+      asset total_distributed = development_distributed + marketing_distributed + advocacy_distributed;
+      adjust_pending_supply( -total_distributed );   // Deduct distributed amount from pending supply.
+
+      ++fund_itr;
    }
-
-   modify( rfo, [&]( reward_fund_object& r )
-   {
-      r.adjust_development_reward_balance( -development_distributed );   
-      r.adjust_marketing_reward_balance( -marketing_distributed );   
-      r.adjust_advocacy_reward_balance( -advocacy_distributed );  
-   });
-   asset total_distributed = development_distributed + marketing_distributed + advocacy_distributed;
-   adjust_pending_supply( -total_distributed );   // Deduct distributed amount from pending supply.
-
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -3310,11 +3462,11 @@ void database::update_executive_board( const executive_board_object& executive_b
       ++vote_itr;
    }
 
-   // Approve the executive board when a threshold of votes to support its budget.
-   bool approve_board = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 8 ) &&
-      ( producer_vote_count >= VOTE_THRESHOLD_AMOUNT * 2 ) &&
-      ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT * 2 ) / PERCENT_100 ) &&
-      ( producer_voting_power >= ( pso.total_producer_voting_power * VOTE_THRESHOLD_PERCENT * 2 ) / PERCENT_100 );
+   // Approve the executive board when a threshold of accounts vote to support its budget.
+   bool approve_board = ( vote_count >= EXECUTIVE_VOTE_THRESHOLD_AMOUNT ) &&
+      ( producer_vote_count >= EXECUTIVE_VOTE_THRESHOLD_PRODUCERS ) &&
+      ( voting_power >= ( props.total_voting_power * EXECUTIVE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( producer_voting_power >= ( pso.total_producer_voting_power * EXECUTIVE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( executive_board, [&]( executive_board_object& e )
    {
@@ -3328,11 +3480,11 @@ void database::update_executive_board( const executive_board_object& executive_b
 
 
 /**
- * Pays the requested budgets fo the top 5 voted executive boards on the network, that have
+ * Pays the requested budgets of the approved executive boards on the network, that have
  * sufficient approval from accounts and producers once per day.
  * Price of network credit asset must be greater than $0.90 USD to issue new units, or 
  * executive budgets are suspended. 
- * Network credit is a digital fiat currency that is issued to executive boards
+ * Network credit is a credit currency that is issued to executive boards
  * for expenses of managing a network development team. Its value is derived from
  * buybacks from network revenue, up to a face value of $1.00 USD
  * per credit, and interest payments for balance holders.
@@ -3350,7 +3502,6 @@ void database::process_executive_board_budgets()
 
    const auto& exec_idx = get_index< executive_board_index >().indices().get< by_voting_power >();
    auto exec_itr = exec_idx.begin();
-   uint16_t board_count = 0;
 
    while( exec_itr != exec_idx.end() )   // update all executive board approvals and vote statistics. 
    {
@@ -3363,16 +3514,13 @@ void database::process_executive_board_budgets()
    {
       auto exec_itr = exec_idx.begin(); // reset iterator;
 
-      while( exec_itr != exec_idx.end() && board_count < EXECUTIVE_BOARD_ACTIVE_SET )   // Pay the budget requests of the top 5 approved boards.
+      while( exec_itr != exec_idx.end() )   // Pay the budget requests of the approved communities.
       {
          const executive_board_object& exec = *exec_itr;
 
          if( exec.board_approved )
          {
-            FC_ASSERT( exec.budget.symbol == SYMBOL_CREDIT , 
-               "Executive Budget must be in the network credit asset." );
             adjust_liquid_balance( exec.account, exec.budget );     // Issues new supply of credit asset to pay executive board.
-            board_count++;
          }
          ++exec_itr;
       }
@@ -3421,11 +3569,11 @@ void database::update_governance_account( const governance_account_object& gover
       ++vote_itr;
    }
 
-   // Approve the executive board when a threshold of votes to support its budget.
-   bool approve_account = ( vote_count >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
-      ( producer_vote_count >= VOTE_THRESHOLD_AMOUNT ) &&
-      ( voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power >= ( pso.total_producer_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+   // Approve the governance account when a threshold of votes to support its budget.
+   bool approve_account = ( vote_count >= GOVERNANCE_VOTE_THRESHOLD_AMOUNT * 4 ) &&
+      ( producer_vote_count >= GOVERNANCE_VOTE_THRESHOLD_PRODUCERS ) &&
+      ( voting_power >= ( props.total_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( producer_voting_power >= ( pso.total_producer_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( governance_account, [&]( governance_account_object& g )
    {
@@ -3519,10 +3667,10 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
    }
 
    // Approve the latest claimed milestone when a threshold of approvals support its release.
-   bool approve_milestone = ( current_approvals >= VOTE_THRESHOLD_AMOUNT * 4 ) &&
-      ( current_producer_approvals >= VOTE_THRESHOLD_AMOUNT ) &&
-      ( current_voting_power >= ( props.total_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( current_producer_voting_power >= ( pso.total_producer_voting_power * VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+   bool approve_milestone = ( current_approvals >= ENTERPRISE_VOTE_THRESHOLD_AMOUNT ) &&
+      ( current_producer_approvals >= ENTERPRISE_VOTE_THRESHOLD_PRODUCERS ) &&
+      ( current_voting_power >= ( props.total_voting_power * ENTERPRISE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( current_producer_voting_power >= ( pso.total_producer_voting_power * ENTERPRISE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
 
    modify( enterprise, [&]( community_enterprise_object& e )
    {
@@ -3553,7 +3701,6 @@ void database::process_community_enterprise_fund()
    if( (head_block_num() % ENTERPRISE_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
       return;
 
-   const reward_fund_object& rfo = get_reward_fund();
    const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
@@ -3568,19 +3715,22 @@ void database::process_community_enterprise_fund()
 
    auto enterprise_itr = enterprise_idx.begin();
 
-   while( enterprise_itr != enterprise_idx.end() && 
-      rfo.community_fund_balance.amount > 0 )   // Enterprise objects in order of highest total voting power.
+   while( enterprise_itr != enterprise_idx.end() )   // Enterprise objects in order of highest total voting power.
    {
-      if( enterprise_itr->approved_milestones >= 0 && enterprise_itr->begin > now )  // Processed when they have inital approval and passed begin time.
+      const reward_fund_object& reward_fund = get_reward_fund( enterprise_itr->daily_budget.symbol );
+
+      if( enterprise_itr->approved_milestones >= 0 && 
+         enterprise_itr->begin > now && 
+         reward_fund.community_fund_balance.amount > 0 )  // Processed when they have inital approval and passed begin time.
       {
          const community_enterprise_object& enterprise = *enterprise_itr;
-         asset available_budget = std::min( rfo.community_fund_balance, enterprise.daily_budget );
+         asset available_budget = std::min( reward_fund.community_fund_balance, enterprise.daily_budget );
 
          if( enterprise.duration > enterprise.days_paid )
          {
-            modify( rfo, [&]( reward_fund_object& r )
+            modify( reward_fund, [&]( reward_fund_object& r )
             {
-               r.adjust_community_fund_balance( available_budget );     // Remove the distributed amount from the reward pool.
+               r.adjust_community_fund_balance( -available_budget );     // Remove the distributed amount from the reward pool.
             });
 
             modify( enterprise, [&]( community_enterprise_object& e )
@@ -3895,7 +4045,10 @@ void database::adjust_interface_users( const interface_object& interface, bool a
 
 
 /**
- *  Overall the network has a MeCoin Issuance rate of one Billion per year.
+ * Distributes currency issuance of all currency assets.
+ * Pays out Staked and liquid Currency assets, including MEC, every block to all network contributors.
+ * 
+ * For MeCoin, the issuance rate is one Billion per year.
  * 
  *  - 25% of issuance is directed to Content Creator rewards.
  *  - 20% of issuance is directed to Equity Holder rewards.
@@ -3907,8 +4060,6 @@ void database::adjust_interface_users( const interface_object& interface, bool a
  *  - 2.5% of issuance is directed to The Marketing reward pool.
  *  - 2.5% of issuance is directed to The Advocacy reward pool.
  *  - 2.5% of issuance is directed to The Activity reward pool.
- * 
- *  Pays out Staked and liquid COIN every block to all network contributors.
  */
 void database::process_funds()
 { try {
@@ -3917,62 +4068,71 @@ void database::process_funds()
    const producer_object& current_producer = get_producer( props.current_producer );
    const account_object& producer_account = get_account( props.current_producer );
 
-   asset block_reward = BLOCK_REWARD;
+   const auto& currency_idx = get_index< asset_currency_data_index >().indices().get< by_id >();
+   auto currency_itr = currency_idx.begin();
 
-   asset content_reward            = ( block_reward * CONTENT_REWARD_PERCENT          ) / PERCENT_100;
-   asset equity_reward             = ( block_reward * EQUITY_REWARD_PERCENT           ) / PERCENT_100;
-   asset producer_reward           = ( block_reward * PRODUCER_REWARD_PERCENT         ) / PERCENT_100;
-   asset supernode_reward          = ( block_reward * SUPERNODE_REWARD_PERCENT        ) / PERCENT_100;
-   asset power_reward              = ( block_reward * POWER_REWARD_PERCENT            ) / PERCENT_100;
-   asset community_fund_reward     = ( block_reward * COMMUNITY_FUND_PERCENT          ) / PERCENT_100;
-   asset development_reward        = ( block_reward * DEVELOPMENT_REWARD_PERCENT      ) / PERCENT_100;
-   asset marketing_reward          = ( block_reward * MARKETING_REWARD_PERCENT        ) / PERCENT_100;
-   asset advocacy_reward           = ( block_reward * ADVOCACY_REWARD_PERCENT         ) / PERCENT_100;
-   asset activity_reward           = ( block_reward * ACTIVITY_REWARD_PERCENT         ) / PERCENT_100;
-
-   asset producer_block_reward     = ( producer_reward * PRODUCER_BLOCK_PERCENT       ) / PERCENT_100;
-   asset validation_reward         = ( producer_reward * PRODUCER_VALIDATOR_PERCENT   ) / PERCENT_100;
-   asset txn_stake_reward          = ( producer_reward * PRODUCER_TXN_STAKE_PERCENT   ) / PERCENT_100;
-   asset work_reward               = ( producer_reward * PRODUCER_WORK_PERCENT        ) / PERCENT_100;
-   asset producer_activity_reward  = ( producer_reward * PRODUCER_ACTIVITY_PERCENT    ) / PERCENT_100;
-
-   asset producer_pending = validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
-   asset pending_issuance = content_reward + equity_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
-
-   asset reward_checksum = content_reward + equity_reward + validation_reward + txn_stake_reward + work_reward + producer_activity_reward + producer_block_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
-   FC_ASSERT( reward_checksum == BLOCK_REWARD, 
-      "Block reward issuance checksum failed, allocation is invalid");
-   
-   const reward_fund_object& reward_fund = get_reward_fund();
-   const asset_equity_data_object& equity = get_equity_data( SYMBOL_EQUITY );
-
-   modify( reward_fund, [&]( reward_fund_object& rfo )
+   while( currency_itr != currency_idx.end() )
    {
-      rfo.adjust_content_reward_balance(content_reward);
-      rfo.adjust_validation_reward_balance( validation_reward );
-      rfo.adjust_txn_stake_reward_balance( txn_stake_reward );
-      rfo.adjust_work_reward_balance( work_reward );
-      rfo.adjust_producer_activity_reward_balance( producer_activity_reward );
-      rfo.adjust_supernode_reward_balance( supernode_reward );
-      rfo.adjust_power_reward_balance( power_reward );
-      rfo.adjust_community_fund_balance( community_fund_reward );
-      rfo.adjust_development_reward_balance( development_reward );
-      rfo.adjust_marketing_reward_balance( marketing_reward );
-      rfo.adjust_advocacy_reward_balance( advocacy_reward );
-      rfo.adjust_activity_reward_balance( activity_reward );
-   });
+      const asset_currency_data_object& currency = *currency_itr;
 
-   modify( equity, [&](asset_equity_data_object& aedo) 
-   {
-      aedo.adjust_pool( equity_reward );
-   });
+      asset block_reward = currency.block_reward;
 
-   adjust_reward_balance( producer_account, producer_block_reward );
+      asset content_reward            = ( block_reward * currency.content_reward_percent          ) / PERCENT_100;
+      asset equity_reward             = ( block_reward * currency.equity_reward_percent           ) / PERCENT_100;
+      asset producer_reward           = ( block_reward * currency.producer_reward_percent         ) / PERCENT_100;
+      asset supernode_reward          = ( block_reward * currency.supernode_reward_percent        ) / PERCENT_100;
+      asset power_reward              = ( block_reward * currency.power_reward_percent            ) / PERCENT_100;
+      asset community_fund_reward     = ( block_reward * currency.community_fund_reward_percent   ) / PERCENT_100;
+      asset development_reward        = ( block_reward * currency.development_reward_percent      ) / PERCENT_100;
+      asset marketing_reward          = ( block_reward * currency.marketing_reward_percent        ) / PERCENT_100;
+      asset advocacy_reward           = ( block_reward * currency.advocacy_reward_percent         ) / PERCENT_100;
+      asset activity_reward           = ( block_reward * currency.activity_reward_percent         ) / PERCENT_100;
 
-   adjust_pending_supply( pending_issuance + producer_pending );
-   
-   push_virtual_operation( producer_reward_operation( producer_account.name, producer_block_reward ) );
-   
+      asset producer_block_reward     = ( producer_reward * currency.producer_block_reward_percent     ) / PERCENT_100;
+      asset validation_reward         = ( producer_reward * currency.validation_reward_percent         ) / PERCENT_100;
+      asset txn_stake_reward          = ( producer_reward * currency.txn_stake_reward_percent          ) / PERCENT_100;
+      asset work_reward               = ( producer_reward * currency.work_reward_percent               ) / PERCENT_100;
+      asset producer_activity_reward  = ( producer_reward * currency.producer_activity_reward_percent  ) / PERCENT_100;
+
+      asset producer_pending = validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
+      asset pending_issuance = content_reward + equity_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
+      asset reward_checksum = content_reward + equity_reward + validation_reward + txn_stake_reward + work_reward + producer_activity_reward + producer_block_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
+      
+      FC_ASSERT( reward_checksum == block_reward,
+         "Block reward issuance checksum failed, allocation is invalid." );
+      
+      const reward_fund_object& reward_fund = get_reward_fund( currency.symbol );
+      const asset_equity_data_object& equity = get_equity_data( currency.equity_asset );
+
+      modify( reward_fund, [&]( reward_fund_object& rfo )
+      {
+         rfo.adjust_content_reward_balance( content_reward );
+         rfo.adjust_validation_reward_balance( validation_reward );
+         rfo.adjust_txn_stake_reward_balance( txn_stake_reward );
+         rfo.adjust_work_reward_balance( work_reward );
+         rfo.adjust_producer_activity_reward_balance( producer_activity_reward );
+         rfo.adjust_supernode_reward_balance( supernode_reward );
+         rfo.adjust_power_reward_balance( power_reward );
+         rfo.adjust_community_fund_balance( community_fund_reward );
+         rfo.adjust_development_reward_balance( development_reward );
+         rfo.adjust_marketing_reward_balance( marketing_reward );
+         rfo.adjust_advocacy_reward_balance( advocacy_reward );
+         rfo.adjust_activity_reward_balance( activity_reward );
+      });
+
+      modify( equity, [&]( asset_equity_data_object& aedo ) 
+      {
+         aedo.adjust_pool( equity_reward );
+      });
+
+      adjust_reward_balance( producer_account, producer_block_reward );
+
+      adjust_pending_supply( pending_issuance + producer_pending );
+      
+      push_virtual_operation( producer_reward_operation( producer_account.name, producer_block_reward ) );
+
+      ++currency_itr;
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -4029,21 +4189,21 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< share_evaluator                          >();
    _my->_evaluator_registry.register_evaluator< moderation_tag_evaluator                 >();
 
-   // Board Evaluators
+   // Community Evaluators
 
-   _my->_evaluator_registry.register_evaluator< board_create_operation                   >();
-   _my->_evaluator_registry.register_evaluator< board_update_operation                   >();
-   _my->_evaluator_registry.register_evaluator< board_add_mod_operation                  >();
-   _my->_evaluator_registry.register_evaluator< board_add_admin_operation                >();
-   _my->_evaluator_registry.register_evaluator< board_vote_mod_operation                 >();
-   _my->_evaluator_registry.register_evaluator< board_transfer_ownership_operation       >();
-   _my->_evaluator_registry.register_evaluator< board_join_request_operation             >();
-   _my->_evaluator_registry.register_evaluator< board_join_accept_operation              >();
-   _my->_evaluator_registry.register_evaluator< board_join_invite_operation              >();
-   _my->_evaluator_registry.register_evaluator< board_invite_accept_operation            >();
-   _my->_evaluator_registry.register_evaluator< board_remove_member_operation            >();
-   _my->_evaluator_registry.register_evaluator< board_blacklist_operation                >();
-   _my->_evaluator_registry.register_evaluator< board_subscribe_operation                >();
+   _my->_evaluator_registry.register_evaluator< community_create_operation                   >();
+   _my->_evaluator_registry.register_evaluator< community_update_operation                   >();
+   _my->_evaluator_registry.register_evaluator< community_add_mod_operation                  >();
+   _my->_evaluator_registry.register_evaluator< community_add_admin_operation                >();
+   _my->_evaluator_registry.register_evaluator< community_vote_mod_operation                 >();
+   _my->_evaluator_registry.register_evaluator< community_transfer_ownership_operation       >();
+   _my->_evaluator_registry.register_evaluator< community_join_request_operation             >();
+   _my->_evaluator_registry.register_evaluator< community_join_accept_operation              >();
+   _my->_evaluator_registry.register_evaluator< community_join_invite_operation              >();
+   _my->_evaluator_registry.register_evaluator< community_invite_accept_operation            >();
+   _my->_evaluator_registry.register_evaluator< community_remove_member_operation            >();
+   _my->_evaluator_registry.register_evaluator< community_blacklist_operation                >();
+   _my->_evaluator_registry.register_evaluator< community_subscribe_operation                >();
 
    // Advertising Evaluators
 
@@ -4072,7 +4232,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< transfer_from_savings_evaluator          >();
    _my->_evaluator_registry.register_evaluator< delegate_asset_evaluator                 >();
    
-   // Escrow Evaluators
+   // Marketplace Evaluators
    
    _my->_evaluator_registry.register_evaluator< escrow_transfer_evaluator                >();
    _my->_evaluator_registry.register_evaluator< escrow_approve_evaluator                 >();
@@ -4198,14 +4358,14 @@ void database::initialize_indexes()
    add_core_index< blog_index                              >(*this);
    add_core_index< feed_index                              >(*this);
 
-   // Board Indexes
+   // Community Indexes
 
-   add_core_index< board_index                             >(*this);
-   add_core_index< board_member_index                      >(*this);
-   add_core_index< board_member_key_index                  >(*this);
-   add_core_index< board_moderator_vote_index              >(*this);
-   add_core_index< board_join_request_index                >(*this);
-   add_core_index< board_join_invite_index                 >(*this);
+   add_core_index< community_index                             >(*this);
+   add_core_index< community_member_index                      >(*this);
+   add_core_index< community_member_key_index                  >(*this);
+   add_core_index< community_moderator_vote_index              >(*this);
+   add_core_index< community_join_request_index                >(*this);
+   add_core_index< community_join_invite_index                 >(*this);
 
    // Advertising Indexes
 
@@ -4228,7 +4388,7 @@ void database::initialize_indexes()
    add_core_index< asset_delegation_index                  >(*this);
    add_core_index< asset_delegation_expiration_index       >(*this);
 
-   // Escrow Indexes
+   // Marketplace Indexes
 
    add_core_index< escrow_index                            >(*this);
 
@@ -4479,7 +4639,7 @@ void database::_apply_block( const signed_block& next_block )
 
    update_producer_set();
    update_governance_account_set();
-   update_board_moderator_set();
+   update_community_moderator_set();
    update_business_account_set();
    update_comment_metrics();
    update_median_liquidity();
@@ -5363,7 +5523,7 @@ void database::cancel_ad_bid( const ad_bid_object& bid )
  */
 void database::cancel_community_enterprise( const community_enterprise_object& e )
 { try {
-   const reward_fund_object& rfo = get_reward_fund();
+   const reward_fund_object& reward_fund = get_reward_fund( e.daily_budget.symbol );
    auto& approval_idx = get_index<enterprise_approval_index>().indices().get<by_enterprise_id>();
    auto approval_itr = approval_idx.lower_bound( boost::make_tuple( e.creator, e.enterprise_id ) );
 
@@ -5377,7 +5537,7 @@ void database::cancel_community_enterprise( const community_enterprise_object& e
    }
 
    asset pending = e.pending_budget;
-   modify( rfo, [&]( reward_fund_object& o )
+   modify( reward_fund, [&]( reward_fund_object& o )
    {
       o.adjust_community_fund_balance( pending );    // Return pending budget to the community fund.
    });
@@ -5459,17 +5619,17 @@ void database::clear_expired_operations()
       remove( inv );
    }
 
-   const auto& board_join_request_idx = get_index< board_join_request_index >().indices().get< by_expiration >();
-   while( !board_join_request_idx.empty() && board_join_request_idx.begin()->expiration <= now )
+   const auto& community_join_request_idx = get_index< community_join_request_index >().indices().get< by_expiration >();
+   while( !community_join_request_idx.empty() && community_join_request_idx.begin()->expiration <= now )
    {
-      const board_join_request_object& req = *board_join_request_idx.begin();
+      const community_join_request_object& req = *community_join_request_idx.begin();
       remove( req );
    }
 
-   const auto& board_join_invite_idx = get_index< board_join_invite_index >().indices().get< by_expiration >();
-   while( !board_join_invite_idx.empty() && board_join_invite_idx.begin()->expiration <= now )
+   const auto& community_join_invite_idx = get_index< community_join_invite_index >().indices().get< by_expiration >();
+   while( !community_join_invite_idx.empty() && community_join_invite_idx.begin()->expiration <= now )
    {
-      const board_join_invite_object& inv = *board_join_invite_idx.begin();
+      const community_join_invite_object& inv = *community_join_invite_idx.begin();
       remove( inv );
    }
 
@@ -5837,7 +5997,11 @@ void database::validate_invariants()const
    while( equity_itr != equity_idx.end() )
    {
       const asset_equity_data_object& equity = *equity_itr;
-      asset_checksum[ equity.dividend_asset ] -= equity.dividend_pool;
+      for( auto a : equity.dividend_pool )
+      {
+         asset_checksum[ a.first ] -= a.second;
+      }
+      
       ++equity_itr;
    }
 
@@ -5911,28 +6075,36 @@ void database::validate_invariants()const
       ++campaign_itr;
    }
 
-   const reward_fund_object& reward_fund = get_reward_fund();
+   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
 
-   asset total_reward_balance = asset( 0, SYMBOL_COIN );
+   while( fund_itr != fund_idx.end() )
+   {
+      const reward_fund_object& reward_fund = *fund_itr;
+      asset total_reward_balance = asset( 0, reward_fund.symbol );
 
-   total_reward_balance += reward_fund.content_reward_balance;
-   total_reward_balance += reward_fund.validation_reward_balance;
-   total_reward_balance += reward_fund.txn_stake_reward_balance;
-   total_reward_balance += reward_fund.work_reward_balance;
-   total_reward_balance += reward_fund.producer_activity_reward_balance;
-   total_reward_balance += reward_fund.supernode_reward_balance;
-   total_reward_balance += reward_fund.power_reward_balance;
-   total_reward_balance += reward_fund.community_fund_balance;
-   total_reward_balance += reward_fund.development_reward_balance;
-   total_reward_balance += reward_fund.marketing_reward_balance;
-   total_reward_balance += reward_fund.advocacy_reward_balance;
-   total_reward_balance += reward_fund.activity_reward_balance;
-   total_reward_balance += reward_fund.premium_partners_fund_balance;
+      total_reward_balance += reward_fund.content_reward_balance;
+      total_reward_balance += reward_fund.validation_reward_balance;
+      total_reward_balance += reward_fund.txn_stake_reward_balance;
+      total_reward_balance += reward_fund.work_reward_balance;
+      total_reward_balance += reward_fund.producer_activity_reward_balance;
+      total_reward_balance += reward_fund.supernode_reward_balance;
+      total_reward_balance += reward_fund.power_reward_balance;
+      total_reward_balance += reward_fund.community_fund_balance;
+      total_reward_balance += reward_fund.development_reward_balance;
+      total_reward_balance += reward_fund.marketing_reward_balance;
+      total_reward_balance += reward_fund.advocacy_reward_balance;
+      total_reward_balance += reward_fund.activity_reward_balance;
+      total_reward_balance += reward_fund.premium_partners_fund_balance;
 
-   FC_ASSERT( total_reward_balance == reward_fund.total_pending_reward_balance,
-      "Reward Fund Error: Balance sums not equal to total balance value." );
+      FC_ASSERT( total_reward_balance == reward_fund.total_pending_reward_balance,
+         "Reward Fund Error: Balance sums not equal to total balance value." );
+      
+      asset_checksum[ reward_fund.symbol ] -= total_reward_balance;
 
-   asset_checksum[ SYMBOL_COIN ] -= total_reward_balance;
+      ++fund_itr;
+   }
+
    auto asset_itr = asset_idx.begin();
 
    while( asset_itr != asset_idx.end() ) // ASSERT ALL ASSET CHECKSUMS ARE ZERO;

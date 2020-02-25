@@ -255,7 +255,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.signatory = "candice";
       account_create.registrar = "candice";
       account_create.new_account_name = "tropico";
-      account_create.account_type = BUSINESS;
       account_create.referrer = INIT_ACCOUNT;
       account_create.proxy = INIT_ACCOUNT;
       account_create.governance_account = INIT_ACCOUNT;
@@ -315,7 +314,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       const asset_equity_data_object& candice_equity = db.get_equity_data( "TROPICO" );
 
       BOOST_REQUIRE( candice_equity.business_account == asset_create.issuer );
-      BOOST_REQUIRE( candice_equity.dividend_asset == SYMBOL_USD );
       BOOST_REQUIRE( candice_equity.dividend_pool.amount == 0 );
 
       const asset_credit_pool_object& candice_credit_pool = db.get_credit_pool( "TROPICO", false );
@@ -387,7 +385,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.signatory = "dan";
       account_create.registrar = "dan";
       account_create.new_account_name = "blocktwo";
-      account_create.account_type = BUSINESS;
       account_create.referrer = INIT_ACCOUNT;
       account_create.proxy = INIT_ACCOUNT;
       account_create.governance_account = INIT_ACCOUNT;

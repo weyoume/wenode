@@ -1,6 +1,3 @@
-/*
- * Copyright (c) 2015 Cryptonomex, Inc., and contributors.
- */
 #pragma once
 #include <node/chain/global_property_object.hpp>
 //#include <node/chain/hardfork.hpp>
@@ -177,13 +174,15 @@ namespace node { namespace chain {
          const producer_schedule_object&        get_producer_schedule()const;
          const median_chain_property_object&    get_median_chain_properties()const;
          const price&                           get_usd_price()const;
-         const reward_fund_object&              get_reward_fund() const;
          const comment_metrics_object&          get_comment_metrics() const;
 
          const asset&                           asset_to_USD( const asset& a) const;
          const asset&                           USD_to_asset( const asset& a) const;
          
          const node_property_object&            get_node_properties()const;
+
+         const reward_fund_object&              get_reward_fund( const asset_symbol_type& symbol ) const;
+         const reward_fund_object*              find_reward_fund( const asset_symbol_type& symbol ) const;
 
          const asset_object& get_core_asset() const;
          const asset_object* find_core_asset() const;
@@ -196,6 +195,9 @@ namespace node { namespace chain {
 
          const asset_dynamic_data_object& get_dynamic_data( const asset_symbol_type& symbol ) const;
          const asset_dynamic_data_object* find_dynamic_data( const asset_symbol_type& symbol ) const;
+
+         const asset_currency_data_object& get_currency_data( const asset_symbol_type& symbol ) const;
+         const asset_currency_data_object* find_currency_data( const asset_symbol_type& symbol ) const;
 
          const asset_bitasset_data_object& get_bitasset_data( const asset_symbol_type& symbol ) const;
          const asset_bitasset_data_object* find_bitasset_data( const asset_symbol_type& symbol ) const;
@@ -284,14 +286,14 @@ namespace node { namespace chain {
          const enterprise_approval_object& get_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const;
          const enterprise_approval_object* find_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const;
 
-         const board_object& get_board( const board_name_type& board )const;
-         const board_object* find_board( const board_name_type& board )const;
+         const community_object& get_community( const community_name_type& community )const;
+         const community_object* find_community( const community_name_type& community )const;
 
-         const board_member_object& get_board_member( const board_name_type& board )const;
-         const board_member_object* find_board_member( const board_name_type& board )const;
+         const community_member_object& get_community_member( const community_name_type& community )const;
+         const community_member_object* find_community_member( const community_name_type& community )const;
 
-         const board_member_key_object& get_board_member_key( const account_name_type& member, const board_name_type& board )const;
-         const board_member_key_object* find_board_member_key( const account_name_type& member, const board_name_type& board )const;
+         const community_member_key_object& get_community_member_key( const account_name_type& member, const community_name_type& community )const;
+         const community_member_key_object* find_community_member_key( const account_name_type& member, const community_name_type& community )const;
 
          const governance_account_object& get_governance_account( const account_name_type& name )const;
          const governance_account_object* find_governance_account( const account_name_type& name )const;
@@ -543,9 +545,9 @@ namespace node { namespace chain {
 
          void process_update_producer_set();
 
-         void update_board_moderators( const board_member_object& board );
+         void update_community_moderators( const community_member_object& community );
 
-         void update_board_moderator_set();
+         void update_community_moderator_set();
 
          void update_business_account( const account_business_object& business );
 
@@ -640,7 +642,8 @@ namespace node { namespace chain {
          asset pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface );
          asset pay_membership_fees( const account_object& member, const asset& payment );
 
-         asset claim_activity_reward( const account_object& account, const producer_object& producer );
+         asset claim_activity_reward( const account_object& account, const producer_object& producer, 
+            asset_symbol_type currency_symbol );
 
          void update_owner_authority( const account_object& account, const authority& owner_authority );
 
@@ -654,8 +657,8 @@ namespace node { namespace chain {
          void update_executive_board_votes(const account_object& account );
          void update_executive_board_votes(const account_object& account, const account_name_type& executive, uint16_t vote_rank );
 
-         void update_board_moderator_votes(const account_object& account, const board_name_type& board );
-         void update_board_moderator_votes(const account_object& account, const board_name_type& board, 
+         void update_community_moderator_votes(const account_object& account, const community_name_type& community );
+         void update_community_moderator_votes(const account_object& account, const community_name_type& community, 
             const account_name_type& moderator, uint16_t vote_rank );
 
          void update_enterprise_votes(const account_object& account );
@@ -708,8 +711,8 @@ namespace node { namespace chain {
 
          void share_comment_to_feeds( const account_name_type& sharer, const feed_reach_type& reach, const comment_object& comment );
 
-         void share_comment_to_board( const account_name_type& sharer, 
-            const board_name_type& board, const comment_object& comment );
+         void share_comment_to_community( const account_name_type& sharer, 
+            const community_name_type& community, const comment_object& comment );
 
          void share_comment_to_tag( const account_name_type& sharer, 
             const tag_name_type& tag, const comment_object& comment );
@@ -722,11 +725,9 @@ namespace node { namespace chain {
 
          void update_tag_in_feed( const account_name_type& account, const tag_name_type& tag );
 
-         void update_board_in_feed( const account_name_type& account, const board_name_type& board );
+         void update_community_in_feed( const account_name_type& account, const community_name_type& community );
 
          void adjust_total_payout( const comment_object& a, const asset& USD, const asset& curator_USD_value, const asset& beneficiary_value );
-
-         void adjust_reward_shares( const comment_object& comment, fc::uint128_t old_reward_shares, fc::uint128_t new_reward_shares );
 
 
 

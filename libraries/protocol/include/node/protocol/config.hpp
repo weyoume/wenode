@@ -37,7 +37,7 @@
 #define CHAIN_ID                        (fc::sha256::hash("WeYouMe"))
 #define ADDRESS_PREFIX                  "WYM"
 
-#define BLOCKCHAIN_PRECISION            int64_t( 100000000 ) // 100 Million integer units per currency unit
+#define BLOCKCHAIN_PRECISION            share_type( 100000000 ) // 100 Million integer units per currency unit
 #define BLOCKCHAIN_PRECISION_DIGITS     8
 
 #define MECOIN_SYMBOL                   "MEC"
@@ -53,20 +53,19 @@
 #define SYMBOL_USD    					MEUSD_SYMBOL                  // [MUSD: MeUSD - Stablecoin collateralized by MeCoin with value pegged to $1.00 USD]
 #define SYMBOL_CREDIT 					MECREDIT_SYMBOL               // [MCR: MeCredit - Interest bearing CryptoCredit issued by the WeYouMe blockchain]
 
-#define MILLION                         int64_t(1000000)              // 1 Million integer
-#define BILLION                         int64_t(1000000000)           // 1 Billion Integer
-#define TRILLION                        int64_t(1000000000000)        // 1 Trillion integer
-#define QUADRILLION                     int64_t(1000000000000000)     // 1 Quadrillion integer
+#define MILLION                         share_type(1000000)              // 1 Million integer
+#define BILLION                         share_type(1000000000)           // 1 Billion Integer
+#define TRILLION                        share_type(1000000000000)        // 1 Trillion integer
 #define PERCENT_100                     (10000)                       // Uses 5 decimal place integer to enable percentages to 2 decimal places of precision
 #define PERCENT_1                       (PERCENT_100/100)             // 1% as percentage integer
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)            // 0.1% as percentage integer
 
-#define GENESIS_TIME                    fc::time_point(fc::microseconds(1590242400000000)) // 24th May 2020 network launch time
-#define MINING_TIME                     fc::time_point(fc::microseconds(1590242400000000)) // 24th May 2020 network launch time
+#define GENESIS_TIME                    fc::time_point(fc::microseconds(1590242400000000))    // 24th May 2020 network launch time
+#define MINING_TIME                     fc::time_point(fc::microseconds(1590242400000000))    // 24th May 2020 network launch time
 
-#define INIT_COIN_SUPPLY                int64_t(0)                                          // Zero MeCoin preissuance
-#define INIT_EQUITY_SUPPLY              int64_t(10 * MILLION * BLOCKCHAIN_PRECISION)        // 10 Million Supply of WYM.
-#define MAX_ASSET_SUPPLY                int128_t(1 * QUADRILLION * BLOCKCHAIN_PRECISION)    // 1 Quadrillion max asset supply.
+#define INIT_COIN_SUPPLY                (0)                                                  // Zero MeCoin preissuance
+#define INIT_EQUITY_SUPPLY              share_type( 10 * MILLION * BLOCKCHAIN_PRECISION )        // 10 Million Supply of WYM.
+#define MAX_ASSET_SUPPLY                share_type( TRILLION * BLOCKCHAIN_PRECISION )        // 1 Trillion max asset supply.
 
 #define BLOCK_INTERVAL                  fc::microseconds(788400)                                    // 0.7884 Seconds per block, resulting in exactly 40 Million blocks per year.
 #define BLOCKS_PER_YEAR                 int64_t(40 * MILLION)                                       // 40 Million blocks per year.
@@ -87,12 +86,23 @@
 #define NETWORK_OFFICER_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
 #define NETWORK_OFFICER_ACTIVE_SET            (50)
 #define EXECUTIVE_BOARD_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
-#define EXECUTIVE_BOARD_ACTIVE_SET            (5)
 #define MIN_EXEC_CREDIT_PRICE                 price( asset( 9, SYMBOL_USD), asset( 10, SYMBOL_CREDIT))     // $0.90 minimum credit price to pay executive budgets
 #define SUPERNODE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)          // Distributes supernode rewards once every day.
-#define SUPERNODE_DECAY_TIME                  fc::days(7)               // Averages supernode file weight over 7 days. 
-#define VOTE_THRESHOLD_PERCENT                (10* PERCENT_1)           // Enterprise proposals require 10% of network voting power to approve milestones.
-#define VOTE_THRESHOLD_AMOUNT                 (5)                       // Enterprise proposals require 10% of network voting power to approve milestones.
+#define SUPERNODE_DECAY_TIME                  fc::days(7)               // Averages supernode file weight over 7 days.
+
+#define GOVERNANCE_VOTE_THRESHOLD_PERCENT             (PERCENT_1)     // Governance Accounts require 1% of network voting power to be approved for profile account creation.
+#define GOVERNANCE_VOTE_THRESHOLD_AMOUNT              (25)            // Governance Accounts proposals require 25 individual votes to be approved for profile account creation.
+#define GOVERNANCE_VOTE_THRESHOLD_PRODUCERS           (5)             // Governance Accounts require 5 top voted producer votes to be approved for profile account creation.
+#define ENTERPRISE_VOTE_THRESHOLD_PERCENT             (PERCENT_1)     // Enterprise proposals require 1% of network voting power to approve milestones.
+#define ENTERPRISE_VOTE_THRESHOLD_AMOUNT              (25)            // Enterprise proposals require 25 individual votes to approve milestones.
+#define ENTERPRISE_VOTE_THRESHOLD_PRODUCERS           (5)             // Enterprise proposals require 5 top voted producer votes to approve milestones.
+#define OFFICER_VOTE_THRESHOLD_PERCENT                (PERCENT_1)     // Network Officers require 1% of network voting power to be approved for rewards.
+#define OFFICER_VOTE_THRESHOLD_AMOUNT                 (25)            // Network Officers proposals require 25 individual votes to be approved for rewards.
+#define OFFICER_VOTE_THRESHOLD_PRODUCERS              (5)             // Network Officers require 5 top voted producer votes to be approved for rewards.
+#define EXECUTIVE_VOTE_THRESHOLD_PERCENT              (10 * PERCENT_1)    // Executive boards require 10% of network voting power to be approved for rewards.
+#define EXECUTIVE_VOTE_THRESHOLD_AMOUNT               (100)           // Executive boards proposals require 100 individual votes to be approved for rewards.
+#define EXECUTIVE_VOTE_THRESHOLD_PRODUCERS            (20)            // Executive boards require 20 top voted producer votes to be approved for rewards.
+
 #define SET_UPDATE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)          // Distributes community enterprise funding once every day.
 #define ENTERPRISE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)
 #define BITASSET_BLOCK_INTERVAL               (BLOCKS_PER_DAY)          // Updates the settlement volume on bitassets and processes collateral bids
@@ -120,9 +130,9 @@
 #define DECLINE_VOTING_RIGHTS_DURATION                   fc::days(3)
 #define OWNER_UPDATE_LIMIT                               fc::minutes(60)
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM      1
-#define MIN_BOARD_CREATE_INTERVAL                        fc::days(1)
+#define MIN_COMMUNITY_CREATE_INTERVAL                        fc::days(1)
 #define MIN_ASSET_CREATE_INTERVAL                        fc::days(1)
-#define MIN_BOARD_UPDATE_INTERVAL                        fc::minutes(10)
+#define MIN_COMMUNITY_UPDATE_INTERVAL                        fc::minutes(10)
 #define MIN_ASSET_UPDATE_INTERVAL                        fc::minutes(10)
 
 #define GENESIS_ACCOUNT_BASE_NAME       ("producer")
@@ -161,7 +171,7 @@
 #define MIN_REPLY_INTERVAL              (fc::seconds(15)) // 15 seconds
 #define POST_AVERAGE_WINDOW             (60*60*24u) // 1 day
 #define POST_MAX_BANDWIDTH              (4*PERCENT_100) // 2 posts per 1 days, average 1 every 12 hours
-#define POST_WEIGHT_CONSTANT            (uint64_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
+#define POST_WEIGHT_CONSTANT            (uint128_t(POST_MAX_BANDWIDTH) * POST_MAX_BANDWIDTH)
 #define MAX_ACC_producer_voteS           1000
 #define MAX_BODY_SIZE                   (1024 * 1024 * 128 )  // 128 mb of body text limit
 
@@ -171,7 +181,7 @@
 #define FREE_TRANSACTIONS_WITH_NEW_ACCOUNT 100
 
 #define BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS (MILLION * 60*60*24*7) // 1 week averaging window for the calculation of bandwidth reserve ratio
-#define BANDWIDTH_PRECISION             (uint64_t(1000000)) // 1 million decimal places for bandwidth units
+#define BANDWIDTH_PRECISION             (uint128_t(1000000)) // 1 million decimal places for bandwidth units
 #define MAX_COMMENT_DEPTH_PRE_HF17      6
 #define MAX_COMMENT_DEPTH               0xffff // 64k
 #define SOFT_MAX_COMMENT_DEPTH          0xff // 255
@@ -203,7 +213,7 @@
 #define PRODUCER_REWARD_PERCENT          (20 * PERCENT_1) // Percentage of coin issuance distributed to block producers: 20%
 #define SUPERNODE_REWARD_PERCENT         (10 * PERCENT_1) // Percentage of coin issuance distributed to Full archive + IPFS storage providers + Public API : 10%
 #define POWER_REWARD_PERCENT             (10 * PERCENT_1) // Percentage of coin issuance distributed to holders of staked coin: 10%
-#define COMMUNITY_FUND_PERCENT           (5 * PERCENT_1)  // Percentage of coin issuance distributed to the community fund for project proposals: 5%
+#define COMMUNITY_FUND_REWARD_PERCENT    (5 * PERCENT_1)  // Percentage of coin issuance distributed to the community fund for project proposals: 5%
 #define DEVELOPMENT_REWARD_PERCENT       (25 * PERCENT_10_OF_PERCENT_1) // Percentage of coin issuance distributed to elected developers: 2.5%
 #define ADVOCACY_REWARD_PERCENT          (25 * PERCENT_10_OF_PERCENT_1) // Percentage of coin issuance distributed to elected advocates: 2.5%
 #define MARKETING_REWARD_PERCENT         (25 * PERCENT_10_OF_PERCENT_1) // Percentage of coin issuance distributed to elected marketers: 2.5%
@@ -211,7 +221,7 @@
 
 // Content reward allocation percentages:
 // 70% of content rewards are distributed to the authors of posts
-// 30% of content rewards are distributed to voters, viewers, sharers, commenters, storage supernodes, and board moderators.
+// 30% of content rewards are distributed to voters, viewers, sharers, commenters, storage supernodes, and community moderators.
 
 #define AUTHOR_REWARD_PERCENT            (70 * PERCENT_1)
 #define VOTE_REWARD_PERCENT              (5 * PERCENT_1)
@@ -222,7 +232,7 @@
 #define MODERATOR_REWARD_PERCENT         (5 * PERCENT_1)
 #define CONTENT_REWARD_DECAY_RATE        fc::days(30)          // 30 days of content reward payouts for posts. 
 #define CONTENT_REWARD_INTERVAL          fc::days(1)           // 1 day between post content rewards.
-#define CONTENT_CONSTANT                 uint128_t(uint64_t(2000000000000ll))
+#define CONTENT_CONSTANT                 uint128_t(2000000000000ll)
 
 // Block Producer reward allocation percentages:
 // 40% of producer rewards are shared equally between top selected producers.
@@ -250,7 +260,7 @@
 #define DEMAND_ADVERTISING_FEE_PERCENT     (25 * PERCENT_1) // Percentage of advertising fee that is shared with the advertising purchaser's interface: 25%
 #define AUDIENCE_ADVERTISING_FEE_PERCENT   (25 * PERCENT_1) // Percentage of advertising fee that is shared with the audience of the delivery: 25%
 
-#define MEMBERSHIP_FEE_BASE                (asset( 250000000, SYMBOL_USD)) // Monthly Price of Standard membership: $2.50 USD
+#define MEMBERSHIP_FEE_BASE                (asset( ( 5 * BLOCKCHAIN_PRECISION ) / 2, SYMBOL_USD)) // Monthly Price of Standard membership: $2.50 USD
 #define MEMBERSHIP_FEE_MID                 (asset( 25 * BLOCKCHAIN_PRECISION, SYMBOL_USD)) // Monthly Price of Mezzanine membership: $25.00 USD
 #define MEMBERSHIP_FEE_TOP                 (asset( 250 * BLOCKCHAIN_PRECISION, SYMBOL_USD)) // Monthly Price of Top Level membership: $250.00 USD
 #define NETWORK_MEMBERSHIP_FEE_PERCENT     (50 * PERCENT_1) // Percentage of membership spend that is consumed as network revenue: 50%
@@ -262,11 +272,16 @@
 #define INTERFACE_PREMIUM_FEE_PERCENT      (25 * PERCENT_1) // Percentage of premium content fee shared with the purhaser's interface: 25%
 #define NODE_PREMIUM_FEE_PERCENT           (25 * PERCENT_1) // Percentage of premium content fee shared with hosting supernodes: 25%
 
-#define MARKETPLACE_FEE_PERCENT                    (2 * PERCENT_1) // Percentage fee charged on marketplace sales with mediation: 2%
-#define NETWORK_MARKETPLACE_FEE_PERCENT            (35 * PERCENT_1) // Percentage of marketplace fee consumed as network revenue: 35%
-#define BUY_INTERFACE_MARKETPLACE_FEE_PERCENT      (15 * PERCENT_1) // Percentage of marketplace fee shared with buyer's interface: 15%
-#define SELL_INTERFACE_MARKETPLACE_FEE_PERCENT     (15 * PERCENT_1) // Percentage of marketplace fee shared with seller's interface: 15%
-#define MEDIATOR_MARKETPLACE_FEE_PERCENT           (35 * PERCENT_1) // Percentage of marketplace fee distributed to mediation team members: 35%
+#define MARKETPLACE_FEE_PERCENT                    (2 * PERCENT_1)   // Percentage fee charged on marketplace sales with mediation: 2%
+#define NETWORK_MARKETPLACE_FEE_PERCENT            (50 * PERCENT_1)  // Percentage of marketplace fee consumed as network revenue: 50%
+#define BUY_INTERFACE_MARKETPLACE_FEE_PERCENT      (25 * PERCENT_1)  // Percentage of marketplace fee shared with buyer's interface: 25%
+#define SELL_INTERFACE_MARKETPLACE_FEE_PERCENT     (25 * PERCENT_1)  // Percentage of marketplace fee shared with seller's interface: 25%
+
+#define DISPUTE_FEE_PERCENT                        (2 * PERCENT_1)   // Percentage of total sale value charged when disputed: 2%
+#define NETWORK_DISPUTE_FEE_PERCENT                (10 * PERCENT_1)  // Percentage of marketplace fee distributed to mediation team members: 10%
+#define BUYER_MEDIATOR_DISPUTE_FEE_PERCENT         (20 * PERCENT_1)  // Percentage of dispute fee paid to the buyers selected mediator: 20%
+#define SELLER_MEDIATOR_DISPUTE_FEE_PERCENT        (20 * PERCENT_1)  // Percentage of dispute fee paid to the sellers selected mediator: 20%
+#define ALLOCATED_MEDIATOR_DISPUTE_FEE_PERCENT     (50 * PERCENT_1)  // Percentage of dispute fee paid split between selected mediators: 50%
 
 #define SUBSCRIPTION_FEE_PERCENT               (2 * PERCENT_1) // Percentage fee charged on subscription content purchases: 2%
 #define NETWORK_PREMIUM_FEE_PERCENT            (50 * PERCENT_1) // Percentage of subscription fee consumed as network revenue: 50%
@@ -285,11 +300,9 @@
 #define AD_RESERVE_RATIO                       (10)      // Advertising bids outstanding cannot exceed 10 times the campaign budget. 
 
 #define MIN_ACCOUNT_NAME_LENGTH                3
-#define MAX_ACCOUNT_NAME_LENGTH                16
-#define MAX_PROFILE_NAME_LENGTH                48
-
+#define MAX_ACCOUNT_NAME_LENGTH                32
 #define MIN_ASSET_SYMBOL_LENGTH                3
-#define MAX_ASSET_SYMBOL_LENGTH                16
+#define MAX_ASSET_SYMBOL_LENGTH                32
 
 #define MIN_PERMLINK_LENGTH                    0
 #define MAX_PERMLINK_LENGTH                    2048
@@ -320,13 +333,13 @@
 #define EQUITY_MIN_PRODUCERS                   (10)                          // Accounts need at least 10 producer votes to claim equity reward. 
 #define EQUITY_BOOST_PRODUCERS                 (50)                          // Boost when account has min 50 producer votes
 #define EQUITY_ACTIVITY_TIME                   fc::days(30)                  // Dividends available when activity in the last 30 days
-#define EQUITY_BOOST_ACTIVITY                  (15 * BLOCKCHAIN_PRECISION)   // Dividends are doubled when account has a rolling average of 15 activity rewards in the last 30 days.
-#define EQUITY_BOOST_BALANCE                   (10 * BLOCKCHAIN_PRECISION)   // Dividends are doubled when account has balance greater than 10 units.
+#define EQUITY_BOOST_ACTIVITY                  (BLOCKCHAIN_PRECISION * 15)   // Dividends are doubled when account has a rolling average of 15 activity rewards in the last 30 days.
+#define EQUITY_BOOST_BALANCE                   (BLOCKCHAIN_PRECISION * 10)   // Dividends are doubled when account has balance greater than 10 units.
 #define EQUITY_BOOST_TOP_PERCENT               (10 * PERCENT_1)              // Boost equity reward by 10% for top members
 #define POWER_BOOST_TOP_PERCENT                (10 * PERCENT_1)              // Boost power reward by 10% for top members
 
 #define EQUITY_INTERVAL                        fc::days(7)           // Time period of distributing dividends to equity assests
-#define EQUITY_INTERVAL_BLOCKS                 int64_t(EQUITY_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Pays Equity rewards once per week.
+#define EQUITY_INTERVAL_BLOCKS                 uint32_t(EQUITY_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Pays Equity rewards once per week.
 #define EXECUTIVE_TYPES_AMOUNT                 (10)                  // Number of executive role positions available to a business account
 
 #define DIVIDEND_SHARE_PERCENT                 (5 * PERCENT_1)       // Percentage of incoming assets added to the dividends pool
@@ -335,7 +348,7 @@
 #define SAVINGS_DIVIDEND_PERCENT               (10 * PERCENT_1)      // percentage of equity dividends distirbuted to savings balances 
 
 #define CREDIT_BUYBACK_INTERVAL                fc::days(7)           // Time period of buying back credit assets 
-#define CREDIT_BUYBACK_INTERVAL_BLOCKS         int64_t( CREDIT_BUYBACK_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Time period of buying back credit assets 
+#define CREDIT_BUYBACK_INTERVAL_BLOCKS         uint32_t( CREDIT_BUYBACK_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Time period of buying back credit assets 
 #define BUYBACK_SHARE_PERCENT                  (5 * PERCENT_1)       // Percentage of incoming assets added to the buyback pool
 #define LIQUID_FIXED_INTEREST_RATE             (1 * PERCENT_1)       // Fixed component of Interest rate of the asset for liquid balances.
 #define LIQUID_VARIABLE_INTEREST_RATE          (2 * PERCENT_1)       // Variable component of Interest rate of the asset for liquid balances.
@@ -355,7 +368,7 @@
 #define MAX_URL_LENGTH                         127
 
 #define MIN_TRANSACTION_SIZE_LIMIT             1024
-#define SECONDS_PER_YEAR                       (uint64_t( 60 * 60 * 24 * 365ll))
+#define SECONDS_PER_YEAR                       int128_t( 60 * 60 * 24 * 365ll)
 
 #define MAX_TRANSACTION_SIZE                   (1024 * 64)
 #define MIN_BLOCK_SIZE_LIMIT                   (MAX_TRANSACTION_SIZE)
@@ -367,9 +380,9 @@
 #define TRANSFER_REQUEST_DURATION              fc::days(7)
 #define RESET_ACCOUNT_DELAY                    fc::days(3)
 
-#define NETWORK_UPDATE_INTERVAL_BLOCKS         int64_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
+#define NETWORK_UPDATE_INTERVAL_BLOCKS         uint32_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
 
-#define MEDIAN_LIQUIDITY_INTERVAL_BLOCKS       int64_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
+#define MEDIAN_LIQUIDITY_INTERVAL_BLOCKS       uint32_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
 #define MEDIAN_LIQUIDITY_INTERVAL              fc::minutes(10)
 
 #define REP_UPDATE_BLOCK_INTERVAL              ( BLOCKS_PER_DAY )
@@ -382,8 +395,6 @@
 #define METRIC_INTERVAL_BLOCKS          (BLOCKS_PER_HOUR)     // Updates metrics once per hour
 #define METRIC_CALC_TIME                (fc::days(30))        // Metrics include posts up to 30 days old. 
 
- 
-
 #define MIN_UNDO_HISTORY                10
 #define MAX_UNDO_HISTORY                10000
 
@@ -395,14 +406,13 @@
  *  Reserved Account IDs with special meaning
  */
 
-
 #define PRODUCER_ACCOUNT                "producers"              // Represents the current producers
 #define NULL_ACCOUNT                    "null"                   // Represents the canonical account with NO authority (nobody can access funds in null account)
 #define TEMP_ACCOUNT                    "temp"                   // Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
 #define PROXY_TO_SELF_ACCOUNT           ""                       // Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
 #define ROOT_POST_PARENT                (account_name_type())    // Represents the canonical root post parent account
 #define COMMUNITY_ACCOUNT               "community"              // Represents the Community Enterprise Fund
-#define EXECUTIVE_ACCOUNT               "executive"              // Represents the Executive Board
+#define EXECUTIVE_ACCOUNT               "executive"              // Represents the Executive board
 #define DEVELOPMENT_ACCOUNT             "development"            // Represents the Development Team
 #define MARKETING_ACCOUNT               "marketing"              // Represents the Marketing Team
 #define ADVOCACY_ACCOUNT                "advocacy"               // Represents the Advocacy Team
@@ -411,7 +421,7 @@
  * Implementation Specific Config settings for launching entity.
  */
 
-#define INIT_ACCOUNT                    "weyoume"                // The initial Executive Board account, issuer of equity asset. 
+#define INIT_ACCOUNT                    "weyoume"                // The initial Executive board account, issuer of equity asset. 
 #define INIT_ACCOUNT_PASSWORD           "yourpasswordgoeshere"
 #define INIT_DETAILS                    "WeYouMe is a social media protocol to enable everyone to share information and value freely."   // Details string of init account.
 #define INIT_URL                        "https://www.weyoume.io"
@@ -424,4 +434,4 @@
 #define INIT_CEO                        "harrison.mclean"               // firstname.lastname of launching Chief Executive Officer
 #define INIT_CEO_DETAILS                "WeYouMe is a social media protocol to enable everyone to share information and value freely."   // Details string of init account.
 #define INIT_CEO_URL                    "https://www.weyoume.io"
-#define INIT_BOARD                      "general"
+#define INIT_COMMUNITY                      "general"

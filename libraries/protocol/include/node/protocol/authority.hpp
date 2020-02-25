@@ -64,8 +64,6 @@ void add_authority_accounts(
       result.insert( item.first );
 }
 
-bool is_valid_account_name( const string& name );
-
 /**
  * Names must comply with the following grammar (RFC 1035):
  * <domain> ::= <subdomain> | " "
@@ -96,48 +94,7 @@ bool is_valid_account_name( const string& name );
  * - All letters are lowercase
  * - Length is between (inclusive) MIN_ACCOUNT_NAME_LENGTH and MAX_ACCOUNT_NAME_LENGTH
  */
-bool is_valid_persona_account_name( const string& name );
-
-/**
- * <domain> ::= <subdomain> | " "
- * <subdomain> ::= <label> "." <label> "." [ <digit>+8 ]
- * <label> ::= [ <letter>+ ]
- *
- * I.e. a valid profile account name consists of a dot-separated sequence
- * of two labels, exactly 8 digits, consisting of the following rules:
- *
- * - Each label is three characters or more
- * - Each label contains only letters
- *
- * In addition we require the following:
- *
- * - All letters are lowercase
- * - Length is between (inclusive) MIN_ACCOUNT_NAME_LENGTH and MAX_PROFILE_NAME_LENGTH
- * 
- * Profile account names are of the form:
- * 
- * firstname.lastname.00000000
- * 
- * two segments of at least 3 lowercase letters, no numbers or hyphens, followed by exactly 8 numbers.
- */ 
-bool is_valid_profile_account_name( const string& name );
-
-/**
- * <domain> ::= <subdomain> | " "
- * <subdomain> ::= <label>
- * <label> ::= [ <letter>+ ]
- *
- * I.e. a valid business account name consists of a sequence
- * of letters, with no hyphens or dots:
- *
- * - Each label is three characters or more
- *
- * In addition we require the following:
- *
- * - All letters are lowercase
- * - Length is between (inclusive) MIN_ACCOUNT_NAME_LENGTH and MAX_ACCOUNT_NAME_LENGTH
- */ 
-bool is_valid_business_account_name( const string& name );
+bool is_valid_account_name( const string& name );
 
 bool operator == ( const authority& a, const authority& b );
 

@@ -64,14 +64,14 @@ struct discussion_query
    void validate()const
    {
       FC_ASSERT( filter_authors.find( account ) == filter_authors.end() );
-      FC_ASSERT( filter_boards.find( board ) == filter_boards.end() );
+      FC_ASSERT( filter_communities.find( community ) == filter_communities.end() );
       FC_ASSERT( filter_tags.find( tag ) == filter_tags.end() );
       FC_ASSERT( limit <= 100 );
    }
 
    string                  account = INIT_ACCOUNT;       ///< Name of the account being fetched for feed or blog queries.
 
-   string                  board = string();             ///< Name of the board being queried.
+   string                  community = string();         ///< Name of the community being queried.
 
    string                  tag = string();               ///< Name of the tag being querired.
 
@@ -91,9 +91,9 @@ struct discussion_query
    
    uint32_t                limit = 20;                   ///< Amount of discussions to return.
 
-   set<string>             select_boards;                ///< list of boards to include.
+   set<string>             select_communities;           ///< list of communities to include.
 
-   set<string>             filter_boards;                ///< list of boards to filter, posts made in these boards are filtered.
+   set<string>             filter_communities;           ///< list of communities to filter, posts made in these communities are filtered.
    
    set<string>             select_tags;                  ///< list of tags to include.
 
@@ -105,7 +105,7 @@ struct discussion_query
 
    set<string>             select_languages;             ///< list of languages to include.
 
-   set<string>             filter_languages;             ///< list of languages to filter, posts made in these boards are filtered.
+   set<string>             filter_languages;             ///< list of languages to filter, posts made in these communities are filtered.
 
    optional<string>        start_author;                 ///< The Author of the first post to include in the ranking.
 
@@ -140,7 +140,7 @@ struct search_query
 
    bool                              include_accounts = true;            ///< Set True to include account results.
 
-   bool                              include_boards = true;              ///< Set True to include board results.
+   bool                              include_communities = true;         ///< Set True to include community results.
 
    bool                              include_tags = true;                ///< Set True to include tag results.
 
@@ -191,16 +191,16 @@ class database_api
       ~database_api();
 
 
-      ///<=================///<
-      ///< === Globals === ///<
-      ///<=================///<
+      //=================//
+      // === Globals === //
+      //=================//
 
 
       fc::variant_object                  get_config()const;
 
       dynamic_global_property_api_obj     get_dynamic_global_properties()const;
 
-      chain_properties                    get_median_chain_properties()const;
+      median_chain_property_api_obj       get_median_chain_properties()const;
 
       producer_schedule_api_obj           get_producer_schedule()const;
 
@@ -208,12 +208,10 @@ class database_api
 
       scheduled_hardfork                  get_next_scheduled_hardfork()const;
 
-      reward_fund_api_obj                 get_reward_fund()const;
 
-
-      ///<===================///<
-      ///< === Accounts ==== ///<
-      ///<===================///<
+      //===================//
+      // === Accounts ==== //
+      //===================//
 
 
       vector< account_api_obj >                       get_accounts( vector< string > names ) const;
@@ -243,9 +241,9 @@ class database_api
       optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
 
 
-      ///<================///<
-      ///< === Assets === ///<
-      ///<================///<
+      //================//
+      // === Assets === //
+      //================//
 
 
       vector< extended_asset >                        get_assets( vector< string > assets )const;
@@ -264,22 +262,24 @@ class database_api
 
       vector< asset_delegation_expiration_api_obj >   get_expiring_asset_delegations( string account, time_point from, uint32_t limit = 100 )const;
 
-
-      ///<================///<
-      ///< === Boards === ///<
-      ///<================///<
+      vector< reward_fund_api_obj >                   get_reward_funds( vector< string > assets )const;
 
 
-      vector< extended_board >                        get_boards( vector< string > boards )const;
-
-      vector< extended_board >                        get_boards_by_subscribers( string from, uint32_t limit )const;
-
-      uint64_t                                        get_board_count()const;
+      //=====================//
+      // === Communities === //
+      //=====================//
 
 
-      ///<=================///<
-      ///< === Network === ///<
-      ///<=================///<
+      vector< extended_community >                        get_communities( vector< string > communities )const;
+
+      vector< extended_community >                        get_communities_by_subscribers( string from, uint32_t limit )const;
+
+      uint64_t                                        get_community_count()const;
+
+
+      //=================//
+      // === Network === //
+      //=================//
 
 
       vector< producer_api_obj >                      get_producers_by_account( vector< string > names )const;
@@ -321,9 +321,9 @@ class database_api
       vector< community_enterprise_api_obj >          get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
 
-      ///<================///<
-      ///< === Market === ///<
-      ///<================///<
+      //================//
+      // === Market === //
+      //================//
 
 
       vector< order_state >                get_open_orders( vector< string > names )const;
@@ -343,9 +343,9 @@ class database_api
       market_state                         get_market_state( string buy_symbol, string sell_symbol )const;
 
 
-      ///<=============///<
-      ///< === Ads === ///<
-      ///<=============///<
+      //=============//
+      // === Ads === //
+      //=============//
 
 
       vector< account_ad_state >           get_account_ads( vector< string > names )const;
@@ -353,17 +353,17 @@ class database_api
       vector< ad_bid_state >               get_interface_audience_bids( const ad_query& query )const;
 
 
-      ///<================///<
-      ///< === Search === ///<
-      ///<================///<
+      //================//
+      // === Search === //
+      //================//
 
 
       search_result_state                  get_search_query( const search_query& query )const;  
 
 
-      ///<=================================///<
-      ///< === Blocks and Transactions === ///<
-      ///<=================================///<
+      //=================================//
+      // === Blocks and Transactions === //
+      //=================================//
 
 
       optional< block_header >             get_block_header( uint64_t block_num )const;
@@ -385,9 +385,9 @@ class database_api
       bool                                 verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
 
 
-      ///<======================///<
-      ///< === Posts + Tags === ///<
-      ///<======================///<
+      //======================//
+      // === Posts + Tags === //
+      //======================//
 
 
       vector< vote_state >                 get_active_votes( string author, string permlink )const;
@@ -413,9 +413,9 @@ class database_api
       vector< pair< tag_name_type, uint32_t > >   get_tags_used_by_author( string author )const;
 
 
-      ///<=====================///<
-      ///< === Discussions === ///<
-      ///<=====================///<
+      //=====================//
+      // === Discussions === //
+      //=====================//
 
 
       discussion                           get_content( string author, string permlink )const;
@@ -462,25 +462,25 @@ class database_api
 
 
 
-      ///<===============///<
-      ///< === State === ///<
-      ///<===============///<
+      //===============//
+      // === State === //
+      //===============//
 
 
       state                                get_state( string path )const;
 
 
-      ///<=======================///<
-      ///< === Subscriptions === ///<
-      ///<=======================///<
+      //=======================//
+      // === Subscriptions === //
+      //=======================//
    
 
       void                                set_block_applied_callback( std::function< void(const variant& block_header ) > cb );
 
 
-      ///<=========================///<
-      ///< === Signal Handlers === ///<
-      ///<=========================///<
+      //=========================//
+      // === Signal Handlers === //
+      //=========================//
 
 
       void on_api_startup();
@@ -496,7 +496,7 @@ class database_api
       template< typename Index, typename StartItr >
       vector< discussion > get_discussions( 
          const discussion_query& q,
-         const string& board,
+         const string& community,
          const string& tag,
          comment_id_type parent,
          const Index& idx, 
@@ -538,7 +538,7 @@ FC_REFLECT_ENUM( node::app::withdraw_route_type,
 
 FC_REFLECT( node::app::discussion_query,
          (account)
-         (board)
+         (community)
          (tag)
          (sort_type)
          (sort_time)
@@ -547,8 +547,8 @@ FC_REFLECT( node::app::discussion_query,
          (include_private)
          (max_rating)
          (limit)
-         (select_boards)
-         (filter_boards)
+         (select_communities)
+         (filter_communities)
          (select_tags)
          (filter_tags)
          (select_authors)
@@ -579,7 +579,7 @@ FC_REFLECT( node::app::ad_query,
 
 FC_API( node::app::database_api,
 
-         ///< Globals
+         // Globals
 
          (get_config)
          (get_dynamic_global_properties)
@@ -587,9 +587,9 @@ FC_API( node::app::database_api,
          (get_producer_schedule)
          (get_hardfork_version)
          (get_next_scheduled_hardfork)
-         (get_reward_fund)
+         (get_reward_funds)
 
-         ///< Accounts
+         // Accounts
 
          (get_accounts)
          (get_accounts_by_followers)
@@ -605,7 +605,7 @@ FC_API( node::app::database_api,
          (get_recovery_request)
          (get_account_bandwidth)
 
-         ///< Assets
+         // Assets
 
          (get_assets)
          (get_asset_count)
@@ -616,13 +616,13 @@ FC_API( node::app::database_api,
          (get_asset_delegations)
          (get_expiring_asset_delegations)
 
-         ///< Boards
+         // Communities
 
-         (get_boards)
-         (get_boards_by_subscribers)
-         (get_board_count)
+         (get_communities)
+         (get_communities_by_subscribers)
+         (get_community_count)
 
-         ///< Network
+         // Network
 
          (get_producers_by_account)
          (get_active_producers)
@@ -644,7 +644,7 @@ FC_API( node::app::database_api,
          (get_governance_accounts_by_subscriber_power)
          (get_enterprise_by_voting_power)
          
-         ///< Market
+         // Market
 
          (get_open_orders)
          (get_limit_orders)
@@ -655,16 +655,16 @@ FC_API( node::app::database_api,
          (get_liquidity_pools)
          (get_market_state)
 
-         ///< Ads
+         // Ads
 
          (get_account_ads)
          (get_interface_audience_bids)
 
-         ///< Search 
+         // Search 
 
          (get_search_query)
 
-         ///< Blocks and transactions
+         // Blocks and transactions
 
          (get_block_header)
          (get_block)
@@ -676,7 +676,7 @@ FC_API( node::app::database_api,
          (verify_authority)
          (verify_account_authority)
 
-         ///< Posts + Tags
+         // Posts + Tags
 
          (get_active_votes)
          (get_active_views)
@@ -690,7 +690,7 @@ FC_API( node::app::database_api,
          (get_top_tags)
          (get_tags_used_by_author)
 
-         ///< Discussions
+         // Discussions
 
          (get_content)
          (get_content_replies)
@@ -716,11 +716,11 @@ FC_API( node::app::database_api,
          (get_discussions_by_share_power)
          (get_discussions_by_comment_power)
          
-         ///< State 
+         // State 
 
          (get_state)
 
-         ///< Subscriptions
+         // Subscriptions
 
          (set_block_applied_callback)
 

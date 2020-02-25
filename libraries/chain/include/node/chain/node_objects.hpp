@@ -12,6 +12,126 @@ namespace node { namespace chain {
    using node::protocol::asset;
    using node::protocol::price;
 
+   /**
+    * Set of Network parameters that are selected by block producers.
+    * 
+    * Producers vote on how to set certain chain properties
+    * to ensure a smooth and well functioning network, 
+    * and can be responsive to changing network conditions.
+    * 
+    * The active set of producers will be used to
+    * control the blockchain configuration by
+    * selecting the median value of all properties listed.
+    */
+   class median_chain_property_object : public object< median_chain_property_object_type, median_chain_property_object>
+   {
+      public:
+         template< typename Constructor, typename Allocator >
+         median_chain_property_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         median_chain_property_object(){}
+
+         id_type                id;
+
+         asset                  account_creation_fee = MIN_ACCOUNT_CREATION_FEE;               ///< Minimum fee required to create a new account by staking.
+
+         uint64_t               maximum_block_size = MAX_BLOCK_SIZE;                           ///< The maximum block size of the network in bytes. No Upper bound on block size limit.
+
+         fc::microseconds       pow_target_time = POW_TARGET_TIME;                             ///< The targeted time for each proof of work
+
+         fc::microseconds       pow_decay_time = POW_DECAY_TIME;                               ///< Time over which proof of work output is averaged over
+
+         fc::microseconds       txn_stake_decay_time = TXN_STAKE_DECAY_TIME;                   ///< Time over which transaction stake is averaged over
+
+         uint16_t               escrow_bond_percent = ESCROW_BOND_PERCENT;                     ///< Percentage of an escrow transfer that is deposited for dispute resolution
+
+         uint16_t               credit_interest_rate = CREDIT_INTEREST_RATE;                   ///< The credit interest rate paid to holders of network credit assets.
+
+         uint16_t               credit_open_ratio = CREDIT_OPEN_RATIO;                         ///< The minimum required collateralization ratio for a credit loan to be opened. 
+
+         uint16_t               credit_liquidation_ratio = CREDIT_LIQUIDATION_RATIO;           ///< The minimum permissible collateralization ratio before a loan is liquidated. 
+
+         uint16_t               credit_min_interest = CREDIT_MIN_INTEREST;                     ///< The minimum component of credit pool interest rates. 
+
+         uint16_t               credit_variable_interest = CREDIT_VARIABLE_INTEREST;           ///< The variable component of credit pool interest rates, applied at equal base and borrowed balances.
+
+         uint16_t               market_max_credit_ratio = MARKET_MAX_CREDIT_RATIO;             ///< The maximum percentage of core asset liquidity balances that can be loaned.
+
+         uint16_t               margin_open_ratio = MARGIN_OPEN_RATIO;                         ///< The minimum required collateralization ratio for a credit loan to be opened. 
+
+         uint16_t               margin_liquidation_ratio = MARGIN_LIQUIDATION_RATIO;           ///< The minimum permissible collateralization ratio before a loan is liquidated. 
+
+         uint16_t               maximum_asset_feed_publishers = MAX_ASSET_FEED_PUBLISHERS;     ///< The maximum number of accounts that can publish price feeds for a bitasset.
+
+         asset                  membership_base_price = MEMBERSHIP_FEE_BASE;                   ///< The price for standard membership per month.
+
+         asset                  membership_mid_price = MEMBERSHIP_FEE_MID;                     ///< The price for Mezzanine membership per month.
+
+         asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                     ///< The price for top level membership per month.
+
+         uint32_t               author_reward_percent = AUTHOR_REWARD_PERCENT;                 ///< The percentage of content rewards distributed to post authors.
+
+         uint32_t               vote_reward_percent = VOTE_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post voters.
+
+         uint32_t               view_reward_percent = VIEW_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post viewers.
+
+         uint32_t               share_reward_percent = SHARE_REWARD_PERCENT;                   ///< The percentage of content rewards distributed to post sharers.
+
+         uint32_t               comment_reward_percent = COMMENT_REWARD_PERCENT;               ///< The percentage of content rewards distributed to post commenters.
+
+         uint32_t               storage_reward_percent = STORAGE_REWARD_PERCENT;               ///< The percentage of content rewards distributed to viewing supernodes.
+
+         uint32_t               moderator_reward_percent = MODERATOR_REWARD_PERCENT;           ///< The percentage of content rewards distributed to community moderators.
+
+         fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;         ///< The time over which content rewards are distributed
+
+         fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;             ///< Time taken per distribution of content rewards.
+
+         uint32_t               vote_reserve_rate = VOTE_RESERVE_RATE;                         ///< The number of votes regenerated per day.
+
+         uint32_t               view_reserve_rate = VIEW_RESERVE_RATE;                         ///< The number of views regenerated per day.
+
+         uint32_t               share_reserve_rate = SHARE_RESERVE_RATE;                       ///< The number of shares regenerated per day.
+
+         uint32_t               comment_reserve_rate = COMMENT_RESERVE_RATE;                   ///< The number of comments regenerated per day.
+
+         fc::microseconds       vote_recharge_time = VOTE_RECHARGE_TIME;                       ///< Time taken to fully recharge voting power.
+
+         fc::microseconds       view_recharge_time = VIEW_RECHARGE_TIME;                       ///< Time taken to fully recharge viewing power.
+
+         fc::microseconds       share_recharge_time = SHARE_RECHARGE_TIME;                     ///< Time taken to fully recharge sharing power.
+
+         fc::microseconds       comment_recharge_time = COMMENT_RECHARGE_TIME;                 ///< Time taken to fully recharge commenting power.
+
+         fc::microseconds       curation_auction_decay_time = CURATION_AUCTION_DECAY_TIME;     ///< time of curation reward decay after a post is created. 
+
+         double                 vote_curation_decay = VOTE_CURATION_DECAY;                     ///< Number of votes for the half life of voting curation reward decay.
+
+         double                 view_curation_decay = VIEW_CURATION_DECAY;                     ///< Number of views for the half life of viewer curation reward decay.
+
+         double                 share_curation_decay = SHARE_CURATION_DECAY;                   ///< Number of shares for the half life of sharing curation reward decay.
+
+         double                 comment_curation_decay = COMMENT_CURATION_DECAY;               ///< Number of comments for the half life of comment curation reward decay.
+
+         fc::microseconds       supernode_decay_time = SUPERNODE_DECAY_TIME;                   ///< Amount of time to average the supernode file weight over. 
+
+         uint16_t               enterprise_vote_percent_required = ENTERPRISE_VOTE_THRESHOLD_PERCENT;     ///< Percentage of total voting power required to approve enterprise milestones. 
+
+         uint64_t               maximum_asset_whitelist_authorities = MAX_ASSET_WHITELIST_AUTHORITIES;  ///< The maximum amount of whitelisted or blacklisted authorities for user issued assets 
+
+         uint8_t                max_stake_intervals = MAX_ASSET_STAKE_INTERVALS;               ///< Maximum weeks that an asset can stake over.
+
+         uint8_t                max_unstake_intervals = MAX_ASSET_UNSTAKE_INTERVALS;           ///< Maximum weeks that an asset can unstake over.
+
+         asset                  max_exec_budget = MAX_EXEC_BUDGET;                             ///< Maximum budget that an executive board can claim.
+   };
+
+      
+
+
    class transfer_request_object : public object< transfer_request_object_type, transfer_request_object >
    {
       public:
@@ -161,29 +281,30 @@ namespace node { namespace chain {
 
          asset                amount_for_sale()const 
          { 
-            return asset( for_sale, sell_price.base.symbol ); 
+            return asset( for_sale, sell_price.base.symbol );
          }
 
          asset                amount_to_receive()const 
          { 
-            return amount_for_sale() * sell_price; 
+            return amount_for_sale() * sell_price;
          }
 
          asset_symbol_type    sell_asset()const 
          { 
-            return sell_price.base.symbol; 
+            return sell_price.base.symbol;
          }
 
          asset_symbol_type    receive_asset()const 
          { 
-            return sell_price.quote.symbol; 
+            return sell_price.quote.symbol;
          }
 
          double               real_price()const 
          { 
-            return sell_price.to_real(); 
+            return sell_price.to_real();
          }
    };
+
 
    /**
     * Creates an object that holds a debt position to issue
@@ -203,7 +324,7 @@ namespace node { namespace chain {
 
          id_type                 id;
 
-         account_name_type       borrower;
+         account_name_type       borrower;                    ///< Account that is the borrower of the stablecoin asset. 
 
          asset                   collateral;                  ///< call_price.base.symbol, access via get_collateral
 
@@ -211,7 +332,7 @@ namespace node { namespace chain {
 
          price                   call_price;                  ///< Collateral / Debt
 
-         optional<uint16_t>      target_collateral_ratio;     ///< maximum CR to maintain when selling collateral on margin call
+         optional< uint16_t >    target_collateral_ratio;     ///< maximum CR to maintain when selling collateral on margin call
 
          account_name_type       interface;                   ///< The interface account that created the order
 
@@ -250,11 +371,122 @@ namespace node { namespace chain {
           *  @param maintenance_collateralization maintenance collateralization of debt asset
           *  @return maximum amount of debt that can be called
           */
-         share_type get_max_debt_to_cover( price match_price,
-                                          price feed_price,
-                                          const uint16_t maintenance_collateral_ratio,
-                                          const optional<price>& maintenance_collateralization = optional<price>() )const;
+         share_type get_max_debt_to_cover(
+            price match_price,
+            price feed_price,
+            const uint16_t maintenance_collateral_ratio,
+            const optional<price>& maintenance_collateralization = optional<price>()
+         )const;
    };
+
+
+   /**
+    * Holds an auction order that exchanges at the daily clearing price.
+    * 
+    * Auction orders match against other auction orders once per day,
+    * if the daily clearing price is above the min_exchange_rate of the order.
+    */
+   class auction_order_object : public object< auction_order_object_type, auction_order_object >
+   {
+      public:
+         template< typename Constructor, typename Allocator >
+         auction_order_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                  id;
+
+         account_name_type        owner;                    ///< Owner of the Auction order.
+
+         string                   order_id;                 ///< uuidv4 of the order for reference.
+
+         asset                    amount_to_sell;           ///< Amount of asset to sell at auction clearing price.
+
+         price                    min_exchange_rate;        ///< The asset pair price to sell the amount at the auction clearing price.
+
+         account_name_type        interface;                ///< Name of the interface that created the transaction.
+
+         time_point               expiration;               ///< Time that the order expires.
+
+         time_point               created;                  ///< Time that the order was created.
+
+         time_point               last_updated;             ///< Time that the order was last modified.
+
+         asset                    amount_for_sale()const
+         { 
+            return amount_to_sell;
+         }
+
+         asset                    amount_to_receive()const
+         { 
+            return amount_to_sell * min_exchange_rate;
+         }
+
+         asset_symbol_type        sell_asset()const
+         { 
+            return min_exchange_rate.base.symbol;
+         }
+
+         asset_symbol_type        receive_asset()const
+         { 
+            return min_exchange_rate.quote.symbol;
+         }
+
+         double                   real_price()const
+         { 
+            return min_exchange_rate.to_real();
+         }
+   };
+
+
+   /**
+    * Holds an option position that issue new units of option contract assets.
+    * 
+    * Option assets can be exercised by the holder to execute a 
+    * trade at the specified strike price before the expiration date.
+    * 
+    * Can be closed by repaying the option asset back into the order.
+    * 
+    * Orders are assigned the trade execution if the options 
+    * are exercised in order of creation.
+    */
+   class option_order_object : public object< option_order_object_type, option_order_object >
+   {
+      public:
+         template< typename Constructor, typename Allocator >
+         option_order_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                      id;
+
+         account_name_type            owner;                    ///< Owner of the Option order.
+
+         string                       order_id;                 ///< uuidv4 of the order for reference.
+
+         asset                        amount_to_issue;          ///< Amount of assets to issue covered options contract assets against. Must be a multiple of 100 units.
+
+         asset                        option_position;          ///< Amount of option assets generated by the position. Debt owed by the order. 
+
+         option_strike                strike_price;             ///< The asset pair strike price at which the options can be exercised at any time before expiration.
+
+         account_name_type            interface;                ///< Name of the interface that created the transaction.
+
+         time_point                   created;                  ///< Time that the order was created.
+
+         time_point                   last_updated;             ///< Time that the order was last modified.
+
+         asset amount_to_receive()const { return option_position; }
+
+         asset amount_for_sale()const { return amount_to_issue; }
+
+         asset_symbol_type debt_type()const { return option_position.symbol; }
+
+         asset_symbol_type collateral_type()const { return amount_to_issue.symbol; }
+   };
+
 
    /**
     *  Tracks bitassets scheduled for force settlement at some point in the future.
@@ -356,7 +588,8 @@ namespace node { namespace chain {
 
    /**
     * Credit collateral object holds assets in collateral for use to support a
-    * credit borrowing order from the asset's credit pool, or a margin order by substracting collateral from 
+    * credit borrowing order from the asset's credit pool, 
+    * or a margin order by substracting collateral from 
     * the object to include in a margin order's collateral.
     */
    class credit_loan_object : public object< credit_loan_object_type, credit_loan_object >
@@ -410,8 +643,8 @@ namespace node { namespace chain {
 
 
    /**
-    * Margin order object creates a borrowing balance in a specific asset, then uses that asset to buy 
-    * another asset, the position asset.
+    * Margin order object creates a borrowing balance in a specific asset, 
+    * then uses that asset to buy another asset, the position asset.
     */
    class margin_order_object : public object< margin_order_object_type, margin_order_object >
    {
@@ -628,6 +861,49 @@ namespace node { namespace chain {
    };
 
 
+   class product_object : public object< product_object_type, product_object >
+   {
+      public:
+         template< typename Constructor, typename Allocator >
+         product_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         product_object(){}
+
+         id_type                                      id;
+
+         account_name_type                            account;             ///< The Seller of the product.
+
+         shared_string                                product_name;        ///< The name of the product. Unique for each account.
+
+         flat_set< shared_string >                    product_variants;    ///< The collection of product variants. Each map must have a key for each variant.
+
+         product_sale_type                            sale_type;           ///< The type of sale to be used for the product.
+
+         flat_map< shared_string, shared_string >     details;             ///< The Description details of each variant of the product.
+
+         flat_map< shared_string, shared_string >     images;              ///< IPFS references to images of each product variant.
+
+         flat_map< shared_string, shared_string >     product_prices;      ///< The price (or min auction price) for each variant of the product.
+
+         flat_map< shared_string, uint32_t >          stock_available;     ///< The available stock of each variant of the product.
+
+         flat_map< shared_string, shared_string >     json;                ///< JSON metadata attributes of each product variant.
+
+         shared_string                                url;                 ///< Reference URL of the product or seller.
+
+         flat_set< shared_string >                    delivery_variants;   ///< The types of product delivery available to purchasers.
+
+         flat_map< shared_string, asset >             delivery_prices;     ///< The price for each variant of delivery.
+
+         time_point                                   created;             ///< Time that the order was created.
+
+         time_point                                   last_updated;        ///< Time that the order was last updated, approved, or disputed.
+   };
+
+
    class savings_withdraw_object : public object< savings_withdraw_object_type, savings_withdraw_object >
    {
       savings_withdraw_object() = delete;
@@ -725,35 +1001,35 @@ namespace node { namespace chain {
 
          reward_fund_id_type     id;
 
-         asset                   content_reward_balance = asset( 0, SYMBOL_COIN );
+         asset_symbol_type       symbol;  
 
-         asset                   validation_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   content_reward_balance;
 
-         asset                   txn_stake_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   validation_reward_balance;
 
-         asset                   work_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   txn_stake_reward_balance;
 
-         asset                   producer_activity_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   work_reward_balance;
 
-         asset                   supernode_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   producer_activity_reward_balance;
 
-         asset                   power_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   supernode_reward_balance;
 
-         asset                   community_fund_balance = asset( 0, SYMBOL_COIN );
+         asset                   power_reward_balance;
 
-         asset                   development_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   community_fund_balance;
 
-         asset                   marketing_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   development_reward_balance;
 
-         asset                   advocacy_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   marketing_reward_balance;
 
-         asset                   activity_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   advocacy_reward_balance;
 
-         asset                   premium_partners_fund_balance = asset( 0, SYMBOL_COIN );      ///< Receives income from memberships, distributed to premium creators. 
+         asset                   activity_reward_balance;
 
-         asset                   total_pending_reward_balance = asset( 0, SYMBOL_COIN );
+         asset                   premium_partners_fund_balance;      ///< Receives income from memberships, distributed to premium creators. 
 
-         uint128_t               total_reward_shares = 0;
+         asset                   total_pending_reward_balance;
 
          uint128_t               recent_content_claims = 0;
 
@@ -771,97 +1047,108 @@ namespace node { namespace chain {
 
          time_point              last_update;
 
-         void reward_fund_object::adjust_content_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_content_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             content_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_validation_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_validation_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             validation_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_txn_stake_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_txn_stake_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             txn_stake_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_work_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_work_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             work_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_producer_activity_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_producer_activity_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             activity_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_supernode_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_supernode_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             supernode_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_power_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_power_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             power_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_community_fund_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_community_fund_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             community_fund_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_development_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_development_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             development_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_marketing_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_marketing_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             marketing_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_advocacy_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_advocacy_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             advocacy_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_activity_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_activity_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             activity_reward_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_premium_partners_fund_balance(const asset& delta)
-         {
-            assert(delta.symbol == SYMBOL_COIN);
+         void reward_fund_object::adjust_premium_partners_fund_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             premium_partners_fund_balance += delta;
             total_pending_reward_balance += delta;
-         }
+         } FC_CAPTURE_AND_RETHROW() }
    };
+
+
+   typedef multi_index_container<
+      median_chain_property_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< median_chain_property_object, median_chain_property_id_type, &median_chain_property_object::id > >
+      >,
+      allocator< median_chain_property_object >
+   > median_chain_property_index;
+
 
    struct by_expiration;
    struct by_request_id;
@@ -1182,10 +1469,15 @@ namespace node { namespace chain {
    > decline_voting_rights_request_index;
 
    struct by_name;
+   struct by_symbol;
+
    typedef multi_index_container<
       reward_fund_object,
       indexed_by<
-         ordered_unique< tag< by_id >, member< reward_fund_object, reward_fund_id_type, &reward_fund_object::id > >
+         ordered_unique< tag< by_id >,
+            member< reward_fund_object, reward_fund_id_type, &reward_fund_object::id > >,
+         ordered_unique< tag< by_symbol >,
+            member< reward_fund_object, asset_symbol_type, &reward_fund_object::symbol > >
       >,
       allocator< reward_fund_object >
    > reward_fund_index;
@@ -1425,8 +1717,54 @@ namespace node { namespace chain {
 #include <node/chain/comment_object.hpp>
 #include <node/chain/account_object.hpp>
 #include <node/chain/asset_object.hpp>
-#include <node/chain/board_object.hpp>
+#include <node/chain/community_object.hpp>
 #include <node/chain/ad_object.hpp>
+#include <node/chain/graph_object.hpp>
+
+FC_REFLECT( node::chain::median_chain_property_object,
+         (id)
+         (account_creation_fee)
+         (maximum_block_size)
+         (pow_target_time)
+         (pow_decay_time)
+         (txn_stake_decay_time)
+         (credit_interest_rate)
+         (credit_open_ratio)
+         (credit_liquidation_ratio)
+         (credit_min_interest)
+         (credit_variable_interest)
+         (market_max_credit_ratio)
+         (margin_open_ratio)
+         (margin_liquidation_ratio)
+         (interest_compound_interval)
+         (maximum_asset_feed_publishers)
+         (membership_base_price)
+         (membership_mid_price)
+         (membership_top_price)
+         (content_reward_decay_rate)
+         (content_reward_interval)
+         (vote_reserve_rate)
+         (view_reserve_rate)
+         (share_reserve_rate)
+         (comment_reserve_rate)
+         (vote_recharge_time)
+         (view_recharge_time)
+         (share_recharge_time)
+         (comment_recharge_time)
+         (curation_auction_decay_time)
+         (vote_curation_decay)
+         (view_curation_decay)
+         (share_curation_decay)
+         (comment_curation_decay)
+         (supernode_decay_time)
+         (enterprise_vote_percent_required)
+         (maximum_asset_whitelist_authorities)
+         (max_stake_intervals)
+         (max_unstake_intervals)
+         (max_exec_budget)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::median_chain_property_object, node::chain::median_chain_property_index );
 
 FC_REFLECT( node::chain::transfer_request_object,
          (id)

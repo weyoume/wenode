@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      comment.board = INIT_BOARD;
+      comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( alice_comment.body ) == comment.body );
       BOOST_REQUIRE( to_string( alice_comment.ipfs[0] ) == comment.ipfs[0] );
       BOOST_REQUIRE( to_string( alice_comment.magnet[0] ) == comment.magnet[0] );
-      BOOST_REQUIRE( alice_comment.board == comment.board );
+      BOOST_REQUIRE( alice_comment.community == comment.community );
       BOOST_REQUIRE( alice_comment.tags[0] == comment.tags[0] );
       BOOST_REQUIRE( alice_comment.interface == comment.interface );
       BOOST_REQUIRE( to_string( alice_comment.language ) == comment.language );
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( bob_comment.body ) == comment.body );
       BOOST_REQUIRE( to_string( bob_comment.ipfs[0] ) == comment.ipfs[0] );
       BOOST_REQUIRE( to_string( bob_comment.magnet[0] ) == comment.magnet[0] );
-      BOOST_REQUIRE( bob_comment.board == comment.board );
+      BOOST_REQUIRE( bob_comment.community == comment.community );
       BOOST_REQUIRE( bob_comment.tags[0] == comment.tags[0] );
       BOOST_REQUIRE( bob_comment.interface == comment.interface );
       BOOST_REQUIRE( to_string( bob_comment.language ) == comment.language );
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( candice_comment.body ) == comment.body );
       BOOST_REQUIRE( to_string( candice_comment.ipfs[0] ) == comment.ipfs[0] );
       BOOST_REQUIRE( to_string( candice_comment.magnet[0] ) == comment.magnet[0] );
-      BOOST_REQUIRE( candice_comment.board == comment.board );
+      BOOST_REQUIRE( candice_comment.community == comment.community );
       BOOST_REQUIRE( candice_comment.tags[0] == comment.tags[0] );
       BOOST_REQUIRE( candice_comment.interface == comment.interface );
       BOOST_REQUIRE( to_string( candice_comment.language ) == comment.language );
@@ -788,7 +788,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      comment.board = INIT_BOARD;
+      comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -995,7 +995,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      comment.board = INIT_BOARD;
+      comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -1134,7 +1134,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      comment.board = INIT_BOARD;
+      comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -1270,7 +1270,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      comment.board = INIT_BOARD;
+      comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -1303,7 +1303,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tag.author = "alice";
       tag.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
       tag.tags.push_back( "nsfw" );
-      tag.rating = MATURE;
+      tag.rating = ADULT;
       tag.details = "Post is NSFW";
       tag.interface = INIT_ACCOUNT;
       tag.filter = false;

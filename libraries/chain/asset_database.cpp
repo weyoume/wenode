@@ -1275,13 +1275,13 @@ share_type database::get_proxied_voting_power( const account_object& a, const pr
 
 share_type database::get_proxied_voting_power( const account_name_type& a, const price& equity_price )const
 { try {
-   return get_proxied_voting_power( get_account(a), equity_price);
+   return get_proxied_voting_power( get_account(a), equity_price );
 } FC_CAPTURE_AND_RETHROW() }
 
 
 share_type database::get_equity_voting_power( const account_object& a, const account_business_object& b )const
 { try {
-   return get_equity_voting_power( a.name, b);
+   return get_equity_voting_power( a.name, b );
 } FC_CAPTURE_AND_RETHROW() }
 
 

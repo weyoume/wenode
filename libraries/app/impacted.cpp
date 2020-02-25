@@ -1,9 +1,5 @@
-
-
 #include <node/protocol/authority.hpp>
-
 #include <node/app/impacted.hpp>
-
 #include <fc/utility.hpp>
 
 namespace node { namespace app {
@@ -53,30 +49,28 @@ struct get_impacted_account_visitor
 
    void operator()( const escrow_transfer_operation& op )
    {
+      _impacted.insert( op.account );
       _impacted.insert( op.from );
       _impacted.insert( op.to );
-      _impacted.insert( op.agent );
    }
 
    void operator()( const escrow_approve_operation& op )
    {
-      _impacted.insert( op.from );
-      _impacted.insert( op.to );
-      _impacted.insert( op.agent );
+      _impacted.insert( op.account );
+      _impacted.insert( op.mediator );
+      _impacted.insert( op.escrow_from );
    }
 
    void operator()( const escrow_dispute_operation& op )
    {
-      _impacted.insert( op.from );
-      _impacted.insert( op.to );
-      _impacted.insert( op.agent );
+      _impacted.insert( op.account );
+      _impacted.insert( op.escrow_from );
    }
 
    void operator()( const escrow_release_operation& op )
    {
-      _impacted.insert( op.from );
-      _impacted.insert( op.to );
-      _impacted.insert( op.agent );
+      _impacted.insert( op.account );
+      _impacted.insert( op.escrow_from );
    }
 
    void operator()( const stake_asset_operation& op )
@@ -91,8 +85,8 @@ struct get_impacted_account_visitor
 
    void operator()( const unstake_asset_route_operation& op )
    {
-      _impacted.insert( op.from_account );
-      _impacted.insert( op.to_account );
+      _impacted.insert( op.from );
+      _impacted.insert( op.to );
    }
 
    void operator()( const account_producer_vote_operation& op )

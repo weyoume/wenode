@@ -57,7 +57,7 @@ uint128_t get_comment_reward( const comment_reward_context& ctx );
 
 inline uint128_t get_content_constant_s()
 {
-   return CONTENT_CONSTANT;
+   return CONTENT_CONSTANT.value;
 }
 
 uint128_t evaluate_reward_curve( 

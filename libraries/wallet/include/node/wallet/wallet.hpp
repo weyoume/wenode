@@ -410,7 +410,7 @@ class wallet_api
        * 
        * @returns All values of network selected chain properties.
        */
-      chain_properties                                get_median_chain_properties()const;
+      median_chain_property_api_obj                   get_median_chain_properties() const;
 
 
       /** 
@@ -442,7 +442,7 @@ class wallet_api
        * 
        * @returns Funds contained within reward pools, pending allocation to network participants. 
        */
-      reward_fund_api_obj                             get_reward_fund()const;
+      vector< reward_fund_api_obj >                   get_reward_funds( vector< string > assets )const;
 
 
       //======================//
@@ -550,7 +550,7 @@ class wallet_api
       /** 
        * Returns the key state sets of a list of accounts.
        * 
-       * Includes all key objects from accounts and boards that are connected.
+       * Includes all key objects from accounts and communities that are connected.
        *
        * @param names The names of the accounts to provide key information.
        * @returns Key state information pertaining to the specified accounts.
@@ -698,45 +698,45 @@ class wallet_api
 
 
       //===================//
-      // === Board API === //
+      // === Community API === //
       //===================//
 
 
       /** 
-       * Returns all available information about a specified board.
+       * Returns all available information about a specified community.
        *
-       * @param board The name of the board to retrieve information about.
-       * @returns Board Object information pertaining to the specified board.
+       * @param community The name of the community to retrieve information about.
+       * @returns Community Object information pertaining to the specified community.
        */
-      extended_board                                  get_board( string board )const;
+      extended_community                                  get_community( string community )const;
 
 
       /** 
-       * Returns all available information about a specified list of boards.
+       * Returns all available information about a specified list of communities.
        *
-       * @param boards List of boards to retrieve information about.
-       * @returns Board Object information pertaining to the specified board.
+       * @param communities List of communities to retrieve information about.
+       * @returns Community Object information pertaining to the specified community.
        */
-      vector< extended_board >                        get_boards( vector< string > boards )const;
+      vector< extended_community >                        get_communities( vector< string > communities )const;
 
 
 
       /** 
-       * Returns a list of the boards with the highest number of subscribers.
+       * Returns a list of the communities with the highest number of subscribers.
        *
-       * @param from First board to retrieve in the ranking order.
-       * @param limit Amount of boards to retrieve.
-       * @returns List of Board Objects pertaining to the top subscribed boards.
+       * @param from First community to retrieve in the ranking order.
+       * @param limit Amount of communities to retrieve.
+       * @returns List of Community Objects pertaining to the top subscribed communities.
        */
-      vector< extended_board >                        get_boards_by_subscribers( string from, uint32_t limit )const;
+      vector< extended_community >                        get_communities_by_subscribers( string from, uint32_t limit )const;
 
 
       /** 
-       * Returns the number of registered boards.
+       * Returns the number of registered communities.
        * 
-       * @returns Number of boards that have been created on the network.
+       * @returns Number of communities that have been created on the network.
        */
-      uint64_t                                        get_board_count()const;
+      uint64_t                                        get_community_count()const;
 
 
       //=====================//
@@ -859,7 +859,7 @@ class wallet_api
       /** 
        * Returns a specifed executive board.
        *
-       * @param name name of the board business account.
+       * @param name name of the community business account.
        * @returns Executive board object information pertaining to the account.
        */
       executive_board_api_obj                         get_executive_board_by_account( string name )const;
@@ -1113,10 +1113,10 @@ class wallet_api
 
 
 
-
       //=====================================//
       // === Blocks and Transactions API === //
       //=====================================//
+
 
 
       /** 
@@ -1374,7 +1374,7 @@ class wallet_api
        * Retrieves the Discussion information from posts that are in an account's feeds.
        * 
        * Feeds can include posts made by followed and connected accounts, as well as from
-       * followed boards, and followed tags. 
+       * followed communities, and followed tags. 
        * 
        * @param query The details of the posts to return, and sorting options used. 
        * @returns The Discussion information from the posts.
@@ -1383,10 +1383,10 @@ class wallet_api
 
 
       /**
-       * Retrieves the Discussion information from posts that are in a specified blog from an account, board, or tag.
+       * Retrieves the Discussion information from posts that are in a specified blog from an account, community, or tag.
        * 
-       * Blogs include all posts that are created by an account, created with a specifed tag, or in a specifed board.
-       * in addition to posts that are shared by the account, or shared with the board or tag. 
+       * Blogs include all posts that are created by an account, created with a specifed tag, or in a specifed community.
+       * in addition to posts that are shared by the account, or shared with the community or tag. 
        * 
        * @param query The details of the posts to return, and sorting options used. 
        * @returns The Discussion information from the posts.
@@ -1397,9 +1397,9 @@ class wallet_api
       /**
        * Retrieves the Discussion information from posts that are recommended for an account.
        * 
-       * Recommended posts include a randomized selection of not yet viewed posts from authors, boards and tags
-       * that are from authors, boards, and tags that the account 
-       * has previously positively engaged with, and authors boards and tags that are closely related to
+       * Recommended posts include a randomized selection of not yet viewed posts from authors, communities and tags
+       * that are from authors, communities, and tags that the account 
+       * has previously positively engaged with, and authors communities and tags that are closely related to
        * those that are engaged with, but not yet followed.
        * 
        * @param query The details of the posts to return, and sorting options used. 
@@ -1592,7 +1592,6 @@ class wallet_api
          string signatory,
          string registrar,
          string new_account_name,
-         string account_type,
          string referrer,
          string proxy,
          string governance_account,
@@ -2408,7 +2407,7 @@ class wallet_api
        * @param ipfs Vector of Strings containing IPFS file hashes: images, videos, files.
        * @param magnet Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
        * @param language String containing the two letter ISO language code of the native language of the author.
-       * @param board The name of the board to which the post is uploaded to.
+       * @param community The name of the community to which the post is uploaded to.
        * @param public_key The public key used to encrypt the post, holders of the private key may decrypt.
        * @param interface Name of the interface application that broadcasted the transaction.
        * @param comment_price Price that is required to comment on the post.
@@ -2430,7 +2429,7 @@ class wallet_api
          vector< string > ipfs,
          vector< string > magnet,
          string language,
-         string board,
+         string community,
          string public_key,
          string interface,
          asset comment_price,
@@ -2516,7 +2515,7 @@ class wallet_api
        * @param permlink Permlink of the post being shared.
        * @param reach Audience reach selection for share.
        * @param interface Name of the interface account that was used to broadcast the transaction and share the post.
-       * @param board Optionally share the post with a new board.
+       * @param community Optionally share the post with a new community.
        * @param tag Optionally share the post with a new tag.
        * @param shared True if sharing the post, false if removing share.
        * @param broadcast Set True to broadcast transaction.
@@ -2528,7 +2527,7 @@ class wallet_api
          string permlink,
          string reach,
          string interface,
-         string board,
+         string community,
          string tag,
          bool shared,
          bool broadcast );
@@ -2538,14 +2537,14 @@ class wallet_api
        * Applies a set of tags to a post for filtering from interfaces.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param moderator Account creating the tag: can be a governance address or a board moderator. 
+       * @param moderator Account creating the tag: can be a governance address or a community moderator. 
        * @param author Author of the post being tagged.
        * @param permlink Permlink of the post being tagged.
        * @param tags Set of tags to apply to the post for selective interface side filtering.
        * @param rating Newly proposed rating for the post.
        * @param details String explaining the reason for the tag to the author.
        * @param interface Interface account used for the transaction.
-       * @param filter True if the post should be filtered from the board and governance account subscribers.
+       * @param filter True if the post should be filtered from the community and governance account subscribers.
        * @param applied True if applying the tag, false if removing the tag.
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2565,33 +2564,31 @@ class wallet_api
 
 
       //============================//
-      // === Board Transactions === //
+      // === Community Transactions === //
       //============================//
 
 
 
       /**
-       * Creates a new board for collecting posts about a specific topic.
+       * Creates a new community for collecting posts about a specific topic.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param founder The account that created the board, able to add and remove administrators.
-       * @param name Name of the board.
-       * @param board_type Type of board Structure to use, determines content types.
-       * @param board_privacy Type of board Privacy to us, determines access permissions and encryption.
-       * @param board_public_key Key used for encrypting and decrypting posts. Private key shared with accepted members.
-       * @param json Public plaintext json information about the board, its topic and rules.
-       * @param json_private Private ciphertext json information about the board.
-       * @param details Details of the board, describing what it is for.
+       * @param founder The account that created the community, able to add and remove administrators.
+       * @param name Name of the community.
+       * @param community_privacy Type of community Privacy to us, determines access permissions and encryption.
+       * @param community_public_key Key used for encrypting and decrypting posts. Private key shared with accepted members.
+       * @param json Public plaintext json information about the community, its topic and rules.
+       * @param json_private Private ciphertext json information about the community.
+       * @param details Details of the community, describing what it is for.
        * @param url External reference URL.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_create(
+      annotated_signed_transaction           community_create(
          string signatory,
          string founder,
          string name,
-         string board_type,
-         string board_privacy,
-         string board_public_key,
+         string community_privacy,
+         string community_public_key,
          string json,
          string json_private,
          string details,
@@ -2600,25 +2597,25 @@ class wallet_api
 
 
       /**
-       * Updates the details of an existing board.
+       * Updates the details of an existing community.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account updating the board.
-       * @param board Name of the board.
-       * @param board_public_key Key used for encrypting and decrypting posts. Private key shared with accepted members.
-       * @param json Public plaintext json information about the board, its topic and rules.
-       * @param json_private Private ciphertext json information about the board.
-       * @param details Details of the board, describing what it is for.
+       * @param account Account updating the community.
+       * @param community Name of the community.
+       * @param community_public_key Key used for encrypting and decrypting posts. Private key shared with accepted members.
+       * @param json Public plaintext json information about the community, its topic and rules.
+       * @param json_private Private ciphertext json information about the community.
+       * @param details Details of the community, describing what it is for.
        * @param url External reference URL.
        * @param pinned_author Author of the pinned post.
        * @param pinned_permlink Permlink of the pinned post.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_update(
+      annotated_signed_transaction           community_update(
          string signatory,
          string account,
-         string board,
-         string board_public_key,
+         string community,
+         string community_public_key,
          string json,
          string json_private,
          string details,
@@ -2629,38 +2626,38 @@ class wallet_api
 
 
       /**
-       * Adds a new moderator to a board.
+       * Adds a new moderator to a community.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account of an administrator of the board.
-       * @param board Board that the moderator is being added to.
+       * @param account Account of an administrator of the community.
+       * @param community Community that the moderator is being added to.
        * @param moderator New moderator account.
        * @param added True when adding a new moderator, false when removing.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_add_mod(
+      annotated_signed_transaction           community_add_mod(
          string signatory,
          string account,
-         string board,
+         string community,
          string moderator,
          bool added,
          bool broadcast );
 
 
       /**
-       * Adds a new administrator to a board.
+       * Adds a new administrator to a community.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account of the founder of the board.
-       * @param board Board that the admin is being added to.
+       * @param account Account of the founder of the community.
+       * @param community Community that the admin is being added to.
        * @param admin New administrator account.
        * @param added True when adding a new administrator, false when removing.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_add_admin(
+      annotated_signed_transaction           community_add_admin(
          string signatory,
          string account,
-         string board,
+         string community,
          string admin,
          bool added,
          bool broadcast );
@@ -2670,17 +2667,17 @@ class wallet_api
        * Votes for a moderator to increase their mod weight.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account of a member of the board.
-       * @param board Board that the moderator is being voted into.
+       * @param account Account of a member of the community.
+       * @param community Community that the moderator is being voted into.
        * @param moderator Moderator account.
-       * @param vote_rank Voting rank for the specified board moderator.
+       * @param vote_rank Voting rank for the specified community moderator.
        * @param approved True when voting for the moderator, false when removing.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_vote_mod(
+      annotated_signed_transaction           community_vote_mod(
          string signatory,
          string account,
-         string board,
+         string community,
          string moderator,
          uint16_t vote_rank,
          bool approved,
@@ -2688,60 +2685,60 @@ class wallet_api
 
 
       /**
-       * Transfers a board to a new account as the founder.
+       * Transfers a community to a new account as the founder.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account that created the board.
-       * @param board Board that is being transferred.
+       * @param account Account that created the community.
+       * @param community Community that is being transferred.
        * @param new_founder Account of the new founder.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_transfer_ownership(
+      annotated_signed_transaction           community_transfer_ownership(
          string signatory,
          string account,
-         string board,
+         string community,
          string new_founder,
          bool broadcast );
 
 
       /**
-       * Requests that an account be added as a new member of a board.
+       * Requests that an account be added as a new member of a community.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account that wants to join the board.
-       * @param board Board that is being requested to join.
-       * @param message Message attatched to the request, encrypted with the boards public key.
+       * @param account Account that wants to join the community.
+       * @param community Community that is being requested to join.
+       * @param message Message attatched to the request, encrypted with the communities public key.
        * @param requested Set true to request, false to cancel request.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_join_request(
+      annotated_signed_transaction           community_join_request(
          string signatory,
          string account,
-         string board,
+         string community,
          string message,
          bool requested,
          bool broadcast );
 
 
       /**
-       * Invite a new member to a board.
+       * Invite a new member to a community.
        *
        * @param signatory The name of the account signing the transaction.
        * @param account Account sending the invitation.
-       * @param member New board member account being invited.
-       * @param board Board that is the member is being invited to.
+       * @param member New community member account being invited.
+       * @param community Community that is the member is being invited to.
        * @param message Message attatched to the invite, encrypted with the member's secure public key.
-       * @param encrypted_board_key The Board Private Key, encrypted with the member's secure public key.
+       * @param encrypted_community_key The Community Private Key, encrypted with the member's secure public key.
        * @param invited Set true to invite, false to cancel invite.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_join_invite(
+      annotated_signed_transaction           community_join_invite(
          string signatory,
          string account,
          string member,
-         string board,
+         string community,
          string message,
-         string encrypted_board_key,
+         string encrypted_community_key,
          bool invited,
          bool broadcast );
 
@@ -2750,91 +2747,91 @@ class wallet_api
        * Used to accept to a request and admit a new member.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account within the board accepting the request.
-       * @param member Account to accept into the board.
-       * @param board Board that is being joined.
-       * @param encrypted_board_key The Board Private Key, encrypted with the member's secure public key.
+       * @param account Account within the community accepting the request.
+       * @param member Account to accept into the community.
+       * @param community Community that is being joined.
+       * @param encrypted_community_key The Community Private Key, encrypted with the member's secure public key.
        * @param accepted Set true to invite, false to cancel invite.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_join_accept(
+      annotated_signed_transaction           community_join_accept(
          string signatory,
          string account,
          string member,
-         string board,
-         string encrypted_board_key,
+         string community,
+         string encrypted_community_key,
          bool accepted,
          bool broadcast );
 
 
       /**
-       * Accepts a board invitation.
+       * Accepts a community invitation.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account A new member of the board.
-       * @param board Board that the account was invited to.
+       * @param account A new member of the community.
+       * @param community Community that the account was invited to.
        * @param accepted True to accept invite, false to reject invite.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_invite_accept(
+      annotated_signed_transaction           community_invite_accept(
          string signatory,
          string account,
-         string board,
+         string community,
          bool accepted,
          bool broadcast );
 
 
       /**
-       * Removes a specifed member of a board.
+       * Removes a specifed member of a community.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Either the member of the board leaving OR a moderator of the board removing the member.
-       * @param member Account to be removed from the board membership.
-       * @param board Board that that member is being removed from.
+       * @param account Either the member of the community leaving OR a moderator of the community removing the member.
+       * @param member Account to be removed from the community membership.
+       * @param community Community that that member is being removed from.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_remove_member(
+      annotated_signed_transaction           community_remove_member(
          string signatory,
          string account,
          string member,
-         string board,
+         string community,
          bool broadcast );
 
 
       /**
-       * Adds a specifed account to the board's blacklist.
+       * Adds a specifed account to the community's blacklist.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Moderator or admin of the board.
-       * @param member Account to be blacklisted from interacting with the board.
-       * @param board Board that member is being blacklisted from.
+       * @param account Moderator or admin of the community.
+       * @param member Account to be blacklisted from interacting with the community.
+       * @param community Community that member is being blacklisted from.
        * @param blacklisted Set to true to add account to blacklist, set to false to remove from blacklist. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_blacklist(
+      annotated_signed_transaction           community_blacklist(
          string signatory,
          string account,
          string member,
-         string board,
+         string community,
          bool blacklisted,
          bool broadcast );
 
 
       /**
-       * Adds a board to an account's subscriptions.
+       * Adds a community to an account's subscriptions.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account that wants to subscribe to the board.
-       * @param board Board to suscribe to.
-       * @param interface Name of the interface account that was used to broadcast the transaction and subscribe to the board.
+       * @param account Account that wants to subscribe to the community.
+       * @param community Community to suscribe to.
+       * @param interface Name of the interface account that was used to broadcast the transaction and subscribe to the community.
        * @param added True to add to lists, false to remove.
        * @param subscribed true if subscribing, false if filtering.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           board_subscribe(
+      annotated_signed_transaction           community_subscribe(
          string signatory,
          string account,
-         string board,
+         string community,
          string interface,
          bool added,
          bool subscribed,
@@ -3283,7 +3280,7 @@ class wallet_api
 
 
       //=============================//
-      // === Escrow Transactions === //
+      // === Marketplace Transactions === //
       //=============================//
 
 
@@ -3943,130 +3940,372 @@ class wallet_api
 };
 
 struct plain_keys {
-   fc::sha512                  checksum;
-   map<public_key_type,string> keys;
+   fc::sha512                      checksum;
+
+   map<public_key_type,string>     keys;
 };
 
-} }     // node::wallet
+} }      // node::wallet
 
 FC_REFLECT( node::wallet::wallet_data,
-            (cipher_keys)
-            (ws_server)
-            (ws_user)
-            (ws_password)
-          )
+         (cipher_keys)
+         (ws_server)
+         (ws_user)
+         (ws_password)
+         );
 
-FC_REFLECT( node::wallet::seed_phrase_info, (brain_priv_key)(wif_priv_key) (pub_key))
+FC_REFLECT( node::wallet::seed_phrase_info, 
+         (brain_priv_key)
+         (wif_priv_key)
+         (pub_key)
+         );
 
-FC_REFLECT( node::wallet::plain_keys, (checksum)(keys) )
+FC_REFLECT( node::wallet::plain_keys,
+         (checksum)
+         (keys)
+         );
 
-FC_REFLECT_ENUM( node::wallet::authority_type, (owner)(active)(posting) )
+FC_REFLECT_ENUM( node::wallet::authority_type, 
+         (owner)
+         (active)
+         (posting)
+         );
+
+FC_REFLECT( node::wallet::encrypted_message_data, 
+         (from)
+         (to)
+         (nonce)
+         (check)
+         (encrypted)
+         );
 
 FC_API( node::wallet::wallet_api,
 
-        // wallet api
+         // Wallet API
 
-        (help)
-        (gethelp)
-        (about)
-        (is_new)
-        (is_locked)
-        (lock)
-        (unlock)
-        (set_password)
-        (load_wallet_file)
-        (save_wallet_file)
+         (help)
+         (info)
+         (about)
+         (list_my_accounts)
+         (get_my_accounts)
+         (get_wallet_filename)
+         (is_new)
+         (is_locked)
+         (lock)
+         (unlock)
+         (set_password)
+         (gethelp)
+         (load_wallet_file)
+         (save_wallet_file)
+         (set_wallet_filename)
+         (serialize_transaction)
+         (copy_wallet_file)
+         (set_transaction_expiration)
+         (check_memo)
+         (get_encrypted_message)
+         (get_decrypted_message)
+         (derive_private_key)
+        
+         // Key API
 
-        // key api
+         (get_private_key)
+         (get_private_key_from_password)
+         (suggest_seed_phrase)
+         (normalize_seed_phrase)
+         (list_keys)
+         (import_key)
+         (encrypt_keys)
 
-        (import_key)
-        (suggest_seed_phrase)
-        (list_keys)
-        (get_private_key)
-        (get_private_key_from_password)
-        (normalize_seed_phrase)
+         // Global API
 
-        // query api
+         (get_config)
+         (get_dynamic_global_properties)
+         (get_median_chain_properties)
+         (get_producer_schedule)
+         (get_hardfork_version)
+         (get_next_scheduled_hardfork)
+         (get_reward_fund)
 
-        (info)
-        (list_my_accounts)
-        (list_accounts)
-        (list_producers)
-        (get_producer)
-        (get_account)
-        (get_block)
-        (get_ops_in_block)
-        (get_feed_history)
-        (get_conversion_requests)
-        (get_account_history)
-        (get_state)
-        (get_withdraw_routes)
+         // Account API
 
-        // transaction api
+         (get_account)
+         (get_accounts)
+         (get_accounts_by_followers)
+         (get_concise_account)
+         (get_concise_accounts)
+         (get_full_account)
+         (get_full_accounts)
+         (get_account_history)
+         (get_messages)
+         (get_balances)
+         (get_keychains)
+         (lookup_accounts)
+         (get_account_count)
+         (get_owner_history)
+         (get_recovery_request)
+         (get_account_bandwidth)
 
-        (create_account)
-        (create_account_with_keys)
-        (create_account_delegated)
-        (create_account_with_keys_delegated)
-        (update_account)
-        (update_account_auth_key)
-        (update_account_auth_account)
-        (update_account_auth_threshold)
-        (update_account_meta)
-        (update_account_secure_public_key)
-        (delegate_asset)
-        (update_producer)
-        (set_voting_proxy)
-        (vote_producer)
-        (follow)
-        (transfer)
-        (escrow_transfer)
-        (escrow_approve)
-        (escrow_dispute)
-        (escrow_release)
-        (stake_asset)
-        (unstake_asset)
-        (unstake_asset_route)
-        (publishFeed)
-        (get_order_book)
-        (get_open_orders)
-        (create_order)
-        (cancel_order)
-        (post_comment)
-        (vote)
-        (set_transaction_expiration)
-        (challenge)
-        (prove)
-        (request_account_recovery)
-        (recover_account)
-        (change_recovery_account)
-        (get_owner_history)
-        (transfer_to_savings)
-        (transfer_from_savings)
-        (cancel_transfer_from_savings)
-        (get_encrypted_memo)
-        (decrypt_memo)
-        (decline_voting_rights)
-        (claim_reward_balance)
+         // Asset API
 
-        // private message api
+         (get_asset)
+         (get_assets)
+         (get_asset_count)
+         (get_escrow)
+         (get_withdraw_routes)
+         (get_savings_withdraw_from)
+         (get_savings_withdraw_to)
+         (get_asset_delegations)
+         (get_expiring_asset_delegations)
 
-        (send_private_message)
-        (get_inbox)
-        (get_outbox)
+         // Community API
 
-        // helper api
+         (get_community)
+         (get_communities)
+         (get_communities_by_subscribers)
+         (get_community_count)
 
-        (get_prototype_operation)
-        (serialize_transaction)
-        (sign_transaction)
+         // Network API
 
-        (network_add_nodes)
-        (network_get_connected_peers)
+         (get_producer_by_account)
+         (get_producers_by_account)
+         (get_active_producers)
+         (lookup_producer_accounts)
+         (get_producer_count)
+         (get_producers_by_voting_power)
+         (get_producers_by_mining_power)
+         (get_network_officer_by_account)
+         (get_network_officers_by_account)
+         (get_development_officers_by_voting_power)
+         (get_marketing_officers_by_voting_power)
+         (get_advocacy_officers_by_voting_power)
+         (get_executive_board_by_account)
+         (get_executive_boards_by_account)
+         (get_executive_boards_by_voting_power)
+         (get_supernode_by_account)
+         (get_supernodes_by_account)
+         (get_supernodes_by_view_weight)
+         (get_interface_by_account)
+         (get_interfaces_by_account)
+         (get_interfaces_by_users)
+         (get_governance_account_by_account)
+         (get_governance_accounts_by_account)
+         (get_governance_accounts_by_subscriber_power)
+         (get_enterprise_by_voting_power)
 
-        (get_active_producers)
-        (get_miner_queue)
-        (get_transaction)
-      )
+         // Market API
 
-FC_REFLECT( node::wallet::encrypted_message_data, (from)(to)(nonce)(check)(encrypted) )
+         (get_open_orders)
+         (get_limit_orders)
+         (get_margin_orders)
+         (get_call_orders)
+         (get_credit_loans)
+         (get_credit_pools)
+         (get_liquidity_pools)
+         (get_market_state)
+
+         // Ad API
+
+         (get_account_ads)
+         (get_interface_audience_bids)
+
+         // Search API
+
+         (get_search_query)
+
+         // Blocks and Transactions API
+
+         (sign_transaction)
+         (get_prototype_operation)
+         (network_add_nodes)
+         (network_get_connected_peers)
+         (get_block)
+         (get_ops_in_block)
+         (get_transaction)
+         (get_transaction_id)
+
+         // Post + Tag API
+
+         (get_active_votes)
+         (get_active_views)
+         (get_active_shares)
+         (get_active_mod_tags)
+         (get_account_votes)
+         (get_account_views)
+         (get_account_shares)
+         (get_account_moderation)
+         (get_tag_followings)
+         (get_top_tags)
+         (get_tags_used_by_author)
+
+         // Discussion API
+
+         (get_content)
+         (get_content_replies)
+         (get_replies_by_last_update)
+         (get_discussions_by_sort_rank)
+         (get_discussions_by_feed)
+         (get_discussions_by_blog)
+         (get_discussions_by_recommended)
+         (get_discussions_by_comments)
+         (get_discussions_by_payout)
+         (get_post_discussions_by_payout)
+         (get_comment_discussions_by_payout)
+         (get_discussions_by_created)
+         (get_discussions_by_active)
+         (get_discussions_by_votes)
+         (get_discussions_by_views)
+         (get_discussions_by_shares)
+         (get_discussions_by_children)
+         (get_discussions_by_vote_power)
+         (get_discussions_by_view_power)
+         (get_discussions_by_share_power)
+         (get_discussions_by_comment_power)
+
+         // State API
+
+         (get_state)
+
+         // Account Transaction API
+
+         (account_create)
+         (account_update)
+         (account_membership)
+         (account_vote_executive)
+         (account_vote_officer)
+         (account_member_request)
+         (account_member_invite)
+         (account_accept_request)
+         (account_accept_invite)
+         (account_remove_member)
+         (account_update_list)
+         (account_producer_vote)
+         (account_update_proxy)
+         (request_account_recovery)
+         (recover_account)
+         (reset_account)
+         (set_reset_account)
+         (change_recovery_account)
+         (decline_voting_rights)
+         (connection_request)
+         (connection_accept)
+         (account_follow)
+         (tag_follow)
+         (activity_reward)
+
+         // Network Transactions
+
+         (update_network_officer)
+         (network_officer_vote)
+         (update_executive_board)
+         (executive_board_vote)
+         (update_governance)
+         (subscribe_governance)
+         (update_supernode)
+         (update_interface)
+         (update_mediator)
+         (create_community_enterprise)
+         (claim_enterprise_milestone)
+         (approve_enterprise_milestone)
+
+         // Post and Comment Transactions
+
+         (comment)
+         (message)
+         (vote)
+         (view)
+         (share)
+         (moderation_tag)
+
+         // Community Transactions
+
+         (community_create)
+         (community_update)
+         (community_add_mod)
+         (community_add_admin)
+         (community_vote_mod)
+         (community_transfer_ownership)
+         (community_join_request)
+         (community_join_invite)
+         (community_join_accept)
+         (community_invite_accept)
+         (community_remove_member)
+         (community_blacklist)
+         (community_subscribe)
+
+         // Ad Transactions
+
+         (ad_creative)
+         (ad_campaign)
+         (ad_inventory)
+         (ad_audience)
+         (ad_bid)
+
+         // Transfer Transactions
+
+         (transfer)
+         (transfer_request)
+         (transfer_accept)
+         (transfer_recurring)
+         (transfer_recurring_request)
+         (transfer_recurring_accept)
+
+         // Balance Transactions
+
+         (claim_reward_balance)
+         (stake_asset)
+         (unstake_asset)
+         (unstake_asset_route)
+         (transfer_to_savings)
+         (transfer_from_savings)
+         (delegate_asset)
+
+         // Marketplace Transactions
+
+         (escrow_transfer)
+         (escrow_approve)
+         (escrow_dispute)
+         (escrow_release)
+
+         // Trading Transactions
+
+         (limit_order)
+         (margin_order)
+         (call_order)
+         (bid_collateral)
+
+         // Pool Transactions
+
+         (liquidity_pool_create)
+         (liquidity_pool_exchange)
+         (liquidity_pool_fund)
+         (liquidity_pool_withdraw)
+         (credit_pool_collateral)
+         (credit_pool_borrow)
+         (credit_pool_lend)
+         (credit_pool_withdraw)
+
+         // Asset Transactions
+
+         (asset_create)
+         (asset_update)
+         (asset_issue)
+         (asset_reserve)
+         (asset_update_issuer)
+         (asset_update_feed_producers)
+         (asset_publish_feed)
+         (asset_settle)
+         (asset_global_settle)
+
+         // Block Producer Transactions
+
+         (producer_update)
+         (proof_of_work)
+         (verify_block)
+         (commit_block)
+         (producer_violation)
+
+         // Custom Transactions
+
+         (custom)
+         (custom_json)
+         );

@@ -393,10 +393,9 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       create.signatory = "alice";
       create.registrar = "alice";
       create.new_account_name = "newuser";
-      create.account_type = PERSONA;
-      create.owner = authority( 1, alice_public_owner_key, 1 );
-      create.active = authority( 2, alice_public_active_key, 2 );
-      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.owner_auth = authority( 1, alice_public_owner_key, 1 );
+      create.active_auth = authority( 2, alice_public_active_key, 2 );
+      create.posting_auth = authority( 1, alice_public_posting_key, 1 );
       create.secure_public_key = string( alice_public_posting_key );
       create.connection_public_key = string( alice_public_posting_key );
       create.friend_public_key = string( alice_public_posting_key );

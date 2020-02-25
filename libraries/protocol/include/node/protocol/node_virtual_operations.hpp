@@ -13,9 +13,11 @@ namespace node { namespace protocol {
       author_reward_operation( const account_name_type& a, const string& p, const asset& r )
          :author(a), permlink(p), reward(r){}
 
-      account_name_type author;
-      string            permlink;
-      asset             reward;
+      account_name_type     author;
+
+      string                permlink;
+
+      asset                 reward;
    };
 
 
@@ -25,10 +27,13 @@ namespace node { namespace protocol {
       curation_reward_operation( const string& c, const asset& r, const string& a, const string& p )
          :curator(c), reward(r), comment_author(a), comment_permlink(p) {}
 
-      account_name_type curator;
-      asset             reward;
-      account_name_type comment_author;
-      string            comment_permlink;
+      account_name_type      curator;
+
+      asset                  reward;
+
+      account_name_type      comment_author;
+
+      string                 comment_permlink;
    };
 
 
@@ -38,9 +43,11 @@ namespace node { namespace protocol {
       comment_reward_operation( const account_name_type& a, const string& pl, const asset& p )
          :author(a), permlink(pl), payout(p){}
 
-      account_name_type author;
-      string            permlink;
-      asset             payout;
+      account_name_type       author;
+
+      string                  permlink;
+
+      asset                   payout;
    };
 
 
@@ -49,8 +56,9 @@ namespace node { namespace protocol {
       interest_operation( const string& o = "", const asset& i = asset(0,SYMBOL_USD) )
          :owner(o),interest(i){}
 
-      account_name_type owner;
-      asset             interest;
+      account_name_type        owner;
+
+      asset                    interest;
    };
 
 
@@ -59,7 +67,7 @@ namespace node { namespace protocol {
       shutdown_producer_operation(){}
       shutdown_producer_operation( const string& o ):owner(o) {}
 
-      account_name_type owner;
+      account_name_type    owner;
    };
 
 
@@ -85,27 +93,37 @@ namespace node { namespace protocol {
          symbol_b(sym_b){}
 
       account_name_type      current_owner;
+
       string                 current_order_id;
+
       asset                  current_pays;
+
       account_name_type      open_owner;
+
       string                 open_order_id;
+
       asset                  open_pays;
+
       asset_symbol_type      symbol_a;
+
       asset_symbol_type      symbol_b;
    };
 
    struct asset_settle_cancel_operation : public virtual_operation
    {
+      asset_settle_cancel_operation(){}
+      asset_settle_cancel_operation(
+         account_name_type a,
+         asset am ):
+         account(a),
+         amount(am){}   
+
       account_name_type             account;        // Account requesting the force settlement. This account pays the fee
       
-      asset                         amount;         // Amount of asset to force settle. This must be a market-issued asset
-
-      force_settlement_id_type      settlement; 
-
-      extensions_type               extensions;
+      asset                         amount;         // Amount of asset to force settle. This must be a market-issued asset 
 
       void            validate()const;
-      void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(account); }
+      void            get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(account); }
    };
 
 
@@ -125,9 +143,13 @@ namespace node { namespace protocol {
          memo(m){}
 
       account_name_type    from;
+
       account_name_type    to;
+
       asset                amount;
+
       string               request_id;
+
       string               memo;
    };
 
@@ -142,40 +164,65 @@ namespace node { namespace protocol {
    struct comment_payout_update_operation : public virtual_operation
    {
       comment_payout_update_operation() {}
-      comment_payout_update_operation( const account_name_type& a, const string& p ) : author( a ), permlink( p ) {}
+      comment_payout_update_operation( 
+         const account_name_type& a, 
+         const string& p ) : 
+         author( a ), 
+         permlink( p ) {}
 
-      account_name_type author;
-      string            permlink;
+      account_name_type     author;
+
+      string                permlink;
    };
 
    struct return_asset_delegation_operation : public virtual_operation
    {
       return_asset_delegation_operation() {}
-      return_asset_delegation_operation( const account_name_type& a, const asset& v ) : account( a ), amount( v ) {}
+      return_asset_delegation_operation( 
+         const account_name_type& a, 
+         const asset& v ) : 
+         account( a ), 
+         amount( v ) {}
 
-      account_name_type account;
-      asset             amount;
+      account_name_type      account;
+
+      asset                  amount;
    };
 
    struct comment_benefactor_reward_operation : public virtual_operation
    {
       comment_benefactor_reward_operation() {}
-      comment_benefactor_reward_operation( const account_name_type& b, const account_name_type& a, const string& p, const asset& r )
-         : benefactor( b ), author( a ), permlink( p ), reward( r ) {}
+      comment_benefactor_reward_operation( 
+         const account_name_type& b, 
+         const account_name_type& a, 
+         const string& p, 
+         const asset& r ) : 
+         benefactor( b ), 
+         author( a ), 
+         permlink( p ), 
+         reward( r ) {}
 
-      account_name_type benefactor;
-      account_name_type author;
-      string            permlink;
-      asset             reward;
+      account_name_type     benefactor;
+
+      account_name_type     author;
+
+      string                permlink;
+
+      asset                 reward;
    };
 
    struct producer_reward_operation : public virtual_operation
    {
       producer_reward_operation(){}
-      producer_reward_operation( const string& p, const asset& r ) : producer( p ), reward( r ) {}
+      producer_reward_operation( 
+         const string& p, 
+         const asset& r ) : 
+         producer( p ), 
+         reward( r ) {}
 
-      account_name_type producer;
-      asset             reward;
+      account_name_type     producer;
+
+      asset                 reward;
 
    };
 
@@ -183,16 +230,19 @@ namespace node { namespace protocol {
    {
       
       execute_bid_operation(){}
-      execute_bid_operation( account_name_type a, asset d, asset c )
-         : bidder(a), debt(d), collateral(c) {}
+      execute_bid_operation( 
+         account_name_type a, 
+         asset d, 
+         asset c ) : 
+         bidder(a), 
+         debt(d), 
+         collateral(c) {}
 
       account_name_type   bidder;
 
       asset               debt;
 
       asset               collateral;
-
-      void            validate()const { FC_ASSERT( !"virtual operation" ); }   
    };
 
 } } //node::protocol
@@ -231,7 +281,14 @@ FC_REFLECT( node::protocol::fill_order_operation,
          (current_pays)
          (open_owner)
          (open_order_id)
-         (open_pays) 
+         (open_pays)
+         (symbol_a)
+         (symbol_b)
+         );
+
+FC_REFLECT( node::protocol::asset_settle_cancel_operation, 
+         (account)
+         (amount)
          );
 
 FC_REFLECT( node::protocol::fill_transfer_from_savings_operation, 
@@ -253,7 +310,7 @@ FC_REFLECT( node::protocol::comment_payout_update_operation,
 
 FC_REFLECT( node::protocol::return_asset_delegation_operation, 
          (account)
-         (asset) 
+         (amount) 
          );
 
 FC_REFLECT( node::protocol::comment_benefactor_reward_operation, 
@@ -266,4 +323,10 @@ FC_REFLECT( node::protocol::comment_benefactor_reward_operation,
 FC_REFLECT( node::protocol::producer_reward_operation, 
          (producer)
          (reward) 
+         );
+
+FC_REFLECT( node::protocol::execute_bid_operation,
+         (bidder)
+         (debt)
+         (collateral)
          );

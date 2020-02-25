@@ -776,7 +776,7 @@ namespace graphene { namespace net { namespace detail {
       _suspend_fetching_sync_blocks(false),
       _items_to_fetch_updated(false),
       _items_to_fetch_sequence_counter(0),
-      _recent_block_interval_in_seconds(BLOCK_INTERVAL),
+      _recent_block_interval_in_seconds(1),
       _user_agent_string(user_agent),
       _desired_number_of_connections(GRAPHENE_NET_DEFAULT_DESIRED_CONNECTIONS),
       _maximum_number_of_connections(GRAPHENE_NET_DEFAULT_MAX_CONNECTIONS),
@@ -1865,11 +1865,11 @@ namespace graphene { namespace net { namespace detail {
       if (user_data.contains("graphene_git_revision_sha"))
         originating_peer->graphene_git_revision_sha = user_data["graphene_git_revision_sha"].as_string();
       if (user_data.contains("graphene_git_revision_unix_timestamp"))
-        originating_peer->graphene_git_revision_unix_timestamp = fc::time_point(user_data["graphene_git_revision_unix_timestamp"].as<uint32_t>());
+        originating_peer->graphene_git_revision_unix_timestamp = fc::time_point( fc::seconds( user_data["graphene_git_revision_unix_timestamp"].as<uint64_t>()) );
       if (user_data.contains("fc_git_revision_sha"))
         originating_peer->fc_git_revision_sha = user_data["fc_git_revision_sha"].as_string();
       if (user_data.contains("fc_git_revision_unix_timestamp"))
-        originating_peer->fc_git_revision_unix_timestamp = fc::time_point(user_data["fc_git_revision_unix_timestamp"].as<uint32_t>());
+        originating_peer->fc_git_revision_unix_timestamp = fc::time_point( fc::seconds( user_data["fc_git_revision_unix_timestamp"].as<int64_t>() ) );
       if (user_data.contains("platform"))
         originating_peer->platform = user_data["platform"].as_string();
       if (user_data.contains("bitness"))
@@ -2649,8 +2649,8 @@ namespace graphene { namespace net { namespace detail {
           // they must be an attacker or have a buggy client.
           fc::time_point minimum_time_of_last_offered_block =
               originating_peer->last_block_time_delegate_has_seen + // timestamp of the block immediately before the first unfetched block
-              originating_peer->number_of_unfetched_item_ids * BLOCK_INTERVAL.count();
-          if (minimum_time_of_last_offered_block > _delegate->get_blockchain_now() + GRAPHENE_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC)
+              fc::microseconds( originating_peer->number_of_unfetched_item_ids * BLOCK_INTERVAL.count() );
+          if(minimum_time_of_last_offered_block > _delegate->get_blockchain_now() + fc::seconds( GRAPHENE_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC ) )
           {
             wlog("Disconnecting from peer ${peer} who offered us an implausible number of blocks, their last block would be in the future (${timestamp})",
                  ("peer", originating_peer->get_remote_endpoint())
@@ -4943,9 +4943,10 @@ namespace graphene { namespace net { namespace detail {
         {
           peer_details["fc_git_revision_unix_timestamp"] = *peer->fc_git_revision_unix_timestamp;
           std::string age_string = fc::get_approximate_relative_time_string( *peer->fc_git_revision_unix_timestamp);
-          if (*peer->fc_git_revision_unix_timestamp == fc::time_point(fc::git_revision_unix_timestamp))
+          
+          if (*peer->fc_git_revision_unix_timestamp == fc::time_point( fc::seconds( fc::git_revision_unix_timestamp) ) )
             age_string += " (same as ours)";
-          else if (*peer->fc_git_revision_unix_timestamp > fc::time_point(fc::git_revision_unix_timestamp))
+          else if (*peer->fc_git_revision_unix_timestamp > fc::time_point( fc::seconds( fc::git_revision_unix_timestamp ) ) )
             age_string += " (newer than ours)";
           else
             age_string += " (older than ours)";

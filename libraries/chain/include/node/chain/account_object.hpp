@@ -29,117 +29,117 @@ namespace node { namespace chain {
 
          id_type                          id;
 
-         account_name_type                name;                                  // Username of the account, lowercase letter and numbers and hyphens only.
+         account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
 
-         shared_string                    details;                               // User's account details.
+         shared_string                    details;                               ///< User's account details.
 
-         shared_string                    json;                                  // Public plaintext json information.
+         shared_string                    json;                                  ///< Public plaintext JSON information.
 
-         shared_string                    json_private;                          // Private ciphertext json information.
+         shared_string                    json_private;                          ///< Private ciphertext JSON information.
 
-         shared_string                    url;                                   // Account's external reference URL.
+         shared_string                    url;                                   ///< Account's external reference URL.
 
-         account_identity_type            account_type;                          // Type of account, persona, profile or business.
+         shared_string                    image;                                 ///< User's Public profile image IPFS Reference.
 
-         membership_tier_type             membership;                            // Level of account membership.
+         membership_tier_type             membership;                            ///< Level of account membership.
 
-         public_key_type                  secure_public_key;                     // Key used for receiving incoming encrypted direct messages and key exchanges.
+         public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
 
-         public_key_type                  connection_public_key;                 // Key used for encrypting posts for connection level visibility. 
+         public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
 
-         public_key_type                  friend_public_key;                     // Key used for encrypting posts for friend level visibility.
+         public_key_type                  friend_public_key;                     ///< Key used for encrypting posts for friend level visibility.
 
-         public_key_type                  companion_public_key;                  // Key used for encrypting posts for companion level visibility.
+         public_key_type                  companion_public_key;                  ///< Key used for encrypting posts for companion level visibility.
 
-         comment_id_type                  pinned_post;                           // Post pinned to the top of the account's profile. 
+         comment_id_type                  pinned_post;                           ///< Post pinned to the top of the account's profile. 
 
-         account_name_type                proxy;                                 // Account that votes on behalf of this account
+         account_name_type                proxy;                                 ///< Account that votes on behalf of this account
 
-         flat_set< account_name_type >    proxied;                               // Accounts that have set this account to be their proxy voter.
+         flat_set< account_name_type >    proxied;                               ///< Accounts that have set this account to be their proxy voter.
 
-         account_name_type                registrar;                             // The name of the account that created the account;
+         account_name_type                registrar;                             ///< The name of the account that created the account;
 
-         account_name_type                referrer;                              // The name of the account that originally referred the account to be created;
+         account_name_type                referrer;                              ///< The name of the account that originally referred the account to be created;
 
-         account_name_type                recovery_account = NULL_ACCOUNT;       // Account that can request recovery using a recent owner key if compromised.  
+         account_name_type                recovery_account = NULL_ACCOUNT;       ///< Account that can request recovery using a recent owner key if compromised.  
 
-         account_name_type                reset_account = NULL_ACCOUNT;          // Account that has the ability to reset owner authority after specified days of inactivity.
+         account_name_type                reset_account = NULL_ACCOUNT;          ///< Account that has the ability to reset owner authority after specified days of inactivity.
 
-         account_name_type                membership_interface = NULL_ACCOUNT;   // Account of the last interface to sell a membership to the account.
+         account_name_type                membership_interface = NULL_ACCOUNT;   ///< Account of the last interface to sell a membership to the account.
 
-         uint16_t                         reset_account_delay_days = 7;          // Days of inactivity required to enable a reset account operation
+         uint16_t                         reset_account_delay_days = 7;          ///< Days of inactivity required to enable a reset account operation
          
-         uint16_t                         referrer_rewards_percentage = 50 * PERCENT_1; // The percentage of registrar rewards that are directed to the referrer.
+         uint16_t                         referrer_rewards_percentage = 50 * PERCENT_1; ///< The percentage of registrar rewards that are directed to the referrer.
          
-         uint32_t                         comment_count = 0;                     // total number of comments on other posts created
+         uint32_t                         comment_count = 0;                     ///< total number of comments on other posts created
 
-         uint32_t                         follower_count = 0;                    // Total number of followers that the account has
+         uint32_t                         follower_count = 0;                    ///< Total number of followers that the account has
 
-         uint32_t                         following_count = 0;                   // Total number of accounts that the account follows
+         uint32_t                         following_count = 0;                   ///< Total number of accounts that the account follows
 
-         uint32_t                         post_vote_count = 0;                   // Total number of posts voted on
+         uint32_t                         post_vote_count = 0;                   ///< Total number of posts voted on
 
-         uint32_t                         post_count = 0;                        // Total number of root posts created
+         uint32_t                         post_count = 0;                        ///< Total number of root posts created
 
-         uint16_t                         voting_power = PERCENT_100;            // current voting power of this account, falls after every vote, recovers over time.
+         uint16_t                         voting_power = PERCENT_100;            ///< current voting power of this account, falls after every vote, recovers over time.
 
-         uint16_t                         viewing_power = PERCENT_100;           // current viewing power of this account, falls after every view, recovers over time.
+         uint16_t                         viewing_power = PERCENT_100;           ///< current viewing power of this account, falls after every view, recovers over time.
 
-         uint16_t                         sharing_power = PERCENT_100;           // current sharing power of this account, falls after every share, recovers over time.
+         uint16_t                         sharing_power = PERCENT_100;           ///< current sharing power of this account, falls after every share, recovers over time.
 
-         uint16_t                         commenting_power = PERCENT_100;        // current commenting power of this account, falls after every comment, recovers over time.
+         uint16_t                         commenting_power = PERCENT_100;        ///< current commenting power of this account, falls after every comment, recovers over time.
 
-         uint8_t                          savings_withdraw_requests = 0;         // Outstanding number of savings withdrawal requests
+         uint8_t                          savings_withdraw_requests = 0;         ///< Outstanding number of savings withdrawal requests
 
-         uint16_t                         withdraw_routes = 0;                   // Number of staked asset withdrawal routes
+         uint16_t                         withdraw_routes = 0;                   ///< Number of staked asset withdrawal routes
 
-         share_type                       posting_rewards = 0;                   // Rewards in core asset earned from author rewards.
+         share_type                       posting_rewards = 0;                   ///< Rewards in core asset earned from author rewards.
 
-         share_type                       curation_rewards = 0;                  // Rewards in core asset earned from voting, shares, views, and commenting
+         share_type                       curation_rewards = 0;                  ///< Rewards in core asset earned from voting, shares, views, and commenting
    
-         share_type                       moderation_rewards = 0;                // Rewards in core asset from moderation rewards. 
+         share_type                       moderation_rewards = 0;                ///< Rewards in core asset from moderation rewards. 
 
-         share_type                       total_rewards = 0;                     // Rewards in core asset earned from all reward sources.
+         share_type                       total_rewards = 0;                     ///< Rewards in core asset earned from all reward sources.
 
-         share_type                       author_reputation = 0;                 // 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+         share_type                       author_reputation = 0;                 ///< 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
 
          asset                            loan_default_balance = asset(0, SYMBOL_CREDIT);
 
-         share_type                       recent_activity_claims = 0;            // Value of activity rewards claimed in last 30 days / BLOCKCHAIN_PRECISION
+         share_type                       recent_activity_claims = 0;            ///< Value of activity rewards claimed in last 30 days / BLOCKCHAIN_PRECISION
 
-         uint16_t                         producer_vote_count = 0;                // Number of producers voted for.
+         uint16_t                         producer_vote_count = 0;                ///< Number of producers voted for.
 
-         uint16_t                         officer_vote_count = 0;                // Number of network officers that the account has voted for.
+         uint16_t                         officer_vote_count = 0;                ///< Number of network officers that the account has voted for.
 
-         uint16_t                         executive_board_vote_count = 0;        // Number of Executive boards that the account has voted for.
+         uint16_t                         executive_board_vote_count = 0;        ///< Number of Executive boards that the account has voted for.
 
-         uint16_t                         governance_subscriptions = 0;          // Number of governance accounts that the account subscribes to.
+         uint16_t                         governance_subscriptions = 0;          ///< Number of governance accounts that the account subscribes to.
 
-         uint16_t                         recurring_membership = 0;              // Amount of months membership should be automatically renewed for on expiration
+         uint16_t                         recurring_membership = 0;              ///< Amount of months membership should be automatically renewed for on expiration
 
-         time_point                       created;                               // Time that the account was created.
+         time_point                       created;                               ///< Time that the account was created.
 
-         time_point                       membership_expiration;                 // Time that the account has its current membership subscription until.
+         time_point                       membership_expiration;                 ///< Time that the account has its current membership subscription until.
 
-         time_point                       last_account_update;                   // Time that the account's details were last updated.
+         time_point                       last_account_update;                   ///< Time that the account's details were last updated.
 
-         time_point                       last_vote_time;                        // Time that the account last voted on a comment.
+         time_point                       last_vote_time;                        ///< Time that the account last voted on a comment.
 
-         time_point                       last_view_time;                        // Time that the account last viewed a post.
+         time_point                       last_view_time;                        ///< Time that the account last viewed a post.
 
-         time_point                       last_share_time;                       // Time that the account last shared a post.
+         time_point                       last_share_time;                       ///< Time that the account last shared a post.
 
-         time_point                       last_post;                             // Time that the user most recently created a comment 
+         time_point                       last_post;                             ///< Time that the user most recently created a comment 
 
-         time_point                       last_root_post;                        // Time that the account last created a post.
+         time_point                       last_root_post;                        ///< Time that the account last created a post.
 
-         time_point                       last_transfer_time;                    // Time that the account last sent a transfer or created a trading txn. 
+         time_point                       last_transfer_time;                    ///< Time that the account last sent a transfer or created a trading txn. 
 
-         time_point                       last_activity_reward;                  // Time that the account last claimed an activity reward. 
+         time_point                       last_activity_reward;                  ///< Time that the account last claimed an activity reward. 
 
          time_point                       last_account_recovery;
 
-         time_point                       last_board_created;
+         time_point                       last_community_created;
 
          time_point                       last_asset_created;
 
@@ -149,7 +149,89 @@ namespace node { namespace chain {
 
          bool                             can_vote = true;
 
-         bool                             deleted = false;
+         bool                             active = true;
+   };
+
+   /**
+    * Encrypted profile information of an account.
+    * 
+    * Enables details to be decrypted by accounts that have access to the decryption key.
+    */
+   class account_profile_object : public object< account_profile_object_type, account_profile_object >
+   {
+      account_profile_object() = delete;
+
+      public:
+         template<typename Constructor, typename Allocator>
+         account_profile_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c(*this);
+         };
+
+         id_type                 id;
+
+         account_name_type       account;             ///< Name of the Account with the profile.
+
+         account_name_type       governance_account;  ///< Governance account administrating and attesting to the accuracy the profile data.
+
+         public_key_type         profile_public_key;  ///< Public key of the profile data for encryption and decryption. 
+
+         shared_string           first_name;          ///< First name of the user.
+
+         shared_string           last_name;           ///< Last name of the user.
+
+         shared_string           gender;              ///< Gender of the user.
+
+         shared_string           date_of_birth;       ///< Date of birth of the user. Format: DD-MM-YYYY.
+
+         shared_string           email;               ///< Email address of the user.
+
+         shared_string           phone;               ///< Phone Number of the user.
+
+         shared_string           nationality;         ///< Country of user's residence.
+
+         shared_string           address;             ///< Place of residence of the user. Format: 123 Main Street, Suburb, 1234, STATE.
+   };
+
+
+   /**
+    * Describes the process and details of the verification of an account by another account.
+    * 
+    * Accounts must have a profile object before they can begin the verification process.
+    * 
+    * The verifier account proves that they have 
+    * access to the profile data of the verified account
+    * by signing an image of both people in the same picture, 
+    * holding a hand writen note containing both account names
+    * and a recent head_block_id of the blockchain using the private key
+    * corresponding to the verified account's profile public key.
+    */
+   class account_verification_object : public object< account_verification_object_type, account_verification_object >
+   {
+      account_verification_object() = delete;
+
+      public:
+         template<typename Constructor, typename Allocator>
+         account_verification_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c(*this);
+         };
+
+         id_type                   id;
+
+         account_name_type         verifier_account;              ///< Name of the Account with the profile.
+
+         account_name_type         verified_account;              ///< Name of the account being verifed.
+
+         public_key_type           verified_profile_public_key;   ///< Public key of the profile data of the verified account.
+
+         shared_string             shared_image;                  ///< IPFS reference to an image containing both people and the current.
+
+         signature_type            image_signature;               ///< Signature of shared_image, that validates to verified_profile_public_key.
+
+         time_point                created;                       ///< Time of verification.
+
+         time_point                last_updated;                  ///< Time that the verifcation was last updated. 
    };
 
    /**
@@ -201,31 +283,31 @@ namespace node { namespace chain {
 
          id_type                                         id;
 
-         account_name_type                               account;                    // Username of the business account, lowercase letters only.
+         account_name_type                               account;                    ///< Username of the business account, lowercase letters only.
 
-         business_structure_type                                  business_type;              // Type of business account, controls authorizations for transactions of different types.
+         business_structure_type                         business_type;              ///< Type of business account, controls authorizations for transactions of different types.
 
-         public_key_type                                 business_public_key;        // Public key of the business account for internal message encryption. 
+         public_key_type                                 business_public_key;        ///< Public key of the business account for internal message encryption. 
 
-         executive_officer_set                           executive_board;            // Set of highest voted executive accounts for each role.
+         executive_officer_set                           executive_board;            ///< Set of highest voted executive accounts for each role.
 
-         flat_map< account_name_type, pair< executive_role_type, share_type > >  executives;   // Set of all executive names.    
+         flat_map< account_name_type, pair< executive_role_type, share_type > >  executives;   ///< Set of all executive names.    
 
-         flat_map< account_name_type, share_type >       officers;                   // Set of all officers in the business, and their supporting voting power.
+         flat_map< account_name_type, share_type >       officers;                   ///< Set of all officers in the business, and their supporting voting power.
 
-         flat_set< account_name_type >                   members;                    // Set of all members of the business.
+         flat_set< account_name_type >                   members;                    ///< Set of all members of the business.
 
-         share_type                                      officer_vote_threshold;     // Amount of voting power required for an officer to be active. 
+         share_type                                      officer_vote_threshold;     ///< Amount of voting power required for an officer to be active. 
 
-         flat_set< asset_symbol_type >                   equity_assets;              // Set of equity assets that offer dividends and voting power over the business account's structure
+         flat_set< asset_symbol_type >                   equity_assets;              ///< Set of equity assets that offer dividends and voting power over the business account's structure
 
-         flat_set< asset_symbol_type >                   credit_assets;              // Set of credit assets that offer interest and buybacks from the business account
+         flat_set< asset_symbol_type >                   credit_assets;              ///< Set of credit assets that offer interest and buybacks from the business account
 
-         flat_map< asset_symbol_type, uint16_t >         equity_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+         flat_map< asset_symbol_type, uint16_t >         equity_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 
-         flat_map< asset_symbol_type, uint16_t >         credit_revenue_shares;      // Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+         flat_map< asset_symbol_type, uint16_t >         credit_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 
-         bool is_authorized_request( const account_name_type& account, const account_permission_object& obj )const      // Determines Permission to request to join.
+         bool is_authorized_request( const account_name_type& account, const account_permission_object& obj )const      ///< Determines Permission to request to join.
          {
             if( obj.blacklisted_accounts.size() )
             {
@@ -288,7 +370,7 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_authorized_blacklist( const account_name_type& account, const account_permission_object& obj )const // Determines Permission to blacklist an account from the board. 
+         bool is_authorized_blacklist( const account_name_type& account, const account_permission_object& obj )const // Determines Permission to blacklist an account from the community. 
          {
             if( obj.blacklisted_accounts.size() )
             {
@@ -327,7 +409,7 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the board's blacklist
+                  return false; // The account is in the community's blacklist
                }   
             }
             if( business_type == OPEN_BUSINESS ) // Public groups, officers can invite.
@@ -371,7 +453,7 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the board's blacklist
+                  return false; // The account is in the community's blacklist
                }   
             }
             if( business_type == OPEN_BUSINESS ) // Public groups, officers authorized
@@ -409,13 +491,13 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_authorized_content( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to create content and interactions, and manage boards
+         bool is_authorized_content( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to create content and interactions, and manage communities
          {
             if( obj.blacklisted_accounts.size() )
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the board's blacklist
+                  return false; // The account is in the community's blacklist
                }   
             }
             if( business_type == OPEN_BUSINESS || business_type == PUBLIC_BUSINESS ) // Open and public business, officers can post
@@ -549,7 +631,7 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_authorized_network( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to alter interface, supernode, network officers, producers, exec board
+         bool is_authorized_network( const account_name_type& account, const account_permission_object& obj )const     // Determines Permission to alter interface, supernode, network officers, producers, executive board
          {
             if( obj.blacklisted_accounts.size() )
             {
@@ -627,17 +709,17 @@ namespace node { namespace chain {
             c(*this);
          };
 
-         id_type                                 id;
+         id_type                   id;
 
-         account_name_type                       account;               // Username of the account, voting for the executive
+         account_name_type         account;               ///< Username of the account, voting for the executive
          
-         account_name_type                       business_account;      // Name of the referred business account.
+         account_name_type         business_account;      ///< Name of the referred business account.
 
-         account_name_type                       executive_account;     // Name of the executive account 
+         account_name_type         executive_account;     ///< Name of the executive account 
 
-         executive_role_type                         role;                  // Role voted in favor of.
+         executive_role_type       role;                  ///< Role voted in favor of.
 
-         uint16_t                                vote_rank;             // The rank of the executive vote.
+         uint16_t                  vote_rank;             ///< The rank of the executive vote.
    };
 
    class account_officer_vote_object : public object< account_officer_vote_object_type, account_officer_vote_object >
@@ -653,13 +735,13 @@ namespace node { namespace chain {
 
          id_type                                 id;
 
-         account_name_type                       account;             // Username of the account, voting for the officer
+         account_name_type                       account;             ///< Username of the account, voting for the officer
          
-         account_name_type                       business_account;    // Name of the referred business account.
+         account_name_type                       business_account;    ///< Name of the referred business account.
 
-         account_name_type                       officer_account;     // Name of the officer account.
+         account_name_type                       officer_account;     ///< Name of the officer account.
 
-         uint16_t                                vote_rank;           // The rank of the officer vote.
+         uint16_t                                vote_rank;           ///< The rank of the officer vote.
    };
 
    class account_member_request_object : public object< account_member_request_object_type, account_member_request_object >
@@ -675,13 +757,13 @@ namespace node { namespace chain {
 
          id_type                                 id;
 
-         account_name_type                       account;               // Username of the account requesting membership in the business account.
+         account_name_type                       account;               ///< Username of the account requesting membership in the business account.
          
-         account_name_type                       business_account;      // Name of the business account.
+         account_name_type                       business_account;      ///< Name of the business account.
 
-         shared_string                           message;               // Encrypted message to the business management team, encrypted with .
+         shared_string                           message;               ///< Encrypted message to the business management team, encrypted with .
 
-         time_point                              expiration;            // time that the request expires.
+         time_point                              expiration;            ///< time that the request expires.
    };
 
    class account_member_invite_object : public object< account_member_invite_object_type, account_member_invite_object >
@@ -697,15 +779,15 @@ namespace node { namespace chain {
 
          id_type                                 id;
 
-         account_name_type                       account;               // Username of the account creating the invitation to join the business account.
+         account_name_type                       account;               ///< Username of the account creating the invitation to join the business account.
          
-         account_name_type                       business_account;      // Name of the business account.
+         account_name_type                       business_account;      ///< Name of the business account.
 
-         account_name_type                       member;                // Name of the newly invited account.
+         account_name_type                       member;                ///< Name of the newly invited account.
 
-         shared_string                           message;               // Encrypted message to the member, encrypted with the members secure public key.
+         shared_string                           message;               ///< Encrypted message to the member, encrypted with the members secure public key.
 
-         time_point                              expiration;            // time that the invitation expires.
+         time_point                              expiration;            ///< time that the invitation expires.
    };
 
    class account_member_key_object : public object< account_member_key_object_type, account_member_key_object >
@@ -721,13 +803,13 @@ namespace node { namespace chain {
 
          id_type                                 id;
 
-         account_name_type                       account;                    // Username of the account that created the key for the new member.
+         account_name_type                       account;                    ///< Username of the account that created the key for the new member.
 
-         account_name_type                       member;                     // Username of the newly added member, for which the key was created.
+         account_name_type                       member;                     ///< Username of the newly added member, for which the key was created.
          
-         account_name_type                       business_account;           // Name of the business account that the key is for.
+         account_name_type                       business_account;           ///< Name of the business account that the key is for.
 
-         encrypted_keypair_type                  encrypted_business_key;     // Copy of the business account's private communications key, encrypted with the member's secure key . 
+         encrypted_keypair_type                  encrypted_business_key;     ///< Copy of the business account's private communications key, encrypted with the member's secure key . 
    };
 
 
@@ -744,17 +826,17 @@ namespace node { namespace chain {
 
          id_type                                  id;
 
-         account_name_type                        account;                       // Name of the account with permissions set.
+         account_name_type                        account;                       ///< Name of the account with permissions set.
    
-         flat_set<account_name_type>              whitelisted_accounts;          // List of accounts that are able to send transfers to this account.
+         flat_set<account_name_type>              whitelisted_accounts;          ///< List of accounts that are able to send transfers to this account.
 
-         flat_set<account_name_type>              blacklisted_accounts;          // List of accounts that are not able to receive transfers from this account.
+         flat_set<account_name_type>              blacklisted_accounts;          ///< List of accounts that are not able to receive transfers from this account.
 
-         flat_set<asset_symbol_type>              whitelisted_assets;            // List of assets that the account has whitelisted to receieve transfers of. 
+         flat_set<asset_symbol_type>              whitelisted_assets;            ///< List of assets that the account has whitelisted to receieve transfers of. 
 
-         flat_set<asset_symbol_type>              blacklisted_assets;            // List of assets that the account has blacklisted against incoming transfers.
+         flat_set<asset_symbol_type>              blacklisted_assets;            ///< List of assets that the account has blacklisted against incoming transfers.
  
-         bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          // Determines if an asset is authorized for transfer with an accounts permissions object. 
+         bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          ///< Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
             bool fast_check = !( asset_obj.flags & balance_whitelist );
             fast_check &= !( whitelisted_assets.size() );
@@ -858,37 +940,37 @@ namespace node { namespace chain {
 
          asset_symbol_type       symbol;
 
-         share_type              liquid_balance;             // Balance that can be freely transferred.
+         share_type              liquid_balance;             ///< Balance that can be freely transferred.
 
-         share_type              staked_balance;             // Balance that cannot be transferred, and is vested in the account for a period of time.
+         share_type              staked_balance;             ///< Balance that cannot be transferred, and is vested in the account for a period of time.
 
-         share_type              reward_balance;             // Balance that is newly issued from the network.
+         share_type              reward_balance;             ///< Balance that is newly issued from the network.
 
-         share_type              savings_balance;            // Balance that cannot be transferred, and must be withdrawn after a delay period. 
+         share_type              savings_balance;            ///< Balance that cannot be transferred, and must be withdrawn after a delay period. 
 
-         share_type              delegated_balance;          // Balance that is delegated to other accounts for voting power.
+         share_type              delegated_balance;          ///< Balance that is delegated to other accounts for voting power.
 
-         share_type              receiving_balance;          // Balance that has been delegated to the account by other delegators. 
+         share_type              receiving_balance;          ///< Balance that has been delegated to the account by other delegators. 
 
-         share_type              total_balance;              // The total of all balances
+         share_type              total_balance;              ///< The total of all balances
 
-         share_type              stake_rate;                 // Amount of liquid balance that is being staked from the liquid balance to the staked balance.  
+         share_type              stake_rate;                 ///< Amount of liquid balance that is being staked from the liquid balance to the staked balance.  
 
-         time_point              next_stake_time;            // time at which the stake rate will be transferred from liquid to staked. 
+         time_point              next_stake_time;            ///< time at which the stake rate will be transferred from liquid to staked. 
 
-         share_type              to_stake;                   // total amount to stake over the staking period. 
+         share_type              to_stake;                   ///< total amount to stake over the staking period. 
 
-         share_type              total_staked;               // total amount that has been staked so far. 
+         share_type              total_staked;               ///< total amount that has been staked so far. 
 
-         share_type              unstake_rate;               // Amount of staked balance that is being unstaked from the staked balance to the liquid balance.  
+         share_type              unstake_rate;               ///< Amount of staked balance that is being unstaked from the staked balance to the liquid balance.  
 
-         time_point              next_unstake_time;          // time at which the unstake rate will be transferred from staked to liquid. 
+         time_point              next_unstake_time;          ///< time at which the unstake rate will be transferred from staked to liquid. 
 
-         share_type              to_unstake;                 // total amount to unstake over the withdrawal period. 
+         share_type              to_unstake;                 ///< total amount to unstake over the withdrawal period. 
 
-         share_type              total_unstaked;             // total amount that has been unstaked so far. 
+         share_type              total_unstaked;             ///< total amount that has been unstaked so far. 
 
-         time_point              last_interest_time;         // Last time that interest was compounded.
+         time_point              last_interest_time;         ///< Last time that interest was compounded.
 
          asset get_liquid_balance()const { return asset(liquid_balance, symbol); }
 
@@ -962,15 +1044,15 @@ namespace node { namespace chain {
 
          id_type                  id;
 
-         account_name_type        account;            // Name of the account
+         account_name_type        account;            ///< Name of the account
 
-         shared_authority         owner;              // used for backup control, can set all other keys
+         shared_authority         owner;              ///< used for backup control, can set all other keys
 
-         shared_authority         active;             // used for all monetary operations, can set active or posting
+         shared_authority         active;             ///< used for all monetary operations, can set active or posting
 
-         shared_authority         posting;            // used for voting and posting
+         shared_authority         posting;            ///< used for voting and posting
 
-         time_point               last_owner_update;  // Time that the owner key was last updated.
+         time_point               last_owner_update;  ///< Time that the owner key was last updated.
    };
 
 
@@ -987,35 +1069,35 @@ namespace node { namespace chain {
 
          id_type                           id;
 
-         account_name_type                 account;              // Name of the account.
+         account_name_type                 account;              ///< Name of the account.
 
-         flat_set< account_name_type >     followers;            // Accounts that follow this account.
+         flat_set< account_name_type >     followers;            ///< Accounts that follow this account.
 
-         flat_set< account_name_type >     following;            // Accounts that this account follows.
+         flat_set< account_name_type >     following;            ///< Accounts that this account follows.
 
-         flat_set< account_name_type >     mutual_followers;     // Accounts that are both following and followers of this account.
+         flat_set< account_name_type >     mutual_followers;     ///< Accounts that are both following and followers of this account.
 
-         flat_set< account_name_type >     connections;          // Accounts that are connections of this account.
+         flat_set< account_name_type >     connections;          ///< Accounts that are connections of this account.
 
-         flat_set< account_name_type >     friends;              // Accounts that are friends of this account.
+         flat_set< account_name_type >     friends;              ///< Accounts that are friends of this account.
 
-         flat_set< account_name_type >     companions;           // Accounts that are companions of this account. 
+         flat_set< account_name_type >     companions;           ///< Accounts that are companions of this account. 
 
-         flat_set< board_name_type >       followed_boards;      // Boards that the account subscribes to. 
+         flat_set< community_name_type >   followed_communities; ///< Communities that the account subscribes to. 
 
-         flat_set< tag_name_type >         followed_tags;        // Tags that the account follows. 
+         flat_set< tag_name_type >         followed_tags;        ///< Tags that the account follows. 
 
-         flat_set< account_name_type >     filtered;             // Accounts that this account has filtered. Interfaces should not show posts by these users.
+         flat_set< account_name_type >     filtered;             ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
 
-         flat_set< board_name_type >       filtered_boards;      // Boards that this account has filtered. Posts will not display if they are in these boards.
+         flat_set< community_name_type >   filtered_communities; ///< Communities that this account has filtered. Posts will not display if they are in these communities.
 
-         flat_set< tag_name_type >         filtered_tags;        // Tags that this account has filtered. Posts will not display if they have any of these tags. 
+         flat_set< tag_name_type >         filtered_tags;        ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
 
-         time_point                        last_update;          // Last time that the account changed its following sets.
+         time_point                        last_update;          ///< Last time that the account changed its following sets.
 
          /**
           * Adjacency value determines how similar two accounts are by comparing the 
-          * accounts, boards and tags that they have in common with eachother. 
+          * accounts, communities and tags that they have in common with eachother. 
           * this value is used for the determination of post recommendations.
           */
          share_type                        adjacency_value( const account_following_object& f )const
@@ -1044,16 +1126,16 @@ namespace node { namespace chain {
             common_companions.reserve( companions.size() );
             std::set_intersection( f.companions.begin(), f.companions.end(), companions.begin(), companions.end(), common_companions.begin());
 
-            vector<account_name_type> common_followed_boards;
-            common_followed_boards.reserve( followed_boards.size() );
-            std::set_intersection( f.followed_boards.begin(), f.followed_boards.end(), followed_boards.begin(), followed_boards.end(), common_followed_boards.begin());
+            vector<account_name_type> common_followed_communities;
+            common_followed_communities.reserve( followed_communities.size() );
+            std::set_intersection( f.followed_communities.begin(), f.followed_communities.end(), followed_communities.begin(), followed_communities.end(), common_followed_communities.begin());
 
             vector<account_name_type> common_followed_tags;
             common_followed_tags.reserve( followed_tags.size() );
             std::set_intersection( f.followed_tags.begin(), f.followed_tags.end(), followed_tags.begin(), followed_tags.end(), common_followed_tags.begin());
 
             share_type result = common_followers.size() + common_following.size() + 2*common_mutual_followers.size() + 3*common_connections.size() +
-            5*common_friends.size() + 10*common_companions.size() + common_followed_boards.size() + common_followed_tags.size();
+            5*common_friends.size() + 10*common_companions.size() + common_followed_communities.size() + common_followed_tags.size();
             return result;
          };
 
@@ -1087,9 +1169,9 @@ namespace node { namespace chain {
             return std::find( followed_tags.begin(), followed_tags.end(), tag ) != followed_tags.end();
          };
 
-         bool                              is_following( const board_name_type& board )const
+         bool                              is_following( const community_name_type& community )const
          {
-            return std::find( followed_boards.begin(), followed_boards.end(), board ) != followed_boards.end();
+            return std::find( followed_communities.begin(), followed_communities.end(), community ) != followed_communities.end();
          };
 
          bool                              is_mutual( const account_name_type& account )const
@@ -1107,9 +1189,9 @@ namespace node { namespace chain {
             return std::find( filtered_tags.begin(), filtered_tags.end(), tag ) != filtered_tags.end();
          };
 
-         bool                              is_filtered( const board_name_type& board )const
+         bool                              is_filtered( const community_name_type& community )const
          {
-            return std::find( filtered_boards.begin(), filtered_boards.end(), board ) != filtered_boards.end();
+            return std::find( filtered_communities.begin(), filtered_communities.end(), community ) != filtered_communities.end();
          };
 
          void                              add_follower( const account_name_type& account )
@@ -1156,11 +1238,11 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_following( const board_name_type& board )
+         void                              add_following( const community_name_type& community )
          {
-            if( !is_following( board ) )
+            if( !is_following( community ) )
             {
-               followed_boards.insert( board );
+               followed_communities.insert( community );
             }
          }
 
@@ -1172,11 +1254,11 @@ namespace node { namespace chain {
             }
          }
 
-         void                              remove_following( const board_name_type& board )
+         void                              remove_following( const community_name_type& community )
          {
-            if( is_following( board ) )
+            if( is_following( community ) )
             {
-               followed_boards.erase( board );
+               followed_communities.erase( community );
             }
          }
 
@@ -1224,19 +1306,19 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_filtered( const const board_name_type& board )
+         void                              add_filtered( const const community_name_type& community )
          {
-            if( !is_filtered( board ) )
+            if( !is_filtered( community ) )
             {
-               filtered_boards.insert( board );
+               filtered_communities.insert( community );
             }
          }
 
-         void                              remove_filtered( const board_name_type& board )
+         void                              remove_filtered( const community_name_type& community )
          {
-            if( is_filtered( board ) )
+            if( is_filtered( community ) )
             {
-               filtered_boards.erase( board );
+               filtered_communities.erase( community );
             }
          }
 
@@ -1256,11 +1338,11 @@ namespace node { namespace chain {
 
          id_type                           id;
 
-         tag_name_type                     tag;              // Name of the tag.
+         tag_name_type                     tag;              ///< Name of the tag.
 
-         flat_set< account_name_type >     followers;        // Accounts that follow this tag. 
+         flat_set< account_name_type >     followers;        ///< Accounts that follow this tag. 
 
-         time_point                        last_update;      // Last time that the tag changed its following sets.
+         time_point                        last_update;      ///< Last time that the tag changed its following sets.
 
          share_type                        adjacency_value( const tag_following_object& t )const
          {
@@ -1307,15 +1389,15 @@ namespace node { namespace chain {
 
          id_type                id;                 
 
-         account_name_type      account;            // Account that created the request
+         account_name_type      account;               ///< Account that created the request.
 
-         account_name_type      requested_account;  
+         account_name_type      requested_account;     ///< Account that the request is being made to.
 
-         connection_tier_type       connection_type;
+         connection_tier_type   connection_type;       ///< Connection level of the request.
 
-         shared_string          message;
+         shared_string          message;               ///< Connection request accompanying message for reference. 
 
-         time_point             expiration;
+         time_point             expiration;            ///< Time that the request expires at. 
    };
 
 
@@ -1332,29 +1414,29 @@ namespace node { namespace chain {
 
          id_type                      id;                 
 
-         account_name_type            account_a;                // Account with the lower ID.
+         account_name_type            account_a;                ///< Account with the lower ID.
 
-         encrypted_keypair_type       encrypted_key_a;          // A's private connection key, encrypted with the public secure key of account B.
+         encrypted_keypair_type       encrypted_key_a;          ///< A's private connection key, encrypted with the public secure key of account B.
 
-         account_name_type            account_b;                // Account with the greater ID.
+         account_name_type            account_b;                ///< Account with the greater ID.
 
-         encrypted_keypair_type       encrypted_key_b;          // B's private connection key, encrypted with the public secure key of account A.
+         encrypted_keypair_type       encrypted_key_b;          ///< B's private connection key, encrypted with the public secure key of account A.
 
-         connection_tier_type             connection_type;          // The connection level shared in this object
+         connection_tier_type         connection_type;          ///< The connection level shared in this object
 
-         shared_string                connection_id;            // Unique uuidv4 for the connection, for local storage of decryption key.
+         shared_string                connection_id;            ///< Unique uuidv4 for the connection, for local storage of decryption key.
 
-         uint32_t                     connection_strength = 0;  // Number of total messages sent between connections
+         uint32_t                     connection_strength = 0;  ///< Number of total messages sent between connections
 
-         uint32_t                     consecutive_days = 0;     // Number of consecutive days that the connected accounts have both sent a message.
+         uint32_t                     consecutive_days = 0;     ///< Number of consecutive days that the connected accounts have both sent a message.
 
-         time_point                   last_message_time_a;      // Time since the account A last sent a message.
+         time_point                   last_message_time_a;      ///< Time since the account A last sent a message.
 
-         time_point                   last_message_time_b;      // Time since the account B last sent a message.
+         time_point                   last_message_time_b;      ///< Time since the account B last sent a message.
 
-         time_point                   last_updated;         // Time the connection keys were last updated. 
+         time_point                   last_updated;             ///< Time the connection keys were last updated. 
 
-         time_point                   created;                  // Time the connection was created. 
+         time_point                   created;                  ///< Time the connection was created. 
 
          time_point                   last_message_time()const
          {
@@ -2161,7 +2243,7 @@ FC_REFLECT( node::chain::account_object,
          (json)
          (json_private)
          (url)
-         (account_type)
+         (image)
          (membership)
          (secure_public_key)
          (connection_public_key)
@@ -2211,12 +2293,12 @@ FC_REFLECT( node::chain::account_object,
          (last_transfer_time)
          (last_activity_reward)
          (last_account_recovery)
-         (last_board_created)
+         (last_community_created)
          (last_asset_created)
          (mined)
          (revenue_share)
          (can_vote)
-         (deleted)
+         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_object, node::chain::account_index );
@@ -2346,10 +2428,10 @@ FC_REFLECT( node::chain::account_following_object,
          (connections)
          (friends)
          (companions)
-         (followed_boards)
+         (followed_communities)
          (followed_tags)
          (filtered)
-         (filtered_boards)
+         (filtered_communities)
          (filtered_tags)
          (last_update)
          );

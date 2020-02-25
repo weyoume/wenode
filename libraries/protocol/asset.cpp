@@ -73,14 +73,14 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( b.base.amount.value > 0 );
          uint128_t result = (uint128_t(a.amount.value) * b.quote.amount.value + b.base.amount.value - 1)/b.base.amount.value;
-         FC_ASSERT( result <= uint128_t(MAX_ASSET_SUPPLY ));
+         FC_ASSERT( result <= share_type::max());
          return asset( result.to_uint64(), b.quote.symbol );
       }
       else if( a.symbol == b.quote.symbol )
       {
          FC_ASSERT( b.quote.amount.value > 0 );
          uint128_t result = (uint128_t(a.amount.value) * b.base.amount.value + b.quote.amount.value - 1)/b.quote.amount.value;
-         FC_ASSERT( uint128_t(MAX_ASSET_SUPPLY ) );
+         FC_ASSERT( result <= share_type::max());
          return asset( result.to_uint64(), b.base.symbol );
       }
       FC_THROW_EXCEPTION( fc::assert_exception, "invalid asset::multiply_and_round_up(price)", ("asset",a)("price",b) );
@@ -135,7 +135,7 @@ namespace node { namespace protocol {
             satoshis += std::stoll( rhs );
       }
 
-      FC_ASSERT( satoshis <= MAX_ASSET_SUPPLY );
+      FC_ASSERT( satoshis <= share_type::max() );
 
       if( negative_found )
          satoshis *= -1;
@@ -148,8 +148,8 @@ namespace node { namespace protocol {
       if( std::tie( a.base.symbol, a.quote.symbol ) != std::tie( b.base.symbol, b.quote.symbol ) )
             return false;
 
-      const auto amult = uint128_t( b.quote.amount.value ) * a.base.amount.value;
-      const auto bmult = uint128_t( a.quote.amount.value ) * b.base.amount.value;
+      const auto amult = share_type( b.quote.amount.value ) * a.base.amount.value;
+      const auto bmult = share_type( a.quote.amount.value ) * b.base.amount.value;
 
       return amult == bmult;
    }
@@ -161,8 +161,8 @@ namespace node { namespace protocol {
       if( a.quote.symbol < b.quote.symbol ) return true;
       if( a.quote.symbol > b.quote.symbol ) return false;
 
-      const auto amult = uint128_t( b.quote.amount.value ) * a.base.amount.value;
-      const auto bmult = uint128_t( a.quote.amount.value ) * b.base.amount.value;
+      const auto amult = share_type( b.quote.amount.value ) * a.base.amount.value;
+      const auto bmult = share_type( a.quote.amount.value ) * b.base.amount.value;
 
       return amult < bmult;
    }
@@ -194,14 +194,14 @@ namespace node { namespace protocol {
          FC_ASSERT( b.base.amount.value > 0 );
          uint128_t result = (uint128_t(a.amount.value) * b.quote.amount.value)/b.base.amount.value;
          FC_ASSERT( result.hi == 0 );
-         return asset( result.to_uint64(), b.quote.symbol );
+         return asset( result, b.quote.symbol );
       }
       else if( a.symbol == b.quote.symbol )
       {
          FC_ASSERT( b.quote.amount.value > 0 );
          uint128_t result = (uint128_t(a.amount.value) * b.base.amount.value)/b.quote.amount.value;
          FC_ASSERT( result.hi == 0 );
-         return asset( result.to_uint64(), b.base.symbol );
+         return asset( result, b.base.symbol );
       }
       FC_THROW_EXCEPTION( fc::assert_exception, "invalid asset * price", ("asset",a)("price",b) );
    }
@@ -212,16 +212,19 @@ namespace node { namespace protocol {
       return price{ base, quote };
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
 
-   price price::max( asset_symbol_type base, asset_symbol_type quote ) { return asset( share_type(MAX_ASSET_SUPPLY), base ) / asset( share_type(1), quote); }
-   price price::min( asset_symbol_type base, asset_symbol_type quote ) { return asset( 1, base ) / asset( MAX_ASSET_SUPPLY, quote); }
+   price price::max( asset_symbol_type base, asset_symbol_type quote ) { return asset( share_type::max(), base ) / asset( 1, quote); }
+   price price::min( asset_symbol_type base, asset_symbol_type quote ) { return asset( 1, base ) / asset( share_type::max(), quote); }
 
    bool price::is_null() const { return *this == price(); }
 
    void price::validate() const
    { try {
-      FC_ASSERT( base.amount > share_type(0), "Price is invalid, base is less than 0.");
-      FC_ASSERT( quote.amount > share_type(0), "Price is invalid, quote is less than 0.");
-      FC_ASSERT( base.symbol != quote.symbol , "Price is invalid, symbols are for the same asset.");
+      FC_ASSERT( base.amount.value > 0,
+         "Price is invalid, base is less than 0.");
+      FC_ASSERT( quote.amount.value > 0,
+         "Price is invalid, quote is less than 0.");
+      FC_ASSERT( base.symbol != quote.symbol,
+         "Price is invalid, symbols are for the same asset.");
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
 
    price operator / ( const asset& base, const asset& quote )
@@ -237,11 +240,11 @@ namespace node { namespace protocol {
       a.validate();
       b.validate();
 
-      if( a.base.amount == share_type(0) )
+      if( a.base.amount.value == 0 )
       {
          return b;
       }
-      if( b.base.amount == share_type(0) )
+      if( b.base.amount.value == 0 )
       {
          return a;
       }
@@ -266,11 +269,11 @@ namespace node { namespace protocol {
       {
          return asset( 0, a.base.symbol ) / asset( 0, a.quote.symbol );   // Returns null price if prices are equal
       }
-      if( a.base.amount == share_type(0) )
+      if( a.base.amount.value == 0 )
       {
          return b;
       }
-      if( b.base.amount == share_type(0) )
+      if( b.base.amount.value == 0 )
       {
          return a;
       }
@@ -297,7 +300,7 @@ namespace node { namespace protocol {
 
       bool shrinked = false;
       bool using_max = false;
-      static const int128_t max( MAX_ASSET_SUPPLY );
+      int128_t max( share_type::max().value );
       while( cp.numerator() > max || cp.denominator() > max )
       {
          if( cp.numerator() == 1 )
@@ -411,6 +414,43 @@ namespace node { namespace protocol {
          return price();
       }  
       return ~settlement_price * ratio_type( maintenance_collateral_ratio, COLLATERAL_RATIO_DENOM );
+   }
+
+   // Option Strike
+
+   string option_strike::to_string()const
+   {
+      return strike_price.quote.symbol + "-" + fc::to_string( strike_price.to_real() ) + "-" + strike_price.base.symbol + "-" + expiration_date.to_string();
+   }
+
+   bool operator == ( const option_strike& a, const option_strike& b )
+   {
+      return std::tie( a.strike_price, a.expiration_date ) == std::tie( b.strike_price, b.expiration_date );
+   }
+
+   bool operator < ( const option_strike& a, const option_strike& b )
+   {
+      return std::tie( a.strike_price, a.expiration_date ) < std::tie( b.strike_price, b.expiration_date );
+   }
+
+   bool operator <= ( const option_strike& a, const option_strike& b )
+   {
+      return std::tie( a.strike_price, a.expiration_date ) <= std::tie( b.strike_price, b.expiration_date );
+   }
+
+   bool operator != ( const option_strike& a, const option_strike& b )
+   {
+      return std::tie( a.strike_price, a.expiration_date ) != std::tie( b.strike_price, b.expiration_date );
+   }
+
+   bool operator > ( const option_strike& a, const option_strike& b )
+   {
+      return std::tie( a.strike_price, a.expiration_date ) > std::tie( b.strike_price, b.expiration_date );
+   }
+
+   bool operator >= ( const option_strike& a, const option_strike& b )
+   {
+      return std::tie( a.strike_price, a.expiration_date ) >= std::tie( b.strike_price, b.expiration_date );
    }
 
 } } // node::protocol

@@ -59,21 +59,21 @@ DEFINE_EVALUATOR( create_community_enterprise )
 DEFINE_EVALUATOR( claim_enterprise_milestone )
 DEFINE_EVALUATOR( approve_enterprise_milestone )
 
-// Board Evaluators
+// Community Evaluators
 
-DEFINE_EVALUATOR( board_create )
-DEFINE_EVALUATOR( board_update )
-DEFINE_EVALUATOR( board_add_mod )
-DEFINE_EVALUATOR( board_add_admin )
-DEFINE_EVALUATOR( board_vote_mod )
-DEFINE_EVALUATOR( board_transfer_ownership )
-DEFINE_EVALUATOR( board_join_request )
-DEFINE_EVALUATOR( board_join_accept )
-DEFINE_EVALUATOR( board_join_invite )
-DEFINE_EVALUATOR( board_invite_accept )
-DEFINE_EVALUATOR( board_remove_member )
-DEFINE_EVALUATOR( board_blacklist )
-DEFINE_EVALUATOR( board_subscribe )
+DEFINE_EVALUATOR( community_create )
+DEFINE_EVALUATOR( community_update )
+DEFINE_EVALUATOR( community_add_mod )
+DEFINE_EVALUATOR( community_add_admin )
+DEFINE_EVALUATOR( community_vote_mod )
+DEFINE_EVALUATOR( community_transfer_ownership )
+DEFINE_EVALUATOR( community_join_request )
+DEFINE_EVALUATOR( community_join_accept )
+DEFINE_EVALUATOR( community_join_invite )
+DEFINE_EVALUATOR( community_invite_accept )
+DEFINE_EVALUATOR( community_remove_member )
+DEFINE_EVALUATOR( community_blacklist )
+DEFINE_EVALUATOR( community_subscribe )
 
 // Advertising Evaluators
 
@@ -102,7 +102,7 @@ DEFINE_EVALUATOR( transfer_to_savings )
 DEFINE_EVALUATOR( transfer_from_savings )
 DEFINE_EVALUATOR( delegate_asset )
 
-// Escrow Evaluators
+// Marketplace Evaluators
 
 DEFINE_EVALUATOR( escrow_transfer )
 DEFINE_EVALUATOR( escrow_approve )
