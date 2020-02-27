@@ -1,9 +1,51 @@
 #pragma once
 #include <node/protocol/types.hpp>
 #include <node/protocol/config.hpp>
-#include <node/protocol/node_operations.hpp>
 
 namespace node { namespace protocol {
+
+   /**
+    * Valid symbols can contain [A-Z0-9], and '.'
+    * They must start with [A, Z]
+    * They must end with [A, Z] before HF_620 or [A-Z0-9] after it
+    * They can contain a maximum of five '.'
+    */
+   bool is_valid_symbol( const string& symbol )
+   {
+      static const std::locale& loc = std::locale::classic();
+      if( symbol.size() < MIN_ASSET_SYMBOL_LENGTH )
+         return false;
+
+      if( symbol.size() > MAX_ASSET_SYMBOL_LENGTH )
+         return false;
+
+      if( !isalpha( symbol.front(), loc ) )
+         return false;
+
+      if( !isalnum( symbol.back(), loc ) )
+         return false;
+
+      uint8_t dot_count = 0;
+      for( const auto c : symbol )
+      {
+         if( (isalpha( c, loc ) && isupper( c, loc )) || isdigit( c, loc ) )
+            continue;
+
+         if( c == '.' )
+         {
+            dot_count++;
+            if( dot_count > 5 )
+            {
+               return false;
+            }
+            continue;
+         }
+
+         return false;
+      }
+
+      return true;
+   }
 
    struct price;
 

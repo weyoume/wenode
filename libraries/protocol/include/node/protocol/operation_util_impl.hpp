@@ -51,8 +51,17 @@ struct operation_validate_visitor
 struct operation_creator_visitor
 {
    typedef void result_type;
-   template<typename T>
-   const account_name_type& operator()( const T& v )const { return v.get_creator_name(); }
+
+   account_name_type       creator;
+
+   operation_creator_visitor( account_name_type a ) :
+   creator(a) {}
+
+   template< typename T > 
+   void operator()( const T& v )const 
+   { 
+      v.get_creator_name( creator );
+   }
 };
 
 struct operation_get_required_auth_visitor
@@ -62,14 +71,17 @@ struct operation_get_required_auth_visitor
    flat_set< account_name_type >&        active;
    flat_set< account_name_type >&        owner;
    flat_set< account_name_type >&        posting;
-   std::vector< authority >&  other;
+   std::vector< authority >&             other;
 
    operation_get_required_auth_visitor(
          flat_set< account_name_type >& a,
          flat_set< account_name_type >& own,
          flat_set< account_name_type >& post,
          std::vector< authority >& oth )
-      : active( a ), owner( own ), posting( post ), other( oth ) {}
+      : active( a ), 
+      owner( own ), 
+      posting( post ), 
+      other( oth ) {}
 
    template< typename T >
    void operator()( const T& v )const
@@ -132,9 +144,10 @@ void operation_validate( const OperationType& op )                         \
    op.visit( node::protocol::operation_validate_visitor() );               \
 }                                                                          \
                                                                            \
-const account_name_type& operation_creator_name( const OperationType& op ) \
+void operation_creator_name( const OperationType& op,                      \
+                           account_name_type creator )                     \
 {                                                                          \
-   return op.visit( node::protocol::operation_creator_visitor() );         \
+   op.visit( node::protocol::operation_creator_visitor( creator ) );       \
 }                                                                          \
                                                                            \
 void operation_get_required_authorities( const OperationType& op,          \

@@ -3,7 +3,6 @@
 #include <boost/multiprecision/cpp_int.hpp>
 
 namespace node { namespace protocol {
-   typedef boost::multiprecision::int128_t  int128_t;
 
    int64_t asset::precision_value()const
    {
@@ -72,16 +71,18 @@ namespace node { namespace protocol {
       if( a.symbol == b.base.symbol )
       {
          FC_ASSERT( b.base.amount.value > 0 );
-         uint128_t result = (uint128_t(a.amount.value) * b.quote.amount.value + b.base.amount.value - 1)/b.base.amount.value;
+         share_type result = (a.amount.value * b.quote.amount.value + b.base.amount.value - 1)/b.base.amount.value;
          FC_ASSERT( result <= share_type::max());
-         return asset( result.to_uint64(), b.quote.symbol );
+         is_valid_symbol( b.quote.symbol );
+         return asset( result, b.quote.symbol );
       }
       else if( a.symbol == b.quote.symbol )
       {
          FC_ASSERT( b.quote.amount.value > 0 );
-         uint128_t result = (uint128_t(a.amount.value) * b.base.amount.value + b.quote.amount.value - 1)/b.quote.amount.value;
+         share_type result = (a.amount.value * b.base.amount.value + b.quote.amount.value - 1)/b.quote.amount.value;
          FC_ASSERT( result <= share_type::max());
-         return asset( result.to_uint64(), b.base.symbol );
+         is_valid_symbol( b.base.symbol );
+         return asset( result, b.base.symbol );
       }
       FC_THROW_EXCEPTION( fc::assert_exception, "invalid asset::multiply_and_round_up(price)", ("asset",a)("price",b) );
    }
@@ -140,11 +141,18 @@ namespace node { namespace protocol {
       if( negative_found )
          satoshis *= -1;
 
+      is_valid_symbol( symbol );
+
       return asset(satoshis, symbol);
    } FC_CAPTURE_AND_RETHROW( (amount_string) ) }
 
    bool operator == ( const price& a, const price& b )
    {
+      is_valid_symbol( a.base.symbol );
+      is_valid_symbol( b.base.symbol );
+      is_valid_symbol( a.quote.symbol );
+      is_valid_symbol( b.quote.symbol );
+
       if( std::tie( a.base.symbol, a.quote.symbol ) != std::tie( b.base.symbol, b.quote.symbol ) )
             return false;
 
@@ -156,6 +164,11 @@ namespace node { namespace protocol {
 
    bool operator < ( const price& a, const price& b )
    {
+      is_valid_symbol( a.base.symbol );
+      is_valid_symbol( b.base.symbol );
+      is_valid_symbol( a.quote.symbol );
+      is_valid_symbol( b.quote.symbol );
+
       if( a.base.symbol < b.base.symbol ) return true;
       if( a.base.symbol > b.base.symbol ) return false;
       if( a.quote.symbol < b.quote.symbol ) return true;
@@ -189,18 +202,19 @@ namespace node { namespace protocol {
 
    asset operator * ( const asset& a, const price& b )
    {
+      is_valid_symbol( a.symbol );
+      is_valid_symbol( b.base.symbol );
+      is_valid_symbol( b.quote.symbol );
       if( a.symbol == b.base.symbol )
       {
          FC_ASSERT( b.base.amount.value > 0 );
-         uint128_t result = (uint128_t(a.amount.value) * b.quote.amount.value)/b.base.amount.value;
-         FC_ASSERT( result.hi == 0 );
+         share_type result = ( a.amount.value * b.quote.amount.value ) / b.base.amount.value;
          return asset( result, b.quote.symbol );
       }
       else if( a.symbol == b.quote.symbol )
       {
          FC_ASSERT( b.quote.amount.value > 0 );
-         uint128_t result = (uint128_t(a.amount.value) * b.base.amount.value)/b.quote.amount.value;
-         FC_ASSERT( result.hi == 0 );
+         share_type result = ( a.amount.value * b.base.amount.value ) / b.quote.amount.value;
          return asset( result, b.base.symbol );
       }
       FC_THROW_EXCEPTION( fc::assert_exception, "invalid asset * price", ("asset",a)("price",b) );
@@ -208,6 +222,9 @@ namespace node { namespace protocol {
 
    price operator / ( const asset& base, const asset& quote )
    { try {
+      is_valid_symbol( base.symbol );
+      is_valid_symbol( quote.symbol );
+      
       FC_ASSERT( base.symbol != quote.symbol );
       return price{ base, quote };
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
@@ -219,6 +236,8 @@ namespace node { namespace protocol {
 
    void price::validate() const
    { try {
+      is_valid_symbol( base.symbol );
+      is_valid_symbol( quote.symbol );
       FC_ASSERT( base.amount.value > 0,
          "Price is invalid, base is less than 0.");
       FC_ASSERT( quote.amount.value > 0,
@@ -229,14 +248,18 @@ namespace node { namespace protocol {
 
    price operator / ( const asset& base, const asset& quote )
    { try {
+      is_valid_symbol( base.symbol );
+      is_valid_symbol( quote.symbol );
       FC_ASSERT( base.symbol != quote.symbol );
       return price{base,quote};
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
 
    price operator + ( const price& a, const price& b )
    { try {
-      FC_ASSERT( a.base.symbol == b.base.symbol, "Cannot add prices of different asset pairs");
-      FC_ASSERT( a.quote.symbol == b.quote.symbol, "Cannot add prices of different asset pairs");
+      FC_ASSERT( a.base.symbol == b.base.symbol,
+         "Cannot add prices of different asset pairs");
+      FC_ASSERT( a.quote.symbol == b.quote.symbol,
+         "Cannot add prices of different asset pairs");
       a.validate();
       b.validate();
 

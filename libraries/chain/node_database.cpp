@@ -4827,7 +4827,9 @@ void database::update_stake( const signed_transaction& trx)
    if( trx.operations.size() )
    {
       const operation& op = trx.operations[0];
-      share_type voting_power = get_voting_power( operation_creator_name(op) );
+      account_name_type creator;
+      operation_creator_name( op, creator );
+      share_type voting_power = get_voting_power( creator );
       size_t size = fc::raw::pack_size(trx);
       _current_trx_stake_weight += uint128_t( voting_power.value * size );
    }

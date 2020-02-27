@@ -18,6 +18,8 @@ namespace node { namespace protocol {
       string                permlink;
 
       asset                 reward;
+
+      void get_creator_name( account_name_type a )const{ a = author; }
    };
 
 
@@ -34,6 +36,8 @@ namespace node { namespace protocol {
       account_name_type      comment_author;
 
       string                 comment_permlink;
+
+      void get_creator_name( account_name_type a )const{ a = curator; }
    };
 
 
@@ -48,6 +52,8 @@ namespace node { namespace protocol {
       string                  permlink;
 
       asset                   payout;
+
+      void get_creator_name( account_name_type a )const{ a = author; }
    };
 
 
@@ -59,6 +65,8 @@ namespace node { namespace protocol {
       account_name_type        owner;
 
       asset                    interest;
+
+      void get_creator_name( account_name_type a )const{ a = owner; }
    };
 
 
@@ -68,6 +76,8 @@ namespace node { namespace protocol {
       shutdown_producer_operation( const string& o ):owner(o) {}
 
       account_name_type    owner;
+
+      void get_creator_name( account_name_type a )const{ a = owner; }
    };
 
 
@@ -107,6 +117,8 @@ namespace node { namespace protocol {
       asset_symbol_type      symbol_a;
 
       asset_symbol_type      symbol_b;
+
+      void get_creator_name( account_name_type a )const{ a = current_owner; }
    };
 
    struct asset_settle_cancel_operation : public virtual_operation
@@ -122,8 +134,7 @@ namespace node { namespace protocol {
       
       asset                         amount;         // Amount of asset to force settle. This must be a market-issued asset 
 
-      void            validate()const;
-      void            get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert(account); }
+      void get_creator_name( account_name_type a )const{ a = account; }
    };
 
 
@@ -151,6 +162,8 @@ namespace node { namespace protocol {
       string               request_id;
 
       string               memo;
+
+      void get_creator_name( account_name_type a )const{ a = from; }
    };
 
    struct hardfork_operation : public virtual_operation
@@ -159,6 +172,8 @@ namespace node { namespace protocol {
       hardfork_operation( uint32_t hf_id ) : hardfork_id( hf_id ) {}
 
       uint32_t         hardfork_id = 0;
+
+      void get_creator_name( account_name_type a )const{ a = account_name_type( NULL_ACCOUNT ); }
    };
 
    struct comment_payout_update_operation : public virtual_operation
@@ -173,6 +188,8 @@ namespace node { namespace protocol {
       account_name_type     author;
 
       string                permlink;
+
+      void get_creator_name( account_name_type a )const{ a = author; }
    };
 
    struct return_asset_delegation_operation : public virtual_operation
@@ -187,6 +204,8 @@ namespace node { namespace protocol {
       account_name_type      account;
 
       asset                  amount;
+
+      void get_creator_name( account_name_type a )const{ a = account; }
    };
 
    struct comment_benefactor_reward_operation : public virtual_operation
@@ -209,6 +228,8 @@ namespace node { namespace protocol {
       string                permlink;
 
       asset                 reward;
+
+      void get_creator_name( account_name_type a )const{ a = benefactor; }
    };
 
    struct producer_reward_operation : public virtual_operation
@@ -223,6 +244,8 @@ namespace node { namespace protocol {
       account_name_type     producer;
 
       asset                 reward;
+
+      void get_creator_name( account_name_type a )const{ a = producer; }
 
    };
 
@@ -243,6 +266,8 @@ namespace node { namespace protocol {
       asset               debt;
 
       asset               collateral;
+
+      void get_creator_name( account_name_type a )const{ a = bidder; }
    };
 
 } } //node::protocol

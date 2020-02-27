@@ -53,9 +53,9 @@
 #define SYMBOL_USD    					MEUSD_SYMBOL                  // [MUSD: MeUSD - Stablecoin collateralized by MeCoin with value pegged to $1.00 USD]
 #define SYMBOL_CREDIT 					MECREDIT_SYMBOL               // [MCR: MeCredit - Interest bearing CryptoCredit issued by the WeYouMe blockchain]
 
-#define MILLION                         share_type(1000000)              // 1 Million integer
-#define BILLION                         share_type(1000000000)           // 1 Billion Integer
-#define TRILLION                        share_type(1000000000000)        // 1 Trillion integer
+#define MILLION                         (1000000)                       // 1 Million integer
+#define BILLION                         (1000000000)                    // 1 Billion Integer
+#define TRILLION                        (1000000000000)                 // 1 Trillion integer
 #define PERCENT_100                     (10000)                       // Uses 5 decimal place integer to enable percentages to 2 decimal places of precision
 #define PERCENT_1                       (PERCENT_100/100)             // 1% as percentage integer
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)            // 0.1% as percentage integer
@@ -75,6 +75,7 @@
 
 #define ANNUAL_COIN_ISSUANCE            asset( 1 * BILLION * BLOCKCHAIN_PRECISION, SYMBOL_COIN)     // 1 Billion MEC issued per year
 #define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                    // 25 MeCoin issued per block
+#define MAX_ACCEPTED_PAYOUT             asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );        // Maximum amount accepted as a content reward payout
 
 #define IRREVERSIBLE_THRESHOLD                (67 * PERCENT_1)          // Blocks produced become irrervsible after approval by this percentage of active producers. 
 #define POW_TARGET_TIME                       fc::minutes(10)           // Aim for approximately one proof of work every 10 minutes to be produced. 
