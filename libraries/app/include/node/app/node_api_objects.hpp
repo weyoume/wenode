@@ -8,7 +8,7 @@
 #include <node/chain/transaction_object.hpp>
 #include <node/chain/producer_objects.hpp>
 #include <node/tags/tags_plugin.hpp>
-#include <node/producer/producer_objects.hpp>
+#include <plugins/producer/include/node/producer/producer_objects.hpp>
 
 namespace node { namespace app {
 
@@ -53,7 +53,7 @@ struct comment_api_obj
       json( to_string( o.json ) ),    
       category( to_string( o.category ) ),
       comment_price( o.comment_price ),
-      last_update( o.last_update ),
+      last_updated( o.last_updated ),
       created( o.created ),
       active( o.active ),
       last_payout( o.last_payout ),
@@ -78,7 +78,7 @@ struct comment_api_obj
       curator_payout_value( o.curator_payout_value ),
       beneficiary_payout_value( o.beneficiary_payout_value ),
       content_rewards( o.content_rewards ),
-      percent_liquid( o.percent_liquid.value ),
+      percent_liquid( o.percent_liquid ),
       reward( o.reward ),
       weight( o.weight ),
       max_weight( o.max_weight ),
@@ -148,7 +148,7 @@ struct comment_api_obj
    asset                          comment_price;                ///< The price paid to create a comment
    vector< pair< account_name_type, asset > >  payments_received;    ///< Map of all transfers received that referenced this comment. 
    vector< beneficiary_route_type > beneficiaries;
-   time_point                     last_update;                  ///< The time the comment was last edited by the author
+   time_point                     last_updated;                 ///< The time the comment was last edited by the author
    time_point                     created;                      ///< Time that the comment was created.
    time_point                     active;                       ///< The last time this post was replied to.
    time_point                     last_payout;                  ///< The last time that the post received a content reward payout
@@ -320,6 +320,7 @@ struct account_api_obj
       officer_vote_count( a.officer_vote_count ),
       executive_board_vote_count( a.executive_board_vote_count ),
       governance_subscriptions( a.governance_subscriptions ),
+      enterprise_approval_count( a.enterprise_approval_count ),
       recurring_membership( a.recurring_membership ),
       created( a.created ),
       membership_expiration( a.membership_expiration ),
@@ -419,6 +420,7 @@ struct account_api_obj
    uint16_t                         officer_vote_count;                         ///< Number of network officers that the account has voted for.
    uint16_t                         executive_board_vote_count;                 ///< Number of Executive boards that the account has voted for.
    uint16_t                         governance_subscriptions;                  ///< Number of governance accounts that the account subscribes to.   
+   uint16_t                         enterprise_approval_count;                 ///< Number of Enterprise proposals that the account votes for. 
    uint16_t                         recurring_membership;                      ///< Amount of months membership should be automatically renewed for on expiration
    time_point                       created;                                   ///< Time that the account was created.
    time_point                       membership_expiration;                     ///< Time that the account has its current membership subscription until.
@@ -598,7 +600,7 @@ struct account_following_api_obj
    account_following_api_obj( const chain::account_following_object& a ):
       id( a.id ),
       account( a.account ),
-      last_update( a.last_update )
+      last_updated( a.last_updated )
       { 
          for( auto name : a.followers )
          {
@@ -661,7 +663,7 @@ struct account_following_api_obj
    vector< account_name_type >     filtered;             ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
    vector< community_name_type >       filtered_communities;      ///< Communities that this account has filtered. Posts will not display if they are in these communities.
    vector< tag_name_type >         filtered_tags;        ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
-   time_point                      last_update;          ///< Last time that the account changed its following sets.
+   time_point                      last_updated;          ///< Last time that the account changed its following sets.
 };
 
 
@@ -998,7 +1000,7 @@ struct tag_following_api_obj
    tag_following_api_obj( const chain::tag_following_object& t ):
       id( t.id ),
       tag( t.tag ),
-      last_update( t.last_update )
+      last_updated( t.last_updated )
       {
          followers.reserve( t.followers.size() );
          for( auto name : t.followers )
@@ -1012,7 +1014,7 @@ struct tag_following_api_obj
    tag_following_id_type             id;
    tag_name_type                     tag;                  ///< Name of the account.
    vector< account_name_type >       followers;            ///< Accounts that follow this account. 
-   time_point                        last_update;          ///< Last time that the tag changed its following sets.
+   time_point                        last_updated;          ///< Last time that the tag changed its following sets.
 };
 
 
@@ -1025,8 +1027,9 @@ struct moderation_tag_api_obj
       community( m.community ),
       rating( post_rating_values[ m.rating ] ),
       details( to_string( m.details ) ),
+      interface( m.interface ),
       filter( m.filter ),
-      last_update( m.last_update ),
+      last_updated( m.last_updated ),
       created( m.created )
       {
          for( auto tag : m.tags )
@@ -1040,12 +1043,13 @@ struct moderation_tag_api_obj
    moderation_tag_id_type         id;
    account_name_type              moderator;        ///< Name of the moderator or goverance account that created the comment tag.
    comment_id_type                comment;          ///< ID of the comment.
-   community_name_type                community;            ///< The name of the community to which the post is uploaded to.
+   community_name_type            community;        ///< The name of the community to which the post is uploaded to.
    vector< tag_name_type >        tags;             ///< Set of string tags for sorting the post by
    string                         rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
    string                         details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
+   account_name_type              interface;        ///< Name of the interface application that broadcasted the transaction.
    bool                           filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
-   time_point                     last_update;      ///< Time the comment tag was last edited by the author.
+   time_point                     last_updated;     ///< Time the comment tag was last edited by the author.
    time_point                     created;          ///< Time that the comment tag was created.
 };
 
@@ -1199,9 +1203,9 @@ struct equity_data_api_obj
    fc::microseconds                             min_active_time;
    int64_t                                      min_balance;
    uint16_t                                     min_producers;
-   uint16_t                                     boost_balance;
-   uint16_t                                     boost_activity;
-   uint16_t                                     boost_producers;
+   int64_t                                      boost_balance;
+   int64_t                                      boost_activity;
+   int64_t                                      boost_producers;
    uint16_t                                     boost_top;
 };
 
@@ -1254,8 +1258,7 @@ struct liquidity_pool_api_obj
       hour_median_price( p.hour_median_price ),
       day_median_price( p.day_median_price )
       {
-         bip::deque< price, allocator< price > > feeds = p.price_history;
-         for( auto feed : feeds )
+         for( auto feed : p.price_history )
          {
             price_history.push_back( feed );
          }
@@ -1539,7 +1542,7 @@ struct producer_api_obj
       mining_count( p.mining_count ),
       last_mining_update( p.last_mining_update ),
       last_pow_time( p.last_pow_time ),
-      recent_txn_stake_weight( p.recent_txn_stake_weight.value ),
+      recent_txn_stake_weight( p.recent_txn_stake_weight ),
       last_txn_stake_weight_update( p.last_txn_stake_weight_update ),
       accumulated_activity_stake( p.accumulated_activity_stake ),
       total_missed( p.total_missed ),
@@ -1557,7 +1560,7 @@ struct producer_api_obj
 
    producer_api_obj(){}
 
-   producer_id_type              id;
+   producer_id_type             id;
    account_name_type            owner;                            ///< The name of the account that has authority over this producer.
    bool                         active;                           ///< True if the producer is actively seeking to produce blocks, set false to deactivate the producer and remove from production.
    producer_object::producer_schedule_type        schedule;       ///< How the producer was scheduled the last time it was scheduled.
@@ -1578,7 +1581,7 @@ struct producer_api_obj
    uint32_t                     mining_count;                     ///< Accumulated number of proofs of work published.
    time_point                   last_mining_update;               ///< Time that the account last updated its mining power.
    time_point                   last_pow_time;                    ///< Time that the miner last created a proof of work.
-   int64_t                      recent_txn_stake_weight;          ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+   uint128_t                    recent_txn_stake_weight;          ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
    time_point                   last_txn_stake_weight_update;     ///< Time that the recent bandwith and txn stake were last updated.
    uint128_t                    accumulated_activity_stake;       ///< Recent amount of activity reward stake for the prime producer. 
    uint32_t                     total_missed;                     ///< Number of blocks missed recently.
@@ -1773,6 +1776,39 @@ struct interface_api_obj
 };
 
 
+struct mediator_api_obj
+{
+   mediator_api_obj( const chain::mediator_object& o ):
+      id( o.id ),
+      account( o.account ),
+      active( o.active ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      json( to_string( o.json ) ),
+      mediator_bond( o.mediator_bond ),
+      mediation_virtual_position( o.mediation_virtual_position ),
+      last_escrow_from( o.last_escrow_from ),
+      last_escrow_id( to_string( o.last_escrow_id ) ),
+      created( o.created ),
+      last_updated( o.last_updated ){}
+   
+   mediator_api_obj(){}
+
+   mediator_id_type        id;
+   account_name_type       account;                     ///< The name of the account that owns the mediator.
+   bool                    active;                      ///< True if the mediator is active, set false to deactivate.
+   string                  details;                     ///< The mediator's details description. 
+   string                  url;                         ///< The mediator's reference URL. 
+   string                  json;                        ///< Json metadata of the mediator, including additonal outside of consensus APIs and services. 
+   asset                   mediator_bond;               ///< Core Asset staked in mediation bond for selection.
+   uint128_t               mediation_virtual_position;  ///< Quantitative ranking of selection for mediation.
+   account_name_type       last_escrow_from;            ///< The sender of the most recently allocated escrow
+   string                  last_escrow_id;              ///< Escrow uuidv4 of the most recently allocated escrow.
+   time_point              created;                     ///< The time the mediator was created.
+   time_point              last_updated;                ///< The time the mediator was last updated.
+};
+
+
 struct community_enterprise_api_obj
 {
    community_enterprise_api_obj( const chain::community_enterprise_object& o ):
@@ -1914,7 +1950,7 @@ struct ad_campaign_api_obj
    account_name_type                account;           ///< Account creating the ad campaign.
    string                           campaign_id;       ///< uuidv4 to refer to the campaign.
    asset                            budget;            ///< Total expenditure of the campaign.
-   asset                            total_bids;        ///< Total amount of expenditure in active bids. Cannot exceed AD_RESERVE_RATIO times the campaign budget.
+   asset                            total_bids;        ///< Total amount of expenditure in active bids.
    time_point                       begin;             ///< Beginning time of the campaign. Bids cannot be created before this time.
    time_point                       end;               ///< Ending time of the campaign. Remaining campaign budget will be refunded after this time.
    string                           json;              ///< json metadata for the campaign.
@@ -2141,7 +2177,7 @@ FC_REFLECT( node::app::comment_api_obj,
          (comment_price)
          (payments_received)
          (beneficiaries)
-         (last_update)
+         (last_updated)
          (created)
          (active)
          (last_payout)
@@ -2346,7 +2382,7 @@ FC_REFLECT( node::app::account_following_api_obj,
          (filtered)
          (filtered_communities)
          (filtered_tags)
-         (last_update)
+         (last_updated)
          );
 
 FC_REFLECT( node::app::account_permission_api_obj,
@@ -2367,7 +2403,7 @@ FC_REFLECT( node::app::message_api_obj,
          (message)
          (json)
          (uuid)
-         (last_update)
+         (last_updated)
          (created)
          );
 
@@ -2492,7 +2528,7 @@ FC_REFLECT( node::app::tag_following_api_obj,
          (id)
          (tag)
          (followers)
-         (last_update)
+         (last_updated)
          );
 
 FC_REFLECT( node::app::moderation_tag_api_obj,
@@ -2505,7 +2541,7 @@ FC_REFLECT( node::app::moderation_tag_api_obj,
          (details)
          (interface)
          (filter)
-         (last_update)
+         (last_updated)
          (created)
          );
 

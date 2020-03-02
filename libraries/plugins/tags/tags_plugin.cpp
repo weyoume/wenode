@@ -5,7 +5,6 @@
 #include <node/protocol/config.hpp>
 
 #include <node/chain/database.hpp>
-//#include <node/chain/hardfork.hpp>
 #include <node/chain/index.hpp>
 #include <node/chain/operation_notification.hpp>
 #include <node/chain/node_objects.hpp>
@@ -1960,7 +1959,7 @@ struct operation_visitor
                   community_a_adjacency_itr != community_a_adjacency_idx.end() && 
                   related_community_a == community_name_type() )
                {
-                  if( following_obj.is_following( community_a_adjacency_itr->community_b ) )  // skip if already following
+                  if( following_obj.is_followed_community( community_a_adjacency_itr->community_b ) )  // skip if already following
                   {
                      ++community_a_adjacency_itr;
                   }
@@ -1974,7 +1973,7 @@ struct operation_visitor
                   community_b_adjacency_itr != community_b_adjacency_idx.end() && 
                   related_community_b == community_name_type() )
                {
-                  if( following_obj.is_following( community_b_adjacency_itr->community_a ) )    // skip if already following
+                  if( following_obj.is_followed_community( community_b_adjacency_itr->community_a ) )    // skip if already following
                   {
                      ++community_b_adjacency_itr;
                   }
@@ -2017,7 +2016,7 @@ struct operation_visitor
                   tag_a_adjacency_itr != tag_a_adjacency_idx.end() && 
                   related_tag_a == tag_name_type() )
                {
-                  if( following_obj.is_following( tag_a_adjacency_itr->tag_b ) )  // skip if already following
+                  if( following_obj.is_followed_tag( tag_a_adjacency_itr->tag_b ) )  // skip if already following
                   {
                      ++tag_a_adjacency_itr;
                   }
@@ -2032,7 +2031,7 @@ struct operation_visitor
                   tag_b_adjacency_itr != tag_b_adjacency_idx.end() && 
                   related_tag_b == tag_name_type() )
                {
-                  if( following_obj.is_following( tag_b_adjacency_itr->tag_a ) )    // skip if already following
+                  if( following_obj.is_followed_tag( tag_b_adjacency_itr->tag_a ) )    // skip if already following
                   {
                      ++tag_b_adjacency_itr;
                   }

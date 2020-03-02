@@ -180,6 +180,8 @@ namespace node { namespace protocol {
 
       string                                 url;                           ///< The account's selected personal URL. 
 
+      string                                 image;                         ///< IPFS Reference of the profile image of the account. 
+
       string                                 json;                          ///< The JSON string of public profile information.
 
       string                                 json_private;                  ///< The JSON string of encrypted profile information.
@@ -234,6 +236,8 @@ namespace node { namespace protocol {
       string                                 details;                       ///< The account's details string.
 
       string                                 url;                           ///< The account's selected personal URL.
+
+      string                                 image;                         ///< IPFS Reference of the profile image of the account. 
 
       string                                 json;                          ///< The JSON string of public profile information.
 
@@ -497,7 +501,7 @@ namespace node { namespace protocol {
 
       string                       encrypted_business_key;    ///< Encrypted Copy of the private key of the business.
 
-      bool                         invited = true;            ///< True to add, false to remove. 
+      bool                         invited = true;            ///< True to add, false to remove.
 
       void validate() const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }

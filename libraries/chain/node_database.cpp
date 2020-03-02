@@ -20,7 +20,6 @@
 #include <node/chain/shared_db_merkle.hpp>
 #include <node/chain/operation_notification.hpp>
 #include <node/chain/producer_schedule.hpp>
-#include <node/producer/producer_objects.hpp>
 
 #include <node/chain/util/asset.hpp>
 #include <node/chain/util/reward.hpp>
@@ -94,8 +93,8 @@ database::~database()
    clear_pending();
 }
 
-void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size, 
-   uint32_t chainbase_flags, const public_key_type& init_public_key = INIT_PUBLIC_KEY )
+void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size = 0, 
+   uint32_t chainbase_flags = 0, const public_key_type& init_public_key = INIT_PUBLIC_KEY )
 { try {
    init_schema();
    chainbase::database::open( shared_mem_dir, chainbase_flags, shared_file_size );
@@ -121,7 +120,8 @@ void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, u
       with_write_lock( [&]()
       {
          undo_all();
-         FC_ASSERT( revision() == head_block_num(), "Chainbase revision does not match head block num",
+         FC_ASSERT( revision() == int64_t( head_block_num() ), 
+            "Chainbase revision does not match head block num",
             ("rev", revision())("head_block", head_block_num()) );
          validate_invariants();
       });
@@ -170,10 +170,10 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.name = INIT_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = get_key( INIT_ACCOUNT, "secure", INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_key( INIT_ACCOUNT, "connection", INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_key( INIT_ACCOUNT, "friend", INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_key( INIT_ACCOUNT, "companion", INIT_ACCOUNT_PASSWORD );
+      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_account_update = now;
       a.last_vote_time = now;
@@ -182,8 +182,11 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.last_transfer_time = now;
       a.last_activity_reward = now;
       a.last_account_recovery = now;
-      a.details = INIT_DETAILS;
-      a.url = INIT_URL;
+      from_string( a.json, "" );
+      from_string( a.json_private, "" );
+      from_string( a.details, INIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.image, INIT_IMAGE );
       a.membership = TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
@@ -200,20 +203,20 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       auth.posting.weight_threshold = 1;
    });
 
-   create< account_following_object >( [&]( account_following_object& afo ) 
+   create< account_following_object >( [&]( account_following_object& afo )
    {
       afo.account = INIT_ACCOUNT;
-      afo.last_update = now;
+      afo.last_updated = now;
    });
 
    create< account_object >( [&]( account_object& a )
    {
       a.name = INIT_CEO;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = get_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_key( INIT_CEO, "connection", INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_key( INIT_CEO, "friend", INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_key( INIT_CEO, "companion", INIT_ACCOUNT_PASSWORD );
+      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_account_update = now;
       a.last_vote_time = now;
@@ -224,8 +227,11 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.last_account_recovery = now;
       a.last_community_created = now;
       a.last_asset_created = now;
-      a.details = INIT_CEO_DETAILS;
-      a.url = INIT_CEO_URL;
+      from_string( a.json, "" );
+      from_string( a.json_private, "" );
+      from_string( a.details, INIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.image, INIT_IMAGE );
       a.membership = TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
    });
@@ -244,7 +250,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_following_object >( [&]( account_following_object& afo ) 
    {
       afo.account = INIT_CEO;
-      afo.last_update = now;
+      afo.last_updated = now;
    });
 
    create< account_business_object >( [&]( account_business_object& abo )
@@ -284,8 +290,8 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       noo.account = INIT_CEO;
       noo.officer_type = DEVELOPMENT;
-      from_string( noo.url, INIT_CEO_URL );
-      from_string( noo.details, INIT_CEO_DETAILS );
+      from_string( noo.url, INIT_URL );
+      from_string( noo.details, INIT_DETAILS );
       noo.officer_approved = true;
       noo.created = now;
       noo.active = true;
@@ -354,10 +360,30 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
 
    update_community_moderators( new_community_member );
 
-
    create< account_object >( [&]( account_object& a )
    {
       a.name = PRODUCER_ACCOUNT;
+      a.registrar = INIT_ACCOUNT;
+      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+      a.created = now;
+      a.last_account_update = now;
+      a.last_vote_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      from_string( a.json, "" );
+      from_string( a.json_private, "" );
+      from_string( a.details, INIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.image, INIT_IMAGE );
+      a.membership = TOP_MEMBERSHIP;
+      a.membership_expiration = time_point::maximum();
+      a.mined = true;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
@@ -370,6 +396,27 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_object >( [&]( account_object& a )
    {
       a.name = NULL_ACCOUNT;
+      a.registrar = INIT_ACCOUNT;
+      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+      a.created = now;
+      a.last_account_update = now;
+      a.last_vote_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      from_string( a.json, "" );
+      from_string( a.json_private, "" );
+      from_string( a.details, INIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.image, INIT_IMAGE );
+      a.membership = TOP_MEMBERSHIP;
+      a.membership_expiration = time_point::maximum();
+      a.mined = true;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
@@ -382,6 +429,27 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_object >( [&]( account_object& a )
    {
       a.name = TEMP_ACCOUNT;
+      a.registrar = INIT_ACCOUNT;
+      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+      a.created = now;
+      a.last_account_update = now;
+      a.last_vote_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      from_string( a.json, "" );
+      from_string( a.json_private, "" );
+      from_string( a.details, INIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.image, INIT_IMAGE );
+      a.membership = TOP_MEMBERSHIP;
+      a.membership_expiration = time_point::maximum();
+      a.mined = true;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
@@ -513,7 +581,6 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.symbol = SYMBOL_CREDIT;
    });
 
-   
    create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
    {
       a.business_account = INIT_ACCOUNT;
@@ -552,12 +619,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_EQUITY;
+      a.symbol_liquid = coin_equity_symbol;
       a.balance_a = asset( 0, SYMBOL_COIN );
       a.balance_b = asset( 0, SYMBOL_EQUITY );
+      a.balance_liquid = asset( 0, coin_equity_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
-      a.balance_liquid = asset( 0, coin_equity_symbol );
    });
 
    asset_symbol_type coin_usd_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_USD );
@@ -580,12 +648,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_USD;
+      a.symbol_liquid = coin_usd_symbol;
       a.balance_a = asset( 0, SYMBOL_COIN );
       a.balance_b = asset( 0, SYMBOL_USD );
+      a.balance_liquid = asset( 0, coin_usd_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
-      a.balance_liquid = asset( 0, coin_usd_symbol );
    });
 
    asset_symbol_type coin_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_CREDIT );
@@ -608,12 +677,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_CREDIT;
+      a.symbol_liquid = coin_credit_symbol;
       a.balance_a = asset( 0, SYMBOL_COIN );
       a.balance_b = asset( 0, SYMBOL_CREDIT );
+      a.balance_liquid = asset( 0, coin_credit_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
-      a.balance_liquid = asset( 0, coin_credit_symbol );
    });
 
    asset_symbol_type equity_usd_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_EQUITY )+"."+string( SYMBOL_USD );
@@ -636,12 +706,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_EQUITY;
       a.symbol_b = SYMBOL_USD;
+      a.symbol_liquid = equity_usd_symbol;
       a.balance_a = asset( 0, SYMBOL_EQUITY );
       a.balance_b = asset( 0, SYMBOL_USD );
+      a.balance_liquid = asset( 0, equity_usd_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
-      a.balance_liquid = asset( 0, equity_usd_symbol );
    });
 
    asset_symbol_type equity_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_EQUITY )+"."+string( SYMBOL_CREDIT );
@@ -664,12 +735,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_EQUITY;
       a.symbol_b = SYMBOL_CREDIT;
+      a.symbol_liquid = equity_credit_symbol;
       a.balance_a = asset( 0, SYMBOL_EQUITY );
       a.balance_b = asset( 0, SYMBOL_CREDIT );
+      a.balance_liquid = asset( 0, equity_credit_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
-      a.balance_liquid = asset( 0, equity_credit_symbol );
    });
 
    asset_symbol_type usd_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_USD )+"."+string( SYMBOL_CREDIT );
@@ -692,12 +764,13 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_USD;
       a.symbol_b = SYMBOL_CREDIT;
+      a.symbol_liquid = usd_credit_symbol;
       a.balance_a = asset( 0, SYMBOL_USD );
       a.balance_b = asset( 0, SYMBOL_CREDIT );
+      a.balance_liquid = asset( 0, usd_credit_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
-      a.balance_liquid = asset( 0, usd_credit_symbol );
    });
 
    // Create Primary asset credit pools [ coin, equity, usd, credit ]
@@ -812,6 +885,27 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       create< account_object >( [&]( account_object& a )
       {
          a.name = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
+         a.registrar = INIT_ACCOUNT;
+         a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+         a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+         a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+         a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+         a.created = now;
+         a.last_account_update = now;
+         a.last_vote_time = now;
+         a.last_post = now;
+         a.last_root_post = now;
+         a.last_transfer_time = now;
+         a.last_activity_reward = now;
+         a.last_account_recovery = now;
+         from_string( a.json, "" );
+         from_string( a.json_private, "" );
+         from_string( a.details, INIT_DETAILS );
+         from_string( a.url, INIT_URL );
+         from_string( a.image, INIT_IMAGE );
+         a.membership = TOP_MEMBERSHIP;
+         a.membership_expiration = time_point::maximum();
+         a.mined = true;
       });
 
       // Create Core asset balance object for producer
@@ -832,15 +926,12 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
          auth.posting = auth.active;
       });
 
-      if( i < GENESIS_PRODUCER_AMOUNT )
+      create< producer_object >( [&]( producer_object& p )
       {
-         create< producer_object >( [&]( producer_object& p )
-         {
-            p.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
-            p.signing_key = init_public_key;
-            p.schedule = producer_object::top_voting_producer;
-         });
-      }
+         p.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
+         p.signing_key = init_public_key;
+         p.schedule = producer_object::top_voting_producer;
+      });
    }
 
    // Create Equity asset balance object for initial account
@@ -857,7 +948,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
 
    create< reward_fund_object >( [&]( reward_fund_object& rfo )
    {
-      rfo.last_update = now;
+      rfo.last_updated = now;
       rfo.symbol = SYMBOL_COIN;
       rfo.content_constant = CONTENT_CONSTANT;
       rfo.content_reward_balance = asset(0, SYMBOL_COIN);
@@ -1182,7 +1273,7 @@ const asset_object* database::find_core_asset() const
 
 const price& database::get_usd_price() const
 {
-   get_bitasset_data( SYMBOL_USD ).current_feed.settlement_price;
+   return get_bitasset_data( SYMBOL_USD ).current_feed.settlement_price;
 }
 
 const asset_object& database::get_asset( const asset_symbol_type& symbol ) const
@@ -1335,14 +1426,14 @@ const account_member_invite_object* database::find_account_member_invite( const 
    return find< account_member_invite_object, by_member_business >( boost::make_tuple( member, business) );
 }
 
-const account_member_key_object& database::get_account_member_key( const account_name_type& account )const
+const account_member_key_object& database::get_account_member_key( const account_name_type& member, const account_name_type& business )const
 { try {
-	return get< account_member_key_object, by_account >( account );
-} FC_CAPTURE_AND_RETHROW( (account) ) }
+	return get< account_member_key_object, by_member_business >( boost::make_tuple( member, business) );
+} FC_CAPTURE_AND_RETHROW( (member)(business) ) }
 
-const account_member_key_object* database::find_account_member_key( const account_name_type& account )const
+const account_member_key_object* database::find_account_member_key( const account_name_type& member, const account_name_type& business )const
 {
-   return find< account_member_key_object, by_account >( account );
+   return find< account_member_key_object, by_member_business >( boost::make_tuple( member, business) );
 }
 
 const account_balance_object& database::get_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const
@@ -1809,16 +1900,6 @@ const savings_withdraw_object* database::find_savings_withdraw( const account_na
    return find< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
 }
 
-const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
-{ try {
-   return get< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
-} FC_CAPTURE_AND_RETHROW( (owner)(request_id) ) }
-
-const savings_withdraw_object* database::find_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
-{
-   return find< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
-}
-
 const reward_fund_object& database::get_reward_fund( const asset_symbol_type& symbol ) const
 { try {
    return get< reward_fund_object, by_symbol >( symbol );
@@ -1834,22 +1915,23 @@ const comment_metrics_object& database::get_comment_metrics() const
    return get< comment_metrics_object>();
 } FC_CAPTURE_AND_RETHROW() }
 
-const asset& database::asset_to_USD( const asset& a) const
+asset database::asset_to_USD( const asset& a ) const
 {
    if( a.symbol != SYMBOL_COIN )
    {
-      price rate = get_liquidity_pool( SYMBOL_COIN, a.symbol ).current_price;
+      price rate = get_liquidity_pool( SYMBOL_COIN, a.symbol ).current_price();
+
       return util::asset_to_USD( get_usd_price(), a * rate );
    }
    else
    {
-      return util::asset_to_USD( get_usd_price(), a);
+      return util::asset_to_USD( get_usd_price(), a );
    }
 }
 
-const asset& database::USD_to_asset( const asset& a) const
+asset database::USD_to_asset( const asset& a) const
 {
-   return util::USD_to_asset( get_usd_price(), a);
+   return util::USD_to_asset( get_usd_price(), a );
 }
 
 const hardfork_property_object& database::get_hardfork_property_object()const
@@ -1873,30 +1955,30 @@ vector< account_name_type > database::shuffle_accounts( vector< account_name_typ
    auto now_hi = uint64_t( head_block_time().time_since_epoch().count() ) << 32;
    for( uint64_t i = 0; i < accounts.size(); ++i )
    {
-      uint64_t k = now_hi +      uint64_t(i)*26857571057736338717ULL;
-      uint64_t l = now_hi >> 1 + uint64_t(i)*95198191871878293511ULL;
-      uint64_t m = now_hi >> 2 + uint64_t(i)*58919729024841961988ULL;
-      uint64_t n = now_hi >> 3 + uint64_t(i)*27137164109707054410ULL;
+      uint64_t k = now_hi +      uint64_t(i)*2685757105773633871ULL;
+      uint64_t l = ( now_hi >> 1 ) + uint64_t(i)*9519819187187829351ULL;
+      uint64_t m = ( now_hi >> 2 ) + uint64_t(i)*5891972902484196198ULL;
+      uint64_t n = ( now_hi >> 3 ) + uint64_t(i)*2713716410970705441ULL;
       
       k ^= (l >> 7);
       l ^= (m << 9);
       m ^= (n >> 5);
       n ^= (k << 3);
 
-      k*= 14226572565896741612ULL;
-      l*= 91985878658736871034ULL;
-      m*= 30605588311672529089ULL;
-      n*= 43069213742576315243ULL;
+      k*= 1422657256589674161ULL;
+      l*= 9198587865873687103ULL;
+      m*= 3060558831167252908ULL;
+      n*= 4306921374257631524ULL;
 
       k ^= (l >> 2);
       l ^= (m << 4);
       m ^= (n >> 1);
       n ^= (k << 9);
 
-      k*= 79477756532752495704ULL;
-      l*= 94908025588282034792ULL;
-      m*= 26941980616458623416ULL;
-      n*= 31902236862011382134ULL;
+      k*= 7947775653275249570ULL;
+      l*= 9490802558828203479ULL;
+      m*= 2694198061645862341ULL;
+      n*= 3190223686201138213ULL;
 
       uint64_t rand = (k ^ l) ^ (m ^ n) ; 
       uint64_t max = set.size() - i;
@@ -2165,7 +2247,6 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
    pending_block.timestamp = when;
    pending_block.producer = producer_owner;
    
-   const producer_object& producer = get_producer( producer_owner );
    auto blockchainVersion = BLOCKCHAIN_VERSION;
    if( producer.running_version != BLOCKCHAIN_VERSION )
    {
@@ -2359,7 +2440,6 @@ fc::time_point database::get_slot_time(uint64_t slot_num)const
       return fc::time_point();
 
    int64_t interval_micsec = BLOCK_INTERVAL.count();
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
 
    if( head_block_num() == 0 )
    {
@@ -2513,7 +2593,6 @@ void database::update_community_moderator_set()
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
    
-   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
    const auto& community_idx = get_index< community_member_index >().indices().get< by_name >();
    auto community_itr = community_idx.begin();
 
@@ -2543,7 +2622,9 @@ void database::update_business_account( const account_business_object& business 
    executive_officer_set exec_set;
 
    auto bus_officer_vote_itr = bus_officer_vote_idx.lower_bound( business.account );
-   share_type voting_power = 0;
+
+   flat_set< account_name_type > executive_account_list;
+   flat_set< account_name_type > officer_account_list;
 
    while( bus_officer_vote_itr != bus_officer_vote_idx.end() &&
       bus_officer_vote_itr->business_account == business.account )
@@ -2571,6 +2652,7 @@ void database::update_business_account( const account_business_object& business 
       }
       else
       {
+         officer_account_list.insert( itr->first );
          ++itr;
       }
    }
@@ -2604,14 +2686,14 @@ void database::update_business_account( const account_business_object& business 
       }
    }
    
-   std::sort( role_rank.begin(), role_rank.end(), [&](auto a, auto b)
+   std::sort( role_rank.begin(), role_rank.end(), [&]( pair< account_name_type, pair< executive_role_type, share_type > > a, pair< account_name_type, pair< executive_role_type, share_type > > b )
    {
       return a.second.second < b.second.second;   // Ordered vector of all executives, for each role. 
    });
 
    auto role_rank_itr = role_rank.begin();
 
-   while( !exec_set.allocated && role_rank_itr != role_rank.end() )
+   while( !exec_set.allocated() && role_rank_itr != role_rank.end() )
    {
       pair< account_name_type, pair< executive_role_type, share_type > > rank = *role_rank_itr;
       
@@ -2682,13 +2764,17 @@ void database::update_business_account( const account_business_object& business 
          }
          break;
       }
+
+      executive_account_list.insert( executive );
    }
 
    modify( business, [&]( account_business_object& b )
    {
-      b.officers = officers;
-      b.executives = executives;
-      b.executive_board = exec_set; 
+      b.officers = officer_account_list;
+      b.executives = executive_account_list;
+      b.officer_votes = officers;
+      b.executive_votes = executives;
+      b.executive_board = exec_set;
    });
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -2703,7 +2789,6 @@ void database::update_business_account_set()
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
 
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
    const auto& business_idx = get_index< account_business_index >().indices().get< by_account >();
    auto business_itr = business_idx.begin();
 
@@ -2776,7 +2861,6 @@ void database::process_power_rewards()
    if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
       return;
 
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
@@ -2869,7 +2953,7 @@ void database::process_equity_rewards()
 { try {
    if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
       return;
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
+
    time_point now = head_block_time();
    const auto& equity_idx = get_index< asset_equity_data_index >().indices().get< by_symbol >();
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
@@ -3004,9 +3088,7 @@ void database::process_txn_stake_rewards()
    if( (head_block_num() % TXN_STAKE_BLOCK_INTERVAL) != 0 )    // Runs once per week
       return;
 
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
-   const producer_schedule_object& pso = get_producer_schedule();
    const auto& producer_idx = get_index< producer_index >().indices().get< by_txn_stake_weight >();
    auto producer_itr = producer_idx.begin();
     
@@ -3014,9 +3096,9 @@ void database::process_txn_stake_rewards()
    share_type total_stake_shares = 0;
    
    while( producer_itr != producer_idx.end() &&
-      producer_itr->recent_txn_stake_weight > BLOCKCHAIN_PRECISION )
+      share_type( int64_t( producer_itr->recent_txn_stake_weight.to_uint64() ) ) > BLOCKCHAIN_PRECISION )
    {
-      share_type stake_shares = producer_itr->recent_txn_stake_weight;  // Get the recent txn stake for each producer
+      share_type stake_shares = int64_t( producer_itr->recent_txn_stake_weight.to_uint64() );         // Get the recent txn stake for each producer
 
       if( stake_shares > 0 )
       {
@@ -3070,8 +3152,6 @@ void database::process_validation_rewards()
 { try {
    
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = head_block_time();
-   const producer_schedule_object& pso = get_producer_schedule();
    const auto& valid_idx = get_index< block_validation_index >().indices().get< by_height_stake >();
    auto valid_itr = valid_idx.lower_bound( props.last_irreversible_block_num );
     
@@ -3082,7 +3162,7 @@ void database::process_validation_rewards()
       valid_itr->block_height == props.last_irreversible_block_num &&
       valid_itr->commitment_stake.amount >= BLOCKCHAIN_PRECISION ) 
    {
-      share_type validation_shares = valid_itr->commitment_stake;       // Get the commitment stake for each producer
+      share_type validation_shares = valid_itr->commitment_stake.amount;       // Get the commitment stake for each producer
 
       if( validation_shares > 0 )
       {
@@ -3133,9 +3213,6 @@ void database::process_producer_activity_rewards()
    if( (head_block_num() % POA_BLOCK_INTERVAL ) != 0 )    // Runs once per 8 hours.
       return;
    
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = head_block_time();
-   const producer_schedule_object& pso = get_producer_schedule();
    const auto& producer_idx = get_index< producer_index >().indices().get< by_activity_stake >();
    auto producer_itr = producer_idx.begin();
 
@@ -3179,7 +3256,6 @@ void database::process_supernode_rewards()
    if( (head_block_num() % SUPERNODE_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
       return;
 
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
    const auto& supernode_idx = get_index< supernode_index >().indices().get< by_view_weight >();
    const auto& sn_acc_idx = get_index< supernode_index >().indices().get< by_account >();
@@ -3244,9 +3320,9 @@ void database::update_network_officer( const network_officer_object& network_off
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
-   share_type voting_power = 0;
+   uint126_t voting_power = 0;
    uint32_t producer_vote_count = 0;
-   share_type producer_voting_power = 0;
+   uint128_t producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_officer_account >();
@@ -3279,8 +3355,8 @@ void database::update_network_officer( const network_officer_object& network_off
    // Approve the network officer when a threshold of voting power and vote amount supports it.
    bool approve_officer = ( vote_count >= OFFICER_VOTE_THRESHOLD_AMOUNT ) &&
       ( producer_vote_count >= OFFICER_VOTE_THRESHOLD_PRODUCERS ) &&
-      ( voting_power >= ( props.total_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power >= ( pso.total_producer_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( voting_power.value >= ( props.total_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( producer_voting_power.value >= ( pso.total_producer_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( network_officer, [&]( network_officer_object& n )
    {
@@ -3306,7 +3382,6 @@ void database::process_network_officer_rewards()
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const producer_schedule_object& pso = get_producer_schedule();
    const auto& officer_idx = get_index< network_officer_index >().indices().get< by_type_voting_power >();
-   time_point now = head_block_time();
    auto officer_itr = officer_idx.begin();
 
    while( officer_itr != officer_idx.end() ) 
@@ -3430,9 +3505,9 @@ void database::update_executive_board( const executive_board_object& executive_b
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
-   share_type voting_power = 0;
+   uint128_t voting_power = 0;
    uint32_t producer_vote_count = 0;
-   share_type producer_voting_power = 0;
+   uint128_t producer_voting_power = 0;
    price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
 
    const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_executive_account >();
@@ -3537,9 +3612,9 @@ void database::update_governance_account( const governance_account_object& gover
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
-   share_type voting_power = 0;
+   uint128_t voting_power = 0;
    uint32_t producer_vote_count = 0;
-   share_type producer_voting_power = 0;
+   uint128_t producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& vote_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
@@ -3614,13 +3689,13 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t total_approvals = 0;
-   share_type total_voting_power = 0;
+   uint128_t total_voting_power = 0;
    uint32_t total_producer_approvals = 0;
-   share_type total_producer_voting_power = 0;
+   uint128_t total_producer_voting_power = 0;
    uint32_t current_approvals = 0;
-   share_type current_voting_power = 0;
+   uint128_t current_voting_power = 0;
    uint32_t current_producer_approvals = 0;
-   share_type current_producer_voting_power = 0;
+   uint128_t current_producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& approval_idx = get_index< enterprise_approval_index >().indices().get< by_enterprise_id >();
@@ -3634,33 +3709,33 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
       const account_object& voter = get_account( approval.account );
       bool is_producer = pso.is_top_voting_producer( voter.name );
       total_approvals++;
-      total_voting_power += get_voting_power( approval.account, equity_price );
+      total_voting_power += get_voting_power( approval.account, equity_price ).value;
       if( voter.proxied.size() )
       {
-         total_voting_power += get_proxied_voting_power( voter, equity_price );
+         total_voting_power += get_proxied_voting_power( voter, equity_price ).value;
       }
 
       if( is_producer )
       {
          total_producer_approvals++;
          const producer_object& producer = get_producer( voter.name );
-         total_producer_voting_power += producer.voting_power;
+         total_producer_voting_power += producer.voting_power.value;
       }
 
       if( approval.milestone == enterprise.claimed_milestones ) // approval is current 
       {
          current_approvals++;
-         current_voting_power += get_voting_power( approval.account, equity_price );
+         current_voting_power += get_voting_power( approval.account, equity_price ).value;
          if( voter.proxied.size() )
          {
-            current_voting_power += get_proxied_voting_power( voter, equity_price );
+            current_voting_power += get_proxied_voting_power( voter, equity_price ).value;
          }
 
          if( is_producer )
          {
             current_producer_approvals++;
             const producer_object& producer = get_producer( voter.name );
-            current_producer_voting_power += producer.voting_power;
+            current_producer_voting_power += producer.voting_power.value;
          }
       }
       ++approval_itr;
@@ -3713,7 +3788,7 @@ void database::process_community_enterprise_fund()
       ++enterprise_itr;
    }
 
-   auto enterprise_itr = enterprise_idx.begin();
+   enterprise_itr = enterprise_idx.begin();
 
    while( enterprise_itr != enterprise_idx.end() )   // Enterprise objects in order of highest total voting power.
    {
@@ -3783,7 +3858,6 @@ void database::process_community_enterprise_fund()
  */
 void database::process_credit_updates()
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
    const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = head_block_time();
 
@@ -3939,7 +4013,7 @@ void database::process_margin_updates()
                asset position_debt_value = margin.position_balance * pos_debt_price;
                asset equity = margin.debt_balance + position_debt_value + collateral_debt_value;
                asset unrealized_value = margin.debt_balance + position_debt_value - margin.debt;
-               share_type collateralization = ( PERCENT_100 * ( equity - margin.debt ) ) / margin.debt;
+               share_type collateralization = ( ( equity - margin.debt ).amount * share_type( PERCENT_100 ) ) / margin.debt.amount;
                
                asset interest = ( margin.debt * interest_rate * ( now - margin.last_interest_time ).count() ) / ( fc::days(365).count() * PERCENT_100 );
 
@@ -4064,9 +4138,11 @@ void database::adjust_interface_users( const interface_object& interface, bool a
 void database::process_funds()
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const producer_schedule_object& pso = get_producer_schedule();
    const producer_object& current_producer = get_producer( props.current_producer );
    const account_object& producer_account = get_account( props.current_producer );
+
+   FC_ASSERT( current_producer.active && producer_account.active,
+         "Block Producer cannot process funds while account or producer object is inactive." );
 
    const auto& currency_idx = get_index< asset_currency_data_index >().indices().get< by_id >();
    auto currency_itr = currency_idx.begin();
@@ -4191,19 +4267,19 @@ void database::initialize_evaluators()
 
    // Community Evaluators
 
-   _my->_evaluator_registry.register_evaluator< community_create_operation                   >();
-   _my->_evaluator_registry.register_evaluator< community_update_operation                   >();
-   _my->_evaluator_registry.register_evaluator< community_add_mod_operation                  >();
-   _my->_evaluator_registry.register_evaluator< community_add_admin_operation                >();
-   _my->_evaluator_registry.register_evaluator< community_vote_mod_operation                 >();
-   _my->_evaluator_registry.register_evaluator< community_transfer_ownership_operation       >();
-   _my->_evaluator_registry.register_evaluator< community_join_request_operation             >();
-   _my->_evaluator_registry.register_evaluator< community_join_accept_operation              >();
-   _my->_evaluator_registry.register_evaluator< community_join_invite_operation              >();
-   _my->_evaluator_registry.register_evaluator< community_invite_accept_operation            >();
-   _my->_evaluator_registry.register_evaluator< community_remove_member_operation            >();
-   _my->_evaluator_registry.register_evaluator< community_blacklist_operation                >();
-   _my->_evaluator_registry.register_evaluator< community_subscribe_operation                >();
+   _my->_evaluator_registry.register_evaluator< community_create_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< community_update_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< community_add_mod_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< community_add_admin_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< community_vote_mod_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< community_transfer_ownership_evaluator       >();
+   _my->_evaluator_registry.register_evaluator< community_join_request_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< community_join_accept_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< community_join_invite_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< community_invite_accept_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< community_remove_member_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< community_blacklist_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< community_subscribe_evaluator                >();
 
    // Advertising Evaluators
 
@@ -4549,7 +4625,6 @@ void database::_apply_block( const signed_block& next_block )
 { try {
    notify_pre_apply_block( next_block );
    uint64_t next_block_num = next_block.block_num();
-   block_id_type next_block_id = next_block.id();
    uint32_t skip = get_node_properties().skip_flags;
 
    if( !( skip & skip_merkle_check ) )
@@ -4839,7 +4914,7 @@ void database::update_stake( const signed_transaction& trx)
  * Decays and increments the current producer according to the stake
  * weight of all the transactions in the block they have created.
  */
-void database::update_transaction_stake(const producer_object& signing_producer, const uint128_t& transaction_stake)
+void database::update_transaction_stake( const producer_object& signing_producer, const uint128_t& transaction_stake )
 {
    const median_chain_property_object& median_props = get_median_chain_properties();
    const time_point now = head_block_time();
@@ -4923,7 +4998,7 @@ void database::update_global_dynamic_data( const signed_block& b )
             modify( producer_missed, [&]( producer_object& p )
             {
                p.total_missed++;
-               if( head_block_num() - p.last_confirmed_block_num  > BLOCKS_PER_DAY )
+               if( int64_t( head_block_num() - p.last_confirmed_block_num ) > BLOCKS_PER_DAY )
                {
                   p.active = false;
                   push_virtual_operation( shutdown_producer_operation( p.owner ) );
@@ -5119,14 +5194,10 @@ asset database::pay_issuer_fees( const account_object& seller, const asset_objec
       asset reward = asset( 0, recv_asset.symbol );
       asset reward_paid = asset( 0, recv_asset.symbol );
 
-      uint16_t reward_percent = recv_asset.market_fee_share_percent;  // Percentage of market fees shared with registrars
+      uint16_t reward_percent = recv_asset.market_fee_share_percent;       // Percentage of market fees shared with registrars
 
-      if( reward_percent > 0 )    // calculate and pay market fee sharing rewards
+      if( reward_percent > 0 )         // Calculate and pay market fee sharing rewards
       {
-         const account_object& registrar_account = get_account( seller.registrar );
-         const account_object& referrer_account = get_account( seller.referrer );
-         const account_object& issuer_account = get_account( recv_asset.issuer );
-
          const account_permission_object& issuer_permissions = get_account_permissions( seller.name );
          const account_permission_object& registrar_permissions = get_account_permissions( seller.registrar );
          const account_permission_object& referrer_permissions = get_account_permissions( seller.referrer );
@@ -5145,7 +5216,7 @@ asset database::pay_issuer_fees( const account_object& seller, const asset_objec
             if( registrar_permissions.is_authorized_transfer( recv_asset.issuer, recv_asset ) &&
                issuer_permissions.is_authorized_transfer( seller.registrar, recv_asset ) )
             {
-               asset registrar_reward = reward;    // Registrar begins with all reward
+               registrar_reward = reward;          // Registrar begins with all reward
             }
 
             if( seller.referrer != seller.registrar )
@@ -5158,7 +5229,7 @@ asset database::pay_issuer_fees( const account_object& seller, const asset_objec
                }
                else
                {
-                  referrer_rewards_value = reward.amount;     // Referrer gets all reward if registrar cannot receive.
+                  referrer_rewards_value = reward.amount;         // Referrer gets all reward if registrar cannot receive.
                }
                
                FC_ASSERT ( referrer_rewards_value <= reward.amount.value,
@@ -5225,7 +5296,7 @@ asset database::pay_network_fees( const asset& amount )
    }
    else if( credit_usd_price < price(asset(1,SYMBOL_USD)/asset(1,SYMBOL_CREDIT)) )   // If price of credit is below $1.00 USD
    {
-      asset credit_purchased = liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );  // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
+      liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );  // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
 
       modify( props, [&]( dynamic_global_property_object& gpo ) 
       {
@@ -5239,6 +5310,9 @@ asset database::pay_network_fees( const asset& amount )
          gpo.accumulated_network_revenue += total_fees;
       });
    }
+
+   return total_fees;
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -5312,6 +5386,9 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
          gpo.accumulated_network_revenue += total_fees;
       });
    }
+
+   return total_fees;
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -5505,7 +5582,6 @@ void database::deliver_ad_bid( const ad_bid_object& bid, const account_object& v
  */
 void database::cancel_ad_bid( const ad_bid_object& bid )
 { try {
-   uint32_t prev_requested = bid.requested;
    uint32_t prev_remaining = bid.remaining;
    asset prev_price = bid.bid_price;
    asset bid_total_remaining = prev_remaining * prev_price;
@@ -5849,10 +5925,7 @@ void database::apply_hardfork( uint32_t hardfork )
    {
       case HARDFORK_0_1:
          break;
-      case HARDFORK_0_2:
-         break;
-      case HARDFORK_0_3:
-         break;
+      
    }
 
    modify( get_hardfork_property_object(), [&]( hardfork_property_object& hfp )
@@ -5873,7 +5946,6 @@ void database::apply_hardfork( uint32_t hardfork )
  */
 void database::validate_invariants()const
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
    const auto& asset_idx = get_index< asset_dynamic_data_index >().indices().get< by_symbol >();
    flat_map< asset_symbol_type, asset > asset_checksum;
 
@@ -6107,7 +6179,7 @@ void database::validate_invariants()const
       ++fund_itr;
    }
 
-   auto asset_itr = asset_idx.begin();
+   asset_itr = asset_idx.begin();
 
    while( asset_itr != asset_idx.end() ) // ASSERT ALL ASSET CHECKSUMS ARE ZERO;
    {

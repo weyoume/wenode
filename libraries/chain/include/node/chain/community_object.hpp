@@ -28,7 +28,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         community_object( Constructor&& c, allocator< Allocator > a )
+         community_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a), json_private(a)
          {
             c(*this);
          };
@@ -215,7 +216,7 @@ namespace node { namespace chain {
 
          share_type                                 total_mod_weight = 0;        ///< Total of all moderator weights. 
 
-         time_point                                 last_update;                 ///< Time that the community was last updated.
+         time_point                                 last_updated;                 ///< Time that the community was last updated.
 
          /**
           * Adjacency value determines how similar two accounts are by comparing the 
@@ -602,7 +603,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         community_join_request_object( Constructor&& c, allocator< Allocator > a )
+         community_join_request_object( Constructor&& c, allocator< Allocator > a ) :
+         message(a)
          {
             c( *this );
          }
@@ -625,7 +627,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         community_join_invite_object( Constructor&& c, allocator< Allocator > a )
+         community_join_invite_object( Constructor&& c, allocator< Allocator > a ) :
+         message(a)
          {
             c( *this );
          }
@@ -650,7 +653,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         community_event_object( Constructor&& c, allocator< Allocator > a )
+         community_event_object( Constructor&& c, allocator< Allocator > a ) :
+         event_name(a), location(a), details(a), url(a), json(a)
          {
             c( *this );
          }
@@ -663,9 +667,11 @@ namespace node { namespace chain {
 
          shared_string                  event_name;             ///< The Name of the event.
 
+         shared_string                  location;               ///< Address location of the event.
+
          shared_string                  details;                ///< Event details describing the purpose of the event.
 
-         shared_string                  location;               ///< Address location of the event.
+         shared_string                  url;                    ///< Reference URL for the event.
 
          shared_string                  json;                   ///< Additional Event JSON data.
 
@@ -929,7 +935,7 @@ FC_REFLECT( node::chain::community_member_object,
          (blacklist)
          (mod_weight)
          (total_mod_weight)
-         (last_update)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_object, node::chain::community_member_index );

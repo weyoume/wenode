@@ -17,12 +17,16 @@ namespace node { namespace chain {
    using node::protocol::asset;
    using node::protocol::price;
    using node::protocol::asset_symbol_type;
+   using node::protocol::account_name_type;
 
    class network_officer_object : public object< network_officer_object_type, network_officer_object >
    {
+      network_officer_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         network_officer_object( Constructor&& c, allocator< Allocator > a )
+         network_officer_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a)
          {
             c( *this );
          }
@@ -57,6 +61,8 @@ namespace node { namespace chain {
 
    class network_officer_vote_object : public object< network_officer_vote_object_type, network_officer_vote_object >
    {
+      network_officer_vote_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          network_officer_vote_object( Constructor&& c, allocator< Allocator > a )
@@ -78,9 +84,12 @@ namespace node { namespace chain {
 
    class executive_board_object : public object< executive_board_object_type, executive_board_object >
    {
+      executive_board_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         executive_board_object( Constructor&& c, allocator< Allocator > a )
+         executive_board_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a)
          {
             c( *this );
          }
@@ -115,6 +124,8 @@ namespace node { namespace chain {
 
    class executive_board_vote_object : public object< executive_board_vote_object_type, executive_board_vote_object >
    {
+      executive_board_vote_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          executive_board_vote_object( Constructor&& c, allocator< Allocator > a )
@@ -134,9 +145,12 @@ namespace node { namespace chain {
 
    class governance_account_object : public object< governance_account_object_type, governance_account_object >
    {
+      governance_account_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         governance_account_object( Constructor&& c, allocator< Allocator > a )
+         governance_account_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a)
          {
             c( *this );
          }
@@ -169,6 +183,8 @@ namespace node { namespace chain {
 
    class governance_subscription_object : public object< governance_subscription_object_type, governance_subscription_object >
    {
+      governance_subscription_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          governance_subscription_object( Constructor&& c, allocator< Allocator > a )
@@ -188,9 +204,12 @@ namespace node { namespace chain {
 
    class supernode_object : public object< supernode_object_type, supernode_object >
    {
+      supernode_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         supernode_object( Constructor&& c, allocator< Allocator > a )
+         supernode_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), node_api_endpoint(a), notification_api_endpoint(a), auth_api_endpoint(a), ipfs_endpoint(a), bittorrent_endpoint(a), json(a)
          {
             c( *this );
          }
@@ -243,9 +262,12 @@ namespace node { namespace chain {
 
    class interface_object : public object< interface_object_type, interface_object >
    {
+      interface_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         interface_object( Constructor&& c, allocator< Allocator > a )
+         interface_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a)
          {
             c( *this );
          }
@@ -280,9 +302,12 @@ namespace node { namespace chain {
 
    class mediator_object : public object< mediator_object_type, mediator_object >
    {
+      mediator_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         mediator_object( Constructor&& c, allocator< Allocator > a )
+         mediator_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a), last_escrow_id(a)
          {
             c( *this );
          }
@@ -315,9 +340,12 @@ namespace node { namespace chain {
 
    class community_enterprise_object : public object< community_enterprise_object_type, community_enterprise_object >
    {
+      community_enterprise_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         community_enterprise_object( Constructor&& c, allocator< Allocator > a )
+         community_enterprise_object( Constructor&& c, allocator< Allocator > a ) :
+         enterprise_id(a), milestones(a), milestone_history(a), details(a), url(a), json(a)
          {
             c( *this );
          }
@@ -394,7 +422,7 @@ namespace node { namespace chain {
             return ( duration - days_paid ) * daily_budget;
          }
 
-         bool                           is_beneficiary( const account_name_type& beneficiary )         ///< Finds if a given account name is in the beneficiarys set. 
+         bool                           is_beneficiary( const account_name_type& beneficiary )         ///< Finds if a given account name is in the beneficiarys set.
          {
             if( beneficiaries[ beneficiary ] > 0 )
             {
@@ -406,7 +434,7 @@ namespace node { namespace chain {
             }
          }
 
-         void adjust_pending_budget(const asset& delta)
+         void                           adjust_pending_budget(const asset& delta)
          {
             assert(delta.symbol == SYMBOL_COIN);
             pending_budget += delta;
@@ -415,28 +443,27 @@ namespace node { namespace chain {
 
    class enterprise_approval_object : public object< enterprise_approval_object_type, enterprise_approval_object >
    {
+      enterprise_approval_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         enterprise_approval_object( Constructor&& c, allocator< Allocator > a )
+         enterprise_approval_object( Constructor&& c, allocator< Allocator > a ) :
+         enterprise_id(a)
          {
             c( *this );
          }
 
          id_type                        id;
 
-         account_name_type              account;                   ///< Account approving the enterprise Milestone. 
+         account_name_type              account;                   ///< Account approving the enterprise Milestone.
 
          account_name_type              creator;                   ///< The name of the account that created the community enterprise proposal.
 
          shared_string                  enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
 
-         uint16_t                       vote_rank;                 ///< The vote rank of the approval for enterprise
+         uint16_t                       vote_rank;                 ///< The vote rank of the approval for enterprise.
 
-         int16_t                        milestone;                 ///< Number of the milestone being approved for release.    
-
-         time_point                     last_updated;              ///< The time the approval was created.
-
-         time_point                     created;                   ///< The time the approval was created.
+         int16_t                        milestone;                 ///< Number of the milestone being approved for release.
    };
 
    struct by_type_voting_power;
@@ -782,7 +809,8 @@ namespace node { namespace chain {
       allocator< community_enterprise_object >
    > community_enterprise_index;
 
-   struct account_rank;
+   struct by_account_rank;
+   struct by_account_enterprise;
 
 
    typedef multi_index_container <
@@ -795,7 +823,10 @@ namespace node { namespace chain {
                member< enterprise_approval_object, account_name_type, &enterprise_approval_object::creator >,
                member< enterprise_approval_object, enterprise_approval_id_type, &enterprise_approval_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< enterprise_approval_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< enterprise_approval_id_type > 
+            >
          >,
          ordered_unique< tag< by_enterprise_id >,
             composite_key< enterprise_approval_object,
@@ -803,14 +834,33 @@ namespace node { namespace chain {
                member< enterprise_approval_object, shared_string, &enterprise_approval_object::enterprise_id >,
                member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less, 
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_account_enterprise >,
+            composite_key< enterprise_approval_object,
+               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >,
+               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::creator >,
+               member< enterprise_approval_object, shared_string, &enterprise_approval_object::enterprise_id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >,
          ordered_unique< tag< by_account_rank >,
             composite_key< enterprise_approval_object, 
                member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >,
                member< enterprise_approval_object, uint16_t, &enterprise_approval_object::vote_rank >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< uint16_t > 
+            >
          >
       >,
       allocator< enterprise_approval_object >
@@ -944,9 +994,11 @@ FC_REFLECT( node::chain::mediator_object,
          (details)
          (url)
          (json)
-         (created)
-         (mediation_bond)
+         (mediator_bond)
          (mediation_virtual_position)
+         (last_escrow_from)
+         (last_escrow_id)
+         (created)
          (last_updated)
          );
 
@@ -995,8 +1047,6 @@ FC_REFLECT( node::chain::enterprise_approval_object,
          (enterprise_id)
          (vote_rank)
          (milestone)
-         (last_updated)
-         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::enterprise_approval_object, node::chain::enterprise_approval_index );

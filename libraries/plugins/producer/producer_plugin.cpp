@@ -318,12 +318,12 @@ namespace detail
 
       if( BOOST_UNLIKELY( reserve_ratio_ptr == nullptr ) )
       {
-          db.create< reserve_ratio_object >([&]( reserve_ratio_object &r ) 
-          {
+         db.create< reserve_ratio_object >([&]( reserve_ratio_object &r ) 
+         {
             r.average_block_size = 0;
             r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
-            r.max_virtual_bandwidth = ( uint128_t( MAX_BLOCK_SIZE * MAX_RESERVE_RATIO ) * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS ) / uint128_t( BLOCK_INTERVAL.count() );
-          });
+            r.max_virtual_bandwidth = ( uint128_t( MAX_BLOCK_SIZE * MAX_RESERVE_RATIO ) * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW.count() ) / uint128_t( BLOCK_INTERVAL.count() );
+         });
       }
       else
       {
@@ -381,7 +381,7 @@ namespace detail
                }
 
                r.max_virtual_bandwidth = ( uint128_t( max_block_size ) * uint128_t( r.current_reserve_ratio )
-                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS ) )
+                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW.count() ) )
                                          / ( BLOCK_INTERVAL.count() * RESERVE_RATIO_PRECISION );
             }
          });
@@ -412,13 +412,19 @@ namespace detail
 
          share_type new_bandwidth;
          share_type trx_bandwidth = trx_size * BANDWIDTH_PRECISION;
-         auto delta_time = ( _db.head_block_time() - band->last_bandwidth_update ).to_seconds();
+         fc::microseconds delta_time = _db.head_block_time() - band->last_bandwidth_update;
 
-         if( delta_time > BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS )
+         if( delta_time > BANDWIDTH_AVERAGE_WINDOW )
+         {
             new_bandwidth = 0;
+         }
+            
          else
-            new_bandwidth = ( ( ( BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS - delta_time ) * fc::uint128( band->average_bandwidth.value ) )
-               / BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS ).to_uint64();
+         {
+            new_bandwidth = ( ( ( BANDWIDTH_AVERAGE_WINDOW - delta_time ).to_seconds() * fc::uint128( band->average_bandwidth.value ) )
+               / BANDWIDTH_AVERAGE_WINDOW.to_seconds() ).to_uint64();
+         }
+            
 
          new_bandwidth += trx_bandwidth;
 

@@ -14,7 +14,7 @@
 #include <node/chain/shared_db_merkle.hpp>
 #include <node/chain/operation_notification.hpp>
 #include <node/chain/producer_schedule.hpp>
-#include <node/producer/producer_objects.hpp>
+
 
 #include <node/chain/util/asset.hpp>
 #include <node/chain/util/reward.hpp>

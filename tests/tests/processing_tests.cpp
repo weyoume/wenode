@@ -5,7 +5,6 @@
 
 #include <node/chain/block_summary_object.hpp>
 #include <node/chain/database.hpp>
-//#include <node/chain/hardfork.hpp>
 #include <node/chain/history_object.hpp>
 #include <node/chain/node_objects.hpp>
 

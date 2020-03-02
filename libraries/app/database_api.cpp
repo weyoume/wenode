@@ -3770,7 +3770,7 @@ vector< vote_state > database_api_impl::get_active_votes( string author, string 
       vstate.weight = itr->weight;
       vstate.reward = itr->reward;
       vstate.percent = itr->vote_percent;
-      vstate.time = itr->last_update;
+      vstate.time = itr->last_updated;
       results.push_back( vstate );
       ++itr;
    }
@@ -3861,7 +3861,7 @@ vector< moderation_state > database_api_impl::get_active_mod_tags( string author
       mstate.rating = itr->rating;
       mstate.details = to_string( itr->details );
       mstate.filter = itr->filter;
-      mstate.time = itr->last_update;
+      mstate.time = itr->last_updated;
 
       results.push_back( mstate );
       ++itr;
@@ -3910,7 +3910,7 @@ vector< account_vote > database_api_impl::get_account_votes( string account, str
       avote.weight = itr->weight;
       avote.reward = itr->reward;
       avote.percent = itr->vote_percent;
-      avote.time = itr->last_update;
+      avote.time = itr->last_updated;
       results.push_back( avote );
       ++itr;
    }
@@ -4053,7 +4053,7 @@ vector< account_moderation > database_api_impl::get_account_moderation( string a
       amod.rating = itr->rating;
       amod.details = to_string( itr->details );
       amod.filter = itr->filter;
-      amod.time = itr->last_update;
+      amod.time = itr->last_updated;
       results.push_back( amod );
       ++itr;
    }
@@ -5287,30 +5287,30 @@ vector< discussion > database_api_impl::get_discussions_by_recommended( const di
          auto now_hi = uint64_t( _db.head_block_time().time_since_epoch().count() ) << 32;
          for( uint32_t i = 0; i < query.limit; ++i )
          {
-            uint64_t k = now_hi +      uint64_t(i)*26857571057736338717ULL;
-            uint64_t l = now_hi >> 1 + uint64_t(i)*95198191871878293511ULL;
-            uint64_t m = now_hi >> 2 + uint64_t(i)*58919729024841961988ULL;
-            uint64_t n = now_hi >> 3 + uint64_t(i)*27137164109707054410ULL;
-            
+            uint64_t k = now_hi +      uint64_t(i)*2685757105773633871ULL;
+            uint64_t l = now_hi >> 1 + uint64_t(i)*9519819187187829351ULL;
+            uint64_t m = now_hi >> 2 + uint64_t(i)*5891972902484196198ULL;
+            uint64_t n = now_hi >> 3 + uint64_t(i)*2713716410970705441ULL;
+         
             k ^= (l >> 7);
             l ^= (m << 9);
             m ^= (n >> 5);
             n ^= (k << 3);
 
-            k*= 14226572565896741612ULL;
-            l*= 91985878658736871034ULL;
-            m*= 30605588311672529089ULL;
-            n*= 43069213742576315243ULL;
+            k*= 1422657256589674161ULL;
+            l*= 9198587865873687103ULL;
+            m*= 3060558831167252908ULL;
+            n*= 4306921374257631524ULL;
 
             k ^= (l >> 2);
             l ^= (m << 4);
             m ^= (n >> 1);
             n ^= (k << 9);
 
-            k*= 79477756532752495704ULL;
-            l*= 94908025588282034792ULL;
-            m*= 26941980616458623416ULL;
-            n*= 31902236862011382134ULL;
+            k*= 7947775653275249570ULL;
+            l*= 9490802558828203479ULL;
+            m*= 2694198061645862341ULL;
+            n*= 3190223686201138213ULL;
 
             uint64_t rand = (k ^ l) ^ (m ^ n) ; 
             uint32_t max = recommended_posts.size() - i;

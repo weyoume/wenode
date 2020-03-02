@@ -1,6 +1,6 @@
 #pragma once
 #include <node/chain/global_property_object.hpp>
-//#include <node/chain/hardfork.hpp>
+#include <node/chain/hardfork.hpp>
 #include <node/chain/node_property_object.hpp>
 #include <node/chain/fork_database.hpp>
 #include <node/chain/block_log.hpp>
@@ -122,15 +122,15 @@ namespace node { namespace chain {
          void open( 
             const fc::path& data_dir, 
             const fc::path& shared_mem_dir, 
-            uint64_t shared_file_size = 0, 
-            uint32_t chainbase_flags = 0, 
-            const public_key_type& init_public_key = INIT_PUBLIC_KEY );
+            uint64_t shared_file_size, 
+            uint32_t chainbase_flags, 
+            const public_key_type& init_public_key );
 
 
          /**
           * Begins a new blockchain and creates initial objects for the network using a specified initial public key.
           */
-         void init_genesis( const public_key_type& init_public_key = INIT_PUBLIC_KEY );
+         void init_genesis( const public_key_type& init_public_key );
 
          /**
           * @brief Rebuild object graph from block history and open detabase
@@ -176,8 +176,8 @@ namespace node { namespace chain {
          const price&                           get_usd_price()const;
          const comment_metrics_object&          get_comment_metrics() const;
 
-         const asset&                           asset_to_USD( const asset& a) const;
-         const asset&                           USD_to_asset( const asset& a) const;
+         asset                                  asset_to_USD( const asset& a) const;
+         asset                                  USD_to_asset( const asset& a) const;
          
          const node_property_object&            get_node_properties()const;
 
@@ -232,8 +232,8 @@ namespace node { namespace chain {
          const account_member_invite_object& get_account_member_invite( const account_name_type& member, const account_name_type& business )const;
          const account_member_invite_object* find_account_member_invite( const account_name_type& member, const account_name_type& business )const;
 
-         const account_member_key_object& get_account_member_key( const account_name_type& account )const;
-         const account_member_key_object* find_account_member_key( const account_name_type& account )const;
+         const account_member_key_object& get_account_member_key( const account_name_type& member, const account_name_type& business )const;
+         const account_member_key_object* find_account_member_key( const account_name_type& member, const account_name_type& business )const;
 
          const account_balance_object& get_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const;
          const account_balance_object* find_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const;
@@ -294,9 +294,6 @@ namespace node { namespace chain {
 
          const community_member_key_object& get_community_member_key( const account_name_type& member, const community_name_type& community )const;
          const community_member_key_object* find_community_member_key( const account_name_type& member, const community_name_type& community )const;
-
-         const governance_account_object& get_governance_account( const account_name_type& name )const;
-         const governance_account_object* find_governance_account( const account_name_type& name )const;
 
          const comment_object& get_comment(  const account_name_type& author, const shared_string& permlink )const;
          const comment_object* find_comment( const account_name_type& author, const shared_string& permlink )const;
@@ -553,7 +550,7 @@ namespace node { namespace chain {
 
          void update_business_account_set();
 
-         void adjust_interface_users( const interface_object& interface, bool adjust = true );
+         void adjust_interface_users( const interface_object& interface, bool adjust );
 
          void clear_network_votes( const account_object& a );
 
@@ -578,7 +575,7 @@ namespace node { namespace chain {
 
          void process_supernode_rewards();
 
-         void adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true );
+         void adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust );
 
          void process_community_enterprise_fund();
          
@@ -661,8 +658,9 @@ namespace node { namespace chain {
          void update_community_moderator_votes(const account_object& account, const community_name_type& community, 
             const account_name_type& moderator, uint16_t vote_rank );
 
-         void update_enterprise_votes(const account_object& account );
-         void update_enterprise_votes(const account_object& account, const account_name_type& creator, const shared_string& enterprise_id, uint16_t vote_rank );
+         void update_enterprise_approvals(const account_object& account );
+         void update_enterprise_approvals(const account_object& account, const account_name_type& creator, 
+            string enterprise_id, uint16_t vote_rank, int16_t input_milestone );
 
          void update_account_executive_votes( const account_object& account, const account_name_type& business );
          void update_account_executive_votes( const account_object& account, const account_name_type& business, const account_object& executive,

@@ -99,14 +99,6 @@ BOOST_AUTO_TEST_CASE( custom_json )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( custom_binary )
-{
-   try
-   {
-
-   }
-   FC_LOG_AND_RETHROW()
-}
 */
 BOOST_AUTO_TEST_SUITE_END()
 #endif

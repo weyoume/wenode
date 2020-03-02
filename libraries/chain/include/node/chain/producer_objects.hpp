@@ -54,7 +54,8 @@ namespace node { namespace chain {
          };
 
          template< typename Constructor, typename Allocator >
-         producer_object( Constructor&& c, allocator< Allocator > a )
+         producer_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a)
          {
             c( *this );
          }
@@ -131,7 +132,7 @@ namespace node { namespace chain {
 
          time_point                   hardfork_time_vote = GENESIS_TIME;     ///< The time to activate the next hardfork.
 
-         void                         producer_object::decay_weights( time_point now, const median_chain_property_object& median_props )
+         void                         decay_weights( time_point now, const median_chain_property_object& median_props )
          {
             mining_power -= ( ( mining_power * ( now - last_mining_update ).to_seconds() ) / median_props.pow_decay_time.to_seconds() );
             recent_txn_stake_weight -= ( recent_txn_stake_weight * ( now - last_txn_stake_weight_update ).to_seconds() ) / median_props.txn_stake_decay_time.to_seconds();
@@ -209,22 +210,22 @@ namespace node { namespace chain {
          
          uint8_t                                           hardfork_required_producers = HARDFORK_REQUIRED_PRODUCERS;
 
-         bool     is_top_voting_producer( const account_name_type& producer )const            ///< finds if a given producer name is in the top voting producers set. 
+         bool                                              is_top_voting_producer( const account_name_type& producer )const            ///< finds if a given producer name is in the top voting producers set. 
          {
             return std::find( top_voting_producers.begin(), top_voting_producers.end(), producer) != top_voting_producers.end();
          }
 
-         bool     is_top_mining_producer( const account_name_type& producer )const         ///< finds if a given producer name is in the top mining producers set. 
+         bool                                              is_top_mining_producer( const account_name_type& producer )const         ///< finds if a given producer name is in the top mining producers set. 
          {
             return std::find( top_mining_producers.begin(), top_mining_producers.end(), producer) != top_mining_producers.end();
          }
 
-         bool     is_top_producer( const account_name_type& producer )const         ///< finds if a given producer name is in the top voting or mining producers set. 
+         bool                                              is_top_producer( const account_name_type& producer )const         ///< finds if a given producer name is in the top voting or mining producers set. 
          {
             return is_top_voting_producer( producer ) || is_top_mining_producer( producer );
          }
 
-         void       producer_schedule_object::decay_pow( time_point now, const median_chain_property_object& median_props )
+         void                                              decay_pow( time_point now, const median_chain_property_object& median_props )
          {
             recent_pow -= ( ( recent_pow * ( now - last_pow_update ).to_seconds() ) / median_props.pow_decay_time.to_seconds() );
             last_pow_update = now;
@@ -621,7 +622,7 @@ FC_REFLECT( node::chain::block_validation_object,
          (id)
          (producer)
          (block_id)
-         (height)
+         (block_height)
          (created)
          (verifications)
          (verifiers)
@@ -636,7 +637,7 @@ FC_REFLECT( node::chain::commit_violation_object,
          (id)
          (reporter)
          (producer)
-         (height)
+         (block_height)
          (first_trx)
          (second_trx)
          (created)

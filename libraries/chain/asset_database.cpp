@@ -14,7 +14,6 @@
 #include <node/chain/shared_db_merkle.hpp>
 #include <node/chain/operation_notification.hpp>
 #include <node/chain/producer_schedule.hpp>
-#include <node/producer/producer_objects.hpp>
 
 #include <node/chain/util/asset.hpp>
 #include <node/chain/util/reward.hpp>
@@ -314,14 +313,13 @@ void database::update_median_liquidity()
       day.reserve( day_history_window );
       hour.reserve( hour_history_window );
 
-      bip::deque< price, allocator< price > > price_history = pool.price_history;
-
       modify( pool, [&]( asset_liquidity_pool_object& p )
       {
          p.price_history.push_back( pool.current_price() );
-         if( p.price_history.size() > day_history_window )
+         
+         while( p.price_history.size() > day_history_window )
          {
-            price_history.pop_front();  // Maintain one day worth of price history
+            p.price_history.pop_front();       // Maintain one day worth of price history
          }
 
          for( auto i : p.price_history )
@@ -347,7 +345,7 @@ void database::update_median_liquidity()
             ++hour_itr;
          }
 
-         size_t offset = hour.size()/2;
+         offset = hour.size()/2;
 
          std::nth_element( hour.begin(), hour.begin()+offset, hour.end(),
          []( price a, price b )
@@ -387,7 +385,7 @@ void database::process_credit_buybacks()
          price market_price = pool.base_hour_median_price( buyback_price.base.symbol );
          if( market_price > buyback_price )
          {
-            pair<asset, asset> buyback = liquid_limit_exchange( credit.buyback_pool, buyback_price, pool, true, true );
+            pair< asset, asset > buyback = liquid_limit_exchange( credit.buyback_pool, buyback_price, pool, true, true );
             modify( credit, [&]( asset_credit_data_object& c )
             {
                c.adjust_pool( -buyback.first );    // buyback the credit asset from its liquidity pool, up to the buyback price, and deduct from the pool.
@@ -437,8 +435,8 @@ void database::process_credit_interest()
       share_type pr = PERCENT_100;
       share_type hpr = PERCENT_100 / 2;
 
-      share_type buy = ( buyback * unit ).amount;       // Buyback price of the credit asset.
-      share_type mar = ( market * unit ).amount;        // Market price of the credit asset.
+      share_type buy = ( unit * buyback ).amount;       // Buyback price of the credit asset.
+      share_type mar = ( unit * market ).amount;        // Market price of the credit asset.
 
       share_type liqf = credit.liquid_fixed_interest_rate;
       share_type staf = credit.staked_fixed_interest_rate;
@@ -561,11 +559,10 @@ void database::clear_expired_delegations()
    {
       const asset_delegation_expiration_object& exp = *exp_itr;
       ++exp_itr;
-      const asset_delegation_object& delegation = get_asset_delegation( exp.delegator, exp.delegatee, exp.amount.symbol );
-
-      adjust_delegated_balance( exp.delegator, -exp.amount );     // decrease delegated balance of delegator account.
-      adjust_receiving_balance( exp.delegatee, -exp.amount );     // decrease receiving balance of delegatee account.
-         
+      
+      adjust_delegated_balance( exp.delegator, -exp.amount );
+      adjust_receiving_balance( exp.delegatee, -exp.amount );
+   
       push_virtual_operation( return_asset_delegation_operation( exp_itr->delegator, exp_itr->amount ) );
 
       remove( exp );
@@ -1214,13 +1211,14 @@ share_type database::get_voting_power( const account_name_type& a )const
    const account_balance_object* equity_ptr = find_account_balance( a, SYMBOL_EQUITY );
    price equity_coin_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    share_type voting_power = 0;
+
    if( coin_ptr != nullptr )
    {
       voting_power += coin_ptr->get_voting_power().amount;
    }
    if( equity_ptr != nullptr )
    {
-      voting_power += (equity_ptr->get_voting_power()*equity_coin_price).amount;
+      voting_power += ( equity_ptr->get_voting_power()*equity_coin_price ).amount;
    }
    return voting_power;
 }
@@ -1242,8 +1240,8 @@ share_type database::get_voting_power( const account_object& a, const price& equ
  */
 share_type database::get_voting_power( const account_name_type& a, const price& equity_coin_price )const
 {
-   const account_balance_object* coin_ptr = find_account_balance(a, SYMBOL_COIN);
-   const account_balance_object* equity_ptr = find_account_balance(a, SYMBOL_EQUITY);
+   const account_balance_object* coin_ptr = find_account_balance( a, SYMBOL_COIN );
+   const account_balance_object* equity_ptr = find_account_balance( a, SYMBOL_EQUITY );
    share_type voting_power = 0;
    if( coin_ptr != nullptr )
    {
@@ -1251,7 +1249,7 @@ share_type database::get_voting_power( const account_name_type& a, const price& 
    }
    if( equity_ptr != nullptr )
    {
-      voting_power += (equity_ptr->get_voting_power()*equity_coin_price).amount;
+      voting_power += ( equity_ptr->get_voting_power() * equity_coin_price ).amount;
    }
    return voting_power;
 }
@@ -1292,11 +1290,12 @@ share_type database::get_equity_voting_power( const account_name_type& a, const 
    {
       const asset_equity_data_object& equity = get_equity_data( symbol );
       const account_balance_object* abo_ptr = find_account_balance( a, symbol );
+
       if( abo_ptr != nullptr )
       {
-         voting_power += abo_ptr->get_liquid_balance() * equity.liquid_voting_rights;
-         voting_power += abo_ptr->get_voting_power() * equity.staked_voting_rights;
-         voting_power += abo_ptr->get_savings_balance() * equity.savings_voting_rights;
+         voting_power += abo_ptr->liquid_balance * share_type( equity.liquid_voting_rights );
+         voting_power += abo_ptr->staked_balance * share_type( equity.staked_voting_rights );
+         voting_power += abo_ptr->savings_balance * share_type( equity.savings_voting_rights );
       }
    }
    return voting_power;
@@ -1320,8 +1319,8 @@ void database::update_expired_feeds()
       const asset_bitasset_data_object& bitasset = *itr;
       ++itr; 
       const asset_object* asset_ptr = nullptr;
-      
-      auto old_median_feed = bitasset.current_feed;
+      price_feed old_median_feed = bitasset.current_feed;
+
       modify( bitasset, [&]( asset_bitasset_data_object& abdo )
       {
          abdo.update_median_feeds( head_time );
@@ -1450,7 +1449,7 @@ void database::dispute_escrow( const escrow_object& escrow )
       ++mediator_itr;
    }
 
-   auto mediator_itr = mediator_idx.begin();
+   mediator_itr = mediator_idx.begin();
 
    // Select top position mediators
    while( mediator_itr != mediator_idx.end() && top_mediators.size() < ( 10 * ESCROW_DISPUTE_MEDIATOR_AMOUNT ) )

@@ -41,7 +41,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         asset_object( Constructor&& c, allocator< Allocator > a )
+         asset_object( Constructor&& c, allocator< Allocator > a ) :
+         display_symbol(a), details(a), json(a), url(a)
          {
             c( *this );
          }
@@ -166,11 +167,6 @@ namespace node { namespace chain {
             return !( flags & asset_issuer_permission_flags::disable_escrow );
          }
 
-         bool enable_escrow()const              ///< true if the asset can be used in escrow transfers and marketplace purchases
-         { 
-            return !( flags & asset_issuer_permission_flags::disable_escrow );
-         }
-
          bool enable_force_settle()const        ///< true if users may request force-settlement of the market-issued asset
          { 
             return !( flags & asset_issuer_permission_flags::disable_force_settle );
@@ -258,25 +254,25 @@ namespace node { namespace chain {
 
          share_type                     confidential_supply = 0;       ///< total confidential asset supply
 
-         asset get_liquid_supply()const { return asset( liquid_supply, symbol ); }
+         asset                          get_liquid_supply()const { return asset( liquid_supply, symbol ); }
 
-         asset get_reward_supply()const { return asset( reward_supply, symbol ); }
+         asset                          get_reward_supply()const { return asset( reward_supply, symbol ); }
 
-         asset get_staked_supply()const { return asset( staked_supply, symbol ); }
+         asset                          get_staked_supply()const { return asset( staked_supply, symbol ); }
 
-         asset get_savings_supply()const { return asset( savings_supply, symbol ); }
+         asset                          get_savings_supply()const { return asset( savings_supply, symbol ); }
 
-         asset get_delegated_supply()const { return asset( delegated_supply, symbol ); }
+         asset                          get_delegated_supply()const { return asset( delegated_supply, symbol ); }
 
-         asset get_receiving_supply()const { return asset( receiving_supply, symbol ); }
+         asset                          get_receiving_supply()const { return asset( receiving_supply, symbol ); }
 
-         asset get_pending_supply()const { return asset( pending_supply, symbol ); }
+         asset                          get_pending_supply()const { return asset( pending_supply, symbol ); }
 
-         asset get_confidential_supply()const { return asset( confidential_supply, symbol ); }
+         asset                          get_confidential_supply()const { return asset( confidential_supply, symbol ); }
 
-         asset get_total_supply()const { return asset( total_supply, symbol ); }
+         asset                          get_total_supply()const { return asset( total_supply, symbol ); }
 
-         void asset_dynamic_data_object::adjust_liquid_supply(const asset& delta)
+         void                           adjust_liquid_supply(const asset& delta)
          { try {
             FC_ASSERT( delta.symbol == symbol );
             liquid_supply += delta.amount;
@@ -286,7 +282,7 @@ namespace node { namespace chain {
 
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void asset_dynamic_data_object::adjust_staked_supply(const asset& delta)
+         void                          adjust_staked_supply(const asset& delta)
          { try {
             FC_ASSERT( delta.symbol == symbol );
             staked_supply += delta.amount;
@@ -296,7 +292,7 @@ namespace node { namespace chain {
             
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void asset_dynamic_data_object::adjust_reward_supply(const asset& delta)
+         void                          adjust_reward_supply(const asset& delta)
          { try {
             FC_ASSERT( delta.symbol == symbol );
             reward_supply += delta.amount;
@@ -306,7 +302,7 @@ namespace node { namespace chain {
             
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void asset_dynamic_data_object::adjust_savings_supply(const asset& delta)
+         void                          adjust_savings_supply(const asset& delta)
          { try {
             FC_ASSERT( delta.symbol == symbol );
             savings_supply += delta.amount;
@@ -316,7 +312,7 @@ namespace node { namespace chain {
             
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void asset_dynamic_data_object::adjust_delegated_supply(const asset& delta)    ///< Not included in total supply
+         void                          adjust_delegated_supply(const asset& delta)    ///< Not included in total supply
          { try {
             FC_ASSERT( delta.symbol == symbol );
             delegated_supply += delta.amount;
@@ -324,7 +320,7 @@ namespace node { namespace chain {
             
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void asset_dynamic_data_object::adjust_receiving_supply(const asset& delta)    ///< Not included in total supply
+         void                          adjust_receiving_supply(const asset& delta)    ///< Not included in total supply
          { try {
             FC_ASSERT( delta.symbol == symbol );
             receiving_supply += delta.amount;
@@ -332,7 +328,7 @@ namespace node { namespace chain {
             
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void asset_dynamic_data_object::adjust_pending_supply(const asset& delta)
+         void                          adjust_pending_supply(const asset& delta)
          { try {
             FC_ASSERT( delta.symbol == symbol );
             pending_supply += delta.amount;
@@ -561,7 +557,7 @@ namespace node { namespace chain {
 
          uint16_t                   boost_top;                   ///< Percent bonus earned by Top membership accounts.
 
-         void adjust_pool( const asset& delta )
+         void                       adjust_pool( const asset& delta )
          { try {
             if( dividend_pool[ delta.symbol ].amount >= 0 && dividend_pool[ delta.symbol ].symbol == delta.symbol )
             {
@@ -639,7 +635,7 @@ namespace node { namespace chain {
 
          uint32_t               var_interest_range;              ///< The percentage range from the buyback price over which to apply the variable interest rate.
 
-         void adjust_pool( const asset& delta )
+         void                   adjust_pool( const asset& delta )
          {
             FC_ASSERT( delta.symbol == buyback_asset );
             buyback_pool += delta;
@@ -690,7 +686,7 @@ namespace node { namespace chain {
          
          time_point                             last_distribution;      ///< Time that the revenue pool was distributed to ownership asset holders.
 
-         void adjust_pool( const asset& delta )
+         void                                   adjust_pool( const asset& delta )
          { try {
             if( revenue_pool[ delta.symbol ].amount >= 0 && revenue_pool[ delta.symbol ].symbol == delta.symbol )
             {
@@ -772,7 +768,7 @@ namespace node { namespace chain {
 
          price                      day_median_price;              ///< The median price over the last day, at 10 minute intervals.
 
-         bip::deque< price, allocator< price > >  price_history;   ///< Tracks the last 24 hours of median price, one per 10 minutes.
+         std::deque< price >        price_history;                 ///< Tracks the last 24 hours of median price, one per 10 minutes.
 
          price                      current_price()const           ///< Liquidity pools current price of Asset A and Asset B. Asset A is the base asset, Asset B is the quote asset.
          {
@@ -791,6 +787,10 @@ namespace node { namespace chain {
             {
                return price( balance_b, balance_a );
             }
+            else
+            {
+               return price();
+            }
          }
 
          price                       base_hour_median_price( const asset_symbol_type& base )const   ///< hourly median price with specified asset as base
@@ -804,6 +804,10 @@ namespace node { namespace chain {
             else if( base == symbol_b )
             {
                return ~hour_median_price;
+            }
+            else
+            {
+               return price();
             }
          }
 
@@ -819,6 +823,10 @@ namespace node { namespace chain {
             {
                return ~day_median_price;
             }
+            else
+            {
+               return price();
+            }
          }
 
          asset                       asset_balance( const asset_symbol_type& symbol )const
@@ -832,6 +840,10 @@ namespace node { namespace chain {
             else if( symbol == symbol_b )
             {
                return balance_b;
+            }
+            else
+            {
+               return asset();
             }
          }
    };
@@ -975,7 +987,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         asset_prediction_pool_object( Constructor&& c, allocator< Allocator > a )
+         asset_prediction_pool_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), outcome_details(a)
          {
             c( *this );
          }
@@ -984,15 +997,17 @@ namespace node { namespace chain {
 
          account_name_type                  issuer;              ///< Name of the account which created the prediction market pool.
 
-         shared_string                      details;             ///< Description of the market, how it will be resolved using known public data sources.
+         asset_symbol_type                  prediction_symbol;   ///< Ticker symbol of the prediction pool primary asset.
 
          asset_symbol_type                  collateral_symbol;   ///< Ticker symbol of the collateral asset backing the prediction market.
 
+         asset                              collateral_pool;     ///< Funds accumulated by outcome asset positions for distribution to winning outcome. 
+
          vector< asset_symbol_type >        outcome_assets;      ///< Available strike price and expirations of call options to buy the quote asset.
 
-         flat_map< asset_symbol_type, shared_string >   outcome_details;       ///< Description of each outcome and the resolution conditions for each asset. 
+         shared_string                      details;             ///< Description of the market, how it will be resolved using known public data sources.
 
-         asset                              prediction_pool;     ///< Funds collected for all outcome asset collateral.
+         flat_map< asset_symbol_type, shared_string >   outcome_details;       ///< Description of each outcome and the resolution conditions for each asset. 
 
          time_point                         min_closing_time;    ///< Time after which the market can be closed.
 
@@ -1017,13 +1032,13 @@ namespace node { namespace chain {
 
          account_name_type                      issuer;                       ///< Name of the account which created the distribution market pool.
 
-         shared_string                          details;                      ///< Description of the distribution process.
+         asset_symbol_type                      distribution_symbol;          ///< Asset that is generated by the distribution.
 
-         asset_symbol_type                      fund_asset;                   ///< Ticker symbol of the asset being accepted for distribution assets.
+         asset_symbol_type                      fund_symbol;                  ///< Ticker symbol of the asset being accepted for distribution assets.
 
          asset                                  fund_pool;                    ///< Pool of funds received.
 
-         asset_symbol_type                      distribution_asset;           ///< Asset that is generated by the distribution.
+         shared_string                          details;                      ///< Description of the distribution process.
 
          uint32_t                               min_input_fund_units;         ///< Minimum funds required for each round of the distribution process.
 
@@ -1129,6 +1144,15 @@ namespace node { namespace chain {
       allocator< asset_credit_data_object >
    > asset_credit_data_index;
 
+   typedef multi_index_container<
+      asset_unique_data_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< asset_unique_data_object, asset_unique_data_id_type, &asset_unique_data_object::id > >,
+         ordered_unique< tag<by_symbol>, member<asset_unique_data_object, asset_symbol_type, &asset_unique_data_object::symbol> >
+      >,
+      allocator< asset_unique_data_object >
+   > asset_unique_data_index;
+
    struct by_asset_pair;
    struct by_symbol_a;
    struct by_symbol_b;
@@ -1136,20 +1160,20 @@ namespace node { namespace chain {
    typedef multi_index_container<
       asset_liquidity_pool_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< asset_liquidity_pool_object, asset_liquidity_pool_id_type, &asset_liquidity_pool_object::id > >,
-         ordered_unique< tag<by_asset_pair>,
+         ordered_unique< tag< by_id >, member< asset_liquidity_pool_object, asset_liquidity_pool_id_type, &asset_liquidity_pool_object::id > >,
+         ordered_unique< tag< by_asset_pair >,
             composite_key< asset_liquidity_pool_object,
                member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_a >,
                member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_b > 
             >
          >,
-         ordered_unique< tag<by_symbol_a>,
+         ordered_unique< tag< by_symbol_a >,
             composite_key< asset_liquidity_pool_object,
                member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_a >,
                member< asset_liquidity_pool_object, asset_liquidity_pool_id_type, &asset_liquidity_pool_object::id > 
             >
          >,
-         ordered_unique< tag<by_symbol_b>,
+         ordered_unique< tag< by_symbol_b >,
             composite_key< asset_liquidity_pool_object,
                member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_b >,
                member< asset_liquidity_pool_object, asset_liquidity_pool_id_type, &asset_liquidity_pool_object::id > 
@@ -1172,6 +1196,64 @@ namespace node { namespace chain {
       allocator< asset_credit_pool_object >
    > asset_credit_pool_index;
 
+   struct by_quote_symbol;
+
+   typedef multi_index_container<
+      asset_option_pool_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< asset_option_pool_object, asset_option_pool_id_type, &asset_option_pool_object::id > >,
+         ordered_unique< tag<by_base_symbol>,
+            composite_key< asset_option_pool_object,
+               member< asset_option_pool_object, asset_symbol_type, &asset_option_pool_object::base_symbol >,
+               member< asset_option_pool_object, asset_option_pool_id_type, &asset_option_pool_object::id > 
+            >
+         >,
+         ordered_unique< tag<by_quote_symbol>,
+            composite_key< asset_option_pool_object,
+               member< asset_option_pool_object, asset_symbol_type, &asset_option_pool_object::quote_symbol >,
+               member< asset_option_pool_object, asset_option_pool_id_type, &asset_option_pool_object::id > 
+            >
+         >
+      >, 
+      allocator< asset_option_pool_object >
+   > asset_option_pool_index;
+
+   struct by_prediction_symbol;
+   struct by_collateral_symbol;
+
+   typedef multi_index_container<
+      asset_prediction_pool_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< asset_prediction_pool_object, asset_prediction_pool_id_type, &asset_prediction_pool_object::id > >,
+         ordered_unique< tag<by_prediction_symbol>, member< asset_prediction_pool_object, asset_symbol_type, &asset_prediction_pool_object::prediction_symbol > >,
+         ordered_unique< tag<by_collateral_symbol>,
+            composite_key< asset_prediction_pool_object,
+               member< asset_prediction_pool_object, asset_symbol_type, &asset_prediction_pool_object::collateral_symbol >,
+               member< asset_prediction_pool_object, asset_prediction_pool_id_type, &asset_prediction_pool_object::id > 
+            >
+         >
+      >, 
+      allocator< asset_prediction_pool_object >
+   > asset_prediction_pool_index;
+
+   struct by_distribution_symbol;
+   struct by_fund_symbol;
+
+   typedef multi_index_container<
+      asset_distribution_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< asset_distribution_object, asset_distribution_id_type, &asset_distribution_object::id > >,
+         ordered_unique< tag<by_distribution_symbol>, member< asset_distribution_object, asset_symbol_type, &asset_distribution_object::distribution_symbol > >,
+         ordered_unique< tag<by_fund_symbol>,
+            composite_key< asset_distribution_object,
+               member< asset_distribution_object, asset_symbol_type, &asset_distribution_object::fund_symbol >,
+               member< asset_distribution_object, asset_distribution_id_type, &asset_distribution_object::id > 
+            >
+         >
+      >, 
+      allocator< asset_distribution_object >
+   > asset_distribution_index;
+
 } } ///< node::chain
 
 FC_REFLECT( node::chain::asset_object,
@@ -1179,8 +1261,24 @@ FC_REFLECT( node::chain::asset_object,
          (symbol)
          (asset_type)
          (issuer)
-         (options)
+         (display_symbol)
+         (details)
+         (json)
+         (url)
+         (max_supply)
+         (stake_intervals)
+         (unstake_intervals)
+         (market_fee_percent)
+         (market_fee_share_percent)
+         (max_market_fee)
+         (issuer_permissions)
+         (flags)
+         (whitelist_authorities)
+         (blacklist_authorities)
+         (whitelist_markets)
+         (blacklist_markets)
          (created)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_object, node::chain::asset_index );
@@ -1233,7 +1331,6 @@ FC_REFLECT( node::chain::asset_bitasset_data_object,
          (symbol)
          (issuer)
          (backing_asset)
-         (options)
          (feeds)
          (current_feed)
          (current_feed_publication_time)
@@ -1241,6 +1338,11 @@ FC_REFLECT( node::chain::asset_bitasset_data_object,
          (force_settled_volume)
          (settlement_price)
          (settlement_fund)
+         (feed_lifetime)
+         (minimum_feeds)
+         (force_settlement_delay)
+         (force_settlement_offset_percent)
+         (maximum_force_settlement_volume)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_bitasset_data_object, node::chain::asset_bitasset_data_index );
@@ -1249,9 +1351,22 @@ FC_REFLECT( node::chain::asset_equity_data_object,
          (id)
          (business_account)
          (symbol)
-         (options)
          (dividend_pool)
          (last_dividend)
+         (dividend_share_percent)
+         (liquid_dividend_percent)
+         (staked_dividend_percent)
+         (savings_dividend_percent)
+         (liquid_voting_rights)
+         (staked_voting_rights)
+         (savings_voting_rights)
+         (min_active_time)
+         (min_balance)
+         (min_producers)
+         (boost_balance)
+         (boost_activity)
+         (boost_producers)
+         (boost_top)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_equity_data_object, node::chain::asset_equity_data_index );
@@ -1260,16 +1375,36 @@ FC_REFLECT( node::chain::asset_credit_data_object,
          (id)
          (business_account)
          (symbol)
-         (options)
          (buyback_asset)
          (buyback_pool)
          (buyback_price)
-         (symbol_a)
-         (symbol_b)
          (last_buyback)
+         (buyback_share_percent)
+         (liquid_fixed_interest_rate)
+         (liquid_variable_interest_rate)
+         (staked_fixed_interest_rate)
+         (staked_variable_interest_rate)
+         (savings_fixed_interest_rate)
+         (savings_variable_interest_rate)
+         (var_interest_range)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_credit_data_object, node::chain::asset_credit_data_index );
+
+FC_REFLECT( node::chain::asset_unique_data_object,
+         (id)
+         (symbol)
+         (issuer)
+         (controlling_owner)
+         (ownership_asset)
+         (control_list)
+         (access_list)
+         (revenue_pool)
+         (access_price)
+         (last_distribution)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_unique_data_object, node::chain::asset_unique_data_index );
 
 FC_REFLECT( node::chain::asset_liquidity_pool_object,
          (id)
@@ -1300,3 +1435,51 @@ FC_REFLECT( node::chain::asset_credit_pool_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_credit_pool_object, node::chain::asset_credit_pool_index );
+
+FC_REFLECT( node::chain::asset_option_pool_object,
+         (id)
+         (issuer)
+         (base_symbol)
+         (quote_symbol)
+         (call_strikes)
+         (put_strikes)
+         (open_interest)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_option_pool_object, node::chain::asset_option_pool_index );
+
+FC_REFLECT( node::chain::asset_prediction_pool_object,
+         (id)
+         (issuer)
+         (prediction_symbol)
+         (collateral_symbol)
+         (collateral_pool)
+         (outcome_assets)
+         (details)
+         (outcome_details)
+         (min_closing_time)
+         (max_closing_time)
+         (prediction_bond)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_prediction_pool_object, node::chain::asset_prediction_pool_index );
+
+FC_REFLECT( node::chain::asset_distribution_object,
+         (id)
+         (issuer)
+         (distribution_symbol)
+         (fund_symbol)
+         (fund_pool)
+         (details)
+         (min_input_fund_units)
+         (max_input_fund_units)
+         (distribution_rounds)
+         (distribution_interval_days)
+         (input_fund_unit)
+         (output_distribution_unit)
+         (min_unit_ratio)
+         (max_unit_ratio)
+         (begin_time)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_distribution_object, node::chain::asset_distribution_index );

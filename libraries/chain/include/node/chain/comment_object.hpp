@@ -19,8 +19,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         comment_object( Constructor&& c, allocator< Allocator > a )
-            :category( a ), parent_permlink( a ), permlink( a ), body( a ), json( a ), beneficiaries( a )
+         comment_object( Constructor&& c, allocator< Allocator > a ) :
+         permlink(a), title(a), body( a ), ipfs(a), magnet(a), language(a), parent_permlink( a ), category( a ), json( a ), beneficiaries( a )
          {
             c( *this );
          }
@@ -73,7 +73,7 @@ namespace node { namespace chain {
 
          bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;  ///< Vector of beneficiary routes that receive a content reward distribution.
          
-         time_point                     last_update;                  ///< The time the comment was last edited by the author
+         time_point                     last_updated;                  ///< The time the comment was last edited by the author
 
          time_point                     created;                      ///< Time that the comment was created.
 
@@ -309,7 +309,7 @@ namespace node { namespace chain {
 
          int16_t                 vote_percent = 0;   //  The percent weight of the vote
 
-         time_point              last_update;        ///< The time of the last update of the vote.
+         time_point              last_updated;        ///< The time of the last update of the vote.
 
          time_point              created;            ///< Time the vote was created.
 
@@ -389,7 +389,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         moderation_tag_object( Constructor&& c, allocator< Allocator > a )
+         moderation_tag_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a)
          {
             c( *this );
          }
@@ -412,7 +413,7 @@ namespace node { namespace chain {
 
          bool                           filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
 
-         time_point                     last_update;      ///< Time the comment tag was last edited by the author.
+         time_point                     last_updated;      ///< Time the comment tag was last edited by the author.
 
          time_point                     created;          ///< Time that the comment tag was created.
    };
@@ -429,7 +430,8 @@ namespace node { namespace chain {
    {
       public:
          template< typename Constructor, typename Allocator >
-         message_object( Constructor&& c, allocator< Allocator > a )
+         message_object( Constructor&& c, allocator< Allocator > a ) :
+         message(a), json(a), uuid(a)
          {
             c( *this );
          }
@@ -529,7 +531,7 @@ namespace node { namespace chain {
 
          double                  vote_comment_ratio = 0;       ///< recent comment power / recent vote power ration
 
-         time_point              last_update;                  ///< Time of last metrics update
+         time_point              last_updated;                 ///< Time of last metrics update
    };
 
 
@@ -558,10 +560,10 @@ namespace node { namespace chain {
          ordered_unique< tag< by_voter_last_update >,
             composite_key< comment_vote_object,
                member< comment_vote_object, account_name_type, &comment_vote_object::voter>,
-               member< comment_vote_object, time_point, &comment_vote_object::last_update>,
+               member< comment_vote_object, time_point, &comment_vote_object::last_updated>,
                member< comment_vote_object, comment_id_type, &comment_vote_object::comment>
             >,
-            composite_key_compare< std::less< account_id_type >, std::greater< time_point >, std::less< comment_id_type > >
+            composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< comment_id_type > >
          >,
          ordered_unique< tag< by_comment_weight_voter >,
             composite_key< comment_vote_object,
@@ -569,7 +571,7 @@ namespace node { namespace chain {
                member< comment_vote_object, uint128_t, &comment_vote_object::weight>,
                member< comment_vote_object, account_name_type, &comment_vote_object::voter>
             >,
-            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_id_type > >
+            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_name_type > >
          >
       >,
       allocator< comment_vote_object >
@@ -622,7 +624,7 @@ namespace node { namespace chain {
                member< comment_view_object, uint128_t, &comment_view_object::weight>,
                member< comment_view_object, account_name_type, &comment_view_object::viewer>
             >,
-            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_id_type > >
+            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_name_type > >
          >
       >,
       allocator< comment_view_object >
@@ -655,7 +657,7 @@ namespace node { namespace chain {
                member< comment_share_object, uint128_t, &comment_share_object::weight>,
                member< comment_share_object, account_name_type, &comment_share_object::sharer>
             >,
-            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_id_type > >
+            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_name_type > >
          >
       >,
       allocator< comment_share_object >
@@ -712,7 +714,7 @@ namespace node { namespace chain {
                std::less< feed_id_type > 
             >
          >,
-         ordered_unique< tag< by_new_account >,
+         ordered_unique< tag< by_old_account >,
             composite_key< feed_object,
                member< feed_object, account_name_type, &feed_object::account >,
                member< feed_object, time_point, &feed_object::feed_time >,
@@ -733,8 +735,8 @@ namespace node { namespace chain {
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
+               std::less< comment_id_type >,
                std::less< feed_reach_type >, 
-               std::less< comment_id_type >, 
                std::less< feed_id_type > 
             >
          >,
@@ -931,7 +933,10 @@ namespace node { namespace chain {
                member< comment_object, account_name_type, &comment_object::author >,
                member< comment_object, shared_string, &comment_object::permlink >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >,
          ordered_unique< tag< by_root >,
             composite_key< comment_object,
@@ -945,7 +950,11 @@ namespace node { namespace chain {
                member< comment_object, uint128_t, &comment_object::weight>,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
-            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< comment_id_type > >
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::greater< uint128_t >, 
+               std::less< comment_id_type > 
+            >
          >,
          ordered_unique< tag< by_time >,
             composite_key< comment_object,
@@ -953,7 +962,11 @@ namespace node { namespace chain {
                member< comment_object, time_point, &comment_object::created >,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
-            composite_key_compare< std::less< bool >, std::greater< time_point >, std::less< comment_id_type > >
+            composite_key_compare< 
+               std::less< bool >, 
+               std::greater< time_point >, 
+               std::less< comment_id_type > 
+            >
          >,
          ordered_unique< tag< by_parent >,
             composite_key< comment_object,
@@ -961,7 +974,11 @@ namespace node { namespace chain {
                member< comment_object, shared_string, &comment_object::parent_permlink >,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less, std::less< comment_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less, 
+               std::less< comment_id_type > 
+            >
          >
          // NON_CONSENSUS INDICIES - used by APIs
 #ifndef IS_LOW_MEM
@@ -971,23 +988,34 @@ namespace node { namespace chain {
                member< comment_object, shared_string, &comment_object::title >,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
-            composite_key_compare< strcmp_less, std::less< comment_id_type > >
+            composite_key_compare< 
+               strcmp_less, 
+               std::less< comment_id_type > 
+            >
          >,
          ordered_unique< tag< by_last_update >,
             composite_key< comment_object,
                member< comment_object, account_name_type, &comment_object::parent_author >,
-               member< comment_object, time_point, &comment_object::last_update >,
+               member< comment_object, time_point, &comment_object::last_updated >,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< comment_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< time_point >, 
+               std::less< comment_id_type > 
+            >
          >,
          ordered_unique< tag< by_author_last_update >,
             composite_key< comment_object,
                member< comment_object, account_name_type, &comment_object::author >,
-               member< comment_object, time_point, &comment_object::last_update >,
+               member< comment_object, time_point, &comment_object::last_updated >,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< comment_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< time_point >,
+               std::less< comment_id_type >
+            >
          >
 #endif
       >,
@@ -1048,22 +1076,22 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >, member< moderation_tag_object, moderation_tag_id_type, &moderation_tag_object::id > >,
          ordered_unique< tag< by_comment_moderator >,
             composite_key< moderation_tag_object,
-               member< moderation_tag_object, comment_id_type, &moderation_tag_object::comment>,
-               member< moderation_tag_object, account_name_type, &moderation_tag_object::moderator>
+               member< moderation_tag_object, comment_id_type, &moderation_tag_object::comment >,
+               member< moderation_tag_object, account_name_type, &moderation_tag_object::moderator >
             >
          >,
          ordered_unique< tag< by_comment_updated >,
             composite_key< moderation_tag_object,
-               member< moderation_tag_object, comment_id_type, &moderation_tag_object::comment>,
-               member< moderation_tag_object, time_point, &moderation_tag_object::last_update>,
-               member< moderation_tag_object, moderation_tag_id_type , &moderation_tag_object::id>
+               member< moderation_tag_object, comment_id_type, &moderation_tag_object::comment >,
+               member< moderation_tag_object, time_point, &moderation_tag_object::last_updated >,
+               member< moderation_tag_object, moderation_tag_id_type , &moderation_tag_object::id >
             >,
             composite_key_compare< std::less< comment_id_type >, std::greater< time_point >, std::less< moderation_tag_id_type > >
          >,
          ordered_unique< tag< by_moderator_comment >,
             composite_key< moderation_tag_object,
-               member< moderation_tag_object, account_name_type, &moderation_tag_object::moderator>,
-               member< moderation_tag_object, comment_id_type, &moderation_tag_object::comment>
+               member< moderation_tag_object, account_name_type, &moderation_tag_object::moderator >,
+               member< moderation_tag_object, comment_id_type, &moderation_tag_object::comment >
             >
          >
       >,
@@ -1102,9 +1130,10 @@ FC_REFLECT( node::chain::comment_object,
          (json)
          (category)
          (comment_price)
+         (premium_price)
          (payments_received)
          (beneficiaries)
-         (last_update)
+         (last_updated)
          (created)
          (active)
          (last_payout)
@@ -1140,11 +1169,12 @@ FC_REFLECT( node::chain::comment_object,
          (share_reward_percent)
          (comment_reward_percent)
          (storage_reward_percent)
-         (moderation_reward_percent)
+         (moderator_reward_percent)
+         (reward_currency)
          (allow_replies)
          (allow_votes)
          (allow_views)
-         (allows_shares)
+         (allow_shares)
          (allow_curation_rewards)
          (root)
          (deleted)
@@ -1190,7 +1220,7 @@ FC_REFLECT( node::chain::comment_vote_object,
          (max_weight)
          (reward)
          (vote_percent)
-         (last_update)
+         (last_updated)
          (created)
          (num_changes)
          );
@@ -1234,7 +1264,7 @@ FC_REFLECT( node::chain::moderation_tag_object,
          (details)
          (interface)
          (filter)
-         (last_update)
+         (last_updated)
          (created)
          );
 
@@ -1249,7 +1279,7 @@ FC_REFLECT( node::chain::message_object,
          (message)
          (json)
          (uuid)
-         (last_update)
+         (last_updated)
          (created)
          );
 
@@ -1285,7 +1315,7 @@ FC_REFLECT( node::chain::comment_metrics_object,
          (vote_view_ratio)
          (vote_share_ratio)
          (vote_comment_ratio)
-         (last_update)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::comment_metrics_object, node::chain::comment_metrics_index );

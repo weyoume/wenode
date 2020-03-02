@@ -11,6 +11,7 @@ namespace node { namespace chain {
    
    using node::protocol::asset;
    using node::protocol::price;
+   using node::protocol::option_strike;
 
    /**
     * Set of Network parameters that are selected by block producers.
@@ -25,14 +26,14 @@ namespace node { namespace chain {
     */
    class median_chain_property_object : public object< median_chain_property_object_type, median_chain_property_object>
    {
+      median_chain_property_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          median_chain_property_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
-
-         median_chain_property_object(){}
 
          id_type                id;
 
@@ -129,14 +130,15 @@ namespace node { namespace chain {
          asset                  max_exec_budget = MAX_EXEC_BUDGET;                             ///< Maximum budget that an executive board can claim.
    };
 
-      
-
-
+   
    class transfer_request_object : public object< transfer_request_object_type, transfer_request_object >
    {
+      transfer_request_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         transfer_request_object( Constructor&& c, allocator< Allocator > a )
+         transfer_request_object( Constructor&& c, allocator< Allocator > a ) :
+         request_id(a), memo(a)
          {
             c( *this );
          }
@@ -159,9 +161,12 @@ namespace node { namespace chain {
 
    class transfer_recurring_object : public object< transfer_recurring_object_type, transfer_recurring_object >
    {
+      transfer_recurring_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         transfer_recurring_object( Constructor&& c, allocator< Allocator > a )
+         transfer_recurring_object( Constructor&& c, allocator< Allocator > a ) :
+         transfer_id(a), memo(a)
          {
             c( *this );
          }
@@ -198,9 +203,12 @@ namespace node { namespace chain {
 
    class transfer_recurring_request_object : public object< transfer_recurring_request_object_type, transfer_recurring_request_object >
    {
+      transfer_recurring_request_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         transfer_recurring_request_object( Constructor&& c, allocator< Allocator > a )
+         transfer_recurring_request_object( Constructor&& c, allocator< Allocator > a ) :
+         request_id(a), memo(a)
          {
             c( *this );
          }
@@ -234,7 +242,7 @@ namespace node { namespace chain {
          asset                       total_payment()
          {
             fc::microseconds time = end - begin;
-            share_type payments = time.count / interval.count;
+            share_type payments = time.count() / interval.count();
             return amount * payments;
          };
    };
@@ -245,14 +253,15 @@ namespace node { namespace chain {
     */
    class limit_order_object : public object< limit_order_object_type, limit_order_object >
    {
+      limit_order_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         limit_order_object( Constructor&& c, allocator< Allocator > a )
+         limit_order_object( Constructor&& c, allocator< Allocator > a ) :
+         order_id(a)
          {
             c( *this );
          }
-
-         limit_order_object(){}
 
          id_type                id;
 
@@ -315,6 +324,8 @@ namespace node { namespace chain {
     */
    class call_order_object : public object< call_order_object_type, call_order_object >
    {
+      call_order_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          call_order_object( Constructor&& c, allocator< Allocator > a )
@@ -388,9 +399,12 @@ namespace node { namespace chain {
     */
    class auction_order_object : public object< auction_order_object_type, auction_order_object >
    {
+      auction_order_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         auction_order_object( Constructor&& c, allocator< Allocator > a )
+         auction_order_object( Constructor&& c, allocator< Allocator > a ) :
+         order_id(a)
          {
             c( *this );
          }
@@ -399,7 +413,7 @@ namespace node { namespace chain {
 
          account_name_type        owner;                    ///< Owner of the Auction order.
 
-         string                   order_id;                 ///< uuidv4 of the order for reference.
+         shared_string            order_id;                 ///< uuidv4 of the order for reference.
 
          asset                    amount_to_sell;           ///< Amount of asset to sell at auction clearing price.
 
@@ -453,9 +467,12 @@ namespace node { namespace chain {
     */
    class option_order_object : public object< option_order_object_type, option_order_object >
    {
+      option_order_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         option_order_object( Constructor&& c, allocator< Allocator > a )
+         option_order_object( Constructor&& c, allocator< Allocator > a ) :
+         order_id(a)
          {
             c( *this );
          }
@@ -464,7 +481,7 @@ namespace node { namespace chain {
 
          account_name_type            owner;                    ///< Owner of the Option order.
 
-         string                       order_id;                 ///< uuidv4 of the order for reference.
+         shared_string                order_id;                 ///< uuidv4 of the order for reference.
 
          asset                        amount_to_issue;          ///< Amount of assets to issue covered options contract assets against. Must be a multiple of 100 units.
 
@@ -478,13 +495,17 @@ namespace node { namespace chain {
 
          time_point                   last_updated;             ///< Time that the order was last modified.
 
-         asset amount_to_receive()const { return option_position; }
+         asset                        amount_to_receive()const { return option_position; }
 
-         asset amount_for_sale()const { return amount_to_issue; }
+         asset                        amount_for_sale()const { return amount_to_issue; }
 
-         asset_symbol_type debt_type()const { return option_position.symbol; }
+         asset_symbol_type            debt_type()const { return option_position.symbol; }
 
-         asset_symbol_type collateral_type()const { return amount_to_issue.symbol; }
+         asset_symbol_type            collateral_type()const { return amount_to_issue.symbol; }
+
+         time_point                   expiration()const { return strike_price.expiration(); }
+
+         price                        option_price()const { return strike_price.strike_price; }
    };
 
 
@@ -495,6 +516,8 @@ namespace node { namespace chain {
     */
    class force_settlement_object : public object< force_settlement_object_type, force_settlement_object >
    {
+      force_settlement_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          force_settlement_object( Constructor&& c, allocator< Allocator > a )
@@ -527,6 +550,8 @@ namespace node { namespace chain {
     */
    class collateral_bid_object : public object< collateral_bid_object_type, collateral_bid_object >
    {
+      collateral_bid_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          collateral_bid_object( Constructor&& c, allocator< Allocator > a )
@@ -542,9 +567,9 @@ namespace node { namespace chain {
 
          asset                 debt;             ///< Debt requested for bid.
 
-         time_point            last_updated;     ///< Time that the bid was last adjusted.
-
          time_point            created;          ///< Time that the bid was created.
+
+         time_point            last_updated;     ///< Time that the bid was last adjusted.
 
          price                 inv_swan_price()const
          {
@@ -565,6 +590,8 @@ namespace node { namespace chain {
     */
    class credit_collateral_object : public object< credit_collateral_object_type, credit_collateral_object >
    {
+      credit_collateral_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          credit_collateral_object( Constructor&& c, allocator< Allocator > a )
@@ -594,9 +621,12 @@ namespace node { namespace chain {
     */
    class credit_loan_object : public object< credit_loan_object_type, credit_loan_object >
    {
+      credit_loan_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         credit_loan_object( Constructor&& c, allocator< Allocator > a )
+         credit_loan_object( Constructor&& c, allocator< Allocator > a ) :
+         loan_id(a)
          {
             c( *this );
          }
@@ -629,8 +659,10 @@ namespace node { namespace chain {
 
          time_point                 last_interest_time;      ///< Time that interest was last compounded. 
 
-         asset_symbol_type          debt_asset()const { return debt.symbol; } 
-         asset_symbol_type          collateral_asset()const { return collateral.symbol; } 
+         asset_symbol_type          debt_asset()const { return debt.symbol; }
+
+         asset_symbol_type          collateral_asset()const { return collateral.symbol; }
+
          price                      liquidation_spread()const { return loan_price - liquidation_price; }
 
          pair< asset_symbol_type, asset_symbol_type > get_market()const
@@ -648,9 +680,12 @@ namespace node { namespace chain {
     */
    class margin_order_object : public object< margin_order_object_type, margin_order_object >
    {
+      margin_order_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         margin_order_object( Constructor&& c, allocator< Allocator > a )
+         margin_order_object( Constructor&& c, allocator< Allocator > a ) :
+         order_id(a)
          {
             c( *this );
          }
@@ -768,14 +803,15 @@ namespace node { namespace chain {
 
    class escrow_object : public object< escrow_object_type, escrow_object >
    {
+      escrow_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         escrow_object( Constructor&& c, allocator< Allocator > a )
+         escrow_object( Constructor&& c, allocator< Allocator > a ) :
+         escrow_id(a), memo(a), json(a)
          {
             c( *this );
          }
-
-         escrow_object(){}
 
          id_type                                   id;
 
@@ -863,20 +899,23 @@ namespace node { namespace chain {
 
    class product_object : public object< product_object_type, product_object >
    {
+      product_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         product_object( Constructor&& c, allocator< Allocator > a )
+         product_object( Constructor&& c, allocator< Allocator > a ) :
+         product_id(a), name(a), product_variants(a), details(a), images(a), product_prices(a), stock_available(a), json(a), url(a), delivery_variants(a), delivery_prices(a)
          {
             c( *this );
          }
-
-         product_object(){}
 
          id_type                                      id;
 
          account_name_type                            account;             ///< The Seller of the product.
 
-         shared_string                                product_name;        ///< The name of the product. Unique for each account.
+         shared_string                                product_id;          ///< uuidv4 referring to the product. Unique for each account.
+
+         shared_string                                name;                ///< The Retail market facing name of the product. 
 
          flat_set< shared_string >                    product_variants;    ///< The collection of product variants. Each map must have a key for each variant.
 
@@ -910,7 +949,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         savings_withdraw_object( Constructor&& c, allocator< Allocator > a )
+         savings_withdraw_object( Constructor&& c, allocator< Allocator > a ) :
+         memo(a), request_id(a)
          {
             c( *this );
          }
@@ -936,6 +976,8 @@ namespace node { namespace chain {
     */
    class unstake_asset_route_object : public object< unstake_asset_route_object_type, unstake_asset_route_object >
    {
+      unstake_asset_route_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          unstake_asset_route_object( Constructor&& c, allocator< Allocator > a )
@@ -943,32 +985,30 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         unstake_asset_route_object(){}
+         id_type                 id;
 
-         id_type             id;
+         account_name_type       from;                 ///< Account that is unstaking the asset balance
 
-         account_name_type   from;                 ///< Account that is unstaking the asset balance
+         account_name_type       to;                    ///< Account name that receives the unstaked assets
 
-         account_name_type   to;                    ///< Account name that receives the unstaked assets
+         asset_symbol_type       symbol;                ///< Asset to be unstaked
 
-         asset_symbol_type   symbol;                ///< Asset to be unstaked
+         uint16_t                percent = 0;           ///< Percentage of unstaking asset that should be directed to this route.
 
-         uint16_t            percent = 0;           ///< Percentage of unstaking asset that should be directed to this route.
-
-         bool                auto_stake = false;    ///< Automatically stake the asset on the receiving account
+         bool                    auto_stake = false;    ///< Automatically stake the asset on the receiving account
    };
 
 
    class decline_voting_rights_request_object : public object< decline_voting_rights_request_object_type, decline_voting_rights_request_object >
    {
+      decline_voting_rights_request_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          decline_voting_rights_request_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
-
-         decline_voting_rights_request_object(){}
 
          id_type             id;
 
@@ -990,6 +1030,8 @@ namespace node { namespace chain {
 
    class reward_fund_object : public object< reward_fund_object_type, reward_fund_object >
    {
+      reward_fund_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
          reward_fund_object( Constructor&& c, allocator< Allocator > a )
@@ -997,9 +1039,7 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         reward_fund_object() {}
-
-         reward_fund_id_type     id;
+         id_type                 id;
 
          asset_symbol_type       symbol;  
 
@@ -1045,93 +1085,93 @@ namespace node { namespace chain {
 
          curve_id                curation_reward_curve = convergent_semi_quadratic;
 
-         time_point              last_update;
+         time_point              last_updated;
 
-         void reward_fund_object::adjust_content_reward_balance( const asset& delta )
+         void                    adjust_content_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             content_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_validation_reward_balance( const asset& delta )
+         void                    adjust_validation_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             validation_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_txn_stake_reward_balance( const asset& delta )
+         void                    adjust_txn_stake_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             txn_stake_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_work_reward_balance( const asset& delta )
+         void                    adjust_work_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             work_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_producer_activity_reward_balance( const asset& delta )
+         void                    adjust_producer_activity_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             activity_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_supernode_reward_balance( const asset& delta )
+         void                    adjust_supernode_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             supernode_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_power_reward_balance( const asset& delta )
+         void                    adjust_power_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             power_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_community_fund_balance( const asset& delta )
+         void                    adjust_community_fund_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             community_fund_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_development_reward_balance( const asset& delta )
+         void                    adjust_development_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             development_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_marketing_reward_balance( const asset& delta )
+         void                    adjust_marketing_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             marketing_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_advocacy_reward_balance( const asset& delta )
+         void                    adjust_advocacy_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             advocacy_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_activity_reward_balance( const asset& delta )
+         void                    adjust_activity_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             activity_reward_balance += delta;
             total_pending_reward_balance += delta;
          } FC_CAPTURE_AND_RETHROW() }
 
-         void reward_fund_object::adjust_premium_partners_fund_balance( const asset& delta )
+         void                    adjust_premium_partners_fund_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             premium_partners_fund_balance += delta;
@@ -1164,14 +1204,20 @@ namespace node { namespace chain {
                member< transfer_request_object, account_name_type, &transfer_request_object::to >,
                member< transfer_request_object, shared_string, &transfer_request_object::request_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less
+            >
          >,
          ordered_unique< tag< by_from_account >,
             composite_key< transfer_request_object,
                member< transfer_request_object, account_name_type, &transfer_request_object::from >,
                member< transfer_request_object, transfer_request_id_type, &transfer_request_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< transfer_request_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< transfer_request_id_type > 
+            >
          >
       >,
       allocator< transfer_request_object >
@@ -1195,14 +1241,20 @@ namespace node { namespace chain {
                member< transfer_recurring_object, account_name_type, &transfer_recurring_object::from >,
                member< transfer_recurring_object, shared_string, &transfer_recurring_object::transfer_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less
+            >
          >,
          ordered_unique< tag< by_to_account >,
             composite_key< transfer_recurring_object,
                member< transfer_recurring_object, account_name_type, &transfer_recurring_object::to >,
                member< transfer_recurring_object, transfer_recurring_id_type, &transfer_recurring_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< transfer_recurring_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< transfer_recurring_id_type >
+            >
          >
       >,
       allocator< transfer_recurring_object >
@@ -1220,21 +1272,26 @@ namespace node { namespace chain {
                member< transfer_recurring_request_object, account_name_type, &transfer_recurring_request_object::to >,
                member< transfer_recurring_request_object, shared_string, &transfer_recurring_request_object::request_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less
+            >
          >,
          ordered_unique< tag< by_from_account >,
             composite_key< transfer_recurring_request_object,
                member< transfer_recurring_request_object, account_name_type, &transfer_recurring_request_object::from >,
                member< transfer_recurring_request_object, transfer_recurring_request_id_type, &transfer_recurring_request_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< transfer_recurring_request_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< transfer_recurring_request_id_type >
+            >
          >
       >,
       allocator< transfer_recurring_request_object >
    > transfer_recurring_request_index;
 
    struct by_price;
-   
    struct by_account;
    
    typedef multi_index_container<
@@ -1250,7 +1307,8 @@ namespace node { namespace chain {
                member< limit_order_object, limit_order_id_type, &limit_order_object::id >
             >,
             composite_key_compare< 
-               std::greater< price >, std::less< limit_order_id_type > 
+               std::greater< price >,
+               std::less< limit_order_id_type >
             >
          >,
          ordered_unique< tag< by_account >,
@@ -1259,7 +1317,8 @@ namespace node { namespace chain {
                member< limit_order_object, shared_string, &limit_order_object::order_id >
             >,
             composite_key_compare< 
-               std::less< account_name_type >, strcmp_less 
+               std::less< account_name_type >, 
+               strcmp_less 
             >
          >
       >,
@@ -1284,51 +1343,75 @@ namespace node { namespace chain {
                member< margin_order_object, price, &margin_order_object::sell_price >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
-            composite_key_compare< std::less< bool >, std::greater< price >, std::less< margin_order_id_type > >
+            composite_key_compare<
+               std::less< bool >,
+               std::greater< price >,
+               std::less< margin_order_id_type >
+            >
          >,
          ordered_unique< tag< by_account >,
             composite_key< margin_order_object,
                member< margin_order_object, account_name_type, &margin_order_object::owner >,
                member< margin_order_object, shared_string, &margin_order_object::order_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >,
-         ordered_unique< tag<by_debt>,
+         ordered_unique< tag< by_debt >,
             composite_key< margin_order_object,
                const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::debt_asset >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
-            composite_key_compare< std::less<asset_symbol_type>, std::less<margin_order_id_type> >
+            composite_key_compare< 
+               std::less< asset_symbol_type >, 
+               std::less< margin_order_id_type > 
+            >
          >,
-         ordered_unique< tag<by_position>,
+         ordered_unique< tag< by_position >,
             composite_key< margin_order_object,
                const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::position_asset >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
-            composite_key_compare< std::less<asset_symbol_type>, std::less<margin_order_id_type> >
+            composite_key_compare< 
+               std::less< asset_symbol_type >, 
+               std::less< margin_order_id_type > 
+            >
          >,
-         ordered_unique< tag<by_collateral>,
+         ordered_unique< tag< by_collateral >,
             composite_key< margin_order_object,
                const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::collateral_asset >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
-            composite_key_compare< std::less<asset_symbol_type>, std::less<margin_order_id_type> >
+            composite_key_compare< 
+               std::less< asset_symbol_type >,
+               std::less< margin_order_id_type >
+            >
          >,
-         ordered_unique< tag<by_debt_collateral_position>,
+         ordered_unique< tag< by_debt_collateral_position >,
             composite_key< margin_order_object,
                const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::debt_asset >,
                const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::collateral_asset >,
                const_mem_fun< margin_order_object, asset_symbol_type, &margin_order_object::position_asset >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
-            composite_key_compare< std::less<asset_symbol_type>, std::less<asset_symbol_type>, std::less<asset_symbol_type>, std::less<margin_order_id_type> >
+            composite_key_compare< 
+               std::less< asset_symbol_type >, 
+               std::less< asset_symbol_type >, 
+               std::less< asset_symbol_type >, 
+               std::less< margin_order_id_type > 
+            >
          >,
-         ordered_unique< tag<by_collateralization>,
+         ordered_unique< tag< by_collateralization >,
             composite_key< margin_order_object,
                member< margin_order_object, share_type, &margin_order_object::collateralization >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
-            composite_key_compare< std::less<share_type>, std::less<margin_order_id_type> >
+            composite_key_compare< 
+               std::less< share_type >, 
+               std::less< margin_order_id_type > 
+            >
          >
       >,
       allocator< margin_order_object >
@@ -1336,12 +1419,10 @@ namespace node { namespace chain {
 
    struct by_owner;
    struct by_conversion_date;
-
-   struct by_owner;
    struct by_volume_weight;
-
    struct by_withdraw_route;
    struct by_destination;
+
    typedef multi_index_container<
       unstake_asset_route_object,
       indexed_by<
@@ -1351,12 +1432,19 @@ namespace node { namespace chain {
                member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::from >,
                member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::to >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type > 
+            >
          >,
          ordered_unique< tag< by_destination >,
             composite_key< unstake_asset_route_object,
                member< unstake_asset_route_object, account_name_type, &unstake_asset_route_object::to >,
                member< unstake_asset_route_object, unstake_asset_route_id_type, &unstake_asset_route_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< unstake_asset_route_id_type >
             >
          >
       >,
@@ -1378,12 +1466,19 @@ namespace node { namespace chain {
                member< escrow_object, account_name_type,  &escrow_object::from >,
                member< escrow_object, shared_string, &escrow_object::escrow_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >,
          ordered_unique< tag< by_to >,
             composite_key< escrow_object,
-               member< escrow_object, account_name_type,  &escrow_object::to >,
+               member< escrow_object, account_name_type, &escrow_object::to >,
                member< escrow_object, escrow_id_type, &escrow_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< escrow_id_type >
             >
          >,
          ordered_unique< tag< by_acceptance_time >,
@@ -1392,7 +1487,11 @@ namespace node { namespace chain {
                member< escrow_object, time_point, &escrow_object::acceptance_time >,
                member< escrow_object, escrow_id_type, &escrow_object::id >
             >,
-            composite_key_compare< std::less< bool >, std::less< time_point >, std::less< escrow_id_type > >
+            composite_key_compare< 
+               std::less< bool >,
+               std::less< time_point >,
+               std::less< escrow_id_type >
+            >
          >,
          ordered_unique< tag< by_dispute_release_time >,
             composite_key< escrow_object,
@@ -1400,18 +1499,57 @@ namespace node { namespace chain {
                member< escrow_object, time_point, &escrow_object::dispute_release_time >,
                member< escrow_object, escrow_id_type, &escrow_object::id >
             >,
-            composite_key_compare< std::less< bool >, std::less< time_point >, std::less< escrow_id_type > >
+            composite_key_compare< 
+               std::less< bool >,
+               std::less< time_point >,
+               std::less< escrow_id_type >
+            >
          >,
          ordered_unique< tag< by_balance >,
             composite_key< escrow_object,
                member< escrow_object, asset, &escrow_object::balance >,
                member< escrow_object, escrow_id_type, &escrow_object::id >
             >,
-            composite_key_compare< std::greater< asset >, std::less< escrow_id_type > >
+            composite_key_compare<
+               std::greater< asset >,
+               std::less< escrow_id_type >
+            >
          >
       >,
       allocator< escrow_object >
    > escrow_index;
+
+   struct by_product_id;
+   struct by_last_updated;
+
+   typedef multi_index_container<
+      product_object,
+      indexed_by<
+         ordered_unique< tag< by_id >, member< product_object, product_id_type, &product_object::id > >,
+         ordered_unique< tag< by_product_id >,
+            composite_key< product_object,
+               member< product_object, account_name_type,  &product_object::account >,
+               member< product_object, shared_string, &product_object::product_id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less
+            >
+         >,
+         ordered_unique< tag< by_last_updated >,
+            composite_key< product_object,
+               member< product_object, time_point, &product_object::last_updated >,
+               member< product_object, product_id_type, &product_object::id >
+            >,
+            composite_key_compare< 
+               std::greater< time_point >, 
+               std::less< product_id_type >
+            >
+         >
+      >,
+      allocator< product_object >
+   > product_index;
+
 
    struct by_request_id;
    struct by_to_complete;
@@ -1426,13 +1564,21 @@ namespace node { namespace chain {
                member< savings_withdraw_object, account_name_type,  &savings_withdraw_object::from >,
                member< savings_withdraw_object, shared_string, &savings_withdraw_object::request_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less
+            >
          >,
          ordered_unique< tag< by_to_complete >,
             composite_key< savings_withdraw_object,
                member< savings_withdraw_object, account_name_type,  &savings_withdraw_object::to >,
                member< savings_withdraw_object, time_point,  &savings_withdraw_object::complete >,
                member< savings_withdraw_object, savings_withdraw_id_type, &savings_withdraw_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< time_point >,
+               std::less< savings_withdraw_id_type >
             >
          >,
          ordered_unique< tag< by_complete_from_request_id >,
@@ -1441,7 +1587,11 @@ namespace node { namespace chain {
                member< savings_withdraw_object, account_name_type,  &savings_withdraw_object::from >,
                member< savings_withdraw_object, shared_string, &savings_withdraw_object::request_id >
             >,
-            composite_key_compare< std::less<time_point>, std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< time_point >, 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >
       >,
       allocator< savings_withdraw_object >
@@ -1462,7 +1612,10 @@ namespace node { namespace chain {
                member< decline_voting_rights_request_object, time_point, &decline_voting_rights_request_object::effective_date >,
                member< decline_voting_rights_request_object, account_name_type, &decline_voting_rights_request_object::account >
             >,
-            composite_key_compare< std::less< time_point >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< time_point >, 
+               std::less< account_name_type > 
+            >
          >
       >,
       allocator< decline_voting_rights_request_object >
@@ -1490,38 +1643,119 @@ namespace node { namespace chain {
    typedef multi_index_container<
       call_order_object,
       indexed_by<
-         ordered_unique< tag<by_id>,
+         ordered_unique< tag< by_id >,
             member< call_order_object, call_order_id_type, &call_order_object::id > >,
-         ordered_unique< tag<by_price>,
+         ordered_unique< tag< by_price >,
             composite_key< call_order_object,
-               member< call_order_object, price, &call_order_object::call_price>,
-               member< call_order_object, call_order_id_type, &call_order_object::id>
+               member< call_order_object, price, &call_order_object::call_price >,
+               member< call_order_object, call_order_id_type, &call_order_object::id >
             >,
-            composite_key_compare< std::less<price>, std::less<call_order_id_type> >
-         >,
-         ordered_unique< tag<by_debt>,
-            composite_key< call_order_object,
-               const_mem_fun< call_order_object, asset_symbol_type, &call_order_object::debt_type>,
-               const_mem_fun< call_order_object, price, &call_order_object::collateralization >,
-               member< call_order_object, call_order_id_type, &call_order_object::id>
-            >,
-            composite_key_compare< std::less<asset_symbol_type>, std::less<call_order_id_type> >
-         >,
-         ordered_unique< tag<by_account>,
-            composite_key< call_order_object,
-               member< call_order_object, account_name_type, &call_order_object::borrower >,
-               const_mem_fun< call_order_object, asset_symbol_type, &call_order_object::debt_type>
+            composite_key_compare< 
+               std::less< price >, 
+               std::less< call_order_id_type > 
             >
          >,
-         ordered_unique< tag<by_collateral>,
+         ordered_unique< tag< by_debt >,
+            composite_key< call_order_object,
+               const_mem_fun< call_order_object, asset_symbol_type, &call_order_object::debt_type >,
+               const_mem_fun< call_order_object, price, &call_order_object::collateralization >,
+               member< call_order_object, call_order_id_type, &call_order_object::id >
+            >,
+            composite_key_compare< 
+               std::less< asset_symbol_type >,
+               std::less< price >,
+               std::less< call_order_id_type >
+            >
+         >,
+         ordered_unique< tag< by_account >,
+            composite_key< call_order_object,
+               member< call_order_object, account_name_type, &call_order_object::borrower >,
+               const_mem_fun< call_order_object, asset_symbol_type, &call_order_object::debt_type >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< asset_symbol_type >
+            >
+         >,
+         ordered_unique< tag< by_collateral >,
             composite_key< call_order_object,
                const_mem_fun< call_order_object, price, &call_order_object::collateralization >,
                member< call_order_object, call_order_id_type, &call_order_object::id >
+            >,
+            composite_key_compare< 
+               std::less< price >, 
+               std::less< call_order_id_type > 
             >
          >
       >, 
       allocator < call_order_object >
    > call_order_index;
+
+
+   typedef multi_index_container<
+      auction_order_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< auction_order_object, auction_order_id_type, &auction_order_object::id > >,
+         ordered_non_unique< tag< by_expiration >, 
+            member< auction_order_object, time_point, &auction_order_object::expiration > >,
+         ordered_unique< tag< by_price >,
+            composite_key< auction_order_object,
+               member< auction_order_object, price, &auction_order_object::min_exchange_rate >,
+               member< auction_order_object, auction_order_id_type, &auction_order_object::id >
+            >,
+            composite_key_compare< 
+               std::less< price >, 
+               std::less< auction_order_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_account >,
+            composite_key< auction_order_object,
+               member< auction_order_object, account_name_type, &auction_order_object::owner >,
+               member< auction_order_object, shared_string, &auction_order_object::order_id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
+         >
+      >, 
+      allocator < auction_order_object >
+   > auction_order_index;
+
+   struct by_strike_price;
+
+   typedef multi_index_container<
+      option_order_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< option_order_object, option_order_id_type, &option_order_object::id > >,
+         ordered_non_unique< tag< by_expiration >, 
+            const_mem_fun< option_order_object, time_point, &option_order_object::expiration > >,
+         ordered_unique< tag< by_strike_price >,
+            composite_key< option_order_object,
+               member< option_order_object, option_strike, &option_order_object::strike_price >,
+               member< option_order_object, option_order_id_type, &option_order_object::id >
+            >,
+            composite_key_compare< 
+               std::less< option_strike >, 
+               std::less< option_order_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_account >,
+            composite_key< option_order_object,
+               member< option_order_object, account_name_type, &option_order_object::owner >,
+               member< option_order_object, shared_string, &option_order_object::order_id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
+         >
+      >, 
+      allocator < option_order_object >
+   > option_order_index;
+
 
    struct by_expiration;
    struct by_account_asset;
@@ -1529,44 +1763,62 @@ namespace node { namespace chain {
    typedef multi_index_container<
       force_settlement_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< force_settlement_object, force_settlement_id_type, &force_settlement_object::id > >,
-         ordered_unique< tag<by_account_asset>,
+         ordered_unique< tag< by_id >, member< force_settlement_object, force_settlement_id_type, &force_settlement_object::id > >,
+         ordered_unique< tag< by_account_asset >,
             composite_key< force_settlement_object,
-               member<force_settlement_object, account_name_type, &force_settlement_object::owner>,
-               const_mem_fun<force_settlement_object, asset_symbol_type, &force_settlement_object::settlement_asset_symbol>,
+               member< force_settlement_object, account_name_type, &force_settlement_object::owner >,
+               const_mem_fun< force_settlement_object, asset_symbol_type, &force_settlement_object::settlement_asset_symbol >,
                member< force_settlement_object, force_settlement_id_type, &force_settlement_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< asset_symbol_type >,
+               std::less< force_settlement_id_type >
             >
          >,
-         ordered_unique< tag<by_expiration>,
+         ordered_unique< tag< by_expiration >,
             composite_key< force_settlement_object,
-               const_mem_fun<force_settlement_object, asset_symbol_type, &force_settlement_object::settlement_asset_symbol>,
-               member<force_settlement_object, time_point, &force_settlement_object::settlement_date>,
+               const_mem_fun< force_settlement_object, asset_symbol_type, &force_settlement_object::settlement_asset_symbol >,
+               member< force_settlement_object, time_point, &force_settlement_object::settlement_date >,
                member< force_settlement_object, force_settlement_id_type, &force_settlement_object::id >
+            >,
+            composite_key_compare< 
+               std::less< asset_symbol_type >,
+               std::less< time_point >,
+               std::less< force_settlement_id_type >
             >
          >
       >,
       allocator < force_settlement_object >
    > force_settlement_index;
 
+
    typedef multi_index_container<
       collateral_bid_object,
       indexed_by<
-         ordered_unique< tag<by_id>,
+         ordered_unique< tag< by_id >,
             member< collateral_bid_object, collateral_bid_id_type, &collateral_bid_object::id > >,
-         ordered_unique< tag<by_account>,
+         ordered_unique< tag< by_account >,
             composite_key< collateral_bid_object,
-               member< collateral_bid_object, account_name_type, &collateral_bid_object::bidder>,
-               const_mem_fun< collateral_bid_object, asset_symbol_type, &collateral_bid_object::debt_type>
-               
+               member< collateral_bid_object, account_name_type, &collateral_bid_object::bidder >,
+               const_mem_fun< collateral_bid_object, asset_symbol_type, &collateral_bid_object::debt_type >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< asset_symbol_type >
             >
          >,
-         ordered_unique< tag<by_price>,
+         ordered_unique< tag< by_price >,
             composite_key< collateral_bid_object,
-               const_mem_fun< collateral_bid_object, asset_symbol_type, &collateral_bid_object::debt_type>,
+               const_mem_fun< collateral_bid_object, asset_symbol_type, &collateral_bid_object::debt_type >,
                const_mem_fun< collateral_bid_object, price, &collateral_bid_object::inv_swan_price >,
                member< collateral_bid_object, collateral_bid_id_type, &collateral_bid_object::id >
             >,
-            composite_key_compare< std::less<asset_symbol_type>, std::greater<price>, std::less<collateral_bid_id_type> >
+            composite_key_compare<
+               std::less< asset_symbol_type >,
+               std::greater< price >,
+               std::less< collateral_bid_id_type >
+            >
          >
       >,
       allocator < collateral_bid_object >
@@ -1577,18 +1829,26 @@ namespace node { namespace chain {
    typedef multi_index_container<
       credit_collateral_object,
       indexed_by<
-         ordered_unique< tag<by_id>,
+         ordered_unique< tag< by_id >,
             member< credit_collateral_object, credit_collateral_id_type, &credit_collateral_object::id > >,
-         ordered_unique< tag<by_owner_symbol>,
+         ordered_unique< tag< by_owner_symbol >,
             composite_key< credit_collateral_object,
-               member< credit_collateral_object, account_name_type, &credit_collateral_object::owner>,
-               member< credit_collateral_object, asset_symbol_type, &credit_collateral_object::symbol>
+               member< credit_collateral_object, account_name_type, &credit_collateral_object::owner >,
+               member< credit_collateral_object, asset_symbol_type, &credit_collateral_object::symbol >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< asset_symbol_type >
             >
          >,
          ordered_unique< tag<by_owner>,
             composite_key< credit_collateral_object,
-               member< credit_collateral_object, account_name_type, &credit_collateral_object::owner>,
+               member< credit_collateral_object, account_name_type, &credit_collateral_object::owner >,
                member< credit_collateral_object, credit_collateral_id_type, &credit_collateral_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< credit_collateral_id_type >
             >
          >
       >,
@@ -1608,104 +1868,107 @@ namespace node { namespace chain {
    typedef multi_index_container<
       credit_loan_object,
       indexed_by<
-         ordered_unique< tag<by_id>,
+         ordered_unique< tag< by_id >,
             member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id > >,
-         ordered_unique< tag<by_owner>,
+         ordered_unique< tag< by_owner >,
             composite_key< credit_loan_object,
-               member< credit_loan_object, account_name_type, &credit_loan_object::owner>,
+               member< credit_loan_object, account_name_type, &credit_loan_object::owner >,
                member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
-               std::less<credit_loan_id_type> 
+               std::less< credit_loan_id_type > 
             >
          >,
          ordered_unique< tag<by_loan_id>,
             composite_key< credit_loan_object,
-               member< credit_loan_object, account_name_type, &credit_loan_object::owner>,
-               member< credit_loan_object, shared_string, &credit_loan_object::loan_id>
+               member< credit_loan_object, account_name_type, &credit_loan_object::owner >,
+               member< credit_loan_object, shared_string, &credit_loan_object::loan_id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less
+            >
+         >,
+         ordered_unique< tag< by_owner_price >,
+            composite_key< credit_loan_object,
+               member< credit_loan_object, account_name_type, &credit_loan_object::owner >,
+               member< credit_loan_object, price, &credit_loan_object::loan_price >,
+               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
-               strcmp_less 
+               std::less< price >, 
+               std::less< credit_loan_id_type > 
             >
          >,
-         ordered_unique< tag<by_owner_price>,
+         ordered_unique< tag< by_owner_debt >,
             composite_key< credit_loan_object,
-               member< credit_loan_object, account_name_type, &credit_loan_object::owner>,
-               member< credit_loan_object, price, &credit_loan_object::loan_price>,
-               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
-            >,
-            composite_key_compare< 
-               std::less<account_name_type>, 
-               std::less<price>, 
-               std::less<credit_loan_id_type> 
-            >
-         >,
-         ordered_unique< tag<by_owner_debt>,
-            composite_key< credit_loan_object,
-               member< credit_loan_object, account_name_type, &credit_loan_object::owner>,
+               member< credit_loan_object, account_name_type, &credit_loan_object::owner >,
                const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::debt_asset >,
-               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
+               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
             composite_key_compare< 
-               std::less<account_name_type>, 
-               std::less<asset_symbol_type>, 
-               std::less<credit_loan_id_type> 
+               std::less< account_name_type >, 
+               std::less< asset_symbol_type >, 
+               std::less< credit_loan_id_type > 
             >
          >,
-         ordered_unique< tag<by_owner_collateral>,
+         ordered_unique< tag< by_owner_collateral >,
             composite_key< credit_loan_object,
-               member< credit_loan_object, account_name_type, &credit_loan_object::owner>,
+               member< credit_loan_object, account_name_type, &credit_loan_object::owner >,
                const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::collateral_asset >,
-               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
+               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
             composite_key_compare< 
-               std::less<account_name_type>, 
-               std::less<asset_symbol_type>, 
-               std::less<credit_loan_id_type> 
+               std::less< account_name_type >, 
+               std::less< asset_symbol_type >, 
+               std::less< credit_loan_id_type > 
             >
          >,
-         ordered_unique< tag<by_liquidation_spread>,
+         ordered_unique< tag< by_liquidation_spread >,
             composite_key< credit_loan_object,
-               const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::debt_asset>,
-               const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::collateral_asset>,
-               const_mem_fun< credit_loan_object, price, &credit_loan_object::liquidation_spread>,
-               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
+               const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::debt_asset >,
+               const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::collateral_asset >,
+               const_mem_fun< credit_loan_object, price, &credit_loan_object::liquidation_spread >,
+               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
             composite_key_compare< 
-               std::less<asset_symbol_type>, 
-               std::less<asset_symbol_type>, 
-               std::less<price>, 
-               std::less<credit_loan_id_type> 
+               std::less< asset_symbol_type >,
+               std::less< asset_symbol_type >,
+               std::less< price >,
+               std::less< credit_loan_id_type >
             >
          >,
-         ordered_unique< tag<by_last_updated>,
+         ordered_unique< tag< by_last_updated >,
             composite_key< credit_loan_object,
-               member< credit_loan_object, time_point, &credit_loan_object::last_updated>,
-               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
+               member< credit_loan_object, time_point, &credit_loan_object::last_updated >,
+               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
             composite_key_compare< 
-               std::greater<time_point>, 
-               std::less<credit_loan_id_type> 
+               std::greater< time_point >, 
+               std::less< credit_loan_id_type > 
             >
          >,
-         ordered_unique< tag<by_debt>,
+         ordered_unique< tag< by_debt >,
             composite_key< credit_loan_object,
-               const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::debt_asset>,
-               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
+               const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::debt_asset >,
+               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
             composite_key_compare< 
-               std::less<asset_symbol_type>, 
-               std::less<credit_loan_id_type> 
-               >
+               std::less< asset_symbol_type >, 
+               std::less< credit_loan_id_type > 
+            >
          >,
-         ordered_unique< tag<by_collateral>,
+         ordered_unique< tag< by_collateral >,
             composite_key< credit_loan_object,
-               const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::collateral_asset>,
-               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id>
+               const_mem_fun< credit_loan_object, asset_symbol_type, &credit_loan_object::collateral_asset >,
+               member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
-            composite_key_compare< std::less<asset_symbol_type>, std::less<credit_loan_id_type> >
+            composite_key_compare< 
+               std::less< asset_symbol_type >,
+               std::less< credit_loan_id_type >
+            >
          >
       >, 
       allocator < credit_loan_object >
@@ -1714,9 +1977,9 @@ namespace node { namespace chain {
 } } // node::chain
 
 #include <node/chain/network_object.hpp>
+#include <node/chain/asset_object.hpp>
 #include <node/chain/comment_object.hpp>
 #include <node/chain/account_object.hpp>
-#include <node/chain/asset_object.hpp>
 #include <node/chain/community_object.hpp>
 #include <node/chain/ad_object.hpp>
 #include <node/chain/graph_object.hpp>
@@ -1728,6 +1991,7 @@ FC_REFLECT( node::chain::median_chain_property_object,
          (pow_target_time)
          (pow_decay_time)
          (txn_stake_decay_time)
+         (escrow_bond_percent)
          (credit_interest_rate)
          (credit_open_ratio)
          (credit_liquidation_ratio)
@@ -1736,11 +2000,17 @@ FC_REFLECT( node::chain::median_chain_property_object,
          (market_max_credit_ratio)
          (margin_open_ratio)
          (margin_liquidation_ratio)
-         (interest_compound_interval)
          (maximum_asset_feed_publishers)
          (membership_base_price)
          (membership_mid_price)
          (membership_top_price)
+         (author_reward_percent)
+         (vote_reward_percent)
+         (view_reward_percent)
+         (share_reward_percent)
+         (comment_reward_percent)
+         (storage_reward_percent)
+         (moderator_reward_percent)
          (content_reward_decay_rate)
          (content_reward_interval)
          (vote_reserve_rate)
@@ -1786,9 +2056,13 @@ FC_REFLECT( node::chain::transfer_recurring_object,
          (transfer_id)
          (memo)
          (begin)
-         (end)
+         (payments)
+         (payments_remaining)
          (interval)
+         (end)
          (next_transfer)
+         (extensible)
+         (fill_or_kill)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::transfer_recurring_object, node::chain::transfer_recurring_index );
@@ -1801,22 +2075,26 @@ FC_REFLECT( node::chain::transfer_recurring_request_object,
          (request_id)
          (memo)
          (begin)
-         (end)
+         (payments)
          (interval)
+         (end)
          (expiration)
+         (extensible)
+         (fill_or_kill)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::transfer_recurring_request_object, node::chain::transfer_recurring_request_index );
 
 FC_REFLECT( node::chain::limit_order_object,
          (id)
-         (created)
-         (expiration)
          (seller)
          (order_id)
          (for_sale)
          (sell_price)
          (interface)
+         (created)
+         (last_updated)
+         (expiration)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::limit_order_object, node::chain::limit_order_index );
@@ -1829,9 +2107,39 @@ FC_REFLECT( node::chain::call_order_object,
          (call_price)
          (target_collateral_ratio)
          (interface)
+         (created)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::call_order_object, node::chain::call_order_index );
+
+FC_REFLECT( node::chain::auction_order_object,
+         (id)
+         (owner)
+         (order_id)
+         (amount_to_sell)
+         (min_exchange_rate)
+         (interface)
+         (expiration)
+         (created)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::auction_order_object, node::chain::auction_order_index );
+
+FC_REFLECT( node::chain::option_order_object,
+         (id)
+         (owner)
+         (order_id)
+         (amount_to_issue)
+         (option_position)
+         (strike_price)
+         (interface)
+         (created)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::option_order_object, node::chain::option_order_index );
 
 FC_REFLECT( node::chain::force_settlement_object, 
          (id)
@@ -1839,6 +2147,8 @@ FC_REFLECT( node::chain::force_settlement_object,
          (balance)
          (settlement_date)
          (interface)
+         (created)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::force_settlement_object, node::chain::force_settlement_index );
@@ -1848,6 +2158,8 @@ FC_REFLECT( node::chain::collateral_bid_object,
          (bidder)
          (collateral)
          (debt)
+         (created)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::collateral_bid_object, node::chain::collateral_bid_index );
@@ -1856,7 +2168,9 @@ FC_REFLECT( node::chain::credit_collateral_object,
          (id)
          (owner)
          (symbol)
-         (collateral)  
+         (collateral)
+         (created)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::credit_collateral_object, node::chain::credit_collateral_index );   
@@ -1875,6 +2189,7 @@ FC_REFLECT( node::chain::credit_loan_object,
          (last_interest_rate)
          (created)
          (last_updated)
+         (last_interest_time)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::credit_loan_object, node::chain::credit_loan_index );
@@ -1894,6 +2209,7 @@ FC_REFLECT( node::chain::margin_order_object,
          (interface)
          (created)
          (last_updated)
+         (last_interest_time)
          (expiration)
          (unrealized_value)
          (last_interest_rate)
@@ -1908,20 +2224,48 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::margin_order_object, node::chain::margin_
 
 FC_REFLECT( node::chain::escrow_object,
          (id)
-         (escrow_id)
          (from)
          (to)
-         (agent)
-         (ratification_deadline)
-         (escrow_expiration)
+         (from_mediator)
+         (to_mediator)
+         (payment)
          (balance)
-         (pending_fee)
-         (to_approved)
-         (agent_approved)
-         (disputed) 
+         (escrow_id)
+         (memo)
+         (json)
+         (acceptance_time)
+         (escrow_expiration)
+         (dispute_release_time)
+         (mediators)
+         (release_percentages)
+         (approvals)
+         (created)
+         (last_updated)
+         (disputed)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::escrow_object, node::chain::escrow_index );
+
+FC_REFLECT( node::chain::product_object,
+         (id)
+         (account)
+         (product_id)
+         (name)
+         (product_variants)
+         (sale_type)
+         (details)
+         (images)
+         (product_prices)
+         (stock_available)
+         (json)
+         (url)
+         (delivery_variants)
+         (delivery_prices)
+         (created)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::product_object, node::chain::product_index );
 
 FC_REFLECT( node::chain::savings_withdraw_object,
          (id)
@@ -1937,8 +2281,8 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::savings_withdraw_object, node::chain::sav
 
 FC_REFLECT( node::chain::unstake_asset_route_object,
          (id)
-         (from_account)
-         (to_account)
+         (from)
+         (to)
          (symbol)
          (percent)
          (auto_stake)
@@ -1965,7 +2309,6 @@ FC_REFLECT_ENUM( node::chain::curve_id,
 FC_REFLECT( node::chain::reward_fund_object,
          (id)
          (content_reward_balance)
-         (equity_reward_balance)
          (validation_reward_balance) 
          (txn_stake_reward_balance) 
          (work_reward_balance)
@@ -1979,14 +2322,13 @@ FC_REFLECT( node::chain::reward_fund_object,
          (activity_reward_balance)
          (premium_partners_fund_balance)
          (total_pending_reward_balance)
-         (total_reward_shares)
          (recent_content_claims)
          (recent_activity_claims)
          (content_constant)
          (content_reward_decay_rate)
          (author_reward_curve)
          (curation_reward_curve)
-         (last_update)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::reward_fund_object, node::chain::reward_fund_index );

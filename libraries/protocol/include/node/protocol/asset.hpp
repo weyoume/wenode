@@ -4,6 +4,11 @@
 
 namespace node { namespace protocol {
 
+   struct asset;
+   struct price;
+   struct price_feed;
+   struct option_strike;
+
    /**
     * Valid symbols can contain [A-Z0-9], and '.'
     * They must start with [A, Z]
@@ -46,8 +51,6 @@ namespace node { namespace protocol {
 
       return true;
    }
-
-   struct price;
 
    /**
     * An object representing an amount of a specified asset.
@@ -279,7 +282,11 @@ namespace node { namespace protocol {
     */
    struct option_strike
    {
-      option_strike( price strike_price = price(), date_type expiration_date = date_type() );
+      option_strike( 
+         price strike_price = price(), 
+         date_type expiration_date = date_type() ) : 
+         strike_price(strike_price), 
+         expiration_date(expiration_date){}
 
       price         strike_price;         ///< Price that the option can be exercised at.
 
@@ -302,6 +309,8 @@ namespace node { namespace protocol {
       }
 
       string to_string()const;
+
+      time_point expiration()const;
    };
 
    bool  operator <  ( const option_strike& a, const option_strike& b );

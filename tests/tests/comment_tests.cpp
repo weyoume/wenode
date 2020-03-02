@@ -5,11 +5,7 @@
 #include <node/protocol/exceptions.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
-
-//#include <node/chain/hardfork.hpp>
-
 #include <node/chain/util/reward.hpp>
-#include <node/producer/producer_objects.hpp>
 #include <fc/crypto/digest.hpp>
 #include <tests/common/database_fixture.hpp>
 
@@ -135,7 +131,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( alice_comment.comment_price == comment.comment_price );
       BOOST_REQUIRE( alice_comment.premium_price == comment.premium_price );
 
-      BOOST_REQUIRE( alice_comment.last_update == now() );
+      BOOST_REQUIRE( alice_comment.last_updated == now() );
       BOOST_REQUIRE( alice_comment.created == now() );
       BOOST_REQUIRE( alice_comment.active == now() );
 
@@ -231,7 +227,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( bob_comment.comment_price == comment.comment_price );
       BOOST_REQUIRE( bob_comment.premium_price == comment.premium_price );
 
-      BOOST_REQUIRE( bob_comment.last_update == now() );
+      BOOST_REQUIRE( bob_comment.last_updated == now() );
       BOOST_REQUIRE( bob_comment.created == now() );
       BOOST_REQUIRE( bob_comment.active == now() );
 
@@ -315,7 +311,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( candice_comment.comment_price == comment.comment_price );
       BOOST_REQUIRE( candice_comment.premium_price == comment.premium_price );
 
-      BOOST_REQUIRE( candice_comment.last_update == now() );
+      BOOST_REQUIRE( candice_comment.last_updated == now() );
       BOOST_REQUIRE( candice_comment.created == now() );
       BOOST_REQUIRE( candice_comment.active == now() );
 
@@ -391,7 +387,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( candice_comment.permlink ) == comment.permlink );
       BOOST_REQUIRE( candice_comment.parent_author == comment.parent_author );
       BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == comment.parent_permlink );
-      BOOST_REQUIRE( candice_comment.last_update == now() );
+      BOOST_REQUIRE( candice_comment.last_updated == now() );
       BOOST_REQUIRE( candice_comment.created == created );
       BOOST_REQUIRE( candice_comment.cashout_time == candice_comment.created + CONTENT_REWARD_INTERVAL );
 
@@ -899,7 +895,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       BOOST_REQUIRE( candice.last_vote_time == now() );
       BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( candice_vote_itr != vote_idx.end() );
-      BOOST_REQUIRE( candice_vote_itr->last_update == now() );
+      BOOST_REQUIRE( candice_vote_itr->last_updated == now() );
       BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
 
       validate_database();
@@ -908,7 +904,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: adjusting vote weight" );
 
-      generate_blocks( now() + fc::seconds( MIN_VOTE_INTERVAL_SEC ) );
+      generate_blocks( now() + MIN_VOTE_INTERVAL );
 
       vote.weight = PERCENT_1 * 50;
       
@@ -921,7 +917,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       auto candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
 
-      BOOST_REQUIRE( candice_vote_itr->last_update == now() );
+      BOOST_REQUIRE( candice_vote_itr->last_updated == now() );
       BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
       
       validate_database();
@@ -930,7 +926,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: changing vote to 0 weight" );
 
-      generate_blocks( now() + fc::seconds( MIN_VOTE_INTERVAL_SEC ) );
+      generate_blocks( now() + MIN_VOTE_INTERVAL );
 
       vote.weight = 0;
 
@@ -944,7 +940,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       auto candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
 
-      BOOST_REQUIRE( candice_vote_itr->last_update == now() );
+      BOOST_REQUIRE( candice_vote_itr->last_updated == now() );
       BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
       BOOST_REQUIRE( candice_vote_itr->reward == 0 );
       
@@ -1072,7 +1068,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing view" );
 
-      generate_blocks( now() + fc::seconds( MIN_VIEW_INTERVAL_SEC ) );
+      generate_blocks( now() + MIN_VIEW_INTERVAL );
 
       view.viewed = false;
       
@@ -1210,7 +1206,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing share" );
 
-      generate_blocks( now() + fc::seconds( MIN_SHARE_INTERVAL_SEC ) );
+      generate_blocks( now() + MIN_SHARE_INTERVAL );
 
       share.shared = false;
       
@@ -1398,7 +1394,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing moderation tag" );
 
-      generate_blocks( now() + fc::seconds( MIN_SHARE_INTERVAL_SEC ) );
+      generate_blocks( now() + MIN_SHARE_INTERVAL );
 
       tag.applied = false;
       

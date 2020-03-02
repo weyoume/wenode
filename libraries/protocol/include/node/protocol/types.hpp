@@ -704,6 +704,7 @@ namespace node {
 
          void next();
 
+         operator fc::time_point()const;
          friend bool operator == ( const date_type& date1, const date_type& date2 );
          friend bool operator < ( const date_type& date1, const date_type& date2 );
          friend bool operator > ( const date_type& date1, const date_type& date2 );

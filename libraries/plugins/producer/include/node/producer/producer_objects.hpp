@@ -1,7 +1,5 @@
 #pragma once
 
-#include <node/chain/node_object_types.hpp>
-
 #include <boost/multi_index/composite_key.hpp>
 
 namespace node { namespace producer {
@@ -109,7 +107,7 @@ class reserve_ratio_object : public object< reserve_ratio_object_type, reserve_r
       /**
        * The maximum bandwidth the blockchain can support is:
        *
-       *    max_bandwidth = maximum_block_size * BANDWIDTH_AVERAGE_WINDOW_MICROSECONDS / BLOCK_INTERVAL
+       *    max_bandwidth = maximum_block_size * BANDWIDTH_AVERAGE_WINDOW / BLOCK_INTERVAL
        *
        * The maximum virtual bandwidth is:
        *

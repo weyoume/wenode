@@ -183,6 +183,9 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       from_string( a.json_private, o.json_private );
       from_string( a.details, o.details );
       from_string( a.url, o.url );
+      from_string( a.image, o.image );
+
+      a.membership = NONE;
 
       a.secure_public_key = public_key_type( o.secure_public_key );
       a.connection_public_key = public_key_type( o.connection_public_key );
@@ -231,7 +234,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    _db.create< account_following_object >( [&]( account_following_object& afo )
    {
       afo.account = o.new_account_name;
-      afo.last_update = now;
+      afo.last_updated = now;
    }); 
 
    if( o.governance_account.size() )
@@ -331,7 +334,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          aovo.officer_account = o.registrar;
       });
 
-      _db.create< account_executive_vote_object >( [&]( account_executive_vote_object& aevo )
+      _db.create< account_enterprise_vote_object >( [&]( account_enterprise_vote_object& aevo )
       {
          aevo.account = o.registrar;
          aevo.business_account = o.new_account_name;
@@ -1102,7 +1105,7 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
    {
       if( producer_itr == account_producer_idx.end() && rank_itr == account_rank_idx.end() )    // No vote for producer or rank
       {
-         FC_ASSERT( voter.producer_vote_count < MAX_ACC_producer_voteS,
+         FC_ASSERT( voter.producer_vote_count < MAX_ACCOUNT_VOTES,
             "Account has voted for too many producers." );
 
          _db.create< producer_vote_object >( [&]( producer_vote_object& v )
@@ -1683,7 +1686,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          {
             afo.companions.insert( account_b_name );
          }
-         afo.last_update = now;
+         afo.last_updated = now;
       });
 
       _db.modify( b_following_set, [&]( account_following_object& afo )
@@ -1700,7 +1703,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          {
             afo.companions.insert( account_a_name );
          }
-         afo.last_update = now;
+         afo.last_updated = now;
       });
 
       _db.remove( request );  // Remove initial request object
@@ -1739,7 +1742,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
             {
                afo.companions.erase( account_b_name );
             }
-            afo.last_update = now;
+            afo.last_updated = now;
          });
 
          _db.modify( b_following_set, [&]( account_following_object& afo )
@@ -1756,7 +1759,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
             {
                afo.companions.erase( account_a_name );
             }
-            afo.last_update = now;
+            afo.last_updated = now;
          });
 
          _db.remove( connection_obj );
@@ -1800,13 +1803,13 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          _db.modify( follower_set, [&]( account_following_object& afo ) 
          {
             afo.add_following( following.name );
-            afo.last_update = now;
+            afo.last_updated = now;
          });
          
          _db.modify( following_set, [&]( account_following_object& afo ) 
          {
             afo.add_follower( follower.name );
-            afo.last_update = now;
+            afo.last_updated = now;
          });
 
          if( follower.membership == NONE )     // Check for the presence of an ad bid on this follow.
@@ -1841,7 +1844,7 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          _db.modify( follower_set, [&]( account_following_object& afo )
          {
             afo.add_filtered( following.name );
-            afo.last_update = now;
+            afo.last_updated = now;
          });
       }
    }
@@ -1855,13 +1858,13 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          _db.modify( follower_set, [&]( account_following_object& afo )
          {
             afo.remove_following( following.name );
-            afo.last_update = now;
+            afo.last_updated = now;
          });
          
          _db.modify( following_set, [&]( account_following_object& afo )
          {
             afo.remove_follower( follower.name );
-            afo.last_update = now;
+            afo.last_updated = now;
          });
       }  
       else    // Unfiltering
@@ -1872,7 +1875,7 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          _db.modify( follower_set, [&]( account_following_object& afo )
          {
             afo.remove_filtered( following.name );
-            afo.last_update = now;
+            afo.last_updated = now;
          });
       }
    }
@@ -1916,31 +1919,31 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
       {
          if( o.followed )        // Creating new follow relation
          {
-            FC_ASSERT( !follower_set.is_following( o.tag ),
+            FC_ASSERT( !follower_set.is_followed_tag( o.tag ),
                "Tag is already followed." );
 
             _db.modify( follower_set, [&]( account_following_object& afo )
             {
-               afo.add_following( o.tag );
-               afo.last_update = now;
+               afo.add_followed_tag( o.tag );
+               afo.last_updated = now;
             });
             
             _db.modify( *tag_ptr, [&]( tag_following_object& tfo )
             {
                tfo.add_follower( follower.name );
-               tfo.last_update = now;
+               tfo.last_updated = now;
             });
 
          }  
          else        // Creating new filter relation
          {
-            FC_ASSERT( !follower_set.is_following( o.tag ),
+            FC_ASSERT( !follower_set.is_followed_tag( o.tag ),
                "Cannot filter a tag that you follow, unfollow first." );
 
             _db.modify( follower_set, [&]( account_following_object& afo )
             {
-               afo.add_filtered( o.tag );
-               afo.last_update = now;
+               afo.add_filtered_tag( o.tag );
+               afo.last_updated = now;
             });
          }
       }
@@ -1948,29 +1951,30 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
       {
          if( o.followed )    // Unfollowing the tag
          {
-            FC_ASSERT( follower_set.is_following( o.tag ),
+            FC_ASSERT( follower_set.is_followed_tag( o.tag ),
                "Cannot unfollow a tag that you do not follow." );
 
             _db.modify( follower_set, [&]( account_following_object& afo )
             {
-               afo.remove_following( o.tag );
-               afo.last_update = now;
+               afo.remove_followed_tag( o.tag );
+               afo.last_updated = now;
             });
             
             _db.modify( *tag_ptr, [&]( tag_following_object& tfo )
             {
                tfo.remove_follower( follower.name );
-               tfo.last_update = now;
+               tfo.last_updated = now;
             });
          }  
          else        // Unfiltering
          {
-            FC_ASSERT( follower_set.is_filtered( o.tag ),
+            FC_ASSERT( follower_set.is_filtered_tag( o.tag ),
                "Cannot unfilter a tag that you do not filter." );
 
             _db.modify( follower_set, [&]( account_following_object& afo )
             {
-               afo.remove_filtered( o.tag );
+               afo.remove_filtered_tag( o.tag );
+               afo.last_updated = now;
             });
          }
       }
@@ -1984,32 +1988,32 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
       {
          _db.modify( follower_set, [&]( account_following_object& afo )
          {
-            afo.add_following( o.tag );
-            afo.last_update = now;
+            afo.add_followed_tag( o.tag );
+            afo.last_updated = now;
          });
 
          _db.create< tag_following_object >( [&]( tag_following_object& tfo )
          {
             tfo.tag = o.tag;
             tfo.add_follower( follower.name );
-            tfo.last_update = now;
+            tfo.last_updated = now;
          });
       }
       else    // Adding filter
       {
-         FC_ASSERT( !follower_set.is_following( o.tag ),
+         FC_ASSERT( !follower_set.is_followed_tag( o.tag ),
             "Cannot filter a tag that you follow, unfollow first." );
 
          _db.modify( follower_set, [&]( account_following_object& afo )
          {
-            afo.add_filtered( o.tag );
-            afo.last_update = now;
+            afo.add_filtered_tag( o.tag );
+            afo.last_updated = now;
          });
 
          _db.create< tag_following_object >( [&]( tag_following_object& tfo )
          {
             tfo.tag = o.tag;
-            tfo.last_update = now;
+            tfo.last_updated = now;
          });
       }
    }
@@ -2073,7 +2077,7 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    FC_ASSERT( now < ( vote.created + fc::days(1) ),
       "Referred Recent Vote should have been made in the last 24 hours." );
 
-   const auto& vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_producer >();
+   const auto& vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank_producer >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, 1 ) );     // Gets top voted producer of account.
 
    const producer_object& producer = _db.get_producer( vote_itr->producer );
@@ -2369,14 +2373,14 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          }
       }
 
-      for( auto name_role : b.executives )
+      for( auto name : b.executives )
       {
-         if( pso.is_top_voting_producer( name_role.first ) )
+         if( pso.is_top_voting_producer( name ) )
          {
             producer_check = true;
          }
-         const account_object& off_account = _db.get_account( name_role.first );
-         const network_officer_object* off_ptr = _db.find_network_officer( name_role.first );
+         const account_object& off_account = _db.get_account( name );
+         const network_officer_object* off_ptr = _db.find_network_officer( name );
          if( off_ptr != nullptr )
          {
             const network_officer_object& officer = *off_ptr;
@@ -2407,12 +2411,12 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
 
       for( auto name : b.officers )
       {
-         if( pso.is_top_voting_producer( name.first ) )
+         if( pso.is_top_voting_producer( name ) )
          {
             producer_check = true;
          }
-         const account_object& off_account = _db.get_account( name.first );
-         const network_officer_object* off_ptr = _db.find_network_officer( name.first );
+         const account_object& off_account = _db.get_account( name );
+         const network_officer_object* off_ptr = _db.find_network_officer( name );
          if( off_ptr != nullptr )
          {
             const network_officer_object& officer = *off_ptr;
@@ -3139,45 +3143,72 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
    const community_enterprise_object& enterprise = _db.get_community_enterprise( o.creator, enterprise_id );
    FC_ASSERT( o.milestone <= enterprise.claimed_milestones,
       "Cannot approve milestone that has not yet been claimed by the enterprise creator." );
+
+   if( o.approved )
+   {
+      FC_ASSERT( account.can_vote, 
+         "Account has declined its voting rights." );
+      FC_ASSERT( enterprise.active, 
+         "Executive board is inactive, and not accepting approval votes at this time." );
+   }
       
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
    time_point now = _db.head_block_time();
-   const enterprise_approval_object* approval_ptr = _db.find_enterprise_approval( creator.name, enterprise_id, account.name );
+   
+   const auto& account_rank_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
+   const auto& account_enterprise_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_enterprise >();
+   auto account_rank_itr = account_rank_idx.find( boost::make_tuple( o.account, o.vote_rank ) );
+   auto account_enterprise_itr = account_enterprise_idx.find( boost::make_tuple( o.account, enterprise.creator, enterprise_id ) );
 
-   if( approval_ptr != nullptr )      // Updating or removing existing approval
-   { 
-      const enterprise_approval_object& approval = *approval_ptr;
-      FC_ASSERT( o.milestone > approval.milestone, 
-         "Update to enterprise milestone approval must support a greater milestone level." );
-
-      if( o.approved )   // Modifying approval details.
+   if( o.approved )      // Adding or modifying vote
+   {
+      if( account_enterprise_itr == account_enterprise_idx.end() && account_rank_itr == account_rank_idx.end() )
       {
-         _db.modify( approval, [&]( enterprise_approval_object& emao )
-         { 
-            emao.milestone = o.milestone;
-            emao.last_updated = now;
+         FC_ASSERT( account.enterprise_approval_count < MAX_ACCOUNT_VOTES,
+            "Account has voted for too many Enterprise proposals." );
+
+         _db.create< enterprise_approval_object >( [&]( enterprise_approval_object& v )
+         {
+            v.creator = o.creator;
+            v.account = o.account;
+            v.vote_rank = o.vote_rank;
+            v.milestone = o.milestone;
          });
+         
+         _db.update_enterprise_approvals( account );
       }
       else
       {
-         _db.remove( approval );
+         if( account_enterprise_itr != account_enterprise_idx.end() && account_rank_itr != account_rank_idx.end() )
+         {
+            FC_ASSERT( account_enterprise_itr->creator != account_rank_itr->creator && account_enterprise_itr->enterprise_id != account_rank_itr->enterprise_id, 
+               "Vote at rank is already specified Enterprise proposal." );
+         }
+         
+         if( account_enterprise_itr != account_enterprise_idx.end() )
+         {
+            _db.remove( *account_enterprise_itr );
+         }
+
+         _db.update_enterprise_approvals( account, o.creator, o.enterprise_id, o.vote_rank, o.milestone );
       }
    }
-   else  // Create new enterprise milestone approval.
+   else       // Removing existing vote
    {
-      _db.create< enterprise_approval_object >( [&]( enterprise_approval_object& emao )
+      if( account_enterprise_itr != account_enterprise_idx.end() )
       {
-         emao.account = o.account;
-         emao.creator = o.creator;
-         from_string( emao.enterprise_id, o.enterprise_id );
-         emao.milestone = o.milestone;
-         emao.created = now;
-      });
+         _db.remove( *account_enterprise_itr );
+      }
+      else if( account_rank_itr != account_rank_idx.end() )
+      {
+         _db.remove( *account_rank_itr );
+      }
+      _db.update_enterprise_approvals( account );
    }
 
    _db.update_enterprise( enterprise, producer_schedule, props );
-
+   
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -3357,7 +3388,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          FC_ASSERT( current_power > 0, 
             "Account currently does not have any commenting power." );
          share_type voting_power = _db.get_voting_power( auth.name );
-         int16_t max_comment_denom = median_props.comment_reserve_rate * ( median_props.comment_recharge_time.count() / fc::days(1).count );  // Weights the viewing power with the network reserve ratio and recharge time
+         int16_t max_comment_denom = median_props.comment_reserve_rate * ( median_props.comment_recharge_time.count() / fc::days(1).count() );  // Weights the viewing power with the network reserve ratio and recharge time
          FC_ASSERT( max_comment_denom > 0 );
          int16_t used_power = (current_power + max_comment_denom - 1) / max_comment_denom;
          new_commenting_power = current_power - used_power;
@@ -3449,6 +3480,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.comment_price = o.comment_price;
          com.premium_price = o.premium_price;
          com.public_key = public_key_type( o.public_key );
+         
          if( o.interface.size() )
          {
             com.interface = o.interface;
@@ -3484,7 +3516,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.allow_shares = options.allow_shares;
          com.allow_curation_rewards = options.allow_curation_rewards;
 
-         com.last_update = now;
+         com.last_updated = now;
          com.created = now;
          com.active = now;
          com.last_payout = fc::time_point::min();
@@ -3591,7 +3623,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
          _db.modify( comment, [&]( comment_object& com )
          {
-            com.last_update = now;
+            com.last_updated = now;
             com.active = now;
             com.rating = options.rating;
             com.community = o.community;
@@ -3670,7 +3702,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          _db.modify( comment, [&]( comment_object& com )
          {
             com.deleted = true;               // deletes comment, nullifying all possible information.
-            com.last_update = fc::time_point::min();
+            com.last_updated = fc::time_point::min();
             com.active = fc::time_point::min();
             com.rating = ADULT;
             com.community = community_name_type();
@@ -3814,8 +3846,8 @@ void vote_evaluator::do_apply( const vote_operation& o )
    auto itr = comment_vote_idx.find( std::make_tuple( comment.id, voter.id ) );
 
    int64_t elapsed_seconds = (now - voter.last_vote_time).to_seconds();
-   FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL_SEC, 
-      "Can only vote once every ${s} seconds.", ("s", MIN_VOTE_INTERVAL_SEC) );
+   FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL.to_seconds(), 
+      "Can only vote once every ${s} seconds.", ("s", MIN_VOTE_INTERVAL) );
    int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.vote_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(voter.voting_power + regenerated_power), int64_t(PERCENT_100) );
    
@@ -3894,7 +3926,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          cv.comment = comment.id;
          cv.reward = reward;
          cv.vote_percent = o.weight;
-         cv.last_update = now;
+         cv.last_updated = now;
 
          bool curation_reward_eligible = reward > 0 && comment.cashout_time != fc::time_point::maximum() && comment.allow_curation_rewards;
          
@@ -4028,7 +4060,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
       {
          cv.reward = reward;
          cv.vote_percent = o.weight;
-         cv.last_update = now;
+         cv.last_updated = now;
          cv.num_changes += 1;
 
          bool curation_reward_eligible = reward > 0 && comment.cashout_time != fc::time_point::maximum() && comment.allow_curation_rewards;
@@ -4133,15 +4165,15 @@ void view_evaluator::do_apply( const view_operation& o )
    auto itr = comment_view_idx.find( std::make_tuple( comment.id, viewer.name ) );
    int64_t elapsed_seconds = ( now - viewer.last_view_time ).to_seconds();
 
-   FC_ASSERT( elapsed_seconds >= MIN_VIEW_INTERVAL_SEC, 
-      "Can only view once every ${s} seconds.", ("s", MIN_VIEW_INTERVAL_SEC) );
+   FC_ASSERT( elapsed_seconds >= MIN_VIEW_INTERVAL.to_seconds(), 
+      "Can only view once every ${s} seconds.", ("s", MIN_VIEW_INTERVAL) );
    int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.view_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t( viewer.viewing_power + regenerated_power ), int64_t(PERCENT_100) );
 
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any viewing power." );
 
-   int16_t max_view_denom = median_props.view_reserve_rate * ( median_props.view_recharge_time.count() / fc::days(1).count );    // Weights the viewing power with the network reserve ratio and recharge time
+   int16_t max_view_denom = median_props.view_reserve_rate * ( median_props.view_recharge_time.count() / fc::days(1).count() );    // Weights the viewing power with the network reserve ratio and recharge time
    FC_ASSERT( max_view_denom > 0, 
       "View denominiator must be greater than zero.");
    int16_t used_power = (current_power + max_view_denom - 1) / max_view_denom;
@@ -4166,11 +4198,11 @@ void view_evaluator::do_apply( const view_operation& o )
          auto supernode_view_itr = comment_view_idx.lower_bound( std::make_tuple( o.supernode, viewer.name ) );
          if( supernode_view_itr == supernode_view_idx.end() )   // No view exists
          {
-            _db.adjust_view_weight( *supernode_ptr, vp );    // Adds voting power to the supernode view weight once per day per user. 
+            _db.adjust_view_weight( *supernode_ptr, vp, true );    // Adds voting power to the supernode view weight once per day per user. 
          }
          else if( ( supernode_view_itr->created + fc::days(1) ) < now )     // Latest view is more than 1 day old
          {
-            _db.adjust_view_weight( *supernode_ptr, vp );    // Adds voting power to the supernode view weight once per day per user. 
+            _db.adjust_view_weight( *supernode_ptr, vp, true );    // Adds voting power to the supernode view weight once per day per user. 
          }
       }
       if( interface_ptr != nullptr )
@@ -4179,11 +4211,11 @@ void view_evaluator::do_apply( const view_operation& o )
 
          if( interface_view_itr == interface_view_idx.end() )   // No view exists
          {
-            _db.adjust_interface_users( *interface_ptr );
+            _db.adjust_interface_users( *interface_ptr, true );
          }
          else if( ( interface_view_itr->created + fc::days(1) ) < now )    // Latest View is more than 1 day old
          {
-            _db.adjust_interface_users( *interface_ptr );
+            _db.adjust_interface_users( *interface_ptr, true );
          }
       }
 
@@ -4368,8 +4400,8 @@ void share_evaluator::do_apply( const share_operation& o )
    auto blog_itr = blog_idx.find( boost::make_tuple( comment.id, sharer.name ) );
 
    int64_t elapsed_seconds = ( now - sharer.last_share_time ).to_seconds();
-   FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL_SEC, 
-      "Can only share once every ${s} seconds.", ("s", MIN_SHARE_INTERVAL_SEC) );
+   FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL.to_seconds(), 
+      "Can only share once every ${s} seconds.", ("s", MIN_SHARE_INTERVAL) );
    int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.share_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(sharer.sharing_power + regenerated_power), int64_t(PERCENT_100) );
    FC_ASSERT( current_power > 0, 
@@ -4638,7 +4670,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
          mto.rating = o.rating;
          from_string( mto.details, o.details );
          mto.filter = o.filter;
-         mto.last_update = now;
+         mto.last_updated = now;
          mto.created = now;  
       });
    }
@@ -4659,7 +4691,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
             mto.rating = o.rating;
             from_string( mto.details, o.details );
             mto.filter = o.filter;
-            mto.last_update = now;
+            mto.last_updated = now;
          });
       }
       else    // deleting moderation tag
@@ -4919,12 +4951,12 @@ void community_add_mod_evaluator::do_apply( const community_add_mod_operation& o
       if( o.added )
       {
          bmo.moderators.insert( moderator.name );
-         bmo.last_update = now;
+         bmo.last_updated = now;
       }
       else 
       {
          bmo.moderators.erase( moderator.name );
-         bmo.last_update = now;
+         bmo.last_updated = now;
       }
    });
 
@@ -4977,12 +5009,12 @@ void community_add_admin_evaluator::do_apply( const community_add_admin_operatio
       if( o.added )
       {
          bmo.administrators.insert( administrator.name );
-         bmo.last_update = now;
+         bmo.last_updated = now;
       }
       else 
       {
          bmo.administrators.erase( administrator.name );
-         bmo.last_update = now;
+         bmo.last_updated = now;
       }
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -5026,7 +5058,7 @@ void community_transfer_ownership_evaluator::do_apply( const community_transfer_
    _db.modify( community_member, [&]( community_member_object& bmo )
    {
       bmo.founder = o.new_founder;
-      bmo.last_update = now;
+      bmo.last_updated = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -5174,7 +5206,7 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
       _db.modify( community_member, [&]( community_member_object& bmo )
       {
          bmo.members.insert( member.name );
-         bmo.last_update = now;
+         bmo.last_updated = now;
       });
       _db.create< community_member_key_object >( [&]( community_member_key_object& bmko )
       {
@@ -5219,7 +5251,7 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
       _db.modify( community_member, [&]( community_member_object& bmo )
       {
          bmo.members.insert( account.name );
-         bmo.last_update = now;
+         bmo.last_updated = now;
       });
    }
    _db.remove( invite );
@@ -5262,7 +5294,7 @@ void community_remove_member_evaluator::do_apply( const community_remove_member_
    _db.modify( community_member, [&]( community_member_object& bmo )
    {
       bmo.members.erase( member.name );
-      bmo.last_update = now;
+      bmo.last_updated = now;
    });
 
    auto key_itr = key_idx.find( std::make_tuple( o.member, o.community ) );
@@ -5311,7 +5343,7 @@ void community_blacklist_evaluator::do_apply( const community_blacklist_operatio
       {
          bmo.blacklist.erase( member.name );
       }
-      bmo.last_update = now;
+      bmo.last_updated = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -5352,21 +5384,21 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
          _db.modify( community_member, [&]( community_member_object& bmo )
          {
             bmo.add_subscriber( account.name );
-            bmo.last_update = now;
+            bmo.last_updated = now;
          });
 
          _db.modify( account_following, [&]( account_following_object& afo )
          {
-            afo.add_following( community.name );
-            afo.last_update = now;
+            afo.add_followed_community( community.name );
+            afo.last_updated = now;
          });
       }
       else        // Add filter
       {
          _db.modify( account_following, [&]( account_following_object& afo )
          {
-            afo.add_filtered( community.name );
-            afo.last_update = now;
+            afo.add_filtered_community( community.name );
+            afo.last_updated = now;
          });
       }
    }
@@ -5377,21 +5409,21 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
          _db.modify( community_member, [&]( community_member_object& bmo )
          {
             bmo.remove_subscriber( account.name );
-            bmo.last_update = now;
+            bmo.last_updated = now;
          });
 
          _db.modify( account_following, [&]( account_following_object& afo )
          {
-            afo.remove_following( community.name );
-            afo.last_update = now;
+            afo.remove_followed_community( community.name );
+            afo.last_updated = now;
          });
       }
       else        // Remove filter
       {
          _db.modify( account_following, [&]( account_following_object& afo )
          {
-            afo.remove_filtered( community.name );
-            afo.last_update = now; 
+            afo.remove_filtered_community( community.name );
+            afo.last_updated = now; 
          });
       }
    }

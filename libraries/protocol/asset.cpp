@@ -224,7 +224,6 @@ namespace node { namespace protocol {
    { try {
       is_valid_symbol( base.symbol );
       is_valid_symbol( quote.symbol );
-      
       FC_ASSERT( base.symbol != quote.symbol );
       return price{ base, quote };
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
@@ -244,14 +243,6 @@ namespace node { namespace protocol {
          "Price is invalid, quote is less than 0.");
       FC_ASSERT( base.symbol != quote.symbol,
          "Price is invalid, symbols are for the same asset.");
-   } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
-
-   price operator / ( const asset& base, const asset& quote )
-   { try {
-      is_valid_symbol( base.symbol );
-      is_valid_symbol( quote.symbol );
-      FC_ASSERT( base.symbol != quote.symbol );
-      return price{base,quote};
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
 
    price operator + ( const price& a, const price& b )
@@ -444,6 +435,11 @@ namespace node { namespace protocol {
    string option_strike::to_string()const
    {
       return strike_price.quote.symbol + "-" + fc::to_string( strike_price.to_real() ) + "-" + strike_price.base.symbol + "-" + expiration_date.to_string();
+   }
+
+   time_point option_strike::expiration()const
+   {
+      return fc::time_point( expiration_date );
    }
 
    bool operator == ( const option_strike& a, const option_strike& b )

@@ -22,7 +22,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         graph_node_object( Constructor&& c, allocator< Allocator > a )
+         graph_node_object( Constructor&& c, allocator< Allocator > a ) :
+         node_id(a), name(a), details(a), json(a), json_private(a)
          {
             c(*this);
          };
@@ -43,7 +44,7 @@ namespace node { namespace chain {
 
          shared_string                      json_private;                ///< Private encrypted ciphertext JSON node attribute information.
 
-         public_key_type                    node_public_key;             ///< Key used for encrypting and decrypting private node JSON data
+         public_key_type                    node_public_key;             ///< Key used for encrypting and decrypting private node JSON data.
 
          account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the node.
 
@@ -68,7 +69,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         graph_edge_object( Constructor&& c, allocator< Allocator > a )
+         graph_edge_object( Constructor&& c, allocator< Allocator > a ) :
+         edge_id(a), name(a), details(a), json(a), json_private(a)
          {
             c(*this);
          };
@@ -117,7 +119,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         graph_node_property_object( Constructor&& c, allocator< Allocator > a )
+         graph_node_property_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a), attributes(a)
          {
             c(*this);
          };
@@ -135,6 +138,8 @@ namespace node { namespace chain {
          shared_string                      details;                     ///< Describes the additional details of the node.
 
          shared_string                      url;                         ///< Reference URL link for more details.
+
+         shared_string                      json;                        ///< Public plaintext JSON metadata information.
 
          vector< shared_string >            attributes;                  ///< List of attributes that each node is required to have.
 
@@ -155,7 +160,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         graph_edge_property_object( Constructor&& c, allocator< Allocator > a )
+         graph_edge_property_object( Constructor&& c, allocator< Allocator > a ) :
+         details(a), url(a), json(a), attributes(a)
          {
             c(*this);
          };
@@ -175,6 +181,8 @@ namespace node { namespace chain {
          shared_string                      details;                     ///< Describes the additional details of the node.
 
          shared_string                      url;                         ///< Reference URL link for more details.
+
+         shared_string                      json;                        ///< Public plaintext JSON metadata information.
 
          vector< shared_string >            attributes;                  ///< List of attributes that each edge is required to have.
 
@@ -404,8 +412,9 @@ namespace node { namespace chain {
 FC_REFLECT( node::chain::graph_node_object,
          (id)
          (account)
-         (node_type)
+         (node_types)
          (node_id)
+         (name)
          (details)
          (json)
          (json_private)
@@ -424,6 +433,7 @@ FC_REFLECT( node::chain::graph_edge_object,
          (edge_id)
          (from_node)
          (to_node)
+         (name)
          (details)
          (json)
          (json_private)
@@ -443,6 +453,7 @@ FC_REFLECT( node::chain::graph_node_property_object,
          (edge_permission)
          (details)
          (url)
+         (json)
          (attributes)
          (interface)
          (created)
@@ -460,6 +471,7 @@ FC_REFLECT( node::chain::graph_edge_property_object,
          (to_node_types)
          (details)
          (url)
+         (json)
          (attributes)
          (interface)
          (created)

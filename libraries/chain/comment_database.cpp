@@ -14,7 +14,6 @@
 #include <node/chain/shared_db_merkle.hpp>
 #include <node/chain/operation_notification.hpp>
 #include <node/chain/producer_schedule.hpp>
-#include <node/producer/producer_objects.hpp>
 
 #include <node/chain/util/asset.hpp>
 #include <node/chain/util/reward.hpp>
@@ -506,8 +505,8 @@ void database::process_comment_cashout()
 
       modify( reward_fund, [&]( reward_fund_object& rfo )
       {
-         rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_update ).to_seconds() ) / ctx.decay_rate.to_seconds();
-         rfo.last_update = now;
+         rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_updated ).to_seconds() ) / ctx.decay_rate.to_seconds();
+         rfo.last_updated = now;
       });
 
       // Snapshots the reward fund into a seperate object reward fund context to ensure equal execution conditions.
@@ -1419,7 +1418,7 @@ void database::remove_shared_comment( const account_name_type& sharer, const com
                   shared_by_copy.push_back( time );
                }
                std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-               [&]( auto a, auto b)
+               [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                {
                   return a.second < b.second;
                });
@@ -1460,7 +1459,7 @@ void database::remove_shared_comment( const account_name_type& sharer, const com
                   shared_by_copy.push_back( time );
                }
                std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-               [&]( auto a, auto b)
+               [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                {
                   return a.second < b.second;
                });
@@ -1543,7 +1542,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                         shared_by_copy.push_back( time );
                      }
                      std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-                     [&]( auto a, auto b)
+                     [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                      {
                         return a.second < b.second;
                      });
@@ -1602,7 +1601,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                         shared_by_copy.push_back( time );
                      }
                      std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-                     [&]( auto a, auto b)
+                     [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                      {
                         return a.second < b.second;
                      });
@@ -1661,7 +1660,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                         shared_by_copy.push_back( time );
                      }
                      std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-                     [&]( auto a, auto b)
+                     [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                      {
                         return a.second < b.second;
                      });
@@ -1720,7 +1719,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                         shared_by_copy.push_back( time );
                      }
                      std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-                     [&]( auto a, auto b)
+                     [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                      {
                         return a.second < b.second;
                      });
@@ -1779,7 +1778,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                         shared_by_copy.push_back( time );
                      }
                      std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-                     [&]( auto a, auto b)
+                     [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point >o b)
                      {
                         return a.second < b.second;
                      });
@@ -1822,7 +1821,7 @@ void database::update_community_in_feed( const account_name_type& account, const
       const comment_object& comment = get( comment_id );
       
       auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_type ) );
-      if( acc_following.is_following( community ) )
+      if( acc_following.is_followed_community( community ) )
       {
          if( feed_itr == feed_idx.end() )      // Comment is not already in account's community feed 
          {
@@ -1842,7 +1841,7 @@ void database::update_community_in_feed( const account_name_type& account, const
             modify( *feed_itr, [&]( feed_object& f )
             {
                f.feed_time = std::max( f.feed_time, blog_itr->blog_time );     // Bump feed time if blog is later
-               f.shared_by = map_merge( f.shared_by, blog_itr->shared_by, [&](auto a, auto b)
+               f.shared_by = map_merge( f.shared_by, blog_itr->shared_by, [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                   {
                      return a > b;    // Take the latest time point of all sharing accounts
                   });
@@ -1873,7 +1872,7 @@ void database::update_community_in_feed( const account_name_type& account, const
                   shared_by_copy.push_back( time );
                }
                std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-               [&]( auto a, auto b)
+               [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                {
                   return a.second < b.second;
                });
@@ -1907,7 +1906,7 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
       const comment_object& comment = get( comment_id );
       
       auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, TAG_FEED ) );
-      if( acc_following.is_following( tag ) )
+      if( acc_following.is_followed_tag( tag ) )
       {
          if( feed_itr == feed_idx.end() )      // Comment is not already in account's tag feed 
          {
@@ -1927,7 +1926,7 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
             modify( *feed_itr, [&]( feed_object& f )
             {
                f.feed_time = std::max( f.feed_time, blog_itr->blog_time );     // Bump feed time if blog is later
-               f.shared_by = map_merge( f.shared_by, blog_itr->shared_by, [&](auto a, auto b)
+               f.shared_by = map_merge( f.shared_by, blog_itr->shared_by, [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                   {
                      return a > b;    // Take the latest time point of all sharing accounts
                   });
@@ -1958,7 +1957,7 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
                   shared_by_copy.push_back( time );
                }
                std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-               [&]( auto a, auto b)
+               [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
                {
                   return a.second < b.second;
                });

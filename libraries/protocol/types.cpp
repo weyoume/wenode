@@ -268,6 +268,21 @@ namespace node { namespace protocol {
       return *this == date_type();
    }
 
+   date_type::operator fc::time_point()const
+   {
+      time_t unix_time = GENESIS_TIME.sec_since_epoch();
+      struct tm * ptm;
+      ptm = gmtime( &unix_time );
+
+      ptm->tm_mday = day;
+      ptm->tm_mon = month - 1;
+      ptm->tm_year = year - 1900;
+
+      time_t secs = mktime( ptm );
+      validate();
+      return fc::time_point( fc::seconds( secs ) );
+   }
+
    /**
     * Ensures the date type matches a valid calander day after 1st Jan 1970.
     */

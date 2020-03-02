@@ -22,7 +22,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         account_object( Constructor&& c, allocator< Allocator > a )
+         account_object( Constructor&& c, allocator< Allocator > a ) : 
+         details(a), json(a), json_private(a), url(a), image(a)
          {
             c(*this);
          };
@@ -115,6 +116,8 @@ namespace node { namespace chain {
 
          uint16_t                         governance_subscriptions = 0;          ///< Number of governance accounts that the account subscribes to.
 
+         uint16_t                         enterprise_approval_count = 0;         ///< Number of Enterprise proposals that the account has voted for. 
+
          uint16_t                         recurring_membership = 0;              ///< Amount of months membership should be automatically renewed for on expiration
 
          time_point                       created;                               ///< Time that the account was created.
@@ -163,7 +166,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         account_profile_object( Constructor&& c, allocator< Allocator > a )
+         account_profile_object( Constructor&& c, allocator< Allocator > a ) :
+         first_name(a), last_name(a), gender(a), date_of_birth(a), email(a), phone(a), nationality(a), address(a)
          {
             c(*this);
          };
@@ -212,7 +216,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         account_verification_object( Constructor&& c, allocator< Allocator > a )
+         account_verification_object( Constructor&& c, allocator< Allocator > a ) :
+         shared_image(a)
          {
             c(*this);
          };
@@ -232,6 +237,116 @@ namespace node { namespace chain {
          time_point                created;                       ///< Time of verification.
 
          time_point                last_updated;                  ///< Time that the verifcation was last updated. 
+   };
+
+
+   class account_permission_object : public object< account_permission_object_type, account_permission_object >
+   {
+      account_permission_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         account_permission_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                                  id;
+
+         account_name_type                        account;                       ///< Name of the account with permissions set.
+   
+         flat_set< account_name_type >            whitelisted_accounts;          ///< List of accounts that are able to send transfers to this account.
+
+         flat_set< account_name_type >            blacklisted_accounts;          ///< List of accounts that are not able to receive transfers from this account.
+
+         flat_set< asset_symbol_type >            whitelisted_assets;            ///< List of assets that the account has whitelisted to receieve transfers of. 
+
+         flat_set< asset_symbol_type >            blacklisted_assets;            ///< List of assets that the account has blacklisted against incoming transfers.
+ 
+         bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          ///< Determines if an asset is authorized for transfer with an accounts permissions object. 
+         {
+            bool fast_check = !( asset_obj.flags & balance_whitelist );
+            fast_check &= !( whitelisted_assets.size() );
+            fast_check &= !( blacklisted_assets.size() );
+            fast_check &= !( whitelisted_accounts.size() );
+            fast_check &= !( blacklisted_accounts.size() );
+
+            if( fast_check )
+            {
+               return true; // The asset does not require transfer permission, and the account does not use an asset whitelist or blacklist
+            }
+
+            if( blacklisted_accounts.size() )
+            {
+               if( blacklisted_accounts.find( name ) != blacklisted_accounts.end() )
+               {
+                  return false;  // The account is in the blacklist of the account
+               }
+            }
+
+            if( whitelisted_accounts.size() )
+            {
+               if( whitelisted_accounts.find( name ) == whitelisted_accounts.end() )
+               {
+                  return false;  // The account is not in the whitelist of the account
+               }
+            }
+
+            if( blacklisted_assets.size() )
+            {
+               if( blacklisted_assets.find( asset_obj.symbol ) != blacklisted_assets.end() )
+               {
+                  return false; // The asset is in the account's blacklist
+               }
+            }
+
+            if( whitelisted_assets.size() )
+            {
+               if( whitelisted_assets.find( asset_obj.symbol ) == whitelisted_assets.end() )
+               {
+                  return false; // The asset is not in the account's whitelist
+               } 
+            }
+
+            if( asset_obj.blacklist_authorities.size() )
+            {
+               if( asset_obj.blacklist_authorities.find( name ) != asset_obj.blacklist_authorities.end() )
+               {
+                  return false; // The account is in the asset's blacklist
+               }
+            }
+
+            if( asset_obj.whitelist_authorities.size() )
+            {
+               if( asset_obj.whitelist_authorities.find( name ) == asset_obj.whitelist_authorities.end() )
+               {
+                  return false; // The account is not in the asset's whitelist
+               }
+            }
+
+            return true;
+         };
+
+         bool is_authorized_transfer( const account_name_type& name )const 
+         {
+            if( blacklisted_accounts.size() )
+            {
+               if( blacklisted_accounts.find( name ) != blacklisted_accounts.end() )
+               {
+                  return false;  // The account is in the blacklist of the account
+               }
+            }
+
+            if( whitelisted_accounts.size() )
+            {
+               if( whitelisted_accounts.find( name ) == whitelisted_accounts.end() )
+               {
+                  return false;  // The account is not in the whitelist of the account
+               }
+            }
+
+            return true;
+         };
    };
 
    /**
@@ -287,21 +402,25 @@ namespace node { namespace chain {
 
          business_structure_type                         business_type;              ///< Type of business account, controls authorizations for transactions of different types.
 
-         public_key_type                                 business_public_key;        ///< Public key of the business account for internal message encryption. 
+         public_key_type                                 business_public_key;        ///< Public key of the business account for internal message encryption.
 
          executive_officer_set                           executive_board;            ///< Set of highest voted executive accounts for each role.
 
-         flat_map< account_name_type, pair< executive_role_type, share_type > >  executives;   ///< Set of all executive names.    
+         flat_map< account_name_type, pair< executive_role_type, share_type > >  executive_votes;   ///< Set of all executive names.  
 
-         flat_map< account_name_type, share_type >       officers;                   ///< Set of all officers in the business, and their supporting voting power.
+         flat_set< account_name_type  >                  executives;                 ///< Set of all executive names.   
+
+         flat_map< account_name_type, share_type >       officer_votes;              ///< Set of all officers in the business, and their supporting voting power.
+
+         flat_set< account_name_type >                   officers;                   ///< Set of all officers in the business, and their supporting voting power.
 
          flat_set< account_name_type >                   members;                    ///< Set of all members of the business.
 
-         share_type                                      officer_vote_threshold;     ///< Amount of voting power required for an officer to be active. 
+         share_type                                      officer_vote_threshold;     ///< Amount of voting power required for an officer to be active.
 
-         flat_set< asset_symbol_type >                   equity_assets;              ///< Set of equity assets that offer dividends and voting power over the business account's structure
+         flat_set< asset_symbol_type >                   equity_assets;              ///< Set of equity assets that offer dividends and voting power over the business account's structure.
 
-         flat_set< asset_symbol_type >                   credit_assets;              ///< Set of credit assets that offer interest and buybacks from the business account
+         flat_set< asset_symbol_type >                   credit_assets;              ///< Set of credit assets that offer interest and buybacks from the business account.
 
          flat_map< asset_symbol_type, uint16_t >         equity_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 
@@ -313,16 +432,27 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the account's blacklist
+                  return false;
                }   
             }
-            if( business_type == PRIVATE_BUSINESS ) // Exclusive groups do not allow join requests, invitation only. 
+
+            switch( business_type )
             {
-               return false; 
-            }
-            else
-            {
-               return true;
+               case OPEN_BUSINESS:
+               case PUBLIC_BUSINESS:
+               {
+                  return true;
+               }
+               break;
+               case PRIVATE_BUSINESS:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid Business Type." );
+               }
             }
          };
 
@@ -332,40 +462,30 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the account's blacklist
+                  return false;
                }   
             }
-            if( business_type == OPEN_BUSINESS ) // Public groups, officers can invite.
+
+            switch( business_type )
             {
-               if( officers.find( account ) != officers.end() )
+               case OPEN_BUSINESS:
                {
-                  return true; // The account is in the officers list.
+                  return officers.find( account ) != officers.end();
                }
-               else
+               break;
+               case PUBLIC_BUSINESS:
                {
-                  return false; // The account is not in the officers list. 
-               }  
-            }
-            else if( business_type == PUBLIC_BUSINESS ) // Public business, executives can invite
-            {
-               if( executives.find( account ) != executives.end() )
-               {
-                  return true; // The account is in the executives list.
+                  return executives.find( account ) != executives.end();
                }
-               else
+               break;
+               case PRIVATE_BUSINESS:
                {
-                  return false; // The account is not in the executives list. 
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account;
                }
-            }
-            else if( business_type == PRIVATE_BUSINESS ) // Private business, CEO and COO can invite
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account )
+               break;
+               default:
                {
-                  return true; // The account is the relevant executive.
-               }
-               else
-               {
-                  return false; // The account is not authorized. 
+                  FC_ASSERT( false, "Invalid Business Type." );
                }
             }
          };
@@ -376,29 +496,26 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the businesses blacklist
+                  return false;
                }   
             }
-            if( business_type == OPEN_BUSINESS || business_type == PUBLIC_BUSINESS )    // Open and public business, executives can blacklist
+
+            switch( business_type )
             {
-               if( executives.find( account ) != executives.end() )
+               case OPEN_BUSINESS:
+               case PUBLIC_BUSINESS:
                {
-                  return true; // The account is in the executives list.
+                  return executives.find( account ) != executives.end();
                }
-               else
+               break;
+               case PRIVATE_BUSINESS:
                {
-                  return false; // The account is not in the executives list. 
-               }  
-            }
-            else if( business_type == PRIVATE_BUSINESS )    // Private business, CEO can blacklist
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account )
-               {
-                  return true; // The account is the CEO.
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account;
                }
-               else
+               break;
+               default:
                {
-                  return false; // The account is not the CEO. 
+                  FC_ASSERT( false, "Invalid Business Type." );
                }
             }
          };
@@ -409,40 +526,30 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the community's blacklist
+                  return false;
                }   
             }
-            if( business_type == OPEN_BUSINESS ) // Public groups, officers can invite.
+
+            switch( business_type )
             {
-               if( officers.find( account ) != officers.end() )
+               case OPEN_BUSINESS:
                {
-                  return true; // The account is in the officers list.
+                  return officers.find( account ) != officers.end();
                }
-               else
+               break;
+               case PUBLIC_BUSINESS:
                {
-                  return false; // The account is not in the officers list. 
-               }  
-            }
-            else if( business_type == PUBLIC_BUSINESS ) // Public business, executives can transfer
-            {
-               if( executives.find( account ) != executives.end() )
-               {
-                  return true; // The account is in the executives list.
+                  return executives.find( account ) != executives.end();
                }
-               else
+               break;
+               case PRIVATE_BUSINESS:
                {
-                  return false; // The account is not in the executives list. 
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_FINANCIAL_OFFICER == account;
                }
-            }
-            else if( business_type == PRIVATE_BUSINESS ) // Private business, CEO and CFO can transfer
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_FINANCIAL_OFFICER == account )
+               break;
+               default:
                {
-                  return true; // The account is the relevant executive.
-               }
-               else
-               {
-                  return false; // The account is not authorized. 
+                  FC_ASSERT( false, "Invalid Business Type." );
                }
             }
          };
@@ -453,40 +560,30 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the community's blacklist
+                  return false;
                }   
             }
-            if( business_type == OPEN_BUSINESS ) // Public groups, officers authorized
+
+            switch( business_type )
             {
-               if( officers.find( account ) != officers.end() )
+               case OPEN_BUSINESS:
                {
-                  return true; // The account is in the officers list.
+                  return officers.find( account ) != officers.end();
                }
-               else
+               break;
+               case PUBLIC_BUSINESS:
                {
-                  return false; // The account is not in the officers list. 
-               }  
-            }
-            else if( business_type == PUBLIC_BUSINESS ) // Public business, executives authorized
-            {
-               if( executives.find( account ) != executives.end() )
-               {
-                  return true; // The account is in the executives list.
+                  return executives.find( account ) != executives.end();
                }
-               else
+               break;
+               case PRIVATE_BUSINESS:
                {
-                  return false; // The account is not in the executives list. 
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account;
                }
-            }
-            else if( business_type == PRIVATE_BUSINESS ) // Private business, CEO and CFO can authorized
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account )
+               break;
+               default:
                {
-                  return true; // The account is the relevant executive.
-               }
-               else
-               {
-                  return false; // The account is not authorized. 
+                  FC_ASSERT( false, "Invalid Business Type." );
                }
             }
          };
@@ -497,29 +594,26 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the community's blacklist
+                  return false;
                }   
             }
-            if( business_type == OPEN_BUSINESS || business_type == PUBLIC_BUSINESS ) // Open and public business, officers can post
+
+            switch( business_type )
             {
-               if( officers.find( account ) != officers.end() )
+               case OPEN_BUSINESS:
+               case PUBLIC_BUSINESS:
                {
-                  return true; // The account is in the officers list.
+                  return officers.find( account ) != officers.end();
                }
-               else
+               break;
+               case PRIVATE_BUSINESS:
                {
-                  return false; // The account is not in the officers list. 
-               }  
-            }
-            else if( business_type == PRIVATE_BUSINESS ) // Private business, CEO, CMO and CAO can post
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_MARKETING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account )
-               {
-                  return true; // The account is the relevant executive.
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_MARKETING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account;
                }
-               else
+               break;
+               default:
                {
-                  return false; // The account is not authorized. 
+                  FC_ASSERT( false, "Invalid Business Type." );
                }
             }
          };
@@ -530,22 +624,26 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the businesses's blacklist
+                  return false;
                }   
             }
-            if( business_type == OPEN_BUSINESS  || business_type == PUBLIC_BUSINESS ) // Public and open business, all equity holders can vote for executives.
+
+            switch( business_type )
             {
-               return true; // The account is in the officers list.
-            }
-            else if( business_type == PRIVATE_BUSINESS ) // Private business, CEO and COO can vote for executives
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account )
+               case OPEN_BUSINESS:
+               case PUBLIC_BUSINESS:
                {
-                  return true; // The account is the relevant executive.
+                  return true;
                }
-               else
+               break;
+               case PRIVATE_BUSINESS:
                {
-                  return false; // The account is not authorized. 
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid Business Type." );
                }
             }
          };
@@ -556,33 +654,30 @@ namespace node { namespace chain {
             {
                if( obj.blacklisted_accounts.find( account ) != obj.blacklisted_accounts.end() )
                {
-                  return false; // The account is in the blacklist
+                  return false;
                }   
             }
-            if( business_type == OPEN_BUSINESS )    // Open business, all equity holders can vote for officers.
+
+            switch( business_type )
             {
-               return true; 
-            }
-            else if( business_type == PUBLIC_BUSINESS ) // Public business, executives can vote for officers.
-            {
-               if( executives.find( account ) != executives.end() )
+               case OPEN_BUSINESS:
                {
-                  return true; // The account is in the executives list.
+                  return true;
                }
-               else
+               break;
+               case PUBLIC_BUSINESS:
                {
-                  return false; // The account is not in the executives list. 
+                  return executives.find( account ) != executives.end();
                }
-            }
-            else if( business_type == PRIVATE_BUSINESS ) // Private business, CEO and COO can vote for officers
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account )
+               break;
+               case PRIVATE_BUSINESS:
                {
-                  return true; // The account is the relevant executive.
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account;
                }
-               else
+               break;
+               default:
                {
-                  return false; // The account is not authorized. 
+                  FC_ASSERT( false, "Invalid Business Type." );
                }
             }
          };
@@ -596,37 +691,27 @@ namespace node { namespace chain {
                   return false; // The account is in the blacklist
                }   
             }
-            if( business_type == OPEN_BUSINESS )    // Open business, all officers can adjust governance
+
+            switch( business_type )
             {
-               if( officers.find( account ) != officers.end() )
+               case OPEN_BUSINESS:
                {
-                  return true; // The account is in the officers list.
+                  return officers.find( account ) != officers.end();
                }
-               else
+               break;
+               case PUBLIC_BUSINESS:
                {
-                  return false; // The account is not in the officers list. 
+                  return executives.find( account ) != executives.end();
                }
-            }
-            else if( business_type == PUBLIC_BUSINESS ) // Public business, executives can adjust governance
-            {
-               if( executives.find( account ) != executives.end() )
+               break;
+               case PRIVATE_BUSINESS:
                {
-                  return true; // The account is in the executives list.
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_GOVERNANCE_OFFICER == account;
                }
-               else
+               break;
+               default:
                {
-                  return false; // The account is not in the executives list. 
-               }
-            }
-            else if( business_type == PRIVATE_BUSINESS ) // Private business, CEO and CGO
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_GOVERNANCE_OFFICER == account )
-               {
-                  return true; // The account is the relevant executive.
-               }
-               else
-               {
-                  return false; // The account is not authorized. 
+                  FC_ASSERT( false, "Invalid Business Type." );
                }
             }
          };
@@ -640,6 +725,32 @@ namespace node { namespace chain {
                   return false; // The account is in the blacklist
                }   
             }
+
+            switch( business_type )
+            {
+               case OPEN_BUSINESS:
+               {
+                  return officers.find( account ) != officers.end();
+               }
+               break;
+               case PUBLIC_BUSINESS:
+               {
+                  return executives.find( account ) != executives.end();
+               }
+               break;
+               case PRIVATE_BUSINESS:
+               {
+                  return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_DEVELOPMENT_OFFICER == account || 
+                  executive_board.CHIEF_MARKETING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account ||
+                  executive_board.CHIEF_TECHNOLOGY_OFFICER == account || executive_board.CHIEF_DESIGN_OFFICER == account;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid Business Type." );
+               }
+            }
+
             if( business_type == OPEN_BUSINESS )    // Open business, all equity holders can create network operations
             {
                if( officers.find( account ) != officers.end() )
@@ -750,7 +861,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         account_member_request_object( Constructor&& c, allocator< Allocator > a )
+         account_member_request_object( Constructor&& c, allocator< Allocator > a ) :
+         message(a)
          {
             c(*this);
          };
@@ -771,8 +883,9 @@ namespace node { namespace chain {
       account_member_invite_object() = delete;
 
       public:
-         template<typename Constructor, typename Allocator>
-         account_member_invite_object( Constructor&& c, allocator< Allocator > a )
+         template< typename Constructor, typename Allocator>
+         account_member_invite_object( Constructor&& c, allocator< Allocator > a ) :
+         message(a)
          {
             c(*this);
          };
@@ -795,7 +908,7 @@ namespace node { namespace chain {
       account_member_key_object() = delete;
 
       public:
-         template<typename Constructor, typename Allocator>
+         template< typename Constructor, typename Allocator>
          account_member_key_object( Constructor&& c, allocator< Allocator > a )
          {
             c(*this);
@@ -810,116 +923,6 @@ namespace node { namespace chain {
          account_name_type                       business_account;           ///< Name of the business account that the key is for.
 
          encrypted_keypair_type                  encrypted_business_key;     ///< Copy of the business account's private communications key, encrypted with the member's secure key . 
-   };
-
-
-   class account_permission_object : public object< account_permission_object_type, account_permission_object >
-   {
-      account_permission_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         account_permission_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
-         id_type                                  id;
-
-         account_name_type                        account;                       ///< Name of the account with permissions set.
-   
-         flat_set<account_name_type>              whitelisted_accounts;          ///< List of accounts that are able to send transfers to this account.
-
-         flat_set<account_name_type>              blacklisted_accounts;          ///< List of accounts that are not able to receive transfers from this account.
-
-         flat_set<asset_symbol_type>              whitelisted_assets;            ///< List of assets that the account has whitelisted to receieve transfers of. 
-
-         flat_set<asset_symbol_type>              blacklisted_assets;            ///< List of assets that the account has blacklisted against incoming transfers.
- 
-         bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          ///< Determines if an asset is authorized for transfer with an accounts permissions object. 
-         {
-            bool fast_check = !( asset_obj.flags & balance_whitelist );
-            fast_check &= !( whitelisted_assets.size() );
-            fast_check &= !( blacklisted_assets.size() );
-            fast_check &= !( whitelisted_accounts.size() );
-            fast_check &= !( blacklisted_accounts.size() );
-
-            if( fast_check )
-            {
-               return true; // The asset does not require transfer permission, and the account does not use an asset whitelist or blacklist
-            }
-
-            if( blacklisted_accounts.size() )
-            {
-               if( blacklisted_accounts.find( name ) != blacklisted_accounts.end() )
-               {
-                  return false;  // The account is in the blacklist of the account
-               }
-            }
-
-            if( whitelisted_accounts.size() )
-            {
-               if( whitelisted_accounts.find( name ) == whitelisted_accounts.end() )
-               {
-                  return false;  // The account is not in the whitelist of the account
-               }
-            }
-
-            if( blacklisted_assets.size() )
-            {
-               if( blacklisted_assets.find( asset_obj.symbol ) != blacklisted_assets.end() )
-               {
-                  return false; // The asset is in the account's blacklist
-               }
-            }
-
-            if( whitelisted_assets.size() )
-            {
-               if( whitelisted_assets.find( asset_obj.symbol ) == whitelisted_assets.end() )
-               {
-                  return false; // The asset is not in the account's whitelist
-               } 
-            }
-
-            if( asset_obj.blacklist_authorities.size() )
-            {
-               if( asset_obj.blacklist_authorities.find( name ) != asset_obj.blacklist_authorities.end() )
-               {
-                  return false; // The account is in the asset's blacklist
-               }
-            }
-
-            if( asset_obj.whitelist_authorities.size() )
-            {
-               if( asset_obj.whitelist_authorities.find( name ) == asset_obj.whitelist_authorities.end() )
-               {
-                  return false; // The account is not in the asset's whitelist
-               }
-            }
-
-            return true;
-         };
-
-         bool is_authorized_transfer( const account_name_type& name )const 
-         {
-            if( blacklisted_accounts.size() )
-            {
-               if( blacklisted_accounts.find( name ) != blacklisted_accounts.end() )
-               {
-                  return false;  // The account is in the blacklist of the account
-               }
-            }
-
-            if( whitelisted_accounts.size() )
-            {
-               if( whitelisted_accounts.find( name ) == whitelisted_accounts.end() )
-               {
-                  return false;  // The account is not in the whitelist of the account
-               }
-            }
-
-            return true;
-         };
    };
 
 
@@ -988,41 +991,41 @@ namespace node { namespace chain {
 
          asset get_voting_power()const { return asset((staked_balance - delegated_balance + receiving_balance), symbol); }
 
-         void account_balance_object::adjust_liquid_balance(const asset& delta)
+         void adjust_liquid_balance(const asset& delta)
          {
             assert(delta.symbol == symbol);
             liquid_balance += delta.amount;
             total_balance += delta.amount;
          }
 
-         void account_balance_object::adjust_reward_balance(const asset& delta)
+         void adjust_reward_balance(const asset& delta)
          {
             assert(delta.symbol == symbol);
             reward_balance += delta.amount;
             total_balance += delta.amount;
          }
 
-         void account_balance_object::adjust_staked_balance(const asset& delta)
+         void adjust_staked_balance(const asset& delta)
          {
             assert(delta.symbol == symbol);
             staked_balance += delta.amount;
             total_balance += delta.amount;
          }
 
-         void account_balance_object::adjust_savings_balance(const asset& delta)
+         void adjust_savings_balance(const asset& delta)
          {
             assert(delta.symbol == symbol);
             savings_balance += delta.amount;
             total_balance += delta.amount;
          }
 
-         void account_balance_object::adjust_delegated_balance(const asset& delta)
+         void adjust_delegated_balance(const asset& delta)
          {
             assert(delta.symbol == symbol);
             delegated_balance += delta.amount;
          }
 
-         void account_balance_object::adjust_receiving_balance(const asset& delta)
+         void adjust_receiving_balance(const asset& delta)
          {
             assert(delta.symbol == symbol);
             receiving_balance += delta.amount;
@@ -1093,7 +1096,7 @@ namespace node { namespace chain {
 
          flat_set< tag_name_type >         filtered_tags;        ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
 
-         time_point                        last_update;          ///< Last time that the account changed its following sets.
+         time_point                        last_updated;          ///< Last time that the account changed its following sets.
 
          /**
           * Adjacency value determines how similar two accounts are by comparing the 
@@ -1164,12 +1167,12 @@ namespace node { namespace chain {
             return std::find( following.begin(), following.end(), account ) != following.end();
          };
 
-         bool                              is_following( const tag_name_type& tag )const
+         bool                              is_followed_tag( const tag_name_type& tag )const
          {
             return std::find( followed_tags.begin(), followed_tags.end(), tag ) != followed_tags.end();
          };
 
-         bool                              is_following( const community_name_type& community )const
+         bool                              is_followed_community( const community_name_type& community )const
          {
             return std::find( followed_communities.begin(), followed_communities.end(), community ) != followed_communities.end();
          };
@@ -1184,12 +1187,12 @@ namespace node { namespace chain {
             return std::find( filtered.begin(), filtered.end(), account ) != filtered.end();
          };
 
-         bool                              is_filtered( const tag_name_type& tag )const
+         bool                              is_filtered_tag( const tag_name_type& tag )const
          {
             return std::find( filtered_tags.begin(), filtered_tags.end(), tag ) != filtered_tags.end();
          };
 
-         bool                              is_filtered( const community_name_type& community )const
+         bool                              is_filtered_community( const community_name_type& community )const
          {
             return std::find( filtered_communities.begin(), filtered_communities.end(), community ) != filtered_communities.end();
          };
@@ -1230,33 +1233,33 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_following( const tag_name_type& t )
+         void                              add_followed_tag( const tag_name_type& t )
          {
-            if( !is_following( t ) )
+            if( !is_followed_tag( t ) )
             {
                followed_tags.insert( t );
             }
          }
 
-         void                              add_following( const community_name_type& community )
+         void                              add_followed_community( const community_name_type& community )
          {
-            if( !is_following( community ) )
+            if( !is_followed_community( community ) )
             {
                followed_communities.insert( community );
             }
          }
 
-         void                              remove_following( const tag_name_type& t )
+         void                              remove_followed_tag( const tag_name_type& t )
          {
-            if( is_following( t ) )
+            if( is_followed_tag( t ) )
             {
                followed_tags.erase( t );
             }
          }
 
-         void                              remove_following( const community_name_type& community )
+         void                              remove_followed_community( const community_name_type& community )
          {
-            if( is_following( community ) )
+            if( is_followed_community( community ) )
             {
                followed_communities.erase( community );
             }
@@ -1290,33 +1293,33 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_filtered( const tag_name_type& t )
+         void                              add_filtered_tag( const tag_name_type& t )
          {
-            if( !is_filtered( t ) )
+            if( !is_filtered_tag( t ) )
             {
                filtered_tags.insert( t );
             }
          }
 
-         void                              remove_filtered( const tag_name_type& t )
+         void                              remove_filtered_tag( const tag_name_type& t )
          {
-            if( is_filtered( t ) )
+            if( is_filtered_tag( t ) )
             {
                filtered_tags.erase( t );
             }
          }
 
-         void                              add_filtered( const const community_name_type& community )
+         void                              add_filtered_community( const community_name_type& community )
          {
-            if( !is_filtered( community ) )
+            if( !is_filtered_community( community ) )
             {
                filtered_communities.insert( community );
             }
          }
 
-         void                              remove_filtered( const community_name_type& community )
+         void                              remove_filtered_community( const community_name_type& community )
          {
-            if( is_filtered( community ) )
+            if( is_filtered_community( community ) )
             {
                filtered_communities.erase( community );
             }
@@ -1342,7 +1345,7 @@ namespace node { namespace chain {
 
          flat_set< account_name_type >     followers;        ///< Accounts that follow this tag. 
 
-         time_point                        last_update;      ///< Last time that the tag changed its following sets.
+         time_point                        last_updated;     ///< Last time that the tag changed its following sets.
 
          share_type                        adjacency_value( const tag_following_object& t )const
          {
@@ -1382,7 +1385,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         connection_request_object( Constructor&& c, allocator< Allocator > a )
+         connection_request_object( Constructor&& c, allocator< Allocator > a ) :
+         message(a)
          {
             c( *this );
          }
@@ -1407,7 +1411,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         connection_object( Constructor&& c, allocator< Allocator > a )
+         connection_object( Constructor&& c, allocator< Allocator > a ) :
+         connection_id(a)
          {
             c( *this );
          }
@@ -1769,27 +1774,27 @@ namespace node { namespace chain {
             member< account_officer_vote_object, account_officer_vote_id_type, &account_officer_vote_object::id > 
          >,
          ordered_unique< tag< by_business >,
-            composite_key< account_executive_vote_object,
+            composite_key< account_officer_vote_object,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
                member< account_officer_vote_object, account_officer_vote_id_type, &account_officer_vote_object::id >
             >
          >,
          ordered_unique< tag< by_business_account_rank >,
-            composite_key< account_executive_vote_object,
+            composite_key< account_officer_vote_object,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::account >,
                member< account_officer_vote_object, uint16_t, &account_officer_vote_object::vote_rank >
             >
          >,
          ordered_unique< tag< by_account_business_officer >,
-            composite_key< account_executive_vote_object,
+            composite_key< account_officer_vote_object,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::account >,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::officer_account >
             >
          >,
          ordered_unique< tag< by_business_officer >,
-            composite_key< account_executive_vote_object,
+            composite_key< account_officer_vote_object,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::officer_account >,
                member< account_officer_vote_object, account_officer_vote_id_type, &account_officer_vote_object::id >
@@ -1885,6 +1890,7 @@ namespace node { namespace chain {
    > account_member_invite_index;
 
    struct by_business_member;
+   struct by_member_business;
 
    typedef multi_index_container <
       account_member_key_object,
@@ -2281,6 +2287,7 @@ FC_REFLECT( node::chain::account_object,
          (officer_vote_count)
          (executive_board_vote_count)
          (governance_subscriptions)
+         (enterprise_approval_count)
          (recurring_membership)
          (created)
          (membership_expiration)
@@ -2433,7 +2440,7 @@ FC_REFLECT( node::chain::account_following_object,
          (filtered)
          (filtered_communities)
          (filtered_tags)
-         (last_update)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_following_object, node::chain::account_following_index );
@@ -2442,7 +2449,7 @@ FC_REFLECT( node::chain::tag_following_object,
          (id)
          (tag)
          (followers)
-         (last_update)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::tag_following_object, node::chain::tag_following_index );

@@ -5,11 +5,7 @@
 #include <node/protocol/exceptions.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
-
-//#include <node/chain/hardfork.hpp>
-
 #include <node/chain/util/reward.hpp>
-#include <node/producer/producer_objects.hpp>
 #include <fc/crypto/digest.hpp>
 #include <tests/common/database_fixture.hpp>
 
@@ -2599,7 +2595,7 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
       const account_following_object& following_a = db.get_account_following( "alice" );
       const tag_following_object& following_t = db.get_tag_following( "test" );
       
-      BOOST_REQUIRE( following_a.is_following( tag_name_type( "test" ) ) );
+      BOOST_REQUIRE( following_a.is_followed_tag( tag_name_type( "test" ) ) );
       BOOST_REQUIRE( following_t.is_follower( account_name_type( "alice" ) ) );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal tag follow" );
@@ -2629,7 +2625,7 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
       const account_following_object& following_a = db.get_account_following( "alice" );
       const tag_following_object& following_t = db.get_tag_following( "test" );
       
-      BOOST_REQUIRE( !following_a.is_following( tag_name_type( "test" ) ) );
+      BOOST_REQUIRE( !following_a.is_followed_tag( tag_name_type( "test" ) ) );
       BOOST_REQUIRE( !following_t.is_follower( account_name_type( "alice" ) ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: unfollowing" );

@@ -20,7 +20,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         ad_creative_object( Constructor&& c, allocator< Allocator > a )
+         ad_creative_object( Constructor&& c, allocator< Allocator > a ) :
+         objective(a), creative_id(a), creative(a), json(a)
          {
             c(*this);
          };
@@ -55,7 +56,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         ad_campaign_object( Constructor&& c, allocator< Allocator > a )
+         ad_campaign_object( Constructor&& c, allocator< Allocator > a ) :
+         campaign_id(a), json(a)
          {
             c(*this);
          };
@@ -86,16 +88,9 @@ namespace node { namespace chain {
 
          bool                             active = true;     // True when active for bidding and delivery, false to deactivate.
 
-         bool is_agent( const account_name_type& account )const  
+         bool                             is_agent( const account_name_type& account )const  
          {
-            if( agents.find( account ) != agents.end() )
-            {
-               return true; // The account is in the agents list.
-            }
-            else 
-            {
-               return false; // The account is not in the agents list.
-            }
+            return agents.find( account ) != agents.end();
          };
    };
 
@@ -106,7 +101,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         ad_inventory_object( Constructor&& c, allocator< Allocator > a )
+         ad_inventory_object( Constructor&& c, allocator< Allocator > a ) :
+         inventory_id(a), audience_id(a), json(a)
          {
             c(*this);
          };
@@ -144,7 +140,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         ad_audience_object( Constructor&& c, allocator< Allocator > a )
+         ad_audience_object( Constructor&& c, allocator< Allocator > a ) :
+         audience_id(a), json(a)
          {
             c(*this);
          };
@@ -167,14 +164,7 @@ namespace node { namespace chain {
 
          bool is_audience( const account_name_type& account )const  
          {
-            if( audience.find( account ) != audience.end() )
-            {
-               return true; // The account is in the audience list.
-            }
-            else 
-            {
-               return false; // The account is not in the audience list.
-            }
+            return audience.find( account ) != audience.end();
          };
    };
 
@@ -184,7 +174,8 @@ namespace node { namespace chain {
 
       public:
          template<typename Constructor, typename Allocator>
-         ad_bid_object( Constructor&& c, allocator< Allocator > a )
+         ad_bid_object( Constructor&& c, allocator< Allocator > a ) :
+         bid_id(a), audience_id(a), campaign_id(a), creative_id(a), inventory_id(a), objective(a), json(a)
          {
             c(*this);
          };
@@ -229,16 +220,9 @@ namespace node { namespace chain {
 
          time_point                       expiration;        // Time that the bid was will expire.
 
-         bool is_delivered( const account_name_type& account )const  
+         bool                             is_delivered( const account_name_type& account )const  
          {
-            if( delivered.find( account ) != delivered.end() )
-            {
-               return true; // The account has been delivered.
-            }
-            else 
-            {
-               return false; // The account has not been delivered.
-            }
+            return delivered.find( account ) != delivered.end();
          };
    };
 
@@ -268,7 +252,10 @@ namespace node { namespace chain {
                member< ad_creative_object, account_name_type, &ad_creative_object::account >,
                member< ad_creative_object, shared_string, &ad_creative_object::creative_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >,
+               strcmp_less
+            >
          >,
          ordered_unique< tag< by_author_objective >,
             composite_key< ad_creative_object,
@@ -345,7 +332,10 @@ namespace node { namespace chain {
                member< ad_inventory_object, account_name_type, &ad_inventory_object::provider >,
                member< ad_inventory_object, shared_string, &ad_inventory_object::inventory_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >,
          ordered_unique< tag< by_metric >,
             composite_key< ad_inventory_object,
@@ -353,7 +343,10 @@ namespace node { namespace chain {
                member< ad_inventory_object, asset, &ad_inventory_object::min_price >,
                member< ad_inventory_object, ad_inventory_id_type, &ad_inventory_object::id >
             >,
-            composite_key_compare< std::less< ad_metric_type >, std::less< asset >, std::less< ad_inventory_id_type > >
+            composite_key_compare< 
+               std::less< ad_metric_type >, 
+               std::less< asset >, 
+               std::less< ad_inventory_id_type > >
          > 
       >,
       allocator< ad_inventory_object >
@@ -383,7 +376,10 @@ namespace node { namespace chain {
                member< ad_audience_object, account_name_type, &ad_audience_object::account >,
                member< ad_audience_object, shared_string, &ad_audience_object::audience_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          > 
       >,
       allocator< ad_audience_object >
@@ -471,6 +467,7 @@ namespace node { namespace chain {
             >,
             composite_key_compare<
                std::less< account_name_type >,
+               std::less< ad_metric_type >,
                std::less< account_name_type >,
                strcmp_less,
                std::greater< asset >,
@@ -534,12 +531,12 @@ namespace node { namespace chain {
 FC_REFLECT( node::chain::ad_creative_object,
          (id)
          (account)
-         (creative_id)
-         (format_type) 
          (author)
          (objective)
+         (creative_id)
          (creative)
          (json)
+         (format_type)
          (created)
          (last_updated)
          (active)
@@ -550,7 +547,7 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::ad_creative_object, node::chain::ad_creat
 FC_REFLECT( node::chain::ad_campaign_object,
          (id)
          (account)
-         (campaign_id)  
+         (campaign_id)
          (budget)
          (total_bids)
          (begin)
@@ -575,7 +572,6 @@ FC_REFLECT( node::chain::ad_inventory_object,
          (inventory)
          (remaining)
          (json)
-         (agents)
          (created)
          (last_updated)
          (expiration)
@@ -610,9 +606,11 @@ FC_REFLECT( node::chain::ad_bid_object,
          (inventory_id)
          (bid_price)
          (metric)
+         (objective)
          (requested)
          (remaining)
-         (audience)
+         (delivered)
+         (json)
          (created)
          (last_updated)
          (expiration)

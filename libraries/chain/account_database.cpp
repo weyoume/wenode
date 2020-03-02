@@ -14,7 +14,7 @@
 #include <node/chain/shared_db_merkle.hpp>
 #include <node/chain/operation_notification.hpp>
 #include <node/chain/producer_schedule.hpp>
-#include <node/producer/producer_objects.hpp>
+
 
 #include <node/chain/util/asset.hpp>
 #include <node/chain/util/reward.hpp>
@@ -56,10 +56,9 @@ void database::process_membership_updates()
       if( member.recurring_membership > 0 )
       {
          const account_object& int_account = get_account( member.membership_interface );
-         const interface_object& interface = get_interface( member.membership_interface );
 
          asset liquid = get_liquid_balance( member.name, SYMBOL_COIN );
-         asset monthly_fee = asset(0, SYMBOL_USD );
+         asset monthly_fee = asset( 0, SYMBOL_USD );
 
          switch( member.membership )
          {
@@ -131,20 +130,21 @@ void database::process_membership_updates()
  * payment: The asset being received as payment
  * interface: The owner account of the interface that sold the membership
  */
-asset database::pay_membership_fees( const account_object& member, const asset& payment, const account_object& interface )
+asset database::pay_membership_fees( const account_object& member, const asset& mem_payment, const account_object& interface )
 { try {
-   FC_ASSERT( payment.symbol == SYMBOL_USD, 
+   FC_ASSERT( mem_payment.symbol == SYMBOL_USD, 
       "Payment asset must be denominated in USD asset.");
 
    const reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
-   asset membership_fee = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price * payment;
+   price usd_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price;
+   asset membership_fee = mem_payment * usd_price;       // Membership fee denominated in Core asset
 
    asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
    asset interface_fees = ( membership_fee * INTERFACE_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
    asset partners_fees = ( membership_fee * PARTNERS_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
 
    asset network_paid = pay_network_fees( member, network_fees );
-   asset interface_paid = pay_fee_share( interface, network_fees );
+   asset interface_paid = pay_fee_share( interface, interface_fees );
 
    asset total_fees = network_paid + interface_paid + partners_fees;
    adjust_liquid_balance( member.name, -total_fees );
@@ -154,21 +154,23 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
       rfo.adjust_premium_partners_fund_balance( partners_fees );    // Adds funds to premium partners fund for distribution to premium creators
    });
 
+   return total_fees;
+
 } FC_CAPTURE_AND_RETHROW() }
 
 /**
  * Pays protocol membership fees, and splits to network contributors
  * member: The account that is paying to upgrade to a membership level
  * payment: The asset being received as payment
- * interface: The owner account of the interface that sold the membership
  */
-asset database::pay_membership_fees( const account_object& member, const asset& payment )
+asset database::pay_membership_fees( const account_object& member, const asset& mem_payment )
 { try {
-   FC_ASSERT( payment.symbol == SYMBOL_USD, 
+   FC_ASSERT( mem_payment.symbol == SYMBOL_USD, 
       "Payment asset must be denominated in USD asset.");
 
    const reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
-   asset membership_fee = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price * payment;
+   price usd_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price;
+   asset membership_fee = mem_payment * usd_price;       // Membership fee denominated in Core asset
 
    asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
    asset interface_fees = ( membership_fee * INTERFACE_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
@@ -184,6 +186,8 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
       rfo.adjust_premium_partners_fund_balance( partners_fees );    // Adds funds to premium partners fund for distribution to premium creators
    });
 
+   return total_fees;
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -197,9 +201,6 @@ void database::update_account_reputations()
    if( (head_block_num() % REP_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
    
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
-
    const auto& account_idx = get_index< account_index >().indices().get< by_total_rewards >();
    auto account_itr = account_idx.begin();
    flat_map< account_name_type, pair< share_type, uint32_t > > reward_map;
@@ -226,7 +227,7 @@ void database::update_account_reputations()
       reward_vector.push_back( std::make_pair( account.first, account.second.first ));
    }
 
-   std::sort( reward_vector.begin(), reward_vector.end(), [&](share_type a, share_type b)
+   std::sort( reward_vector.begin(), reward_vector.end(), [&]( pair< account_name_type, share_type > a, pair< account_name_type, share_type > b )
    {
       return a < b;
    });
@@ -254,7 +255,6 @@ asset database::claim_activity_reward( const account_object& account,
    const reward_fund_object& reward_fund = get_reward_fund( currency_symbol );
    const account_balance_object& abo = get_account_balance( account.name, currency.equity_asset );
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const producer_schedule_object& pso = get_producer_schedule();
    const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = props.time;
    auto decay_rate = RECENT_REWARD_DECAY_RATE;
@@ -281,12 +281,12 @@ asset database::claim_activity_reward( const account_object& account,
    // Decay recent claims of activity reward fund and add new shares of this claim.
    modify( reward_fund, [&]( reward_fund_object& rfo )   
    {
-      rfo.recent_activity_claims -= ( rfo.recent_activity_claims * ( now - rfo.last_update ).to_seconds() ) / decay_rate.to_seconds();
-      rfo.last_update = now;
+      rfo.recent_activity_claims -= ( rfo.recent_activity_claims * ( now - rfo.last_updated ).to_seconds() ) / decay_rate.to_seconds();
+      rfo.last_updated = now;
       rfo.recent_activity_claims += activity_shares.value;
    }); 
 
-   asset activity_reward = ( reward_fund.activity_reward_balance * activity_shares ) / reward_fund.recent_activity_claims;
+   asset activity_reward = asset( ( reward_fund.activity_reward_balance.amount * activity_shares ) / int64_t( reward_fund.recent_activity_claims.to_uint64() ), currency_symbol );
 
    modify( reward_fund, [&]( reward_fund_object& rfo )
    {
@@ -429,7 +429,7 @@ void database::update_network_officer_votes( const account_object& account )
       const network_officer_vote_object& vote = *vote_itr;
       if( vote.vote_rank != vote_rank[ vote.officer_type ] )
       {
-         modify( vote, [&]( producer_vote_object& v )
+         modify( vote, [&]( network_officer_vote_object& v )
          {
             v.vote_rank = vote_rank[ vote.officer_type ];   // Updates vote rank to linear order of index retrieval.
          });
@@ -469,7 +469,7 @@ void database::update_network_officer_votes( const account_object& account, cons
       }
       if( vote.vote_rank != vote_rank[ vote.officer_type ] )
       {
-         modify( vote, [&]( producer_vote_object& v )
+         modify( vote, [&]( network_officer_vote_object& v )
          {
             v.vote_rank = vote_rank[ vote.officer_type ];   // Updates vote rank to linear order of index retrieval.
          });
@@ -641,7 +641,7 @@ void database::update_community_moderator_votes( const account_object& account, 
  * Aligns enterprise approval votes in order of highest to lowest,
  * with continual ordering.
  */
-void database::update_enterprise_votes( const account_object& account )
+void database::update_enterprise_approvals( const account_object& account )
 {
    const auto& vote_idx = get_index< enterprise_approval_index >().indices().get< by_account_rank >();
    auto vote_itr = vote_idx.lower_bound( account.name );
@@ -667,11 +667,11 @@ void database::update_enterprise_votes( const account_object& account )
  * Aligns enterprise approval votes in a continuous order, and inputs a new vote
  * at a specified vote number.
  */
-void database::update_enterprise_votes( const account_object& account, const account_name_type& creator, 
-const shared_string& enterprise_id, uint16_t input_vote_rank )
+void database::update_enterprise_approvals( const account_object& account, const account_name_type& creator,
+   string enterprise_id, uint16_t input_vote_rank, int16_t input_milestone )
 {
    const auto& vote_idx = get_index< enterprise_approval_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, 1 ) );
 
    uint16_t new_vote_rank = 1;
 
@@ -696,9 +696,10 @@ const shared_string& enterprise_id, uint16_t input_vote_rank )
    create< enterprise_approval_object >([&]( enterprise_approval_object& v )
    {
       v.account = account.name;
-      v.enterprise_id = enterprise_id;
+      from_string( v.enterprise_id, enterprise_id );
       v.creator = creator;
       v.vote_rank = input_vote_rank;
+      v.milestone = input_milestone;
    });
 }
 
@@ -936,8 +937,8 @@ void database::process_decline_voting_rights()
 void database::clear_producer_votes( const account_object& a )
 {
    const auto& vidx = get_index< producer_vote_index >().indices().get<by_account_producer>();
-   auto itr = vidx.lower_bound( boost::make_tuple( a.id, producer_id_type() ) );
-   while( itr != vidx.end() && itr->account == a.id )
+   auto itr = vidx.lower_bound( a.name );
+   while( itr != vidx.end() && itr->account == a.name )
    {
       const auto& current = *itr;
       ++itr;
