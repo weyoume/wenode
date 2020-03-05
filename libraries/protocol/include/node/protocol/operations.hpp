@@ -178,6 +178,7 @@ namespace node { namespace protocol {
             comment_reward_operation,
             interest_operation,
             fill_order_operation,
+            execute_bid_operation,
             asset_settle_cancel_operation,
             shutdown_producer_operation,
             fill_transfer_from_savings_operation,

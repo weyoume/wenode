@@ -39,20 +39,20 @@ using boost::container::flat_set;
 
 bool database::apply_order( const limit_order_object& new_order_object )
 {
-   auto order_id = new_order_object.id;
+   limit_order_id_type order_id = new_order_object.id;
    asset_symbol_type sell_asset_symbol = new_order_object.sell_asset();
    asset_symbol_type recv_asset_symbol = new_order_object.receive_asset();
 
    // We only need to check if the new order will match with others if it is at the front of the book
-   const auto& limit_price_idx = get_index<limit_order_index>().indices().get<by_price>();
-   const auto& margin_price_idx = get_index<limit_order_index>().indices().get<by_price>();
+   const auto& limit_price_idx = get_index< limit_order_index >().indices().get< by_price >();
+   const auto& margin_price_idx = get_index< margin_order_index >().indices().get< by_price >();
 
    bool match_limit = false;
    bool match_margin = false;
    bool check_pool = false;
    bool match_pool = false;
 
-   auto limit_itr = limit_price_idx.lower_bound( boost::make_tuple( new_order_object.sell_price, order_id ) );
+   auto limit_itr = limit_price_idx.lower_bound( new_order_object.sell_price );
    if( limit_itr != limit_price_idx.begin() )
    {
       --limit_itr;
@@ -62,7 +62,7 @@ bool database::apply_order( const limit_order_object& new_order_object )
       }   
    }
 
-   auto margin_itr = margin_price_idx.lower_bound( boost::make_tuple( false, new_order_object.sell_price, order_id ) );
+   auto margin_itr = margin_price_idx.lower_bound( boost::make_tuple( false, new_order_object.sell_price ) );
    if( margin_itr != margin_price_idx.begin() )
    {
       --margin_itr;
@@ -105,7 +105,7 @@ bool database::apply_order( const limit_order_object& new_order_object )
    auto max_price = ~new_order_object.sell_price;                  // this is the opposite side (on the book)
    limit_itr = limit_price_idx.lower_bound( max_price.max() );
    auto limit_end = limit_price_idx.upper_bound( max_price );
-   margin_itr = margin_price_idx.lower_bound( max_price.max() );
+   margin_itr = margin_price_idx.lower_bound( boost::make_tuple( false, max_price.max() ) );
    auto margin_end = margin_price_idx.upper_bound( boost::make_tuple( false, max_price ) );
 
    if( check_pool )
@@ -243,20 +243,20 @@ bool database::apply_order( const limit_order_object& new_order_object )
 
 bool database::apply_order( const margin_order_object& new_order_object )
 {
-   auto order_id = new_order_object.id;
+   margin_order_id_type order_id = new_order_object.id;
    asset_symbol_type sell_asset_symbol = new_order_object.sell_asset();
    asset_symbol_type recv_asset_symbol = new_order_object.receive_asset();
 
    // We only need to check if the new order will match with others if it is at the front of the book
-   const auto& limit_price_idx = get_index<limit_order_index>().indices().get<by_price>();
-   const auto& margin_price_idx = get_index<limit_order_index>().indices().get<by_price>();
+   const auto& limit_price_idx = get_index< limit_order_index >().indices().get< by_price >();
+   const auto& margin_price_idx = get_index< margin_order_index>().indices().get< by_price >();
 
    bool match_limit = false;
    bool match_margin = false;
    bool check_pool = false;
    bool match_pool = false;
 
-   auto limit_itr = limit_price_idx.lower_bound( boost::make_tuple( new_order_object.sell_price, order_id ) );
+   auto limit_itr = limit_price_idx.lower_bound( new_order_object.sell_price );
    if( limit_itr != limit_price_idx.begin() )
    {
       --limit_itr;
@@ -266,7 +266,7 @@ bool database::apply_order( const margin_order_object& new_order_object )
       }   
    }
 
-   auto margin_itr = margin_price_idx.lower_bound( boost::make_tuple( false, new_order_object.sell_price, order_id ) );
+   auto margin_itr = margin_price_idx.lower_bound( boost::make_tuple( false, new_order_object.sell_price ) );
    if( margin_itr != margin_price_idx.begin() )
    {
       --margin_itr;
@@ -309,7 +309,7 @@ bool database::apply_order( const margin_order_object& new_order_object )
    auto max_price = ~new_order_object.sell_price;                  // this is the opposite side (on the book)
    limit_itr = limit_price_idx.lower_bound( max_price.max() );
    auto limit_end = limit_price_idx.upper_bound( max_price );
-   margin_itr = margin_price_idx.lower_bound( max_price.max() );
+   margin_itr = margin_price_idx.lower_bound(  boost::make_tuple( false, max_price.max() ) );
    auto margin_end = margin_price_idx.upper_bound( boost::make_tuple( false, max_price ) );
 
    if( check_pool )
@@ -1023,7 +1023,6 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
 
    const account_object& seller = get_account( order.seller );
    const asset_object& recv_asset = get_asset( receives.symbol );
-   const asset_dynamic_data_object& fee_asset_dyn_data = get_dynamic_data( receives.symbol );
    time_point now = head_block_time();
 
    asset issuer_fees = asset( 0, receives.symbol );
@@ -1235,14 +1234,14 @@ void database::liquid_fund( const asset& input, const account_object& account, c
    FC_ASSERT( liquid.symbol == pool.symbol_a || liquid.symbol == pool.symbol_b, 
       "Invalid symbol input to liquidity pool: ${s}.",("s", input.symbol) );
 
-   uint128_t pr = BLOCKCHAIN_PRECISION;
-   uint128_t pr_sq = BLOCKCHAIN_PRECISION * BLOCKCHAIN_PRECISION;
+   uint128_t pr = BLOCKCHAIN_PRECISION.value;
+   uint128_t pr_sq = pr * pr;
    uint128_t sup = pool.balance_liquid.amount.value;
    uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
    uint128_t in = input.amount.value;
 
-   uint128_t return_amount = ( sup * ( approx_sqrt( pr_sq + ( ( pr_sq * in ) / ib ) ) - pr  ) ) / pr;
-   asset return_asset = asset( return_amount, pool.symbol_liquid );
+   uint128_t return_amount = ( sup * ( uint128_t( approx_sqrt( pr_sq + ( ( pr_sq * in ) / ib ) ) ) - pr  ) ) / pr;
+   asset return_asset = asset( int64_t( return_amount.to_uint64() ), pool.symbol_liquid );
    
    adjust_liquid_balance( account.name, -input );
 
@@ -1268,16 +1267,15 @@ void database::liquid_fund( const asset& input, const account_object& account, c
  * Withdraws a pool's liquidity asset for some of its underlying assets,
  * lowering the total supply of the pool's liquidity asset
  */
-void database::liquid_withdraw( const asset& input, const asset_symbol_type& receive, const account_object& account, const asset_liquidity_pool_object& pool)
+void database::liquid_withdraw( const asset& input, const asset_symbol_type& receive, const account_object& account, const asset_liquidity_pool_object& pool )
 { try {
    asset liquid = get_liquid_balance( account.name, input.symbol );
    FC_ASSERT( liquid >= input, 
       "Account: ${a} does not have enough liquid balance to withdraw requested amount: ${i}.",("a", account.name)("i", input) );
 
-   uint128_t pr = BLOCKCHAIN_PRECISION;
-   uint128_t pr_sq = BLOCKCHAIN_PRECISION * BLOCKCHAIN_PRECISION;
+   uint128_t pr = BLOCKCHAIN_PRECISION.value;
+   uint128_t pr_sq = pr * pr;
    uint128_t sup = pool.balance_liquid.amount.value;
-   uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
    uint128_t rb = pool.asset_balance( receive ).amount.value;
    uint128_t in = input.amount.value;
 
@@ -1319,7 +1317,7 @@ asset database::liquid_exchange( const asset& input, const asset_symbol_type& re
    {
       const asset_liquidity_pool_object& input_pool = get_liquidity_pool( SYMBOL_COIN, input.symbol );
 
-      uint128_t pr = BLOCKCHAIN_PRECISION;
+      uint128_t pr = BLOCKCHAIN_PRECISION.value;
       uint128_t ib = input_pool.asset_balance( input.symbol ).amount.value;
       uint128_t rb = input_pool.asset_balance( SYMBOL_COIN ).amount.value;
       uint128_t in = input.amount.value;
@@ -1375,7 +1373,7 @@ asset database::liquid_exchange( const asset& input, const asset_symbol_type& re
       }
 
       uint128_t in = coin_input.amount.value;
-      uint128_t pr = BLOCKCHAIN_PRECISION;
+      uint128_t pr = BLOCKCHAIN_PRECISION.value;
       uint128_t ib = receive_pool.asset_balance( SYMBOL_COIN ).amount.value;
       uint128_t rb = receive_pool.asset_balance( receive ).amount.value;
 
@@ -1413,7 +1411,7 @@ void database::liquid_exchange( const asset& input, const account_object& accoun
 { try {
    asset total_fees;
    asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   uint128_t pr = uint128_t(BLOCKCHAIN_PRECISION.value);
+   uint128_t pr = BLOCKCHAIN_PRECISION.value;
    uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
    uint128_t rb = pool.asset_balance( rec ).amount.value;
    uint128_t in = input.amount.value;
@@ -1474,7 +1472,7 @@ void database::liquid_exchange( const asset& input, const account_object& accoun
 { try {
    asset total_fees;
    asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   uint128_t pr = uint128_t(BLOCKCHAIN_PRECISION.value);
+   uint128_t pr = BLOCKCHAIN_PRECISION.value;
    uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
    uint128_t rb = pool.asset_balance( rec ).amount.value;
    uint128_t in = input.amount.value;
@@ -1540,7 +1538,7 @@ asset database::liquid_acquire( const asset& receive, const asset_symbol_type& i
    {
       const asset_liquidity_pool_object& acquire_pool = get_liquidity_pool( SYMBOL_COIN, receive.symbol );
 
-      uint128_t pr = uint128_t(BLOCKCHAIN_PRECISION.value);
+      uint128_t pr = BLOCKCHAIN_PRECISION.value;
       uint128_t pr_sq = pr * pr;
       uint128_t ib = acquire_pool.asset_balance( SYMBOL_COIN ).amount.value;
       uint128_t rb = acquire_pool.asset_balance( receive.symbol ).amount.value;
@@ -1595,7 +1593,7 @@ asset database::liquid_acquire( const asset& receive, const asset_symbol_type& i
       }
 
       uint128_t in = coin_asset.amount.value;
-      uint128_t pr = BLOCKCHAIN_PRECISION;
+      uint128_t pr = BLOCKCHAIN_PRECISION.value;
       uint128_t ib = receive_pool.asset_balance( input ).amount.value;
       uint128_t rb = receive_pool.asset_balance( SYMBOL_COIN ).amount.value;
 
@@ -1636,8 +1634,8 @@ void database::liquid_acquire( const asset& receive, const account_object& accou
       "Invalid pool requested for acquisition.");
    asset total_fees;
    asset_symbol_type in = pool.base_price( receive.symbol ).quote.symbol;
-   uint128_t pr = BLOCKCHAIN_PRECISION;
-   uint128_t pr_sq = BLOCKCHAIN_PRECISION * BLOCKCHAIN_PRECISION;
+   uint128_t pr = BLOCKCHAIN_PRECISION.value;
+   uint128_t pr_sq = pr * pr;
    uint128_t ib = pool.asset_balance( in ).amount.value;
    uint128_t rb = pool.asset_balance( receive.symbol ).amount.value;
    uint128_t re = receive.amount.value;
@@ -1705,8 +1703,8 @@ void database::liquid_acquire( const asset& receive, const account_object& accou
       "Invalid pool requested for acquisition.");
    asset total_fees;
    asset_symbol_type in = pool.base_price( receive.symbol ).quote.symbol;
-   uint128_t pr = BLOCKCHAIN_PRECISION;
-   uint128_t pr_sq = BLOCKCHAIN_PRECISION * BLOCKCHAIN_PRECISION;
+   uint128_t pr = BLOCKCHAIN_PRECISION.value;
+   uint128_t pr_sq = pr * pr;
    uint128_t ib = pool.asset_balance( in ).amount.value;
    uint128_t rb = pool.asset_balance( receive.symbol ).amount.value;
    uint128_t re = receive.amount.value;
@@ -1771,7 +1769,7 @@ void database::liquid_acquire( const asset& receive, const account_object& accou
  * an amount that would cause the sale price to fall below a specified limit price.
  */
 pair< asset, asset > database::liquid_limit_exchange( const asset& input, const price& limit_price, 
-   const asset_liquidity_pool_object& pool, bool execute = true, bool apply_fees = true )
+   const asset_liquidity_pool_object& pool, bool execute, bool apply_fees )
 { try {
    FC_ASSERT( input.symbol == pool.symbol_a || input.symbol == pool.symbol_b,
       "Invalid pool requested for acquisition.");
@@ -1790,7 +1788,7 @@ pair< asset, asset > database::liquid_limit_exchange( const asset& input, const 
 
    if( current > limit_price )
    {
-      uint128_t pr = BLOCKCHAIN_PRECISION;
+      uint128_t pr = BLOCKCHAIN_PRECISION.value;
       uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
       uint128_t rb = pool.asset_balance( rec ).amount.value;
       uint128_t in = input.amount.value;
@@ -1880,7 +1878,7 @@ void database::liquid_limit_exchange( const asset& input, const price& limit_pri
 
    if( current > limit_price )
    {
-      uint128_t pr = BLOCKCHAIN_PRECISION;
+      uint128_t pr = BLOCKCHAIN_PRECISION.value;
       uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
       uint128_t rb = pool.asset_balance( rec ).amount.value;
       uint128_t in = input.amount.value;
@@ -1961,7 +1959,7 @@ void database::liquid_limit_exchange( const asset& input, const price& limit_pri
 
    if( current > limit_price )
    {
-      uint128_t pr = BLOCKCHAIN_PRECISION;
+      uint128_t pr = BLOCKCHAIN_PRECISION.value;
       uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
       uint128_t rb = pool.asset_balance( rec ).amount.value;
       uint128_t in = input.amount.value;
@@ -2066,7 +2064,6 @@ void database::credit_withdraw( const asset& input, const account_object& accoun
    FC_ASSERT( input.symbol == pool.credit_symbol,
       "Incorrect pool for input asset" );
    asset liquid = get_liquid_balance( account.name, input.symbol );
-   asset credit = pool.credit_balance;
    price credit_price = pool.current_price();
    asset withdrawn = input * credit_price;
 
@@ -2121,7 +2118,6 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
 
    if( collateral.symbol != SYMBOL_COIN )
    {
-      const asset_liquidity_pool_object& col_pool = get_liquidity_pool( collateral.symbol );
       collateral_coin = liquid_exchange( 10 * collateral, SYMBOL_COIN, false, false);
    }
    else
@@ -2219,7 +2215,6 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
 
    if( collateral.symbol != SYMBOL_COIN )    // Coin derived from sale of 10 times collateral amount
    {
-      const asset_liquidity_pool_object& col_pool = get_liquidity_pool( collateral.symbol );
       collateral_coin = liquid_exchange( 10 * collateral, SYMBOL_COIN, false, false );
    }
    else
@@ -2229,7 +2224,6 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
 
    if( position.symbol != SYMBOL_COIN )      // Coin derived from sale of 10 times position amount
    {
-      const asset_liquidity_pool_object& position_pool = get_liquidity_pool( position.symbol );
       position_coin = liquid_exchange( 10 * position, SYMBOL_COIN, false, false );
    }
    else
@@ -2376,8 +2370,7 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
       "Black swan already occurred, it should not happen again" );
 
    const asset_symbol_type& backing_asset = bitasset.backing_asset;
-   const asset_object& backing_asset_object = get_asset( backing_asset );
-   asset collateral_gathered = asset( 0, backing_asset);
+   asset collateral_gathered = asset( 0, backing_asset );
    const asset_dynamic_data_object& mia_dyn = get_dynamic_data( mia.symbol );
    auto original_mia_supply = mia_dyn.total_supply;
 
@@ -2406,7 +2399,7 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
    modify( bitasset, [&]( asset_bitasset_data_object& obj )
    {
       obj.settlement_price = asset( original_mia_supply, mia.symbol ) / collateral_gathered;     // Activate global settlement price on asset
-      obj.settlement_fund = collateral_gathered;
+      obj.settlement_fund = collateral_gathered.amount;
    });
 } FC_CAPTURE_AND_RETHROW( (mia)(settlement_price) ) }
 
@@ -2433,11 +2426,11 @@ void database::revive_bitasset( const asset_object& bitasset )
          bid.debt = asset( bdd.total_supply, bitasset.symbol );
       });
 
-      execute_bid( pseudo_bid, bdd.total_supply, bad.settlement_fund.amount, bad.current_feed );
+      execute_bid( pseudo_bid, bdd.total_supply, bad.settlement_fund, bad.current_feed );
    } 
    else
    {
-      FC_ASSERT( bad.settlement_fund.amount == 0,
+      FC_ASSERT( bad.settlement_fund == 0,
          "Cannot have settlement fund with zero total asset supply." );
    }
       
@@ -2455,7 +2448,7 @@ void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const a
    const auto& bid_idx = get_index< collateral_bid_index >().indices().get< by_price >();
    auto bid_itr = bid_idx.lower_bound( boost::make_tuple( bitasset.symbol, price::max( bad.backing_asset, bitasset.symbol ) ) );
 
-   while( bid_itr != bid_idx.end() && bid_itr->inv_swan_price.quote.symbol == bitasset.symbol )
+   while( bid_itr != bid_idx.end() && bid_itr->inv_swan_price().quote.symbol == bitasset.symbol )
    {
       const collateral_bid_object& bid = *bid_itr;
       ++bid_itr;
@@ -2465,15 +2458,13 @@ void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const a
    modify( bad, [&]( asset_bitasset_data_object& obj )
    {
       obj.settlement_price = price();
-      obj.settlement_fund = asset( 0, bad.symbol );
+      obj.settlement_fund = 0;
    });
 } FC_CAPTURE_AND_RETHROW( ( bitasset ) ) }
 
 
 void database::cancel_bid( const collateral_bid_object& bid, bool create_virtual_op )
 {
-   const account_object& bidder_account = get_account( bid.bidder );
-
    adjust_liquid_balance( bid.bidder, bid.collateral );
 
    if( create_virtual_op )
@@ -2505,11 +2496,12 @@ void database::execute_bid( const collateral_bid_object& bid, share_type debt,
       call.call_price = price( asset( 1, bid.collateral.symbol ), asset( 1, bid.debt.symbol ) );
    });
 
-   push_virtual_operation( 
-      execute_bid_operation( bid.bidder, 
-      asset( bid.collateral.amount + collateral_from_fund, bid.collateral.symbol ),
-      asset( debt, bid.debt.symbol ) ) 
-   );
+   execute_bid_operation ebo;
+   ebo.bidder = bid.bidder;
+   ebo.collateral = asset( bid.collateral.amount + collateral_from_fund, bid.collateral.symbol );
+   ebo.debt = asset( debt, bid.debt.symbol );
+
+   push_virtual_operation( ebo );
 
    remove( bid );
 }
@@ -2713,32 +2705,25 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
      return false; 
    }
 
-   auto call_index = get_index< call_order_index >();
-   const auto& call_price_index = call_index.indices().get< by_price >();
-   const auto& call_collateral_index = call_index.indices().get< by_collateral >();
+   const auto& call_collateral_index = get_index< call_order_index >().indices().get< by_collateral >();
 
    auto call_min = price::min( bitasset.backing_asset, mia.symbol );
    auto call_max = price::max( bitasset.backing_asset, mia.symbol );
 
-   auto call_price_itr = call_price_index.begin();
-   auto call_price_end = call_price_itr;
    auto call_collateral_itr = call_collateral_index.begin();
    auto call_collateral_end = call_collateral_itr;
    
    call_collateral_itr = call_collateral_index.lower_bound( call_min );
    call_collateral_end = call_collateral_index.upper_bound( call_max );
    
-   bool filled_limit = false;
    bool margin_called = false;
 
-   auto head_time = head_block_time();
-   auto head_num = head_block_num();
+   uint64_t head_num = head_block_num();
 
    while( !check_for_blackswan( mia, enable_black_swan, &bitasset ) && 
       limit_itr != limit_end && 
       ( call_collateral_itr != call_collateral_end ) )
    {
-      bool filled_call = false;
 
       const call_order_object& call_order = *call_collateral_itr;
 
@@ -2770,18 +2755,12 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
       {  
          order_receives = usd_for_sale * match_price; // round down, in favor of call order
          call_receives = order_receives.multiply_and_round_up( match_price );
-         filled_limit = true;
+         
       } 
       else // fill call
       { 
          call_receives = usd_to_buy;
          order_receives = usd_to_buy.multiply_and_round_up( match_price ); // round up, in favor of limit order
-         filled_call = true; 
-
-         if( usd_to_buy == usd_for_sale ) 
-         {
-            filled_limit = true;
-         }
       }
 
       call_pays  = order_receives;

@@ -2861,7 +2861,6 @@ void database::process_power_rewards()
    if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
       return;
 
-   time_point now = head_block_time();
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
@@ -3088,7 +3087,6 @@ void database::process_txn_stake_rewards()
    if( (head_block_num() % TXN_STAKE_BLOCK_INTERVAL) != 0 )    // Runs once per week
       return;
 
-   time_point now = head_block_time();
    const auto& producer_idx = get_index< producer_index >().indices().get< by_txn_stake_weight >();
    auto producer_itr = producer_idx.begin();
     
@@ -3183,9 +3181,9 @@ void database::process_validation_rewards()
 
       for( auto b : validation_map )
       {
-         asset validation_reward = ( validation_reward * b.second ) / total_validation_shares; 
+         asset validation_reward_split = ( validation_reward * b.second ) / total_validation_shares; 
          adjust_reward_balance( b.first, validation_reward );       // Pay transaction validation reward to each block producer proportionally.
-         distributed += validation_reward;
+         distributed += validation_reward_split;
       }
 
       modify( reward_fund, [&]( reward_fund_object& r )
@@ -3320,7 +3318,7 @@ void database::update_network_officer( const network_officer_object& network_off
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
-   uint126_t voting_power = 0;
+   uint128_t voting_power = 0;
    uint32_t producer_vote_count = 0;
    uint128_t producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
@@ -3355,15 +3353,15 @@ void database::update_network_officer( const network_officer_object& network_off
    // Approve the network officer when a threshold of voting power and vote amount supports it.
    bool approve_officer = ( vote_count >= OFFICER_VOTE_THRESHOLD_AMOUNT ) &&
       ( producer_vote_count >= OFFICER_VOTE_THRESHOLD_PRODUCERS ) &&
-      ( voting_power.value >= ( props.total_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power.value >= ( pso.total_producer_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( voting_power >= ( props.total_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( producer_voting_power >= ( pso.total_producer_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( network_officer, [&]( network_officer_object& n )
    {
       n.vote_count = vote_count;
-      n.voting_power = voting_power;
+      n.voting_power = share_type( voting_power.to_uint64() );
       n.producer_vote_count = producer_vote_count;
-      n.producer_voting_power = producer_voting_power;
+      n.producer_voting_power = share_type( producer_voting_power.to_uint64() );
       n.officer_approved = approve_officer;
    });
 } FC_CAPTURE_AND_RETHROW() }
@@ -3546,9 +3544,9 @@ void database::update_executive_board( const executive_board_object& executive_b
    modify( executive_board, [&]( executive_board_object& e )
    {
       e.vote_count = vote_count;
-      e.voting_power = voting_power;
+      e.voting_power = share_type( voting_power.to_uint64() );
       e.producer_vote_count = producer_vote_count;
-      e.producer_voting_power = producer_voting_power;
+      e.producer_voting_power = share_type( producer_voting_power.to_uint64() );
       e.board_approved = approve_board;
    });
 } FC_CAPTURE_AND_RETHROW() }
@@ -3653,9 +3651,9 @@ void database::update_governance_account( const governance_account_object& gover
    modify( governance_account, [&]( governance_account_object& g )
    {
       g.subscriber_count = vote_count;
-      g.subscriber_power = voting_power;
+      g.subscriber_power = share_type( voting_power.to_uint64() );
       g.producer_subscriber_count = producer_vote_count;
-      g.producer_subscriber_power = producer_voting_power;
+      g.producer_subscriber_power = share_type( producer_voting_power.to_uint64() );
       g.account_approved = approve_account;
    });
 } FC_CAPTURE_AND_RETHROW() }
@@ -3750,13 +3748,13 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
    modify( enterprise, [&]( community_enterprise_object& e )
    {
       e.total_approvals = total_approvals;
-      e.total_voting_power = total_voting_power;
+      e.total_voting_power = share_type( total_voting_power.to_uint64() );
       e.total_producer_approvals = total_producer_approvals;
-      e.total_producer_voting_power = total_producer_voting_power;
+      e.total_producer_voting_power = share_type( total_producer_voting_power.to_uint64() );
       e.current_approvals = current_approvals;
-      e.current_voting_power = current_voting_power;
+      e.current_voting_power = share_type( current_voting_power.to_uint64() );
       e.current_producer_approvals = current_producer_approvals;
-      e.current_producer_voting_power = current_producer_voting_power;
+      e.current_producer_voting_power = share_type( current_producer_voting_power.to_uint64() );
       if( approve_milestone )
       {
          e.approved_milestones = e.claimed_milestones;
@@ -5372,7 +5370,7 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
    }
    else if( credit_usd_price < price(asset(1,SYMBOL_USD)/asset(1,SYMBOL_CREDIT)) )   // If price of credit is below $1.00 USD
    {
-      asset credit_purchased = liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );   // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
+      liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );   // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
 
       modify( props, [&]( dynamic_global_property_object& gpo ) 
       {

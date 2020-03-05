@@ -576,7 +576,7 @@ namespace node { namespace chain {
             return price( collateral, debt );    ///< Collateral / Debt.
          }
 
-         asset_symbol_type debt_type()const 
+         asset_symbol_type     debt_type()const 
          { 
             return debt.symbol;
          } 

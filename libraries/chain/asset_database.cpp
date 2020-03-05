@@ -1390,7 +1390,7 @@ void database::process_bids( const asset_bitasset_data_object& bad )
    {
       const auto end = bid_itr;
       share_type to_cover = bdd.total_supply;
-      share_type remaining_fund = bad.settlement_fund;
+      asset remaining_fund = bad.settlement_fund;
       for( bid_itr = start; bid_itr != end; )
       {
          const collateral_bid_object& bid = *bid_itr;
@@ -1407,14 +1407,14 @@ void database::process_bids( const asset_bitasset_data_object& bad )
          if( debt >= to_cover )
          {
             debt = to_cover;
-            collateral = remaining_fund;
+            collateral = remaining_fund.amount;
          }
          to_cover -= debt;
-         remaining_fund -= collateral;
+         remaining_fund.amount -= collateral;
          execute_bid( bid, debt, collateral, bad.current_feed );
       }
 
-      FC_ASSERT( remaining_fund == 0, 
+      FC_ASSERT( remaining_fund.amount == 0, 
          "Settlement fund not completely allocated by bids." );
       FC_ASSERT( to_cover == 0,
          "Asset debt not completely covered by bids." );

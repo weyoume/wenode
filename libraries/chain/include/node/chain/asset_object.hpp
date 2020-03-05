@@ -452,7 +452,7 @@ namespace node { namespace chain {
          
          price                     settlement_price;                              ///< Price at which force settlements of a black swanned asset will occur
          
-         asset                     settlement_fund;                               ///< Amount of collateral which is available for force settlement
+         share_type                settlement_fund;                               ///< Amount of collateral which is available for force settlement
 
          fc::microseconds          feed_lifetime;                                 ///< Time before a price feed expires
 

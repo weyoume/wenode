@@ -57,7 +57,7 @@ flat_map< _KEY_TYPE, _VALUE_TYPE > map_merge( flat_map<_KEY_TYPE,_VALUE_TYPE> ma
    flat_map< _KEY_TYPE, _VALUE_TYPE > result_map;
    for( auto value_a : map_a )
    {
-      if( map_b[ value_a.first ] )
+      if( map_b.count( value_a.first ) > 0 )
       {
          if( Comparator( value_a.second, map_b[ value_a.first ] ) )
          {
@@ -343,16 +343,16 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
    {
       util::fill_comment_reward_context_local_state( ctx, comment );
 
-      uint128_t reward_tokens = util::get_comment_reward( ctx );
+      share_type reward_tokens = share_type( util::get_comment_reward( ctx ).to_uint64() );
 
       if( reward_tokens > 0 )
       {
-         share_type voter_tokens = ( ( reward_tokens * comment.vote_reward_percent ) / PERCENT_100 ).to_uint64();
-         share_type viewer_tokens = ( ( reward_tokens * comment.view_reward_percent ) / PERCENT_100 ).to_uint64();
-         share_type sharer_tokens = ( ( reward_tokens * comment.share_reward_percent ) / PERCENT_100 ).to_uint64();
-         share_type commenter_tokens = ( ( reward_tokens * comment.comment_reward_percent ) / PERCENT_100 ).to_uint64();
-         share_type storage_tokens = ( ( reward_tokens * comment.storage_reward_percent ) / PERCENT_100 ).to_uint64();
-         share_type moderator_tokens = ( ( reward_tokens * comment.moderator_reward_percent ) / PERCENT_100 ).to_uint64();
+         share_type voter_tokens =  ( reward_tokens * comment.vote_reward_percent ) / PERCENT_100;
+         share_type viewer_tokens = ( reward_tokens * comment.view_reward_percent ) / PERCENT_100;
+         share_type sharer_tokens = ( reward_tokens * comment.share_reward_percent ) / PERCENT_100;
+         share_type commenter_tokens = ( reward_tokens * comment.comment_reward_percent ) / PERCENT_100;
+         share_type storage_tokens = ( reward_tokens * comment.storage_reward_percent ) / PERCENT_100;
+         share_type moderator_tokens = ( reward_tokens * comment.moderator_reward_percent ) / PERCENT_100;
          share_type total_curation_tokens = voter_tokens + viewer_tokens + sharer_tokens + commenter_tokens + storage_tokens + moderator_tokens;
          share_type author_tokens = reward_tokens - total_curation_tokens;
 
@@ -466,7 +466,8 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
       }
    }
    return claimed_reward;
-} FC_CAPTURE_AND_RETHROW( (comment) ) }
+} FC_CAPTURE_AND_RETHROW() }
+
 
 util::comment_reward_context database::get_comment_reward_context( const reward_fund_object& reward_fund )
 {
@@ -516,7 +517,6 @@ void database::process_comment_cashout()
       rf_ctx.content_reward_balance = reward_fund.content_reward_balance;
 
       const auto& comment_idx = get_index< comment_index >().indices().get< by_cashout_time >();
-      const auto& com_by_root = get_index< comment_index >().indices().get< by_root >();
       auto comment_itr = comment_idx.begin();
       
       while( comment_itr != comment_idx.end() && 
@@ -525,8 +525,10 @@ void database::process_comment_cashout()
       {
          if( comment_itr->net_reward > 0 )
          {
+            uint128_t net_reward = uint128_t( uint64_t( comment_itr->net_reward ) );
+
             rf_ctx.recent_content_claims += util::evaluate_reward_curve(
-               uint128_t( comment_itr->net_reward ),
+               net_reward,
                comment_itr->cashouts_received,
                ctx.reward_curve,
                ctx.decay_rate,
@@ -570,7 +572,6 @@ void database::update_comment_metrics()
       return;
 
    auto now = head_block_time();
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
    const comment_metrics_object& comment_metrics = get_comment_metrics();
    
    // Initialize comment metrics
@@ -644,50 +645,50 @@ void database::update_comment_metrics()
       vote_comment_ratio = double(recent_comment_power) / double( recent_vote_power );
 
       // Median count values
-      std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
+      std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
       {
          return a->net_votes < b->net_votes;
       });
       median_vote_count = comments[comments.size()/2]->net_votes;
 
-      std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
+      std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
       {
          return a->view_count < b->view_count;
       });
       median_view_count = comments[comments.size()/2]->view_count;
 
-      std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
+      std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
       {
          return a->share_count < b->share_count;
       });
       median_share_count = comments[comments.size()/2]->share_count;
 
-      std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
+      std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
       {
          return a->children < b->children;
       } );
       median_comment_count = comments[comments.size()/2]->children;
 
       // Median Power values
-      std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
+      std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
       {
          return a->vote_power < b->vote_power;
       });
       median_vote_power = comments[comments.size()/2]->vote_power;
 
-      std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
+      std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
       {
          return a->view_power < b->view_power;
       });
       median_view_power = comments[comments.size()/2]->view_power;
 
-      std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
+      std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
       {
          return a->share_power < b->share_power;
       });
       median_share_power = comments[comments.size()/2]->share_power;
 
-      std::sort( comments.begin(), comments.end(), [&](comment_object* a, comment_object* b)
+      std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
       {
          return a->comment_power < b->comment_power;
       });
@@ -741,13 +742,14 @@ void database::add_comment_to_feeds( const comment_object& comment )
    const auto& feed_idx = get_index< feed_index >().indices().get< by_account_comment_type >();
    const account_following_object& acc_following = get_account_following( comment.author );
    const community_member_object* community_member_ptr = nullptr;
-   if( comment.community.size )
+
+   if( comment.community != community_name_type() )
    {
       community_member_ptr = find_community_member( comment.community );
    }
 
-   const auto& account_blog_idx = get_index< blog_index >().indices().get< by_comment_community >();
-   auto account_blog_itr = account_blog_idx.find( boost::make_tuple( comment_id, comment.community ) );
+   const auto& account_blog_idx = get_index< blog_index >().indices().get< by_comment_account >();
+   auto account_blog_itr = account_blog_idx.find( boost::make_tuple( comment_id, comment.author ) );
    if( account_blog_itr == account_blog_idx.end() )       // Comment is not already in the account's blog
    {
       create< blog_object >( [&]( blog_object& b )
@@ -857,7 +859,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
 
    for( const account_name_type& account : acc_following.friends ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( comment_id, account, FRIEND_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, FRIEND_FEED ) );
       if( feed_itr == feed_idx.end() )      // Comment is not already in friend feed
       {
          create< feed_object >( [&]( feed_object& f )
@@ -1077,7 +1079,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
 
    for( const account_name_type& account : acc_following.friends ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( comment_id, account, FRIEND_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, FRIEND_FEED ) );
 
       if( feed_itr == feed_idx.end() )      // Comment is not already in friend feed
       {
@@ -1348,7 +1350,6 @@ void database::share_comment_to_tag( const account_name_type& sharer,
  */
 void database::clear_comment_feeds( const comment_object& comment )
 { try {
-   time_point now = head_block_time();
    const comment_id_type& comment_id = comment.id;
    const auto& feed_idx = get_index< feed_index >().indices().get< by_comment >();
    auto feed_itr = feed_idx.lower_bound( comment_id );
@@ -1381,7 +1382,6 @@ void database::clear_comment_feeds( const comment_object& comment )
  */
 void database::remove_shared_comment( const account_name_type& sharer, const comment_object& comment )
 { try {
-   time_point now = head_block_time();
    const comment_id_type& comment_id = comment.id;
    const auto& feed_idx = get_index< feed_index >().indices().get< by_comment >();
    auto feed_itr = feed_idx.lower_bound( comment_id );
@@ -1481,7 +1481,6 @@ void database::remove_shared_comment( const account_name_type& sharer, const com
  */
 void database::update_account_in_feed( const account_name_type& account, const account_name_type& followed )
 { try {
-   time_point now = head_block_time();
    const auto& feed_idx = get_index< feed_index >().indices().get< by_account_comment_type >();
    const auto& blog_idx = get_index< blog_index >().indices().get< by_new_account_blog >();
    const account_following_object& acc_following = get_account_following( account );
@@ -1778,7 +1777,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                         shared_by_copy.push_back( time );
                      }
                      std::sort( shared_by_copy.begin(), shared_by_copy.end(), 
-                     [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point >o b)
+                     [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b )
                      {
                         return a.second < b.second;
                      });
@@ -1812,13 +1811,11 @@ void database::update_community_in_feed( const account_name_type& account, const
    const account_following_object& acc_following = get_account_following( account );
    auto blog_itr = blog_idx.lower_bound( community );
    auto blog_end = blog_idx.upper_bound( community );
-   const community_member_object& community_member = get_community_member( community );
    feed_reach_type feed_type = COMMUNITY_FEED;
 
    while( blog_itr != blog_end )
    {
       const comment_id_type& comment_id = blog_itr->comment;
-      const comment_object& comment = get( comment_id );
       
       auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_type ) );
       if( acc_following.is_followed_community( community ) )
@@ -1841,10 +1838,11 @@ void database::update_community_in_feed( const account_name_type& account, const
             modify( *feed_itr, [&]( feed_object& f )
             {
                f.feed_time = std::max( f.feed_time, blog_itr->blog_time );     // Bump feed time if blog is later
-               f.shared_by = map_merge( f.shared_by, blog_itr->shared_by, [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
-                  {
-                     return a > b;    // Take the latest time point of all sharing accounts
-                  });
+               f.shared_by = map_merge( f.shared_by, blog_itr->shared_by, 
+               [&]( time_point a, time_point b )
+               {
+                  return a > b;    // Take the latest time point of all sharing accounts
+               });
                f.shares = f.shared_by.size();
             });
          }
@@ -1903,7 +1901,6 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
    while( blog_itr != blog_end )
    {
       const comment_id_type& comment_id = blog_itr->comment;
-      const comment_object& comment = get( comment_id );
       
       auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, TAG_FEED ) );
       if( acc_following.is_followed_tag( tag ) )
@@ -1926,7 +1923,7 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
             modify( *feed_itr, [&]( feed_object& f )
             {
                f.feed_time = std::max( f.feed_time, blog_itr->blog_time );     // Bump feed time if blog is later
-               f.shared_by = map_merge( f.shared_by, blog_itr->shared_by, [&]( pair < account_name_type, time_point > a, pair < account_name_type, time_point > b)
+               f.shared_by = map_merge( f.shared_by, blog_itr->shared_by, [&]( time_point a, time_point b )
                   {
                      return a > b;    // Take the latest time point of all sharing accounts
                   });

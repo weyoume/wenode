@@ -855,18 +855,18 @@ namespace node { namespace chain {
          void liquid_withdraw( const asset& input, const asset_symbol_type& receive, 
             const account_object& account, const asset_liquidity_pool_object& pool );
 
-         asset liquid_exchange( const asset& input, const asset_symbol_type& receive, bool execute = true, bool apply_fees = true );
+         asset liquid_exchange( const asset& input, const asset_symbol_type& receive, bool execute, bool apply_fees );
          void liquid_exchange( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool, 
             const account_object& int_account );
          void liquid_exchange( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool );
          
-         asset liquid_acquire( const asset& receive, const asset_symbol_type& input, bool execute = true, bool apply_fees = true );
+         asset liquid_acquire( const asset& receive, const asset_symbol_type& input, bool execute, bool apply_fees );
          void liquid_acquire( const asset& receive, const account_object& account, const asset_liquidity_pool_object& pool, 
             const account_object& int_account );
          void liquid_acquire( const asset& receive, const account_object& account, const asset_liquidity_pool_object& pool );
 
          pair< asset, asset > liquid_limit_exchange( const asset& input, const price& limit_price, 
-            const asset_liquidity_pool_object& pool, bool execute = true, bool apply_fees = true );
+            const asset_liquidity_pool_object& pool, bool execute, bool apply_fees );
          void liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
             const asset_liquidity_pool_object& pool, const account_object& int_account );
          void liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
