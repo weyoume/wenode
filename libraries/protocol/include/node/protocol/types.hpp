@@ -218,7 +218,7 @@ namespace node {
       };
 
       /**
-       * Types of network officers, each receive reward distributions from the network upon voter approval.
+       * Types of Product sale varying the price of the item being sold.
        */
       enum product_sale_type
       {
@@ -253,7 +253,7 @@ namespace node {
          OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
          PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
          GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency. 
-         UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset. 
+         UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset.
       };
 
       vector< string > asset_property_values =
@@ -414,23 +414,6 @@ namespace node {
          "account",
          "community",
          "tag"
-      };
-
-      /**
-       * Types of post ratings, indicating the maturity level of the content. 
-       */
-      enum post_rating_type
-      {
-         FAMILY,    ///< Posts that are suitable for younger users.
-         GENERAL,   ///< Posts that are suitable for regular users.
-         ADULT      ///< Posts that are Not Safe for Work, and may be explicit.
-      };
-
-      vector< string > post_rating_values =
-      {
-         "family",
-         "general",
-         "adult"
       };
 
       /**
@@ -852,12 +835,6 @@ FC_REFLECT_ENUM( node::protocol::blog_reach_type,
          (ACCOUNT_BLOG)
          (COMMUNITY_BLOG)
          (TAG_BLOG)
-         );
-
-FC_REFLECT_ENUM( node::protocol::post_rating_type,
-         (FAMILY)
-         (GENERAL)
-         (ADULT)
          );
 
 FC_REFLECT_ENUM( node::protocol::sort_time_type,

@@ -1241,7 +1241,8 @@ void database::liquid_fund( const asset& input, const account_object& account, c
    uint128_t in = input.amount.value;
 
    uint128_t return_amount = ( sup * ( uint128_t( approx_sqrt( pr_sq + ( ( pr_sq * in ) / ib ) ) ) - pr  ) ) / pr;
-   asset return_asset = asset( int64_t( return_amount.to_uint64() ), pool.symbol_liquid );
+   share_type ra = int64_t( return_amount.to_uint64() );
+   asset return_asset = asset( ra, pool.symbol_liquid );
    
    adjust_liquid_balance( account.name, -input );
 
@@ -1281,7 +1282,9 @@ void database::liquid_withdraw( const asset& input, const asset_symbol_type& rec
 
    uint128_t var = pr - ( ( in * pr ) / sup );
    uint128_t return_amount = ( rb * ( pr_sq - ( var * var ) ) ) / pr_sq;
-   asset return_asset = asset( return_amount, receive );
+
+   share_type ra = int64_t( return_amount.to_uint64() );
+   asset return_asset = asset( ra, receive );
    
    adjust_liquid_balance( account.name, -input );
 
@@ -1324,11 +1327,12 @@ asset database::liquid_exchange( const asset& input, const asset_symbol_type& re
 
       uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
 
-      asset total_fees = asset( ( return_amount * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
+      share_type ra = int64_t( return_amount.to_uint64() );
+      asset total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
       asset network_fees = asset( ( total_fees.amount * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100, SYMBOL_COIN );
       asset pool_fees = total_fees - network_fees;
    
-      asset return_asset = asset( return_amount, SYMBOL_COIN );
+      asset return_asset = asset( int64_t( return_amount.to_uint64() ), SYMBOL_COIN );
 
       if( apply_fees )
       {
@@ -1378,7 +1382,9 @@ asset database::liquid_exchange( const asset& input, const asset_symbol_type& re
       uint128_t rb = receive_pool.asset_balance( receive ).amount.value;
 
       uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
-      asset return_asset = asset( return_amount, receive );
+
+      share_type ra = int64_t( return_amount.to_uint64() );
+      asset return_asset = asset( ra, receive );
       
       if( execute )
       {
@@ -1424,17 +1430,19 @@ void database::liquid_exchange( const asset& input, const account_object& accoun
 
    uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
 
+   share_type ra = int64_t( return_amount.to_uint64() );
+
    if( input.symbol != SYMBOL_COIN )
    {
-      total_fees = asset( ( return_amount * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-      return_amount -= total_fees.amount.value;
+      total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
+      ra -= total_fees.amount.value;
    }
    
    asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
    asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
    asset pool_fees = total_fees - network_fees - interface_fees;
    
-   asset return_asset = asset( return_amount, SYMBOL_COIN );
+   asset return_asset = asset( ra, SYMBOL_COIN );
    
    adjust_liquid_balance( account.name, -input );
    pay_network_fees( account, network_fees );
@@ -1485,17 +1493,19 @@ void database::liquid_exchange( const asset& input, const account_object& accoun
 
    uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
 
+   share_type ra = int64_t( return_amount.to_uint64() );
+
    if( input.symbol != SYMBOL_COIN )
    {
-      total_fees = asset( ( return_amount * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-      return_amount -= total_fees.amount.value;
+      total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
+      ra -= total_fees.amount.value;
    }
    
    asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
    asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
    asset pool_fees = total_fees - network_fees - interface_fees;
    
-   asset return_asset = asset( return_amount, SYMBOL_COIN );
+   asset return_asset = asset( ra, SYMBOL_COIN );
    
    adjust_liquid_balance( account.name, -input );
    pay_network_fees( account, network_fees + interface_fees );
@@ -1546,11 +1556,13 @@ asset database::liquid_acquire( const asset& receive, const asset_symbol_type& i
 
       uint128_t input_coin = ( ( ( pr_sq * ib ) / ( pr - ( ( pr * re ) / rb ) ) ) - ( pr * ib ) ) / pr;
 
-      asset total_fees = asset( ( input_coin * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
+      share_type ic = int64_t( input_coin.to_uint64() );
+
+      asset total_fees = asset( ( ic * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
       asset network_fees = asset( ( total_fees.amount * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100, SYMBOL_COIN );
       asset pool_fees = total_fees - network_fees;
       
-      asset coin_asset = asset( input_coin, SYMBOL_COIN );
+      asset coin_asset = asset( ic, SYMBOL_COIN );
       
       if( execute )
       {
@@ -1598,7 +1610,10 @@ asset database::liquid_acquire( const asset& receive, const asset_symbol_type& i
       uint128_t rb = receive_pool.asset_balance( SYMBOL_COIN ).amount.value;
 
       uint128_t input_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
-      asset input_asset = asset( input_amount, input );
+
+      share_type ia = int64_t( input_amount.to_uint64() );
+      
+      asset input_asset = asset( ia, input );
       
       if( execute )
       {
@@ -1647,7 +1662,8 @@ void database::liquid_acquire( const asset& receive, const account_object& accou
    }
 
    uint128_t input_amount = ( ( ( pr_sq * ib ) / ( pr - ( ( pr * re ) / rb ) ) ) - ( pr * ib ) ) / pr;
-   asset input_asset = asset( input_amount, in );
+   share_type ia = int64_t( input_amount.to_uint64() );
+   asset input_asset = asset( ia, in );
    
    if( receive.symbol != SYMBOL_COIN )
    {
@@ -1664,7 +1680,7 @@ void database::liquid_acquire( const asset& receive, const account_object& accou
    FC_ASSERT( liquid >= input_asset, 
       "Insufficient Balance to acquire requested amount: ${a}.", ("a", receive) );
 
-   adjust_liquid_balance( account.name , -input_asset );
+   adjust_liquid_balance( account.name, -input_asset );
 
    pay_network_fees( account, network_fees );
    pay_fee_share( int_account, interface_fees );
@@ -1716,7 +1732,8 @@ void database::liquid_acquire( const asset& receive, const account_object& accou
    }
 
    uint128_t input_amount = ( ( ( pr_sq * ib ) / ( pr - ( ( pr * re ) / rb ) ) ) - ( pr * ib ) ) / pr;
-   asset input_asset = asset( input_amount, in );
+   share_type ia = int64_t( input_amount.to_uint64() );
+   asset input_asset = asset( ia, in );
    
    if( receive.symbol != SYMBOL_COIN )
    {
@@ -1800,17 +1817,19 @@ pair< asset, asset > database::liquid_limit_exchange( const asset& input, const 
          "Negative limit amount, limit price above current price.");
       
       uint128_t lim_in = std::min( in, limit_amount );
-      asset input_asset = asset( lim_in, input.symbol );
+      share_type lim_in_share = int64_t( lim_in.to_uint64() );
+      asset input_asset = asset( lim_in_share, input.symbol );
 
       uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( lim_in + ib ) ) ) ) / pr;
+      share_type ra = int64_t( return_amount.to_uint64() );
       
       if( apply_fees )
       {
-         total_fees = asset( ( return_amount * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-         return_amount -= total_fees.amount.value;
+         total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
+         ra -= total_fees.amount.value;
       }
 
-      asset return_asset = asset( return_amount, rec );
+      asset return_asset = asset( ra, rec );
       asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
       asset pool_fees = total_fees - network_fees;
       
@@ -1890,14 +1909,16 @@ void database::liquid_limit_exchange( const asset& input, const price& limit_pri
          "Negative limit amount, limit price above current price.");
       
       uint128_t lim_in = std::min( in, limit_amount );
-      asset input_asset = asset( lim_in, input.symbol );
+      share_type lim_in_share = int64_t( lim_in.to_uint64() );
+      asset input_asset = asset( lim_in_share, input.symbol );
 
       uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( lim_in + ib ) ) ) ) / pr;
+      share_type ra = int64_t( return_amount.to_uint64() );
       
-      asset total_fees = asset( ( return_amount * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-      return_amount -= total_fees.amount.value;
+      asset total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
+      ra -= total_fees.amount.value;
       
-      asset return_asset = asset( return_amount, rec );
+      asset return_asset = asset( ra, rec );
       asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
       asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
       asset pool_fees = total_fees - network_fees - interface_fees;
@@ -1971,14 +1992,16 @@ void database::liquid_limit_exchange( const asset& input, const price& limit_pri
          "Negative limit amount, limit price above current price.");
       
       uint128_t lim_in = std::min( in, limit_amount );
-      asset input_asset = asset( lim_in, input.symbol );
+      share_type lim_in_share = int64_t( lim_in.to_uint64() );
+      asset input_asset = asset( lim_in_share, input.symbol );
 
       uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( lim_in + ib ) ) ) ) / pr;
+      share_type ra = int64_t( return_amount.to_uint64() );
       
-      asset total_fees = asset( ( return_amount * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-      return_amount -= total_fees.amount.value;
+      asset total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
+      ra -= total_fees.amount.value;
       
-      asset return_asset = asset( return_amount, rec );
+      asset return_asset = asset( ra, rec );
       asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
       asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
       asset pool_fees = total_fees - network_fees - interface_fees;
@@ -2317,7 +2340,7 @@ asset database::network_credit_acquisition( const asset& amount, bool execute )
    asset credit_acquired;
 
    const asset_object& asset_obj = get_asset( amount.symbol );
-   FC_ASSERT( asset_obj.asset_type != CREDIT_POOL_ASSET && asset_obj.asset_type != LIQUIDITY_POOL_ASSET, 
+   FC_ASSERT( asset_obj.asset_type != asset_property_type::CREDIT_POOL_ASSET && asset_obj.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
       "Cannot acquire assets that do not facilitate liquidity pools." );
 
    if( amount.symbol != SYMBOL_CREDIT )

@@ -187,7 +187,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
       from_string( a.image, INIT_IMAGE );
-      a.membership = TOP_MEMBERSHIP;
+      a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
    });
@@ -232,7 +232,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
       from_string( a.image, INIT_IMAGE );
-      a.membership = TOP_MEMBERSHIP;
+      a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
    });
 
@@ -381,7 +381,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
       from_string( a.image, INIT_IMAGE );
-      a.membership = TOP_MEMBERSHIP;
+      a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
    });
@@ -414,7 +414,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
       from_string( a.image, INIT_IMAGE );
-      a.membership = TOP_MEMBERSHIP;
+      a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
    });
@@ -447,7 +447,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
       from_string( a.image, INIT_IMAGE );
-      a.membership = TOP_MEMBERSHIP;
+      a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
    });
@@ -465,7 +465,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.symbol = SYMBOL_COIN;
       a.max_supply = MAX_ASSET_SUPPLY;
-      a.asset_type = CURRENCY_ASSET;
+      a.asset_type = asset_property_type::CURRENCY_ASSET;
       a.flags = 0;
       a.issuer_permissions = 0;
       a.issuer = NULL_ACCOUNT;
@@ -508,7 +508,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.symbol = SYMBOL_EQUITY;
       a.max_supply = INIT_EQUITY_SUPPLY;
-      a.asset_type = EQUITY_ASSET;
+      a.asset_type = asset_property_type::EQUITY_ASSET;
       a.flags = 0;
       a.issuer_permissions = 0;
       a.issuer = INIT_ACCOUNT;
@@ -549,7 +549,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.symbol = SYMBOL_USD;
       a.issuer = NULL_ACCOUNT;
-      a.asset_type = BITASSET_ASSET;
+      a.asset_type = asset_property_type::BITASSET_ASSET;
       a.max_supply = MAX_ASSET_SUPPLY;
       a.flags = producer_fed_asset;
       a.issuer_permissions = 0;
@@ -568,7 +568,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< asset_object >( [&]( asset_object& a )
    {
       a.symbol = SYMBOL_CREDIT;
-      a.asset_type = CREDIT_ASSET;
+      a.asset_type = asset_property_type::CREDIT_ASSET;
       a.flags = 0;
       a.issuer_permissions = 0;
       a.issuer = INIT_ACCOUNT;
@@ -605,7 +605,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = coin_equity_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -634,7 +634,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = coin_usd_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -663,7 +663,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = coin_credit_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -692,7 +692,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = equity_usd_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -721,7 +721,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = equity_credit_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -750,7 +750,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = usd_credit_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -781,7 +781,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_coin_symbol;
-      a.asset_type = CREDIT_POOL_ASSET; 
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; 
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -807,7 +807,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_equity_symbol;
-      a.asset_type = CREDIT_POOL_ASSET; 
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; 
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -833,7 +833,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_usd_symbol;
-      a.asset_type = CREDIT_POOL_ASSET; 
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; 
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -859,7 +859,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_credit_symbol;
-      a.asset_type = CREDIT_POOL_ASSET; 
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; 
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -903,7 +903,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
          from_string( a.details, INIT_DETAILS );
          from_string( a.url, INIT_URL );
          from_string( a.image, INIT_IMAGE );
-         a.membership = TOP_MEMBERSHIP;
+         a.membership = membership_tier_type::TOP_MEMBERSHIP;
          a.membership_expiration = time_point::maximum();
          a.mined = true;
       });
@@ -2703,61 +2703,61 @@ void database::update_business_account( const account_business_object& business 
 
       switch( role )
       {
-         case CHIEF_EXECUTIVE_OFFICER:
+         case executive_role_type::CHIEF_EXECUTIVE_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_EXECUTIVE_OFFICER = executive;
          }
          break;
-         case CHIEF_OPERATING_OFFICER:
+         case executive_role_type::CHIEF_OPERATING_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_OPERATING_OFFICER = executive;
          }
          break;
-         case CHIEF_FINANCIAL_OFFICER:
+         case executive_role_type::CHIEF_FINANCIAL_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_FINANCIAL_OFFICER = executive;
          }
          break;
-         case CHIEF_TECHNOLOGY_OFFICER:
+         case executive_role_type::CHIEF_TECHNOLOGY_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_TECHNOLOGY_OFFICER = executive;
          }
          break;
-         case CHIEF_DEVELOPMENT_OFFICER:
+         case executive_role_type::CHIEF_DEVELOPMENT_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_DEVELOPMENT_OFFICER = executive;
          }
          break;
-         case CHIEF_SECURITY_OFFICER:
+         case executive_role_type::CHIEF_SECURITY_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_SECURITY_OFFICER = executive;
          }
          break;
-         case CHIEF_ADVOCACY_OFFICER:
+         case executive_role_type::CHIEF_ADVOCACY_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_ADVOCACY_OFFICER = executive;
          }
          break;
-         case CHIEF_GOVERNANCE_OFFICER:
+         case executive_role_type::CHIEF_GOVERNANCE_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_GOVERNANCE_OFFICER = executive;
          }
          break;
-         case CHIEF_MARKETING_OFFICER:
+         case executive_role_type::CHIEF_MARKETING_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_MARKETING_OFFICER = executive;
          }
          break;
-         case CHIEF_DESIGN_OFFICER:
+         case executive_role_type::CHIEF_DESIGN_OFFICER:
          {
             executives[executive] = std::make_pair( role, votes );
             exec_set.CHIEF_DESIGN_OFFICER = executive;
@@ -2935,7 +2935,7 @@ share_type database::get_equity_shares( const account_balance_object& balance, c
       equity_shares *= 2;    // Doubles equity reward when 10+ WYM balance, 50+ producer votes, and 15+ Activity rewards in last 30 days
    }
 
-   if( account.membership == TOP_MEMBERSHIP ) 
+   if( account.membership == membership_tier_type::TOP_MEMBERSHIP ) 
    {
       equity_shares = (equity_shares * equity.boost_top ) / PERCENT_100;
    }
@@ -3390,8 +3390,8 @@ void database::process_network_officer_rewards()
 
    // ========== Development Officers ========== //
 
-   auto development_itr = officer_idx.lower_bound( DEVELOPMENT );
-   auto development_end = officer_idx.upper_bound( DEVELOPMENT );
+   auto development_itr = officer_idx.lower_bound( network_officer_role_type::DEVELOPMENT );
+   auto development_end = officer_idx.upper_bound( network_officer_role_type::DEVELOPMENT );
    flat_map < account_name_type, share_type > development_map;
    share_type total_development_shares = 0;
 
@@ -3409,8 +3409,8 @@ void database::process_network_officer_rewards()
 
    // ========== Marketing Officers ========== //
 
-   auto marketing_itr = officer_idx.lower_bound( MARKETING );
-   auto marketing_end = officer_idx.upper_bound( MARKETING );
+   auto marketing_itr = officer_idx.lower_bound( network_officer_role_type::MARKETING );
+   auto marketing_end = officer_idx.upper_bound( network_officer_role_type::MARKETING );
    flat_map < account_name_type, share_type > marketing_map;
    share_type total_marketing_shares = 0;
    
@@ -3428,8 +3428,8 @@ void database::process_network_officer_rewards()
 
    // ========== Advocacy Officers ========== //
 
-   auto advocacy_itr = officer_idx.lower_bound( ADVOCACY );
-   auto advocacy_end = officer_idx.upper_bound( ADVOCACY );
+   auto advocacy_itr = officer_idx.lower_bound( network_officer_role_type::ADVOCACY );
+   auto advocacy_end = officer_idx.upper_bound( network_officer_role_type::ADVOCACY );
    flat_map < account_name_type, share_type > advocacy_map;
    share_type total_advocacy_shares = 0;
    
@@ -5357,29 +5357,29 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
    price usd_settlement_price = get_bitasset_data( SYMBOL_USD ).settlement_price;
    price usd_market_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).base_hour_median_price( usd_settlement_price.base.symbol );
 
-   if( usd_market_price < usd_settlement_price )   // If the market price of USD is below settlement price
+   if( usd_market_price < usd_settlement_price )       // If the market price of USD is below settlement price
    {
-      asset usd_purchased = liquid_exchange( total_fees, SYMBOL_USD, true, false );   // Liquid Exchange into USD, without paying fees to avoid recursive fees. 
+      asset usd_purchased = liquid_exchange( total_fees, SYMBOL_USD, true, false );      // Liquid Exchange into USD, without paying fees to avoid recursive fees. 
 
       create< force_settlement_object >([&]( force_settlement_object& fso ) 
       {
          fso.owner = NULL_ACCOUNT;
-         fso.balance = usd_purchased;    // Settle USD purchased at below settlement price, to increase total Coin burned.
+         fso.balance = usd_purchased;        // Settle USD purchased at below settlement price, to increase total Coin burned.
          fso.settlement_date = now + fc::minutes( 10 );
       });
    }
-   else if( credit_usd_price < price(asset(1,SYMBOL_USD)/asset(1,SYMBOL_CREDIT)) )   // If price of credit is below $1.00 USD
+   else if( credit_usd_price < price(asset(1,SYMBOL_USD)/asset(1,SYMBOL_CREDIT)) )       // If price of credit is below $1.00 USD
    {
-      liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );   // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
+      liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );       // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
 
-      modify( props, [&]( dynamic_global_property_object& gpo ) 
+      modify( props, [&]( dynamic_global_property_object& gpo )
       {
          gpo.accumulated_network_revenue += total_fees;
       });
    }
    else   // Remove Coin from Supply and increment network revenue. 
    {
-      modify( props, [&]( dynamic_global_property_object& gpo ) 
+      modify( props, [&]( dynamic_global_property_object& gpo )
       {
          gpo.accumulated_network_revenue += total_fees;
       });

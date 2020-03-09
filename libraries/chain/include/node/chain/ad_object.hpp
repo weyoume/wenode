@@ -1,11 +1,9 @@
 #pragma once
-#include <fc/fixed_string.hpp>
 
+#include <fc/fixed_string.hpp>
 #include <node/protocol/authority.hpp>
 #include <node/protocol/node_operations.hpp>
-
 #include <node/chain/node_object_types.hpp>
-#include <node/chain/producer_objects.hpp>
 #include <node/chain/shared_authority.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
@@ -28,25 +26,25 @@ namespace node { namespace chain {
 
          id_type                     id;
 
-         account_name_type           account;           // Name of the account creating the creative.
+         account_name_type           account;           ///< Name of the account creating the creative.
 
-         account_name_type           author;            // Name of the author of the objective.
+         account_name_type           author;            ///< Name of the author of the objective.
 
-         shared_string               objective;         // The name of the object being advertised, the link and CTA destination of the creative.
+         shared_string               objective;         ///< The name of the object being advertised, the link and CTA destination of the creative.
 
-         shared_string               creative_id;       // The uuidv4 of the creative for reference.
+         shared_string               creative_id;       ///< The uuidv4 of the creative for reference.
 
-         shared_string               creative;          // IPFS link to the Media to be displayed, image or video.
+         shared_string               creative;          ///< IPFS link to the Media to be displayed, image or video.
 
-         shared_string               json;              // JSON metadata information about the community, its topic and rules.
+         shared_string               json;              ///< JSON metadata information about the community, its topic and rules.
 
-         ad_format_type              format_type;       // The type of formatting used for the ad, determines the interpretation of the creative and objective.
+         ad_format_type              format_type;       ///< The type of formatting used for the ad, determines the interpretation of the creative and objective.
 
-         time_point                  created;           // Time creative was made.
+         time_point                  created;           ///< Time creative was made.
 
-         time_point                  last_updated;      // Time creative's details were last updated.
+         time_point                  last_updated;      ///< Time creative's details were last updated.
 
-         bool                        active = true;     // True when the creative is active for use in campaigns, false to deactivate.
+         bool                        active = true;     ///< True when the creative is active for use in campaigns, false to deactivate.
    };
 
 
@@ -64,29 +62,29 @@ namespace node { namespace chain {
 
          id_type                          id;
 
-         account_name_type                account;           // Account creating the ad campaign.
+         account_name_type                account;           ///< Account creating the ad campaign.
 
-         shared_string                    campaign_id;       // uuidv4 to refer to the campaign.
+         shared_string                    campaign_id;       ///< uuidv4 to refer to the campaign.
 
-         asset                            budget;            // Total expenditure of the campaign. Campaign is ended when budget reaches zero.
+         asset                            budget;            ///< Total expenditure of the campaign. Campaign is ended when budget reaches zero.
 
-         asset                            total_bids;        // Total amount of expenditure in active bids. Cannot the campaign budget.
+         asset                            total_bids;        ///< Total amount of expenditure in active bids. Cannot the campaign budget.
 
-         time_point                       begin;             // Beginning time of the campaign. Bids cannot be created before this time.
+         time_point                       begin;             ///< Beginning time of the campaign. Bids cannot be created before this time.
 
-         time_point                       end;               // Ending time of the campaign. Remaining campaign budget will be refunded after this time.
+         time_point                       end;               ///< Ending time of the campaign. Remaining campaign budget will be refunded after this time.
 
-         shared_string                    json;              // JSON metadata for the campaign.
+         shared_string                    json;              ///< JSON metadata for the campaign.
 
-         flat_set< account_name_type >    agents;            // Set of Accounts authorized to create bids for the campaign.
+         flat_set< account_name_type >    agents;            ///< Set of Accounts authorized to create bids for the campaign.
 
-         account_name_type                interface;         // Interface that facilitated the purchase of the advertising campaign.
+         account_name_type                interface;         ///< Interface that facilitated the purchase of the advertising campaign.
          
-         time_point                       created;           // Time campaign was created.
+         time_point                       created;           ///< Time campaign was created.
 
-         time_point                       last_updated;      // Time campaigns's details were last updated or inventory was delivered.
+         time_point                       last_updated;      ///< Time campaigns's details were last updated or inventory was delivered.
 
-         bool                             active = true;     // True when active for bidding and delivery, false to deactivate.
+         bool                             active = true;     ///< True when active for bidding and delivery, false to deactivate.
 
          bool                             is_agent( const account_name_type& account )const  
          {
@@ -109,29 +107,29 @@ namespace node { namespace chain {
 
          id_type                          id;
 
-         account_name_type                provider;          // Account creating the ad inventory.
+         account_name_type                provider;          ///< Account creating the ad inventory.
 
-         shared_string                    inventory_id;      // uuidv4 to refer to the inventory.
+         shared_string                    inventory_id;      ///< uuidv4 to refer to the inventory.
 
-         ad_metric_type                   metric;            // Type of expense metric used.
+         ad_metric_type                   metric;            ///< Type of expense metric used.
 
-         shared_string                    audience_id;       // ad audience_id, containing a set of usernames of viewing accounts in their userbase.
+         shared_string                    audience_id;       ///< ad audience_id, containing a set of usernames of viewing accounts in their userbase.
 
-         asset                            min_price;         // Minimum bidding price per metric.
+         asset                            min_price;         ///< Minimum bidding price per metric.
 
-         uint32_t                         inventory;         // Total metrics available.
+         uint32_t                         inventory;         ///< Total metrics available.
 
-         uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
+         uint32_t                         remaining;         ///< Current amount of inventory remaining. Decrements when delivered.
 
-         shared_string                    json;              // JSON metadata for the inventory.
+         shared_string                    json;              ///< JSON metadata for the inventory.
          
-         time_point                       created;           // Time inventory was created.
+         time_point                       created;           ///< Time inventory was created.
 
-         time_point                       last_updated;      // Time inventorys's details were last updated or inventory was delivered.
+         time_point                       last_updated;      ///< Time inventorys's details were last updated or inventory was delivered.
 
-         time_point                       expiration;        // Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
+         time_point                       expiration;        ///< Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
 
-         bool                             active = true;     // True when active for bidding and delivery, false to deactivate.
+         bool                             active = true;     ///< True when active for bidding and delivery, false to deactivate.
    };
 
    class ad_audience_object : public object< ad_audience_object_type, ad_audience_object >
@@ -148,19 +146,19 @@ namespace node { namespace chain {
 
          id_type                          id;
 
-         account_name_type                account;           // Account creating the ad audience.
+         account_name_type                account;           ///< Account creating the ad audience.
 
-         shared_string                    audience_id;       // uuidv4 to refer to the audience.
+         shared_string                    audience_id;       ///< uuidv4 to refer to the audience.
 
-         shared_string                    json;              // JSON metadata for the audience.
+         shared_string                    json;              ///< JSON metadata for the audience.
 
-         flat_set< account_name_type >    audience;          // List of usernames within the audience for campaigns and inventory.
+         flat_set< account_name_type >    audience;          ///< List of usernames within the audience for campaigns and inventory.
          
-         time_point                       created;           // Time audience was created.
+         time_point                       created;           ///< Time audience was created.
 
-         time_point                       last_updated;      // Time audiences's details were last updated.
+         time_point                       last_updated;      ///< Time audiences's details were last updated.
 
-         bool                             active = true;     // True when active for bidding and delivery, false to deactivate.
+         bool                             active = true;     ///< True when active for bidding and delivery, false to deactivate.
 
          bool is_audience( const account_name_type& account )const  
          {
@@ -182,43 +180,43 @@ namespace node { namespace chain {
 
          id_type                          id;
 
-         account_name_type                bidder;            // Account that created the ad budget, or an agent of the campaign.
+         account_name_type                bidder;            ///< Account that created the ad budget, or an agent of the campaign.
 
-         shared_string                    bid_id;            // Bid uuidv4 for referring to the bid and updating it or cancelling it.
+         shared_string                    bid_id;            ///< Bid uuidv4 for referring to the bid and updating it or cancelling it.
 
-         shared_string                    audience_id;       // Desired audience for display acceptance. Audience must include only members of the inventory audience.
+         shared_string                    audience_id;       ///< Desired audience for display acceptance. Audience must include only members of the inventory audience.
 
-         account_name_type                account;           // Account that created the campaign that this bid is directed towards.
+         account_name_type                account;           ///< Account that created the campaign that this bid is directed towards.
 
-         shared_string                    campaign_id;       // Ad campaign uuidv4 to utilise for the bid.
+         shared_string                    campaign_id;       ///< Ad campaign uuidv4 to utilise for the bid.
 
-         account_name_type                author;            // Account that created the creative that is being bidded on.
+         account_name_type                author;            ///< Account that created the creative that is being bidded on.
 
-         shared_string                    creative_id;       // Desired creative for display.
+         shared_string                    creative_id;       ///< Desired creative for display.
 
-         account_name_type                provider;          // Account offering inventory supply.
+         account_name_type                provider;          ///< Account offering inventory supply.
 
-         shared_string                    inventory_id;      // Inventory uuidv4 offering to bid on.
+         shared_string                    inventory_id;      ///< Inventory uuidv4 offering to bid on.
 
-         asset                            bid_price;         // Price offered per metric. Asset symbol must be the same as the inventory price.
+         asset                            bid_price;         ///< Price offered per metric. Asset symbol must be the same as the inventory price.
 
-         ad_metric_type                   metric;            // Type of expense metric used.
+         ad_metric_type                   metric;            ///< Type of expense metric used.
 
-         shared_string                    objective;         // Creative Objective for bid rank ordering.
+         shared_string                    objective;         ///< Creative Objective for bid rank ordering.
 
-         uint32_t                         requested;         // Maximum total metrics requested.
+         uint32_t                         requested;         ///< Maximum total metrics requested.
 
-         uint32_t                         remaining;         // Current amount of inventory remaining. Decrements when delivered.
+         uint32_t                         remaining;         ///< Current amount of inventory remaining. Decrements when delivered.
 
-         flat_set< account_name_type >    delivered;         // List of audience accounts that have been delivered creative.
+         flat_set< account_name_type >    delivered;         ///< List of audience accounts that have been delivered creative.
 
-         shared_string                    json;              // JSON Metadata of the ad bid.
+         shared_string                    json;              ///< JSON Metadata of the ad bid.
          
-         time_point                       created;           // Time that the bid was created.
+         time_point                       created;           ///< Time that the bid was created.
 
-         time_point                       last_updated;      // Time that the bid's details were last updated or inventory was delivered.
+         time_point                       last_updated;      ///< Time that the bid's details were last updated or inventory was delivered.
 
-         time_point                       expiration;        // Time that the bid was will expire.
+         time_point                       expiration;        ///< Time that the bid was will expire.
 
          bool                             is_delivered( const account_name_type& account )const  
          {

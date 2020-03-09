@@ -335,7 +335,7 @@ namespace node { namespace protocol {
             shrinked = true;
          }
       }
-      if( shrinked ) // maybe not accurate enough due to rounding, do additional checks here
+      if( shrinked )       // maybe not accurate enough due to rounding, do additional checks here
       {
          int128_t num = ocp.numerator();
          int128_t den = ocp.denominator();
@@ -354,8 +354,10 @@ namespace node { namespace protocol {
             num = 1;
          }
          boost::rational<int128_t> ncp( num, den );
-         if( num == max || den == max ) // it's on the edge, we know it's accurate enough
+         if( num == max || den == max )         // it's on the edge, we know it's accurate enough
+         {
             cp = ncp;
+         }  
          else
          {
             // from the accurate ocp, now we have ncp and cp. use the one which is closer to ocp.

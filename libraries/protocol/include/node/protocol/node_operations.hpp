@@ -3,12 +3,9 @@
 #include <node/protocol/block_header.hpp>
 #include <node/protocol/asset.hpp>
 
-
 #include <fc/utf8.hpp>
 #include <fc/crypto/equihash.hpp>
-
 #include <regex> 
-
 
 namespace node { namespace protocol {
 
@@ -1459,11 +1456,11 @@ namespace node { namespace protocol {
     */
    struct comment_options
    {
-      post_format_type                      post_type = TEXT_POST;          ///< Type of post being created, text, image, article, video, audio, file, etc.
+      post_format_type                      post_type = post_format_type::TEXT_POST;          ///< Type of post being created, text, image, article, video, audio, file, etc.
 
-      feed_reach_type                       reach = TAG_FEED;               ///< The extent to which the post will be distributed to account's followers and connections feeds.
+      feed_reach_type                       reach = feed_reach_type::TAG_FEED;               ///< The extent to which the post will be distributed to account's followers and connections feeds.
 
-      post_rating_type                      rating = GENERAL;               ///< User nominated rating as to the maturity of the content, and display sensitivity.
+      uint16_t                              rating = 1;                     ///< User nominated rating as to the maturity of the content, and display sensitivity.
 
       asset_symbol_type                     reward_currency = SYMBOL_COIN;  ///< The reward currency that the post will earn. 
 
@@ -1543,7 +1540,7 @@ namespace node { namespace protocol {
 
       string                      parent_permlink; ///< Permlink of the post this post is replying to, empty if root post.
 
-      vector< string >            tags;            ///< Set of string tags for sorting the post by.
+      vector< tag_name_type >     tags;            ///< Set of string tags for sorting the post by.
 
       string                      json;            ///< json string of additional interface specific data relating to the post.
 
@@ -1687,7 +1684,7 @@ namespace node { namespace protocol {
 
       vector< string >            tags;               ///< Set of tags to apply to the post for selective interface side filtering.
 
-      post_rating_type            rating;             ///< Newly proposed rating for the post.
+      uint16_t                    rating;             ///< Newly proposed rating for the post.
 
       string                      details;            ///< String explaining the reason for the tag to the author.
 
@@ -1778,6 +1775,8 @@ namespace node { namespace protocol {
       account_name_type           pinned_author;         ///< Author of the pinned post.
 
       string                      pinned_permlink;       ///< Permlink of the pinned post.
+
+      bool                        active = true;         ///< True when the community is active, false to deactivate. 
 
       void validate()const;
       void get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2133,7 +2132,7 @@ namespace node { namespace protocol {
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void get_creator_name( account_name_type a )const{ a = author; }
+      void get_creator_name( account_name_type a )const{ a = account; }
    };
 
    /**
@@ -4850,6 +4849,7 @@ FC_REFLECT( node::protocol::community_update_operation,
          (url)
          (pinned_author)
          (pinned_permlink)
+         (active)
          );
 
 FC_REFLECT( node::protocol::community_add_mod_operation,

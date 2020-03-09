@@ -97,7 +97,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.signatory = "alice";
       asset_create.issuer = "alice";
       asset_create.symbol = "ALICECOIN";
-      asset_create.asset_type = STANDARD_ASSET;
+      asset_create.asset_type = asset_property_type::STANDARD_ASSET;
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.signatory = "tropico";
       asset_create.issuer = "tropico";
       asset_create.symbol = "TROPICO";
-      asset_create.asset_type = EQUITY_ASSET;
+      asset_create.asset_type = asset_property_type::EQUITY_ASSET;
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TROPICO" );
@@ -412,7 +412,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.signatory = "blocktwo";
       asset_create.issuer = "blocktwo";
       asset_create.symbol = "BLOCKTWO";
-      asset_create.asset_type = CREDIT_ASSET;
+      asset_create.asset_type = asset_property_type::CREDIT_ASSET;
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKTWO" );
@@ -519,7 +519,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.signatory = "elon";
       asset_create.issuer = "elon";
       asset_create.symbol = "TSLA";
-      asset_create.asset_type = BITASSET_ASSET;
+      asset_create.asset_type = asset_property_type::BITASSET_ASSET;
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TSLA" );

@@ -5,9 +5,8 @@
 #include <node/chain/fork_database.hpp>
 #include <node/chain/block_log.hpp>
 #include <node/chain/operation_notification.hpp>
-#include <node/chain/node_objects.hpp>
-
 #include <node/protocol/protocol.hpp>
+#include <node/chain/node_objects.hpp>
 
 #include <fc/signals.hpp>
 
@@ -16,13 +15,6 @@
 #include <map>
 
 namespace node { namespace chain {
-
-   using node::protocol::signed_transaction;
-   using node::protocol::operation;
-   using node::protocol::authority;
-   using node::protocol::asset;
-   using node::protocol::asset_symbol_type;
-   using node::protocol::price;
 
    class database_impl;
    class custom_operation_interpreter;

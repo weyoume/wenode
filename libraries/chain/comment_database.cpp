@@ -343,7 +343,7 @@ share_type database::distribute_comment_reward( util::comment_reward_context& ct
    {
       util::fill_comment_reward_context_local_state( ctx, comment );
 
-      share_type reward_tokens = share_type( util::get_comment_reward( ctx ).to_uint64() );
+      share_type reward_tokens = util::get_comment_reward( ctx );
 
       if( reward_tokens > 0 )
       {
@@ -525,7 +525,7 @@ void database::process_comment_cashout()
       {
          if( comment_itr->net_reward > 0 )
          {
-            uint128_t net_reward = uint128_t( uint64_t( comment_itr->net_reward ) );
+            uint128_t net_reward = uint128_t( comment_itr->net_reward.value );
 
             rf_ctx.recent_content_claims += util::evaluate_reward_curve(
                net_reward,
@@ -577,18 +577,18 @@ void database::update_comment_metrics()
    // Initialize comment metrics
 
    uint32_t recent_post_count = 0;        
-   int128_t recent_vote_power = 0;
-   int128_t recent_view_power = 0;
-   int128_t recent_share_power = 0;
-   int128_t recent_comment_power = 0;
-   int128_t average_vote_power = 0;
-   int128_t average_view_power = 0;
-   int128_t average_share_power = 0;
-   int128_t average_comment_power = 0;
-   int128_t median_vote_power = 0;
-   int128_t median_view_power = 0;
-   int128_t median_share_power = 0;
-   int128_t median_comment_power = 0;
+   share_type recent_vote_power = 0;
+   share_type recent_view_power = 0;
+   share_type recent_share_power = 0;
+   share_type recent_comment_power = 0;
+   share_type average_vote_power = 0;
+   share_type average_view_power = 0;
+   share_type average_share_power = 0;
+   share_type average_comment_power = 0;
+   share_type median_vote_power = 0;
+   share_type median_view_power = 0;
+   share_type median_share_power = 0;
+   share_type median_comment_power = 0;
    uint32_t recent_vote_count = 0;
    uint32_t recent_view_count = 0;
    uint32_t recent_share_count = 0;
@@ -640,9 +640,9 @@ void database::update_comment_metrics()
       average_comment_count = recent_comment_count / recent_post_count;
 
       // Power Ratios
-      vote_view_ratio = double(recent_view_power) / double( recent_vote_power );
-      vote_share_ratio = double(recent_share_power) / double( recent_vote_power);
-      vote_comment_ratio = double(recent_comment_power) / double( recent_vote_power );
+      vote_view_ratio = double( recent_view_power.value ) / double( recent_vote_power.value );
+      vote_share_ratio = double( recent_share_power.value ) / double( recent_vote_power.value );
+      vote_comment_ratio = double( recent_comment_power.value ) / double( recent_vote_power.value );
 
       // Median count values
       std::sort( comments.begin(), comments.end(), [&]( const comment_object* a, const comment_object* b )
@@ -756,7 +756,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
       {
          b.account = comment.author;
          b.comment = comment_id;
-         b.blog_type = ACCOUNT_BLOG;
+         b.blog_type = blog_reach_type::ACCOUNT_BLOG;
          b.blog_time = now; 
          b.shared_by[ comment.author ] = now;
          b.first_shared_by = comment.author;
@@ -766,21 +766,21 @@ void database::add_comment_to_feeds( const comment_object& comment )
 
    switch( comment.reach )
    {
-      case NO_FEED:
+      case feed_reach_type::NO_FEED:
       {
          return;               // Do not share to any feeds. Shows only on account blog. 
       }
-      case COMMUNITY_FEED:     // Encrypted Community feed variants are only shared to community subscribers, and not account followers or connections. 
-      case COMPANION_FEED:     // Encrypted posts are only shared to connected accounts of the specified level.
-      case FRIEND_FEED:
-      case CONNECTION_FEED:
+      case feed_reach_type::COMMUNITY_FEED:     // Encrypted Community feed variants are only shared to community subscribers, and not account followers or connections. 
+      case feed_reach_type::COMPANION_FEED:     // Encrypted posts are only shared to connected accounts of the specified level.
+      case feed_reach_type::FRIEND_FEED:
+      case feed_reach_type::CONNECTION_FEED:
       {
          FC_ASSERT( comment.is_encrypted(), 
             "Post should be encrypted at this reach level." );
       }
-      case MUTUAL_FEED:        // Public Posts only from here down
-      case FOLLOW_FEED:
-      case TAG_FEED:           // Tag Feed level posts are shared to tag followers, in addition to account followers. 
+      case feed_reach_type::MUTUAL_FEED:        // Public Posts only from here down
+      case feed_reach_type::FOLLOW_FEED:
+      case feed_reach_type::TAG_FEED:           // Tag Feed level posts are shared to tag followers, in addition to account followers. 
       {
          FC_ASSERT( !comment.is_encrypted(), 
             "Post should not encrypted at this reach level." );
@@ -801,7 +801,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
          {
             b.community = comment.community;
             b.comment = comment_id;
-            b.blog_type = COMMUNITY_BLOG;
+            b.blog_type = blog_reach_type::COMMUNITY_BLOG;
             b.blog_time = now; 
             b.shared_by[ comment.author ] = now;
             b.first_shared_by = comment.author;
@@ -811,14 +811,14 @@ void database::add_comment_to_feeds( const comment_object& comment )
 
       for( const account_name_type& account : community_member_ptr->subscribers )    // Add post to community feeds. 
       {
-         auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, COMMUNITY_FEED ) );
+         auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::COMMUNITY_FEED ) );
          if( feed_itr == feed_idx.end() )         // Comment is not already in account's communities feed for the type of community. 
          {
             create< feed_object >( [&]( feed_object& f )
             {
                f.account = account;
                f.comment = comment_id;
-               f.feed_type = COMMUNITY_FEED;
+               f.feed_type = feed_reach_type::COMMUNITY_FEED;
                f.feed_time = now;
                f.communities[ comment.community ][ comment.author ] = now;
                f.shared_by[ comment.author ] = now;
@@ -828,7 +828,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
          } 
       }
 
-      if( comment.reach == COMMUNITY_FEED )
+      if( comment.reach == feed_reach_type::COMMUNITY_FEED )
       { 
          return;
       }
@@ -836,7 +836,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
 
    for( const account_name_type& account : acc_following.companions )    // Add to companion feeds
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, COMPANION_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::COMPANION_FEED ) );
       if( feed_itr == feed_idx.end() )      // Comment is not already in companion feed
       {
          create< feed_object >( [&]( feed_object& f )
@@ -844,7 +844,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = COMPANION_FEED;
+            f.feed_type = feed_reach_type::COMPANION_FEED;
             f.shared_by[ comment.author ] = now;
             f.first_shared_by = comment.author;
             f.shares = 1;
@@ -852,14 +852,14 @@ void database::add_comment_to_feeds( const comment_object& comment )
       }
    }
 
-   if( comment.reach == COMPANION_FEED )
+   if( comment.reach == feed_reach_type::COMPANION_FEED )
    { 
       return;
    }
 
    for( const account_name_type& account : acc_following.friends ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, FRIEND_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::FRIEND_FEED ) );
       if( feed_itr == feed_idx.end() )      // Comment is not already in friend feed
       {
          create< feed_object >( [&]( feed_object& f )
@@ -867,7 +867,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = FRIEND_FEED;
+            f.feed_type = feed_reach_type::FRIEND_FEED;
             f.shared_by[ comment.author ] = now;
             f.first_shared_by = comment.author;
             f.shares = 1;
@@ -875,14 +875,14 @@ void database::add_comment_to_feeds( const comment_object& comment )
       }
    }
 
-   if( comment.reach == FRIEND_FEED )
+   if( comment.reach == feed_reach_type::FRIEND_FEED )
    { 
       return;
    }
 
    for( const account_name_type& account : acc_following.connections ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, CONNECTION_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::CONNECTION_FEED ) );
       if( feed_itr == feed_idx.end() )   // Comment is not already in connection feed
       {
          create< feed_object >( [&]( feed_object& f )
@@ -890,7 +890,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = CONNECTION_FEED;
+            f.feed_type = feed_reach_type::CONNECTION_FEED;
             f.shared_by[ comment.author ] = now;
             f.first_shared_by = comment.author;
             f.shares = 1;
@@ -898,14 +898,14 @@ void database::add_comment_to_feeds( const comment_object& comment )
       }
    }
 
-   if( comment.reach == CONNECTION_FEED )
+   if( comment.reach == feed_reach_type::CONNECTION_FEED )
    { 
       return;
    }
 
    for( const account_name_type& account : acc_following.mutual_followers ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, MUTUAL_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::MUTUAL_FEED ) );
       if( feed_itr == feed_idx.end() )   // Comment is not already in mutual feed
       {
          create< feed_object >( [&]( feed_object& f )
@@ -913,7 +913,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = MUTUAL_FEED;
+            f.feed_type = feed_reach_type::MUTUAL_FEED;
             f.shared_by[ comment.author ] = now;
             f.first_shared_by = comment.author;
             f.shares = 1;
@@ -921,14 +921,14 @@ void database::add_comment_to_feeds( const comment_object& comment )
       }
    }
 
-   if( comment.reach == MUTUAL_FEED )
+   if( comment.reach == feed_reach_type::MUTUAL_FEED )
    { 
       return;
    }
 
    for( const account_name_type& account : acc_following.followers ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, FOLLOW_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::FOLLOW_FEED ) );
       if( feed_itr == feed_idx.end() )   // Comment is not already in follow feed
       {
          create< feed_object >( [&]( feed_object& f )
@@ -936,7 +936,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = FOLLOW_FEED;
+            f.feed_type = feed_reach_type::FOLLOW_FEED;
             f.shared_by[ comment.author ] = now;
             f.first_shared_by = comment.author;
             f.shares = 1;
@@ -944,7 +944,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
       }   
    }
 
-   if( comment.reach == FOLLOW_FEED )
+   if( comment.reach == feed_reach_type::FOLLOW_FEED )
    { 
       return;
    }
@@ -959,7 +959,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
          {
             b.tag = comment_tag;
             b.comment = comment_id;
-            b.blog_type = TAG_BLOG;
+            b.blog_type = blog_reach_type::TAG_BLOG;
             b.blog_time = now; 
             b.shared_by[ comment.author ] = now;
             b.first_shared_by = comment.author;
@@ -972,14 +972,14 @@ void database::add_comment_to_feeds( const comment_object& comment )
       {
          for( const account_name_type& account : tag_ptr->followers )   // For all followers of each tag
          {
-            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, TAG_FEED ) );
+            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::TAG_FEED ) );
             if( feed_itr == feed_idx.end() )       // Comment is not already in the account's tag feed
             {
                create< feed_object >( [&]( feed_object& f )
                {
                   f.account = account;
                   f.comment = comment_id;
-                  f.feed_type = TAG_FEED;
+                  f.feed_type = feed_reach_type::TAG_FEED;
                   f.feed_time = now; 
                   f.tags[ comment_tag ][ comment.author ] = now;
                   f.shared_by[ comment.author ] = now;
@@ -1007,11 +1007,11 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
 
    switch( reach )
    {
-      case COMPANION_FEED:
-      case FRIEND_FEED:
-      case CONNECTION_FEED:
-      case MUTUAL_FEED:
-      case FOLLOW_FEED:
+      case feed_reach_type::COMPANION_FEED:
+      case feed_reach_type::FRIEND_FEED:
+      case feed_reach_type::CONNECTION_FEED:
+      case feed_reach_type::MUTUAL_FEED:
+      case feed_reach_type::FOLLOW_FEED:
          break;
       default:
       {
@@ -1027,7 +1027,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
       {
          b.account = sharer;
          b.comment = comment_id;
-         b.blog_type = ACCOUNT_BLOG;
+         b.blog_type = blog_reach_type::ACCOUNT_BLOG;
          b.blog_time = now; 
          b.shared_by[ sharer ] = now;
          b.first_shared_by = sharer;
@@ -1046,7 +1046,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
 
    for( const account_name_type& account : acc_following.companions ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, COMPANION_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::COMPANION_FEED ) );
 
       if( feed_itr == feed_idx.end() )      // Comment is not already in companion feed
       {
@@ -1055,7 +1055,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = COMPANION_FEED;
+            f.feed_type = feed_reach_type::COMPANION_FEED;
             f.shared_by[ sharer ] = now;
             f.first_shared_by = sharer;
             f.shares = 1;
@@ -1072,14 +1072,14 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
       }
    }
 
-   if( reach == COMPANION_FEED )
+   if( reach == feed_reach_type::COMPANION_FEED )
    { 
       return;
    }
 
    for( const account_name_type& account : acc_following.friends ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, FRIEND_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::FRIEND_FEED ) );
 
       if( feed_itr == feed_idx.end() )      // Comment is not already in friend feed
       {
@@ -1088,7 +1088,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = FRIEND_FEED;
+            f.feed_type = feed_reach_type::FRIEND_FEED;
             f.shared_by[ sharer ] = now;
             f.first_shared_by = sharer;
             f.shares = 1;
@@ -1105,14 +1105,14 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
       }
    }
 
-   if( reach == FRIEND_FEED )
+   if( reach == feed_reach_type::FRIEND_FEED )
    { 
       return;
    }
 
    for( const account_name_type& account : acc_following.connections ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, CONNECTION_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::CONNECTION_FEED ) );
 
       if( feed_itr == feed_idx.end() )   // Comment is not already in connection feed
       {
@@ -1121,7 +1121,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = CONNECTION_FEED;
+            f.feed_type = feed_reach_type::CONNECTION_FEED;
             f.shared_by[ sharer ] = now;
             f.first_shared_by = sharer;
             f.shares = 1;
@@ -1138,14 +1138,14 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
       }
    }
 
-   if( reach == CONNECTION_FEED )
+   if( reach == feed_reach_type::CONNECTION_FEED )
    { 
       return;
    }
 
    for( const account_name_type& account : acc_following.mutual_followers ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, MUTUAL_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::MUTUAL_FEED ) );
 
       if( feed_itr == feed_idx.end() )   // Comment is not already in mutual feed
       {
@@ -1154,7 +1154,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = MUTUAL_FEED;
+            f.feed_type = feed_reach_type::MUTUAL_FEED;
             f.shared_by[ sharer ] = now;
             f.first_shared_by = sharer;
             f.shares = 1;
@@ -1171,14 +1171,14 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
       }
    }
 
-   if( reach == MUTUAL_FEED )
+   if( reach == feed_reach_type::MUTUAL_FEED )
    { 
       return;
    }
 
    for( const account_name_type& account : acc_following.followers ) 
    {
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, FOLLOW_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::FOLLOW_FEED ) );
       if( feed_itr == feed_idx.end() )   // Comment is not already in follow feed
       {
          create< feed_object >( [&]( feed_object& f )
@@ -1186,7 +1186,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
             f.account = account;
             f.feed_time = now;
             f.comment = comment_id;
-            f.feed_type = FOLLOW_FEED;
+            f.feed_type = feed_reach_type::FOLLOW_FEED;
             f.shared_by[ sharer ] = now;
             f.first_shared_by = sharer;
             f.shares = 1;
@@ -1217,7 +1217,7 @@ void database::share_comment_to_community( const account_name_type& sharer,
    const comment_id_type& comment_id = comment.id;
    const community_member_object& community_member = get_community_member( community );
    const auto& feed_idx = get_index< feed_index >().indices().get< by_account_comment_type >();
-   feed_reach_type feed_type = COMMUNITY_FEED;
+   feed_reach_type feed_type = feed_reach_type::COMMUNITY_FEED;
 
    const auto& blog_idx = get_index< blog_index >().indices().get< by_comment_community >();
    auto blog_itr = blog_idx.find( boost::make_tuple( comment_id, community ) );
@@ -1227,7 +1227,7 @@ void database::share_comment_to_community( const account_name_type& sharer,
       {
          b.community = community;
          b.comment = comment_id;
-         b.blog_type = COMMUNITY_BLOG;
+         b.blog_type = blog_reach_type::COMMUNITY_BLOG;
          b.blog_time = now; 
          b.shared_by[ sharer ] = now;
          b.first_shared_by = sharer;
@@ -1287,6 +1287,7 @@ void database::share_comment_to_tag( const account_name_type& sharer,
    const auto& feed_idx = get_index< feed_index >().indices().get< by_account_comment_type >();
    const auto& blog_idx = get_index< blog_index >().indices().get< by_comment_tag >();
    auto blog_itr = blog_idx.find( boost::make_tuple( comment_id, tag ) );
+   feed_reach_type feed_type = feed_reach_type::TAG_FEED;
 
    if( blog_itr == blog_idx.end() )       // Comment is not already in the tag's blog
    {
@@ -1294,7 +1295,7 @@ void database::share_comment_to_tag( const account_name_type& sharer,
       {
          b.tag = tag;
          b.comment = comment_id;
-         b.blog_type = TAG_BLOG;
+         b.blog_type = blog_reach_type::TAG_BLOG;
          b.blog_time = now; 
          b.shared_by[ sharer ] = now;
          b.first_shared_by = sharer;
@@ -1316,14 +1317,14 @@ void database::share_comment_to_tag( const account_name_type& sharer,
    {
       for( const account_name_type& account : tag_ptr->followers )
       {
-         auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, TAG_FEED ) );
+         auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_type ) );
          if( feed_itr == feed_idx.end() )       // Comment is not already in the account's tag feed
          {
             create< feed_object >( [&]( feed_object& f )
             {
                f.account = account;
                f.comment = comment_id;
-               f.feed_type = TAG_FEED;
+               f.feed_type = feed_type;
                f.feed_time = now; 
                f.tags[ tag ][ sharer ] = now ;
                f.shared_by[ sharer ] = now;
@@ -1495,9 +1496,9 @@ void database::update_account_in_feed( const account_name_type& account, const a
       
       switch( reach )
       {
-         case COMPANION_FEED:
+         case feed_reach_type::COMPANION_FEED:
          {
-            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, COMPANION_FEED ) );
+            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::COMPANION_FEED ) );
             if( acc_following.is_companion( followed ) )      // Account is new companion
             {
                if( feed_itr == feed_idx.end() )      // Comment is not already in account's companion feed 
@@ -1507,7 +1508,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                      f.account = account;
                      f.feed_time = blog_itr->blog_time;
                      f.comment = comment_id;
-                     f.feed_type = COMPANION_FEED;
+                     f.feed_type = feed_reach_type::COMPANION_FEED;
                      f.shared_by[ followed ] = blog_itr->blog_time;
                      f.shares = 1;
                   });
@@ -1554,9 +1555,9 @@ void database::update_account_in_feed( const account_name_type& account, const a
             }
          }
          break;
-         case FRIEND_FEED:
+         case feed_reach_type::FRIEND_FEED:
          {
-            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, FRIEND_FEED ) );
+            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::FRIEND_FEED ) );
             if( acc_following.is_friend( followed ) )      // Account is new friend
             {
                if( feed_itr == feed_idx.end() )      // Comment is not already in account's friend feed 
@@ -1566,7 +1567,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                      f.account = account;
                      f.feed_time = blog_itr->blog_time;
                      f.comment = comment_id;
-                     f.feed_type = FRIEND_FEED;
+                     f.feed_type = feed_reach_type::FRIEND_FEED;
                      f.shared_by[ followed ] = blog_itr->blog_time;
                      f.shares = 1;
                   });
@@ -1613,9 +1614,9 @@ void database::update_account_in_feed( const account_name_type& account, const a
             }
          }
          break;
-         case CONNECTION_FEED:
+         case feed_reach_type::CONNECTION_FEED:
          {
-            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, CONNECTION_FEED ) );
+            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::CONNECTION_FEED ) );
             if( acc_following.is_connection( followed ) )      // Account is new connection
             {
                if( feed_itr == feed_idx.end() )      // Comment is not already in account's connection feed 
@@ -1625,7 +1626,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                      f.account = account;
                      f.feed_time = blog_itr->blog_time;
                      f.comment = comment_id;
-                     f.feed_type = CONNECTION_FEED;
+                     f.feed_type = feed_reach_type::CONNECTION_FEED;
                      f.shared_by[ followed ] = blog_itr->blog_time;
                      f.shares = 1;
                   });
@@ -1672,9 +1673,9 @@ void database::update_account_in_feed( const account_name_type& account, const a
             }
          }
          break;
-         case MUTUAL_FEED:
+         case feed_reach_type::MUTUAL_FEED:
          {
-            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, MUTUAL_FEED ) );
+            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::MUTUAL_FEED ) );
             if( acc_following.is_mutual( followed ) )      // Account is new mutual
             {
                if( feed_itr == feed_idx.end() )      // Comment is not already in account's mutual feed 
@@ -1684,7 +1685,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                      f.account = account;
                      f.feed_time = blog_itr->blog_time;
                      f.comment = comment_id;
-                     f.feed_type = MUTUAL_FEED;
+                     f.feed_type = feed_reach_type::MUTUAL_FEED;
                      f.shared_by[ followed ] = blog_itr->blog_time;
                      f.shares = 1;
                   });
@@ -1731,9 +1732,9 @@ void database::update_account_in_feed( const account_name_type& account, const a
             }
          }
          break;
-         case FOLLOW_FEED:
+         case feed_reach_type::FOLLOW_FEED:
          {
-            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, FOLLOW_FEED ) );
+            auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::FOLLOW_FEED ) );
             if( acc_following.is_following( followed ) )      // Account is new follow
             {
                if( feed_itr == feed_idx.end() )      // Comment is not already in account's follow feed 
@@ -1743,7 +1744,7 @@ void database::update_account_in_feed( const account_name_type& account, const a
                      f.account = account;
                      f.feed_time = blog_itr->blog_time;
                      f.comment = comment_id;
-                     f.feed_type = FOLLOW_FEED;
+                     f.feed_type = feed_reach_type::FOLLOW_FEED;
                      f.shared_by[ followed ] = blog_itr->blog_time;
                      f.shares = 1;
                   });
@@ -1811,7 +1812,7 @@ void database::update_community_in_feed( const account_name_type& account, const
    const account_following_object& acc_following = get_account_following( account );
    auto blog_itr = blog_idx.lower_bound( community );
    auto blog_end = blog_idx.upper_bound( community );
-   feed_reach_type feed_type = COMMUNITY_FEED;
+   feed_reach_type feed_type = feed_reach_type::COMMUNITY_FEED;
 
    while( blog_itr != blog_end )
    {
@@ -1897,12 +1898,13 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
    auto blog_itr = blog_idx.lower_bound( tag );
    auto blog_end = blog_idx.upper_bound( tag );
    const account_following_object& acc_following = get_account_following( account );
+   feed_reach_type feed_type = feed_reach_type::COMMUNITY_FEED;
 
    while( blog_itr != blog_end )
    {
       const comment_id_type& comment_id = blog_itr->comment;
       
-      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, TAG_FEED ) );
+      auto feed_itr = feed_idx.find( boost::make_tuple( account, comment_id, feed_type ) );
       if( acc_following.is_followed_tag( tag ) )
       {
          if( feed_itr == feed_idx.end() )      // Comment is not already in account's tag feed 
@@ -1912,7 +1914,7 @@ void database::update_tag_in_feed( const account_name_type& account, const tag_n
                f.account = account;
                f.feed_time = blog_itr->blog_time;
                f.comment = comment_id;
-               f.feed_type = TAG_FEED;
+               f.feed_type = feed_type;
                f.shared_by = blog_itr->shared_by;
                f.first_shared_by = blog_itr->first_shared_by;
                f.shares = blog_itr->shares;

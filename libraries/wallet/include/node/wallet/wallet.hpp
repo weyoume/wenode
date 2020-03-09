@@ -2388,7 +2388,7 @@ class wallet_api
        * {
        *    "post_type": "\"text\"",
        *    "reach": "\"tag\"",
-       *    "rating": "\"general\"",
+       *    "rating": 9,
        *    "max_accepted_payout": "\"1000000000.00000000 MUSD\"",
        *    "percent_liquid": 10000,
        *    "allow_replies": true,
@@ -2554,7 +2554,7 @@ class wallet_api
          string author,
          string permlink,
          vector< string > tags,
-         string rating,
+         uint16_t rating,
          string details,
          string interface,
          bool filter,

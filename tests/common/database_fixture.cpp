@@ -509,11 +509,11 @@ const comment_object& database_fixture::comment_create(
       op.title = "test";
       op.body = "test";
       op.community = INIT_COMMUNITY;
-      op.options.post_type = TEXT_POST;
+      op.options.post_type = post_format_type::TEXT_POST;
       op.language = "en";
-      op.options.reach = TAG_FEED;
+      op.options.reach = feed_reach_type::TAG_FEED;
       op.interface = INIT_ACCOUNT;
-      op.options.rating = GENERAL;
+      op.options.rating = 1;
       op.tags.push_back( "test" );
       op.json = "{\"json\":\"valid\"}";
 

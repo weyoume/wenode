@@ -897,11 +897,11 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++bus_inv_itr;
          }
 
-         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, CONNECTION ) );
-         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, CONNECTION ) );
+         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
+         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
          while( connection_a_itr != connection_a_idx.end() && 
             connection_a_itr->account_a == name &&
-            connection_a_itr->connection_type == CONNECTION )
+            connection_a_itr->connection_type == connection_tier_type::CONNECTION )
          {
             results.back().connections.connections[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr );
             results.back().keychain.connection_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
@@ -909,18 +909,18 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          }
          while( connection_b_itr != connection_b_idx.end() && 
             connection_b_itr->account_b == name &&
-            connection_b_itr->connection_type == CONNECTION )
+            connection_b_itr->connection_type == connection_tier_type::CONNECTION )
          {
             results.back().connections.connections[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr );
             results.back().keychain.connection_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
             ++connection_b_itr;
          }
 
-         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, FRIEND ) );
-         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, FRIEND ) );
+         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
+         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
          while( connection_a_itr != connection_a_idx.end() && 
             connection_a_itr->account_a == name &&
-            connection_a_itr->connection_type == FRIEND )
+            connection_a_itr->connection_type == connection_tier_type::FRIEND )
          {
             results.back().connections.friends[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr );
             results.back().keychain.friend_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
@@ -928,18 +928,18 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          }
          while( connection_b_itr != connection_b_idx.end() && 
             connection_b_itr->account_b == name &&
-            connection_b_itr->connection_type == FRIEND )
+            connection_b_itr->connection_type == connection_tier_type::FRIEND )
          {
             results.back().connections.friends[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr );
             results.back().keychain.friend_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
             ++connection_b_itr;
          }
 
-         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, COMPANION ) );
-         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, COMPANION ) );
+         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
+         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
          while( connection_a_itr != connection_a_idx.end() && 
             connection_a_itr->account_a == name &&
-            connection_a_itr->connection_type == COMPANION )
+            connection_a_itr->connection_type == connection_tier_type::COMPANION )
          {
             results.back().connections.companions[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr );
             results.back().keychain.companion_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
@@ -947,7 +947,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          }
          while( connection_b_itr != connection_b_idx.end() && 
             connection_b_itr->account_b == name &&
-            connection_b_itr->connection_type == COMPANION )
+            connection_b_itr->connection_type == connection_tier_type::COMPANION )
          {
             results.back().connections.companions[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr );
             results.back().keychain.companion_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
@@ -1485,52 +1485,52 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
    {
       key_state kstate;
 
-      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, CONNECTION ) );
-      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, CONNECTION ) );
+      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
+      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
       while( connection_a_itr != connection_a_idx.end() && 
          connection_a_itr->account_a == name &&
-         connection_a_itr->connection_type == CONNECTION )
+         connection_a_itr->connection_type == connection_tier_type::CONNECTION )
       {
          kstate.connection_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
          ++connection_a_itr;
       }
       while( connection_b_itr != connection_b_idx.end() && 
          connection_b_itr->account_b == name &&
-         connection_b_itr->connection_type == CONNECTION )
+         connection_b_itr->connection_type == connection_tier_type::CONNECTION )
       {
          kstate.connection_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
          ++connection_b_itr;
       }
 
-      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, FRIEND ) );
-      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, FRIEND ) );
+      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
+      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
       while( connection_a_itr != connection_a_idx.end() && 
          connection_a_itr->account_a == name &&
-         connection_a_itr->connection_type == FRIEND )
+         connection_a_itr->connection_type == connection_tier_type::FRIEND )
       {
          kstate.friend_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
          ++connection_a_itr;
       }
       while( connection_b_itr != connection_b_idx.end() && 
          connection_b_itr->account_b == name &&
-         connection_b_itr->connection_type == FRIEND )
+         connection_b_itr->connection_type == connection_tier_type::FRIEND )
       {
          kstate.friend_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
          ++connection_b_itr;
       }
 
-      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, COMPANION ) );
-      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, COMPANION ) );
+      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
+      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
       while( connection_a_itr != connection_a_idx.end() && 
          connection_a_itr->account_a == name &&
-         connection_a_itr->connection_type == COMPANION )
+         connection_a_itr->connection_type == connection_tier_type::COMPANION )
       {
          kstate.companion_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
          ++connection_a_itr;
       }
       while( connection_b_itr != connection_b_idx.end() && 
          connection_b_itr->account_b == name &&
-         connection_b_itr->connection_type == COMPANION )
+         connection_b_itr->connection_type == connection_tier_type::COMPANION )
       {
          kstate.companion_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
          ++connection_b_itr;
@@ -2346,7 +2346,7 @@ vector< network_officer_api_obj > database_api_impl::get_development_officers_by
    const auto& name_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
    const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_type_voting_power >();
 
-   auto itr = vote_idx.lower_bound( DEVELOPMENT );
+   auto itr = vote_idx.lower_bound( network_officer_role_type::DEVELOPMENT );
 
    if( from.size() ) 
    {
@@ -2356,7 +2356,7 @@ vector< network_officer_api_obj > database_api_impl::get_development_officers_by
       itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == DEVELOPMENT )
+   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == network_officer_role_type::DEVELOPMENT )
    {
       results.push_back( network_officer_api_obj( *itr ) );
       ++itr;
@@ -2381,7 +2381,7 @@ vector< network_officer_api_obj > database_api_impl::get_marketing_officers_by_v
    const auto& name_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
    const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_type_voting_power >();
 
-   auto itr = vote_idx.lower_bound( MARKETING );
+   auto itr = vote_idx.lower_bound( network_officer_role_type::MARKETING );
 
    if( from.size() ) 
    {
@@ -2390,7 +2390,7 @@ vector< network_officer_api_obj > database_api_impl::get_marketing_officers_by_v
       itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == MARKETING )
+   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == network_officer_role_type::MARKETING )
    {
       results.push_back( network_officer_api_obj( *itr ) );
       ++itr;
@@ -2415,7 +2415,7 @@ vector< network_officer_api_obj > database_api_impl::get_advocacy_officers_by_vo
    const auto& name_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
    const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_type_voting_power >();
 
-   auto itr = vote_idx.lower_bound( ADVOCACY );
+   auto itr = vote_idx.lower_bound( network_officer_role_type::ADVOCACY );
 
    if( from.size() ) 
    {
@@ -2425,7 +2425,7 @@ vector< network_officer_api_obj > database_api_impl::get_advocacy_officers_by_vo
       itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == ADVOCACY )
+   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == network_officer_role_type::ADVOCACY )
    {
       results.push_back( network_officer_api_obj( *itr ) );
       ++itr;
@@ -2885,11 +2885,11 @@ market_call_orders database_api_impl::get_call_orders( string buy_symbol, string
 
    asset_symbol_type bitasset_symbol;
 
-   if( buy_asset.asset_type == BITASSET_ASSET )
+   if( buy_asset.asset_type == asset_property_type::BITASSET_ASSET )
    {
       bitasset_symbol = buy_asset.symbol;
    }
-   else if( sell_asset.asset_type == BITASSET_ASSET )
+   else if( sell_asset.asset_type == asset_property_type::BITASSET_ASSET )
    {
       bitasset_symbol = sell_asset.symbol;
    }
@@ -3253,7 +3253,7 @@ vector< ad_bid_state > database_api_impl::get_interface_audience_bids( const ad_
    account_name_type interface = query.interface;
    account_name_type viewer = query.viewer;
 
-   ad_format_type format = STANDARD_FORMAT;
+   ad_format_type format = ad_format_type::STANDARD_FORMAT;
    for( auto i = 0; i < ad_format_values.size(); i++ )
    {
       if( query.format_type == ad_format_values[ i ] )
@@ -4359,39 +4359,39 @@ vector< discussion > database_api::get_discussions(
             time_point created = tidx_itr->created;
             bool old_post = false;
 
-            if( query.post_include_time == post_time_values[ ALL_TIME ] )
+            if( query.post_include_time == post_time_values[ post_time_type::ALL_TIME ] )
             {
                old_post = false;
             }
-            else if( query.post_include_time == post_time_values[ LAST_HOUR ] )
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_HOUR ] )
             {
                if( created + fc::hours(1) > now )
                {
                   old_post = true;
                }
             }
-            else if( query.post_include_time == post_time_values[ LAST_DAY ] )
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_DAY ] )
             {
                if( created + fc::days(1) > now ) 
                {
                   old_post = true;
                }
             }
-            else if( query.post_include_time == post_time_values[ LAST_WEEK ] )
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_WEEK ] )
             {
                if( created + fc::days(7) > now ) 
                {
                   old_post = true;
                }
             }
-            else if( query.post_include_time == post_time_values[ LAST_MONTH ] )
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_MONTH ] )
             {
                if( created + fc::days(30) > now ) 
                {
                   old_post = true;
                }
             }
-            else if( query.post_include_time == post_time_values[ LAST_YEAR ] )
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_YEAR ] )
             {
                if( created + fc::days(365) > now ) 
                {
@@ -4405,33 +4405,13 @@ vector< discussion > database_api::get_discussions(
                continue;
             }
          }
-
-         if( query.max_rating.size() )
+      
+         if( tidx_itr->rating > query.max_rating  )
          {
-            bool over_rating = false;
-
-            if( query.max_rating == post_rating_values[ FAMILY ] )
-            {
-               if( tidx_itr->rating == ADULT || tidx_itr->rating == GENERAL )
-               {
-                  over_rating = true;
-               }
-            }
-            else if( query.max_rating == post_rating_values[ GENERAL ] )
-            {
-               if( tidx_itr->rating == ADULT || )
-               {
-                  over_rating = true;
-               }
-            }
-            
-            if( over_rating )
-            {
-               ++tidx_itr;
-               continue;
-            }
+            ++tidx_itr;
+            continue;
          }
-
+         
          if( query.select_authors.size() && query.select_authors.find( tidx_itr->author ) == query.select_authors.end() )
          {
             ++tidx_itr;
@@ -4611,255 +4591,255 @@ vector< discussion > database_api_impl::get_discussions_by_sort_rank( const disc
 
    const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_standard >();
 
-   if( sort_type == sort_option_values[ QUALITY_SORT ] )
+   if( sort_type == sort_option_values[ sort_option_type::QUALITY_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ VOTES_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::VOTES_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ VIEWS_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::VIEWS_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ SHARES_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::SHARES_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ COMMENTS_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::COMMENTS_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ POPULAR_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::POPULAR_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ VIRAL_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::VIRAL_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ DISCUSSION_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::DISCUSSION_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ PROMINENT_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::PROMINENT_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ CONVERSATION_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::CONVERSATION_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_elite >();
       }
    }
-   else if( sort_type == sort_option_values[ DISCOURSE_SORT ] )
+   else if( sort_type == sort_option_values[ sort_option_type::DISCOURSE_SORT ] )
    {
-      if( sort_time == sort_time_values[ ACTIVE_TIME ] )
+      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_active >();
       }
-      else if( sort_time == sort_time_values[ RAPID_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_rapid >();
       }
-      else if( sort_time == sort_time_values[ STANDARD_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_standard >();
       }
-      else if( sort_time == sort_time_values[ TOP_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_top >();
       }
-      else if( sort_time == sort_time_values[ ELITE_TIME ] )
+      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
       {
          const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_elite >();
       }
@@ -4901,7 +4881,7 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
    
    const auto& f_idx = _db.get_index< feed_index >().indices().get< by_new_account_type >();
    auto feed_itr = f_idx.lower_bound( account );
-   feed_reach_type reach = FOLLOW_FEED;
+   feed_reach_type reach = feed_reach_type::FOLLOW_FEED;
 
    if( query.feed_type.size() )
    {
@@ -4935,6 +4915,231 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
       {
          break;
       }
+
+      if( query.post_include_time.size() )
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         time_point now = my->_db.head_block_time();
+         time_point created = tag_itr->created;
+         bool old_post = false;
+
+         if( query.post_include_time == post_time_values[ post_time_type::ALL_TIME ] )
+         {
+            old_post = false;
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_HOUR ] )
+         {
+            if( created + fc::hours(1) > now )
+            {
+               old_post = true;
+            }
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_DAY ] )
+         {
+            if( created + fc::days(1) > now ) 
+            {
+               old_post = true;
+            }
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_WEEK ] )
+         {
+            if( created + fc::days(7) > now ) 
+            {
+               old_post = true;
+            }
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_MONTH ] )
+         {
+            if( created + fc::days(30) > now ) 
+            {
+               old_post = true;
+            }
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_YEAR ] )
+         {
+            if( created + fc::days(365) > now ) 
+            {
+               old_post = true;
+            }
+         }
+
+         if( old_post )
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( !query.include_private )
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         if( tag_itr->encrypted )
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.max_rating =< 9 )
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         if( tag_itr->rating > query.max_rating )
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.select_authors.size() )
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         if( query.select_authors.find( tag_itr->author ) == query.select_authors.end() )
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.select_languages.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         {
+            if( query.select_languages.find( tag_itr->language ) != query.select_languages.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( !found ) 
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.select_communities.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         {
+            if( query.select_communities.find( tag_itr->community ) != query.select_communities.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( !found ) 
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.select_tags.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         {
+            if( query.select_tags.find( tag_itr->tag ) != query.select_tags.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( !found ) 
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.filter_authors.size()  )
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         if( query.filter_authors.find( feed_itr->account ) != query.filter_authors.end() )
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.filter_languages.size() )
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         {
+            if( query.filter_languages.find( tag_itr->language ) != query.filter_languages.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( found ) 
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.filter_communities.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         {
+            if( query.filter_communities.find( tag_itr->community ) != query.filter_communities.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( found ) 
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
+      if( query.filter_tags.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         {
+            if( query.filter_tags.find( tag_itr->tag ) != query.filter_tags.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( found ) 
+         {
+            ++feed_itr;
+            continue;
+         }
+      }
+
       try
       {
          results.push_back( get_discussion( feed_itr->comment ) );
@@ -5000,16 +5205,16 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
 
    if( query.blog_type.size() )
    {
-      if( query.blog_type == blog_reach_values[ ACCOUNT_BLOG ] )
+      if( query.blog_type == blog_reach_values[ blog_reach_type::ACCOUNT_BLOG ] )
       {
          const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
       }
-      else if( query.blog_type == blog_reach_values[ COMMUNITY_BLOG ] )
+      else if( query.blog_type == blog_reach_values[ blog_reach_type::COMMUNITY_BLOG ] )
       {
          const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_community_blog >();
          subject = community;
       }
-      else if( query.blog_type == blog_reach_values[ TAG_BLOG ] )
+      else if( query.blog_type == blog_reach_values[ blog_reach_type::TAG_BLOG ] )
       {
          const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_tag_blog >();
          subject = tag;
@@ -5033,17 +5238,72 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
    { 
       try
       {
-         if( account.size() && blog_itr->account != account && query.blog_type == blog_reach_values[ ACCOUNT_BLOG ] )
+         if( account.size() && blog_itr->account != account && query.blog_type == blog_reach_values[ blog_reach_type::ACCOUNT_BLOG ] )
          {
             break;
          }
-         if( community.size() && blog_itr->community != community && query.blog_type == blog_reach_values[ COMMUNITY_BLOG ] )
+         if( community.size() && blog_itr->community != community && query.blog_type == blog_reach_values[ blog_reach_type::COMMUNITY_BLOG ] )
          {
             break;
          }
-         if( tag.size() && blog_itr->tag != tag && query.blog_type == blog_reach_values[ TAG_BLOG ] )
+         if( tag.size() && blog_itr->tag != tag && query.blog_type == blog_reach_values[ blog_reach_type::TAG_BLOG ] )
          {
             break;
+         }
+
+         if( query.post_include_time.size() )
+         {
+            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+            time_point now = my->_db.head_block_time();
+            time_point created = tag_itr->created;
+            bool old_post = false;
+
+            if( query.post_include_time == post_time_values[ post_time_type::ALL_TIME ] )
+            {
+               old_post = false;
+            }
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_HOUR ] )
+            {
+               if( created + fc::hours(1) > now )
+               {
+                  old_post = true;
+               }
+            }
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_DAY ] )
+            {
+               if( created + fc::days(1) > now ) 
+               {
+                  old_post = true;
+               }
+            }
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_WEEK ] )
+            {
+               if( created + fc::days(7) > now ) 
+               {
+                  old_post = true;
+               }
+            }
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_MONTH ] )
+            {
+               if( created + fc::days(30) > now ) 
+               {
+                  old_post = true;
+               }
+            }
+            else if( query.post_include_time == post_time_values[ post_time_type::LAST_YEAR ] )
+            {
+               if( created + fc::days(365) > now ) 
+               {
+                  old_post = true;
+               }
+            }
+
+            if( old_post )
+            {
+               ++blog_itr;
+               continue;
+            }
          }
 
          if( !query.include_private )
@@ -5056,27 +5316,11 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
             }
          }
 
-         if( query.max_rating.size() )
+         if( query.max_rating =< 9 )
          {
             auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-            bool over_rating = false;
 
-            if( query.max_rating == post_rating_values[ FAMILY ] )
-            {
-               if( tag_itr->rating == ADULT || tag_itr->rating == GENERAL )
-               {
-                  over_rating = true;
-               }
-            }
-            else if( query.max_rating == post_rating_values[ GENERAL ] )
-            {
-               if( tag_itr->rating == ADULT )
-               {
-                  over_rating = true;
-               }
-            }
-            
-            if( over_rating )
+            if( tag_itr->rating > query.max_rating )
             {
                ++blog_itr;
                continue;
@@ -5872,7 +6116,7 @@ state database_api_impl::get_state( string path )const
       {
          discussion_query q;
          q.account = acnt;
-         q.blog_type = ACCOUNT_BLOG;
+         q.blog_type = blog_reach_type::ACCOUNT_BLOG;
          vector< discussion > blog_posts = get_discussions_by_blog( q );
          const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_comment_account >();
          _state.blogs[ acnt ] = vector< string >();
@@ -5888,7 +6132,7 @@ state database_api_impl::get_state( string path )const
       {
          discussion_query q;
          q.account = acnt;
-         q.feed_type = FOLLOW_FEED;
+         q.feed_type = feed_reach_type::FOLLOW_FEED;
          vector< discussion > feed_posts = get_discussions_by_feed( q );
          const auto& feed_idx = _db.get_index< feed_index >().indices().get< by_new_account >();
          _state.blogs[ acnt ] = vector< string >();

@@ -3,9 +3,7 @@
 
 #include <node/protocol/authority.hpp>
 #include <node/protocol/node_operations.hpp>
-
 #include <node/chain/node_object_types.hpp>
-#include <node/chain/producer_objects.hpp>
 #include <node/chain/shared_authority.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
@@ -14,7 +12,7 @@
 
 namespace node { namespace chain {
 
-   using node::protocol::authority;
+   
 
    class account_object : public object< account_object_type, account_object >
    {
@@ -265,7 +263,7 @@ namespace node { namespace chain {
  
          bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          ///< Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
-            bool fast_check = !( asset_obj.flags & balance_whitelist );
+            bool fast_check = !( asset_obj.flags & asset_issuer_permission_flags::balance_whitelist );
             fast_check &= !( whitelisted_assets.size() );
             fast_check &= !( blacklisted_assets.size() );
             fast_check &= !( whitelisted_accounts.size() );
@@ -438,13 +436,13 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
-               case PUBLIC_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return true;
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return false;
                }
@@ -468,17 +466,17 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
                {
                   return officers.find( account ) != officers.end();
                }
                break;
-               case PUBLIC_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return executives.find( account ) != executives.end();
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account;
                }
@@ -502,13 +500,13 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
-               case PUBLIC_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return executives.find( account ) != executives.end();
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account;
                }
@@ -532,17 +530,17 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
                {
                   return officers.find( account ) != officers.end();
                }
                break;
-               case PUBLIC_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return executives.find( account ) != executives.end();
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_FINANCIAL_OFFICER == account;
                }
@@ -566,17 +564,17 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
                {
                   return officers.find( account ) != officers.end();
                }
                break;
-               case PUBLIC_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return executives.find( account ) != executives.end();
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account;
                }
@@ -600,13 +598,13 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
-               case PUBLIC_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return officers.find( account ) != officers.end();
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_MARKETING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account;
                }
@@ -630,13 +628,13 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
-               case PUBLIC_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return true;
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account;
                }
@@ -660,17 +658,17 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
                {
                   return true;
                }
                break;
-               case PUBLIC_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return executives.find( account ) != executives.end();
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_OPERATING_OFFICER == account;
                }
@@ -694,17 +692,17 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
                {
                   return officers.find( account ) != officers.end();
                }
                break;
-               case PUBLIC_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return executives.find( account ) != executives.end();
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_GOVERNANCE_OFFICER == account;
                }
@@ -728,17 +726,17 @@ namespace node { namespace chain {
 
             switch( business_type )
             {
-               case OPEN_BUSINESS:
+               case business_structure_type::OPEN_BUSINESS:
                {
                   return officers.find( account ) != officers.end();
                }
                break;
-               case PUBLIC_BUSINESS:
+               case business_structure_type::PUBLIC_BUSINESS:
                {
                   return executives.find( account ) != executives.end();
                }
                break;
-               case PRIVATE_BUSINESS:
+               case business_structure_type::PRIVATE_BUSINESS:
                {
                   return executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_DEVELOPMENT_OFFICER == account || 
                   executive_board.CHIEF_MARKETING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account ||
@@ -748,42 +746,6 @@ namespace node { namespace chain {
                default:
                {
                   FC_ASSERT( false, "Invalid Business Type." );
-               }
-            }
-
-            if( business_type == OPEN_BUSINESS )    // Open business, all equity holders can create network operations
-            {
-               if( officers.find( account ) != officers.end() )
-               {
-                  return true; // The account is in the officers list.
-               }
-               else
-               {
-                  return false; // The account is not in the officers list. 
-               }
-            }
-            else if( business_type == PUBLIC_BUSINESS ) // Public business, executives can create network operations
-            {
-               if( executives.find( account ) != executives.end() )
-               {
-                  return true; // The account is in the executives list.
-               }
-               else
-               {
-                  return false; // The account is not in the executives list. 
-               }
-            }
-            else if( business_type == PRIVATE_BUSINESS ) // Private business, CEO and CDO, CMO, CTO, CDO, and CAO can create network operations
-            {
-               if( executive_board.CHIEF_EXECUTIVE_OFFICER == account || executive_board.CHIEF_DEVELOPMENT_OFFICER == account || 
-                  executive_board.CHIEF_MARKETING_OFFICER == account || executive_board.CHIEF_ADVOCACY_OFFICER == account ||
-                  executive_board.CHIEF_TECHNOLOGY_OFFICER == account || executive_board.CHIEF_DESIGN_OFFICER == account )
-               {
-                  return true; // The account is the relevant executive.
-               }
-               else
-               {
-                  return false; // The account is not authorized. 
                }
             }
          };

@@ -1,8 +1,8 @@
+
 #include <node/chain/node_evaluator.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/custom_operation_interpreter.hpp>
 #include <node/chain/node_objects.hpp>
-#include <node/chain/producer_objects.hpp>
 #include <node/chain/block_summary_object.hpp>
 #include <cmath>
 
@@ -75,9 +75,14 @@ struct strcmp_equal
 void account_create_evaluator::do_apply( const account_create_operation& o )
 { try {
    const account_name_type& signed_for = o.registrar;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_general(o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -114,29 +119,38 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       ( "o.delegation", o.delegation ) );
    
    const account_object& registrar = _db.get_account( o.registrar );   // Ensure all referenced accounts exist
+   FC_ASSERT( registrar.active,
+      "Account: ${s} is not active, plase select a different registrar account.",("s", o.registrar) );
 
    if( o.recovery_account.size() )
    {
       const account_object& recovery_account = _db.get_account( o.recovery_account );
+      FC_ASSERT( recovery_account.active,
+         "Account: ${s} is not active, plase select a different recovery account.",("s", o.recovery_account) );
    }
    if( o.reset_account.size() )
    {
       const account_object& reset_account = _db.get_account( o.reset_account );
+      FC_ASSERT( reset_account.active,
+         "Account: ${s} is not active, plase select a different reset account.",("s", o.reset_account) );
    }
    if( o.referrer.size() )
    {
       const account_object& referrer = _db.get_account( o.referrer );
+      FC_ASSERT( referrer.active,
+         "Account: ${s} is not active, plase select a different referrer account.",("s", o.referrer) );
    }
    if( o.proxy.size() )
    {
       const account_object& proxy = _db.get_account( o.proxy );
+      FC_ASSERT( proxy.active,
+         "Account: ${s} is not active, plase select a different proxy account.",("s", o.proxy) );
    }
-
    if( o.governance_account.size() )
    {
       const governance_account_object& governance_account = _db.get_governance_account( o.governance_account );
       FC_ASSERT( governance_account.active,
-         "Governance account is not active, plase select a different governance account." );
+         "Governance account: ${a} is not active, plase select a different governance account.",("a", o.governance_account) );
    }
    
    for( auto& a : o.owner_auth.account_auths )
@@ -350,9 +364,14 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
 void account_update_evaluator::do_apply( const account_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_chief( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -447,22 +466,27 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
 void account_membership_evaluator::do_apply( const account_membership_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
-
    const account_object* int_account_ptr = nullptr;
-   const interface_object* interface_ptr = nullptr;
 
    if( o.interface.size() )
    {
       int_account_ptr = _db.find_account( o.interface );
-      interface_ptr = _db.find_interface( o.interface );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
    
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
@@ -472,22 +496,22 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
 
    switch( o.membership_type )
    {
-      case NONE:
+      case membership_tier_type::NONE:
       {
          
       }
       break; 
-      case STANDARD_MEMBERSHIP:
+      case membership_tier_type::STANDARD_MEMBERSHIP:
       {
          monthly_fee = median_props.membership_base_price;
       }
       break;
-      case MID_MEMBERSHIP:
+      case membership_tier_type::MID_MEMBERSHIP:
       {
          monthly_fee = median_props.membership_mid_price;
       }
       break; 
-      case TOP_MEMBERSHIP:
+      case membership_tier_type::TOP_MEMBERSHIP:
       {
          monthly_fee = median_props.membership_top_price;
       }
@@ -505,24 +529,24 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
 
    switch( account.membership )
    {
-      case NONE:
+      case membership_tier_type::NONE:
       {
           
       }
       break;
-      case STANDARD_MEMBERSHIP:
+      case membership_tier_type::STANDARD_MEMBERSHIP:
       {
-         carried_fees = asset( ( median_props.membership_base_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         carried_fees = asset( ( median_props.membership_base_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
       }
       break;
-      case MID_MEMBERSHIP:
+      case membership_tier_type::MID_MEMBERSHIP:
       {
-         carried_fees = asset( ( median_props.membership_mid_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         carried_fees = asset( ( median_props.membership_mid_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
       }
       break;
-      case TOP_MEMBERSHIP:
+      case membership_tier_type::TOP_MEMBERSHIP:
       {
-         carried_fees = asset( ( median_props.membership_top_price * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         carried_fees = asset( ( median_props.membership_top_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
       }
       break;
       default:
@@ -572,20 +596,28 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
 void account_vote_executive_evaluator::do_apply( const account_vote_executive_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_vote_executive( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    const account_object& voter = _db.get_account( o.account );
    const account_object& executive = _db.get_account( o.executive_account );
+   FC_ASSERT( executive.active, 
+      "Account: ${s} must be active to be voted for.",("s", o.executive_account) );
    const account_object& business = _db.get_account( o.business_account );
+   FC_ASSERT( business.active, 
+      "Account: ${s} must be active to accept executive votes.",("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
-   share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );  
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
 
    FC_ASSERT( voting_power > 0,
       "Account must hold a balance of voting power in the equity assets of the business account in order to vote for executives." );
@@ -657,17 +689,26 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
 void account_vote_officer_evaluator::do_apply( const account_vote_officer_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_vote_officer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    const account_object& voter = _db.get_account( o.account );
    const account_object& officer = _db.get_account( o.officer_account );
+   FC_ASSERT( officer.active, 
+      "Account: ${s} must be active to be voted for.",("s", o.officer_account) );
    const account_object& business = _db.get_account( o.business_account );
+   FC_ASSERT( business.active, 
+      "Account: ${s} must be active to accept officer votes.",("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
 
@@ -739,16 +780,23 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
 void account_member_request_evaluator::do_apply( const account_member_request_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_request( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    
    const account_object& account = _db.get_account( o.account );
    const account_object& business = _db.get_account( o.business_account );
+   FC_ASSERT( business.active, 
+      "Account: ${s} must be active to accept member requests.",("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( bus_acc.business_type != PRIVATE_BUSINESS,
@@ -787,17 +835,26 @@ void account_member_request_evaluator::do_apply( const account_member_request_op
 void account_member_invite_evaluator::do_apply( const account_member_invite_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_invite( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    
    const account_object& account = _db.get_account( o.account );
    const account_object& member = _db.get_account( o.member);
+   FC_ASSERT( member.active, 
+      "Account: ${s} must be active to accept member invites.",("s", o.member) );
    const account_object& business = _db.get_account( o.business_account );
+   FC_ASSERT( business.active, 
+      "Account: ${s} must be active to accept member invites.",("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( !bus_acc.is_member( member.name ),
@@ -849,16 +906,25 @@ void account_member_invite_evaluator::do_apply( const account_member_invite_oper
 void account_accept_request_evaluator::do_apply( const account_accept_request_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_invite( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account ); 
-   const account_object& member = _db.get_account( o.member );
+   const account_object& member = _db.get_account( o.member);
+   FC_ASSERT( member.active, 
+      "Account: ${s} must be active to accept member requests.",("s", o.member) );
    const account_object& business = _db.get_account( o.business_account );
+   FC_ASSERT( business.active, 
+      "Account: ${s} must be active to accept member requests.",("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( !bus_acc.is_member( member.name ),
@@ -896,15 +962,22 @@ void account_accept_request_evaluator::do_apply( const account_accept_request_op
 void account_accept_invite_evaluator::do_apply( const account_accept_invite_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
    const account_object& business = _db.get_account( o.business_account );
+   FC_ASSERT( business.active, 
+      "Account: ${s} must be active to accept member invites",("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( !bus_acc.is_member( account.name ),
@@ -944,16 +1017,25 @@ void account_accept_invite_evaluator::do_apply( const account_accept_invite_oper
 void account_remove_member_evaluator::do_apply( const account_remove_member_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_blacklist( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account ); 
    const account_object& member_acc = _db.get_account( o.member );
+   FC_ASSERT( member_acc.active, 
+      "Account: ${s} must be active to accept member requests.",("s", o.member) );
    const account_object& business = _db.get_account( o.business_account );
+   FC_ASSERT( business.active, 
+      "Account: ${s} must be active to remove members.",("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( bus_acc.is_member( member_acc.name ), 
@@ -986,10 +1068,15 @@ void account_remove_member_evaluator::do_apply( const account_remove_member_oper
 void account_update_list_evaluator::do_apply( const account_update_list_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_blacklist( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -1010,10 +1097,8 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
          "Account: ${a} cannot add an asset it is the issuer of to its own blacklist or whitelist." );
       asset_sym = *o.listed_asset;
    }
-   
-   const account_object& account = _db.get_account( o.account );
-   const account_permission_object& perm = _db.get_account_permissions( o.account );
 
+   const account_permission_object& perm = _db.get_account_permissions( o.account );
    const account_business_object* bus_acc_ptr = _db.find_account_business( o.account );
 
    if( bus_acc_ptr != nullptr )
@@ -1074,9 +1159,14 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
 void account_producer_vote_evaluator::do_apply( const account_producer_vote_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -1095,7 +1185,6 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
          "Producer is inactive, and not accepting approval votes at this time." );
    }
 
-   const producer_schedule_object& pso = _db.get_producer_schedule();
    const auto& account_rank_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
    const auto& account_producer_idx = _db.get_index< producer_vote_index >().indices().get< by_account_producer >();
    auto rank_itr = account_rank_idx.find( boost::make_tuple( voter.name, o.vote_rank ) );   // vote at rank number
@@ -1154,9 +1243,14 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
 void account_update_proxy_evaluator::do_apply( const account_update_proxy_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -1221,16 +1315,20 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
 void request_account_recovery_evaluator::do_apply( const request_account_recovery_operation& o )
 { try {
    const account_name_type& signed_for = o.recovery_account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_executive( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    const account_object& account_to_recover = _db.get_account( o.account_to_recover );
-   const account_object& account = _db.get_account( o.recovery_account );
    time_point now = _db.head_block_time();
    const auto& producer_idx = _db.get_index< producer_index >().indices().get< by_voting_power >();
 
@@ -1293,9 +1391,14 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
 void recover_account_evaluator::do_apply( const recover_account_operation& o )
 { try {
    const account_name_type& signed_for = o.account_to_recover;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_executive( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -1341,15 +1444,22 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
 void reset_account_evaluator::do_apply( const reset_account_operation& o )
 { try {
    const account_name_type& signed_for = o.account_to_reset;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_executive( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account_to_reset );
    const account_object& reset_account = _db.get_account( o.reset_account );
+   FC_ASSERT( reset_account.active, 
+      "Account: ${s} must be active to reset account.",("s", o.reset_account) );
    fc::microseconds delay = fc::days( account.reset_account_delay_days );
    time_point now = _db.head_block_time();
 
@@ -1373,9 +1483,14 @@ void reset_account_evaluator::do_apply( const reset_account_operation& o )
 void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_executive( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -1383,6 +1498,8 @@ void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o
 
    const account_object& account = _db.get_account( o.account );
    const account_object& new_reset_account = _db.get_account( o.new_reset_account );
+   FC_ASSERT( new_reset_account.active, 
+      "Account: ${s} must be active to become new reset account.",("s", o.new_reset_account) );
 
    FC_ASSERT( account.reset_account != o.new_reset_account,
       "Reset account must change." );
@@ -1398,15 +1515,22 @@ void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o
 void change_recovery_account_evaluator::do_apply( const change_recovery_account_operation& o )
 { try {
    const account_name_type& signed_for = o.account_to_recover;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_executive( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& account = _db.get_account( o.new_recovery_account ); 
+   const account_object& new_recovery_account = _db.get_account( o.new_recovery_account );
+   FC_ASSERT( new_recovery_account.active,
+      "Account: ${s} must be active to be a new recovery account.",("s", o.new_recovery_account) );
    const account_object& account_to_recover = _db.get_account( o.account_to_recover );
    time_point now = _db.head_block_time();
 
@@ -1440,9 +1564,14 @@ void change_recovery_account_evaluator::do_apply( const change_recovery_account_
 void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_chief( o.signatory ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -1478,9 +1607,14 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
 void connection_request_evaluator::do_apply( const connection_request_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -1510,7 +1644,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
    }
 
    const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
-   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, CONNECTION ) );
+   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
 
    if( req_itr == req_idx.end() && acc_itr == acc_idx.end() )      // New connection request 
    {
@@ -1518,7 +1652,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
          "Request doesn't exist, user must select to request connection with the account." );
       if( con_itr == con_idx.end() )      // No existing connection object.
       { 
-         FC_ASSERT( o.connection_type == CONNECTION,
+         FC_ASSERT( o.connection_type == connection_tier_type::CONNECTION,
             "First connection request must be of standard Connection type before elevation to higher levels." );
 
          _db.create< connection_request_object >( [&]( connection_request_object& cro )
@@ -1534,20 +1668,20 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
       {
          const connection_object& connection_obj = *con_itr;
 
-         auto friend_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, FRIEND ) );
-         auto comp_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, COMPANION ) );
+         auto friend_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::FRIEND ) );
+         auto comp_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::COMPANION ) );
 
-         FC_ASSERT( o.connection_type != CONNECTION,
+         FC_ASSERT( o.connection_type != connection_tier_type::CONNECTION,
             "Connection of this type already exists, should request a type increase." );
 
-         if( o.connection_type == FRIEND )
+         if( o.connection_type == connection_tier_type::FRIEND )
          {
             FC_ASSERT( friend_itr == con_idx.end(),
                "Friend level connection already exists." );
             FC_ASSERT( now > ( connection_obj.created + CONNECTION_REQUEST_DURATION ),
                "Friend Connection must wait one week from first connection." );
          }
-         else if( o.connection_type == COMPANION )
+         else if( o.connection_type == connection_tier_type::COMPANION )
          {
             FC_ASSERT( friend_itr != con_idx.end(),
                "Companion connection must follow a friend connection." );
@@ -1580,9 +1714,14 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
 void connection_accept_evaluator::do_apply( const connection_accept_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -1595,17 +1734,17 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
    switch( o.connection_type )
    {
-      case CONNECTION:
+      case connection_tier_type::CONNECTION:
       {
          public_key = account.connection_public_key;
       }
       break;
-      case FRIEND:
+      case connection_tier_type::FRIEND:
       {
          public_key = account.friend_public_key;
       }
       break;
-      case COMPANION:
+      case connection_tier_type::COMPANION:
       {
          public_key = account.companion_public_key;
       }
@@ -1620,7 +1759,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
    account_name_type account_a_name;
    account_name_type account_b_name;
 
-   if( account.id < req_account.id )  // Connection objects are sorted with lowest ID is account A.
+   if( account.id < req_account.id )         // Connection objects are sorted with lowest ID is account A.
    {
       account_a_name = account.name;
       account_b_name = req_account.name;
@@ -1635,7 +1774,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, o.connection_type ) );
 
    const auto& req_idx = _db.get_index< connection_request_index >().indices().get< by_account_req >();
-   auto req_itr = req_idx.find( boost::make_tuple( req_account, account ) );
+   auto req_itr = req_idx.find( boost::make_tuple( o.requesting_account, o.account ) );
 
    const account_following_object& a_following_set = _db.get_account_following( account_a_name );
    const account_following_object& b_following_set = _db.get_account_following( account_b_name );
@@ -1674,15 +1813,15 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
       _db.modify( a_following_set, [&]( account_following_object& afo )
       {
-         if( o.connection_type == CONNECTION )
+         if( o.connection_type == connection_tier_type::CONNECTION )
          {
             afo.connections.insert( account_b_name );
          }
-         else if( o.connection_type == FRIEND )
+         else if( o.connection_type == connection_tier_type::FRIEND )
          {
             afo.friends.insert( account_b_name );
          }
-         else if( o.connection_type == COMPANION )
+         else if( o.connection_type == connection_tier_type::COMPANION )
          {
             afo.companions.insert( account_b_name );
          }
@@ -1691,15 +1830,15 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
       _db.modify( b_following_set, [&]( account_following_object& afo )
       {
-         if( o.connection_type == CONNECTION )
+         if( o.connection_type == connection_tier_type::CONNECTION )
          {
             afo.connections.insert( account_a_name );
          }
-         else if( o.connection_type == FRIEND )
+         else if( o.connection_type == connection_tier_type::FRIEND )
          {
             afo.friends.insert( account_a_name );
          }
-         else if( o.connection_type == COMPANION )
+         else if( o.connection_type == connection_tier_type::COMPANION )
          {
             afo.companions.insert( account_a_name );
          }
@@ -1730,15 +1869,15 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
       {
          _db.modify( a_following_set, [&]( account_following_object& afo )
          {
-            if( o.connection_type == CONNECTION )
+            if( o.connection_type == connection_tier_type::CONNECTION )
             {
                afo.connections.erase( account_b_name );
             }
-            else if( o.connection_type == FRIEND )
+            else if( o.connection_type == connection_tier_type::FRIEND )
             {
                afo.friends.erase( account_b_name );
             }
-            else if( o.connection_type == COMPANION )
+            else if( o.connection_type == connection_tier_type::COMPANION )
             {
                afo.companions.erase( account_b_name );
             }
@@ -1747,15 +1886,15 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
          _db.modify( b_following_set, [&]( account_following_object& afo )
          {
-            if( o.connection_type == CONNECTION )
+            if( o.connection_type == connection_tier_type::CONNECTION )
             {
                afo.connections.erase( account_a_name );
             }
-            else if( o.connection_type == FRIEND )
+            else if( o.connection_type == connection_tier_type::FRIEND )
             {
                afo.friends.erase( account_a_name );
             }
-            else if( o.connection_type == COMPANION )
+            else if( o.connection_type == connection_tier_type::COMPANION )
             {
                afo.companions.erase( account_a_name );
             }
@@ -1780,9 +1919,14 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 void account_follow_evaluator::do_apply( const account_follow_operation& o )
 { try {
    const account_name_type& signed_for = o.follower;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -1815,13 +1959,13 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          if( follower.membership == NONE )     // Check for the presence of an ad bid on this follow.
          {
             const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
-            auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, FOLLOW_METRIC, o.following, o.following ) );
+            auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::FOLLOW_METRIC, o.following, o.following ) );
 
             while( bid_itr != bid_idx.end() &&
                bid_itr->provider == o.interface &&
-               bid_itr->metric == FOLLOW_METRIC &&
+               bid_itr->metric == ad_metric_type::FOLLOW_METRIC &&
                bid_itr->author == o.following &&
-               bid_itr->objective == o.following )    // Retrieves highest paying bids for this share by this interface.
+               to_string( bid_itr->objective ) == string( o.following ) )    // Retrieves highest paying bids for this share by this interface.
             {
                const ad_bid_object& bid = *bid_itr;
                const ad_audience_object& audience = _db.get_ad_audience( bid.bidder, bid.audience_id );
@@ -1901,9 +2045,14 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
 void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
 { try {
    const account_name_type& signed_for = o.follower;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -2026,9 +2175,14 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
 void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_officer( o.signatory ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -2059,7 +2213,7 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    FC_ASSERT( view_comment.id != vote_comment.id,
       "Viewed post and voted must must be different comments." );
 
-   FC_ASSERT( comment.net_votes >= ( comment_metrics.median_vote_count / 5 ),
+   FC_ASSERT( uint32_t( comment.net_votes ) >= ( comment_metrics.median_vote_count / 5 ),
       "Referred recent Post should have at least 20% of median number of votes." );
    FC_ASSERT( comment.view_count >= ( comment_metrics.median_view_count / 5 ),
       "Referred recent Post should have at least 20% of median number of views." );
@@ -2102,9 +2256,14 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
 void update_network_officer_evaluator::do_apply( const update_network_officer_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -2167,9 +2326,14 @@ void update_network_officer_evaluator::do_apply( const update_network_officer_op
 void network_officer_vote_evaluator::do_apply( const network_officer_vote_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -2177,7 +2341,11 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
 
    const account_object& voter = _db.get_account( o.account );
    const account_object& officer_account = _db.get_account( o.network_officer );
+   FC_ASSERT( officer_account.active, 
+      "Account: ${s} must be active to vote as officer.",("s", o.network_officer) );
    const network_officer_object& officer = _db.get_network_officer( o.network_officer );
+   FC_ASSERT( officer.active, 
+      "Account: ${s} must be active to vote as officer.",("s", o.network_officer) );
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
@@ -2265,21 +2433,35 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
 void update_executive_board_evaluator::do_apply( const update_executive_board_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
    const account_business_object& b = _db.get_account_business( signed_for );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    
    const account_object& account = _db.get_account( o.account );
    const account_object& executive = _db.get_account( o.executive );
+   FC_ASSERT( executive.active, 
+      "Account: ${s} must be active to update executive board.",("s", o.executive) );
    FC_ASSERT( o.executive == o.account || b.is_authorized_network( o.account, _db.get_account_permissions( o.account ) ),
       "Account is not authorized to update Executive board." );
    const governance_account_object& gov_account = _db.get_governance_account( o.executive );
+   FC_ASSERT( gov_account.active, 
+      "Account: ${s} must be have governance account active to update executive board.",("s", o.executive) );
    const interface_object& interface = _db.get_interface( o.executive );
+   FC_ASSERT( interface.active, 
+      "Account: ${s} must be have interface active to update executive board.",("s", o.executive) );
    const supernode_object& supernode = _db.get_supernode( o.executive );
+   FC_ASSERT( supernode.active, 
+      "Account: ${s} must be have supernode active to update executive board.",("s", o.executive) );
    asset stake = _db.get_staked_balance( account.name, SYMBOL_COIN );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
 
@@ -2295,8 +2477,6 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
       "Executive board requires chief executive officer.");
    FC_ASSERT( b.officers.size(), 
       "Executive board requires at least one officer." );
-
-   const executive_officer_set& officers = b.executive_board;
 
    if( exec_ptr != nullptr )      // Updating existing Executive board
    { 
@@ -2325,7 +2505,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          "Executive board does not exist for this account, set active to true.");
       FC_ASSERT( supernode.active && interface.active && gov_account.active, 
          "Executive board must have an active interface, supernode, and governance account");
-      FC_ASSERT( executive.membership == TOP_MEMBERSHIP, 
+      FC_ASSERT( executive.membership == membership_tier_type::TOP_MEMBERSHIP, 
          "Account must be a top level member to create an Executive board.");  
       FC_ASSERT( stake.amount >= 100*BLOCKCHAIN_PRECISION, 
          "Must have a minimum stake of 100 Core assets.");
@@ -2351,17 +2531,17 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          const network_officer_object& officer = *off_ptr;
          switch( officer.officer_type)
          {
-            case DEVELOPMENT: 
+            case network_officer_role_type::DEVELOPMENT: 
             {
                dev_check = true;
             }
             break;
-            case MARKETING: 
+            case network_officer_role_type::MARKETING: 
             {
                mar_check = true;
             }
             break;
-            case ADVOCACY: 
+            case network_officer_role_type::ADVOCACY: 
             {
                adv_check = true;
             } 
@@ -2380,23 +2560,25 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
             producer_check = true;
          }
          const account_object& off_account = _db.get_account( name );
+         FC_ASSERT( off_account.active, 
+            "Account: ${s} must be active to vote as officer.",("s", name) );
          const network_officer_object* off_ptr = _db.find_network_officer( name );
          if( off_ptr != nullptr )
          {
             const network_officer_object& officer = *off_ptr;
             switch( officer.officer_type )
             {
-               case DEVELOPMENT: 
+               case network_officer_role_type::DEVELOPMENT: 
                {
                   dev_check = true;
                }
                continue;
-               case MARKETING: 
+               case network_officer_role_type::MARKETING: 
                {
                   mar_check = true;
                }
                continue;
-               case ADVOCACY: 
+               case network_officer_role_type::ADVOCACY:
                {
                   adv_check = true;
                }
@@ -2416,23 +2598,25 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
             producer_check = true;
          }
          const account_object& off_account = _db.get_account( name );
+         FC_ASSERT( off_account.active, 
+            "Account: ${s} must be active to vote as officer.",("s", name) );
          const network_officer_object* off_ptr = _db.find_network_officer( name );
          if( off_ptr != nullptr )
          {
             const network_officer_object& officer = *off_ptr;
             switch( officer.officer_type )
             {
-               case DEVELOPMENT: 
+               case network_officer_role_type::DEVELOPMENT: 
                {
                   dev_check = true;
                }
                continue;
-               case MARKETING: 
+               case network_officer_role_type::MARKETING: 
                {
                   mar_check = true;
                }
                continue;
-               case ADVOCACY: 
+               case network_officer_role_type::ADVOCACY: 
                {
                   adv_check = true;
                }
@@ -2474,16 +2658,25 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
 void executive_board_vote_evaluator::do_apply( const executive_board_vote_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& voter = _db.get_account( o.account );
    const executive_board_object& executive = _db.get_executive_board( o.executive_board );
+   FC_ASSERT( executive.active, 
+      "Account: ${s} must be active to receive executive board vote.",("s", o.executive_board ) );
    const account_object& executive_account = _db.get_account( o.executive_board );
+   FC_ASSERT( executive_account.active, 
+      "Account: ${s} must be active to receive executive board vote.",("s", o.executive_board ) );
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
 
@@ -2553,17 +2746,22 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
 void update_governance_evaluator::do_apply( const update_governance_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    time_point now = _db.head_block_time();
    const account_object& account = _db.get_account( o.account );
    
-   FC_ASSERT( account.membership == TOP_MEMBERSHIP,
+   FC_ASSERT( account.membership == membership_tier_type::TOP_MEMBERSHIP,
       "Account must be a Top level member to create governance account" );
 
    const governance_account_object* gov_acc_ptr = _db.find_governance_account( o.account );
@@ -2614,10 +2812,15 @@ void update_governance_evaluator::do_apply( const update_governance_operation& o
 void subscribe_governance_evaluator::do_apply( const subscribe_governance_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -2625,7 +2828,6 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
    const governance_account_object& gov_account = _db.get_governance_account( o.governance_account );
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const producer_schedule_object& pso = _db.get_producer_schedule();
-   share_type voting_power = _db.get_voting_power( account );
    const auto& gov_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_governance >();
    auto itr = gov_idx.find( boost::make_tuple( o.account, gov_account.account ) );
 
@@ -2669,16 +2871,20 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
 void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   
    time_point now = _db.head_block_time();
-   const account_object& account = _db.get_account( o.account );
    const supernode_object* sup_ptr = _db.find_supernode( o.account );
 
    if( sup_ptr != nullptr )      // updating existing supernode
@@ -2774,10 +2980,15 @@ void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
 void update_interface_evaluator::do_apply( const update_interface_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -2838,15 +3049,20 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
 void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
+   
    time_point now = _db.head_block_time();
    asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
 
@@ -2910,7 +3126,7 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
          m.last_updated = now;
          m.mediator_bond = o.mediator_bond;
          m.last_escrow_from = account_name_type();
-         m.last_escrow_id = shared_string();
+         from_string( m.last_escrow_id, "" ); ;
       });
    } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -2919,10 +3135,15 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
 void create_community_enterprise_evaluator::do_apply( const create_community_enterprise_operation& o )
 { try {
    const account_name_type& signed_for = o.creator;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -2931,7 +3152,10 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
    const reward_fund_object& reward_fund = _db.get_reward_fund( o.daily_budget.symbol );
    const asset_currency_data_object& currency = _db.get_currency_data( o.daily_budget.symbol );
 
-   share_type daily_budget_total = ( BLOCK_REWARD.amount * BLOCKS_PER_DAY * COMMUNITY_FUND_REWARD_PERCENT) / PERCENT_100 ;
+   FC_ASSERT( currency.community_fund_reward_percent > 0,
+      "Daily Budget reward currency does not issue to Enterprise proposals." );
+
+   share_type daily_budget_total = ( currency.block_reward.amount * BLOCKS_PER_DAY * currency.community_fund_reward_percent) / PERCENT_100 ;
    FC_ASSERT( o.daily_budget.amount < daily_budget_total,
       "Daily Budget must specify a budget less than the total amount of funds available per day." );
    
@@ -2943,7 +3167,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
    FC_ASSERT( milestone_sum == PERCENT_100, 
       "Milestone Sum must equal 100 percent." );
    
-   if( o.proposal_type == FUNDING )
+   if( o.proposal_type == proposal_distribution_type::FUNDING )
    {
       uint16_t beneficiary_sum = 0;
       for( auto beneficiary : o.beneficiaries )
@@ -2953,17 +3177,18 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
       FC_ASSERT( beneficiary_sum == PERCENT_100, 
          "Beneficiary Sum must equal 100 percent." );
    }
-   else if( o.proposal_type == INVESTMENT )
+   else if( o.proposal_type == proposal_distribution_type::INVESTMENT )
    {
       asset_symbol_type inv_asset = *o.investment;
-      const asset_object& asset = _db.get_asset( inv_asset );
+      const asset_object& asset_obj = _db.get_asset( inv_asset );
+      FC_ASSERT( !asset_obj.is_market_issued(),
+         "Investment Asset cannot be market issued." );
    }
 
    shared_string enterprise_id;
    from_string( enterprise_id, o.enterprise_id );
 
-   const account_object& account = _db.get_account( o.creator );
-   const community_enterprise_object* ent_ptr = _db.find_community_enterprise( account.name, enterprise_id );
+   const community_enterprise_object* ent_ptr = _db.find_community_enterprise( o.creator, enterprise_id );
 
    if( ent_ptr != nullptr ) // Updating or removing existing proposal 
    { 
@@ -2981,7 +3206,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          FC_ASSERT( milestone_sum == PERCENT_100, 
             "Milestone Sum must equal 100 percent." );
 
-         if( o.proposal_type == COMPETITION )
+         if( o.proposal_type == proposal_distribution_type::COMPETITION )
          {
             FC_ASSERT( o.beneficiaries.size() == 0, 
                "Competition Proposal must not specifiy winner beneficiaries before starting new proposal." );
@@ -3023,7 +3248,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
       FC_ASSERT( o.begin  > ( now + fc::days(7) ), 
          "Begin time must be at least 7 days in the future." );
       
-      if( o.proposal_type == COMPETITION )
+      if( o.proposal_type == proposal_distribution_type::COMPETITION )
       {
          FC_ASSERT( o.beneficiaries.size() == 0, 
             "Competition Proposal must not specifiy winner beneficiaries before starting new proposal." );
@@ -3055,13 +3280,23 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          ceo.end = o.begin + fc::days( o.duration );
          ceo.expiration = ceo.end + fc::days(365);
          ceo.duration = o.duration;
+         ceo.approved_milestones = -1;
+         ceo.claimed_milestones = 0;
          ceo.daily_budget = o.daily_budget;
+         ceo.pending_budget = asset( 0, o.daily_budget.symbol );
+         ceo.total_distributed = asset( 0, o.daily_budget.symbol );
+
          for( auto mile : o.milestones )
          {
             shared_string description;
             from_string( description, mile.first );
             ceo.milestones.push_back( std::make_pair( description, mile.second ) );
          }
+
+         shared_string history;
+         from_string( history, "Milestone History: Initial Claim." );
+         ceo.milestone_history.push_back( history );
+
          if( o.investment.valid() )
          {
             ceo.investment = *o.investment;
@@ -3088,14 +3323,19 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
 void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_milestone_operation& o )
 { try {
    const account_name_type& signed_for = o.creator;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& creator = _db.get_account( o.creator );
+
    shared_string enterprise_id;
    from_string( enterprise_id, o.enterprise_id );
    
@@ -3107,7 +3347,6 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
 
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
    const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-   time_point now = _db.head_block_time();
    shared_string new_history;
    from_string( new_history, o.details );
 
@@ -3128,15 +3367,20 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
 void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_milestone_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+
    const account_object& account = _db.get_account( o.account );
-   const account_object& creator = _db.get_account( o.creator );
    shared_string enterprise_id;
    from_string( enterprise_id, o.enterprise_id );
 
@@ -3154,8 +3398,6 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
       
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-   time_point now = _db.head_block_time();
-   
    const auto& account_rank_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
    const auto& account_enterprise_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_enterprise >();
    auto account_rank_itr = account_rank_idx.find( boost::make_tuple( o.account, o.vote_rank ) );
@@ -3226,10 +3468,15 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
 void comment_evaluator::do_apply( const comment_operation& o )
 { try {
    const account_name_type& signed_for = o.author;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -3243,7 +3490,12 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
    if( o.interface.size() )
    {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
       const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
    
    const community_object* community_ptr = nullptr;
@@ -3271,14 +3523,18 @@ void comment_evaluator::do_apply( const comment_operation& o )
       
       switch( community.community_privacy )
       {
-         case OPEN_PUBLIC_COMMUNITY:
-         case EXCLUSIVE_PUBLIC_COMMUNITY:
+         case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+         case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
+         case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+         case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
          {
             FC_ASSERT( public_key_type( o.public_key ) != public_key_type(), 
                "Posts in Open and Public communities should not be encrypted." );
          }
-         case OPEN_PRIVATE_COMMUNITY:
-         case EXCLUSIVE_PRIVATE_COMMUNITY:
+         case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+         case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+         case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+         case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
          {
             FC_ASSERT( public_key_type( o.public_key ) == community.community_public_key, 
                "Posts in Private and Exclusive Communities must be encrypted with the community public key.");
@@ -3296,41 +3552,41 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
    switch( options.reach )
    {
-      case TAG_FEED:
-      case FOLLOW_FEED:
-      case MUTUAL_FEED:
+      case feed_reach_type::TAG_FEED:
+      case feed_reach_type::FOLLOW_FEED:
+      case feed_reach_type::MUTUAL_FEED:
       {
-         FC_ASSERT( o.public_key == public_key_type(), 
+         FC_ASSERT( public_key_type( o.public_key ) == public_key_type(), 
             "Follow, Mutual and Tag level posts should not be encrypted." );
       }
       break;
-      case CONNECTION_FEED:
+      case feed_reach_type::CONNECTION_FEED:
       {
-         FC_ASSERT( o.public_key == auth.connection_public_key, 
+         FC_ASSERT( public_key_type( o.public_key ) == auth.connection_public_key, 
             "Connection level posts must be encrypted with the account's Connection public key." );
       }
       break;
-      case FRIEND_FEED:
+      case feed_reach_type::FRIEND_FEED:
       {
-         FC_ASSERT( o.public_key == auth.friend_public_key, 
+         FC_ASSERT( public_key_type( o.public_key ) == auth.friend_public_key, 
             "Connection level posts must be encrypted with the account's Friend public key.");
       }
       break;
-      case COMPANION_FEED:
+      case feed_reach_type::COMPANION_FEED:
       {
-         FC_ASSERT( o.public_key == auth.companion_public_key, 
+         FC_ASSERT( public_key_type( o.public_key ) == auth.companion_public_key, 
             "Connection level posts must be encrypted with the account's Companion public key.");
       }
       break;
-      case COMMUNITY_FEED:
+      case feed_reach_type::COMMUNITY_FEED:
       {
          FC_ASSERT( community_ptr != nullptr, 
             "Community level posts must be made within a valid community.");
-         FC_ASSERT( o.public_key == community_ptr->community_public_key, 
+         FC_ASSERT( public_key_type( o.public_key ) == community_ptr->community_public_key, 
             "Community level posts must be encrypted with the community public key.");
       }
       break;
-      case NO_FEED:
+      case feed_reach_type::NO_FEED:
       break;
       default:
       {
@@ -3345,7 +3601,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          "Beneficiary \"${a}\" must exist.", ("a", b.account) );
    }
    
-   int128_t reward = 0;
+   share_type reward = 0;
    uint128_t weight = 0;
    uint128_t max_weight = 0;
    uint16_t new_commenting_power = auth.commenting_power;
@@ -3397,7 +3653,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          
          reward = ( voting_power.value * used_power) / PERCENT_100;
          
-         uint128_t old_power = std::max( uint128_t( root.comment_power ), uint128_t(0) );  // Record comment value before applying comment
+         uint128_t old_power = std::max( uint128_t( root.comment_power.value ), uint128_t(0) );  // Record comment value before applying comment
 
          _db.modify( root, [&]( comment_object& c )
          {
@@ -3405,7 +3661,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             c.comment_power += reward;
          });
 
-         uint128_t new_power = std::max( uint128_t( root.comment_power ), uint128_t(0) );   // record new net reward after applying comment
+         uint128_t new_power = std::max( uint128_t( root.comment_power.value ), uint128_t(0) );   // record new net reward after applying comment
          bool curation_reward_eligible = reward > 0 && root.cashout_time != fc::time_point::maximum() && root.allow_curation_rewards;
             
          if( curation_reward_eligible )
@@ -3496,6 +3752,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
             shared_string l;
             from_string( l, link );
             com.magnet.push_back( l );
+         }
+         for( auto& tag : o.tags )
+         {
+            com.tags.push_back( tag );
          }
          for( auto& b : options.beneficiaries )
          {
@@ -3668,7 +3928,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
                shared_string l;
                from_string( l, link );
                com.magnet.push_back( l );
-            } 
+            }
+            for( auto& tag : o.tags )
+            {
+               com.tags.push_back( tag );
+            }
             if( o.language.size() ) 
             {
                from_string( com.language, o.language );
@@ -3704,7 +3968,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.deleted = true;               // deletes comment, nullifying all possible information.
             com.last_updated = fc::time_point::min();
             com.active = fc::time_point::min();
-            com.rating = ADULT;
+            com.rating = 1;
             com.community = community_name_type();
             com.reach = NO_FEED;
             from_string( com.json, "" );  
@@ -3751,10 +4015,15 @@ struct comment_options_extension_visitor
 void message_evaluator::do_apply( const message_operation& o )
 { try {
    const account_name_type& signed_for = o.sender;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -3777,7 +4046,7 @@ void message_evaluator::do_apply( const message_operation& o )
    }
 
    const auto& connection_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
-   auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, CONNECTION ) );
+   auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
 
    FC_ASSERT( con_itr != connection_idx.end(), 
       "Cannot send message: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
@@ -3813,10 +4082,15 @@ void message_evaluator::do_apply( const message_operation& o )
 void vote_evaluator::do_apply( const vote_operation& o )
 { try {
    const account_name_type& signed_for = o.voter;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -3839,11 +4113,21 @@ void vote_evaluator::do_apply( const vote_operation& o )
          "User ${u} is not authorized to interact with posts in the community ${b}.",("b", comment.community)("u", voter.name));
    }
 
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+   }
+
    const reward_fund_object& reward_fund = _db.get_reward_fund( comment.reward_currency );
    auto curve = reward_fund.curation_reward_curve;
 
    const auto& comment_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
-   auto itr = comment_vote_idx.find( std::make_tuple( comment.id, voter.id ) );
+   auto itr = comment_vote_idx.find( std::make_tuple( comment.id, voter.name ) );
 
    int64_t elapsed_seconds = (now - voter.last_vote_time).to_seconds();
    FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL.to_seconds(), 
@@ -3862,11 +4146,11 @@ void vote_evaluator::do_apply( const vote_operation& o )
    FC_ASSERT( used_power <= current_power, 
       "Account does not have enough power to vote." );
 
-   int128_t voting_power = _db.get_voting_power( o.voter ).value;    // Gets the user's voting power from their Equity and Staked coin balances
-   int128_t abs_reward = ( voting_power * used_power ) / PERCENT_100;
+   share_type voting_power = _db.get_voting_power( o.voter );    // Gets the user's voting power from their Equity and Staked coin balances
+   share_type abs_reward = ( voting_power * used_power ) / PERCENT_100;
    FC_ASSERT( abs_reward > 0 || o.weight == 0, 
       "Voting weight is too small, please accumulate more voting power." );
-   int128_t reward = o.weight < 0 ? -abs_reward : abs_reward; // Determines the sign of abs_reward for upvote and downvote
+   share_type reward = o.weight < 0 ? -abs_reward : abs_reward; // Determines the sign of abs_reward for upvote and downvote
 
    const comment_object& root = _db.get( comment.root_comment );
 
@@ -3884,7 +4168,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.post_vote_count++;
       });
 
-      uint128_t old_power = std::max( uint128_t(comment.vote_power), uint128_t(0));
+      uint128_t old_power = std::max( uint128_t(comment.vote_power.value ), uint128_t(0));
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -3900,7 +4184,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          } 
       });
 
-      uint128_t new_power = std::max( uint128_t(comment.vote_power), uint128_t(0));
+      uint128_t new_power = std::max( uint128_t(comment.vote_power.value ), uint128_t(0));
 
       /** this verifies uniqueness of voter
        *
@@ -3927,6 +4211,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
          cv.reward = reward;
          cv.vote_percent = o.weight;
          cv.last_updated = now;
+         if( o.interface.size() )
+         {
+            cv.interface = o.interface;
+         }
 
          bool curation_reward_eligible = reward > 0 && comment.cashout_time != fc::time_point::maximum() && comment.allow_curation_rewards;
          
@@ -3996,11 +4284,11 @@ void vote_evaluator::do_apply( const vote_operation& o )
       if( voter.membership == NONE )     // Check for the presence of an ad bid on this vote.
       {
          const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
-         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, VOTE_METRIC, comment.author, comment.permlink ) );
+         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::VOTE_METRIC, comment.author, comment.permlink ) );
 
          while( bid_itr != bid_idx.end() &&
             bid_itr->provider == o.interface &&
-            bid_itr->metric == VOTE_METRIC &&
+            bid_itr->metric == ad_metric_type::VOTE_METRIC &&
             bid_itr->author == comment.author &&
             bid_itr->objective == comment.permlink )    // Retrieves highest paying bids for this vote by this interface.
          {
@@ -4030,7 +4318,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.last_vote_time = now;                          // Update last vote time
       });
 
-      uint128_t old_power = std::max( uint128_t( comment.vote_power ), uint128_t(0));  // Record net reward before new vote is applied
+      uint128_t old_power = std::max( uint128_t( comment.vote_power.value ), uint128_t(0));  // Record net reward before new vote is applied
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -4054,7 +4342,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
             c.net_votes -= 2;
       });
 
-      uint128_t new_power = std::max( uint128_t( comment.vote_power ), uint128_t(0));    // Record net reward after new vote is applied
+      uint128_t new_power = std::max( uint128_t( comment.vote_power.value ), uint128_t(0));    // Record net reward after new vote is applied
 
       _db.modify( *itr, [&]( comment_vote_object& cv )
       {
@@ -4120,10 +4408,15 @@ void vote_evaluator::do_apply( const vote_operation& o )
 void view_evaluator::do_apply( const view_operation& o )
 { try {
    const account_name_type& signed_for = o.viewer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -4180,7 +4473,7 @@ void view_evaluator::do_apply( const view_operation& o )
    FC_ASSERT( used_power <= current_power, 
       "Account does not have enough power to view." );
    
-   int128_t reward = ( vp.value * used_power ) / PERCENT_100;
+   share_type reward = ( vp.value * used_power ) / PERCENT_100;
    const comment_object& root = _db.get( comment.root_comment );       // If root post, gets the posts own object.
 
    if( itr == comment_view_idx.end() )   // New view is being added 
@@ -4195,7 +4488,7 @@ void view_evaluator::do_apply( const view_operation& o )
 
       if( supernode_ptr != nullptr )
       {
-         auto supernode_view_itr = comment_view_idx.lower_bound( std::make_tuple( o.supernode, viewer.name ) );
+         auto supernode_view_itr = supernode_view_idx.lower_bound( std::make_tuple( o.supernode, viewer.name ) );
          if( supernode_view_itr == supernode_view_idx.end() )   // No view exists
          {
             _db.adjust_view_weight( *supernode_ptr, vp, true );    // Adds voting power to the supernode view weight once per day per user. 
@@ -4207,8 +4500,7 @@ void view_evaluator::do_apply( const view_operation& o )
       }
       if( interface_ptr != nullptr )
       {
-         auto interface_view_itr = comment_view_idx.lower_bound( std::make_tuple( o.interface, viewer.name ) );
-
+         auto interface_view_itr = interface_view_idx.lower_bound( std::make_tuple( o.interface, viewer.name ) );
          if( interface_view_itr == interface_view_idx.end() )   // No view exists
          {
             _db.adjust_interface_users( *interface_ptr, true );
@@ -4225,7 +4517,7 @@ void view_evaluator::do_apply( const view_operation& o )
          a.last_view_time = now;
       });
 
-      uint128_t old_power = std::max( uint128_t( comment.view_power ), uint128_t(0) );  // Record reward value before applying view transaction
+      uint128_t old_power = std::max( uint128_t( comment.view_power.value ), uint128_t(0) );  // Record reward value before applying view transaction
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -4234,7 +4526,7 @@ void view_evaluator::do_apply( const view_operation& o )
          c.view_count++;
       });
 
-      uint128_t new_power = std::max( uint128_t( comment.view_power ), uint128_t(0) );   // record new net reward after viewing
+      uint128_t new_power = std::max( uint128_t( comment.view_power.value ), uint128_t(0) );   // record new net reward after viewing
 
       if( community_ptr != nullptr )
       {
@@ -4243,8 +4535,6 @@ void view_evaluator::do_apply( const view_operation& o )
             bo.view_count++;
          });
       }
-
-      share_type max_view_weight = 0;
 
       _db.create< comment_view_object >( [&]( comment_view_object& cv )
       {
@@ -4314,11 +4604,11 @@ void view_evaluator::do_apply( const view_operation& o )
       if( viewer.membership == NONE )     // Check for the presence of an ad bid on this view.
       {
          const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
-         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, VIEW_METRIC, comment.author, comment.permlink ) );
+         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::VIEW_METRIC, comment.author, comment.permlink ) );
 
          while( bid_itr != bid_idx.end() &&
             bid_itr->provider == o.interface &&
-            bid_itr->metric == VIEW_METRIC &&
+            bid_itr->metric == ad_metric_type::VIEW_METRIC &&
             bid_itr->author == comment.author &&
             bid_itr->objective == comment.permlink )    // Retrieves highest paying bids for this view by this interface.
          {
@@ -4338,7 +4628,7 @@ void view_evaluator::do_apply( const view_operation& o )
    else  // View is being removed
    {
       FC_ASSERT( !o.viewed, 
-         "Must select view = false to remove existing view" );
+         "Must select viewed = false to remove existing view" );
       
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -4364,10 +4654,15 @@ void view_evaluator::do_apply( const view_operation& o )
 void share_evaluator::do_apply( const share_operation& o )
 { try {
    const account_name_type& signed_for = o.sharer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -4388,6 +4683,16 @@ void share_evaluator::do_apply( const share_operation& o )
          "User ${u} is not authorized to interact with posts in the community ${b}.",("b", comment.community)("u", sharer.name));
    }
 
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+   }
+
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund( comment.reward_currency );
    auto curve = reward_fund.curation_reward_curve;
@@ -4395,9 +4700,6 @@ void share_evaluator::do_apply( const share_operation& o )
    
    const auto& comment_share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
    auto itr = comment_share_idx.find( std::make_tuple( comment.id, sharer.name ) );
-
-   const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_comment_account >();
-   auto blog_itr = blog_idx.find( boost::make_tuple( comment.id, sharer.name ) );
 
    int64_t elapsed_seconds = ( now - sharer.last_share_time ).to_seconds();
    FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL.to_seconds(), 
@@ -4407,13 +4709,13 @@ void share_evaluator::do_apply( const share_operation& o )
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any sharing power." );
 
-   int16_t max_share_denom = median_props.share_reserve_rate * (median_props.share_recharge_time.count() / fc::days(1).count);    // Weights the sharing power with the network reserve ratio and recharge time
+   int16_t max_share_denom = median_props.share_reserve_rate * (median_props.share_recharge_time.count() / fc::days(1).count() );    // Weights the sharing power with the network reserve ratio and recharge time
    FC_ASSERT( max_share_denom > 0 );
    int16_t used_power = (current_power + max_share_denom - 1) / max_share_denom;
    FC_ASSERT( used_power <= current_power,   
       "Account does not have enough power to share." );
    share_type vp = _db.get_voting_power( sharer );         // Gets the user's voting power from their Equity and Staked coin balances to weight the share.
-   int128_t reward = ( vp.value * used_power ) / PERCENT_100;
+   share_type reward = ( vp.value * used_power ) / PERCENT_100;
    const comment_object& root = _db.get( comment.root_comment );       // If root post, gets the posts own object.
 
    if( itr == comment_share_idx.end() )   // New share is being added to emtpy index
@@ -4429,7 +4731,7 @@ void share_evaluator::do_apply( const share_operation& o )
          a.last_share_time = now;
       });
 
-      uint128_t old_power = std::max( uint128_t( comment.share_power ), uint128_t(0) );  // Record reward value before applying share transaction
+      uint128_t old_power = std::max( uint128_t( comment.share_power.value ), uint128_t(0) );  // Record reward value before applying share transaction
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -4446,13 +4748,17 @@ void share_evaluator::do_apply( const share_operation& o )
          });
       }
 
-      uint128_t new_power = std::max( uint128_t( comment.share_power ), uint128_t(0));   // record new net reward after sharing
+      uint128_t new_power = std::max( uint128_t( comment.share_power.value ), uint128_t(0));   // record new net reward after sharing
 
       // Create comment share object for tracking share.
       _db.create< comment_share_object >( [&]( comment_share_object& cs )    
       {
          cs.sharer = sharer.name;
          cs.comment = comment.id;
+         if( o.interface.size() )
+         {
+            cs.interface = o.interface;
+         }
          cs.reward = reward;
          cs.created = now;
 
@@ -4528,11 +4834,11 @@ void share_evaluator::do_apply( const share_operation& o )
       if( sharer.membership == NONE )     // Check for the presence of an ad bid on this share.
       {
          const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
-         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, SHARE_METRIC, comment.author, comment.permlink ) );
+         auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::SHARE_METRIC, comment.author, comment.permlink ) );
 
          while( bid_itr != bid_idx.end() &&
             bid_itr->provider == o.interface &&
-            bid_itr->metric == SHARE_METRIC &&
+            bid_itr->metric == ad_metric_type::SHARE_METRIC &&
             bid_itr->author == comment.author &&
             bid_itr->objective == comment.permlink )    // Retrieves highest paying bids for this share by this interface.
          {
@@ -4587,21 +4893,32 @@ void share_evaluator::do_apply( const share_operation& o )
 void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
 { try {
    const account_name_type& signed_for = o.moderator;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    
    const account_object& moderator = _db.get_account( o.moderator );
    const account_object& author = _db.get_account( o.author );
+   FC_ASSERT( author.active, 
+      "Author: ${s} must be active to broadcast transaction.",("s", o.author) );
 
    if( o.interface.size() )
    {
       const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
       const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
    
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
@@ -4619,14 +4936,14 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       FC_ASSERT( community_member_ptr != nullptr || gov_ptr != nullptr,
          "Account must be a community moderator or governance account to create moderation tag." );
 
-      if( community_member_ptr == nullptr )     // no community, must be governance account
+      if( community_member_ptr == nullptr )     // No community, must be governance account.
       {
          FC_ASSERT( gov_ptr != nullptr,
             "Account must be a governance account to create moderation tag." );
          FC_ASSERT( gov_ptr->account == o.moderator,
             "Account must be a governance account to create moderation tag." );
       }
-      else if( gov_ptr == nullptr )         // not governance account, must be moderator
+      else if( gov_ptr == nullptr )         // Not governance account, must be moderator.
       {
          FC_ASSERT( community_member_ptr != nullptr,
             "Account must be a community moderator to create moderation tag." );
@@ -4639,9 +4956,6 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
             "Account must be a community moderator or governance account to create moderation tag." );
       } 
    }
-  
-   FC_ASSERT( o.rating >= comment.rating,
-      "Moderation Tag rating ${n} should be equal to or greater than author's rating ${r}.", ("n", o.rating)("r", comment.rating) );
    
    const auto& mod_idx = _db.get_index< moderation_tag_index >().indices().get< by_moderator_comment >();
    auto mod_itr = mod_idx.find( boost::make_tuple( o.moderator, comment.id ) );
@@ -4702,18 +5016,23 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
-//==========================//
+//==============================//
 // === Community Evaluators === //
-//==========================//
+//==============================//
 
 
 void community_create_evaluator::do_apply( const community_create_operation& o )
 { try {
    const account_name_type& signed_for = o.founder;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -4773,15 +5092,20 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
 void community_update_evaluator::do_apply( const community_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const community_object& community = _db.get_community( o.community ); 
-   const account_object& account = _db.get_account( o.account );
+
+   const community_object& community = _db.get_community( o.community );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( now > ( community.last_community_update + MIN_COMMUNITY_UPDATE_INTERVAL ),
@@ -4813,6 +5137,7 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
       from_string( bo.url, o.url );
       bo.community_public_key = public_key_type( o.community_public_key );
       bo.last_community_update = now;
+      bo.active = o.active;
 
       if( pinned_post_ptr != nullptr )
       {
@@ -4825,17 +5150,26 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
 void community_vote_mod_evaluator::do_apply( const community_vote_mod_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    const account_object& voter = _db.get_account( o.account );
    const account_object& moderator_account = _db.get_account( o.moderator );
+   FC_ASSERT( moderator_account.active, 
+      "Account: ${s} must be active to be voted as moderator.",("s", o.moderator) );
    const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active for moderator voting.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
 
    if( o.approved )
@@ -4905,16 +5239,23 @@ void community_vote_mod_evaluator::do_apply( const community_vote_mod_operation&
 void community_add_mod_evaluator::do_apply( const community_add_mod_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
    const account_object& moderator = _db.get_account( o.moderator );
    const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active for moderator voting.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
 
@@ -4966,16 +5307,23 @@ void community_add_mod_evaluator::do_apply( const community_add_mod_operation& o
 void community_add_admin_evaluator::do_apply( const community_add_admin_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
    const account_object& administrator = _db.get_account( o.admin ); 
-   const community_object& community = _db.get_community( o.community ); 
+   const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active for adding admins.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
 
@@ -5023,16 +5371,25 @@ void community_add_admin_evaluator::do_apply( const community_add_admin_operatio
 void community_transfer_ownership_evaluator::do_apply( const community_transfer_ownership_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_chief( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active for ownership transfer.",("s", o.community) );
    const account_object& account = _db.get_account( o.account );
    const account_object& new_founder = _db.get_account( o.new_founder );
+   FC_ASSERT( new_founder.active, 
+      "Account: ${s} must be active to become the new community founder.",("s", o.new_founder) );
    time_point now = _db.head_block_time();
    const community_member_object& community_member = _db.get_community_member( o.community );
 
@@ -5066,21 +5423,28 @@ void community_transfer_ownership_evaluator::do_apply( const community_transfer_
 void community_join_request_evaluator::do_apply( const community_join_request_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account ); 
-   const community_object& community = _db.get_community( o.community ); 
-   FC_ASSERT( community.community_privacy != EXCLUSIVE_PRIVATE_COMMUNITY, 
+   const account_object& account = _db.get_account( o.account );
+   const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active,
+      "Community: ${s} must be active for join requests.",("s", o.community) );
+   FC_ASSERT( community.community_privacy != EXCLUSIVE_PRIVATE_COMMUNITY,
       "Account: ${a} cannot request to join an Exclusive community: ${b} Membership is by invitation only.", ("a", o.account)("b", o.community));
-   const community_member_object& community_member = _db.get_community_member( o.community ); 
-   FC_ASSERT( !community_member.is_member( account.name ), 
-      "Account: ${a} is already a member of the community: ${b}.", ("a", o.account)("b", o.community)); 
-   FC_ASSERT( community_member.is_authorized_request( account.name ), 
+   const community_member_object& community_member = _db.get_community_member( o.community );
+   FC_ASSERT( !community_member.is_member( account.name ),
+      "Account: ${a} is already a member of the community: ${b}.", ("a", o.account)("b", o.community));
+   FC_ASSERT( community_member.is_authorized_request( account.name ),
       "Account: ${a} is not authorised to request to join the community: ${b}.", ("a", o.account)("b", o.community));
    time_point now = _db.head_block_time();
    const auto& req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
@@ -5111,20 +5475,27 @@ void community_join_request_evaluator::do_apply( const community_join_request_op
 void community_join_invite_evaluator::do_apply( const community_join_invite_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account ); 
-   const account_object& member = _db.get_account( o.member ); 
+   const account_object& account = _db.get_account( o.account );
+   const account_object& member = _db.get_account( o.member );
    const community_object& community = _db.get_community( o.community );
-   const community_member_object& community_member = _db.get_community_member( o.community ); 
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active for join invitations.",("s", o.community) );
+   const community_member_object& community_member = _db.get_community_member( o.community );
    FC_ASSERT( !community_member.is_member( member.name ), 
       "Account: ${a} is already a member of the community: ${b}.", ("a", o.member)("b", o.community));
-   FC_ASSERT( community_member.is_authorized_invite( account.name ), 
+   FC_ASSERT( community_member.is_authorized_invite( account.name ),
       "Account: ${a} is not authorised to send community: ${b} join invitations.", ("a", o.account)("b", o.community));
 
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.member );
@@ -5152,6 +5523,7 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
          from_string( bjio.message, o.message );
          bjio.expiration = now + CONNECTION_REQUEST_DURATION;
       });
+
       _db.create< community_member_key_object >( [&]( community_member_key_object& bmko )
       {
          bmko.account = account.name;
@@ -5175,16 +5547,23 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
 void community_join_accept_evaluator::do_apply( const community_join_accept_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account ); 
    const account_object& member = _db.get_account( o.member );
    const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active for join acceptance.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
 
@@ -5194,9 +5573,7 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
       "Account: ${a} is not authorized to accept join requests to the community: ${b}.", ("a", o.account)("b", o.community));    // Ensure Account is a moderator.
 
    const auto& req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
-   const auto& key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
    auto req_itr = req_idx.find( std::make_tuple( o.member, o.community ) );
-   auto key_itr = key_idx.find( std::make_tuple( o.member, o.community ) );
 
    FC_ASSERT( req_itr != req_idx.end(),
       "Community join request does not exist.");    // Ensure Request exists
@@ -5208,6 +5585,7 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
          bmo.members.insert( member.name );
          bmo.last_updated = now;
       });
+
       _db.create< community_member_key_object >( [&]( community_member_key_object& bmko )
       {
          bmko.account = account.name;
@@ -5216,6 +5594,7 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
          bmko.encrypted_community_key = encrypted_keypair_type( member.secure_public_key, community.community_public_key, o.encrypted_community_key );
       });
    }
+
    _db.remove( *req_itr );
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -5223,15 +5602,23 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
 void community_invite_accept_evaluator::do_apply( const community_invite_accept_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+
    const account_object& account = _db.get_account( o.account );
    const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active for invite acceptance.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
 
@@ -5242,6 +5629,9 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
    FC_ASSERT( itr != inv_idx.end(),
       "Community join invitation does not exist.");   // Ensure Invitation exists
    const community_join_invite_object& invite = *itr;
+
+   const auto& key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
+   auto key_itr = key_idx.find( std::make_tuple( o.account, o.community ) );
 
    FC_ASSERT( community_member.is_authorized_invite( invite.account ), 
       "Account: ${a} is no longer authorised to send community: ${b} join invitations.", ("a", invite.account)("b", o.community));  // Ensure inviting account is still authorised to send invitations
@@ -5254,6 +5644,11 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
          bmo.last_updated = now;
       });
    }
+   else
+   {
+      _db.remove( *key_itr );
+   }
+   
    _db.remove( invite );
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -5261,16 +5656,23 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
 void community_remove_member_evaluator::do_apply( const community_remove_member_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
    const account_object& member = _db.get_account( o.member );
    const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active removing members.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
 
@@ -5309,16 +5711,23 @@ void community_remove_member_evaluator::do_apply( const community_remove_member_
 void community_blacklist_evaluator::do_apply( const community_blacklist_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
+   
    const account_object& member = _db.get_account( o.member );
    const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active for blacklist updating.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
    
@@ -5351,16 +5760,23 @@ void community_blacklist_evaluator::do_apply( const community_blacklist_operatio
 void community_subscribe_evaluator::do_apply( const community_subscribe_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
    const account_following_object& account_following = _db.get_account_following( o.account );
    const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active to subscribe.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
 
@@ -5440,18 +5856,25 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
 
 void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
 { try {
-   const account_name_type& signed_for = o.author;
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    time_point now = _db.head_block_time();
-   const account_object& account = _db.get_account( o.account );
    const account_object& author = _db.get_account( o.author );
+
+   FC_ASSERT( author.active, 
+      "Author: ${s} must be active for content to be used as ad creative.",("s", o.author) );
 
    shared_string creative_id;
    from_string( creative_id, o.creative_id );
@@ -5461,7 +5884,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
 
    switch( o.format_type )
    {
-      case STANDARD_FORMAT:
+      case ad_format_type::STANDARD_FORMAT:
       {
          const comment_object& creative_obj = _db.get_comment( o.author, o.objective );
          FC_ASSERT( creative_obj.root_comment == true,
@@ -5476,7 +5899,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must not be a product post" );
       }
       break;
-      case PREMIUM_FORMAT:
+      case ad_format_type::PREMIUM_FORMAT:
       {
          const comment_object& creative_obj = _db.get_comment( o.author, o.objective );
          FC_ASSERT( creative_obj.root_comment == true,
@@ -5491,9 +5914,9 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must not be a product post" );
       }
       break;
-      case PRODUCT_FORMAT:
+      case ad_format_type::PRODUCT_FORMAT:
       {
-         const comment_object& creative_obj = _db.get_comment( o.author, o.objective );
+         const comment_object& creative_obj = _db.get_comment( o.author, o.objective );     // TODO: Product object selection
          FC_ASSERT( creative_obj.root_comment == true,
             "Creative comment must be a root comment" );
          FC_ASSERT( creative_obj.deleted == false,
@@ -5506,29 +5929,30 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must be a product post" );
       }
       break;
-      case LINK_FORMAT:
+      case ad_format_type::LINK_FORMAT:
       {
          validate_url( o.objective );
       }
       break;
-      case ACCOUNT_FORMAT:
+      case ad_format_type::ACCOUNT_FORMAT:
       {
          const account_object& creative_obj = _db.get_account( account_name_type( o.objective ) );
          FC_ASSERT( creative_obj.active,
             "Creative account is inactive." );
       }
       break;
-      case COMMUNITY_FORMAT:
+      case ad_format_type::COMMUNITY_FORMAT:
       {
          const community_object& creative_obj = _db.get_community( community_name_type( o.objective ) );
          FC_ASSERT( creative_obj.active,
             "Creative community is inactive and cannot be selected." );
       }
       break;
-      
-      case ASSET_FORMAT:
+      case ad_format_type::ASSET_FORMAT:
       {
          const asset_object& creative_obj = _db.get_asset( asset_symbol_type( o.objective ) );
+         FC_ASSERT( creative_obj.symbol == asset_symbol_type( o.objective ),
+            "Creative Asset is inactive and cannot be selected." );
       }
       break;
       default:
@@ -5553,7 +5977,6 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
          aco.created = now;
          aco.last_updated = now;
       });
-
    }
    else  // Creative exists, editing
    {
@@ -5573,10 +5996,15 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
 void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -5657,10 +6085,15 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
 void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
 { try {
    const account_name_type& signed_for = o.provider;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -5674,6 +6107,9 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
    shared_string audience_id;
    from_string( audience_id, o.audience_id );
    const ad_audience_object& audience = _db.get_ad_audience( provider.name, audience_id );
+   FC_ASSERT( audience.active, 
+      "Audience: ${s} must be active to broadcast transaction.",("s", o.audience_id) );
+
    time_point now = _db.head_block_time();
 
    const auto& inventory_idx = _db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
@@ -5729,10 +6165,15 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
 void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -5792,10 +6233,15 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
 void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 { try {
    const account_name_type& signed_for = o.bidder;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      const account_object& signatory = _db.get_account( o.signatory );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
@@ -6027,15 +6473,22 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 void transfer_evaluator::do_apply( const transfer_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& from_account = _db.get_account( o.from );
    const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to receive transfer.",("s", o.to) );
    asset liquid = _db.get_liquid_balance( from_account.name, o.amount.symbol );
 
    FC_ASSERT( liquid >= o.amount, 
@@ -6046,7 +6499,7 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
 
-   if( asset_obj.asset_type == UNIQUE_ASSET )
+   if( asset_obj.asset_type == asset_property_type::UNIQUE_ASSET )
    {
       FC_ASSERT( o.amount.amount == BLOCKCHAIN_PRECISION,
          "Unique asset must be transferred as a single unit asset." );
@@ -6106,21 +6559,27 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
 void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
 { try {
    const account_name_type& signed_for = o.to;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& from_account = _db.get_account( o.from );
-   const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to receive transfer request.",("s", o.from) );
    time_point now = _db.head_block_time();
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
 
-   if( asset_obj.asset_type == UNIQUE_ASSET )
+   if( asset_obj.asset_type == asset_property_type::UNIQUE_ASSET )
    {
       FC_ASSERT( o.amount.amount == BLOCKCHAIN_PRECISION, 
          "Unique asset must be transferred as a single unit asset." );
@@ -6174,9 +6633,14 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
 void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -6185,13 +6649,15 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
    from_string( request_id, o.request_id );
    const account_object& from_account = _db.get_account( o.from );
    const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to receive transfer.",("s", o.to) );
    const transfer_request_object& request = _db.get_transfer_request( o.to, request_id );
    const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
 
-   if( asset_obj.asset_type == UNIQUE_ASSET )
+   if( asset_obj.asset_type == asset_property_type::UNIQUE_ASSET )
    {
       FC_ASSERT( request.amount.amount == BLOCKCHAIN_PRECISION,
          "Unique asset must be transferred as a single unit asset." );
@@ -6210,6 +6676,11 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
          "Account does not have sufficient funds for transfer." );
       _db.adjust_liquid_balance( request.from, -request.amount );
       _db.adjust_liquid_balance( request.to, request.amount );
+
+      _db.modify( from_account, [&]( account_object& a )
+      {
+         a.last_transfer_time = now;
+      });
    }
    else
    {
@@ -6221,9 +6692,14 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
 void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
-   if( o.signatory != o.get_creator_name() )
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -6231,6 +6707,8 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
 
    const account_object& from_account = _db.get_account( o.from );
    const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to receive transfer.",("s", o.to) );
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
@@ -6319,16 +6797,22 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
 void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_request_operation& o )
 { try {
    const account_name_type& signed_for = o.to;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    const account_object& from_account = _db.get_account( o.from );
-   const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to receive transfer request.",("s", o.from) );
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
@@ -6401,21 +6885,27 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
 void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_accept_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to receive transfer.",("s", o.to) );
    const account_object& from_account = _db.get_account( o.from );
    shared_string request_id;
    from_string( request_id, o.request_id );
    const transfer_recurring_request_object& request = _db.get_transfer_recurring_request( to_account.name, request_id );
    const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
-   time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
    asset from_liquid = _db.get_liquid_balance( request.from, request.amount.symbol );
@@ -6467,9 +6957,14 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
 void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_officer( o.signatory ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -6528,9 +7023,14 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
 void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -6595,9 +7095,14 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
 void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -6616,7 +7121,7 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 
    if( !from_account.mined && o.amount.symbol == SYMBOL_COIN )
    {
-      asset min_stake = asset( median_props.account_creation_fee * 10, SYMBOL_COIN );
+      asset min_stake = median_props.account_creation_fee * 10;
       FC_ASSERT( stake >= min_stake,
          "Account registered by another account requires 10x account creation before it can be powered down." );
    }
@@ -6670,9 +7175,14 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -6738,9 +7248,14 @@ void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operatio
 void transfer_to_savings_evaluator::do_apply( const transfer_to_savings_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -6762,15 +7277,22 @@ void transfer_to_savings_evaluator::do_apply( const transfer_to_savings_operatio
 void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active,
+      "Account: ${s} must be active to withdraw savings balance to.",("s", o.to) );
    const account_object& from_account = _db.get_account( o.from );
    time_point now = _db.head_block_time();
 
@@ -6839,18 +7361,24 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
 void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 { try {
    const account_name_type& signed_for = o.delegator;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_balance_object& delegator_balance = _db.get_account_balance( o.delegator, o.amount.symbol );
-   const account_balance_object& delegatee_balance = _db.get_account_balance( o.delegatee, o.amount.symbol );
    const account_object& delegator_account = _db.get_account( o.delegator );
    const account_object& delegatee_account = _db.get_account( o.delegatee );
+   FC_ASSERT( delegatee_account.active, 
+      "Account: ${s} must be active to receive delegated balance.",("s", o.delegatee) );
+   const account_balance_object& delegator_balance = _db.get_account_balance( o.delegator, o.amount.symbol );
    time_point now = _db.head_block_time();
    const asset_delegation_object* delegation_ptr = _db.find_asset_delegation( o.delegator, o.delegatee, o.amount.symbol );
 
@@ -6925,9 +7453,14 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -6942,7 +7475,11 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
       "The escrow expiration must be after head block time." );
 
    const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to begin escrow transfer.",("s", o.to) );
    const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to begin escrow transfer.",("s", o.from) );
    asset liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
 
    FC_ASSERT( liquid >= o.amount,
@@ -6995,9 +7532,14 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7008,11 +7550,12 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
-
-   const account_object& to_account = _db.get_account( escrow.to );
-   const account_object& from_account = _db.get_account( escrow.from );
    const account_object& mediator_account = _db.get_account( o.mediator );
+   FC_ASSERT( mediator_account.active, 
+      "Account: ${s} must be active to be assigned to escrow transfer.",("s", o.mediator) );
    const mediator_object& mediator_obj = _db.get_mediator( o.mediator );
+   FC_ASSERT( mediator_obj.active, 
+      "Mediator: ${s} must be active to be assigned to escrow transfer.",("s", o.mediator) );
 
    asset liquid = _db.get_liquid_balance( o.account, escrow.payment.symbol );
    // Escrow bond is a percentage paid as security in the event of dispute, and can be forfeited.
@@ -7090,9 +7633,14 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7102,8 +7650,6 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
    from_string( escrow_id, o.escrow_id );
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
-   const account_object& to_account = _db.get_account( escrow.to );
-   const account_object& from_account = _db.get_account( escrow.from );
 
    time_point now = _db.head_block_time();
 
@@ -7124,9 +7670,14 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
 void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7136,10 +7687,6 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
    from_string( escrow_id, o.escrow_id );
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
-   const account_object& to_account = _db.get_account( escrow.to );
-   const account_object& from_account = _db.get_account( escrow.from );
-   const account_object& to_mediator_account = _db.get_account( escrow.to_mediator );
-   const account_object& from_mediator_account = _db.get_account( escrow.from_mediator );
 
    time_point now = _db.head_block_time();
    
@@ -7196,9 +7743,14 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
 void limit_order_evaluator::do_apply( const limit_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7211,12 +7763,14 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
    FC_ASSERT( o.expiration > now,
       "Limit order has to expire after head block time." );
 
-   const account_object& owner = _db.get_account( o.owner );
-
    if( o.interface.size() )
    {
-      const account_object& interface = _db.get_account( o.interface );
-      const interface_object& inter = _db.get_interface( o.interface );
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
 
    shared_string order_id;
@@ -7289,9 +7843,14 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
 void margin_order_evaluator::do_apply( const margin_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7302,15 +7861,19 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
    time_point now = _db.head_block_time();
    FC_ASSERT( o.expiration > now,
       "Margin order has to expire after head block time." );
-   FC_ASSERT( o.exchange_rate.base == o.amount_to_borrow.symbol,
+   FC_ASSERT( o.exchange_rate.base.symbol == o.amount_to_borrow.symbol,
       "Margin order exchange rate should have debt asset as base of price." );
    FC_ASSERT( owner.loan_default_balance.amount == 0,
       "Account has an outstanding loan default balance. Please expend network credit collateral to recoup losses before opening a new loan." );
 
    if( o.interface.size() )
    {
-      const account_object& interface = _db.get_account( o.interface );
-      const interface_object& inter = _db.get_interface( o.interface );
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
 
    const asset_object& debt_asset = _db.get_asset( o.amount_to_borrow.symbol );
@@ -7318,11 +7881,11 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
    const asset_object& position_asset = _db.get_asset( o.exchange_rate.quote.symbol );
    const credit_collateral_object& collateral = _db.get_collateral( o.owner, o.collateral.symbol );
 
-   FC_ASSERT( debt_asset.asset_type != CREDIT_POOL_ASSET && debt_asset.asset_type != LIQUIDITY_POOL_ASSET, 
+   FC_ASSERT( debt_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && debt_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
       "Cannot borrow assets issued by liquidity or credit pools." );
-   FC_ASSERT( collateral_asset.asset_type != CREDIT_POOL_ASSET && collateral_asset.asset_type != LIQUIDITY_POOL_ASSET, 
+   FC_ASSERT( collateral_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && collateral_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
       "Cannot collateralize assets issued by liquidity or credit pools." );
-   FC_ASSERT( position_asset.asset_type != CREDIT_POOL_ASSET && position_asset.asset_type != LIQUIDITY_POOL_ASSET, 
+   FC_ASSERT( position_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && position_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
       "Cannot open margin positions in assets issued by liquidity or credit pools." );
 
    shared_string order_id;
@@ -7537,16 +8100,20 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
 void call_order_evaluator::do_apply( const call_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    time_point now = _db.head_block_time();
-   const account_object& paying_account = _db.get_account( o.owner );
    const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
    const asset_dynamic_data_object& debt_dynamic_data = _db.get_dynamic_data( o.debt.symbol );
    const asset_bitasset_data_object& debt_bitasset_data = _db.get_bitasset_data( o.debt.symbol );
@@ -7559,15 +8126,12 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
       "Collateral asset type should be same as backing asset of debt asset" );
    FC_ASSERT( !debt_bitasset_data.current_feed.settlement_price.is_null(),
       "Cannot borrow asset with no price feed." );
-   
-   auto& call_idx = _db.get_index< call_order_index >().indices().get< by_account >();
-   auto itr = call_idx.find( boost::make_tuple( o.owner, o.debt.symbol ) );
 
    const call_order_object* call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );
    optional< price > old_collateralization;
    optional< share_type > old_debt;
 
-   if( call_obj_ptr = nullptr )    // creating new debt position
+   if( call_obj_ptr == nullptr )    // creating new debt position
    {
       FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount <= debt_asset.max_supply,
          "Borrowing this quantity would exceed the assets Maximum supply." );
@@ -7591,10 +8155,8 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
    else        // updating existing debt position
    {
       const call_order_object& call_object = *call_obj_ptr;
-
       asset delta_collateral = o.collateral - call_object.collateral;
       asset delta_debt = o.debt - call_object.debt;
-
       _db.adjust_liquid_balance( o.owner, delta_debt );
       _db.adjust_liquid_balance( o.owner, -delta_collateral );
    
@@ -7603,7 +8165,7 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
          FC_ASSERT( o.collateral.amount > 0 && o.debt.amount > 0,
             "Both collateral and debt should be positive after updated a debt position if not to close it" );
 
-         price old_collateralization = call_object.collateralization();
+         old_collateralization = call_object.collateralization();
          old_debt = call_object.debt.amount;
 
          _db.modify( call_object, [&]( call_order_object& coo )
@@ -7653,20 +8215,23 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
 void bid_collateral_evaluator::do_apply( const bid_collateral_operation& o )
 { try {
    const account_name_type& signed_for = o.bidder;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& paying_account = _db.get_account( o.bidder );
    const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
    const asset_bitasset_data_object& bitasset_data = _db.get_bitasset_data( debt_asset.symbol );
    const asset& liquid = _db.get_liquid_balance( o.bidder, bitasset_data.backing_asset );
 
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
 
    FC_ASSERT( debt_asset.is_market_issued(),
@@ -7734,20 +8299,24 @@ void bid_collateral_evaluator::do_apply( const bid_collateral_operation& o )
 void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& account = _db.get_account( o.account );
    const asset_object& first_asset = _db.get_asset( o.first_amount.symbol );
    const asset_object& second_asset = _db.get_asset( o.second_amount.symbol );
 
-   FC_ASSERT( first_asset.asset_type != LIQUIDITY_POOL_ASSET &&
-      second_asset.asset_type != LIQUIDITY_POOL_ASSET,
+   FC_ASSERT( first_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET &&
+      second_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET,
       "Cannot make a liquidity pool asset with a liquidity pool asset as a component." );
 
    asset amount_a;
@@ -7777,7 +8346,7 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    {
       a.issuer = o.account;
       a.symbol = liquidity_asset_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
    });
 
    _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a ) 
@@ -7815,9 +8384,14 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
 void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7830,8 +8404,12 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
 
    if( o.interface.size() )
    {
-      const account_object* int_account_ptr = _db.find_account( o.interface );
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
       const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
    
    asset_symbol_type symbol_a;
@@ -7894,9 +8472,14 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
 void liquidity_pool_fund_evaluator::do_apply( const liquidity_pool_fund_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7930,9 +8513,14 @@ void liquidity_pool_fund_evaluator::do_apply( const liquidity_pool_fund_operatio
 void liquidity_pool_withdraw_evaluator::do_apply( const liquidity_pool_withdraw_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7966,9 +8554,14 @@ void liquidity_pool_withdraw_evaluator::do_apply( const liquidity_pool_withdraw_
 void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -7978,8 +8571,6 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
    const asset_object& collateral_asset = _db.get_asset( o.amount.symbol );
    const asset& liquid = _db.get_liquid_balance( o.account, o.amount.symbol );
    asset loan_default_balance = account.loan_default_balance;
-
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
 
    const auto& col_idx = _db.get_index< credit_collateral_index >().indices().get< by_owner_symbol >();
@@ -8059,9 +8650,14 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
 void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -8101,9 +8697,9 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
 
    FC_ASSERT( o.collateral.amount >= min_collateral.amount,
       "Collateral is insufficient to support a loan of this size." );
-   FC_ASSERT( debt_asset.asset_type != CREDIT_POOL_ASSET && debt_asset.asset_type != LIQUIDITY_POOL_ASSET, 
+   FC_ASSERT( debt_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && debt_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
       "Cannot borrow assets issued by liquidity or credit pools." );
-   FC_ASSERT( collateral_asset.asset_type != CREDIT_POOL_ASSET && collateral_asset.asset_type != LIQUIDITY_POOL_ASSET, 
+   FC_ASSERT( collateral_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && collateral_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
       "Cannot collateralize assets issued by liquidity or credit pools." );
 
    const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_loan_id >();
@@ -8240,9 +8836,14 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
 void credit_pool_lend_evaluator::do_apply( const credit_pool_lend_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -8251,9 +8852,9 @@ void credit_pool_lend_evaluator::do_apply( const credit_pool_lend_operation& o )
    const account_object& account = _db.get_account( o.account );
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
 
-   FC_ASSERT( asset_obj.asset_type != CREDIT_POOL_ASSET,
+   FC_ASSERT( asset_obj.asset_type != asset_property_type::CREDIT_POOL_ASSET,
       "Cannot lend a Credit pool asset, please use withdraw operation to access underlying reserves." );
-   FC_ASSERT( asset_obj.asset_type != LIQUIDITY_POOL_ASSET,
+   FC_ASSERT( asset_obj.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET,
       "Cannot lend a Liquidity pool asset, please use withdraw operation to access underlying reserves." );
 
    const asset_credit_pool_object& credit_pool = _db.get_credit_pool( asset_obj.symbol, false );
@@ -8266,9 +8867,14 @@ void credit_pool_lend_evaluator::do_apply( const credit_pool_lend_operation& o )
 void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -8277,7 +8883,7 @@ void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operat
    const account_object& account = _db.get_account( o.account );
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
 
-   FC_ASSERT( asset_obj.asset_type == CREDIT_POOL_ASSET,
+   FC_ASSERT( asset_obj.asset_type == asset_property_type::CREDIT_POOL_ASSET,
       "Asset must be a credit pool asset to withdraw from it's credit pool." );
 
    const asset_credit_pool_object& credit_pool = _db.get_credit_pool( asset_obj.symbol, true );
@@ -8323,15 +8929,19 @@ void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operat
 void asset_create_evaluator::do_apply( const asset_create_operation& o )
 { try {
    const account_name_type& signed_for = o.issuer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const dynamic_global_property_object& props =_db.get_dynamic_global_properties();
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
 
@@ -8353,6 +8963,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
    FC_ASSERT( liquid_coin >= o.coin_liquidity, 
       "Issuer has insufficient coin balance to provide specified initial liquidity." );
+   FC_ASSERT( liquid_usd >= o.usd_liquidity, 
+      "Issuer has insufficient USD balance to provide specified initial liquidity." );
    FC_ASSERT( o.options.whitelist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
       "Too many Whitelist authorities." );
    FC_ASSERT( o.options.blacklist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
@@ -8391,19 +9003,21 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
    switch( o.asset_type )  // Asset specific requirements
    {
-      case STANDARD_ASSET:
+      case asset_property_type::STANDARD_ASSET:
       {
          // No specific checks
       }
       break;
-      case CURRENCY_ASSET:
+      case asset_property_type::CURRENCY_ASSET:
       {
          issuer_account_name = NULL_ACCOUNT;
       }
       break;
-      case EQUITY_ASSET:
+      case asset_property_type::EQUITY_ASSET:
       {
          const account_business_object& abo = _db.get_account_business( o.issuer );
+         FC_ASSERT( abo.account == o.issuer, 
+            "Account: ${s} must be a business account to create an equity asset.",("s", o.issuer) );
          uint16_t revenue_share_sum = o.options.dividend_share_percent;
          for( auto share : bus_acc_ptr->equity_revenue_shares )
          {
@@ -8448,9 +9062,11 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          });
       }
       break;
-      case CREDIT_ASSET:
+      case asset_property_type::CREDIT_ASSET:
       {
          const account_business_object& abo = _db.get_account_business( o.issuer );
+         FC_ASSERT( abo.account == o.issuer, 
+            "Account: ${s} must be a business account to create a credit asset.",("s", o.issuer) );
          FC_ASSERT( !o.options.buyback_price.is_null(),
             "Buyback price cannot be null." );
          FC_ASSERT( o.options.buyback_price.base.symbol == o.options.buyback_asset,
@@ -8458,7 +9074,11 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          FC_ASSERT( o.options.buyback_price.quote.symbol == o.symbol,
             "Buyback price must have credit asset as quote." );
          
-         const asset_object& buyback_asset = _db.get_asset( o.options.buyback_asset ); 
+         const asset_object& buyback_asset = _db.get_asset( o.options.buyback_asset );
+         FC_ASSERT( buyback_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
+            buyback_asset.asset_type == asset_property_type::BITASSET_ASSET, 
+            "Buyback asset must beeither a currency or bitasset type asset." );
+
          uint16_t revenue_share_sum = o.options.buyback_share_percent;
 
          for( auto share : bus_acc_ptr->equity_revenue_shares )
@@ -8501,7 +9121,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          });
       }
       break;
-      case BITASSET_ASSET:
+      case asset_property_type::BITASSET_ASSET:
       {
          const asset_object& backing_asset = _db.get_asset( o.options.backing_asset );
          if( backing_asset.is_market_issued() )
@@ -8537,15 +9157,23 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          });
       }
       break;
-      case GATEWAY_ASSET:
+      case asset_property_type::GATEWAY_ASSET:
       {
          const account_business_object& abo = _db.get_account_business( o.issuer );
+         FC_ASSERT( abo.account == o.issuer, 
+            "Account: ${s} must be a business account to create a gateway asset.",("s", o.issuer) );
       }
       break;
-      case UNIQUE_ASSET:
+      case asset_property_type::UNIQUE_ASSET:
       {
          FC_ASSERT( o.options.max_supply == BLOCKCHAIN_PRECISION,
             "Unique assets must have a maximum supply of exactly one unit." );
+      }
+      break;
+      default:
+      {
+         FC_ASSERT( false,
+            "Cannot create new asset of market issued type." );
       }
       break;
    }
@@ -8587,7 +9215,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    {
       a.issuer = o.issuer;
       a.symbol = core_liq_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;    // Create the core liquidity pool for the new asset.
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;    // Create the core liquidity pool for the new asset.
       from_string( a.display_symbol, core_liq_symbol );
       from_string( a.details, o.options.details );
       from_string( a.json, o.options.json );
@@ -8638,7 +9266,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    {
       a.issuer = o.issuer;
       a.symbol = usd_liq_symbol;
-      a.asset_type = LIQUIDITY_POOL_ASSET;    // Create the USD liquidity pool for the new asset.
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;    // Create the USD liquidity pool for the new asset.
       from_string( a.display_symbol, usd_liq_symbol );
       from_string( a.details, o.options.details );
       from_string( a.json, o.options.json );
@@ -8663,8 +9291,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.symbol = usd_liq_symbol;
    });
 
-   asset init_new_asset = asset( o.usd_liquidity.amount, o.symbol );           // Creates initial new asset supply equivalent to core liquidity. 
-   asset init_liquid_asset = asset( o.usd_liquidity.amount, usd_liq_symbol);   // Creates equivalent supply of the liquidity pool asset for liquidity injection.
+   init_new_asset = asset( o.usd_liquidity.amount, o.symbol );           // Creates initial new asset supply equivalent to core liquidity. 
+   init_liquid_asset = asset( o.usd_liquidity.amount, usd_liq_symbol);   // Creates equivalent supply of the liquidity pool asset for liquidity injection.
       
    _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
@@ -8689,7 +9317,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    {
       a.issuer = o.issuer;
       a.symbol = credit_asset_symbol;
-      a.asset_type = CREDIT_POOL_ASSET; // Create the asset credit pool for the new asset.
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; // Create the asset credit pool for the new asset.
       from_string( a.display_symbol, credit_asset_symbol );
       from_string( a.details, o.options.details );
       from_string( a.json, o.options.json );
@@ -8740,23 +9368,128 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
+/**
+ * Loop through assets, looking for ones that are backed by the asset being changed. 
+ * When found, perform checks to verify validity.
+ *
+ * @param op the bitasset update operation being performed
+ * @param new_backing_asset
+ */
+void check_children_of_bitasset( database& db, const asset_update_operation& o, const asset_object& new_backing_asset )
+{
+   if( new_backing_asset.symbol != SYMBOL_COIN )    //  If new backing asset is CORE, no child bitassets to review. 
+   {
+      const auto& idx = db.get_index< asset_bitasset_data_index >().indices().get< by_backing_asset >();
+      auto backed_range = idx.equal_range( o.asset_to_update );
+      std::for_each( backed_range.first, backed_range.second, // loop through all assets that have this asset as a backing asset
+         [&new_backing_asset, &o, &db]( const asset_bitasset_data_object& bitasset_data )
+         {
+            const auto& child = db.get_bitasset_data( bitasset_data.symbol );
+
+            FC_ASSERT( child.symbol != o.new_options.backing_asset,
+               "The BitAsset would be invalidated by changing this backing asset ('A' backed by 'B' backed by 'A')." );
+         });
+   }
+}
+
+
+/**
+ * @brief Apply requested changes to bitasset options
+ *
+ * This applies the requested changes to the bitasset object.
+ * It also cleans up the releated feeds
+ *
+ * @param op the requested operation
+ * @param db the database
+ * @param bdo the actual database object
+ * @param asset_to_update the asset_object related to this bitasset_data_object
+ * @returns true if the feed price is changed
+ */
+bool update_bitasset_object_options( const asset_update_operation& o, database& db, 
+   asset_bitasset_data_object& bdo, const asset_object& asset_to_update )
+{
+   time_point now = db.head_block_time();
+
+   // If the minimum number of feeds to calculate a median has changed, recalculate the median
+   bool should_update_feeds = false;
+
+   if( o.new_options.minimum_feeds != bdo.minimum_feeds )
+   {
+      should_update_feeds = true;
+   }
+      
+   if( o.new_options.feed_lifetime != bdo.feed_lifetime )
+   {
+      should_update_feeds = true;    // call update_median_feeds if the feed_lifetime changed
+   }
+
+   bool backing_asset_changed = false;    // feeds must be reset if the backing asset is changed
+   bool is_producer_fed = false;
+   if( o.new_options.backing_asset != bdo.backing_asset )
+   {
+      backing_asset_changed = true;
+      should_update_feeds = true;
+      if( asset_to_update.is_producer_fed() )
+      {
+         is_producer_fed = true;
+      }   
+   }
+
+   bdo.backing_asset = o.new_options.backing_asset;
+   bdo.feed_lifetime = o.new_options.feed_lifetime;
+   bdo.minimum_feeds = o.new_options.minimum_feeds;
+   bdo.force_settlement_delay = o.new_options.force_settlement_delay;
+   bdo.force_settlement_offset_percent = o.new_options.force_settlement_offset_percent;
+   bdo.maximum_force_settlement_volume = o.new_options.maximum_force_settlement_volume;
+
+   if( backing_asset_changed )        // Reset price feeds if modifying backing asset
+   {
+      if( is_producer_fed )
+      {
+         bdo.feeds.clear();
+      }
+      else
+      {
+         for( auto& current_feed : bdo.feeds )
+         {
+            current_feed.second.second.settlement_price = price();  // Zero all outstanding price feeds
+         }
+      }
+   }
+
+   if( should_update_feeds ) // Call check_call_orders if the price feed changes
+   {
+      const auto old_feed = bdo.current_feed;
+      bdo.update_median_feeds( now );
+      return ( !( old_feed == bdo.current_feed ) ); 
+   }
+
+   return false;
+}
+
+
 void asset_update_evaluator::do_apply( const asset_update_operation& o )
 { try {
    const account_name_type& signed_for = o.issuer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const dynamic_global_property_object& props =_db.get_dynamic_global_properties();
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
 
-   const account_object& issuer = _db.get_account( o.issuer );
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
+    FC_ASSERT( ( asset_obj.last_updated + MIN_ASSET_UPDATE_INTERVAL ) <= now, 
+      "Can only update asset once per 10 minutes." );
    const asset_dynamic_data_object& dyn_data = _db.get_dynamic_data( o.asset_to_update );
 
    if( ( dyn_data.total_supply != 0 ) )      // new issuer_permissions must be subset of old issuer permissions
@@ -8801,17 +9534,17 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
 
    switch( asset_obj.asset_type )  // Asset specific requirements
    {
-      case CURRENCY_ASSET:
+      case asset_property_type::CURRENCY_ASSET:
       {
          FC_ASSERT( false, "Cannot Edit Currency asset." );
       }
       break;
-      case STANDARD_ASSET:
+      case asset_property_type::STANDARD_ASSET:
       {
          // No specific checks
       }
       break;
-      case EQUITY_ASSET:
+      case asset_property_type::EQUITY_ASSET:
       {
          const account_business_object& bus_acc = _db.get_account_business( o.issuer );
          const asset_equity_data_object& equity_obj = _db.get_equity_data( o.asset_to_update );
@@ -8853,10 +9586,9 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          });
       }
       break;
-      case CREDIT_ASSET:
+      case asset_property_type::CREDIT_ASSET:
       {
          const account_business_object& bus_acc = _db.get_account_business( o.issuer );
-         const asset_object& buyback_asset = _db.get_asset( o.new_options.buyback_asset );
          const asset_credit_data_object& credit_obj = _db.get_credit_data( o.asset_to_update );
          uint16_t revenue_share_sum = o.new_options.buyback_share_percent;
 
@@ -8898,7 +9630,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          });
       }
       break;
-      case BITASSET_ASSET:
+      case asset_property_type::BITASSET_ASSET:
       {
          FC_ASSERT( asset_obj.is_market_issued(), 
             "Asset must be market issued to update bitasset." );
@@ -8962,27 +9694,27 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          }
       }
       break;
-      case LIQUIDITY_POOL_ASSET:
+      case asset_property_type::LIQUIDITY_POOL_ASSET:
       {
          FC_ASSERT( false, "Cannot Edit Liquidity Pool asset." );
       }
       break;
-      case CREDIT_POOL_ASSET:
+      case asset_property_type::CREDIT_POOL_ASSET:
       {
          FC_ASSERT( false, "Cannot Edit Credit pool asset." );
       }
       break;
-      case OPTION_ASSET:
+      case asset_property_type::OPTION_ASSET:
       {
          FC_ASSERT( false, "Cannot Edit Option asset." );
       }
       break;
-      case GATEWAY_ASSET:
+      case asset_property_type::GATEWAY_ASSET:
       {
-         const account_business_object& abo = _db.get_account_business( o.issuer );
+         
       }
       break;
-      case UNIQUE_ASSET:
+      case asset_property_type::UNIQUE_ASSET:
       {
          FC_ASSERT( o.new_options.max_supply == BLOCKCHAIN_PRECISION,
             "Unique assets must have a maximum supply of exactly one unit." );
@@ -8992,6 +9724,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       {
          FC_ASSERT( false, "Invalid Asset type." );
       }
+      break;
    }
 
    _db.modify( asset_obj, [&]( asset_object& a )
@@ -9018,17 +9751,23 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
 void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
 { try {
    const account_name_type& signed_for = o.issuer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
    const asset_object& asset_obj = _db.get_asset( o.asset_to_issue.symbol );
-   const account_object& issuer = _db.get_account( o.issuer );
    const account_object& to_account = _db.get_account( o.issue_to_account );
+   FC_ASSERT( to_account.active,
+      "Account: ${s} must be active to broadcast transaction.",("s", o.issue_to_account) );
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.issue_to_account );
    const asset_dynamic_data_object& asset_dyn_data = _db.get_dynamic_data( o.asset_to_issue.symbol );
 
@@ -9049,9 +9788,14 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
 void asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
 { try {
    const account_name_type& signed_for = o.payer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9077,9 +9821,14 @@ void asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
 void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operation& o )
 { try {
    const account_name_type& signed_for = o.issuer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_chief( o.signatory ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9087,6 +9836,8 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
 
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
    const account_object& new_issuer_account = _db.get_account( o.new_issuer );
+   FC_ASSERT( new_issuer_account.active, 
+      "Account: ${s} must be active to become new issuer.",("s", o.new_issuer) );
 
    FC_ASSERT( o.issuer == asset_obj.issuer,
       "Invalid issuer for asset (${o.issuer} != ${a.issuer})",
@@ -9099,113 +9850,17 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-/**
- * Loop through assets, looking for ones that are backed by the asset being changed. 
- * When found, perform checks to verify validity.
- *
- * @param op the bitasset update operation being performed
- * @param new_backing_asset
- */
-void check_children_of_bitasset( database& db, const asset_update_operation& o, const asset_object& new_backing_asset )
-{
-   if( new_backing_asset.symbol != SYMBOL_COIN )    //  If new backing asset is CORE, no child bitassets to review. 
-   {
-      const auto& idx = db.get_index< asset_bitasset_data_index >().indices().get< by_backing_asset >();
-      auto backed_range = idx.equal_range( o.asset_to_update );
-      std::for_each( backed_range.first, backed_range.second, // loop through all assets that have this asset as a backing asset
-         [&new_backing_asset, &o, &db]( const asset_bitasset_data_object& bitasset_data )
-         {
-            const auto& child = db.get_bitasset_data( bitasset_data.symbol );
-
-            FC_ASSERT( child.symbol != o.new_options.backing_asset,
-               "The BitAsset would be invalidated by changing this backing asset ('A' backed by 'B' backed by 'A')." );
-         });
-   }
-}
-
-
-/**
- * @brief Apply requested changes to bitasset options
- *
- * This applies the requested changes to the bitasset object.
- * It also cleans up the releated feeds
- *
- * @param op the requested operation
- * @param db the database
- * @param bdo the actual database object
- * @param asset_to_update the asset_object related to this bitasset_data_object
- * @returns true if the feed price is changed
- */
-bool update_bitasset_object_options( const asset_update_operation& o, database& db, 
-   asset_bitasset_data_object& bdo, const asset_object& asset_to_update )
-{
-   const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-   time_point now = db.head_block_time();
-
-   // If the minimum number of feeds to calculate a median has changed, recalculate the median
-   bool should_update_feeds = false;
-
-   if( o.new_options.minimum_feeds != bdo.minimum_feeds )
-   {
-      should_update_feeds = true;
-   }
-      
-   if( o.new_options.feed_lifetime != bdo.feed_lifetime )
-   {
-      should_update_feeds = true;    // call update_median_feeds if the feed_lifetime changed
-   }
-
-   bool backing_asset_changed = false;    // feeds must be reset if the backing asset is changed
-   bool is_producer_fed = false;
-   if( o.new_options.backing_asset != bdo.backing_asset )
-   {
-      backing_asset_changed = true;
-      should_update_feeds = true;
-      if( asset_to_update.is_producer_fed() )
-      {
-         is_producer_fed = true;
-      }   
-   }
-
-   bdo.backing_asset = o.new_options.backing_asset;
-   bdo.feed_lifetime = o.new_options.feed_lifetime;
-   bdo.minimum_feeds = o.new_options.minimum_feeds;
-   bdo.force_settlement_delay = o.new_options.force_settlement_delay;
-   bdo.force_settlement_offset_percent = o.new_options.force_settlement_offset_percent;
-   bdo.maximum_force_settlement_volume = o.new_options.maximum_force_settlement_volume;
-
-   if( backing_asset_changed )        // Reset price feeds if modifying backing asset
-   {
-      if( is_producer_fed )
-      {
-         bdo.feeds.clear();
-      }
-      else
-      {
-         for( auto& current_feed : bdo.feeds )
-         {
-            current_feed.second.second.settlement_price = price();  // Zero all outstanding price feeds
-         }
-      }
-   }
-
-   if( should_update_feeds ) // Call check_call_orders if the price feed changes
-   {
-      const auto old_feed = bdo.current_feed;
-      bdo.update_median_feeds( now );
-      return ( !( old_feed == bdo.current_feed ) ); 
-   }
-
-   return false;
-}
-
-
 void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_producers_operation& o )
 { try {
    const account_name_type& signed_for = o.issuer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9218,7 +9873,7 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
    
    FC_ASSERT( o.new_feed_producers.size() <= median_props.maximum_asset_feed_publishers,
       "Cannot specify more feed producers than maximum allowed." );
-   FC_ASSERT( asset_obj.asset_type == BITASSET_ASSET,
+   FC_ASSERT( asset_obj.asset_type == asset_property_type::BITASSET_ASSET,
       "Cannot update feed producers on a non-BitAsset." );
    FC_ASSERT(!( asset_obj.is_producer_fed() ),
       "Cannot set feed producers on a producer-fed asset." );
@@ -9257,9 +9912,14 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
 void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation& o )
 { try {
    const account_name_type& signed_for = o.publisher;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9328,9 +9988,14 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
 void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9359,12 +10024,12 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
 
       if( o.amount == mia_dyn.get_total_supply() )     // Settling the entire asset remaining supply. 
       {
-         settled_amount = bitasset.settlement_fund;   // Set the settled amount to the exact remaining supply. 
+         settled_amount.amount = bitasset.settlement_fund;   // Set the settled amount to the exact remaining supply. 
       }
       else
       {
-         FC_ASSERT( settled_amount <= bitasset.settlement_fund,
-            "Settled amount should be less than or equal to settlement fund." ); // should be strictly < except for PM with zero outcome
+         FC_ASSERT( settled_amount.amount <= bitasset.settlement_fund,
+            "Settled amount should be less than or equal to settlement fund." );         // should be strictly < except for PM with zero outcome
       }
          
       FC_ASSERT( settled_amount.amount != 0, 
@@ -9382,7 +10047,7 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
       {
          _db.modify( bitasset, [&]( asset_bitasset_data_object& abdo )  
          {
-            abdo.settlement_fund -= settled_amount;
+            abdo.settlement_fund -= settled_amount.amount;
          });
 
          _db.adjust_liquid_balance( o.account, settled_amount );
@@ -9440,9 +10105,14 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
 void asset_global_settle_evaluator::do_apply( const asset_global_settle_operation& o )
 { try {
    const account_name_type& signed_for = o.issuer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9491,11 +10161,16 @@ void asset_global_settle_evaluator::do_apply( const asset_global_settle_operatio
 
 void producer_update_evaluator::do_apply( const producer_update_operation& o )
 { try {
-   const account_object& owner = _db.get_account( o.owner ); // verify owner exists
+   
    const account_name_type& signed_for = o.owner;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9561,7 +10236,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
    const auto& work = o.work.get< proof_of_work >();
    uint128_t target_pow = _db.pow_difficulty();
    uint32_t recent_block_num = protocol::block_header::num_from_id( work.input.prev_block );
-
+   account_name_type miner_account = work.input.miner_account;
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
@@ -9572,10 +10247,6 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       "Proof of Work done for block older than last irreversible block number." );
    FC_ASSERT( work.pow_summary < target_pow,
       "Insufficient work difficulty. Work: ${w}, Target: ${t} .", ("w",work.pow_summary)("t", target_pow) );
-
-   const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-   fc::microseconds decay_rate = median_props.pow_decay_time;  // Averaging window of the targetting adjustment
-   account_name_type miner_account = work.input.miner_account;
 
    uint128_t work_difficulty = ( 1 << 30 ) / work.pow_summary;
 
@@ -9657,9 +10328,14 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
 void verify_block_evaluator::do_apply( const verify_block_operation& o )
 { try {
    const account_name_type& signed_for = o.producer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9667,8 +10343,9 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
    
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
-   const account_object& producer_acc = _db.get_account( o.producer ); 
    const producer_object& producer = _db.get_producer( o.producer );
+   FC_ASSERT( producer.active, 
+      "Account: ${s} must be active to verify blocks.",("s", o.producer) );
    uint32_t recent_block_num = protocol::block_header::num_from_id( o.block_id );
    
    FC_ASSERT( recent_block_num == o.block_height,
@@ -9721,9 +10398,14 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
 void commit_block_evaluator::do_apply( const commit_block_operation& o )
 { try {
    const account_name_type& signed_for = o.producer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
@@ -9731,7 +10413,6 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
    uint32_t recent_block_num = protocol::block_header::num_from_id( o.block_id );
-   const account_object& producer_acc = _db.get_account( o.producer );
    const producer_object& producer = _db.get_producer( o.producer );
 
    FC_ASSERT( recent_block_num == o.block_height,
@@ -9774,7 +10455,6 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
          {
             const verify_block_operation& verify_op = op.get< verify_block_operation >();
             verify_op.validate();
-            const account_object& verify_acc = _db.get_account( verify_op.producer );
             const producer_object& verify_wit = _db.get_producer( verify_op.producer );
             if( verify_op.block_id == o.block_id && 
                verify_op.block_height == o.block_height &&
@@ -9814,17 +10494,20 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
  */
 void producer_violation_evaluator::do_apply( const producer_violation_operation& o )
 { try {
-   const account_name_type& signed_for = o.get_creator_name();
+   const account_name_type& signed_for = o.reporter;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
-      const account_object& signatory = _db.get_account( o.signatory );
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
       FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& reporter = _db.get_account( o.reporter );
-   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const chain_id_type& chain_id = CHAIN_ID;
@@ -9856,8 +10539,6 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
    asset first_stake;
    asset second_stake;
 
-   
-
    for( operation op : first_trx.operations )
    {
       if( op.which() == operation::tag< commit_block_operation >::value )
@@ -9885,9 +10566,6 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
          break;
       }
    }
-
-   const account_object& acc = _db.get_account( first_producer );
-   const producer_object& prod = _db.get_producer( first_producer );
 
    FC_ASSERT( first_height != 0 && second_height != 0 && first_height == second_height,
       "Producer violation claim must include two valid commit block operations at the same height." );

@@ -71,9 +71,9 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
       comment.options = options;
       comment.validate();
 
@@ -683,7 +683,7 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       request.signatory = "alice";
       request.account = "alice";
       request.requested_account = "bob";
-      request.connection_type = CONNECTION;
+      request.connection_type = connection_tier_type::CONNECTION;
       request.message = "Hello";
       request.requested = true;
 
@@ -699,7 +699,7 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       accept.signatory = "bob";
       accept.account = "bob";
       accept.requesting_account = "alice";
-      accept.connection_type = CONNECTION;
+      accept.connection_type = connection_tier_type::CONNECTION;
       accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
       accept.encrypted_key = "#supersecretencryptedkeygoeshere";
       accept.connected = true;
@@ -714,7 +714,7 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       accept.signatory = "alice";
       accept.account = "alice";
       accept.requesting_account = "bob";
-      accept.connection_type = CONNECTION;
+      accept.connection_type = connection_tier_type::CONNECTION;
       accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
       accept.encrypted_key = "#supersecretencryptedkeygoeshere";
       accept.connected = true;
@@ -796,9 +796,9 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
       comment.options = options;
       comment.validate();
 
@@ -1003,9 +1003,9 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
       comment.options = options;
       comment.validate();
 
@@ -1142,9 +1142,9 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
       comment.options = options;
       comment.validate();
 
@@ -1162,7 +1162,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       share.sharer = "bob";
       share.author = "alice";
       share.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
-      share.reach = FOLLOW_FEED;
+      share.reach = feed_reach_type::FOLLOW_FEED;
       share.interface = INIT_ACCOUNT;
 
       tx.operations.push_back( share );
@@ -1278,9 +1278,9 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
       comment.options = options;
       comment.validate();
 
@@ -1299,7 +1299,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tag.author = "alice";
       tag.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
       tag.tags.push_back( "nsfw" );
-      tag.rating = ADULT;
+      tag.rating = 9;
       tag.details = "Post is NSFW";
       tag.interface = INIT_ACCOUNT;
       tag.filter = false;
@@ -1337,7 +1337,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       mem.signatory = "bob";
       mem.account = "bob";
-      mem.membership_type = TOP_MEMBERSHIP;
+      mem.membership_type = membership_tier_type::TOP_MEMBERSHIP;
       mem.months = 1;
       mem.interface = INIT_ACCOUNT;
       mem.validate();

@@ -1,17 +1,13 @@
 #pragma once
 #include <fc/fixed_string.hpp>
-
 #include <node/protocol/authority.hpp>
 #include <node/protocol/node_operations.hpp>
-
 #include <node/chain/node_object_types.hpp>
-#include <node/chain/producer_objects.hpp>
 #include <node/chain/shared_authority.hpp>
-
 #include <boost/multi_index/composite_key.hpp>
+#include <numeric>
 
 namespace node { namespace chain {
-
 
    /**
     * Communities enable posts to be created within a 
@@ -54,7 +50,7 @@ namespace node { namespace chain {
 
          comment_id_type                    pinned_post;                        ///< Post pinned to the top of the community's page. 
 
-         post_rating_type                   max_rating;                         ///< Highest severity rating that posts in the community can have.
+         uint16_t                           max_rating;                         ///< Highest severity rating that posts in the community can have.
 
          uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
 
@@ -257,18 +253,18 @@ namespace node { namespace chain {
 
             switch( community_privacy )
             {
-               case OPEN_PUBLIC_COMMUNITY:
-               case GENERAL_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
                {
                   return true;
                }
                break;
-               case EXCLUSIVE_PUBLIC_COMMUNITY:
-               case CLOSED_PUBLIC_COMMUNITY:
-               case OPEN_PRIVATE_COMMUNITY:
-               case GENERAL_PRIVATE_COMMUNITY:
-               case EXCLUSIVE_PRIVATE_COMMUNITY:
-               case CLOSED_PRIVATE_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
                   if( is_member( account ) )
                   {
@@ -299,18 +295,18 @@ namespace node { namespace chain {
 
             switch( community_privacy )
             {
-               case OPEN_PUBLIC_COMMUNITY:
-               case GENERAL_PUBLIC_COMMUNITY:
-               case EXCLUSIVE_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
                {
                   return true;
                }
                break;
-               case CLOSED_PUBLIC_COMMUNITY:
-               case OPEN_PRIVATE_COMMUNITY:
-               case GENERAL_PRIVATE_COMMUNITY:
-               case EXCLUSIVE_PRIVATE_COMMUNITY:
-               case CLOSED_PRIVATE_COMMUNITY:
+               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
                   if( is_member( account ) )
                   {
@@ -341,18 +337,18 @@ namespace node { namespace chain {
 
             switch( community_privacy )
             {
-               case OPEN_PUBLIC_COMMUNITY:
-               case GENERAL_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
                {
                   return false; 
                }
                break;
-               case EXCLUSIVE_PUBLIC_COMMUNITY:
-               case CLOSED_PUBLIC_COMMUNITY:
-               case OPEN_PRIVATE_COMMUNITY:
-               case GENERAL_PRIVATE_COMMUNITY:
-               case EXCLUSIVE_PRIVATE_COMMUNITY:
-               case CLOSED_PRIVATE_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
                   return true;
                }
@@ -376,9 +372,9 @@ namespace node { namespace chain {
 
             switch( community_privacy )
             {
-               case OPEN_PUBLIC_COMMUNITY:
-               case GENERAL_PUBLIC_COMMUNITY:
-               case EXCLUSIVE_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
                {
                   if( is_member( account ) )
                   {
@@ -390,10 +386,10 @@ namespace node { namespace chain {
                   }  
                }
                break;
-               case CLOSED_PUBLIC_COMMUNITY:
-               case OPEN_PRIVATE_COMMUNITY:
-               case GENERAL_PRIVATE_COMMUNITY:
-               case EXCLUSIVE_PRIVATE_COMMUNITY:
+               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
                {
                   if( is_moderator( account ) )
                   {
@@ -405,7 +401,7 @@ namespace node { namespace chain {
                   }
                }
                break;
-               case CLOSED_PRIVATE_COMMUNITY:
+               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
                   if( is_administrator( account ) )
                   {
@@ -436,14 +432,14 @@ namespace node { namespace chain {
 
             switch( community_privacy )
             {
-               case OPEN_PUBLIC_COMMUNITY:
+               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
                {
                   return false;
                }
                break;
-               case GENERAL_PUBLIC_COMMUNITY:
-               case EXCLUSIVE_PUBLIC_COMMUNITY:
-               case CLOSED_PUBLIC_COMMUNITY:
+               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
                {
                   if( is_moderator( account ) )
                   {
@@ -455,10 +451,10 @@ namespace node { namespace chain {
                   }
                }
                break;
-               case OPEN_PRIVATE_COMMUNITY:
-               case GENERAL_PRIVATE_COMMUNITY:
-               case EXCLUSIVE_PRIVATE_COMMUNITY:
-               case CLOSED_PRIVATE_COMMUNITY:
+               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
                   if( is_administrator( account ) )
                   {
@@ -919,6 +915,7 @@ FC_REFLECT( node::chain::community_object,
          (last_community_update)
          (last_post)
          (last_root_post)
+         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::community_object, node::chain::community_index );

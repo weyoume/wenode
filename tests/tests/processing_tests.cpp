@@ -453,13 +453,13 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       util::comment_reward_context ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, alice_comment );
-      uint128_t alice_reward = util::get_comment_reward( ctx );
+      share_type alice_reward = util::get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, bob_comment );
-      uint128_t bob_reward = util::get_comment_reward( ctx );
+      share_type bob_reward = util::get_comment_reward( ctx );
 
-      asset alice_comment_payout = asset( alice_reward.to_uint64(), SYMBOL_COIN );
-      asset bob_comment_payout = asset( bob_reward.to_uint64(), SYMBOL_COIN );
+      asset alice_comment_payout = asset( alice_reward, SYMBOL_COIN );
+      asset bob_comment_payout = asset( bob_reward, SYMBOL_COIN );
 
       BOOST_REQUIRE( rf.content_reward_balance == reward - alice_comment_payout );
 
@@ -471,13 +471,13 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       util::comment_reward_context ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, alice_comment );
-      uint128_t alice_reward = util::get_comment_reward( ctx );
+      share_type alice_reward = util::get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, bob_comment );
-      uint128_t bob_reward = util::get_comment_reward( ctx );
+      share_type bob_reward = util::get_comment_reward( ctx );
 
-      asset alice_comment_payout = asset( alice_reward.to_uint64(), SYMBOL_COIN );
-      asset bob_comment_payout = asset( bob_reward.to_uint64(), SYMBOL_COIN );
+      asset alice_comment_payout = asset( alice_reward, SYMBOL_COIN );
+      asset bob_comment_payout = asset( bob_reward, SYMBOL_COIN );
 
       BOOST_REQUIRE( rf.content_reward_balance == reward - bob_comment_payout );
 
@@ -542,13 +542,13 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       util::comment_reward_context ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, candice_comment );
-      uint128_t candice_reward = util::get_comment_reward( ctx );
+      share_type candice_reward = util::get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, dan_comment );
-      uint128_t dan_reward = util::get_comment_reward( ctx );
+      share_type dan_reward = util::get_comment_reward( ctx );
 
-      asset candice_comment_payout = asset( candice_reward.to_uint64(), SYMBOL_COIN );
-      asset dan_comment_payout = asset( dan_reward.to_uint64(), SYMBOL_COIN );
+      asset candice_comment_payout = asset( candice_reward, SYMBOL_COIN );
+      asset dan_comment_payout = asset( dan_reward, SYMBOL_COIN );
    
       BOOST_REQUIRE( rf.content_reward_balance == reward - candice_comment_payout - dan_comment_payout );
 

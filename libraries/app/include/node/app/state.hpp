@@ -41,7 +41,7 @@ namespace node { namespace app {
    {
       string         voter;
       uint128_t      weight = 0;
-      int128_t       reward = 0;
+      int64_t       reward = 0;
       int16_t        percent = 0;
       time_point     time;
    };
@@ -50,7 +50,7 @@ namespace node { namespace app {
    {
       string         viewer;
       uint128_t      weight = 0;
-      int128_t       reward = 0;
+      int64_t       reward = 0;
       time_point     time;
    };
 
@@ -58,7 +58,7 @@ namespace node { namespace app {
    {
       string         sharer;
       uint128_t      weight = 0;
-      int128_t       reward = 0;
+      int64_t       reward = 0;
       time_point     time;
    };
 
@@ -66,7 +66,7 @@ namespace node { namespace app {
    {
       string                     moderator;
       vector< tag_name_type >    tags;             // Set of additional string tags for sorting the post by
-      string                     rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
+      uint16_t                   rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
       string                     details;          // Explanation as to what rule the post is in contravention of and why it was tagged.
       bool                       filter;           // True if the post should be filtered by the community or governance address subscribers.
       time_point                 time;
@@ -77,7 +77,7 @@ namespace node { namespace app {
       string         author;
       string         permlink;
       uint128_t      weight = 0;
-      int128_t       reward = 0;
+      int64_t        reward = 0;
       int16_t        percent = 0;
       time_point     time;
    };
@@ -87,7 +87,7 @@ namespace node { namespace app {
       string         author;
       string         permlink;
       uint128_t      weight = 0;
-      int128_t       reward = 0;
+      int64_t        reward = 0;
       time_point     time;
    };
 
@@ -96,7 +96,7 @@ namespace node { namespace app {
       string         author;
       string         permlink;
       uint128_t      weight = 0;
-      int128_t       reward = 0;
+      int64_t        reward = 0;
       time_point     time;
    };
 
@@ -104,8 +104,8 @@ namespace node { namespace app {
    {
       string                     author;
       string                     permlink;
-      vector< tag_name_type >    tags;             // Set of additional string tags for sorting the post by
-      string                     rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity. 
+      vector< tag_name_type >    tags;             // Set of additional string tags for sorting the post by.
+      string                     rating;           // Moderator updated rating as to the maturity of the content, and display sensitivity.
       string                     details;          // Explanation as to what rule the post is in contravention of and why it was tagged.
       bool                       filter;           // True if the post should be filtered by the community or governance address subscribers.
       time_point                 time;

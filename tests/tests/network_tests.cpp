@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
 
       membership.signatory = "alice";
       membership.account = "alice";
-      membership.membership_type = STANDARD_MEMBERSHIP;
+      membership.membership_type = membership_tier_type::STANDARD_MEMBERSHIP;
       membership.months = 1;
       membership.interface = INIT_ACCOUNT;
       membership.validate();
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
 
       officer.signatory = "alice";
       officer.account = "alice";
-      officer.officer_type = DEVELOPMENT;
+      officer.officer_type = network_officer_role_type::DEVELOPMENT;
       officer.details = "details";
       officer.url = "www.url.com";
       officer.json = "{\"json\":\"valid\"}";
@@ -159,7 +159,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
       const network_officer_object& alice_officer = db.get_network_officer( "alice" );
       
       BOOST_REQUIRE( alice_officer.account == "alice" );
-      BOOST_REQUIRE( alice_officer.officer_type == DEVELOPMENT );
+      BOOST_REQUIRE( alice_officer.officer_type == network_officer_role_type::DEVELOPMENT );
       BOOST_REQUIRE( alice_officer.active == true );
       BOOST_REQUIRE( alice_officer.officer_approved == false );
       
@@ -373,7 +373,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
       const network_officer_object& alice_officer = db.get_network_officer( "alice" );
       
       BOOST_REQUIRE( alice_officer.account == "alice" );
-      BOOST_REQUIRE( alice_officer.officer_type == DEVELOPMENT );
+      BOOST_REQUIRE( alice_officer.officer_type == network_officer_role_type::DEVELOPMENT );
       BOOST_REQUIRE( alice_officer.active == true );
       BOOST_REQUIRE( alice_officer.officer_approved == true );
       
@@ -607,7 +607,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       member.signatory = "alice";
       member.account = "alice";
-      member.membership_type = TOP_MEMBERSHIP;
+      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
       member.months = 1;
       member.interface = INIT_ACCOUNT;
       member.validate();
@@ -663,7 +663,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       officer.signatory = "bob";
       officer.account = "bob";
-      officer.officer_type = DEVELOPMENT;
+      officer.officer_type = network_officer_role_type::DEVELOPMENT;
       officer.details = "details";
       officer.url = "www.url.com";
       officer.json = "{\"json\":\"valid\"}";
@@ -679,7 +679,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       officer.signatory = "candice";
       officer.account = "candice";
-      officer.officer_type = MARKETING;
+      officer.officer_type = network_officer_role_type::MARKETING;
 
       tx.operations.push_back( officer );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
@@ -690,7 +690,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       officer.signatory = "dan";
       officer.account = "dan";
-      officer.officer_type = ADVOCACY;
+      officer.officer_type = network_officer_role_type::ADVOCACY;
 
       tx.operations.push_back( officer );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
@@ -1455,7 +1455,7 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       member.signatory = "govaccount";
       member.account = "govaccount";
-      member.membership_type = TOP_MEMBERSHIP;
+      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
       member.months = 1;
       member.interface = INIT_ACCOUNT;
       member.validate();
@@ -1804,7 +1804,7 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 
       member.signatory = "alice";
       member.account = "alice";
-      member.membership_type = TOP_MEMBERSHIP;
+      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
       member.months = 1;
       member.validate();
 
@@ -1915,7 +1915,7 @@ BOOST_AUTO_TEST_CASE( update_mediator_operation_test )
 
       member.signatory = "alice";
       member.account = "alice";
-      member.membership_type = TOP_MEMBERSHIP;
+      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
       member.months = 1;
       member.validate();
 
@@ -2070,7 +2070,7 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       create.signatory = "alice";
       create.creator = "alice";
       create.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      create.proposal_type = FUNDING;
+      create.proposal_type = proposal_distribution_type::FUNDING;
       create.beneficiaries[ "alice" ] = PERCENT_100;
       create.milestones.push_back( std::make_pair( "Begin proposal", 50*PERCENT_1 ) );
       create.milestones.push_back( std::make_pair( "Finish proposal", 50*PERCENT_1 ) );

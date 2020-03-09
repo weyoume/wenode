@@ -16,14 +16,12 @@ namespace node { namespace chain { namespace util {
 using node::protocol::asset;
 using node::protocol::price;
 using node::protocol::share_type;
-
+using node::protocol::asset_symbol_type;
 using fc::uint128_t;
 
 uint8_t find_msb( const uint128_t& u );
 
 uint64_t approx_sqrt( const uint128_t& x );
-
-void fill_comment_reward_context_local_state( util::comment_reward_context& ctx, const comment_object& comment );
 
 
 /**
@@ -53,7 +51,9 @@ struct comment_reward_context
    uint128_t           content_constant;               ///< Constant added to reward value for reward curve calculation.
 };
 
-uint128_t get_comment_reward( const comment_reward_context& ctx );
+void fill_comment_reward_context_local_state( comment_reward_context& ctx, const comment_object& comment );
+
+share_type get_comment_reward( const comment_reward_context& ctx );
 
 inline uint128_t get_content_constant_s()
 {

@@ -35,14 +35,14 @@ uint64_t approx_sqrt( const uint128_t& x )
    return result;
 }
 
-void fill_comment_reward_context_local_state( util::comment_reward_context& ctx, const comment_object& comment )
+void fill_comment_reward_context_local_state( comment_reward_context& ctx, const comment_object& comment )
 {
    ctx.reward = comment.net_reward;
    ctx.cashouts_received = comment.cashouts_received;
    ctx.max_reward = comment.max_accepted_payout;
 }
 
-uint128_t get_comment_reward( const comment_reward_context& ctx )
+share_type get_comment_reward( const comment_reward_context& ctx )
 { try {
    FC_ASSERT( ctx.reward > 0 );
    FC_ASSERT( ctx.recent_content_claims > 0 );
@@ -59,8 +59,8 @@ uint128_t get_comment_reward( const comment_reward_context& ctx )
 
    u256 payout_u256 = ( rf * claim ) / total_claims;
 
-   FC_ASSERT( payout_u256 <= u256( uint64_t( std::numeric_limits<int128_t>::max() ) ) );
-   uint128_t payout = static_cast< uint128_t >( payout_u256 );
+   FC_ASSERT( payout_u256 <= u256( std::numeric_limits<int64_t>::max() ) );
+   share_type payout = static_cast< int64_t >( payout_u256 );
 
    if( is_comment_payout_dust( ctx.current_COIN_USD_price, payout ) )
    {
@@ -69,7 +69,7 @@ uint128_t get_comment_reward( const comment_reward_context& ctx )
 
    asset max_reward = USD_to_asset( ctx.current_COIN_USD_price, ctx.max_reward );
 
-   payout = std::min( payout, uint128_t( max_reward.amount.value ) );
+   payout = std::min( payout, share_type( max_reward.amount.value ) );
 
    return payout;
 } FC_CAPTURE_AND_RETHROW( (ctx) ) }

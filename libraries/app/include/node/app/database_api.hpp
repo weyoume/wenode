@@ -87,7 +87,7 @@ struct discussion_query
 
    bool                    include_private = false;      ///< True to include private encrypted posts.
 
-   string                  max_rating = "general";       ///< Highest content rating to include in posts queried.
+   uint16_t                max_rating = 9;               ///< Highest content rating to include in posts queried.
    
    uint32_t                limit = 20;                   ///< Amount of discussions to return.
 

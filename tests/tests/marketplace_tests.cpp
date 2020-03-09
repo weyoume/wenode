@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_validate )
 
       member.signatory = "candice";
       member.account = "candice";
-      member.membership_type = TOP_MEMBERSHIP;
+      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
       member.months = 1;
       member.validate();
 

@@ -22,17 +22,46 @@ using chainbase::object;
 using chainbase::oid;
 using chainbase::allocator;
 using chainbase::strcmp_less;
+using chainbase::shared_vector;
 
+using node::protocol::chain_id_type;
+using node::protocol::digest_type;
+using node::protocol::public_key_type;
+using node::protocol::share_type;
+using node::protocol::ratio_type;
 using node::protocol::block_id_type;
 using node::protocol::transaction_id_type;
-using node::protocol::chain_id_type;
+using node::protocol::signature_type;
+
 using node::protocol::account_name_type;
-using node::protocol::asset_symbol_type;
 using node::protocol::community_name_type;
+using node::protocol::tag_name_type;
+using node::protocol::asset_symbol_type;
 using node::protocol::graph_node_name_type;
 using node::protocol::graph_edge_name_type;
-using node::protocol::tag_name_type;
-using node::protocol::share_type;
+using node::protocol::encrypted_keypair_type;
+using node::protocol::date_type;
+
+using node::protocol::community_privacy_type;
+using node::protocol::business_structure_type;
+using node::protocol::membership_tier_type;
+using node::protocol::network_officer_role_type;
+using node::protocol::executive_role_type;
+using node::protocol::proposal_distribution_type;
+using node::protocol::product_sale_type;
+using node::protocol::asset_property_type;
+using node::protocol::ad_format_type;
+using node::protocol::post_format_type;
+using node::protocol::ad_metric_type;
+using node::protocol::connection_tier_type;
+using node::protocol::feed_reach_type;
+using node::protocol::blog_reach_type;
+using node::protocol::sort_time_type;
+using node::protocol::sort_option_type;
+using node::protocol::post_time_type;
+using node::protocol::asset_issuer_permission_flags;
+using node::protocol::community_permission_flags;
+
 
 typedef bip::basic_string< char, std::char_traits< char >, allocator< char > > shared_string;
 inline std::string to_string( const shared_string& str ) { return std::string( str.begin(), str.end() ); }

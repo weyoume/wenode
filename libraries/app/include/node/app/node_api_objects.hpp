@@ -1,12 +1,9 @@
 #pragma once
-#include <node/chain/account_object.hpp>
+#include <node/chain/node_objects.hpp>
 #include <node/chain/block_summary_object.hpp>
-#include <node/chain/comment_object.hpp>
 #include <node/chain/global_property_object.hpp>
 #include <node/chain/history_object.hpp>
-#include <node/chain/node_objects.hpp>
 #include <node/chain/transaction_object.hpp>
-#include <node/chain/producer_objects.hpp>
 #include <node/tags/tags_plugin.hpp>
 #include <plugins/producer/include/node/producer/producer_objects.hpp>
 
@@ -45,7 +42,7 @@ struct comment_api_obj
       community( o.community ),
       body( to_string( o.body ) ),
       interface( o.interface ),
-      rating( post_rating_values[ o.rating ] ),
+      rating( o.rating ),
       language( to_string( o.language ) ),
       root_comment( o.root_comment ),
       parent_author( o.parent_author ),
@@ -63,11 +60,11 @@ struct comment_api_obj
       net_votes( o.net_votes ),
       view_count( o.view_count ),
       share_count( o.share_count ),
-      net_reward( o.net_reward ),
-      vote_power( o.vote_power ),
-      view_power( o.view_power ),
-      share_power( o.share_power ),
-      comment_power( o.comment_power ),
+      net_reward( o.net_reward.value ),
+      vote_power( o.vote_power.value ),
+      view_power( o.view_power.value ),
+      share_power( o.share_power.value ),
+      comment_power( o.comment_power.value ),
       cashout_time( o.cashout_time ),
       cashouts_received( o.cashouts_received ),
       total_vote_weight( o.total_vote_weight ),
@@ -79,7 +76,7 @@ struct comment_api_obj
       beneficiary_payout_value( o.beneficiary_payout_value ),
       content_rewards( o.content_rewards ),
       percent_liquid( o.percent_liquid ),
-      reward( o.reward ),
+      reward( o.reward.value ),
       weight( o.weight ),
       max_weight( o.max_weight ),
       max_accepted_payout( o.max_accepted_payout ),
@@ -138,7 +135,7 @@ struct comment_api_obj
    vector< string >               ipfs;                         ///< String containing a display image or video file as an IPFS file hash.
    vector< string >               magnet;                       ///< String containing a bittorrent magnet link to a file swarm.
    account_name_type              interface;                    ///< Name of the interface account that was used to broadcast the transaction and view the post.
-   string                         rating;                       ///< User nominated rating as to the maturity of the content, and display sensitivity. 
+   uint16_t                       rating;                       ///< User nominated rating as to the maturity of the content, and display sensitivity. 
    string                         language;                     ///< String containing a two letter language code that the post is broadcast in.
    comment_id_type                root_comment;                 ///< The root post that the comment is an ancestor of. 
    account_name_type              parent_author;                ///< Account that created the post this post is replying to, empty if root post. 
@@ -158,11 +155,11 @@ struct comment_api_obj
    int32_t                        net_votes;                    ///< The amount of upvotes, minus downvotes on the post.
    uint32_t                       view_count;                   ///< The amount of views on the post.
    uint32_t                       share_count;                  ///< The amount of shares on the post.
-   int128_t                       net_reward;                   ///< Net reward is the sum of all vote, view, share and comment power.
-   int128_t                       vote_power;                   ///< Sum of weighted voting power from votes.
-   int128_t                       view_power;                   ///< Sum of weighted voting power from viewers.
-   int128_t                       share_power;                  ///< Sum of weighted voting power from shares.
-   int128_t                       comment_power;                ///< Sum of weighted voting power from comments.
+   int64_t                       net_reward;                   ///< Net reward is the sum of all vote, view, share and comment power.
+   int64_t                       vote_power;                   ///< Sum of weighted voting power from votes.
+   int64_t                       view_power;                   ///< Sum of weighted voting power from viewers.
+   int64_t                       share_power;                  ///< Sum of weighted voting power from shares.
+   int64_t                       comment_power;                ///< Sum of weighted voting power from comments.
    time_point                     cashout_time;                 ///< 24 hours from the weighted average of vote time
    uint32_t                       cashouts_received;            ///< Number of times that the comment has received content rewards
    uint128_t                      total_vote_weight;            ///< the total weight of votes, used to calculate pro-rata share of curation payouts
@@ -548,13 +545,21 @@ struct account_business_api_obj
       executive_board( a.executive_board ),
       officer_vote_threshold( a.officer_vote_threshold.value )
       {
+         for( auto name : a.executive_votes )
+         {
+            executive_votes.push_back( std::make_pair( name.first, std::make_pair( executive_role_values[ name.second.first ] , name.second.second.value ) ) );
+         }
          for( auto name : a.executives )
          {
-            executives.push_back( std::make_pair( name.first, std::make_pair( executive_role_values[ name.second.first ] , name.second.second.value ) ) );
+            executives.push_back( name );
+         }
+         for( auto name : a.officer_votes )
+         {
+            officer_votes.push_back( std::make_pair( name.first, name.second.value ) );
          }
          for( auto name : a.officers )
          {
-            officers.push_back( std::make_pair( name.first, name.second.value ) );
+            officers.push_back( name );
          }
          for( auto name : a.members )
          {
@@ -584,8 +589,10 @@ struct account_business_api_obj
    account_name_type                                               account;                    ///< Username of the business account, lowercase letters only.
    string                                                          business_type;              ///< Type of business account, controls authorizations for transactions of different types.
    executive_officer_set                                           executive_board;            ///< Set of highest voted executive accounts for each role.
-   vector< pair< account_name_type, pair< string, int64_t > > >    executives;                 ///< Set of all executive names.    
-   vector< pair< account_name_type, int64_t > >                    officers;                   ///< Set of all officers in the business, and their supporting voting power.
+   vector< pair< account_name_type, pair< string, int64_t > > >    executive_votes;            ///< Set of all executive names.
+   vector< account_name_type >                                     executives;                 ///< Set of accounts voted as executives.
+   vector< pair< account_name_type, int64_t > >                    officer_votes;              ///< Set of all officers in the business, and their supporting voting power.
+   vector< account_name_type >                                     officers;                   ///< Set of accounts voted as officers.
    vector< account_name_type >                                     members;                    ///< Set of all members of the business.
    int64_t                                                         officer_vote_threshold;     ///< Amount of voting power required for an officer to be active. 
    vector<asset_symbol_type >                                      equity_assets;              ///< Set of equity assets that offer dividends and voting power over the business account's structure
@@ -969,7 +976,8 @@ struct community_api_obj
       created( b.created ),
       last_community_update( b.last_community_update ),
       last_post( b.last_post ),
-      last_root_post( b.last_root_post ){}
+      last_root_post( b.last_root_post ),
+      active( b.active ){}
 
    community_api_obj(){}
 
@@ -992,6 +1000,7 @@ struct community_api_obj
    time_point                         last_community_update;                  ///< Time that the community's details were last updated.
    time_point                         last_post;                          ///< Time that the user most recently created a comment.
    time_point                         last_root_post;                     ///< Time that the community last created a post. 
+   bool                               active;
 };
 
 
@@ -1025,7 +1034,7 @@ struct moderation_tag_api_obj
       moderator( m.moderator ),
       comment( m.comment ),
       community( m.community ),
-      rating( post_rating_values[ m.rating ] ),
+      rating( m.rating ),
       details( to_string( m.details ) ),
       interface( m.interface ),
       filter( m.filter ),
@@ -1045,7 +1054,7 @@ struct moderation_tag_api_obj
    comment_id_type                comment;          ///< ID of the comment.
    community_name_type            community;        ///< The name of the community to which the post is uploaded to.
    vector< tag_name_type >        tags;             ///< Set of string tags for sorting the post by
-   string                         rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
+   uint16_t                       rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
    string                         details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
    account_name_type              interface;        ///< Name of the interface application that broadcasted the transaction.
    bool                           filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
@@ -1177,9 +1186,9 @@ struct equity_data_api_obj
       min_active_time( e.min_active_time ),
       min_balance( e.min_balance.value ),
       min_producers( e.min_producers ),
-      boost_balance( e.boost_balance ),
-      boost_activity( e.boost_activity ),
-      boost_producers( e.boost_producers ),
+      boost_balance( e.boost_balance.value ),
+      boost_activity( e.boost_activity.value ),
+      boost_producers( e.boost_producers.value ),
       boost_top( e.boost_top )
       {
          for( auto a: e.dividend_pool )
@@ -2093,11 +2102,11 @@ struct tag_api_obj
    int32_t                    net_votes;       ///< The amount of upvotes, minus downvotes for all posts using the tag.
    int32_t                    view_count;      ///< The amount of views for all posts using the tag.
    int32_t                    share_count;     ///< The amount of shares for all posts using the tag.
-   int128_t                   net_reward;      ///< Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
-   int128_t                   vote_power;      ///< Sum of weighted voting power for all posts using the tag.
-   int128_t                   view_power;      ///< Sum of weighted view power for all posts using the tag.
-   int128_t                   share_power;     ///< Sum of weighted share power for all posts using the tag.
-   int128_t                   comment_power;   ///< Sum of weighted comment power for all posts using the tag.
+   int64_t                   net_reward;      ///< Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
+   int64_t                   vote_power;      ///< Sum of weighted voting power for all posts using the tag.
+   int64_t                   view_power;      ///< Sum of weighted view power for all posts using the tag.
+   int64_t                   share_power;     ///< Sum of weighted share power for all posts using the tag.
+   int64_t                   comment_power;   ///< Sum of weighted comment power for all posts using the tag.
 };
 
 
@@ -2522,6 +2531,7 @@ FC_REFLECT( node::app::community_api_obj,
          (last_community_update)
          (last_post)
          (last_root_post)
+         (active)
          );
 
 FC_REFLECT( node::app::tag_following_api_obj,

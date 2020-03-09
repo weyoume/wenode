@@ -18,6 +18,7 @@ namespace node { namespace chain {
    using node::protocol::asset;
    using node::protocol::asset_symbol_type;
    using node::protocol::share_type;
+   using node::protocol::signed_transaction;
 
    /**
     * All producers with at least 1% net positive approval and

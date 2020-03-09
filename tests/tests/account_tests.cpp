@@ -494,7 +494,7 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       account_membership_operation op;
       op.signatory = "alice";
       op.account = "alice";
-      op.membership_type = STANDARD_MEMBERSHIP;
+      op.membership_type = membership_tier_type::STANDARD_MEMBERSHIP;
       op.months = 1;
       op.interface = INIT_ACCOUNT;
 
@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       const account_object& acct = db.get_account( "alice" );
 
       BOOST_REQUIRE( acct.name == "alice" );
-      BOOST_REQUIRE( acct.membership == STANDARD_MEMBERSHIP );
+      BOOST_REQUIRE( acct.membership == membership_tier_type::STANDARD_MEMBERSHIP );
       BOOST_REQUIRE( acct.membership_interface == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.recurring_membership == 1 );
       BOOST_REQUIRE( acct.membership_expiration == now() + fc::days(30) );
@@ -560,7 +560,7 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       op.account = "alice";
       op.business_account = INIT_ACCOUNT;
       op.executive_account = INIT_CEO;
-      op.role = CHIEF_EXECUTIVE_OFFICER;
+      op.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
 
       op.validate();
 
@@ -576,7 +576,7 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       BOOST_REQUIRE( vote.business_account == INIT_ACCOUNT );
       BOOST_REQUIRE( vote.executive_account ==  INIT_CEO );
       BOOST_REQUIRE( vote.vote_rank == 1 );
-      BOOST_REQUIRE( vote.role == CHIEF_EXECUTIVE_OFFICER );
+      BOOST_REQUIRE( vote.role == executive_role_type::CHIEF_EXECUTIVE_OFFICER );
 
       validate_database();
 
@@ -2139,9 +2139,9 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
 
       comment_options options;
       comment.options = options;
@@ -2239,7 +2239,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       request.signatory = "alice";
       request.account = "alice";
       request.requested_account = "bob";
-      request.connection_type = CONNECTION;
+      request.connection_type = connection_tier_type::CONNECTION;
       request.message = "Hello";
       request.requested = true;
 
@@ -2253,12 +2253,12 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       const auto& req_idx = db.get_index< connection_request_index >().indices().get< by_account_req >();
       auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
       const auto& con_idx = db.get_index< connection_index >().indices().get< by_accounts >();
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", CONNECTION ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::CONNECTION ) );
 
       BOOST_REQUIRE( req_itr != req_idx.end() );
       BOOST_REQUIRE( req_itr->account == "alice" );
       BOOST_REQUIRE( req_itr->requested_account == "bob" );
-      BOOST_REQUIRE( req_itr->connection_type == CONNECTION );
+      BOOST_REQUIRE( req_itr->connection_type == connection_tier_type::CONNECTION );
       BOOST_REQUIRE( req_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
       BOOST_REQUIRE( con_itr == con_idx.end() );    // Connection not created yet
 
@@ -2274,7 +2274,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       accept.signatory = "bob";
       accept.account = "bob";
       accept.requesting_account = "alice";
-      accept.connection_type = CONNECTION;
+      accept.connection_type = connection_tier_type::CONNECTION;
       accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
       accept.encrypted_key = "#supersecretencryptedkeygoeshere";
       accept.connected = true;
@@ -2284,12 +2284,12 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       db.push_transaction( tx, 0 );
 
       auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", CONNECTION ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::CONNECTION ) );
 
       BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
       BOOST_REQUIRE( con_itr->account_a == "alice" );
       BOOST_REQUIRE( con_itr->account_b == "bob" );
-      BOOST_REQUIRE( con_itr->connection_type == CONNECTION );
+      BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::CONNECTION );
       BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
       BOOST_REQUIRE( con_itr->connection_id == "eb634e76-f478-49d5-8441-54ae22a4092c" );
       BOOST_REQUIRE( con_itr->created == now() );
@@ -2310,12 +2310,12 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       db.push_transaction( tx, 0 );
 
       auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", CONNECTION ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::CONNECTION ) );
 
       BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
       BOOST_REQUIRE( con_itr->account_a == "alice" );
       BOOST_REQUIRE( con_itr->account_b == "bob" );
-      BOOST_REQUIRE( con_itr->connection_type == CONNECTION );
+      BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::CONNECTION );
       BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
       BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
       BOOST_REQUIRE( con_itr->connection_id == "eb634e76-f478-49d5-8441-54ae22a4092c" );
@@ -2338,7 +2338,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
 
       generate_blocks( now() + CONNECTION_REQUEST_DURATION - BLOCK_INTERVAL, true );
 
-      request.connection_type = FRIEND;
+      request.connection_type = connection_tier_type::FRIEND;
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2361,12 +2361,12 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       db.push_transaction( tx, 0 );
 
       auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", FRIEND ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
 
       BOOST_REQUIRE( req_itr != req_idx.end() );
       BOOST_REQUIRE( req_itr->account == "alice" );
       BOOST_REQUIRE( req_itr->requested_account == "bob" );
-      BOOST_REQUIRE( req_itr->connection_type == FRIEND );
+      BOOST_REQUIRE( req_itr->connection_type == connection_tier_type::FRIEND );
       BOOST_REQUIRE( req_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
       BOOST_REQUIRE( con_itr == con_idx.end() );    // Connection not created yet
 
@@ -2380,7 +2380,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       accept.signatory = "bob";
       accept.account = "bob";
       accept.requesting_account = "alice";
-      accept.connection_type = FRIEND;
+      accept.connection_type = connection_tier_type::FRIEND;
       accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
       accept.encrypted_key = "#supersecretencryptedkeygoeshere";
       accept.connected = true;
@@ -2390,12 +2390,12 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       db.push_transaction( tx, 0 );
 
       auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", FRIEND ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
 
       BOOST_REQUIRE( req_itr == req_idx.end() );
       BOOST_REQUIRE( con_itr->account_a == "alice" );
       BOOST_REQUIRE( con_itr->account_b == "bob" );
-      BOOST_REQUIRE( con_itr->connection_type == FRIEND );
+      BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::FRIEND );
       BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
       BOOST_REQUIRE( con_itr->connection_id == "eb634e76-f478-49d5-8441-54ae22a4092c" );
       BOOST_REQUIRE( con_itr->created == now() );
@@ -2410,19 +2410,19 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       accept.signatory = "alice";
       accept.account = "alice";
       accept.requesting_account = "bob";
-      accept.connection_type = FRIEND;
+      accept.connection_type = connection_tier_type::FRIEND;
 
       tx.operations.push_back( accept );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", FRIEND ) );
+      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
 
       BOOST_REQUIRE( req_itr == req_idx.end() );
       BOOST_REQUIRE( con_itr->account_a == "alice" );
       BOOST_REQUIRE( con_itr->account_b == "bob" );
-      BOOST_REQUIRE( con_itr->connection_type == FRIEND );
+      BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::FRIEND );
       BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
       BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == "#supersecretencryptedkeygoeshere" );
       BOOST_REQUIRE( con_itr->connection_id == "eb634e76-f478-49d5-8441-54ae22a4092c" );

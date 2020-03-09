@@ -1,5 +1,5 @@
 #pragma once
-
+#include <node/protocol/types.hpp>
 #include <node/protocol/node_operations.hpp>
 
 #include <node/chain/evaluator.hpp>

@@ -7,11 +7,9 @@
 #include <node/app/application.hpp>
 
 #include <node/protocol/block.hpp>
-
 #include <node/chain/block_log.hpp>
-#include <node/chain/account_object.hpp>
 #include <node/chain/database.hpp>
-#include <node/chain/producer_objects.hpp>
+#include <node/chain/node_objects.hpp>
 
 #include <graphene/utilities/key_conversion.hpp>
 

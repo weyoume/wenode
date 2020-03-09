@@ -3,7 +3,6 @@
 #include <node/protocol/node_operations.hpp>
 #include <node/protocol/authority.hpp>
 #include <node/chain/node_object_types.hpp>
-#include <node/chain/producer_objects.hpp>
 #include <node/chain/shared_authority.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
@@ -97,11 +96,11 @@ namespace node { namespace chain {
          { 
             switch( asset_type )
             {
-               case BITASSET_ASSET:
-               case PREDICTION_ASSET:
-               case LIQUIDITY_POOL_ASSET:
-               case CREDIT_POOL_ASSET:
-               case OPTION_ASSET:
+               case asset_property_type::BITASSET_ASSET:
+               case asset_property_type::PREDICTION_ASSET:
+               case asset_property_type::LIQUIDITY_POOL_ASSET:
+               case asset_property_type::CREDIT_POOL_ASSET:
+               case asset_property_type::OPTION_ASSET:
                {
                   return true;
                }
@@ -206,8 +205,8 @@ namespace node { namespace chain {
          {
             if( !is_market_issued() )
             {
-               FC_ASSERT(!(flags & disable_force_settle || flags & global_settle));
-               FC_ASSERT(!(issuer_permissions & disable_force_settle || issuer_permissions & global_settle));
+               FC_ASSERT(!(flags & asset_issuer_permission_flags::disable_force_settle || flags & asset_issuer_permission_flags::global_settle));
+               FC_ASSERT(!(issuer_permissions & asset_issuer_permission_flags::disable_force_settle || issuer_permissions & asset_issuer_permission_flags::global_settle));
             }
          }
    };

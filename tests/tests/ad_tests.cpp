@@ -77,9 +77,9 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
       comment.options = options;
       comment.validate();
 
@@ -95,7 +95,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
       creative.signatory = "alice";
       creative.author = "alice";
-      creative.format_type = STANDARD_FORMAT;
+      creative.format_type = ad_format_type::STANDARD_FORMAT;
       creative.creative_id = "8638f626-7c6e-4440-9a67-43ab48939870";
       creative.objective = "creativepermlink";
       creative.creative = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
@@ -195,7 +195,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       inventory.provider = "bob";
       inventory.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
       inventory.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
-      inventory.metric = VIEW_METRIC;
+      inventory.metric = ad_metric_type::VIEW_METRIC;
       inventory.json = "{\"json\":\"valid\"}";
       inventory.min_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       inventory.inventory = 100;
@@ -237,7 +237,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       inventory.provider = "bob";
       inventory.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
       inventory.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
-      inventory.metric = VIEW_METRIC;
+      inventory.metric = ad_metric_type::VIEW_METRIC;
       inventory.json = "{\"json\":\"valid\"}";
       inventory.min_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       inventory.inventory = 100;

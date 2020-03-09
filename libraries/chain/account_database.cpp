@@ -62,21 +62,21 @@ void database::process_membership_updates()
 
          switch( member.membership )
          {
-            case NONE:
+            case membership_tier_type::NONE:
             {
                break; 
             }
-            case STANDARD_MEMBERSHIP:
+            case membership_tier_type::STANDARD_MEMBERSHIP:
             {
                monthly_fee = median_props.membership_base_price;
                break; 
             }
-            case MID_MEMBERSHIP:
+            case membership_tier_type::MID_MEMBERSHIP:
             {
                monthly_fee = median_props.membership_mid_price;
                break; 
             }
-            case TOP_MEMBERSHIP:
+            case membership_tier_type::TOP_MEMBERSHIP:
             {
                monthly_fee = median_props.membership_top_price;
                break; 
@@ -265,15 +265,15 @@ asset database::claim_activity_reward( const account_object& account,
    {
       activity_shares *= 2;
    }
-   if( account.membership == STANDARD_MEMBERSHIP )
+   if( account.membership == membership_tier_type::STANDARD_MEMBERSHIP )
    {
       activity_shares = (activity_shares * ACTIVITY_BOOST_STANDARD_PERCENT) / PERCENT_100;
    }
-   else if( account.membership == MID_MEMBERSHIP )
+   else if( account.membership == membership_tier_type::MID_MEMBERSHIP )
    {
       activity_shares = (activity_shares * ACTIVITY_BOOST_MID_PERCENT) / PERCENT_100;
    }
-   else if( account.membership == TOP_MEMBERSHIP )
+   else if( account.membership == membership_tier_type::TOP_MEMBERSHIP )
    {
       activity_shares = (activity_shares * ACTIVITY_BOOST_TOP_PERCENT) / PERCENT_100;
    }
@@ -420,9 +420,9 @@ void database::update_network_officer_votes( const account_object& account )
    auto vote_itr = vote_idx.lower_bound( account.name );
 
    flat_map< network_officer_role_type, uint16_t > vote_rank;
-   vote_rank[ DEVELOPMENT ] = 1;
-   vote_rank[ MARKETING ] = 1;
-   vote_rank[ ADVOCACY ] = 1;
+   vote_rank[ network_officer_role_type::DEVELOPMENT ] = 1;
+   vote_rank[ network_officer_role_type::MARKETING ] = 1;
+   vote_rank[ network_officer_role_type::ADVOCACY ] = 1;
 
    while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
    {
@@ -440,7 +440,7 @@ void database::update_network_officer_votes( const account_object& account )
 
    modify( account, [&]( account_object& a )
    {
-      a.officer_vote_count = ( vote_rank[ DEVELOPMENT ] + vote_rank[ MARKETING ] + vote_rank[ ADVOCACY ] - 3 );
+      a.officer_vote_count = ( vote_rank[ network_officer_role_type::DEVELOPMENT ] + vote_rank[ network_officer_role_type::MARKETING ] + vote_rank[ network_officer_role_type::ADVOCACY ] - 3 );
    });
 }
 
@@ -455,9 +455,9 @@ void database::update_network_officer_votes( const account_object& account, cons
    auto vote_itr = vote_idx.lower_bound( account.name );
 
    flat_map< network_officer_role_type, uint16_t > vote_rank;
-   vote_rank[ DEVELOPMENT ] = 1;
-   vote_rank[ MARKETING ] = 1;
-   vote_rank[ ADVOCACY ] = 1;
+   vote_rank[ network_officer_role_type::DEVELOPMENT ] = 1;
+   vote_rank[ network_officer_role_type::MARKETING ] = 1;
+   vote_rank[ network_officer_role_type::ADVOCACY ] = 1;
 
    while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
    {
@@ -488,7 +488,7 @@ void database::update_network_officer_votes( const account_object& account, cons
 
    modify( account, [&]( account_object& a )
    {
-      a.officer_vote_count = ( vote_rank[ DEVELOPMENT ] + vote_rank[ MARKETING ] + vote_rank[ ADVOCACY ] - 3 );
+      a.officer_vote_count = ( vote_rank[ network_officer_role_type::DEVELOPMENT ] + vote_rank[ network_officer_role_type::MARKETING ] + vote_rank[ network_officer_role_type::ADVOCACY ] - 3 );
    });
 }
 
@@ -713,16 +713,16 @@ void database::update_account_executive_votes( const account_object& account, co
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
 
    flat_map< executive_role_type, uint16_t >vote_rank;
-   vote_rank[ CHIEF_EXECUTIVE_OFFICER ] = 1;
-   vote_rank[ CHIEF_OPERATING_OFFICER ] = 1;
-   vote_rank[ CHIEF_FINANCIAL_OFFICER ] = 1;
-   vote_rank[ CHIEF_TECHNOLOGY_OFFICER ] = 1;
-   vote_rank[ CHIEF_DEVELOPMENT_OFFICER ] = 1;
-   vote_rank[ CHIEF_MARKETING_OFFICER ] = 1;
-   vote_rank[ CHIEF_ADVOCACY_OFFICER ] = 1;
-   vote_rank[ CHIEF_GOVERNANCE_OFFICER ] = 1;
-   vote_rank[ CHIEF_SECURITY_OFFICER ] = 1;
-   vote_rank[ CHIEF_DESIGN_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_EXECUTIVE_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_OPERATING_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_FINANCIAL_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_TECHNOLOGY_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_DEVELOPMENT_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_MARKETING_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_ADVOCACY_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_GOVERNANCE_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_SECURITY_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_DESIGN_OFFICER ] = 1;
 
    while( vote_itr != vote_idx.end() && 
       vote_itr->account == account.name &&
@@ -753,16 +753,16 @@ void database::update_account_executive_votes( const account_object& account, co
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
 
    flat_map< executive_role_type, uint16_t >vote_rank;
-   vote_rank[ CHIEF_EXECUTIVE_OFFICER ] = 1;
-   vote_rank[ CHIEF_OPERATING_OFFICER ] = 1;
-   vote_rank[ CHIEF_FINANCIAL_OFFICER ] = 1;
-   vote_rank[ CHIEF_TECHNOLOGY_OFFICER ] = 1;
-   vote_rank[ CHIEF_DEVELOPMENT_OFFICER ] = 1;
-   vote_rank[ CHIEF_MARKETING_OFFICER ] = 1;
-   vote_rank[ CHIEF_ADVOCACY_OFFICER ] = 1;
-   vote_rank[ CHIEF_GOVERNANCE_OFFICER ] = 1;
-   vote_rank[ CHIEF_SECURITY_OFFICER ] = 1;
-   vote_rank[ CHIEF_DESIGN_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_EXECUTIVE_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_OPERATING_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_FINANCIAL_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_TECHNOLOGY_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_DEVELOPMENT_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_MARKETING_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_ADVOCACY_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_GOVERNANCE_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_SECURITY_OFFICER ] = 1;
+   vote_rank[ executive_role_type::CHIEF_DESIGN_OFFICER ] = 1;
 
    while( vote_itr != vote_idx.end() && 
       vote_itr->account == account.name &&

@@ -136,9 +136,9 @@ namespace node { namespace protocol {
 
       switch( business_type )
       {
-         case OPEN_BUSINESS:
-         case PUBLIC_BUSINESS:
-         case PRIVATE_BUSINESS:
+         case business_structure_type::OPEN_BUSINESS:
+         case business_structure_type::PUBLIC_BUSINESS:
+         case business_structure_type::PRIVATE_BUSINESS:
          {
             break;
          }
@@ -223,10 +223,10 @@ namespace node { namespace protocol {
       validate_account_name( interface );
       switch( membership_type )
       {
-         case NONE:
-         case STANDARD_MEMBERSHIP:
-         case MID_MEMBERSHIP:
-         case TOP_MEMBERSHIP:
+         case membership_tier_type::NONE:
+         case membership_tier_type::STANDARD_MEMBERSHIP:
+         case membership_tier_type::MID_MEMBERSHIP:
+         case membership_tier_type::TOP_MEMBERSHIP:
          {
             break;
          }
@@ -250,16 +250,16 @@ namespace node { namespace protocol {
       validate_account_name( executive_account );
       switch( role )
       {
-         case CHIEF_EXECUTIVE_OFFICER:
-         case CHIEF_OPERATING_OFFICER:
-         case CHIEF_FINANCIAL_OFFICER:
-         case CHIEF_DEVELOPMENT_OFFICER:
-         case CHIEF_TECHNOLOGY_OFFICER:
-         case CHIEF_SECURITY_OFFICER:
-         case CHIEF_GOVERNANCE_OFFICER:
-         case CHIEF_MARKETING_OFFICER:
-         case CHIEF_DESIGN_OFFICER:
-         case CHIEF_ADVOCACY_OFFICER:
+         case executive_role_type::CHIEF_EXECUTIVE_OFFICER:
+         case executive_role_type::CHIEF_OPERATING_OFFICER:
+         case executive_role_type::CHIEF_FINANCIAL_OFFICER:
+         case executive_role_type::CHIEF_DEVELOPMENT_OFFICER:
+         case executive_role_type::CHIEF_TECHNOLOGY_OFFICER:
+         case executive_role_type::CHIEF_SECURITY_OFFICER:
+         case executive_role_type::CHIEF_GOVERNANCE_OFFICER:
+         case executive_role_type::CHIEF_MARKETING_OFFICER:
+         case executive_role_type::CHIEF_DESIGN_OFFICER:
+         case executive_role_type::CHIEF_ADVOCACY_OFFICER:
          break;
          
          default:
@@ -437,9 +437,9 @@ namespace node { namespace protocol {
 
       switch( connection_type )
       {
-         case CONNECTION:
-         case FRIEND:
-         case COMPANION:
+         case connection_tier_type::CONNECTION:
+         case connection_tier_type::FRIEND:
+         case connection_tier_type::COMPANION:
          {
             break;
          }
@@ -468,9 +468,9 @@ namespace node { namespace protocol {
 
       switch( connection_type )
       {
-         case CONNECTION:
-         case FRIEND:
-         case COMPANION:
+         case connection_tier_type::CONNECTION:
+         case connection_tier_type::FRIEND:
+         case connection_tier_type::COMPANION:
          {
             break;
          }
@@ -522,9 +522,9 @@ namespace node { namespace protocol {
       validate_account_name( account );
       switch( officer_type )
       {
-         case DEVELOPMENT:
-         case MARKETING:
-         case ADVOCACY:
+         case network_officer_role_type::DEVELOPMENT:
+         case network_officer_role_type::MARKETING:
+         case network_officer_role_type::ADVOCACY:
          {
             break;
          }
@@ -796,18 +796,18 @@ namespace node { namespace protocol {
 
       switch( proposal_type )
       {
-         case FUNDING:
+         case proposal_distribution_type::FUNDING:
          {
             FC_ASSERT( beneficiaries.size() >= 1 && beneficiaries.size() <= 100, 
             "Funding Proposal must have between 1 and 100 beneficiaries." );
          }
          break;
-         case COMPETITION:
+         case proposal_distribution_type::COMPETITION:
          {
 
          }
          break;
-         case INVESTMENT:
+         case proposal_distribution_type::INVESTMENT:
          {
             FC_ASSERT( beneficiaries.size() == 0, 
                "Investment Proposal should not specify account beneficiaries." );
@@ -899,20 +899,22 @@ namespace node { namespace protocol {
          "Max accepted payout must be in USD" );
       FC_ASSERT( max_accepted_payout.amount.value >= 0, 
          "Cannot accept less than 0 payout" );
+      FC_ASSERT( rating >= 1 && rating <= 10, 
+         "Post Rating level should be between 1 and 10" );
 
       switch( post_type )
       {
-         case TEXT_POST:
-         case IMAGE_POST:
-         case VIDEO_POST:
-         case LINK_POST:
-         case ARTICLE_POST:
-         case AUDIO_POST:
-         case FILE_POST:
-         case POLL_POST:
-         case LIVESTREAM_POST:
-         case PRODUCT_POST:
-         case LIST_POST:
+         case post_format_type::TEXT_POST:
+         case post_format_type::IMAGE_POST:
+         case post_format_type::VIDEO_POST:
+         case post_format_type::LINK_POST:
+         case post_format_type::ARTICLE_POST:
+         case post_format_type::AUDIO_POST:
+         case post_format_type::FILE_POST:
+         case post_format_type::POLL_POST:
+         case post_format_type::LIVESTREAM_POST:
+         case post_format_type::PRODUCT_POST:
+         case post_format_type::LIST_POST:
          {
             break;
          }
@@ -924,34 +926,20 @@ namespace node { namespace protocol {
 
       switch( reach )
       {
-         case NO_FEED:
-         case FOLLOW_FEED:
-         case MUTUAL_FEED:
-         case CONNECTION_FEED:
-         case FRIEND_FEED:
-         case COMPANION_FEED:
-         case COMMUNITY_FEED:
-         case TAG_FEED:
+         case feed_reach_type::NO_FEED:
+         case feed_reach_type::FOLLOW_FEED:
+         case feed_reach_type::MUTUAL_FEED:
+         case feed_reach_type::CONNECTION_FEED:
+         case feed_reach_type::FRIEND_FEED:
+         case feed_reach_type::COMPANION_FEED:
+         case feed_reach_type::COMMUNITY_FEED:
+         case feed_reach_type::TAG_FEED:
          {
             break;
          }
          default:
          {
             FC_ASSERT( false, "Comment rejected: Invalid feed type." );
-         }
-      }
-
-      switch( rating )
-      {
-         case FAMILY:
-         case GENERAL:
-         case ADULT:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Comment rejected: Invalid rating type." );
          }
       }
 
@@ -1112,19 +1100,9 @@ namespace node { namespace protocol {
          validate_tag_name( tag );
       }
 
-      switch( rating )
-      {
-         case FAMILY:
-         case GENERAL:
-         case ADULT:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Invalid rating type." );
-         }
-      }
+      FC_ASSERT( rating >= 1 && rating <= 10,
+         "Post Rating level should be between 1 and 10" );
+
       FC_ASSERT( details.size(), 
          "Moderation tag must include details explaining the rule or standard violation." );
 
@@ -1133,9 +1111,9 @@ namespace node { namespace protocol {
    }
 
 
-   //==========================//
+   //==============================//
    // === Community Operations === //
-   //==========================//
+   //==============================//
 
 
    void community_create_operation::validate() const
@@ -1146,14 +1124,14 @@ namespace node { namespace protocol {
 
       switch( community_privacy )
       {
-         case OPEN_PUBLIC_COMMUNITY:
-         case GENERAL_PUBLIC_COMMUNITY:
-         case EXCLUSIVE_PUBLIC_COMMUNITY:
-         case CLOSED_PUBLIC_COMMUNITY:
-         case OPEN_PRIVATE_COMMUNITY:
-         case GENERAL_PRIVATE_COMMUNITY:
-         case EXCLUSIVE_PRIVATE_COMMUNITY:
-         case CLOSED_PRIVATE_COMMUNITY:
+         case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+         case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
+         case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+         case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
+         case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+         case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+         case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+         case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
          {
             break;
          }
@@ -1406,13 +1384,13 @@ namespace node { namespace protocol {
 
       switch( format_type )
       {
-         case STANDARD_FORMAT:
-         case PREMIUM_FORMAT:
-         case PRODUCT_FORMAT:
-         case LINK_FORMAT:
-         case COMMUNITY_FORMAT:
-         case ACCOUNT_FORMAT:
-         case ASSET_FORMAT:
+         case ad_format_type::STANDARD_FORMAT:
+         case ad_format_type::PREMIUM_FORMAT:
+         case ad_format_type::PRODUCT_FORMAT:
+         case ad_format_type::LINK_FORMAT:
+         case ad_format_type::COMMUNITY_FORMAT:
+         case ad_format_type::ACCOUNT_FORMAT:
+         case ad_format_type::ASSET_FORMAT:
          {
             break;
          }
@@ -1515,12 +1493,12 @@ namespace node { namespace protocol {
    
       switch( metric )
       {
-         case VIEW_METRIC:
-         case VOTE_METRIC:
-         case SHARE_METRIC:
-         case FOLLOW_METRIC:
-         case PURCHASE_METRIC:
-         case PREMIUM_METRIC:
+         case ad_metric_type::VIEW_METRIC:
+         case ad_metric_type::VOTE_METRIC:
+         case ad_metric_type::SHARE_METRIC:
+         case ad_metric_type::FOLLOW_METRIC:
+         case ad_metric_type::PURCHASE_METRIC:
+         case ad_metric_type::PREMIUM_METRIC:
          {
             break;
          }
@@ -1771,9 +1749,11 @@ namespace node { namespace protocol {
 
       switch( graph_privacy )
       {
-         case CONNECTION:
-         case FRIEND:
-         case COMPANION:
+         case connection_tier_type::PUBLIC:
+         case connection_tier_type::CONNECTION:
+         case connection_tier_type::FRIEND:
+         case connection_tier_type::COMPANION:
+         case connection_tier_type::SECURE:
          {
             break;
          }
@@ -1785,9 +1765,11 @@ namespace node { namespace protocol {
 
       switch( edge_permission )
       {
-         case CONNECTION:
-         case FRIEND:
-         case COMPANION:
+         case connection_tier_type::PUBLIC:
+         case connection_tier_type::CONNECTION:
+         case connection_tier_type::FRIEND:
+         case connection_tier_type::COMPANION:
+         case connection_tier_type::SECURE:
          {
             break;
          }
@@ -1825,9 +1807,11 @@ namespace node { namespace protocol {
 
       switch( graph_privacy )
       {
-         case CONNECTION:
-         case FRIEND:
-         case COMPANION:
+         case connection_tier_type::PUBLIC:
+         case connection_tier_type::CONNECTION:
+         case connection_tier_type::FRIEND:
+         case connection_tier_type::COMPANION:
+         case connection_tier_type::SECURE:
          {
             break;
          }
@@ -2115,11 +2099,11 @@ namespace node { namespace protocol {
 
       switch( sale_type )
       {
-         case FIXED_PRICE_SALE:
-         case WHOLESALE_PRICE_SALE:
-         case OPEN_AUCTION_SALE:
-         case REVERSE_AUCTION_SALE:
-         case SECRET_AUCTION_SALE:
+         case product_sale_type::FIXED_PRICE_SALE:
+         case product_sale_type::WHOLESALE_PRICE_SALE:
+         case product_sale_type::OPEN_AUCTION_SALE:
+         case product_sale_type::REVERSE_AUCTION_SALE:
+         case product_sale_type::SECRET_AUCTION_SALE:
          {
             break;
          }
@@ -2757,35 +2741,35 @@ namespace node { namespace protocol {
 
       switch( asset_type )
       {
-         case STANDARD_ASSET:
-         case CURRENCY_ASSET:
-         case EQUITY_ASSET:
-         case CREDIT_ASSET:
-         case BITASSET_ASSET:
-         case GATEWAY_ASSET:
-         case UNIQUE_ASSET:
+         case asset_property_type::STANDARD_ASSET:
+         case asset_property_type::CURRENCY_ASSET:
+         case asset_property_type::EQUITY_ASSET:
+         case asset_property_type::CREDIT_ASSET:
+         case asset_property_type::BITASSET_ASSET:
+         case asset_property_type::GATEWAY_ASSET:
+         case asset_property_type::UNIQUE_ASSET:
          {
             break;
          }
-         case LIQUIDITY_POOL_ASSET:
+         case asset_property_type::LIQUIDITY_POOL_ASSET:
          {
             FC_ASSERT( false,
                "Cannot directly create a new liquidity pool asset. Please create a liquidity pool between two existing assets." );
          }
          break;
-         case CREDIT_POOL_ASSET:
+         case asset_property_type::CREDIT_POOL_ASSET:
          {
             FC_ASSERT( false, 
                "Cannot directly create a new credit pool asset. Credit pool assets are created in addition to every asset." );
          }
          break;
-         case OPTION_ASSET:
+         case asset_property_type::OPTION_ASSET:
          {
             FC_ASSERT( false,
                "Cannot directly create a new option asset. Option assets are issued from an Options market." );
          }
          break;
-         case PREDICTION_ASSET:
+         case asset_property_type::PREDICTION_ASSET:
          {
             FC_ASSERT( false, 
                "Cannot directly create a new prediction asset. Prediction assets are issued from a Prediction market." );

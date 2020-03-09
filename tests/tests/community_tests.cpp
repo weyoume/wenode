@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_privacy = community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY;
       create.community_public_key = string( bob_public_posting_key );
       
       create.validate();
@@ -266,7 +266,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_privacy = community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY;
       create.community_public_key = string( bob_public_posting_key );
       
       create.validate();
@@ -329,9 +329,9 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
       comment.options = options;
       comment.validate();
 
@@ -629,7 +629,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_privacy = community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY;
       create.community_public_key = string( bob_public_posting_key );
 
       tx.operations.push_back( create );
@@ -1506,9 +1506,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       comment_options options;
 
-      options.post_type = ARTICLE_POST;
-      options.reach = TAG_FEED;
-      options.rating = GENERAL;
+      options.post_type = post_format_type::ARTICLE_POST;
+      options.reach = feed_reach_type::TAG_FEED;
+      options.rating = 1;
       comment.options = options;
       comment.validate();
 
@@ -1755,7 +1755,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       share.sharer = "george";
       share.author = "alice";
       share.permlink = "lorem";
-      share.reach = FOLLOW_FEED;
+      share.reach = feed_reach_type::FOLLOW_FEED;
       share.interface = INIT_ACCOUNT;
       share.shared = true;
       share.validate();
@@ -2167,7 +2167,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tag.author = "george";
       tag.permlink = "ipsum";
       tag.tags.push_back( "nsfw" );
-      tag.rating = ADULT;
+      tag.rating = 9;
       tag.details = "Post is NSFW";
       tag.interface = INIT_ACCOUNT;
       tag.filter = false;

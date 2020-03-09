@@ -55,8 +55,7 @@ void reset_mining_virtual_schedule_time( database& db )
 void update_median_producer_props( database& db )
 {
    const producer_schedule_object& pso = db.get_producer_schedule();
-   const dynamic_global_property_object props = db.get_dynamic_global_properties();
-   vector< const producer_object* > active; 
+   vector< const producer_object* > active;
    active.reserve( pso.num_scheduled_producers );
    size_t offset = active.size()/2;
 
@@ -355,16 +354,14 @@ void update_producer_schedule( database& db )
    if( (db.head_block_num() % TOTAL_PRODUCERS) == 0 ) //  pso.next_shuffle_block_num 
    {
       const producer_schedule_object& pso = db.get_producer_schedule();
-      const median_chain_property_object& median_props = db.get_median_chain_properties();
       fc::uint128 new_voting_virtual_time = pso.current_voting_virtual_time;
       fc::uint128 new_mining_virtual_time = pso.current_mining_virtual_time;
 
       vector< account_name_type > active_voting_producers;
       vector< account_name_type > active_mining_producers;
 
-      uint8_t total_producers = pso.dpos_producers + pso.dpos_additional_producers + pso.pow_producers + pso.pow_additional_producers;
       uint8_t max_voting_producers = pso.dpos_producers + pso.dpos_additional_producers;
-      uint8_t max_mining_producers = pso.pow_producers +  pso.pow_additional_producers;
+      uint8_t max_mining_producers = pso.pow_producers + pso.pow_additional_producers;
 
       FC_ASSERT( max_voting_producers + max_mining_producers == TOTAL_PRODUCERS,
          "Block production requires max voting producers and mining producers to add to total producers value." );
@@ -631,7 +628,7 @@ void update_producer_schedule( database& db )
 
       vector< account_name_type > shuffled_voting_producers = db.shuffle_accounts( active_voting_producers );     // Shuffle the active voting_producers
       vector< account_name_type > shuffled_mining_producers = db.shuffle_accounts( active_mining_producers );     // Shuffle the active mining_producers
-      size_t expected_active_producers = std::min( size_t( TOTAL_PRODUCERS ), voting_power_producer_idx.size()+ mining_power_producer_idx.size() );
+      expected_active_producers = std::min( size_t( TOTAL_PRODUCERS ), voting_power_producer_idx.size()+ mining_power_producer_idx.size() );
 
       for( size_t i = shuffled_voting_producers.size(); i < max_voting_producers; i++ )
       {

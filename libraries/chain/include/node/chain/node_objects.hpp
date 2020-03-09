@@ -2,6 +2,7 @@
 
 #include <node/protocol/authority.hpp>
 #include <node/protocol/node_operations.hpp>
+#include <node/protocol/block.hpp>
 #include <node/chain/node_object_types.hpp>
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
@@ -12,6 +13,64 @@ namespace node { namespace chain {
    using node::protocol::asset;
    using node::protocol::price;
    using node::protocol::option_strike;
+   using node::protocol::asset_unit;
+   using node::protocol::authority;
+   using node::protocol::signed_transaction;
+   using node::protocol::operation;
+
+   using node::protocol::chain_properties;
+   using node::protocol::digest_type;
+   using node::protocol::public_key_type;
+   using node::protocol::version;
+   using node::protocol::hardfork_version;
+
+   using node::protocol::price;
+   using node::protocol::asset;
+   using node::protocol::option_strike;
+   using node::protocol::price_feed;
+   using node::protocol::asset_unit;
+
+   using node::protocol::share_type;
+   using node::protocol::ratio_type;
+
+   using node::protocol::block_id_type;
+   using node::protocol::transaction_id_type;
+   using node::protocol::chain_id_type;
+
+   using node::protocol::account_name_type;
+   using node::protocol::community_name_type;
+   using node::protocol::tag_name_type;
+   using node::protocol::asset_symbol_type;
+   using node::protocol::graph_node_name_type;
+   using node::protocol::graph_edge_name_type;
+   
+   using node::protocol::encrypted_keypair_type;
+   using node::protocol::date_type;
+  
+   using node::protocol::beneficiary_route_type;
+   using node::protocol::executive_officer_set;
+   using chainbase::shared_vector;
+
+   using node::protocol::community_privacy_type;
+   using node::protocol::business_structure_type;
+   using node::protocol::membership_tier_type;
+   using node::protocol::network_officer_role_type;
+   using node::protocol::executive_role_type;
+   using node::protocol::proposal_distribution_type;
+   using node::protocol::product_sale_type;
+   using node::protocol::asset_property_type;
+   using node::protocol::ad_format_type;
+   using node::protocol::post_format_type;
+   using node::protocol::ad_metric_type;
+   using node::protocol::connection_tier_type;
+   using node::protocol::feed_reach_type;
+   using node::protocol::blog_reach_type;
+   using node::protocol::sort_time_type;
+   using node::protocol::sort_option_type;
+   using node::protocol::post_time_type;
+   using node::protocol::asset_issuer_permission_flags;
+   using node::protocol::community_permission_flags;
+
 
    /**
     * Set of Network parameters that are selected by block producers.
@@ -539,8 +598,7 @@ namespace node { namespace chain {
 
          time_point             last_updated;      ///< Time that the settlement was last modified.
 
-         asset_symbol_type      settlement_asset_symbol()const
-         { return balance.symbol; }
+         asset_symbol_type      settlement_asset_symbol()const { return balance.symbol; }
    };
 
    /**
@@ -1976,6 +2034,7 @@ namespace node { namespace chain {
 
 } } // node::chain
 
+#include <node/chain/producer_objects.hpp>
 #include <node/chain/network_object.hpp>
 #include <node/chain/asset_object.hpp>
 #include <node/chain/comment_object.hpp>

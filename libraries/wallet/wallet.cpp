@@ -2628,7 +2628,7 @@ annotated_signed_transaction      wallet_api::account_membership(
    op.signatory = signatory;
    op.account = account;
 
-   membership_tier_type mem_tier = STANDARD_MEMBERSHIP;
+   membership_tier_type mem_tier = membership_tier_type::STANDARD_MEMBERSHIP;
 
    for( auto i = 0; i < membership_tier_values.size(); i++ )
    {
@@ -2672,7 +2672,7 @@ annotated_signed_transaction      wallet_api::account_vote_executive(
    op.business_account = business_account;
    op.executive_account = executive_account;
 
-   executive_role_type exec_role = CHIEF_EXECUTIVE_OFFICER;
+   executive_role_type exec_role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
 
    for( auto i = 0; i < executive_role_values.size(); i++ )
    {
@@ -3096,7 +3096,7 @@ annotated_signed_transaction      wallet_api::connection_request(
    op.account = account;
    op.requested_account = requested_account;
 
-   connection_tier_type connection_tier = CONNECTION;
+   connection_tier_type connection_tier = connection_tier_type::CONNECTION;
 
    for( auto i = 0; i < connection_tier_values.size(); i++ )
    {
@@ -3138,7 +3138,7 @@ annotated_signed_transaction      wallet_api::connection_accept(
    op.requesting_account = requesting_account;
    op.connection_id = connection_id;
 
-   connection_tier_type connection_tier = CONNECTION;
+   connection_tier_type connection_tier = connection_tier_type::CONNECTION;
 
    for( auto i = 0; i < connection_tier_values.size(); i++ )
    {
@@ -3269,7 +3269,7 @@ annotated_signed_transaction      wallet_api::update_network_officer(
    op.signatory = signatory;
    op.account = account;
 
-   network_officer_role_type role_type = DEVELOPMENT;
+   network_officer_role_type role_type = network_officer_role_type::DEVELOPMENT;
 
    for( auto i = 0; i < network_officer_role_values.size(); i++ )
    {
@@ -3551,7 +3551,7 @@ annotated_signed_transaction      wallet_api::create_community_enterprise(
    op.creator = creator;
    op.enterprise_id = enterprise_id;
 
-   proposal_distribution_type prop_type = FUNDING;
+   proposal_distribution_type prop_type = proposal_distribution_type::FUNDING;
 
    for( auto i = 0; i < proposal_distribution_values.size(); i++ )
    {
@@ -3825,7 +3825,7 @@ annotated_signed_transaction      wallet_api::share(
    op.author = author;
    op.permlink = permlink;
 
-   feed_reach_type reach_type = FOLLOW_FEED;
+   feed_reach_type reach_type = feed_reach_type::FOLLOW_FEED;
 
    for( auto i = 0; i < feed_reach_values.size(); i++ )
    {
@@ -3856,7 +3856,7 @@ annotated_signed_transaction      wallet_api::moderation_tag(
    string author,
    string permlink,
    vector< string > tags,
-   string rating,
+   uint16_t rating,
    string details,
    string interface,
    bool filter,
@@ -3872,19 +3872,7 @@ annotated_signed_transaction      wallet_api::moderation_tag(
    op.author = author;
    op.permlink = permlink;
    op.tags = tags;
-
-   post_rating_type rating_type = GENERAL;
-
-   for( auto i = 0; i < post_rating_values.size(); i++ )
-   {
-      if( rating == post_rating_values[ i ] )
-      {
-         rating = post_rating_type( i );
-         break;
-      }
-   }
-
-   op.rating = rating_type;
+   op.rating = rating;
    op.details = details;
    op.interface = interface;
    op.filter = filter;
@@ -3925,7 +3913,7 @@ annotated_signed_transaction      wallet_api::community_create(
    op.founder = founder;
    op.name = name;
 
-   community_privacy_type privacy_type = OPEN_PUBLIC_COMMUNITY;
+   community_privacy_type privacy_type = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
 
    for( auto i = 0; i < community_privacy_values.size(); i++ )
    {
@@ -4307,7 +4295,7 @@ annotated_signed_transaction      wallet_api::ad_creative(
    op.creative = creative;
    op.json = json;
 
-   ad_format_type ad_format = STANDARD_FORMAT;
+   ad_format_type ad_format = ad_format_type::STANDARD_FORMAT;
 
    for( auto i = 0; i < ad_format_values.size(); i++ )
    {
@@ -4400,7 +4388,7 @@ annotated_signed_transaction      wallet_api::ad_inventory(
    op.inventory_id = inventory_id;
    op.audience_id = audience_id;
    
-   ad_metric_type ad_metric = VIEW_METRIC;
+   ad_metric_type ad_metric = ad_metric_type::VIEW_METRIC;
 
    for( auto i = 0; i < ad_metric_values.size(); i++ )
    {
@@ -5428,7 +5416,7 @@ annotated_signed_transaction      wallet_api::asset_create(
    op.issuer = issuer;
    op.symbol = symbol;
 
-   asset_property_type asset_property = STANDARD_ASSET;
+   asset_property_type asset_property = asset_property_type::STANDARD_ASSET;
 
    for( auto i = 0; i < asset_property_values.size(); i++ )
    {
